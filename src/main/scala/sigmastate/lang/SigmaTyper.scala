@@ -116,12 +116,17 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         case genFunTpe @ SFunc(argTypes, tRes, _) =>
           // If it's a function then the application has type of that function's return type.
           val newObj = assignType(env, obj)
-          val actualTypes = newObj.tpe +: newArgs.map(_.tpe)
+          val newArgTypes = newArgs.map(_.tpe)
+          val actualTypes = newObj.tpe +: newArgTypes
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
               newObj.tpe.asInstanceOf[SProduct].method(n) match {
                 case Some(method) if method.irBuilder.isDefined =>
+                  val expectedArgs = concrFunTpe.asFunc.tDom.tail
+                  if (expectedArgs.length != newArgTypes.length
+                    || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
+                    error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes")
                   val methodConcrType = method.withSType(concrFunTpe)
                   methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))

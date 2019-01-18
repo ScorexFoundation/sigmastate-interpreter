@@ -333,6 +333,187 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SCollection.segmentLength") {
+    testMissingCosting("OUTPUTS.segmentLength({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("SCollection.indexWhere") {
+    testMissingCosting("OUTPUTS.indexWhere({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("SCollection.lastIndexWhere") {
+    testMissingCosting("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("SCollection.patch") {
+    testMissingCosting("Coll(1, 2).patch(1, Coll(3), 1)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1))
+      )
+    )
+  }
+
+  property("SCollection.updated") {
+    testMissingCosting("Coll(1, 2).updated(1, 1)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(1))
+      )
+    )
+  }
+
+  property("SCollection.updateMany") {
+    testMissingCosting("Coll(1, 2).updateMany(Coll(1), Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)), ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.unionSets") {
+    testMissingCosting("Coll(1, 2).unionSets(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.diff") {
+    testMissingCosting("Coll(1, 2).diff(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.intersect") {
+    testMissingCosting("Coll(1, 2).intersect(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.prefixLength") {
+    testMissingCosting("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.PrefixLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("SCollection.indexOf") {
+    testMissingCosting("Coll(1, 2).indexOf(1, 0)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(0))
+      )
+    )
+  }
+
+  property("SCollection.lastIndexOf") {
+    testMissingCosting("Coll(1, 2).lastIndexOf(1, 0)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(0))
+      )
+    )
+  }
+
+  property("SCollection.find") {
+    testMissingCosting("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.FindMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("Collection.distinct") {
+    testMissingCosting("Coll(true, false).distinct",
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.DistinctMethod,
+        Vector()
+      )
+    )
+  }
+
+  property("SCollection.startsWith") {
+    testMissingCosting("Coll(1, 2).startsWith(Coll(1), 1)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)), IntConstant(1))
+      )
+    )
+  }
+
+  property("SCollection.endsWith") {
+    testMissingCosting("Coll(1, 2).endsWith(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)

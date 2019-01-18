@@ -717,8 +717,59 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       SCollection(tOV),
       Seq(STypeParam(tIV), STypeParam(tOV))),
     15, MethodCallIrBuilder)
+  val SegmentLengthMethod = SMethod(this, "segmentLength",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),
+    16, MethodCallIrBuilder)
+  val IndexWhereMethod = SMethod(this, "indexWhere",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),
+    17, MethodCallIrBuilder)
+  val LastIndexWhereMethod = SMethod(this, "lastIndexWhere",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),
+    18, MethodCallIrBuilder)
+  val PatchMethod = SMethod(this, "patch",
+    SFunc(IndexedSeq(SCollection(tIV), SInt, SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))),
+    19, MethodCallIrBuilder)
+  val UpdatedMethod = SMethod(this, "updated",
+    SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), SCollection(tIV), Seq(STypeParam(tIV))),
+    20, MethodCallIrBuilder)
+  val UpdateManyMethod = SMethod(this, "updateMany",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(SInt), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))),
+    21, MethodCallIrBuilder)
+  val UnionSetsMethod = SMethod(this, "unionSets",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))),
+    22, MethodCallIrBuilder)
+  val DiffMethod = SMethod(this, "diff",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))),
+    23, MethodCallIrBuilder)
+  val IntersectMethod = SMethod(this, "intersect",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))),
+    24, MethodCallIrBuilder)
+  val PrefixLengthMethod = SMethod(this, "prefixLength",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),
+    25, MethodCallIrBuilder)
+  val IndexOfMethod = SMethod(this, "indexOf",
+    SFunc(IndexedSeq(SCollection(tIV), tIV, SInt), SInt, Seq(STypeParam(tIV))),
+    26, MethodCallIrBuilder)
+  val LastIndexOfMethod = SMethod(this, "lastIndexOf",
+    SFunc(IndexedSeq(SCollection(tIV), tIV, SInt), SInt, Seq(STypeParam(tIV))),
+    27, MethodCallIrBuilder)
+  lazy val FindMethod = SMethod(this, "find",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SOption(tIV), Seq(STypeParam(tIV))),
+    28, MethodCallIrBuilder)
+//  lazy val ZipMethod = SMethod(this, "zip",
+//    SFunc(IndexedSeq(SCollection(tIV), SCollection(tOV)),
+//      SCollection(STuple(tIV, tOV)),
+//      Seq(STypeParam(tIV), STypeParam(tOV))),
+//    29, MethodCallIrBuilder)
+  val DistinctMethod = SMethod(this, "distinct", SCollection(tIV), 30, MethodCallIrBuilder)
+  val StartsWithMethod = SMethod(this, "startsWith",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV), SInt), SBoolean, Seq(STypeParam(tIV))),
+    31, MethodCallIrBuilder)
+  val EndsWithMethod = SMethod(this, "endsWith",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SBoolean, Seq(STypeParam(tIV))),
+    32, MethodCallIrBuilder)
 
-  val methods = Seq(
+  lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
     GetOrElseMethod,
     MapMethod,
@@ -734,6 +785,23 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     BitShiftRightZeroedMethod,
     IndicesMethod,
     FlatMapMethod,
+    SegmentLengthMethod,
+    IndexWhereMethod,
+    LastIndexWhereMethod,
+    PatchMethod,
+    UpdatedMethod,
+    UpdateManyMethod,
+    UnionSetsMethod,
+    DiffMethod,
+    IntersectMethod,
+    PrefixLengthMethod,
+    IndexOfMethod,
+    LastIndexOfMethod,
+    FindMethod,
+//    ZipMethod,
+    DistinctMethod,
+    StartsWithMethod,
+    EndsWithMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
