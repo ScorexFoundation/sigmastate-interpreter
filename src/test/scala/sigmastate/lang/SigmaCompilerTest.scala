@@ -8,7 +8,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Ident, Lambda, ZKProofBlock}
+import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
@@ -317,6 +317,18 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           Vector(("i", SInt)),
           SBoolean,
           Some(GT(Ident("i", SInt).asIntValue, IntConstant(0)))))
+      )
+    )
+  }
+
+  property("SOption.flatMap") {
+    testMissingCosting("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
+      mkMethodCall(GetVarInt(1),
+        SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SOption(SInt),
+          Some(GetVarInt(2))))
       )
     )
   }

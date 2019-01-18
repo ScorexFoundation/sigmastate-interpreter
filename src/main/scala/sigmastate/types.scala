@@ -626,6 +626,9 @@ object SOption extends STypeCompanion {
   val FilterMethod    = SMethod(this, "filter",
     SFunc(IndexedSeq(SOption(tT), SFunc(tT, SBoolean)), SOption(tT), Seq(STypeParam(tT))),
     8, MethodCallIrBuilder)
+  val FlatMapMethod   = SMethod(this, "flatMap",
+    SFunc(IndexedSeq(SOption(tT), SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
+    9, MethodCallIrBuilder)
   val methods: Seq[SMethod] = Seq(
     IsEmptyMethod,
     IsDefinedMethod,
@@ -635,6 +638,7 @@ object SOption extends STypeCompanion {
     ToCollMethod,
     MapMethod,
     FilterMethod,
+    FlatMapMethod,
   )
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SOption[T] = SOption(elemType)
   def unapply[T <: SType](tOpt: SOption[T]): Option[T] = Some(tOpt.elemType)
