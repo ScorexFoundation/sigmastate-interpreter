@@ -44,7 +44,7 @@ class EmissionRules(val settings: MonetarySettings) {
     if (h < settings.fixedRatePeriod) {
       settings.fixedRate * h
     } else {
-      val fixedRateIssue: Long = settings.fixedRate * (settings.fixedRatePeriod- 1)
+      val fixedRateIssue: Long = settings.fixedRate * (settings.fixedRatePeriod - 1)
       val epoch = (h - settings.fixedRatePeriod) / settings.epochLength
       val fullEpochsIssued: Long = (1 to epoch.toInt).map { e =>
         Math.max(settings.fixedRate - settings.oneEpochReduction * e, 0) * settings.epochLength

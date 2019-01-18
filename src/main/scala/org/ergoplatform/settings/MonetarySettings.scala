@@ -1,10 +1,6 @@
 package org.ergoplatform.settings
 
 import org.ergoplatform.mining.emission.EmissionRules
-import scorex.crypto.authds.ADDigest
-import scorex.util.encode.Base16
-
-import scala.util.Success
 
 /**
   * Configuration file for monetary settings of Ergo chain
