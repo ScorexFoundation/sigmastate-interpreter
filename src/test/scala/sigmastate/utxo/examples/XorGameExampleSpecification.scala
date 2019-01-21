@@ -265,7 +265,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     // below we need to specify a and s (even though they are not needed)
     val proofDefaultWin = bob.withContextExtender(0, ByteArrayConstant(sDummy)).withContextExtender(1, ByteConstant(aDummy)).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get.proof
 
-    // verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
+//    verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
 
   }
 
