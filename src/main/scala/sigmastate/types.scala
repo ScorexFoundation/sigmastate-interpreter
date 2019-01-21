@@ -753,14 +753,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(IndexedSeq(SCollection(tIV), tIV, SInt), SInt, Seq(STypeParam(tIV))),
     27, MethodCallIrBuilder)
-  lazy val FindMethod = SMethod(this, "find",
+  val FindMethod = SMethod(this, "find",
     SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SOption(tIV), Seq(STypeParam(tIV))),
     28, MethodCallIrBuilder)
-//  lazy val ZipMethod = SMethod(this, "zip",
-//    SFunc(IndexedSeq(SCollection(tIV), SCollection(tOV)),
-//      SCollection(STuple(tIV, tOV)),
-//      Seq(STypeParam(tIV), STypeParam(tOV))),
-//    29, MethodCallIrBuilder)
+  val ZipMethod = SMethod(this, "zip",
+    SFunc(IndexedSeq(SCollection(tIV), SCollection(tOV)),
+      SCollection(STuple(tIV, tOV)),
+      Seq(STypeParam(tIV), STypeParam(tOV))),
+    29, MethodCallIrBuilder)
   val DistinctMethod = SMethod(this, "distinct", SCollection(tIV), 30, MethodCallIrBuilder)
   val StartsWithMethod = SMethod(this, "startsWith",
     SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV), SInt), SBoolean, Seq(STypeParam(tIV))),
@@ -768,6 +768,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val EndsWithMethod = SMethod(this, "endsWith",
     SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SBoolean, Seq(STypeParam(tIV))),
     32, MethodCallIrBuilder)
+  val PartitionMethod = SMethod(this, "partition",
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), STuple(SCollection(tIV), SCollection(tIV)), Seq(STypeParam(tIV))),
+    33, MethodCallIrBuilder)
 
   lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
@@ -798,10 +801,11 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     IndexOfMethod,
     LastIndexOfMethod,
     FindMethod,
-//    ZipMethod,
+    ZipMethod,
     DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,
+    PartitionMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -849,7 +853,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
 
   override def elemType: SAny.type = SAny
 
-  override val methods: Seq[SMethod] = {
+  override lazy val methods: Seq[SMethod] = {
     val tupleMethods = Array.tabulate(items.size) { i =>
       SMethod(STuple, componentNameByIndex(i), items(i), (i + 1).toByte)
     }
@@ -882,7 +886,7 @@ object STuple extends STypeCompanion {
 
   def typeId = TupleTypeCode
 
-  val colMethods = {
+  lazy val colMethods = {
     val subst = Map(SCollection.tIV -> SAny)
     SCollection.methods.map { m =>
       m.copy(stype = SigmaTyper.applySubst(m.stype, subst))

@@ -513,6 +513,30 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SCollection.zip") {
+    testMissingCosting("Coll(1, 2).zip(Coll(1, 1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.partition") {
+    testMissingCosting("Coll(1, 2).partition({ (i: Int) => i > 0 })",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(Terms.Lambda(
+          Vector(("i", SInt)),
+          SBoolean,
+          Some(GT(Ident("i", SInt), IntConstant(0)))
+        ))
+      )
+    )
+  }
+
 
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
