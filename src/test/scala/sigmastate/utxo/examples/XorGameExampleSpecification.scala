@@ -198,20 +198,20 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
 
     val winner = {
-      if (a == b) {
+      if (a != b) {
         /////////////////////////////////////////////////////////
         // Possibility 2.1: Bob wins and Alice reveals secret
         // Bob can spend anytime. But we show how he will spend before bobDeadline
         /////////////////////////////////////////////////////////
-        println("Alice won")
-        alice
+        println("Bob won")
+        bob
       } else {
         /////////////////////////////////////////////////////////
         // Possibility 2.2: Alice wins (and she may or may not reveal secret).
         // Alice must spend before bobDeadline height
         /////////////////////////////////////////////////////////
-        println("Bob won")
-        bob
+        println("Alice won")
+        alice
       }
     }.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
 
@@ -233,9 +233,9 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       self = fullGameOutput // what is the use of self?
     )
 
-    val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get.proof
+    val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get
 
-    //verifier.verify(fullGameEnv, fullGameScript, gameOverContext, proofGameOver, fakeMessage).get._1 shouldBe true
+    verifier.verify(fullGameEnv, fullGameScript, gameOverContext, proofGameOver, fakeMessage).get._1 shouldBe true
 
     /////////////////////////////////////////////////////////
     // Possibility 2.3: Bob wins or Alice wins but does not spend before  . Alice does not reveal secret
@@ -244,7 +244,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     val defaultWinHeight = bobDeadline + 101
 
-    // assume winner is paying to Carol
+    // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
     val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
 
@@ -263,9 +263,13 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val sDummy = Array[Byte]()
     val aDummy:Byte = 0
     // below we need to specify a and s (even though they are not needed)
-    val proofDefaultWin = bob.withContextExtender(0, ByteArrayConstant(sDummy)).withContextExtender(1, ByteConstant(aDummy)).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get.proof
+    val proofDefaultWin = bob.withContextExtender(
+      0, ByteArrayConstant(sDummy)
+    ).withContextExtender(
+      1, ByteConstant(aDummy)
+    ).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get
 
-//    verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
+    verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
 
   }
 
