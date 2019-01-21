@@ -141,7 +141,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val abortHalfGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(abortHalfGameOutput))
 
-    val abortHalfGameTxContext = ErgoLikeContext(
+    val abortHalfGameContext = ErgoLikeContext(
       currentHeight = abortHalfGameHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
@@ -150,9 +150,9 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       self = halfGameOutput // what is the use of self?
     )
 
-    val proofAbortHalfGame = alice.prove(halfGameEnv, halfGameScript, abortHalfGameTxContext, fakeMessage).get.proof
+    val proofAbortHalfGame = alice.prove(halfGameEnv, halfGameScript, abortHalfGameContext, fakeMessage).get.proof
 
-    verifier.verify(halfGameEnv, halfGameScript, abortHalfGameTxContext, proofAbortHalfGame, fakeMessage).get._1 shouldBe true
+    verifier.verify(halfGameEnv, halfGameScript, abortHalfGameContext, proofAbortHalfGame, fakeMessage).get._1 shouldBe true
 
     /////////////////////////////////////////////////////////
     //// Possibility 2: Bob will spend halfGameOutput and generate a full game
@@ -165,7 +165,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = if (scala.util.Random.nextBoolean) 0x01 else 0x00
-//    val b:Constant[SByte.type] = ByteConstant(bByte)
+    //    val b:Constant[SByte.type] = ByteConstant(bByte)
 
     val fullGameOutput = ErgoBox(playAmount*2, fullGameScript, fullGameCreationHeight, Nil,
       Map(
@@ -178,7 +178,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val fullGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullGameOutput))
 
-    val fullGameTxContext = ErgoLikeContext(
+    val fullGameContext = ErgoLikeContext(
       currentHeight = fullGameCreationHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
@@ -188,9 +188,9 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
-    val proofFullGame = bob.prove(halfGameEnv, halfGameScript, fullGameTxContext, fakeMessage).get.proof
+    val proofFullGame = bob.prove(halfGameEnv, halfGameScript, fullGameContext, fakeMessage).get.proof
 
-    verifier.verify(halfGameEnv, halfGameScript, fullGameTxContext, proofFullGame, fakeMessage).get._1 shouldBe true
+    verifier.verify(halfGameEnv, halfGameScript, fullGameContext, proofFullGame, fakeMessage).get._1 shouldBe true
 
     /////////////////////////////////////////////////////////
     //// fullGameOutput represents the Full-Game "box" created by Bob.
@@ -224,7 +224,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
 
-    val gameOverTxContext = ErgoLikeContext(
+    val gameOverContext = ErgoLikeContext(
       currentHeight = gameOverHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
@@ -233,16 +233,39 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       self = fullGameOutput // what is the use of self?
     )
 
-    val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverTxContext, fakeMessage).get.proof
+    val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get.proof
 
-    verifier.verify(fullGameEnv, fullGameScript, gameOverTxContext, proofGameOver, fakeMessage).get._1 shouldBe true
+    //verifier.verify(fullGameEnv, fullGameScript, gameOverContext, proofGameOver, fakeMessage).get._1 shouldBe true
 
     /////////////////////////////////////////////////////////
     // Possibility 2.3: Bob wins or Alice wins but does not spend before  . Alice does not reveal secret
     // Bob can spend after bobDeadline.
     /////////////////////////////////////////////////////////
 
-    // to do 
+    val defaultWinHeight = bobDeadline + 101
+
+    // assume winner is paying to Carol
+    // note that playAmount*2 below is not checked. It could be anything.
+    val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
+
+    //normally this transaction would invalid (why?), but we're not checking it in this test
+    val defaultWinTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(defaultWinOutput))
+
+    val defaultWinContext = ErgoLikeContext(
+      currentHeight = defaultWinHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fullGameOutput),
+      spendingTransaction = defaultWinTx,
+      self = fullGameOutput // what is the use of self?
+    )
+
+    val sDummy = Array[Byte]()
+    val aDummy:Byte = 0
+    // below we need to specify a and s (even though they are not needed)
+    val proofDefaultWin = bob.withContextExtender(0, ByteArrayConstant(sDummy)).withContextExtender(1, ByteConstant(aDummy)).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get.proof
+
+    // verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
 
   }
 
