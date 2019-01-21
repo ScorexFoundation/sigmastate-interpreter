@@ -63,7 +63,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
       val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
-      ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks)))
+      ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks).isProven))
     } else {
       ByteArrayConstant(ValueSerializer.serialize((new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage))
     }
