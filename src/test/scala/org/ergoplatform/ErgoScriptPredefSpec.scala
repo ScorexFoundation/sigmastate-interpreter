@@ -6,15 +6,15 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.Random
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ConcreteCollection, IntConstant, LongConstant, SigmaPropValue, Value}
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, SigmaPropConstant, Value}
+import sigmastate._
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, SelectField}
-import sigmastate._
 
 import scala.util.Try
 
@@ -61,8 +61,9 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val prop = ErgoScriptPredef.foundationScript(settings)
 
-    def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if(ableToProve){
-      ByteArrayConstant(ValueSerializer.serialize(prover.dlogSecrets.head.publicImage))
+    def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
+      val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
+      ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks)))
     } else {
       ByteArrayConstant(ValueSerializer.serialize((new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage))
     }
