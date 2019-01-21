@@ -164,12 +164,70 @@ Often lack of reversibility is considered a weak point of Bitcoin. We give a pro
 
 We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both select a secret bit and submit a coin each. They then reveal their secret bits. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires at least 3 transactions. 
 \begin{enumerate}
-	\item Alice generates $a\in \mathbb{Z}_q$ and computes $h = H(a)$. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. She adds her commitment $h$ along with her coin protected by secret $x_0$ and public $y_0 = g^{x_0}$. This creates an unspent Box by Alice. She waits for some Bob to join the game by spending this output subject to certian conditions (see below). Alice can spend the box if no one joins within 100 blocks. 
-	\item Bob generates bit $b\in \{0,1\}$ and adds it (in the clear) along with his coin protected by secret $x_1$ and public $y_1 = g^{x_1}$. He does this by spending Alice's box with one of his own and creating a new Box containing both coins along with Alice's commitment $h$ and his own bit $b$. Lets call this an intermediate box. 
-	\item Alice opens $h$ by revealing $a$ somehow (either privately or via the blockchain). If Alice fails to reveal $a$ within 100 blocks of creating the intermediate box then Bob automatically wins and gets to spend the intermediate box. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. The winner claims the prize by inputting $a$ to the script. 
+	\item Alice commits to a secret bit $a$ as follows. She selects a random string $s$ and computes her commitment $h = H(s\|a)$ (i.e., hash after concatenating $s$ with a string representation of $a$).
+	
+%	generates $a\in \mathbb{Z}_q$ and computes $h = H(a)$. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. 
+	
+	She adds her commitment $h$ along with her coin protected by secret $x_0$ and public $y_0 = g^{x_0}$. This creates an unspent Box by Alice. She waits for some Bob to join the game by spending this output subject to certian conditions given by the {\em firstRoundScript} (see below). Alice can spend the box if no one joins within 100 blocks. 
+%	\item Alice generates $a\in \mathbb{Z}_q$ and computes $h = H(a)$. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. She adds her commitment $h$ along with her coin protected by secret $x_0$ and public $y_0 = g^{x_0}$. This creates an unspent Box by Alice. She waits for some Bob to join the game by spending this output subject to certian conditions (see below). Alice can spend the box if no one joins within 100 blocks. 
+	\item Bob generates bit $b\in \{0,1\}$ and adds it (in the clear) along with his coin protected by secret $x_1$ and public $y_1 = g^{x_1}$. He does this by spending Alice's box with one of his own and creating a new Box containing both coins along with Alice's commitment $h$ and his own bit $b$. Lets call this an intermediate box. Note that the transaction must satisfy the conditions given by {\em firstRoundScript}. In particular, one of the instructions in this script requires that the output must be protected by {\em secondRoundScript} (also given below).
+	\item Alice opens $h$ by revealing $s$ somehow (either privately to Bob or publicly). If Alice fails to reveal $a$ within 100 blocks of creating the intermediate box then Bob automatically wins and gets to spend the intermediate box. %We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. 
+	Anyone with knowledge of $s$ can send the price to the winner by inputting $a$ to {\em secondRoundScript}. 
+	
+%	\item Alice opens $h$ by revealing $a$ somehow (either privately or via the blockchain). If Alice fails to reveal $a$ within 100 blocks of creating the intermediate box then Bob automatically wins and gets to spend the intermediate box. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. The winner claims the prize by inputting $a$ to the script. 
 \end{enumerate}
 
 		%INPUTS.size == 2 && INPUTS(0).value == INPUTS(1).value && INPUTS(0).propositionBytes == pkA.propBytes,
+		
+The script {\em secondRoundScript} is given by the following conditions:
+\begin{enumerate}
+	\item The first free register (R4) is assumed to be Bob's input $b$ (boolean).
+	\item The second free register (R5) contains Bob's public key. 
+	\item If the block height is more than 100 then Bob's public key can spend.
+	\item The first typed variable (obtainable via \texttt{getVar(0)}) must be Alice's secret $s$.
+	\item The second typed variable (obtainable via \texttt{getVar(1)}) must be Alice's choice $a$ (boolean).
+	\item Commitment must be correctly opened (i.e., $H(s\|a)$ must equal $h$).
+	\item If $(a == b)$ then Alice can spend else Bob can spend.	
+\end{enumerate}
+
+% More security conditions:
+% The spender must not give a high fee. We can also say that the winner must be spender. This is more complex but will be a good example.
+% 
+This is encoded in out Scala program as follows: 
+
+\begin{verbatim}
+{
+val secondRoundScript = Compile( // Can this be implemented?
+"""val hash = INPUTS(0).R4 // Alice's original commitment
+val bobsBit = INPUTS(0).R5 // Boolean, Bob's public bit
+val aliceBytes = getVar[Array[Byte]](0) // Alice's open commitment, a 256 bit integer
+val correctlyOpened = sha256(aliceBytes) == hash 
+val equals = bobsBit == aliceBytes(0) > 0  // use the LSB of aliceBytes
+(correctlyOpened && 
+(
+(pkA && equals) || 
+(pkB && !equals)
+)
+) || 
+(pkB && txHeight > 100)"""
+)
+
+val pkA = // Alice's public key. Can we extract it from INPUT(0).propositionBytes ? 
+val pkB = // Bob's public key. Can we extract it from INPUT(1).propositionBytes ?
+val b = getVar[Boolean](0) // Bob's public bit
+
+(pkA && txHeight > 100) || {
+INPUTS.size == 2 && 
+INPUTS(0).value == INPUTS(1).value && 
+INPUTS(0) == SELF &&
+OUTPUTS.size == 1 &&
+OUTPUTS(0).R4 == INPUTS(0).R4 && // Copy Alice's commitment hash to output
+OUTPUTS(0).R5 == b 
+OUTPUTS(0).propositionBytes == outProp
+}
+\end{verbatim}
+
+
 Alice creates her coin with the following spending condition in the output:
 
 \begin{verbatim}
