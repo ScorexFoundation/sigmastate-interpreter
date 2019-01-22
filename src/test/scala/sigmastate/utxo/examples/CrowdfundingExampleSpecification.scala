@@ -1,8 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scapi.sigma.DLogProtocol.ProveDlog
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
+import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -32,7 +31,7 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
     val backerPubKey = backerProver.dlogSecrets.head.publicImage
     val projectPubKey = projectProver.dlogSecrets.head.publicImage
 
-    val timeout = LongConstant(100)
+    val timeout = IntConstant(100)
     val minToRaise = LongConstant(1000)
 
     val env = Map(
@@ -61,21 +60,20 @@ class CrowdfundingExampleSpecification extends SigmaTestingCommons {
         ValDef(1, SigmaPropConstant(projectPubKey))),
       SigmaOr(List(
         SigmaAnd(List(
-          BoolToSigmaProp(GE(Height, LongConstant(100))),
+          BoolToSigmaProp(GE(Height, IntConstant(100))),
           SigmaPropConstant(backerPubKey))
         ),
         SigmaAnd(List(
           BoolToSigmaProp(AND(ConcreteCollection(Vector(
-            LT(Height, LongConstant(100)),
-            OR(
-              MapCollection(Outputs,
-                FuncValue(Vector((2, SBox)),
-                  BinAnd(
-                    GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
-                    EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
-                  )
+            LT(Height, IntConstant(100)),
+            Exists(Outputs,
+              FuncValue(Vector((2, SBox)),
+                BinAnd(
+                  GE(ExtractAmount(ValUse(2, SBox)), LongConstant(1000)),
+                  EQ(ExtractScriptBytes(ValUse(2, SBox)), SigmaPropBytes(ValUse(1, SSigmaProp)))
                 )
-              ).asCollection[SBoolean.type])
+              )
+            )
           ), SBoolean))),
           ValUse(1, SSigmaProp)))
       ))

@@ -1,14 +1,14 @@
-package scapi.sigma
+package sigmastate.basics
 
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
-import sigmastate._
-import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
-import Value.PropositionCode
-import scapi.sigma.VerifierMessage.Challenge
+import sigmastate._
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.{Context, CryptoConstants}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
@@ -60,7 +60,8 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
   override def bytes: Array[PropositionCode] = ???
 }
 
-// Common input: (g,h,u,v)
+/** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v)*/
 case class ProveDHTuple(gv: Value[SGroupElement.type],
                                    hv: Value[SGroupElement.type],
                                    uv: Value[SGroupElement.type],

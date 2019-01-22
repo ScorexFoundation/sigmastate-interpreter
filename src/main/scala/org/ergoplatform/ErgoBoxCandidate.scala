@@ -19,17 +19,17 @@ import scala.runtime.ScalaRunTime
 
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
-                       val creationHeight: Long,
+                       val creationHeight: Int,
                        val additionalTokens: Seq[(TokenId, Long)] = Seq(),
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  def proposition: BoolValue = ergoTree.proposition
+  def proposition: BoolValue = ergoTree.proposition.asBoolValue
 
   def dataSize: Long = bytesWithNoRef.length.toLong
 
   lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.serialize(ergoTree.proposition)
+  val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(ergoTree.proposition)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
@@ -44,7 +44,7 @@ class ErgoBoxCandidate(val value: Long,
         val tokenTuples = additionalTokens.map { case (id, amount) =>
           Array(id, amount)
         }.toArray
-        Some(Constant(tokenTuples.asWrappedType, SCollection(STokenType)))
+        Some(Constant(tokenTuples.asWrappedType, STokensRegType))
       case ReferenceRegId =>
         val tupleVal = Array(creationHeight, Array.fill(34)(0: Byte))
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
@@ -76,8 +76,8 @@ object ErgoBoxCandidate {
                                         digestsInTx: Option[Array[Digest32]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
-      w.putBytes(ErgoTreeSerializer.serialize(obj.ergoTree))
-      w.putULong(obj.creationHeight)
+      w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
+      w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digestsInTx.isDefined) {
@@ -115,8 +115,8 @@ object ErgoBoxCandidate {
 
     def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
-      val prop = ErgoTreeSerializer.deserialize(r, resolvePlaceholdersToConstants = true).asBoolValue
-      val creationHeight = r.getULong()
+      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+      val creationHeight = r.getUInt().toInt
       val addTokensCount = r.getByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {
@@ -136,7 +136,7 @@ object ErgoBoxCandidate {
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
-      new ErgoBoxCandidate(value, prop, creationHeight, addTokens, regs)
+      new ErgoBoxCandidate(value, tree, creationHeight, addTokens, regs)
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {

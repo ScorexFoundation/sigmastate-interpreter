@@ -48,7 +48,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   def test(name: String, env: ScriptEnv,
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: SValue,
-      onlyPositive: Boolean = false) = {
+      onlyPositive: Boolean = true) = {
     val prover = new ErgoLikeTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
@@ -64,7 +64,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
       reg2 -> IntConstant(1)),
-      creationHeight = 5L)
+      creationHeight = 5)
 
     val ctx = ErgoLikeContext.dummy(outputToSpend)
 
@@ -272,12 +272,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        OR(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
-          ).asCollection[SBoolean.type])
+        Exists(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+        )
       }
     )
     test("TupCol5", env1, ext1,
@@ -287,12 +286,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |}""".stripMargin,
       {
         val data = GetVar(dataVar, dataType).get
-        AND(
-          MapCollection(data,
-            FuncValue(
-              Vector((1, STuple(SByteArray, SLong))),
-              GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
-          ).asCollection[SBoolean.type])
+        ForAll(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            GT(SizeOf(SelectField(ValUse(1, STuple(SByteArray, SLong)), 1).asCollection[SByte.type]), IntConstant(0)))
+        )
       }
     )
     test("TupCol6", env1, ext1,
@@ -433,10 +431,23 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  property("ByteArrayToBigInt: big int should not exceed dlog group order ") {
+    val bytes = Array.fill[Byte](500)(1)
+    val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
+    assertExceptionThrown(
+      test("BATBI1", env, ext,
+        s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) > 0 }",
+        GT(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)),
+        onlyPositive = true
+      ),
+      _.getCause.isInstanceOf[RuntimeException]
+    )
+  }
+
   property("ExtractCreationInfo") {
     test("Info1", env, ext,
-      "SELF.creationInfo._1 == 5L",
-      EQ(SelectField(ExtractCreationInfo(Self),1),LongConstant(5)),
+      "SELF.creationInfo._1 == 5",
+      EQ(SelectField(ExtractCreationInfo(Self),1),IntConstant(5)),
       true
     )
     // suppose to be tx.id + box index
@@ -449,9 +460,9 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
   property("sigmaProp") {
     test("prop1", env, ext, "sigmaProp(HEIGHT >= 0)",
-      BoolToSigmaProp(GE(Height, LongConstant(0))), true)
+      BoolToSigmaProp(GE(Height, IntConstant(0))), true)
     test("prop2", env, ext, "sigmaProp(HEIGHT >= 0) && getVar[SigmaProp](proofVar1).get",
-      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, LongConstant(0))), GetVarSigmaProp(propVar1).get)), true)
+      SigmaAnd(Vector(BoolToSigmaProp(GE(Height, IntConstant(0))), GetVarSigmaProp(propVar1).get)), true)
 //    println(CostTableStat.costTableString)
   }
 
@@ -459,4 +470,26 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
 //      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
 //  }
+
+  property("numeric cast") {
+    test("downcast", env, ext,
+      "{ getVar[Int](intVar2).get.toByte == 2.toByte }",
+      EQ(Downcast(GetVarInt(2).get, SByte), ByteConstant(2)),
+      onlyPositive = true
+    )
+    test("upcast", env, ext,
+      "{ getVar[Int](intVar2).get.toLong == 2L }",
+      EQ(Upcast(GetVarInt(2).get, SLong), LongConstant(2)),
+      onlyPositive = true
+    )
+  }
+
+  property("EQ const array vs collection") {
+    val byteArrayVar1Value = ByteArrayConstant(Array[Byte](1.toByte, 2.toByte))
+    test("EQArrayCollection", env + ("byteArrayVar1" -> byteArrayVar1Value), ext,
+      "byteArrayVar1 == Coll[Byte](1.toByte, 2.toByte)",
+      EQ(byteArrayVar1Value, ConcreteCollection(Vector(ByteConstant(1), ByteConstant(2)), SByte)),
+      true
+    )
+  }
 }

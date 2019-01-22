@@ -14,6 +14,7 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
+import sigmastate.utxo.ExtractCreationInfo
 
 import scala.runtime.ScalaRunTime
 
@@ -29,7 +30,7 @@ import scala.runtime.ScalaRunTime
   * We add additional fields in addition to amount and proposition~(which stored in the registers R0 and R1). Namely,
   * register R2 contains additional tokens (a sequence of pairs (token identifier, value)). Register R3 contains height
   * when block got included into the blockchain and also transaction identifier and box index in the transaction outputs.
-  * Registers R4-R9 are free for abritrary usage. 
+  * Registers R4-R9 are free for arbitrary usage.
   *
   *
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked
@@ -50,7 +51,7 @@ class ErgoBox private(
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
                        val transactionId: ModifierId,
                        val index: Short,
-                       override val creationHeight: Long
+                       override val creationHeight: Int
 ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
@@ -101,11 +102,14 @@ object ErgoBox {
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
-  val SReferenceRegType = STuple(SLong, SCollection.SByteArray)
+  val SReferenceRegType = ExtractCreationInfo.ResultType
 
   type Amount = Long
 
-  trait RegisterId {val number: Byte}
+  trait RegisterId {
+    val number: Byte
+    def asIndex: Int = number.toInt
+  }
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
@@ -144,7 +148,7 @@ object ErgoBox {
 
   def apply(value: Long,
             ergoTree: ErgoTree,
-            creationHeight: Long,
+            creationHeight: Int,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,

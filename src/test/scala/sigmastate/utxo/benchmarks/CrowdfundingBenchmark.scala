@@ -5,9 +5,9 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import scalan.util.BenchmarkUtil._
 
-
-class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons {
+class CrowdfundingBenchmark extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
     val outputToSpend = ErgoBox(10, TrueLeaf, 0)
@@ -26,7 +26,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons with BenchmarkingCommons
     ctx
   }
 
-  val timeout = 100L
+  val timeout = 100
   val minToRaise = 1000L
   val nIters = 10000
   val nTasks = 1

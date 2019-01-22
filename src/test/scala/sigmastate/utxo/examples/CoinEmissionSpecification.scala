@@ -21,7 +21,9 @@ import sigmastate.{SLong, _}
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
-  implicit lazy val IR = new RuntimeIRContext
+  implicit lazy val IR = new TestingIRContext {
+    // override val okPrintEvaluatedEntries = true
+  }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -78,7 +80,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val outputsNum = EQ(SizeOf(Outputs), 2)
     val correctMinerProposition = EQ(
       ExtractScriptBytes(minerOut),
-      ErgoTreeSerializer.serializedPubkeyPropValue(MinerPubkey)
+      ErgoTreeSerializer.DefaultSerializer.serializedPubkeyPropValue(MinerPubkey)
     )
 
     val prop = AND(
@@ -133,7 +135,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
     def genCoinbaseLikeTransaction(state: ValidationState,
                                    emissionBox: ErgoBox,
-                                   height: Long): ErgoLikeTransaction = {
+                                   height: Int): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Seq(), Map())

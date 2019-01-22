@@ -8,7 +8,6 @@ import org.ergoplatform._
 import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
-import scapi.sigma.DLogProtocol
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
@@ -21,7 +20,6 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaBuilder
 
@@ -42,7 +40,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import WArray._
   import WOption._
   import WECPoint._
-  
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -64,6 +62,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case _: NumericTimes[_]   => Some(MultiplyCode)
       case _: IntegralDivide[_] => Some(DivisionCode)
       case _: IntegralMod[_]    => Some(ModuloCode)
+      case _: OrderingMin[_]    => Some(MinCode)
+      case _: OrderingMax[_]    => Some(MaxCode)
       case _ => None
     }
   }
@@ -107,16 +107,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
   object IsInternalDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
-      case _: SigmaDslBuilder | _: ColBuilder => Some(d)
+      case _: SigmaDslBuilder | _: ColBuilder | _: WSpecialPredefCompanion => Some(d)
       case _ => None
     }
   }
 
-  object IsExtractableConstant {
+  object IsNonConstantDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
       // in case of GroupElement constant (ProveDlog) different constants have different meaning,
       // thus it is ok for them to create ValDef
-      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
+//      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
       // to increase effect of constant segregation we need to treat the constants specially
       // and don't create ValDef even if the constant is used more than one time,
       // because two equal constants don't always have the same meaning.
@@ -139,7 +139,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         ValUse(id, tpe) // recursion base
       case Def(Lambda(lam, _, x, y)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
-      val env1 = env + (x -> (varId, elemToSType(x.elem)))
+        val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(mainG, env1, lam, varId + 1, constantsProcessing)
         val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
@@ -166,10 +166,17 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
         mkConcreteCollection[elemTpe.type](col.toIndexedSeq, elemTpe)
+      case CBM.xor(_, colSym1, colSym2) =>
+        mkXor(recurse(colSym1), recurse(colSym2))
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
-        mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
+        wc.constValue match {
+          case cb: CostingBox =>
+            mkConstant[tpe.type](cb.ebox.asInstanceOf[tpe.WrappedType], tpe)
+          case _ =>
+            mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
+        }
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
@@ -184,6 +191,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, DivisionCode)
       case BIM.mod(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, ModuloCode)
+      case BIM.min(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MinCode)
+      case BIM.max(In(x), In(y)) =>
+        mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
@@ -234,6 +245,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
         mkExtractId(box.asBox)
+      case BoxM.bytes(In(box)) =>
+        mkExtractBytes(box.asBox)
+      case BoxM.bytesWithoutRef(In(box)) =>
+        mkExtractBytesWithNoRef(box.asBox)
 
       case OM.get(In(optionSym)) =>
         mkOptionGet(optionSym.asValue[SOption[SType]])
@@ -259,6 +274,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAND(recurse(items))
       case Def(SDBM.anyOf(_,  items)) =>
         mkOR(recurse(items))
+      case Def(SDBM.atLeast(_, bound, items)) =>
+        mkAtLeast(recurse(bound), recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
@@ -285,9 +302,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)
-
       case SDBM.byteArrayToBigInt(_, colSym) =>
         mkByteArrayToBigInt(recurse(colSym))
+      case SDBM.blake2b256(_, colSym) =>
+        mkCalcBlake2b256(recurse(colSym))
+      case SDBM.treeModifications(_, treeSym, opsColSym, proofColSym) =>
+        mkTreeModifications(recurse(treeSym), recurse(opsColSym), recurse(proofColSym))
+      case SDBM.treeLookup(_, treeSym, keySym, proofColSym) =>
+        mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofColSym))
+      case SDBM.longToByteArray(_, longSym) =>
+        mkLongToByteArray(recurse(longSym))
 
       case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
@@ -304,6 +328,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkDowncast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
       case Def(Upcast(inputSym, toSym)) =>
         mkUpcast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
+
+      case Def(SimpleStruct(_, fields)) =>
+        val items = fields.map { case (n, v) => recurse(v) }
+        mkTuple(items)
 
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
@@ -323,7 +351,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       if (mainG.hasManyUsagesGlobal(s)
         && IsContextProperty.unapply(d).isEmpty
         && IsInternalDef.unapply(d).isEmpty
-        && IsExtractableConstant.unapply(d).nonEmpty)
+        && IsNonConstantDef.unapply(d).nonEmpty)
       {
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1

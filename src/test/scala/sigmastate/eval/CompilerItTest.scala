@@ -4,10 +4,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import scapi.sigma.DLogProtocol
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, BigIntConstant, SigmaPropConstant, ByteArrayConstant, IntConstant, BigIntArrayConstant, SigmaBoolean, GroupElementConstant, ValUse}
+import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
@@ -16,6 +15,8 @@ import sigmastate.utxo._
 import special.collection.{Col => VCol}
 import special.sigma.{TestValue => VTestValue}
 import scalan.BaseCtxTests
+import scalan.util.BenchmarkUtil._
+import sigmastate.basics.DLogProtocol
 
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -95,27 +96,24 @@ class CompilerItTest extends BaseCtxTests
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
-      cost = {_ => costOfProveDlog },
+      cost = null,
       size = {_ => CryptoConstants.groupSize.toLong },
-      tree = SigmaPropConstant(p1), Result(res, 10052, 32))
+      tree = SigmaPropConstant(p1), Result(res, 10053, 32))
   }
   test("sigmaPropConstCase") {
     sigmaPropConstCase.doReduce()
   }
 
   def andSigmaPropConstsCase = {
+    import SigmaDslBuilder._
     val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
     val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
-    val resSym = (p1Sym && p2Sym)
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
-      calc = {_ => resSym },
-      cost = {_ =>
-        val c1 = costOfProveDlog + costOf("SigmaPropIsProven", SFunc(SSigmaProp, SBoolean))
-        c1 + c1 + costOf("BinAnd", SFunc(Vector(SBoolean, SBoolean), SBoolean))
-      },
-      size = {_ => typeSize[Boolean] },
+      calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
+      cost = null,
+      size = null,
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20107, 1))
+      Result(CAND(Seq(p1, p2)), 20126, 66))
   }
 
   test("andSigmaPropConstsCase") {
@@ -168,7 +166,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntArr1.slice(0, 1), 2, 32))
+      Result(bigIntArr1.slice(0, 1), 21, 32))
   }
   test("bigIntArray_Slice_Case") {
     bigIntArray_Slice_Case.doReduce()
@@ -261,10 +259,10 @@ class CompilerItTest extends BaseCtxTests
       tree = BlockValue(Vector(
         ValDef(1,List(),SigmaPropConstant(projectPK))),
         SigmaOr(Seq(
-          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,LongConstant(100))),SigmaPropConstant(backerPK))),
+          SigmaAnd(Seq(BoolToSigmaProp(GE(Height,IntConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
-              LT(Height,LongConstant(100)),
+              LT(Height,IntConstant(100)),
               Exists(Outputs,
                 FuncValue(Vector((2,SBox)),
                   BinAnd(
@@ -274,7 +272,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40360, 1L)
+      Result({ TrivialProp.FalseProp }, 40674, 1L)
     )
   }
   test("crowdFunding_Case") {

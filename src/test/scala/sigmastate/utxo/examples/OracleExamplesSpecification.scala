@@ -70,7 +70,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     *
     *
     */
-  property("oracle example") { // TODO LHF InterpreterException: Script reduced to false
+  property("oracle example") {
     val oracle = new ErgoLikeTestProvingInterpreter
     val aliceTemplate = new ErgoLikeTestProvingInterpreter
     val bob = new ErgoLikeTestProvingInterpreter
@@ -93,7 +93,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val ts = System.currentTimeMillis()
 
-    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)))
+    // we need to fit the resulted BigInt in group order
+    val reducedHashSize = 31
+    val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)).take(reducedHashSize))
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
 
@@ -124,8 +126,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     def withinTimeframe(sinceHeight: Int,
                         timeoutHeight: Int,
                         fallback: Value[SBoolean.type])(script: Value[SBoolean.type]) =
-      OR(AND(GE(Height, LongConstant(sinceHeight)), LT(Height, LongConstant(timeoutHeight)), script),
-        AND(GE(Height, LongConstant(timeoutHeight)), fallback))
+      OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
+        AND(GE(Height, IntConstant(timeoutHeight)), fallback))
 
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
@@ -135,8 +137,15 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
           Exponentiate(oraclePubImage.value,
-            ByteArrayToBigInt(CalcBlake2b256(
-              Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))))))
+            ByteArrayToBigInt(
+              Slice(
+                CalcBlake2b256(
+                  Append(LongToByteArray(extract[SLong.type](reg1)), LongToByteArray(extract[SLong.type](reg4)))),
+                IntConstant(0), IntConstant(reducedHashSize)
+              )
+            )
+          )
+        )
       ),
       contractLogic)
 

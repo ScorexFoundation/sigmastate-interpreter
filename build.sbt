@@ -1,4 +1,6 @@
+import scala.language.postfixOps
 import scala.util.Try
+import scala.sys.process._
 
 organization := "org.scorexfoundation"
 
@@ -8,7 +10,7 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.12.7",
+  scalaVersion := "2.12.8",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -55,19 +57,17 @@ version in ThisBuild := {
   }
 }
 
-git.gitUncommittedChanges in ThisBuild := true
-
-val specialVersion = "master-014a4749-SNAPSHOT"
+val specialVersion = "master-6eca3f22-SNAPSHOT"
 val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
 
-val specialSigmaVersion = "master-708072b5-SNAPSHOT"
+val specialSigmaVersion = "master-354d6254-SNAPSHOT"
 val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
 val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
 
 val testingDependencies = Seq(
-  "org.scalatest" %% "scalatest" % "3.0.+" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "junit" % "junit" % "4.12" % "test",
@@ -118,3 +118,44 @@ credentials ++= (for {
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
+
+def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
+  val ergoBranch = "master"
+  log.info(s"Testing current build in Ergo (branch $ergoBranch):")
+  val cwd = new File("").absolutePath
+  val ergoPath = new File(cwd + "/ergo-tests/")
+  log.info(s"Cleaning $ergoPath")
+  s"rm -rf ${ergoPath.absolutePath}" !
+
+  log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
+  s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
+
+  log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
+  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+
+  log.info("Updated Ergo lock.sbt:")
+  Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
+
+  log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
+  val res = Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  
+  if (res != 0) sys.error(s"Ergo $task failed!")
+}
+
+lazy val ergoUnitTest = TaskKey[Unit]("ergoUnitTest", "run ergo unit tests with current version")
+ergoUnitTest := {
+  val log = streams.value.log
+  val sigmastateVersion = version.value
+  runErgoTask("test", sigmastateVersion, log) 
+}
+
+ergoUnitTest := ergoUnitTest.dependsOn(publishLocal).value
+
+lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
+ergoItTest := {
+  val log = streams.value.log
+  val sigmastateVersion = version.value
+  runErgoTask("it:test", sigmastateVersion, log)
+}
+
+ergoItTest := ergoItTest.dependsOn(publishLocal).value

@@ -4,22 +4,26 @@ import java.math.BigInteger
 
 import com.google.common.base.Strings
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol
 import sigmastate._
-import sigmastate.Values._
+import sigmastate.Values.{ConstantPlaceholder, _}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{SigmaPropBytes, SizeOf}
+import sigmastate.utxo.{ExtractCreationInfo, SelectField, SigmaPropBytes, SizeOf}
 import SType._
-
+import org.ergoplatform.{Height, MinerPubkey, Self}
+import scalan.util.BenchmarkUtil._
 import scalan.BaseCtxTests
+import sigmastate.SCollection.SByteArray
+import sigmastate.basics.DLogProtocol
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.lang.Terms.ValueOps
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   implicit override lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting {
-//      override val useAlphaEquality = false
+      this.useAlphaEquality = true
     }
   import IR._
   import WArray._
@@ -82,9 +86,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes },
-      { _ => costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)) +
-             costOf("SigmaPropBytes", SFunc(SSigmaProp, SCollection.SByteArray))})
+      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes }
+    )
   }
 
   test("operations") {
@@ -125,8 +128,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("context data") {
 //    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
-    check("height1", "HEIGHT + 1L", ctx => ctx.HEIGHT + 1L)
-    check("height2", "HEIGHT > 1L", ctx => ctx.HEIGHT > 1L)
+    check("height1", "HEIGHT + 1", ctx => ctx.HEIGHT + 1)
+    check("height2", "HEIGHT > 1", ctx => ctx.HEIGHT > 1)
     check("size", "INPUTS.size + OUTPUTS.size", ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length })
     check("value", "SELF.value + 1L", ctx => ctx.SELF.value + 1L)
   }
@@ -156,6 +159,16 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
+
+  test("substConstants") {
+    import org.ergoplatform.ErgoScriptPredef._
+    val minerRewardDelay = 720
+    val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
+    val costed = cost(env, prop)
+    val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
+    emit("substConstants", calcF, costF, sizeF)
+  }
+
   test("Crowd Funding") {
     val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
@@ -166,11 +179,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx: Rep[Context] =>
         val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
         val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val projectBytes = projectPubKey.propBytes
         val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
-            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
+            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectBytes)
           }))
         )).asRep[SigmaProp] && projectPubKey
         (c1 || c2)
@@ -212,11 +226,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
       val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val selfBytes = ctx.SELF.propositionBytes
+      val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(
-        ctx.HEIGHT >= ctx.SELF.getReg[Long](4).get + demurragePeriod,
+        ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
-          val selfBytes = ctx.SELF.propositionBytes
-          (out.value >= ctx.SELF.value - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
+          (out.value >= selfValue - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
         })
       ))
       regScript.isValid lazy_|| Thunk{c2}

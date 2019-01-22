@@ -33,7 +33,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     * )
     */
   property("Evaluation - Demurrage Example") {
-    val demurragePeriod = 100L
+    val demurragePeriod = 100
     val demurrageCoeff = 2
 
     val outIdxVarId = Byte.MaxValue
@@ -56,20 +56,20 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     )
 
     //todo: add condition on
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
         |
         | val c1 = allOf(Coll(
-        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
-        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1) <= 0
+        |   HEIGHT >= SELF.R3[(Int, Coll[Byte])].get._1 + demurragePeriod,
+        |   SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Int, Coll[Byte])].get._1) <= 0
         | ))
         |
         | val c2 = allOf(Coll(
-        |   HEIGHT >= SELF.R3[(Long, Coll[Byte])].get._1 + demurragePeriod,
-        |   out.R3[(Long, Coll[Byte])].get._1 == HEIGHT,
-        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Long, Coll[Byte])].get._1),
+        |   HEIGHT >= SELF.R3[(Int, Coll[Byte])].get._1 + demurragePeriod,
+        |   out.R3[(Int, Coll[Byte])].get._1 == HEIGHT,
+        |   out.value >= SELF.value - demurrageCoeff * SELF.bytes.size * (HEIGHT - SELF.R3[(Int, Coll[Byte])].get._1),
         |   out.propositionBytes == SELF.propositionBytes
         | ))
         |

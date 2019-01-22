@@ -4,9 +4,9 @@ import java.math.BigInteger
 
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
-import scapi.sigma.DLogProtocol
-import scapi.sigma.DLogProtocol.DLogProverInput
 import sigmastate.Values
+import sigmastate.basics.DLogProtocol
+import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.serialization.generators.ValueGenerators
 
@@ -46,7 +46,7 @@ class ErgoAddressSpecification extends PropSpec
       val p2sh = Pay2SHAddress(s)
 
       //search we're doing to find a box potentially corresponding to some address
-      ErgoTreeSerializer.serialize(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
+      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
     }
   }
 
@@ -55,7 +55,7 @@ class ErgoAddressSpecification extends PropSpec
       val p2s = Pay2SAddress(s)
 
       //search we're doing to find a box potentially corresponding to some address
-      ErgoTreeSerializer.serialize(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
+      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
     }
   }
 

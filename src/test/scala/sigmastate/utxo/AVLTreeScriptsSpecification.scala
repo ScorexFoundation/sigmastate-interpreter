@@ -46,7 +46,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ByteArrayConstant(opsBytes),
       ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest))
     val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    val propCompiled = compile(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -95,7 +95,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ByteArrayConstant(proof)).get, ByteArrayConstant(value))
 
     val env = Map("key" -> key, "proof" -> proof, "value" -> value)
-    val propCompiled = compile(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -137,7 +137,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(digest, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compile(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
+    val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
 
     val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
@@ -180,7 +180,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         GetVarByteArray(proofId).get))
     )
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
-    val propCompiled = compile(env,
+    val propCompiled = compileWithCosting(env,
       """{
         |  val tree = SELF.R3[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get
@@ -241,7 +241,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
-    val prop = compile(env,
+    val prop = compileWithCosting(env,
       """{
         |  val tree = SELF.R4[AvlTree].get
         |  val key = SELF.R5[Coll[Byte]].get

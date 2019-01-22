@@ -27,13 +27,30 @@ object CostTable {
   val groupElementConst = 1
   val constCost = 1
 
-  val plusMinus = 1
+  val plusMinus = 2
   val multiply = 10
 
   val plusMinusBigInt = 10
   val multiplyBigInt = 50
 
   val hashPerKb = 100
+
+  val collAccess = 5
+
+  val collToColl = 20
+
+  val comparisonCost = 3
+
+  val logicCost = 2
+
+  val sigmaAndCost = 10
+  val sigmaOrCost = 40
+
+  val castOp = 5
+
+  val treeOp = 1000
+
+  val extractCost = 10
 
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
@@ -49,56 +66,58 @@ object CostTable {
     ("Const", "() => Coll[IV]", constCost),
     ("Const", "() => Box", constCost),
     ("ConcreteCollection", "() => Coll[IV]", constCost),
-    ("If", "(Boolean, T, T) => T", MinimalCost),
-//    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
-//    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
-//    ("If", "(Boolean, Short, Short) => Short", MinimalCost),
-//    ("If", "(Boolean, Int, Int) => Int", MinimalCost),
-//    ("If", "(Boolean, Long, Long) => Long", MinimalCost),
-//    ("If", "(Boolean, BigInt, BigInt) => BigInt", MinimalCost),
-//    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
-//    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
-//    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
-    ("Self$", "Context => Box", MinimalCost),
-    ("GroupGenerator$", "() => GroupElement", MinimalCost),
-    ("AccessBox", "Context => Box", MinimalCost),
-    ("GetVar", "(Context, Byte) => Option[T]", MinimalCost),
-    ("AccessRegister", "Box => Option[T]", MinimalCost),
-    ("ExtractAmount", "(Box) => Long", MinimalCost),
-    ("ExtractId", "(Box) => Coll[Byte]", MinimalCost),
-    ("ExtractBytes", "(Box) => Coll[Byte]", MinimalCost),
-    ("ExtractScriptBytes", "(Box) => Coll[Byte]", MinimalCost),
-    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", MinimalCost),
-    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", MinimalCost),
+    ("GroupGenerator$", "() => GroupElement", constCost),
+    ("Self$", "Context => Box", constCost),
+
+    ("AccessBox", "Context => Box", extractCost),
+    ("GetVar", "(Context, Byte) => Option[T]", extractCost),
+    ("AccessRegister", "Box => Option[T]", extractCost),
+    ("ExtractAmount", "(Box) => Long", extractCost),
+    ("ExtractId", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
+    ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
-    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
     ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
 
-    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", MinimalCost),
-    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", MinimalCost),
-    ("SizeOf", "(Coll[IV]) => Int", MinimalCost),
-    ("ByIndex", "(Coll[IV],Int) => IV", MinimalCost),
+    ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
+    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
+    ("SizeOf", "(Coll[IV]) => Int", collAccess),
+    ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
 
-    ("SigmaPropIsProven", "SigmaProp => Boolean", MinimalCost),
-    ("BoolToSigmaProp", "Boolean => SigmaProp", MinimalCost),
-    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", MinimalCost),
-    ("BinAnd", "(Boolean, Boolean) => Boolean", MinimalCost),
-    ("BinOr", "(Boolean, Boolean) => Boolean", MinimalCost),
-    ("AND", "(Coll[Boolean]) => Boolean", MinimalCost),
-    ("OR_per_item", "(Coll[Boolean]) => Boolean", MinimalCost),
-    ("AND_per_item", "(Coll[Boolean]) => Boolean", MinimalCost),
-    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", MinimalCost),
+    ("If", "(Boolean, T, T) => T", logicCost),
+    //    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
+    //    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
+    //    ("If", "(Boolean, Short, Short) => Short", MinimalCost),
+    //    ("If", "(Boolean, Int, Int) => Int", MinimalCost),
+    //    ("If", "(Boolean, Long, Long) => Long", MinimalCost),
+    //    ("If", "(Boolean, BigInt, BigInt) => BigInt", MinimalCost),
+    //    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
+    //    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
+    //    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
+
+    ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
+    ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
+    ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
+    ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
+    ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
+    ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
     ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
-    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", MinimalCost),
-    ("GT_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("GE_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("LE_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("LT_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("EQ_per_kb", "(T,T) => Boolean", MinimalCost),
-    ("NEQ_per_kb", "(T,T) => Boolean", MinimalCost),
+    ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+    ("GT_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("GE_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("LE_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("LT_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("EQ_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("NEQ_per_kb", "(T,T) => Boolean", comparisonCost),
 
     ("+", "(Byte, Byte) => Byte", plusMinus),
     ("+", "(Short, Short) => Short", plusMinus),
@@ -143,36 +162,39 @@ object CostTable {
     ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
-    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", MinimalCost),
+    ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
+    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
 
-    ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", MinimalCost),
+    ("min", "(Byte, Byte) => Byte", logicCost),
+    ("min", "(Short, Short) => Short", logicCost),
+    ("min", "(Int, Int) => Int", logicCost),
+    ("min", "(Long, Long) => Long", logicCost),
+    ("min", "(BigInt, BigInt) => BigInt", comparisonCost),
+    ("min_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("min", "(Byte, Byte) => Byte", MinimalCost),
-    ("min", "(Short, Short) => Short", MinimalCost),
-    ("min", "(Int, Int) => Int", MinimalCost),
-    ("min", "(Long, Long) => Long", MinimalCost),
-    ("min", "(BigInt, BigInt) => BigInt", MinimalCost),
-    ("min_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("max", "(Byte, Byte) => Byte", logicCost),
+    ("max", "(Short, Short) => Short", logicCost),
+    ("max", "(Int, Int) => Int", logicCost),
+    ("max", "(Long, Long) => Long", logicCost),
+    ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
+    ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("max", "(Byte, Byte) => Byte", MinimalCost),
-    ("max", "(Short, Short) => Short", MinimalCost),
-    ("max", "(Int, Int) => Int", MinimalCost),
-    ("max", "(Long, Long) => Long", MinimalCost),
-    ("max", "(BigInt, BigInt) => BigInt", MinimalCost),
-    ("max_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
+    ("TreeModifications_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
+    ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
 
-    ("TreeModifications", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", MinimalCost),
-    ("TreeLookup", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", MinimalCost),
-
-    ("LongToByteArray", "(Long) => Coll[Byte]", MinimalCost),
+    ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
 
     ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
 
     //cost if of twice prove dlog
     ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
 
-    ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", MinimalCost),
-    ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", MinimalCost),
+    ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
+    ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
+
+    ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
+
+    ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {

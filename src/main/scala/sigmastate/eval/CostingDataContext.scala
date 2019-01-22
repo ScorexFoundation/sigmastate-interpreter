@@ -3,11 +3,12 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SomeValue}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{OperationSerializer, SigmaSerializer}
@@ -35,15 +36,20 @@ case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
 }
 
-class CostingBox(
-    val IR: Evaluation,
-    id: Col[Byte],
-    value: Long,
-    bytes: Col[Byte],
-    bytesWithoutRef: Col[Byte],
-    propositionBytes: Col[Byte],
-    registers: Col[AnyValue],
-    var isCost: Boolean) extends TestBox(id, value, bytes, bytesWithoutRef, propositionBytes, registers) {
+import CostingBox._
+
+class CostingBox(val IR: Evaluation,
+                 isCost: Boolean,
+                 val ebox: ErgoBox)
+  extends TestBox(
+    colBytes(ebox.id)(IR),
+    ebox.value,
+    colBytes(ebox.bytes)(IR),
+    colBytes(ebox.bytesWithNoRef)(IR),
+    colBytes(ebox.propositionBytes)(IR),
+    regs(ebox)(IR)
+  )
+{
   override val builder = new CostingSigmaDslBuilder(IR)
 
   override def getReg[T](i: Int)(implicit cT: RType[T]): Option[T] =
@@ -71,16 +77,42 @@ class CostingBox(
     } else
       super.getReg(i)
 
-  override def creationInfo: (Long, Col[Byte]) = {
+  override def creationInfo: (Int, Col[Byte]) = {
     import Types._
-    this.R3[(Long, Col[Byte])].get.asInstanceOf[Any] match {
-      case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SLong, SByteArray))) if arr.length == 2 =>
-        (arr(0).asInstanceOf[Long], builder.Cols.fromArray(arr(1).asInstanceOf[Array[Byte]]))
+    this.R3[(Int, Col[Byte])].get.asInstanceOf[Any] match {
+      case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
+        (arr(0).asInstanceOf[Int], builder.Cols.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>
         sys.error(s"Invalid value $v of creationInfo register R3")
     }
 
   }
+}
+
+object CostingBox {
+
+  def colBytes(b: Array[Byte])(implicit IR: Evaluation): Col[Byte] = IR.sigmaDslBuilderValue.Cols.fromArray(b)
+
+  def regs(ebox: ErgoBox)(implicit IR: Evaluation): Col[AnyValue] = {
+    val res = new Array[AnyValue](ErgoBox.maxRegisters)
+
+    def checkNotYetDefined(id: Int, newValue: SValue) =
+      require(res(id) == null, s"register $id is defined more then once: previous value ${res(id)}, new value $newValue")
+
+    for ((k, v) <- ebox.additionalRegisters) {
+      checkNotYetDefined(k.number, v)
+      res(k.number) = new TestValue(v)
+    }
+
+    for (r <- ErgoBox.mandatoryRegisters) {
+      val regId = r.number
+      val v = ebox.get(r).get
+      checkNotYetDefined(regId, v)
+      res(regId) = new TestValue(v)
+    }
+    IR.sigmaDslBuilderValue.Cols.fromArray(res)
+  }
+
 }
 
 class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { dsl =>
@@ -142,7 +174,7 @@ class CostingDataContext(
     val IR: Evaluation,
     inputs: Array[Box],
     outputs: Array[Box],
-    height: Long,
+    height: Int,
     selfBox: Box,
     lastBlockUtxoRootHash: AvlTree,
     minerPubKey: Array[Byte],

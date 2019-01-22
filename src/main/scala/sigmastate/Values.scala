@@ -42,7 +42,7 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    lazy val bytes = ErgoTreeSerializer.serialize(this)
+    lazy val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -89,7 +89,7 @@ object Values {
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
   }
 
-  trait EvaluatedValue[S <: SType] extends Value[S] {
+  trait EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
@@ -103,7 +103,7 @@ object Values {
     }
   }
 
-  trait Constant[S <: SType] extends EvaluatedValue[S] {}
+  trait Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     override def companion: ValueCompanion = Constant
@@ -137,6 +137,7 @@ object Values {
     }
   }
 
+  /** Placeholder for a constant in ErgoTree. Zero based index in ErgoTree.constants array. */
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
@@ -275,7 +276,7 @@ object Values {
     }
   }
 
-  implicit class AvlTreeConstantOps(c: AvlTreeConstant) {
+  implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
         c.value.startingDigest,
@@ -344,6 +345,19 @@ object Values {
     def elementType: T
   }
 
+  type OptionConstant[T <: SType] = Constant[SOption[T]]
+  object OptionConstant {
+    def apply[T <: SType](value: Option[T#WrappedType], elementType: T): Constant[SOption[T]] =
+      Constant[SOption[T]](value, SOption(elementType))
+    def unapply[T <: SType](node: Value[SOption[T]]): Option[(Option[T#WrappedType], T)] = node match {
+      case opt: Constant[SOption[a]] @unchecked if opt.tpe.isOption =>
+        val v = opt.value.asInstanceOf[Option[T#WrappedType]]
+        val t = opt.tpe.elemType.asInstanceOf[T]
+        Some((v, t))
+      case _ => None
+    }
+  }
+
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
 
   object CollectionConstant {
@@ -358,7 +372,7 @@ object Values {
     }
   }
 
-  implicit class CollectionConstantOps[T <: SType](c: CollectionConstant[T]) {
+  implicit class CollectionConstantOps[T <: SType](val c: CollectionConstant[T]) extends AnyVal {
     def toConcreteCollection: ConcreteCollection[T] = {
       val tElem = c.tpe.elemType
       val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
@@ -555,7 +569,7 @@ object Values {
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
 
-  implicit class CollectionOps[T <: SType](coll: Value[SCollection[T]]) {
+  implicit class CollectionOps[T <: SType](val coll: Value[SCollection[T]]) extends AnyVal {
     def length: Int = matchCase(_.items.length, _.value.length, _.items.length)
     def items = matchCase(_.items, _ => sys.error(s"Cannot get 'items' property of node $coll"), _.items)
 //    def isEvaluatedCollection =
@@ -578,14 +592,18 @@ object Values {
       )
   }
 
-  implicit class SigmaPropValueOps(p: Value[SSigmaProp.type]) {
+  implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
   }
 
-  implicit class SigmaBooleanOps(sb: SigmaBoolean) {
+  implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
+  }
+
+  implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
+    def toSigmaProp: SigmaPropValue = BoolToSigmaProp(b)
   }
 
   sealed trait BlockItem extends NotReadyValue[SType] {
@@ -647,14 +665,14 @@ object Values {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
     /** This is not used as operation, but rather to form a program structure */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object FuncValue {
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }
 
-  implicit class OptionValueOps[T <: SType](p: Value[SOption[T]]) {
+  implicit class OptionValueOps[T <: SType](val p: Value[SOption[T]]) extends AnyVal {
     def get: Value[T] = OptionGet(p)
     def getOrElse(default: Value[T]): Value[T] = OptionGetOrElse(p, default)
     def isDefined: Value[SBoolean.type] = OptionIsDefined(p)
@@ -692,39 +710,63 @@ object Values {
     *  That new language will give an interpretation for the new bytes.
     *
     *  Consistency between fields is ensured by private constructor and factory methods in `ErgoTree` object.
+    *  For performance reasons, ErgoTreeSerializer can be configured to perform additional constant segregation.
+    *  In such a case after deserialization there may be more constants segregated. This is done for example to
+    *  support caching optimization described in #264 mentioned above.
+    *
+    *  The default behavior of ErgoTreeSerializer is to preserve original structure of ErgoTree and check
+    *  consistency. In case of any inconsistency the serializer throws exception.
+    *  
+    *  @param header      the first byte of serialized byte array which determines interpretation of the rest of the array
+    *  @param constants   If isConstantSegregation == true contains the constants for which there may be
+    *                     ConstantPlaceholders in the tree.
+    *                     If isConstantSegregation == false this array should be empty and any placeholder in
+    *                     the tree will lead to exception.
+    *  @param root        if isConstantSegregation == true contains ConstantPlaceholder instead of some Constant nodes.
+    *                     Otherwise may not contain placeholders.
+    *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
+    *                     there should be a constant in `constants` array.
+    *  @param proposition When isConstantSegregation == false this is the same as root.
+    *                     Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants
     * */
   case class ErgoTree private(
     header: Byte,
-    /** If isConstantSegregation == true contains all constants.
-      * Otherwise should be empty */
     constants: IndexedSeq[Constant[SType]],
-    /** if isConstantSegregation == true contains ConstantPlaceholder instead of Constant nodes.
-      * Otherwise */
-    root: BoolValue,
-    /** When isConstantSegregation == false this is the same as root.
-      * Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants */
-    proposition: BoolValue
+    root: SValue,
+    proposition: SValue
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
-    def isConstantSegregation: Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+    @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
+    @inline def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(this)
   }
 
   object ErgoTree {
-    val DefaultHeader: Byte = 0
+    /** Current version of ErgoTree serialization format (aka bite-code language version)*/
+    val VersionFlag: Byte = 0
+
+    /** Default value of ErgoTree.header byte */
+    val DefaultHeader: Byte = (0 | VersionFlag).toByte
+
+    /** Header flag to indicate that constant segregation should be applied. */
     val ConstantSegregationFlag: Byte = 0x10
 
-    def substConstants(root: BoolValue, constants: IndexedSeq[Constant[SType]]): BoolValue = {
+    /** Default header with constant segregation enabled. */
+    val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
+
+    @inline def isConstantSegregation(header: Byte): Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+
+    def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
       val substRule = strategy[Value[_ <: SType]] {
         case ph: ConstantPlaceholder[_] =>
           Some(store.get(ph.id))
         case _ => None
       }
-      everywherebu(substRule)(root).fold(root)(_.asInstanceOf[BoolValue])
+      everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: BoolValue) = {
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SValue) = {
       if ((header & ConstantSegregationFlag) != 0) {
         val prop = substConstants(root, constants)
         new ErgoTree(header, constants, root, prop)
@@ -732,7 +774,12 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    implicit def fromProposition(prop: BoolValue): ErgoTree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
+    implicit def fromProposition(prop: SValue): ErgoTree = {
+      // get ErgoTree with segregated constants
+      // todo rewrite with everywherebu?
+      ErgoTreeSerializer.DefaultSerializer
+        .deserializeErgoTree(ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(prop))
+    }
   }
 
 }

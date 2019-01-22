@@ -1,18 +1,21 @@
 package sigmastate.lang
 
+import org.ergoplatform.{Height, Inputs}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
+import sigmastate.lang.Terms.{Ident, Select}
+import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
-  def typecheck(env: ScriptEnv, x: String): SType = {
+  def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
@@ -21,7 +24,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder)
       val typed = typer.typecheck(bound)
-     typed.tpe
+      if (expected != null) typed shouldBe expected
+      typed.tpe
     } catch {
       case e: Exception => throw e
     }
@@ -47,25 +51,29 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("simple expressions") {
-    typecheck(env, "x") shouldBe SInt
-    typecheck(env, "x + y") shouldBe SInt
+    typecheck(env, "x", IntConstant(10)) shouldBe SInt   // constants are substituted from env
+    typecheck(env, "x + y", Plus(10, 11)) shouldBe SInt
+    typecheck(env, "x + height1", Plus(Upcast(10, SLong), 100L)) shouldBe SLong
     typecheck(env, "x - y") shouldBe SInt
     typecheck(env, "x / y") shouldBe SInt
     typecheck(env, "x % y") shouldBe SInt
-    typecheck(env, "c1 && c2") shouldBe SBoolean
-    typecheck(env, "arr1") shouldBe SByteArray
-    typecheck(env, "HEIGHT") shouldBe SLong
-    typecheck(env, "HEIGHT + 1") shouldBe SLong
-    typecheck(env, "INPUTS") shouldBe SCollection(SBox)
+    typecheck(env, "c1 && c2", BinAnd(TrueLeaf, FalseLeaf)) shouldBe SBoolean
+    typecheck(env, "arr1", ByteArrayConstant(Array[Byte](1,2))) shouldBe SByteArray
+    typecheck(env, "HEIGHT", Height) shouldBe SInt
+    typecheck(env, "HEIGHT + 1") shouldBe SInt
+    typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
-    typecheck(env, "INPUTS.size > 1") shouldBe SBoolean
-    typecheck(env, "arr1 | arr2") shouldBe SByteArray
-    typecheck(env, "arr1 ++ arr2") shouldBe SByteArray
+    typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
+    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+//    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
+    typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    // todo should be g1.exp(n1)
+    // ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
+//    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
-    typecheck(env, "p1 || p2") shouldBe SBoolean
-    typecheck(env, "p1 && p2") shouldBe SBoolean
+    typecheck(env, "p1 || p2") shouldBe SSigmaProp
+    typecheck(env, "p1 && p2") shouldBe SSigmaProp
     typecheck(env, "b1 < b2") shouldBe SBoolean
     typecheck(env, "b1 > b2") shouldBe SBoolean
     typecheck(env, "b1 <= b2") shouldBe SBoolean
@@ -84,13 +92,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
     typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray
     typecheck(env, "getVar[SigmaProp](10).get") shouldBe SSigmaProp
-    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SBoolean
-    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SBoolean
+    typecheck(env, "p1 && getVar[SigmaProp](10).get") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get || p2") shouldBe SSigmaProp
+    typecheck(env, "getVar[SigmaProp](10).get && getVar[SigmaProp](11).get") shouldBe SSigmaProp
     typecheck(env, "Coll(true, getVar[SigmaProp](11).get)") shouldBe SCollection(SBoolean)
     typecheck(env, "min(1, 2)") shouldBe SInt
     typecheck(env, "min(1L, 2)") shouldBe SLong
-    typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SLong
+    typecheck(env, "min(HEIGHT, INPUTS.size)") shouldBe SInt
     typecheck(env, "max(1, 2)") shouldBe SInt
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
@@ -243,6 +251,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ (box: Box) => box.propositionBytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.bytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
     typecheck(env, "{ (box: Box) => box.id }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)
+    typecheck(env, "{ (box: Box) => box.creationInfo }") shouldBe
+      SFunc(IndexedSeq(SBox), ExtractCreationInfo.ResultType)
   }
 
   property("type parameters") {
@@ -468,5 +478,14 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("string concat") {
     typecheck(env, """ "a" + "b" """) shouldBe SString
+  }
+
+  property("modular arith ops") {
+    typecheck(env, "10.toBigInt.modQ") shouldBe SBigInt
+    typecheck(env, "10.toBigInt.plusModQ(2.toBigInt)") shouldBe SBigInt
+    typecheck(env, "10.toBigInt.minusModQ(2.toBigInt)") shouldBe SBigInt
+    an[MethodNotFound] should be thrownBy typecheck(env, "10.modQ")
+    an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.plusModQ(1)")
+    an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.minusModQ(1)")
   }
 }

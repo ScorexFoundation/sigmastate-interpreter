@@ -1,14 +1,14 @@
 package sigmastate
 
 import org.bouncycastle.util.BigIntegers
-import scapi.sigma.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
-import scapi.sigma.VerifierMessage.Challenge
-import scapi.sigma.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.Value
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
 import Helpers.xor
 import gf2t.GF2_192_Poly
+import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
 
 
 object SigSerializer {

@@ -2,7 +2,7 @@ package sigmastate
 
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
-import scapi.sigma.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
@@ -37,26 +37,26 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = TestingContext(h)
-        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h - 1)), dk1)).get._1 should(
+        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
-        reduceToCrypto(ctx, AND(GE(Height, LongConstant(h)), dk1)).get._1 should (
+        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
           matchPattern { case sb: SigmaBoolean => })
 
         {
-          val res = reduceToCrypto(ctx, AND(GE(Height, LongConstant(h + 1)), dk1)).get._1
+          val res = reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
           res should matchPattern { case FalseProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h - 1)), dk1)).get._1
+          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, LongConstant(h)), dk1)).get._1
+          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
-        reduceToCrypto(ctx, OR(GE(Height, LongConstant(h + 1)), dk1)).get._1 should(
+        reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
       }
     }
@@ -73,28 +73,28 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         val ctx = TestingContext(h)
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h + 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h + 1)), dk1)
+                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[CAND])
 
 
         assert(reduceToCrypto(ctx, OR(
-                  AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, LongConstant(h - 1)), dk1)
+                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+                  AND(GT(Height, IntConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
         reduceToCrypto(ctx, OR(
-          AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, LongConstant(h + 1)), dk1)
+          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+          AND(GT(Height, IntConstant(h + 1)), dk1)
         )).get._1 shouldBe FalseProp
 
         reduceToCrypto(ctx,
           OR(
             OR(
-              AND(LE(Height, LongConstant(h - 1)), AND(dk1, dk2)),
-              AND(GT(Height, LongConstant(h + 1)), dk1)
+              AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
+              AND(GT(Height, IntConstant(h + 1)), dk1)
             ),
-            AND(GT(Height, LongConstant(h - 1)), LE(Height, LongConstant(h + 1)))
+            AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
         ).get._1 shouldBe TrueProp
 
@@ -117,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compile(env, code).asBoolValue
+    val prop = compileWithCosting(env, code).asBoolValue
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -126,50 +126,72 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluate array ops") {
-//    testEval("""{
-//              |  val arr = Array(1, 2) ++ Array(3, 4)
-//              |  arr.size == 4
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array(1, 2, 3)
-//              |  arr.slice(1, 3) == Array(2, 3)
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = bytes1 ++ bytes2
-//              |  arr.size == 6
-//              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2) ++ Coll(3, 4)
+        |  arr.size == 4
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.slice(1, 3) == Coll(2, 3)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ bytes2
+        |  arr.size == 6
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = bytes1 ++ Coll[Byte]()
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll[Byte]() ++ bytes1
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R4[Coll[Int]].get
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = box1.R5[Coll[Boolean]].get
+        |  allOf(arr) == false
+        |}""".stripMargin)
 
-//    // TODO IndexOutOfBoundsException in ColsOverArraysDefs$ColOverArrayBuilder$ColOverArrayBuilderCtor.apply(...
-//    testEval("""{
-//              |  val arr = bytes1 ++ Array[Byte]()
-//              |  arr.size == 3
-//              |}""".stripMargin)
-//    testEval("""{
-//              |  val arr = Array[Byte]() ++ bytes1
-//              |  arr.size == 3
-//              |}""".stripMargin)
-
-    testEval("""{
-              |  val arr = box1.R4[Coll[Int]].get
-              |  arr.size == 3
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
-              |  anyOf(arr)
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = box1.R5[Coll[Boolean]].get
-              |  allOf(arr) == false
-              |}""".stripMargin)
-    testEval("""{
-              |  val arr = Coll(1, 2, 3)
-              |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
-              |}""".stripMargin)
-//    // TODO uncomment when Costing for where is implemented
-//    testEval("""{
-//              |  val arr = Array(1, 2, 3)
-//              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-//              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.size == 3
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  anyOf(arr)
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(true, false)
+        |  allOf(arr) == false
+        |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
+        |}""".stripMargin)
+    //    // TODO uncomment when Costing for where is implemented
+    //    testEval("""{
+    //              |  val arr = Array(1, 2, 3)
+    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
+    //              |}""".stripMargin)
   }
 
 //  property("Evaluate sigma in lambdas") {
@@ -237,8 +259,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val env2 = TestingContext(101)
 
     val prop = OR(
-      AND(LE(Height, LongConstant(100)), AND(dk1, dk2)),
-      AND(GT(Height, LongConstant(100)), dk1)
+      AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
+      AND(GT(Height, IntConstant(100)), dk1)
     )
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -265,7 +287,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop3 = AND(TrueLeaf, TrueLeaf)
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop4 = GT(Height, LongConstant(90))
+    val prop4 = GT(Height, IntConstant(90))
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
@@ -340,7 +362,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("deserialize") {
     val str = Base58.encode(ValueSerializer.serialize(ByteArrayConstant(Array[Byte](2))))
-    testEval(s"""deserialize[Coll[Byte]]("$str").size == 1""")
     testEval(s"""deserialize[Coll[Byte]]("$str")(0) == 2""")
   }
 }
@@ -357,9 +378,9 @@ case class TestingContext(height: Int,
     val vars = Array[AnyValue]()
     val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
-    val selfBox = new CostingBox(IR, noBytes, 0L, noBytes, noBytes, noBytes,
-      IR.sigmaDslBuilderValue.Cols.fromArray(new Array[AnyValue](10)), isCost)
-    new CostingDataContext(IR, inputs, outputs, height, selfBox, emptyAvlTree, ErgoLikeContext.dummyPubkey, vars, isCost)
+    new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
+      lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,
+      vars = vars, isCost = isCost)
   }
 
 }

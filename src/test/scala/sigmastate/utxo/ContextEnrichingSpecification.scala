@@ -5,6 +5,7 @@ import scorex.util.encode.Base16
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.OptionUnwrapNone
 
@@ -16,25 +17,25 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
-      """.stripMargin)
-    val prop = BinAnd(
-      pubkey.isProven,
-      EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
+      """.stripMargin).asBoolValue
+    val prop = SigmaAnd(
+      pubkey,
+      EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage))).toSigmaProp
     )
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
+    val pr = prover.prove(compiledScript, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeTestInterpreter
-    verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, compiledScript, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env, compiledScript, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("context enriching mixed w. crypto 2") {
@@ -44,32 +45,34 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get ++ getVar[Coll[Byte]](2).get) == blake
         |}
-      """.stripMargin)
+      """.stripMargin).asBoolValue
 
-    val prop = BinAnd(
-      pubkey.isProven,
+    val prop = SigmaAnd(
+      pubkey,
       EQ(
         CalcBlake2b256(Append(GetVarByteArray(1).get, GetVarByteArray(2).get)),
         ByteArrayConstant(Blake2b256(preimage1 ++ preimage2))
-      )
+      ).toSigmaProp
     )
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
+    val pr = prover.prove(compiledScript, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeTestInterpreter
-    verifier.verify(env, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
+    verifier.verify(env, compiledScript, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env, compiledScript, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  property("prover enriching context - xor") {
+  // todo: fix broken XOR for byte arrays
+  // in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+  ignore("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 
@@ -83,7 +86,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       .withContextExtender(k2, ByteArrayConstant(v2))
 
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         |  (getVar[Coll[Byte]](k1).get | getVar[Coll[Byte]](k2).get) == r
         |}
@@ -109,12 +112,12 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   /**
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
-  ignore("prover enriching context(!!! ignored)") {
+  property("prover enriching context") {
     val prover = new ErgoLikeTestProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage))
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         |  blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
@@ -131,7 +134,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
-      _.getCause.isInstanceOf[OptionUnwrapNone])
+      rootCause(_).isInstanceOf[NoSuchElementException])
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -141,7 +144,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       """{
         |  blake2b256(getVar[Coll[Byte]](2).get ++ getVar[Coll[Byte]](1).get) == blake
         |}

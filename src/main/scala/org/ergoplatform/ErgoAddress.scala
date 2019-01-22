@@ -3,7 +3,7 @@ package org.ergoplatform
 import java.util
 
 import com.google.common.primitives.Ints
-import scapi.sigma.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values.{ConcreteCollection, ConstantNode, IntConstant, Value, GetVarByteArray}
@@ -127,7 +127,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 object Pay2SHAddress {
 
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
-    val sb = ErgoTreeSerializer.serialize(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
     val sbh = ErgoAddressEncoder.hash192(sb)
     new Pay2SHAddress(sbh)
   }
@@ -154,7 +154,7 @@ class Pay2SAddress(override val script: Value[SBoolean.type],
 
 object Pay2SAddress {
   def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SAddress = {
-    val sb = ErgoTreeSerializer.serialize(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
     new Pay2SAddress(script, sb)
   }
 
@@ -197,7 +197,7 @@ case class ErgoAddressEncoder(networkPrefix: Byte) {
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(bs)
         case Pay2SAddress.addressTypePrefix =>
-          new Pay2SAddress(ErgoTreeSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
+          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
         case _ => throw new Exception("Unsupported address type: " + addressType)
       }
     }

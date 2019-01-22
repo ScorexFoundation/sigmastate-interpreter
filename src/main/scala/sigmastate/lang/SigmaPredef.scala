@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values.{Value, SValue}
 import sigmastate._
 import sigmastate.lang.Terms.{Lambda, STypeParam}
@@ -24,13 +24,15 @@ object SigmaPredef {
   val predefinedEnv: Map[String, SValue] = Seq(
     "allOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
     "anyOf" -> mkLambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SBoolean)), SBoolean, None),
+    "atLeast" -> mkLambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
     "ZKProof" -> mkLambda(Vector("block" -> SSigmaProp), SBoolean, None),
     "sigmaProp" -> mkLambda(Vector("condition" -> SBoolean), SSigmaProp, None),
 
     "blake2b256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "sha256" -> mkLambda(Vector("input" -> SByteArray), SByteArray, None),
     "byteArrayToBigInt" -> mkLambda(Vector("input" -> SByteArray), SBigInt, None),
+    "byteArrayToLong" -> mkLambda(Vector("input" -> SByteArray), SLong, None),
+    "decodePoint" -> mkLambda(Vector("input" -> SByteArray), SGroupElement, None),
     "longToByteArray" -> mkLambda(Vector("input" -> SLong), SByteArray, None),
 
     "getVar" -> mkGenLambda(Seq(STypeParam(tT)), Vector("varId" -> SByte), SOption(tT), None),
@@ -46,6 +48,10 @@ object SigmaPredef {
     "fromBase64" -> mkLambda(Vector("input" -> SString), SByteArray, None),
     "PK" -> mkLambda(Vector("input" -> SString), SSigmaProp, None),
     "deserialize" -> mkGenLambda(Seq(STypeParam(tT)), Vector("str" -> SString), SOption(tT), None),
+    "substConstants" -> mkGenLambda(
+      Seq(STypeParam(tT)),
+      Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
+      SByteArray, None),
   ).toMap
 
   def PredefIdent(name: String): Value[SType] = {
@@ -71,6 +77,10 @@ object SigmaPredef {
 
   val LongToByteArraySym = PredefIdent("longToByteArray")
   val ByteArrayToBigIntSym = PredefIdent("byteArrayToBigInt")
+  val ByteArrayToLongSym = PredefIdent("byteArrayToLong")  // mutually inverse to longToByteArray
+
+  /** Implemented as CryptoConstants.dlogGroup.curve.decodePoint(bytes)*/
+  val DecodePointSym = PredefIdent("decodePoint")
 
   val FromBase58Sym = PredefIdent("fromBase58")
   val FromBase64Sym = PredefIdent("fromBase64")

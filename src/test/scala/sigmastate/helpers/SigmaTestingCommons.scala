@@ -40,8 +40,8 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val interProp = compiler.compile(env, code, TestnetNetworkPrefix)
-    val IR.Pair(calcF, _) = IR.doCosting(Map(), interProp)
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
     IR.buildTree(calcF)
   }
 
@@ -53,7 +53,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
-                creationHeight: Long)
+                creationHeight: Int)
     = ErgoBox(value, proposition, creationHeight, Seq(), Map(), Array.fill[Byte](32)(0.toByte).toModifierId)
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {

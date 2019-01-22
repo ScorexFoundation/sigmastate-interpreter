@@ -8,7 +8,7 @@ import sigmastate.utxo.{ErgoLikeTestInterpreter, SigmaContract}
 import scala.util.Try
 
 abstract class CrowdFundingContract(
-                                     val timeout: Long,
+                                     val timeout: Int,
                                      val minToRaise: Long,
                                      val backerProver: ErgoLikeTestProvingInterpreter,
                                      val projectProver: ErgoLikeTestProvingInterpreter

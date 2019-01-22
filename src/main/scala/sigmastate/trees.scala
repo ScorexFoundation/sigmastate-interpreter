@@ -1,23 +1,13 @@
 package sigmastate
 
-import java.math.BigInteger
-
-import com.google.common.primitives.Longs
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
-import scorex.util.encode.{Base64, Base58}
-import scapi.sigma.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput, _}
-import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
-import sigmastate.SCollection.SByteArray
+import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
-import sigmastate.interpreter.{Context, Interpreter}
-import sigmastate.serialization.OpCodes
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Helpers._
-import sigmastate.utxo.CostTable.Cost
+import sigmastate.serialization._
 import sigmastate.utxo.Transformer
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -82,6 +72,9 @@ case class CTHRESHOLD(k: Int, sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoo
 trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPrivateInput[SP, _]]
   extends SigmaBoolean with SigmaProtocolCommonInput[SP]
 
+/** Represents boolean values (true/false) in SigmaBoolean tree.
+  * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
+  * See CAND.normalized, COR.normalized and AtLeast.reduce. */
 case class TrivialProp(condition: Boolean) extends SigmaBoolean {
   override val opCode: OpCode = OpCodes.TrivialProofCode
 }
@@ -90,6 +83,10 @@ object TrivialProp {
   val FalseProp = TrivialProp(false)
 }
 
+/** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
+  * to be used as arguments of `atLeast(..., sigmaProp(boolExpr), ...)` operation.
+  * During execution results to either `TrueProp` or `FalseProp` values of SigmaBoolean type.
+  */
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
@@ -109,6 +106,10 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
+object SigmaAnd {
+  def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(head +: tail)
+}
+
 /**
   * OR disjunction for sigma propositions
   */
@@ -117,6 +118,11 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
+
+object SigmaOr {
+  def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
+}
+
 
 /**
   * OR logical conjunction
@@ -155,18 +161,23 @@ object AND {
   * Logical threshold.
   * AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
   */
-case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]])
-  extends Transformer[SCollection[SBoolean.type], SBoolean.type]
-    with NotReadyValueBoolean {
+case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]])
+  extends Transformer[SCollection[SSigmaProp.type], SSigmaProp.type]
+    with NotReadyValue[SSigmaProp.type] {
+  override def tpe: SSigmaProp.type = SSigmaProp
   override val opCode: OpCode = AtLeastCode
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
+
 }
 
 object AtLeast {
-  def apply(bound: Value[SInt.type], children: Seq[Value[SBoolean.type]]): AtLeast =
+
+  val MaxChildrenCount = 255
+
+  def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
 
-  def apply(bound: Value[SInt.type], head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AtLeast = apply(bound, head +: tail)
+  def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast = apply(bound, head +: tail)
 
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
     import sigmastate.TrivialProp._
@@ -185,11 +196,8 @@ object AtLeast {
     //
     // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
     // be converted to one of true, false, and, or)
-    require(children.length <= 255)
+    require(children.length <= MaxChildrenCount)
     // My preferred method: if (children.length>=255) return FalseLeaf
-
-    // TODO: this constraint on the number of children of atLeast should also be ensured at ErgoScript compile time
-    // remove this todo once issue #291 is resolved
 
     for (iChild <- children.indices) {
       if (curBound == 1)
@@ -247,7 +255,7 @@ object Downcast {
 }
 
 /**
-  * Cast SLong to SByteArray
+  * Convert SLong to SByteArray
   */
 case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
@@ -256,12 +264,30 @@ case class LongToByteArray(input: Value[SLong.type])
 }
 
 /**
-  * Cast SByteArray to SBigInt
+  * Convert SByteArray to SLong
+  */
+case class ByteArrayToLong(input: Value[SByteArray])
+  extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
+  override val opCode: OpCode = OpCodes.ByteArrayToLongCode
+  override val opType = SFunc(SByteArray, SLong)
+}
+
+/**
+  * Convert SByteArray to SBigInt
   */
 case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
   override val opType = SFunc(SByteArray, SBigInt)
+}
+
+/**
+  * Convert SByteArray to SGroupElement using CryptoConstants.dlogGroup.curve.decodePoint(bytes)
+  */
+case class DecodePoint(input: Value[SByteArray])
+  extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
+  override val opCode: OpCode = OpCodes.DecodePointCode
+  override val opType = SFunc(SByteArray, SGroupElement)
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
@@ -284,6 +310,37 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val opCode: OpCode = OpCodes.CalcSha256Code
   override val hashFn: CryptographicHash32 = Sha256
+}
+
+/**
+  * Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+  * at given positions with new values. This operation allow to use serialized scripts as
+  * pre-defined templates.
+  * The typical usage is "check that output box have proposition equal to given script bytes,
+  * where minerPk (constants(0)) is replaced with currentMinerPk".
+  * Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+  * During substitution each value from newValues is checked to be an instance of the corresponding type.
+  * This means, the constants during substitution cannot change their types.
+  *
+  * @param scriptBytes serialized ErgoTree with ConstantSegregationFlag set to 1.
+  * @param positions zero based indexes in ErgoTree.constants array which should be replaced with new values
+  * @param newValues new values to be injected into the corresponding positions in ErgoTree.constants array
+  * @return original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same
+  */
+case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray], newValues: Value[SCollection[T]])
+    extends NotReadyValueByteArray {
+  import SubstConstants._
+  override val opCode: OpCode = OpCodes.SubstConstantsCode
+  override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
+}
+
+object SubstConstants {
+  val tT = STypeIdent("T")
+
+  def eval(scriptBytes: Array[Byte],
+           positions: Array[Int],
+           newVals: Array[Value[SType]]): Array[Byte] =
+    ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
 /**
@@ -326,6 +383,36 @@ object ArithOp {
     case OpCodes.MaxCode      => "max"
     case _ => sys.error(s"Cannot find ArithOpName for opcode $opCode")
   }
+}
+
+case class Negation[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+  override val opCode: OpCode = OpCodes.NegationCode
+  override def tpe: T = input.tpe
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+  override val opCode: OpCode = OpCodes.BitInversionCode
+  override def tpe: T = input.tpe
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
+  extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
+  override def tpe: T = left.tpe
+}
+
+case class ModQ(input: Value[SBigInt.type])
+  extends NotReadyValue[SBigInt.type] {
+  override val opCode: OpCode = OpCodes.ModQCode
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(input.tpe, tpe)
+}
+
+case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], opCode: OpCode)
+  extends NotReadyValue[SBigInt.type] {
+  override def tpe: SBigInt.type = SBigInt
+  override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
 /**
@@ -435,6 +522,21 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override val opCode: OpCode = BinAndCode
 }
 
+case class BinXor(override val left: BoolValue, override val right: BoolValue)
+  extends Relation[SBoolean.type, SBoolean.type] {
+  override val opCode: OpCode = BinXorCode
+}
+
+/** Returns this collection shifted left/right by the specified number of elements,
+  * filling in the new right/left elements from left/right elements. The size of collection is preserved. */
+case class Rotate[T <: SType](coll: Value[SCollection[T]],
+                              shift: Value[SInt.type],
+                              opCode: OpCode)
+  extends NotReadyValue[SCollection[T]] {
+  override def tpe: SCollection[T] = coll.tpe
+  override def opType = SFunc(Vector(coll.tpe, shift.tpe), tpe)
+}
+
 /**
   * A tree node with three descendants
   */
@@ -453,8 +555,8 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
 /**
   * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
   * Throws exception if proof is incorrect
-  * Return SomeValue(SByteArray) of leaf with key `key` if it exists
-  * Return NoneValue if leaf with provided key does not exist.
+  * Return Some(bytes) of leaf with key `key` if it exists
+  * Return None if leaf with provided key does not exist.
   */
 case class TreeLookup(tree: Value[SAvlTree.type],
                       key: Value[SByteArray],
@@ -469,6 +571,12 @@ case class TreeLookup(tree: Value[SAvlTree.type],
   override lazy val third = proof
 }
 
+/**
+  * Perform modification of in the tree with root `tree` using proof `proof`.
+  * Throws exception if proof is incorrect
+  * Return Some(newTree) if successfull
+  * Return None if operations were not performed.
+  */
 case class TreeModifications(tree: Value[SAvlTree.type],
                              operations: Value[SByteArray],
                              proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
@@ -502,4 +610,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 }
 object If {
   val tT = STypeIdent("T")
+}
+
+case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
+  override val opCode: OpCode = OpCodes.LogicalNotCode
+  override val opType = SFunc(Vector(SBoolean), SBoolean)
 }

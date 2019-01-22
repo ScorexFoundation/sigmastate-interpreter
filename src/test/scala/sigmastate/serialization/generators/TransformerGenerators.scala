@@ -69,7 +69,7 @@ trait TransformerGenerators {
 
   val atLeastGen: Gen[AtLeast] = for {
     bound <- intConstGen
-    input <- arbCCOfBoolConstant.arbitrary
+    input <- arbCCOfSigmaPropConstant.arbitrary
   } yield mkAtLeast(bound, input).asInstanceOf[AtLeast]
 
   val filterGen: Gen[Filter[SInt.type]] = for {

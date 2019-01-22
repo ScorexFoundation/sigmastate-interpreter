@@ -96,6 +96,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, mkByteArrayToBigInt),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, mkCalcBlake2b256),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, mkCalcSha256),
+    SimpleTransformerSerializer[SByteArray, SGroupElement.type](DecodePointCode, mkDecodePoint),
     SimpleTransformerSerializer[SOption[SType], SType](OptionGetCode, mkOptionGet),
     SimpleTransformerSerializer[SOption[SType], SBoolean.type](OptionIsDefinedCode, mkOptionIsDefined),
     OptionGetOrElseSerializer(mkOptionGetOrElse),
@@ -120,6 +121,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaTransformerSerializer(SigmaAndCode, mkSigmaAnd),
     SigmaTransformerSerializer(SigmaOrCode, mkSigmaOr),
     BoolToSigmaPropSerializer(mkBoolToSigmaProp),
+    ModQSerializer,
+    ModQArithOpSerializer(PlusModQCode, mkPlusModQ),
+    ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
+    SubstConstantsSerializer,
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {

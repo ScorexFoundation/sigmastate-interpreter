@@ -5,13 +5,13 @@ import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.ProveDHTuple
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util._
 import sigmastate._
 import sigmastate.Values._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 
 import scala.collection.JavaConverters._
@@ -43,7 +43,8 @@ trait ValueGenerators extends TypeGenerators {
 
   implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
   implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
-  implicit val arbSigmaProp: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
+  implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
@@ -95,6 +96,8 @@ trait ValueGenerators extends TypeGenerators {
   } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
+  val sigmaPropGen: Gen[SigmaPropValue] =
+    Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
 
@@ -187,7 +190,7 @@ trait ValueGenerators extends TypeGenerators {
     case SLong => arbLong
     case SBigInt => arbBigInteger
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbSigmaProp
+    case SSigmaProp => arbSigmaBoolean
     case SBox => arbBox
     case SAvlTree => arbAvlTreeData
     case SAny => arbAnyVal
@@ -222,7 +225,7 @@ trait ValueGenerators extends TypeGenerators {
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    creationHeight <- Gen.choose(-1, Long.MaxValue)
+    creationHeight <- Gen.choose(-1, Int.MaxValue)
   } yield ergoplatform.ErgoBox(l, b, creationHeight, tokens.asScala, ar.asScala.toMap, tId.toArray.toModifierId, boxId)
 
   def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {

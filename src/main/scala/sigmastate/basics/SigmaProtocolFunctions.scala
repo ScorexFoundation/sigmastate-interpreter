@@ -1,8 +1,8 @@
-package scapi.sigma
+package sigmastate.basics
 
 import java.security.SecureRandom
 
-import scapi.sigma.VerifierMessage.Challenge
+import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
 import supertagged.TaggedType

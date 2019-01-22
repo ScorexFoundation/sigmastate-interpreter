@@ -53,10 +53,13 @@ object SigmaParser extends Exprs with Types with Core {
           builder.mkConstant[SLong.type](-value, SLong)
         case _ => error(s"cannot prefix $arg with op $opName")
       }
+    case "!" => builder.mkLogicalNot(arg.asBoolValue)
+    case "-" => builder.mkNegation(arg.asNumValue)
+    case "~" => builder.mkBitInversion(arg.asNumValue)
     case _ => error(s"Unknown prefix operation $opName for $arg")
   }
 
-  val parseAsMethods = Set("*", "++", "||", "&&", "+")
+  val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
 
   def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
     case "==" => EQ(l, r)
@@ -66,8 +69,8 @@ object SigmaParser extends Exprs with Types with Core {
     case "<=" => LE(l, r)
     case "<"  => LT(l, r)
     case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "|"  => builder.mkXor(l.asValue[SByteArray], r.asValue[SByteArray])
-    case "^"  => builder.mkExponentiate(l.asValue[SGroupElement.type], r.asValue[SBigInt.type])
+    case "|"  => builder.mkBitOr(l.asNumValue, r.asNumValue)
+    case "&"  => builder.mkBitAnd(l.asNumValue, r.asNumValue)
     case _ if parseAsMethods.contains(opName) =>
       MethodCallLike(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])

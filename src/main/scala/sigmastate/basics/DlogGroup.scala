@@ -1,4 +1,4 @@
-package scapi.sigma
+package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom

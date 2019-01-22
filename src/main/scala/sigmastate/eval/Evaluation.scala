@@ -4,13 +4,12 @@ import java.lang.reflect.Method
 import java.math.BigInteger
 
 import org.ergoplatform._
-import scapi.sigma.{ProveDHTuple, DLogProtocol}
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, CollectionConstant, ConcreteCollection, Constant, EvaluatedValue, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf, CostTableStat}
+import sigmastate.utxo.{CostTable, CostTableStat, ExtractAmount, SizeOf}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -18,11 +17,12 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
-import scapi.sigma.DLogProtocol.ProveDlog
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.Nullable
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -47,7 +47,9 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WOption._
   import WECPoint._
   import Liftables._
-  
+
+  val okPrintEvaluatedEntries: Boolean = false
+
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val ColM = ColMethods
@@ -156,8 +158,6 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
   }
 
-  val okPrintEvaluatedEntries: Boolean = false
-
   def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
     if (okPrintEvaluatedEntries)
       println(printEnvEntry(sym, value))
@@ -174,7 +174,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
-            val valueInCtx = ctx.elem.invokeUnlifted(mc, dataEnv)
+            val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
                 Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
@@ -186,7 +186,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
-            val valueInReg = box.elem.invokeUnlifted(mc, dataEnv)
+            val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
                 Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
@@ -245,6 +245,13 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
             val res = sigmastate.TrivialProp(b)
             out(res)
+          case SDBM.substConstants(_,
+            In(input: special.collection.Col[Byte]@unchecked),
+            In(positions: special.collection.Col[Int]@unchecked),
+            In(newVals: special.collection.Col[Any]@unchecked), _) =>
+            val typedNewVals = newVals.arr.map(_.asInstanceOf[Value[SType]])
+            val byteArray = SubstConstants.eval(input.arr, positions.arr, typedNewVals)
+            out(sigmaDslBuilderValue.Cols.fromArray(byteArray))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
@@ -252,7 +259,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
-            val dataRes = obj.elem.invokeUnlifted(mc, dataEnv)
+            val dataRes = invokeUnlifted(obj.elem, mc, dataEnv)
             val res = dataRes match {
               case Constant(v, _) => v
               case v => v
@@ -341,7 +348,12 @@ trait Evaluation extends RuntimeCosting { IR =>
             val tpe = elemToSType(eTo).asNumType
             out(tpe.upcast(from.asInstanceOf[AnyVal]))
 
-          case _ => !!!(s"Don't know how to evaluate($te)")
+          case SimpleStruct(_, fields) =>
+            val items = fields.map { case (_, In(fieldValue)) => fieldValue }.toArray
+            out(sigmaDslBuilderValue.Cols.fromArray(items))
+
+          case _ =>
+            !!!(s"Don't know how to evaluate($te)")
         }
         if (okMeasureOperationTime) {
           val endTime = System.nanoTime()
@@ -349,7 +361,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                val col = res._1(res._2).asInstanceOf[special.collection.Col[Any]]
+                val col = res._1(res._2).asInstanceOf[SCol[Any]]
                 val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
                 CostTableStat.addOpTime(opId, colTime, col.length)
               }

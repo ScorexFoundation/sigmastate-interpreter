@@ -4,18 +4,19 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import scapi.sigma.DLogProtocol.ProveDlog
-import scapi.sigma.{DLogProtocol, ProveDHTuple}
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
+import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
+import sigmastate.basics.ProveDHTuple
 
 trait SigmaBuilder {
 
@@ -44,7 +45,8 @@ trait SigmaBuilder {
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
-  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type]
+  def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue
+  def mkBinXor(left: BoolValue, right: BoolValue): BoolValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
@@ -75,6 +77,7 @@ trait SigmaBuilder {
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
+  def mkDecodePoint(input: Value[SByteArray]): GroupElementValue
 
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
                             col2: Value[SCollection[IV]]): Value[SCollection[IV]]
@@ -183,6 +186,20 @@ trait SigmaBuilder {
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 
+  def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type]
+  def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
+  def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
+
+  def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
+
+  def mkNegation[T <: SNumericType](input: Value[T]): Value[T]
+  def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T]
+  def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftRight[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+  def mkBitShiftLeft[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
@@ -276,8 +293,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBinAnd(left: BoolValue, right: BoolValue) = BinAnd(left, right)
 
-  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
+  override def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue =
     AtLeast(bound, input)
+
+  override def mkBinXor(left: BoolValue, right: BoolValue): BoolValue = BinXor(left, right)
 
   override def mkExponentiate(left: Value[SGroupElement.type], right: Value[SBigInt.type]): Value[SGroupElement.type] =
     Exponentiate(left, right)
@@ -328,6 +347,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray] =
     CalcSha256(input)
+
+  override def mkDecodePoint(input: Value[SByteArray]): GroupElementValue =
+    DecodePoint(input)
 
   override def mkMapCollection[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
                                                          mapper: Value[SFunc]): Value[SCollection[OV]] =
@@ -512,6 +534,40 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type] =
     OptionIsDefined(input)
+
+  override def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQ(input)
+
+  override def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQArithOp(left, right, OpCodes.PlusModQCode)
+
+  override def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type] =
+    ModQArithOp(left, right, OpCodes.MinusModQCode)
+
+  override def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type] =
+    LogicalNot(input)
+
+  override def mkNegation[T <: SNumericType](input: Value[T]): Value[T] =
+    Negation(input)
+
+  override def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T] =
+    BitInversion(input)
+
+  override def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitOrCode)
+
+  override def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitAndCode)
+
+  override def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
+    BitOp(left, right, OpCodes.BitXorCode)
+
+  override def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftRightCode)
+
+  override def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
+    BitOp(bits, shift, OpCodes.BitShiftLeftCode)
+
 }
 
 trait TypeConstraintCheck {
