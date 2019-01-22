@@ -457,50 +457,38 @@ Verifier performs the following safety checks:
 
 \begin{enumerate}
 \item \textbf{Deserialization of Statement.}
-Verifier receives the statement as a collection of bytes and checks that the size
-of collection is less than predefined constant $C_1$. Deserializer parses the
-collection of bytes and checks if it is according to the format. Deserializer also
-controls the size of the constructed statement tree. It should be less than
-predefined constant $C_2$. The tree being constricted is also checked to
-satisfy typing rules. After deserialization stage we have valid tree of known
-limited size $TreeSize$. We want the complexity of all subsequent checks to
-be $O(TreeSize)$.
+Verifier receives the statement as a collection of bytes and checks that the
+size of collection is less than predefined constant $C_1$. Deserializer parses
+the collection of bytes and checks if it is according to the format.
+Deserializer also controls the size of the constructed statement tree. It should
+be less than predefined constant $C_2$. The tree being constricted is also
+checked to satisfy typing rules. After deserialization stage we have valid tree
+of known limited size $TreeSize$ and depth $TreeDepth$. We want the complexity
+of all subsequent checks to be $O(TreeSize)$.
 
 \item \textbf{Instantiation of the Cost Function.}
 Cost Function is the function of the same input (Context, variables,
-registers, etc.) as Statement function, but it computes Long value of the
+registers, etc.) as Statement function, but it computes Int value of the
 computation cost of the Statement function, so it answer the question "How
 many operations it is required to compute the statement?". 
 
 The Cost Function is instantiated by the following steps:
     \begin{enumerate}
-        \item Cost Function Tree, CFT, is obtained by:
-        \begin{itemize}
-            \item reading from the bytes stream immediately after Statement
-            Tree. In this case the CFT is integral part of the Statement.
-            \item generating from Statement Tree using algorithm $genCFT$
-        \end{itemize}
-        Both of these cases provide equivalent guarantees and only differ by
-        the time of CFT generation
-        \item After the CFT is obtained the standard interpreter is used to
-        evaluate it and calculate an estimation of the computation cost of
-        the Statement. (Section \ref{sec:gen-cost-function})
     \end{enumerate}
 
- The idea is that the complexity of the Cost Function is linear in the size
- of the Statement tree in most of the cases. In the worst case it is linear
- in the size of the input data of the Statement which is strictly limited in
- size.
- We also rely on the fact that the complexity of $genCFT$ is linear in the
- size of the Statement Tree.
+ The idea is that the complexity of obtaining the Cost Function ($genCF$) is
+ linear in the size of the Statement tree. Execution time of the Cost Function
+ is linear in the size of the input data of the Statement which is strictly
+ limited in size.
 
 \item \textbf{Evaluating the Statement cost.}
-The Cost Function is applied immediately before evaluation of the Statement
-by the following steps: 
+The Cost Function is applied right before evaluation of the Statement by the
+following steps:
     \begin{enumerate}
         \item construct the context as it is required for Statement evaluation 
-        \item invoke the interpreter to evaluate the Cost Function Tree in the
+        \item invoke the interpreter to evaluate the Cost Function in the
         given context
+        \item check resulting cost limit
     \end{enumerate}
 
 The generation of the CFT is further described in
