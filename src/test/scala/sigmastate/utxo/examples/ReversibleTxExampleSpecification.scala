@@ -1,22 +1,18 @@
 package sigmastate.utxo.examples
 
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
+import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
-import scorex.utils.Random
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ByteConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedBox, TrueLeaf, ValDef, ValUse}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.interpreter.Interpreter._
 import sigmastate.utxo._
 
 
 class ReversibleTxExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
 
@@ -188,6 +184,6 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val proofCarolSpend = carol.prove(withdrawEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
 
     verifier.verify(withdrawEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
-
   }
+
 }
