@@ -74,24 +74,24 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
       "alicePubKey" -> alicePubKey,
-      "fullGameScript" -> fullGameScript.bytes
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
     val halfGameScript = compileWithCosting(halfGameEnv,
       """{
-        | alicePubKey || {
-        |   val out           = OUTPUTS(0)
-        |   val b             = out.R4[Byte].get
-        |   val bobPubKey     = out.R5[SigmaProp].get
-        |   val bobDeadline   = out.R6[Int].get
-        |   val validBobInput = b == 0 || b == 1
+        |  alicePubKey || {
+        |    val out           = OUTPUTS(0)
+        |    val b             = out.R4[Byte].get
+        |    val bobPubKey     = out.R5[SigmaProp].get
+        |    val bobDeadline   = out.R6[Int].get
+        |    val validBobInput = b == 0 || b == 1
         |
-        |   OUTPUTS.size == 1 &&
-        |   bobDeadline >= HEIGHT+30 &&
-        |   out.value >= SELF.value * 2 &&
-        |   validBobInput &&
-        |   out.propositionBytes == fullGameScript
-        | }
+        |    OUTPUTS.size == 1 &&
+        |    bobDeadline >= HEIGHT+30 &&
+        |    out.value >= SELF.value * 2 &&
+        |    validBobInput &&
+        |    blake2b256(out.propositionBytes) == fullGameScriptHash
+        |  }
         |}
       """.stripMargin).asBoolValue
 
@@ -108,7 +108,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val halfGameOutput = ErgoBox(playAmount, halfGameScript, halfGameCreationHeight)
 
     /////////////////////////////////////////////////////////
-    //// above halfGameOutput a Half-Game "box" created by Alice.
+    //// above halfGameOutput is a Half-Game "box" created by Alice.
     /////////////////////////////////////////////////////////
 
     //a blockchain node verifying a block containing a spending transaction
@@ -122,14 +122,15 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val carol = new ErgoLikeTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
+    val abortHalfGameHeight = halfGameCreationHeight + 10 // can be anything
+
     // NOTES:
     // We need to supply the additional parameters for R4, R5 and R6, even though they are not needed in the proof of this
     // branch (i.e., when Alice is spending this output)
-    // We should just have given ErgoBox(playAmount, carolPubKey, fullGameCreationHeight) but the test gives error
+    // Ideally, we should just have given:
+    //
+    //   val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight) // gives error
 
-    val abortHalfGameHeight = halfGameCreationHeight + 10 // can be anything
-
-    val abortHalfGameOutputV2 = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight)
     val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight, Nil,
       Map(
         R4 -> ByteConstant(0), // dummy data. Has to be given, even though not needed as per halfGameScript
@@ -165,7 +166,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = if (scala.util.Random.nextBoolean) 0x01 else 0x00
-    //    val b:Constant[SByte.type] = ByteConstant(bByte)
 
     val fullGameOutput = ErgoBox(playAmount*2, fullGameScript, fullGameCreationHeight, Nil,
       Map(
@@ -213,7 +213,11 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         println("Alice won")
         alice
       }
-    }.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
+    }.withContextExtender(
+      0, ByteArrayConstant(s)
+    ).withContextExtender(
+      1, ByteConstant(a)
+    )
 
     val gameOverHeight = fullGameCreationHeight + 10
 
@@ -238,11 +242,11 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     verifier.verify(fullGameEnv, fullGameScript, gameOverContext, proofGameOver, fakeMessage).get._1 shouldBe true
 
     /////////////////////////////////////////////////////////
-    // Possibility 2.3: Bob wins or Alice wins but does not spend before  . Alice does not reveal secret
+    // Possibility 2.3: (Bob wins and Alice does not reveal secret) OR (Alice wins and does not spend before bobDeadline)
     // Bob can spend after bobDeadline.
     /////////////////////////////////////////////////////////
 
-    val defaultWinHeight = bobDeadline + 101
+    val defaultWinHeight = bobDeadline + 1
 
     // assume Bob is paying to Carol
     // note that playAmount*2 below is not checked. It could be anything.
@@ -272,6 +276,5 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
 
   }
-
 
 }
