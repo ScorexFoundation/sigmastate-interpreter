@@ -3,9 +3,9 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ByteConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -14,7 +14,8 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.utxo._
 
 class XorGameExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   /** XOR game example:
 
      Alice creates a XOR game of "playAmount" amount of ergs until some "timeout" height, called aliceDeadline
@@ -196,7 +197,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //// fullGameOutput represents the Full-Game "box" created by Bob.
     /////////////////////////////////////////////////////////
 
-
     val winner = {
       if (a != b) {
         /////////////////////////////////////////////////////////
@@ -274,7 +274,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     ).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get
 
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
-
   }
 
 }
