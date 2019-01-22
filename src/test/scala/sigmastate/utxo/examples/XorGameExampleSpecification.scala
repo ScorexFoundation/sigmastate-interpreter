@@ -18,9 +18,9 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
   /** XOR game example:
 
-     Alice creates a XOR game of "playAmount" amount of ergs until some "timeout" height, called aliceDeadline
-     another player (Bob) then creates a transaction using this output that follows the game protocol
-     given below. In the game, Alice will create the a "halfGameOutput" output (a "Half game" UTXO).
+     Alice creates a XOR game of "playAmount" amount of ergs until some "timeout" height, called aliceDeadline.
+     Another player (Bob) then creates a transaction using this output that follows the game protocol
+     given below. In the game, Alice will create "halfGameOutput" output (a "Half game" UTXO).
      Bob will spend Alice's output and create another output called "fullGameOutput" (a "Full game" UTXO).
      After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner
 
@@ -38,7 +38,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     For simplicity, we will use following bytes to designate bits
         0x00 = false
         0x01 = true
-
     */
   property("Evaluation - XorGame Example") {
 
