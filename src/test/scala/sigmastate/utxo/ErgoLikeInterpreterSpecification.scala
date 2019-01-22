@@ -1,7 +1,6 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext._
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
