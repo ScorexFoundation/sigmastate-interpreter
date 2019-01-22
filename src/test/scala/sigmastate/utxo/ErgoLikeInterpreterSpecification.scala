@@ -631,7 +631,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(box),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, prover.dlogSecrets(2).publicImage, 0))),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, TrueLeaf, 0))),
       self = box)
 
     an[RuntimeException] should be thrownBy
