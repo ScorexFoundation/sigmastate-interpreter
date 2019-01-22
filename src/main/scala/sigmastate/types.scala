@@ -753,7 +753,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(IndexedSeq(SCollection(tIV), tIV, SInt), SInt, Seq(STypeParam(tIV))),
     27, MethodCallIrBuilder)
-  val FindMethod = SMethod(this, "find",
+  lazy val FindMethod = SMethod(this, "find",
     SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SOption(tIV), Seq(STypeParam(tIV))),
     28, MethodCallIrBuilder)
   val ZipMethod = SMethod(this, "zip",
