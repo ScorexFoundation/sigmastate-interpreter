@@ -13,9 +13,9 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.lihaoyi" % "sourcecode_2.12" % "0.1.4",
   "com.sun.mail" % "javax.mail" % "1.6.0",
   "com.trueaccord.lenses" % "lenses_2.12" % "0.4.12",
-  "com.typesafe" % "config" % "1.3.1",
-  "com.typesafe.akka" % "akka-actor_2.12" % "2.4.20",
-  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
+  "com.typesafe" % "config" % "1.3.3",
+  "com.typesafe.akka" % "akka-actor_2.12" % "2.5.19",
+  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.2",
   "commons-io" % "commons-io" % "2.5",
   "io.github.scalan" % "common_2.12" % "master-6eca3f22-SNAPSHOT",
   "io.github.scalan" % "core_2.12" % "master-6eca3f22-SNAPSHOT",
@@ -41,10 +41,10 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.rudogma" % "supertagged_2.12" % "1.4",
   "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.0.6",
-  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1",
+  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.3",
   "org.scorexfoundation" % "scrypto_2.12" % "2.1.4",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 5e333cb35b2a537d1b2240adc607317b51f46f97
+// LIBRARY_DEPENDENCIES_HASH dfa66eff4845bdd9646b3e344e6b0535d165d4fb

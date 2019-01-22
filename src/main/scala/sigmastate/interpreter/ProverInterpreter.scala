@@ -6,14 +6,13 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import Values._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.serialization.Serializer
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
 import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}

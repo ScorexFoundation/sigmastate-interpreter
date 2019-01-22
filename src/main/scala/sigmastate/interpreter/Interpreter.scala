@@ -1,35 +1,26 @@
 package sigmastate.interpreter
 
 import java.util
-import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
+import sigmastate.Values._
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
-import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
-import sigmastate.utils.Extensions._
-import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import special.sigma.InvalidType
 
-import scala.util.{Success, Failure, Try}
+import scala.util.Try
 
 
 object CryptoConstants {
@@ -73,7 +64,6 @@ object CryptoFunctions {
 
 trait Interpreter extends ScorexLogging {
 
-  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context
