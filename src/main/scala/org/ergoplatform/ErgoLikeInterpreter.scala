@@ -16,7 +16,12 @@ class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(im
       case d: DeserializeRegister[_] =>
         context.self.get(d.reg).flatMap { v =>
           v match {
-            case eba: EvaluatedValue[SByteArray]@unchecked => Some(ValueSerializer.deserialize(eba.value))
+            case eba: EvaluatedValue[SByteArray]@unchecked =>
+              val outVal = ValueSerializer.deserialize(eba.value)
+              if (outVal.tpe != d.tpe)
+                sys.error(s"Failed deserialization of $d: expected deserialized value to have type ${d.tpe}; got ${outVal.tpe}")
+              else
+                Some(outVal)
             case _ => None
           }
         }.orElse(d.default)
