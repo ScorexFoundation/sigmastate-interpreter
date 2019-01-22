@@ -52,7 +52,7 @@
 \newcommand{\ignore}[1]{}
 
 \newcommand{\langname}{ErgoScript\xspace}
-\newcommand{\mixname}{Twix\xspace}
+\newcommand{\mixname}{ErgoMix\xspace}
 
 \newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
@@ -153,215 +153,77 @@ See Section \ref{sec:safety} for more details.
 \section{\langname Examples}
 
 We give some examples of \langname to illustrate its usage. 
-\subsection{Reversible Payments}
-
-Often lack of reversibility is considered a weak point of Bitcoin. We give a protocol that allows reversible payments in Ergo. The payments are reversible for a limited time, which we call the cooling off period. Let $pk_\textsf{A}$ be the public key of someone who can reverse payments. This public key can (and should) be different from the sender of the payment. Let $pk_{\textsf{B}}$ be the recipient of the payment. The sender will create the output with the following spending condition:
-
- $$(pk_\textsf{A}\land \texttt{depth <= coolingPeriod}) \lor (pk_\textsf{B}\land \texttt{depth > coolingPeriod})$$
- 
- \snote{This requires a `depth' instruction, which is current not present. Depth is simply current height - inclusion height.}
 \subsection{The XOR Game}
 
-We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both select a secret bit and submit a coin each. They then reveal their secret bits. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires at least 3 transactions. 
+We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both select a secret bit and submit a coin each. They then reveal their secret bits. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires 3 transactions (steps). 
 \begin{enumerate}
-	\item Alice commits to a secret bit $a$ as follows. She selects a random string $s$ and computes her commitment $h = H(s\|a)$ (i.e., hash after concatenating $s$ with a string representation of $a$).
+	\item Alice commits to a secret bit $a$ as follows. She selects a random bit-string $s$ and computes her commitment $h = H(s\|a)$ (i.e., hash after concatenating $s$ with $a$).
+	%Let $x_\textsf{A}\in \mathbb{Z}_q$ be her private key and $y_\textsf{A} = g^{x_\textsf{A}} \in G$ her public key. % We don't need to specify explicitly the keys for now
 	
-%	generates $a\in \mathbb{Z}_q$ and computes $h = H(a)$. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. 
+	She creates an unspent box called the {\em half-game output} containing her coin and commitment $h$. This box is protected by a script called the {\em half-game script}  given below. Alice waits for another player to join her game, who will do so by spending her half-game output and creating another box that satisfies the conditions given in the half-game script. Alice can also spend the half-game output herself before anyone joins, effectively aborting the game. 
 	
-	She adds her commitment $h$ along with her coin protected by secret $x_0$ and public $y_0 = g^{x_0}$. This creates an unspent Box by Alice. She waits for some Bob to join the game by spending this output subject to certian conditions given by the {\em firstRoundScript} (see below). Alice can spend the box if no one joins within 100 blocks. 
-%	\item Alice generates $a\in \mathbb{Z}_q$ and computes $h = H(a)$. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. She adds her commitment $h$ along with her coin protected by secret $x_0$ and public $y_0 = g^{x_0}$. This creates an unspent Box by Alice. She waits for some Bob to join the game by spending this output subject to certian conditions (see below). Alice can spend the box if no one joins within 100 blocks. 
-	\item Bob generates bit $b\in \{0,1\}$ and adds it (in the clear) along with his coin protected by secret $x_1$ and public $y_1 = g^{x_1}$. He does this by spending Alice's box with one of his own and creating a new Box containing both coins along with Alice's commitment $h$ and his own bit $b$. Lets call this an intermediate box. Note that the transaction must satisfy the conditions given by {\em firstRoundScript}. In particular, one of the instructions in this script requires that the output must be protected by {\em secondRoundScript} (also given below).
-	\item Alice opens $h$ by revealing $s$ somehow (either privately to Bob or publicly). If Alice fails to reveal $a$ within 100 blocks of creating the intermediate box then Bob automatically wins and gets to spend the intermediate box. %We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. 
-	Anyone with knowledge of $s$ can send the price to the winner by inputting $a$ to {\em secondRoundScript}. 
-	
-%	\item Alice opens $h$ by revealing $a$ somehow (either privately or via the blockchain). If Alice fails to reveal $a$ within 100 blocks of creating the intermediate box then Bob automatically wins and gets to spend the intermediate box. We consider Alice's choice to be $\textsf{True}$ if $a < q/2$, and $\textsf{False}$ otherwise. The winner claims the prize by inputting $a$ to the script. 
+	% We can add a locking period before which Alice cannot spend the box, but this seems unnecessary.
+
+	\item Bob decides to join Alice's game. He generates a random bit $b$ and spends Alice's half-game output alongwith one of his own to create a new box called the {\em full-game output}. This new box  holds two coins and contains $b$ (in the clear) alongwith Bob's public key in the registers. 
+	Note that the full-game output must satisfy the conditions given by the half-game script. In particular, one of the conditions requires that the full-game output must be protected by the {\em full-game script} (given below).
+	\item Alice opens $h$ by revealing $s, a$. If $a = b$ then Alice wins else Bob wins. The winner can spend the full-game output using his/her private key and providing $s$ and $a$ to the full-game script.
+
+	If Alice fails to open $h$ within a specified time (say 30 blocks after the full-game output is created) then Bob automatically wins. 
 \end{enumerate}
 
-		%INPUTS.size == 2 && INPUTS(0).value == INPUTS(1).value && INPUTS(0).propositionBytes == pkA.propBytes,
-		
-The script {\em secondRoundScript} is given by the following conditions:
-\begin{enumerate}
-	\item The first free register (R4) is assumed to be Bob's input $b$ (boolean).
-	\item The second free register (R5) contains Bob's public key. 
-	\item If the block height is more than 100 then Bob's public key can spend.
-	\item The first typed variable (obtainable via \texttt{getVar(0)}) must be Alice's secret $s$.
-	\item The second typed variable (obtainable via \texttt{getVar(1)}) must be Alice's choice $a$ (boolean).
-	\item Commitment must be correctly opened (i.e., $H(s\|a)$ must equal $h$).
-	\item If $(a == b)$ then Alice can spend else Bob can spend.	
-\end{enumerate}
-
-% More security conditions:
-% The spender must not give a high fee. We can also say that the winner must be spender. This is more complex but will be a good example.
-% 
-This is encoded in out Scala program as follows: 
+The full-game script is first compiled to get a binary representation of its \langname code: 
 
 \begin{verbatim}
+val fullGameScript = compile("""
 {
-val secondRoundScript = Compile( // Can this be implemented?
-"""val hash = INPUTS(0).R4 // Alice's original commitment
-val bobsBit = INPUTS(0).R5 // Boolean, Bob's public bit
-val aliceBytes = getVar[Array[Byte]](0) // Alice's open commitment, a 256 bit integer
-val correctlyOpened = sha256(aliceBytes) == hash 
-val equals = bobsBit == aliceBytes(0) > 0  // use the LSB of aliceBytes
-(correctlyOpened && 
-(
-(pkA && equals) || 
-(pkB && !equals)
-)
-) || 
-(pkB && txHeight > 100)"""
-)
+  val s           = getVar[Coll[Byte]](0).get // bit string s 
+  val a           = getVar[Byte](1).get       // bit a (represented as a byte)
+  val b           = SELF.R4[Byte].get         // bit b (represented as a byte)
+  val bobPubKey   = SELF.R5[SigmaProp].get
+  val bobDeadline = SELF.R6[Int].get 
+  // after bobDeadline height, Bob can spend unconditionally
 
-val pkA = // Alice's public key. Can we extract it from INPUT(0).propositionBytes ? 
-val pkB = // Bob's public key. Can we extract it from INPUT(1).propositionBytes ?
-val b = getVar[Boolean](0) // Bob's public bit
+  (bobPubKey && HEIGHT > bobDeadline) || {
+    blake2b256(s ++ Coll(a)) == h && { // h is Alice's commitment
+      alicePubKey && a == b || bobPubKey && a != b
+    }
+  }
+}""")
+\end{verbatim}
 
-(pkA && txHeight > 100) || {
-INPUTS.size == 2 && 
-INPUTS(0).value == INPUTS(1).value && 
-INPUTS(0) == SELF &&
-OUTPUTS.size == 1 &&
-OUTPUTS(0).R4 == INPUTS(0).R4 && // Copy Alice's commitment hash to output
-OUTPUTS(0).R5 == b 
-OUTPUTS(0).propositionBytes == outProp
+Then a hash of the above compiled script is computed:
+
+\begin{verbatim}
+val fullGameScriptHash = Blake2b256(fullGameScript)
+\end{verbatim}
+
+Finally, Alice creates her half-game output with the following spending condition:
+
+\begin{verbatim}
+alicePubKey || {
+  val out           = OUTPUTS(0)
+  val b             = out.R4[Byte].get
+  val bobPubKey     = out.R5[SigmaProp].get
+  val bobDeadline   = out.R6[Int].get
+  val validBobInput = b == 0 || b == 1
+
+  OUTPUTS.size == 1 &&
+  bobDeadline >= HEIGHT+30 &&
+  out.value >= SELF.value * 2 &&
+  validBobInput &&
+  blake2b256(out.propositionBytes) == fullGameScriptHash
 }
 \end{verbatim}
 
-
-Alice creates her coin with the following spending condition in the output:
-
-\begin{verbatim}
-  {
-    val outProp = Compile( // Can this be implemented?
-     """val hash = INPUTS(0).R4 // Alice's original commitment
-        val bobsBit = INPUTS(0).R5 // Boolean, Bob's public bit
-        val aliceBytes = getVar[Array[Byte]](0) // Alice's open commitment, a 256 bit integer
-        val correctlyOpened = sha256(aliceBytes) == hash 
-        val equals = bobsBit == aliceBytes(0) > 0  // use the LSB of aliceBytes
-        (correctlyOpened && 
-           (
-              (pkA && equals) || 
-              (pkB && !equals)
-           )
-        ) || 
-        (pkB && txHeight > 100)"""
-    )
-
-    val pkA = // Alice's public key. Can we extract it from INPUT(0).propositionBytes ? 
-    val pkB = // Bob's public key. Can we extract it from INPUT(1).propositionBytes ?
-    val b = getVar[Boolean](0) // Bob's public bit
-
-    (pkA && txHeight > 100) || {
-      INPUTS.size == 2 && 
-      INPUTS(0).value == INPUTS(1).value && 
-      INPUTS(0) == SELF &&
-      OUTPUTS.size == 1 &&
-      OUTPUTS(0).R4 == INPUTS(0).R4 && // Copy Alice's commitment hash to output
-      OUTPUTS(0).R5 == b 
-      OUTPUTS(0).propositionBytes == outProp
-    }
-\end{verbatim}
-
-%\begin{verbatim}
-		%INPUTS.size == 2 && 
-		%INPUTS(0).value == INPUTS(1).value && 
-		%INPUTS(0) == SELF &&
-		%OUTPUTS.size == 1 &&
-		%OUTPUTS(0).R3 == INPUTS(0).R3 &&
-		%OUTPUTS(0).R4 == INPUTS(1).R3 &&
-		%OUTPUTS(0).propositionBytes = COMPILE{ // hypothetical function
-		  %"INPUTS.size == 1 &&
-		   %sha256(INPUTS(0).R5) == INPUTS(0).R3 && 
-		   %sha256(INPUTS(0).R6) == INPUTS(1).R4 &&"
-			%
-		%}
-		%{
-		 %{ 
-       %pkA && 
-       %SELF.R3 < q/2 == SELF.R4 < q/2
-		 %} ||
-		 %{
-       %pkB && 
-       %SELF.R3 < q/2 != SELF.R4 < q/2
-		 %}
-		%} 		
-%\end{verbatim}
-%
-
-%
-%Let us try to describe this in Ergo. Let $g, h$ be two public parameters 
-%Public parameters: Let g, h be two public generators such that DLog h to base g is unknown (that is, g and h are two random elements of group).
-%We commitment to a secret bit is as follows:
-%Choose a large secret x. If committing to 0, compute c = g^x else compute c = h^x. 
-%In summary to commit to bit b, compute c = g^((1-b)x).h^(bx)
-%The commitment is c. In order to open c, we simply reveal x. The scheme is perfectly hiding. Note that commitment must open to either 0 or 1 else its an invalid commitment and coin is unusable. 
-%Alice first creates input with 1 coin and commitment C_A and conditions as follows:
-%{ // normal protocol
-%Let Bob (an arbitrary key) input 1 coin and commitment C_B in future before height 100
-	%Let Alice open commitment C_A to bit a
-	%Let Bob open commitment C_B to bit b
-	%if (a == b) Alice can spend both coins else Bob can spend both coins
-%}
-%// error protocol
-%If Alice does not open within 10 blocks when she has to then Bob gets both coins
-%If Alice’s commitment opens to something other than 0 or 1 then Bob gets both coins
-%If Bob does not open within 10 blocks when he has to then Alice gets both coins
-%If Bob’s commitment opens to something other than 0 or 1 then Alice gets both coins
-%If no Bob joins before height 100 then Alice can withdraw (spend) her coin
-%
-%So it’s like a “game pool”, with two different types of inputs:
-%Input type 1: a party can put their coins and wait for other party to join. 
-%Input type 2: If coins already in pool, the party can join existing game 
-%
-
+\snote{To do: some explanation about above code}
 
 \subsection{The Mixing Protocol}
 
 We now describe a mixing protocol for Ergo called \mixname, which is motivated from ZeroCash (ZC). 
-The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
+%The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
 \mixname essentially mixes two coins and so provides ``50\% anonymity'' in one mix. A coin can be successively mixed to increase the anonymity above any desired level (say 99.99999\%). We do a formal analysis of the protocol later. 
 
-\mixname is based on the UTXO model. Like ZC, \mixname uses pooled coins for mixing. Unlike ZC, however, \mixname has two UTXO pools for providing anonymity: a {\em half-mixed} pool ($H$) and a {\em fully-mixed} pool ($F$). The $F$ pool contains coins that are anonymized. There is also the standard pool ($S$) that contains UTXOs for ordinary spending without any anonymity. The goal of the protocol is to move coins from $O$ to $F$ (possibly via $H$) and after sufficient mixing, back to $O$. The protocol contains the following transactions. 
-\begin{enumerate}
-	\item \textbf{Half-mix:} This takes one coin from either $O$ or $F$ and puts it in $H$.
-	\item \textbf{Full-mix:} This takes one coin from $H$, the other from either $O$ or $F$ and puts both coins in $F$ such that it is impossible (for outsiders) to distinguish them.
-	\item \textbf{Spend:} This takes one coin from $F$ and either puts it in $O$.% or $H$.
-		
-\end{enumerate}
-To participate in the mix, a user can may either add an unspent coin to the pool (which can be an output of a previous mix operation), or below operations anyone can add coins to this unspent pool. 
-tained. Anyone can deposit ordinary currency, say Ethers
-(ETH) to the 2C pool and later withdraw from it at a 1:1
-exchange rate. The key difference is that the size of the 2C
-pool depends on
-Twix attempts to fix some of its drawbacks discussed below. Like 
-We describe Two-Coin, a cryptocurrency for enhancing pri-
-vacy of trancactions. Two-Coin (2C), like Zero-Coin (ZC)
-uses zero-knowledge proofs but is more storage efficient than
-ZC. Similar to ZC, in 2C a pool of anonymous coins is main-
-tained. Anyone can deposit ordinary currency, say Ethers
-(ETH) to the 2C pool and later withdraw from it at a 1:1
-exchange rate. The key difference is that the size of the 2C
-pool depends on the number of unspent coins rather than
-number of deposited coins (as in ZC). This greatly enhances
-the scalability, while keeping anonymity at similar levels. In
-2C, each unspent coin can be spent twice, hence the name
-(a withdraw is treated similar to a spend). Once a coin has
-been spent twice, it is removed from the pool. Thus, un-
-like ZC, a 2C pool does not have a monotonously increasing
-set. In practice, we can replace zero-knowledge proofs with
-zk-SNARKS at the cost of lower security.
-\begin{enumerate}
-	\item ZeroCash requires a pool of mixed coins, whose size increases monotonously. Once a coin is added to the pool, it  
-	
-\end{enumerate}
-
-The idea of Twix is quite general and can be implemented in other platforms. In Ergo, however, the protocol can be used without any additional platform support. 
-
-
-There is a pool of unmixed coins where anyone can add theirs.
-
 The protocol is as follows:
-%The game requires at least 3 transactions. 
 
 \begin{enumerate}
 	\item \textbf{Pool:} To add a coin to the pool, Alice picks random generator $g_\textsf{A}\in G$ and $x_\textsf{A}\in \mathbb{Z}_q$. Let $y_\textsf{A} = {g_\textsf{A}}^{x_\textsf{A}}$. Alice creates an output box $A$ containing $(g_\textsf{A}, y_\textsf{A})$ and protected by the script given below. She waits for Bob to join by spending $A$ subject to the conditions given in the script. Alice can spend $A$ if no one joins within 100 blocks. 
@@ -378,6 +240,11 @@ The protocol is as follows:
 		
 		\item Let $s_{\textsf{B}}$ be the statement: ``For given $(g_\textsf{A}, y_\textsf{A}, y_\textsf{B}, g_\textsf{B})$
 		prove knowledge of $x_\textsf{B}$ such that $g_\textsf{B} = {g_\textsf{A}}^{x_\textsf{B}}$ and $y_\textsf{B} = {y_\textsf{A}}^{x_\textsf{B}}$.''  This is encoded as $$s_\textsf{B} = (g_\textsf{A}, y_\textsf{A}, y_\textsf{B}, g_\textsf{B}) \mapsto \texttt{ProveDLogEq}(g_\textsf{A}, g_\textsf{B}, y_\textsf{A}, y_\textsf{B}).$$
+		
+		\snote{
+			We can actually use a smaller statement for Bob:
+			$$ s_\textsf{B} = (g_\textsf{A}, y_\textsf{A}, y_\textsf{B}, g_\textsf{B}) \mapsto \texttt{ProveDLog}(g_\textsf{A}, g_\textsf{B}). $$
+		}
 			Observe that the order of $g_\textsf{B}, y_\textsf{B}$ is reversed from $s_\textsf{A}$.
 		\item Each box is protected by the statement $s_\textsf{A} \lor s_\textsf{B}$. 
 		
