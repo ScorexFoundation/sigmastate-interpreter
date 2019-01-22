@@ -416,7 +416,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       )))
   }
 
-  property("function definitions") {
+  property("function definitions via val") {
     parse("{val f = { (x: Int) => x - 1 }; f}") shouldBe
       Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
     parse(
@@ -424,6 +424,64 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
        |f}
       """.stripMargin) shouldBe
         Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
+  }
+
+  property("function (one arg) definition expr body") {
+    parse("{ def f(x: Int): Int = x - 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition with no res type, expr body") {
+    parse("{ def f(x: Int) = x - 1 }") shouldBe Block(List(),
+      Val("f", NoType, Lambda(IndexedSeq("x" -> SInt), NoType, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition brackets body") {
+    val expectedTree = Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))))
+    parse("{ def f(x: Int): Int = { x - 1 } }") shouldBe expectedTree
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+        }
+      """.stripMargin) shouldBe expectedTree
+  }
+
+  property("function(two arg) definition expr body") {
+    parse("{ def f(x: Int, y: Int): Int = x - y }") shouldBe Block(List(),
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt, "y" -> SInt), SInt, mkMinus(IntIdent("x"), IntIdent("y")))))
+  }
+
+  property("function definition and application") {
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+         f(5)
+        }
+      """.stripMargin) shouldBe Block(
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))),
+      Apply(Ident("f"), Vector(IntConstant(5)))
+    )
+  }
+
+  property("function with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def f[A, B](x: A, y: B): (A, B) = (x, y) }") shouldBe Block(List(),
+      Val("f",
+        STuple(tA, tB),
+        Lambda(IndexedSeq("x" -> tA, "y" -> tB),
+          STuple(tA, tB),
+          Tuple(Ident("x"), Ident("y"))
+        )
+      )
+    )
   }
 
   property("get field of ref") {

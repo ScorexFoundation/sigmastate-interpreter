@@ -46,7 +46,7 @@ trait Exprs extends Core with Types {
           case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
-//      val Fun = P( /* `fun` ~/ */ FunDef)
+      val Fun = P(`def` ~ FunDef)
 
       val LambdaRhs = if (semiInference) P( BlockChunk.map {
         case (_ , b)  => mkBlock(b)
@@ -64,7 +64,7 @@ trait Exprs extends Core with Types {
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
-      P( If /*| Fun*/ | SmallerExprOrLambda )
+      P( If | Fun | SmallerExprOrLambda )
     }
 
     val SuperPostfixSuffix = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
@@ -205,13 +205,16 @@ trait Exprs extends Core with Types {
     rhs
   }
 
-//  val FunDef = {
-//    val Body = P( WL ~ `=>` ~ StatCtx.Expr )
-//    P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-//      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-//      case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
-//    }
-//  }
+  val FunDef = {
+    val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
+    P( Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
+      case (n, _ @ Seq(args), resType, body) =>
+        val lambda = builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        builder.mkVal(n, resType.getOrElse(NoType), lambda)
+      case (n, secs, resType, body) =>
+        error(s"Function can only have single argument list: def $n($secs): ${resType.getOrElse(NoType)} = $body")
+    }
+  }
 
   val SimplePattern = {
     val TupleEx = P( "(" ~/ Pattern.repTC() ~ ")" )
