@@ -50,32 +50,11 @@ object ErgoScriptPredef {
   /**
     * Required script of the box, that collects mining rewards
     */
-  def rewardOutputScriptWithPlaceholder(delta: Int): ErgoTree = {
-    import ErgoTree._
-    val root = AND(
-      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
-      ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
-    )
-    ErgoTree(ConstantSegregationHeader, Vector(ByteArrayConstant(Array.emptyByteArray)), root)
-  }
-
-  /**
-    * Required script of the box, that collects mining rewards
-    */
   def rewardOutputScript(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
     AND(
       GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
       minerPk
     )
-  }
-
-  def rewardOutputScriptForCurrentMiner(delta: Int): Value[SByteArray] = {
-    val expectedBytes = rewardOutputScriptWithPlaceholder(delta).bytes
-    val currentMinerScript = SubstConstants(
-      ByteArrayConstant(expectedBytes),
-      ConcreteCollection(IntConstant(0)),
-      ConcreteCollection(MinerPubkey))
-    currentMinerScript
   }
 
   /**
