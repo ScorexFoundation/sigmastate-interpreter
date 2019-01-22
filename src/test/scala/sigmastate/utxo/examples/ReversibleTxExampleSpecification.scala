@@ -27,18 +27,18 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     *  Consider the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet.
     *
-    *  Since its a hot-wallet, its private key can get compromised. By compromise, we imply that some unauthorized withdraws have occured.
+    *  Since its a hot-wallet, its private key can get compromised. By compromise, we imply that some unauthorized withdraws have occurred.
     *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet and move them to
     *  a "safe" address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
     *  This is a reasonable assumption.
     *
     *  In order to achieve this, we require that all coins sent via the hot-wallet (both legitimate and by the attacker)
-    *  have a 24 hour cooling off period, during which the created UTXO is "locked" and can only be spent by a trusted private key
+    *  have a 24 hour cooling off period, during which the created UTXOs are "locked" and can only be spent by a trusted private key
     *  (which is different from the hot-wallet private key)
     *
     *  Once this period is over, those coins become normal and can only be spent by the customer who withdrew.
     *
-    *  This is achieved by storing the hot-wallet funds only in <b>"Reversible Addresses"</b>, a special type of address.
+    *  This is achieved by storing the hot-wallet funds in a <b>Reversible Address</b>, a special type of address.
     *
     *  The reversible address is a P2SH address created using a script that encodes our spending condition.
     *  The script requires that any UTXO created by spending this box can only be spent by the trusted party during the locking period.
@@ -52,7 +52,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     *  Bob with public key bobPubKey is a customer withdrawing from Alice. This is the normal scenario
     *
-    *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., reverse payments)
+    *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., she can reverse payments)
     *
     * Once alicePubKey is compromised (i.e, a transaction spending from this key is found to be unauthorized), an "Abort procedure"
     * is triggered. After this, all funds sent from alicePubKey are suspect and should be aborted (sent elsewhere). This is done
@@ -60,25 +60,24 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     * For the abort, we require that all locked UTXOs be spent and the funds sent to a secure address (unrelated to alicePubKey).
     *
-    * The high-level idea is as follows:
+    * This is achieved as follows:
+    *
     *  Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
     *
-    *  She then creates a deposit address for the wallet using a script called depositScript, which requires that the
+    *  She then creates a deposit address for topping up the hot-wallet using a script called depositScript, which requires that the
     *  spending condition generate a single box protected by withdrawScript.
     *
-    * Note that only the outputs paying to the above deposit address can be spent in a reversible way.
-    * Thus, the wallet must be topped up using only this address.
     *
     */
   property("Evaluation - Reversible Tx Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ErgoLikeTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ErgoLikeTestProvingInterpreter // private key of trusted party who can abort withdraws
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val withdrawEnv = Map(
@@ -167,8 +166,6 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val bobSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(bobSpendOutput))
-
-    // val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
 
     val bobSpendContext = ErgoLikeContext(
       currentHeight = bobSpendHeight,

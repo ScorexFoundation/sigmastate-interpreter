@@ -15,24 +15,24 @@ import sigmastate.utxo._
 
 class XorGameExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  /** XOR game example:
+  /** XOR game:
 
-     Alice creates a XOR game of "playAmount" amount of ergs until some "timeout" height, called aliceDeadline
-     another player (Bob) then creates a transaction using this output that follows the game protocol
-     given below. In the game, Alice will create the a "halfGameOutput" output (a "Half game" UTXO).
-     Bob will spend Alice's output and create another output called "fullGameOutput" (a "Full game" UTXO).
-     After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner
+     Alice creates a XOR game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
+     Another player (Bob) then sends a transaction spending Alice's UTXO and creating another output called "fullGameOutput" (a "Full game" UTXO).
+     After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner.
+     The transactions encode the following protocol.
 
      protocol:
        Step 1: Alice commits to secret bit a as follows:
                   Generate random s and compute h = Hash(s||a)
                   h is the commitment to a
-               Alice also selects the "play amount" which can be 0 (a "friendly" game)
+               Alice also selects the "play amount", the amount each player must spend to participate.
                She generates a halfGameOutput encoding h and some spending condition given below by halfGameScript
        Step 2: Bob chooses random bit b (public) and creates a new tx spending Alice's UTXO along with
-               some others such that there is one output that has the spending conditions given by fullGameScript.
+               some others and creating one output that has the spending conditions given by fullGameScript.
                (one of the conditions being that the amount of that output is >= twice the play amount.)
        Step 3: Alice reveals (s, a) to open her commitment and wins if a == b. Otherwise Bob wins.
+               If Alice fails to open her commitment before some deadline then Bob automatically wins.
 
     For simplicity, we will use following bytes to designate bits
         0x00 = false
@@ -77,6 +77,9 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
+    // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
+    // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
+    // before some minimum height.
     val halfGameScript = compileWithCosting(halfGameEnv,
       """{
         |  alicePubKey || {
@@ -264,7 +267,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       self = fullGameOutput // what is the use of self?
     )
 
-    val sDummy = Array[Byte]()
+    val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
     val aDummy:Byte = 0
     // below we need to specify a and s (even though they are not needed)
     val proofDefaultWin = bob.withContextExtender(
