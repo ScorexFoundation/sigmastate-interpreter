@@ -1,14 +1,19 @@
 package sigmastate.lang
 
-import sigmastate.SType
-import sigmastate.lang.syntax.ParserException
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.Values.{SValue, SigmaTree, Value}
+import sigmastate.SType
+import sigmastate.Values.{SValue, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.syntax.ParserException
 
-class SigmaCompiler(builder: SigmaBuilder) {
+/**
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
+  * @param builder
+  */
+class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
@@ -19,9 +24,10 @@ class SigmaCompiler(builder: SigmaBuilder) {
   }
 
   def typecheck(env: ScriptEnv, parsed: SValue): Value[SType] = {
-    val binder = new SigmaBinder(env, builder)
+    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+    val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val typed = typer.typecheck(bound)
     typed
   }
@@ -31,14 +37,15 @@ class SigmaCompiler(builder: SigmaBuilder) {
     typecheck(env, parsed)
   }
 
-  def compile(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix): Value[SType] = {
+  def compile(env: ScriptEnv, code: String): Value[SType] = {
     val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder, networkPrefix)
+    val spec = new SigmaSpecializer(builder)
     val ir = spec.specialize(typed)
     ir
   }
 }
 
 object SigmaCompiler {
-  def apply(builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler = new SigmaCompiler(builder)
+  def apply(networkPrefix: NetworkPrefix, builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
+    new SigmaCompiler(networkPrefix, builder)
 }

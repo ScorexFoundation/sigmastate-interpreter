@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Height
-import org.ergoplatform.ErgoLikeContext.Metadata.NetworkPrefix
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
@@ -54,14 +53,6 @@ object ErgoLikeContext {
   type Height = Int
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
-
-  case class Metadata(networkPrefix: NetworkPrefix)
-
-  object Metadata {
-    type NetworkPrefix = Byte
-    val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
-    val TestnetNetworkPrefix: NetworkPrefix = 16.toByte
-  }
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,

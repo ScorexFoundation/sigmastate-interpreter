@@ -1,41 +1,45 @@
 package sigmastate.lang
 
 import java.lang.reflect.InvocationTargetException
-import java.math.BigInteger
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
-import sigmastate.lang.Terms._
-import sigmastate._
-import Values._
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
-import scorex.util.encode.Base58
+import sigmastate.Values._
+import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.exceptions.{BinderException, InvalidTypeArguments, InvalidArguments}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
 
-class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
+/**
+  * @param env
+  * @param builder
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
+  */
+class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
+                  networkPrefix: NetworkPrefix,
+                  predefFuncRegistry: PredefinedFuncRegistry) {
   import SigmaBinder._
-  import SigmaPredef._
   import builder._
+
+  private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)
 
   /** Rewriting of AST with respect to environment to resolve all references to global names
     * and infer their types. */
   private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
     case Ident(n, NoType) => env.get(n) match {
       case Some(v) => Option(liftAny(v).get)
-      case None => predefinedEnv.get(n) match {
-        case Some(v) => Some(Ident(n, v.tpe))
-        case None => n match {
-          case "HEIGHT" => Some(Height)
-          case "MinerPubkey" => Some(MinerPubkey)
-          case "INPUTS" => Some(Inputs)
-          case "OUTPUTS" => Some(Outputs)
-          case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
-          case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
-          case "SELF" => Some(Self)
-          case "None" => Some(mkNoneValue(NoType))
-          case _ => None
-        }
+      case None => n match {
+        case "HEIGHT" => Some(Height)
+        case "MinerPubkey" => Some(MinerPubkey)
+        case "INPUTS" => Some(Inputs)
+        case "OUTPUTS" => Some(Outputs)
+        case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
+        case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
+        case "SELF" => Some(Self)
+        case "None" => Some(mkNoneValue(NoType))
+        case _ => None
       }
     }
 
@@ -78,19 +82,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
         throw new InvalidArguments(s"Invalid arguments for max: $args")
     }
 
-    // Rule getVar[T](id) --> GetVar(id)
-    case e @ Apply(ApplyTypes(GetVarSym, targs), args) =>
-      if (targs.length != 1 || args.length != 1)
-        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
-      val id = args.head match {
-        case LongConstant(i) => SByte.downcast(i)
-        case IntConstant(i) => SByte.downcast(i)
-        case ShortConstant(i) => SByte.downcast(i)
-        case ByteConstant(i) => i
-        case v => error(s"invalid type for var id, expected numeric, got $v")
-      }
-      Some(mkGetVar(id, targs.head))
-
     // Rule: lambda (...) = ... --> lambda (...): T = ...
     case lam @ Lambda(params, args, t, Some(body)) =>
       require(params.isEmpty)
@@ -113,19 +104,10 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder) {
         Some(newBlock)
       else
         None
-    case e @ Apply(ApplyTypes(DeserializeSym, targs), args) =>
-      if (targs.length != 1)
-        throw new InvalidTypeArguments(s"Wrong number of type arguments in $e: expected one type argument")
-      if (args.length != 1)
-        throw new InvalidArguments(s"Wrong number of arguments in $e: expected one argument")
-      val str = args.head match {
-        case StringConstant(s) => s
-        case _ =>
-          throw new InvalidArguments(s"invalid argument in $e: expected a string constant")
-      }
-      val bytes = Base58.decode(str).get
-      Some(
-        ValueSerializer.deserialize(bytes))
+
+    case Apply(PKFunc.symNoType, args) =>
+      Some(PKFunc.irBuilder(PKFunc.sym, args))
+
   })))(e)
 
   def bind(e: SValue): SValue =

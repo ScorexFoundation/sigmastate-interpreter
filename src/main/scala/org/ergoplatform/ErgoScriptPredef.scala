@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ErgoTree, IntArrayConstant, IntConstant, LongConstant, SigmaPropValue, Value}
@@ -16,9 +17,8 @@ object ErgoScriptPredef {
 
   import sigmastate.interpreter.Interpreter._
 
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
-
-  def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+  def compileWithCosting(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SType] = {
+    val compiler = new SigmaCompiler(networkPrefix, TransformingSigmaBuilder)
     val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
     IR.buildTree(calcF)
@@ -183,7 +183,7 @@ object ErgoScriptPredef {
     * (v2) INPUTS.flatMap(box => box.tokens).filter(t => t._1 == tokenId).sum >= thresholdAmount
     * (v3) INPUTS.map(box => box.tokens.find(t => t._1 == tokenId).map(t => t._2).getOrElse(0)).sum >= thresholdAmount
     */
-  def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long)(implicit IR: IRContext): Value[SBoolean.type] = {
+  def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SBoolean.type] = {
     val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
     val res = compileWithCosting(env,
       """{
@@ -199,7 +199,7 @@ object ErgoScriptPredef {
         |  val total = sumValues(tokenAmounts)
         |  total >= thresholdAmount
         |}
-      """.stripMargin)
+      """.stripMargin, networkPrefix)
     res.asBoolValue
   }
 

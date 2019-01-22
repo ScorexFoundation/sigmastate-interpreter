@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
@@ -204,7 +205,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val wrongId2: Digest32 = Blake2b256(wrongId)
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount)
+    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix)
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))

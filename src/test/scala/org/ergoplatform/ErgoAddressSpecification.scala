@@ -2,6 +2,7 @@ package org.ergoplatform
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
 import sigmastate.Values
@@ -17,7 +18,7 @@ class ErgoAddressSpecification extends PropSpec
   with TryValues {
 
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
-    new ErgoAddressEncoder(ErgoAddressEncoder.TestnetNetworkPrefix)
+    new ErgoAddressEncoder(TestnetNetworkPrefix)
 
   def addressRoundtrip(addr: ErgoAddress): Assertion = {
     ergoAddressEncoder.fromString(ergoAddressEncoder.toString(addr)).get shouldBe addr
@@ -72,4 +73,17 @@ class ErgoAddressSpecification extends PropSpec
     ergoAddressEncoder.fromProposition(p2sh.script).success.value.isInstanceOf[Pay2SHAddress] shouldBe true
     ergoAddressEncoder.fromProposition(p2pk.script).success.value.isInstanceOf[P2PKAddress] shouldBe true
   }
+
+  property("decode with wrong network prefix") {
+    forAll(proveDlogGen) { pk =>
+      val mainnetEncoder = new ErgoAddressEncoder(MainnetNetworkPrefix)
+      val testnetEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+      val mnAddr = P2PKAddress(pk)(mainnetEncoder)
+      val tnAddr = P2PKAddress(pk)(testnetEncoder)
+
+      an[RuntimeException] should be thrownBy mainnetEncoder.fromString(tnAddr.toString).get
+      an[RuntimeException] should be thrownBy testnetEncoder.fromString(mnAddr.toString).get
+    }
+  }
+
 }

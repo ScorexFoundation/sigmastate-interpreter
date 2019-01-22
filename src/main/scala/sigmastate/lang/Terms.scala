@@ -165,6 +165,8 @@ object Terms {
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
+    def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =
+      Lambda(Nil, args, resTpe, body)
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 
