@@ -74,7 +74,6 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     ("object", "bytes"),
     (FalseLeaf, Array[Byte](1, 0)),
     (TrueLeaf, Array[Byte](1, 1)),
-    caseObjectValue(Context),
     caseObjectValue(Height),
     caseObjectValue(Inputs),
     caseObjectValue(Outputs),
