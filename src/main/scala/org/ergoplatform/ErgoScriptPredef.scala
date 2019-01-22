@@ -52,9 +52,8 @@ object ErgoScriptPredef {
     */
   def rewardOutputScriptWithPlaceholder(delta: Int): ErgoTree = {
     import ErgoTree._
-    val createdAtHeight = SelectField(ExtractCreationInfo(Self), 1).asLongValue
     val root = AND(
-      GE(Height, Plus(createdAtHeight, IntConstant(delta))),
+      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
       ProveDlog(DecodePoint(Values.ConstantPlaceholder(0, SByteArray)))
     )
     ErgoTree(ConstantSegregationHeader, Vector(ByteArrayConstant(Array.emptyByteArray)), root)
@@ -86,7 +85,7 @@ object ErgoScriptPredef {
   def feeProposition(delta: Int = 720): Value[SBoolean.type] = {
     val out = ByIndex(Outputs, IntConstant(0))
     AND(
-      EQ(Height, SelectField(ExtractCreationInfo(out), 1).asLongValue),
+      EQ(Height, boxCreationHeight(out)),
       EQ(ExtractScriptBytes(out), expectedMinerOutScriptBytesVal(delta, MinerPubkey)),
       EQ(SizeOf(Outputs), 1)
     )
