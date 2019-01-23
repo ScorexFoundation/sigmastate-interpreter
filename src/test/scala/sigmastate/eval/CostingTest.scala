@@ -152,6 +152,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }",
       ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
+    check("lam4", "{ def f(out: Box) = out.value >= 0L ; f }",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
   }
 
   test("if then else") {

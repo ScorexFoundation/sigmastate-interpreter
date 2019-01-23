@@ -405,7 +405,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     // nested lambda
     parse(
       """f { (a: Int) =>
-        |val g = { (c: Int) => c - 1 }
+        |def g(c: Int) = c - 1
         |a - g(a)
         |}""".stripMargin) shouldBe Apply(Ident("f"), IndexedSeq(
       Lambda(IndexedSeq("a" -> SInt),

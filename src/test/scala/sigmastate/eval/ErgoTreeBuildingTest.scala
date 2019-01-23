@@ -76,6 +76,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
         ValDef(1,List(),FuncValue(Vector((1,SLong)), Plus(Upcast(Height, SLong), ValUse(1,SLong))))),
         Plus(Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(10))).asNumValue,
              Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
+    build(emptyEnv, "lam7", "{ def f(x: Long) = HEIGHT + x; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
   }
 
   test("Crowd Funding") {

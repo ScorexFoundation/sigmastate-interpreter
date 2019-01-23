@@ -504,7 +504,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compileWithCosting(env,
       """{
         |
-        | val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
+        | def isFriend(inputBox: Box) = inputBox.id == friend.id
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 
