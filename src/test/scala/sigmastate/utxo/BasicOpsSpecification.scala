@@ -492,4 +492,16 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
   }
+
+  property("user defined function") {
+    test("function", env, ext,
+      "{ def inc(i: Int) = i + 1; inc(2) == 3 }",
+      EQ(
+        Apply(
+          FuncValue(Vector((1, SInt)), Plus(ValUse(1, SInt), IntConstant(1))),
+          Vector(IntConstant(2))
+        ),
+        IntConstant(3)),
+    )
+  }
 }

@@ -247,8 +247,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "{ (a) => a + 1 }", "undefined type of argument")
   }
 
-  property("function definitions") {
+  property("function definitions via val") {
     typecheck(env, "{ val f = { (x: Int) => x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+  }
+
+  property("function definitions") {
+    typecheck(env, "{ def f(x: Int) = { x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
   }
 
   property("predefined primitives") {
