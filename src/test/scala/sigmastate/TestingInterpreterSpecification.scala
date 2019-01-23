@@ -355,7 +355,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     // block with nested lambda (assigned to a val)
     testEval(
       """ Coll[Int](1,2,3).exists { (a: Int) =>
-        |   val g = { (c: Int) => c == 1 }
+        |   def g(c: Int) = c == 1
         |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }

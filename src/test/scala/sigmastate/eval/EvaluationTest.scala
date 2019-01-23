@@ -66,8 +66,8 @@ class EvaluationTest extends BaseCtxTests
     // access R5 and call g only if f returns false
     reduce(emptyEnv, "lam4",
       """{
-       |  val f = { (out: Box) => out.value >= 0L };
-       |  val g = { (x: Int) => x < 0 };
+       |  def f(out: Box) = out.value >= 0L;
+       |  def g(x: Int) = x < 0;
        |  f(SELF) || g(SELF.R5[Int].get)
        | }""".stripMargin, ctx, true)
 
