@@ -3,7 +3,7 @@ package org.ergoplatform
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, ErgoTree, IntArrayConstant, IntConstant, LongConstant, SigmaPropValue, Value}
+import sigmastate.Values.{IntArrayConstant, IntConstant, LongConstant, SigmaPropValue, Value}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.IRContext
@@ -107,7 +107,7 @@ object ErgoScriptPredef {
     * Script for Ergo foundation box.
     *
     * The script allows to collect coins, if:
-    * - First transaction output contains at least Emission.remainingFoundationAtHeight coins in it
+    * - First transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
     * and is protected by the same script AND
     * - satisfies conditions from the first non-mandatory register
     */
