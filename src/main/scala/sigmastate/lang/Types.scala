@@ -116,6 +116,10 @@ trait Types extends Core {
     P( FunTypeArgs.? ~~ FunArgs.rep )
   }
 
+  // extension method subject (type that being extended)
+  // see dotty extension method http://dotty.epfl.ch/blog/2019/01/21/12th-dotty-milestone-release.html
+  val DottyExtMethodSubj = P( "(" ~/ Id.! ~  `:` ~/ Type ~ ")" )
+
   val TypeBounds: P0 = P( (`>:` ~/ Type).? ~ (`<:` ~/ Type).? ).ignore
   val TypeArg: P0 = {
     val CtxBounds = P((`:` ~/ Type).rep)

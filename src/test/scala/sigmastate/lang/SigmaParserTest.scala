@@ -484,6 +484,25 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     )
   }
 
+  property("function (no args) definition expr body") {
+    parse("{ def f: Int = 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq(), SInt, IntConstant(1))))
+  }
+
+  property("method extension(dotty) with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def (pairs: Coll[(A,B)]) f[A, B]: Coll[(B, A)] = pairs.magicSwap }") shouldBe Block(List(),
+      Val("f",
+        SCollection(STuple(tB, tA)),
+        Lambda(IndexedSeq("pairs" -> SCollection(STuple(tA, tB))),
+          SCollection(STuple(tB, tA)),
+          Select(Ident("pairs"), "magicSwap")
+        )
+      )
+    )
+  }
+
   property("get field of ref") {
     parse("XXX.YYY") shouldBe Select(Ident("XXX"), "YYY")
     parse("""

@@ -207,12 +207,16 @@ trait Exprs extends Core with Types {
 
   val FunDef = {
     val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
-    P( Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (n, _ @ Seq(args), resType, body) =>
-        val lambda = builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+    P(DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
+      case (None, n, args, resType, body) =>
+        val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
         builder.mkVal(n, resType.getOrElse(NoType), lambda)
-      case (n, secs, resType, body) =>
-        error(s"Function can only have single argument list: def $n($secs): ${resType.getOrElse(NoType)} = $body")
+      case (Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
+        val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
+        val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        builder.mkVal(n, resType.getOrElse(NoType), lambda)
+      case (dottyExt, n, secs, resType, body) =>
+        error(s"Function can only have single argument list: def ${dottyExt.getOrElse("")} $n($secs): ${resType.getOrElse(NoType)} = $body")
     }
   }
 
