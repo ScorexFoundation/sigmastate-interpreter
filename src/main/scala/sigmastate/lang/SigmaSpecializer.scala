@@ -14,9 +14,11 @@ import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
 import scorex.util.Extensions._
 
-class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPrefix) {
+class SigmaSpecializer(val builder: SigmaBuilder) {
   import SigmaSpecializer._
   import builder._
+
+  private implicit val predefFuncRegistry: PredefinedFuncRegistry = new PredefinedFuncRegistry(builder)
 
   /** Create name -> TaggedXXX(tag) pair to be used in environment. */
   def mkTagged(name: String, tpe: SType, tag: Byte): TaggedVariable[SType] = {
@@ -38,59 +40,6 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
       }
       val res1 = eval(curEnv, res)
       Some(res1)
-
-    // Rule: allOf(arr) --> AND(arr)
-    case Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(mkAND(arr))
-
-    // Rule: anyOf(arr) --> OR(arr)
-    case Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-      Some(mkOR(arr))
-
-    // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
-    case Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
-      Some(mkAtLeast(bound.asIntValue, arr))
-
-    // Rule: ZKProof(block) --> ZKProofBlock(block)
-    case Apply(ZKProofSym, Seq(block: SigmaPropValue@unchecked)) =>
-      Some(mkZKProofBlock(block))
-
-    // Rule: sigmaProp(condition) --> BoolToSigmaProp(condition)
-    case Apply(SigmaPropSym, Seq(condition: BoolValue@unchecked)) =>
-      Some(mkBoolToSigmaProp(condition))
-
-    case Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkCalcBlake2b256(arg))
-
-    case Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkCalcSha256(arg))
-
-    case Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkIsMember(tree, key, proof))
-
-    case Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkTreeLookup(tree, key, proof))
-
-    case Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-      Some(mkTreeModifications(tree, operations, proof))
-
-    case Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-      Some(SigmaPropConstant(mkProveDlog(g)))
-
-    case Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-      Some(SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)))
-
-    case Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-      Some(mkLongToByteArray(arg))
-
-    case Apply(FromBase58Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      Some(ByteArrayConstant(Base58.decode(arg.value).get))
-
-    case Apply(FromBase64Sym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      Some(ByteArrayConstant(Base64.decode(arg.value).get))
-
-    case Apply(ByteArrayToBigIntSym, Seq(arg: Value[SByteArray]@unchecked)) =>
-      Some(mkByteArrayToBigInt(arg))
 
     case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
@@ -124,14 +73,6 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
     case Select(p, SSigmaProp.PropBytes, _) if p.tpe == SSigmaProp =>
       Some(SigmaPropBytes(p.asSigmaProp))
 
-    case Apply(PKSym, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-      Some(
-        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
-          case a: P2PKAddress => a.pubkey
-          case a@_ => error(s"unsupported address $a")
-        }
-      )
-
     case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
       val reg = ErgoBox.registerByName.getOrElse(regName,
         error(s"Invalid register name $regName in expression $sel"))
@@ -145,16 +86,6 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
 
     case Select(nrv: NotReadyValue[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
       Some(mkOptionIsDefined(nrv))
-
-    case sel @ Select(e @ Apply(ApplyTypes(f @ GetVarSym, targs), args), "get", Some(regType)) =>
-      if (targs.length != 1 || args.length != 1)
-        error(s"Wrong number of arguments in $e: expected one type argument and one variable id")
-      val id = args.head match {
-        case LongConstant(i) => i.toByteExact  //TODO use SByte.downcast once it is implemented
-        case IntConstant(i) => i.toByteExact
-        case ByteConstant(i) => i
-      }
-      Some(mkTaggedVariable(id, targs.head))
 
     case sel @ Select(obj, field, _) if obj.tpe == SBox =>
       (obj.asValue[SBox.type], field) match {
@@ -226,8 +157,8 @@ class SigmaSpecializer(val builder: SigmaBuilder, val networkPrefix: NetworkPref
             case v => IndexedSeq(v)
           }, SBoolean)))
 
-    case StringConcat(StringConstant(l), StringConstant(r)) =>
-      Some(StringConstant(l + r))
+    case PredefinedFuncApply(irNode) =>
+      Some(irNode)
 
   })))(e)
 

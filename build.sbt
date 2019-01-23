@@ -120,7 +120,7 @@ credentials ++= (for {
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "master"
+  val ergoBranch = "v2.0"
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
@@ -138,7 +138,7 @@ def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
 
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
   val res = Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
-  
+
   if (res != 0) sys.error(s"Ergo $task failed!")
 }
 

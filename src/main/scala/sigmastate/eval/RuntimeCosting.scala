@@ -21,7 +21,7 @@ import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.{Blake2b256, Sha256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SigmaCompiler, Terms}
+import sigmastate.lang.Terms
 import scalan.staged.Slicing
 import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 
@@ -558,7 +558,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
-  lazy val compiler = new SigmaCompiler(builder)
 
   var _colBuilder: Rep[ColBuilder] = _
   var _costedBuilder: Rep[CostedBuilder] = _
@@ -1488,11 +1487,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //      }
 //      res1.asRep[Costed[T#WrappedType]]
     }
-  }
-
-  def cost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
-    val typed = compiler.typecheck(env, code)
-    cost(env, typed)
   }
 
   def cost(env: ScriptEnv, typed: SValue): Rep[Context => Costed[SType#WrappedType]] = {
