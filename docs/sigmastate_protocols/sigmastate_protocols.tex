@@ -81,7 +81,7 @@ This paper describes uses \langname to design games and mixing protocols
 Our language incorporates proofs as first-class citizens, giving developers access to cryptographic primitives for non-interactive {\em proofs of knowledge} known as $\Sigma$-protocols (pronounced ``sigma-protocols''). A transaction's output is protected by a statement known as a $\Sigma$-statement. In order to spend the output, the statement needs to be proven true (by providing a $\Sigma$-proof). The combination of the protecting script and the spending proof forms a $\Sigma$-protocol.
 
 \subsection{Sigma Protocols}
-For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}. Here we give a brief overview. The classic example a $\Sigma$-proof is the following 3-step identification protocol due to~\cite{Sch91}. $G$ is a cyclic multiplicative group of prime order $q$ such that computing discrete logarithms in $G$ is hard. Let $g$ be a generator of $G$. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $y = g^x$.
+For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}. Here we give a brief overview. The classic example of a $\Sigma$-proof is the following 3-step identification protocol due to~\cite{Sch91}. $G$ is a cyclic multiplicative group of prime order $q$ such that computing discrete logarithms in $G$ is hard. Let $g$ be a generator of $G$. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $y = g^x$.
 \begin{enumerate}
 	\item \textbf{Commit:} Alice selects a random $r$, computes $u = g^r$ and sends $u$ to Bob.
 	\item \textbf{Challenge:} Bob selects a random $c\in\mathbb{Z}_q$ and sends $c$ to Alice.
@@ -155,7 +155,7 @@ See Section \ref{sec:safety} for more details.
 We give some examples of \langname to illustrate its usage. 
 \subsection{The XOR Game}
 
-We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both select a secret bit and submit a coin each. They then reveal their secret bits. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires 3 transactions (steps). 
+We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both submit a coin each and select a bit independently. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires 3 transactions (steps). 
 \begin{enumerate}
 	\item Alice commits to a secret bit $a$ as follows. She selects a random bit-string $s$ and computes her commitment $h = H(s\|a)$ (i.e., hash after concatenating $s$ with $a$).
 	%Let $x_\textsf{A}\in \mathbb{Z}_q$ be her private key and $y_\textsf{A} = g^{x_\textsf{A}} \in G$ her public key. % We don't need to specify explicitly the keys for now
@@ -166,12 +166,12 @@ We describe a simple game called ``Same or different'' or the XOR game. Alice an
 
 	\item Bob decides to join Alice's game. He generates a random bit $b$ and spends Alice's half-game output alongwith one of his own to create a new box called the {\em full-game output}. This new box  holds two coins and contains $b$ (in the clear) alongwith Bob's public key in the registers. 
 	Note that the full-game output must satisfy the conditions given by the half-game script. In particular, one of the conditions requires that the full-game output must be protected by the {\em full-game script} (given below).
-	\item Alice opens $h$ by revealing $s, a$. If $a = b$ then Alice wins else Bob wins. The winner can spend the full-game output using his/her private key and providing $s$ and $a$ to the full-game script.
+	\item Alice opens $h$ by revealing $s, a$. If $a = b$ then Alice wins else Bob wins. The winner spends the full-game output using his/her private key and providing $s$ and $a$ to the full-game script.
 
-	If Alice fails to open $h$ within a specified time (say 30 blocks after the full-game output is created) then Bob automatically wins. 
+	If Alice fails to open $h$ within a specified deadline (say 30 blocks after the full-game output is created) then Bob automatically wins. 
 \end{enumerate}
 
-The full-game script is first compiled to get a binary representation of its \langname code: 
+The full-game script encodes the following conditions: The registers \texttt{R4}, \texttt{R5} and \texttt{R6} are expected to store Bob's bit $b$, Bob's public key (stored as a \texttt{ProveDLog} proposition) and the deadline for Bob's automatic win respectively. The context variables with id 0 and 1 (provided at the time of spending the full-game box) contain $s$ and $a$ required to open Alice's commitnent. The remaining part encodes the spending conditon of full-game box. Alice compiles the full-game script to get a binary representation of its \langname code: 
 
 \begin{verbatim}
 val fullGameScript = compile("""
@@ -197,13 +197,12 @@ Then a hash of the above compiled script is computed:
 val fullGameScriptHash = Blake2b256(fullGameScript)
 \end{verbatim}
 
-Finally, Alice creates her half-game output with the following spending condition:
+Finally, Alice sets \texttt{fullGameScriptHash} as an environment variable for the compiler and creates her half-game output with the following spending condition:
 
 \begin{verbatim}
 alicePubKey || {
-  val out           = OUTPUTS(0)
+  val out           = OUTPUTS(0) // the first output is our 
   val b             = out.R4[Byte].get
-  val bobPubKey     = out.R5[SigmaProp].get
   val bobDeadline   = out.R6[Int].get
   val validBobInput = b == 0 || b == 1
 
@@ -215,7 +214,79 @@ alicePubKey || {
 }
 \end{verbatim}
 
-\snote{To do: some explanation about above code}
+The above script requires that the transaction spending the half-game box must either be signed by Alice or generate exactly one output box with the following properties:
+
+\begin{enumerate}
+	\item Its value must be at least twice that of the half-game box.
+	\item Register \texttt{R4} must contain a byte that is either 0 or 1. This encodes Bob's choice $b$.
+	\item Register \texttt{R6} must contain an integer that is at least 30 more than the height at which the box is generated. This will correspond to the height at which Bob automatically wins.
+	\item It must be protected by a script whose hash equals \texttt{fullGameScriptHash}.
+\end{enumerate}
+ 
+The game ensure security and fairness as follows. Since Alice's choice is hidden from Bob when he creates the full-game output, he does not have any advantage in selecting $b$. Secondly, Alice is sure to lose if she commits to a value other than 0 or 1. Finally, if Alice refuses to open her commitment, then Bob is sure to win after about 30 blocks. 
+
+%\snote{To do: some explanation about above code}
+
+\subsection{Theft-Proof Addresses}
+
+In this section, we use \langname to design a useful primitive called a {\em reversible address}, which has anti-theft features in the following sense.
+Any funds sent to a safe address can only be spent using a {\em reversible transaction}. That is, any transaction spending funds from a safe address must create outputs that allow funds to be reversed for a certain time. 
+
+To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized withdraw transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. The irreversibility of fund transfers, usually considered a feature, has now become a bug.
+
+We would like that in the event of such a compromise, we are able to save all funds stored in this wallet and move them to another address, provided that the breach is discovered within a specified time (such as 24 hours) of the first unauthorized withdraw. 
+
+To achieve this, we require that all coins sent from the hot-wallet (both legitimate and by the attacker)
+have a 24 hour cooling-off period, during which the created UTXOs are ``locked'' and can only be spent by a trusted private key that is was selected {\em before} the compromise occurred. This trusted key must be different from the hot-wallet private key and should ideally be in cold storage. 
+After 24 hours, these UTXOs become `normal' and can only be spent by the receiver.
+
+This is done by storing the hot-wallet funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alicePubKey} is the public key of the hot-wallet and \texttt{carolPubKey} is the public key of the trusted party.\footnote{The trusted party must be decided at the time of address generation and cannot be changed later. To use a different trusted party, a new address has to be generated.} A reversible address is a P2SH\footnote{As in Bitcoin, a P2SH (Pay to Script Hash) address is created from the hash of a script encoding spending conditions for any UTXOs controlled by that address.} address whose script encodes the following spending conditions:   
+\begin{enumerate}
+	\item I can only be spent by \texttt{alicePubKey}.
+	\item Any UTXO created by spending me must be protected by a script requring the following: 	
+	\begin{enumerate}
+		\item ``My register \texttt{R4} contains an arbitrary public key called \texttt{bobPubKey}.'' 
+		\item ``My register \texttt{R5} contains an arbitrary integer called \texttt{bobDeadline}.'' 
+		\item ``I can only be spent by \texttt{carolPubKey} if blockchain height $\leq$ \texttt{bobDeadline}.''
+		\item ``I can only be spent by \texttt{bobPubKey} if blockchain height $>$ \texttt{bobDeadline}.''	
+    \end{enumerate}  
+	\item Any UTXO created by spending me must satisfy the following: 	
+	\begin{enumerate}
+		\item Its register \texttt{R5} must contain a number that is at least 100 more than the current height. 
+	\end{enumerate}  
+\end{enumerate}
+
+Thus, all funds sent from such addresses have a temporary lock of 100 blocks. Note that the number 100 can be replaced by any desired value but it must be decided at the time of address generation. All hot-wallet funds must be stored in and sent from the above safe address only. 
+
+Let \texttt{bobPubKey} be the public key of a customer who is withdrawing. The sender (\texttt{alicePubKey}) must ensure that register \texttt{R4} of the created UTXO contains \texttt{bobPubKey}. In the normal scenario, \texttt{bobPubKey} will be able to spend the UTXO after around 100 blocks. 
+
+If an unauthorized transaction is detected from \texttt{alicePubKey}, an ``abort procedure'' is triggered via \texttt{carolPubKey}: all funds sent from \texttt{alicePubKey} currently in the locked state are suspect and need to diverted elsewhere. Additionally, any UTXOs currently controlled by \texttt{alicePubKey} also need to be sent secure addresses. 
+
+Note that such reversible addresses are designed for storing large amount of funds needed for automated withdraws (such as an exchange hot-wallet). They are not designed for storing funds for personal use (such as paying for a coffee).
+
+Concretely, such an address is created as follows. First create a script and compile it to get its binary version called \texttt{withdrawScript}:
+\begin{verbatim}
+val withdrawScript = compile("""{
+  val bobPubKey   = SELF.R4[SigmaProp].get // public key of customer withdrawing
+  val bobDeadline = SELF.R5[Int].get       // max locking height
+  (bobPubKey && HEIGHT > bobDeadline) || (carolPubKey && HEIGHT <= bobDeadline)
+}""")
+\end{verbatim}
+
+Then compute \texttt{withdrawScriptHash = Blake2b256(withdrawScript)} and create a compiled script called \texttt{depositScript} using this hash as follows:
+
+\begin{verbatim}
+val depositScript = compile("""{ 
+  alicePubKey && OUTPUTS.forall({(out:Box) =>
+    out.R5[Int].get >= HEIGHT + 30 &&
+    blake2b256(out.propositionBytes) == withdrawScriptHash
+  })
+}""")
+\end{verbatim}
+
+Finally the reversible P2SH address is obtained as:
+
+ \texttt{val depositAddress = Pay2SHAddress(depositScript)}.
 
 \subsection{The Mixing Protocol}
 

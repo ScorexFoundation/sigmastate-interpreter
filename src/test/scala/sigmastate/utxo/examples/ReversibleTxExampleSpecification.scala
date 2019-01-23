@@ -27,46 +27,41 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     *  Consider the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet.
     *
-    *  Since its a hot-wallet, its private key can get compromised. By compromise, we imply that some unauthorized withdraws have occurred.
-    *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet and move them to
-    *  a "safe" address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
-    *  This is a reasonable assumption.
+    *  Since its a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
+    *
+    *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet by
+    *  moving them to a secure address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
     *
     *  In order to achieve this, we require that all coins sent via the hot-wallet (both legitimate and by the attacker)
-    *  have a 24 hour cooling off period, during which the created UTXOs are "locked" and can only be spent by a trusted private key
-    *  (which is different from the hot-wallet private key)
-    *
+    *  have a 24 hour cooling off period, during which the created UTXOs are "locked" and can only be spent by a trusted
+    *  private key (which is different from the hot-wallet private key)
     *  Once this period is over, those coins become normal and can only be spent by the customer who withdrew.
     *
     *  This is achieved by storing the hot-wallet funds in a <b>Reversible Address</b>, a special type of address.
     *
     *  The reversible address is a P2SH address created using a script that encodes our spending condition.
-    *  The script requires that any UTXO created by spending this box can only be spent by the trusted party during the locking period.
-    *  Thus, all funds sent from such addresses have a temporary lock.
+    *  The script requires that any UTXO created by spending this box can only be spent by the trusted party during the
+    *  locking period. Thus, all funds sent from such addresses have a temporary lock.
     *
     *  Note that reversible addresses are designed for storing large amount of funds needed for automated withdraws
     *  (such as an exchange hot-wallet). They are NOT designed for storing funds for personal use (such as paying for a coffee).
     *
-    * We use the following notation:
+    *  We use the following notation in the code:
+    *
     *  Alice is the hot-wallet with public key alicePubKey
     *
     *  Bob with public key bobPubKey is a customer withdrawing from Alice. This is the normal scenario
     *
     *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., she can reverse payments)
     *
-    * Once alicePubKey is compromised (i.e, a transaction spending from this key is found to be unauthorized), an "Abort procedure"
-    * is triggered. After this, all funds sent from alicePubKey are suspect and should be aborted (sent elsewhere). This is done
-    * by Carol.
+    *  Once alicePubKey is compromised (i.e., a transaction spending from this key is found to be unauthorized), an "abort procedure"
+    *  is triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
     *
-    * For the abort, we require that all locked UTXOs be spent and the funds sent to a secure address (unrelated to alicePubKey).
+    *  A reversible address is created by Alice as follows:
     *
-    * This is achieved as follows:
-    *
-    *  Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
-    *
-    *  She then creates a deposit address for topping up the hot-wallet using a script called depositScript, which requires that the
-    *  spending condition generate a single box protected by withdrawScript.
-    *
+    *  1. Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
+    *  2. She then creates a script called depositScript which requires that all created boxes be protected by withdrawScript.
+    *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */
   property("Evaluation - Reversible Tx Example") {
@@ -102,12 +97,15 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     val depositScript = compileWithCosting(depositEnv,
       """{
-        |  alicePubKey &&
-        |  OUTPUTS.size == 1 &&
-        |  blake2b256(OUTPUTS(0).propositionBytes) == withdrawScriptHash &&
-        |  OUTPUTS(0).R5[Int].get >= HEIGHT + 30       // bobDeadline stored in R5. After this height, Bob gets to spend unconditionally
+        |  alicePubKey && OUTPUTS.forall({(out:Box) =>
+        |    out.R5[Int].get >= HEIGHT + 30
+        |  }) && OUTPUTS.forall({(out:Box) =>
+        |    blake2b256(out.propositionBytes) == withdrawScriptHash
+        |  })
         |}""".stripMargin
     ).asBoolValue
+
+    // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
     val depositAddress = Pay2SHAddress(depositScript)
     // The above is a "reversible wallet" address.

@@ -85,7 +85,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |  alicePubKey || {
         |    val out           = OUTPUTS(0)
         |    val b             = out.R4[Byte].get
-        |    val bobPubKey     = out.R5[SigmaProp].get
         |    val bobDeadline   = out.R6[Int].get
         |    val validBobInput = b == 0 || b == 1
         |
