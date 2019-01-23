@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+pdflatex sigmastate_protocols
+bibtex sigmastate_protocols
+pdflatex sigmastate_protocols
+pdflatex sigmastate_protocols
+rm sigmastate_protocols.aux
+rm sigmastate_protocols.log
+rm sigmastate_protocols.out
+rm sigmastate_protocols.toc
