@@ -224,7 +224,6 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
 
-
     // transaction with the only input with enough token should pass
     val inputs0 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
@@ -252,7 +251,14 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
     )
     check(inputs3) shouldBe 'success
-
+    
+    // A transaction which contains input with no tokens
+    val inputs4 = IndexedSeq(
+      ErgoBox(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),
+      ErgoBox(20, prop, 0, Seq(), Map()),
+      ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
+    )
+    check(inputs4) shouldBe 'success
   }
 
   def checkRewardTx(minerPk: ProveDlog,
