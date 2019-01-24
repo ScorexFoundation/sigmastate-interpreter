@@ -20,9 +20,10 @@ import sigmastate.utxo.{ByIndex, ErgoLikeTestInterpreter, ExtractCreationInfo, S
 import scala.util.Try
 
 class ErgoScriptPredefSpec extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext {
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
+
   private val emptyProverResult: ProverResult = ProverResult(Array.emptyByteArray, ContextExtension.empty)
   private val settings = MonetarySettings(30 * 2 * 24 * 365, 90 * 24 * 30, 75L * EmissionRules.CoinsInOneErgo,
     3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10)
@@ -251,7 +252,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
     )
     check(inputs3) shouldBe 'success
-    
+
     // A transaction which contains input with no tokens
     val inputs4 = IndexedSeq(
       ErgoBox(20, prop, 0, Seq((wrongId, 1), (tokenId, tokenAmount / 2)), Map()),

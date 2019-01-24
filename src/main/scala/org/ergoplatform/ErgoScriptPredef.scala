@@ -106,9 +106,9 @@ object ErgoScriptPredef {
   /**
     * Script for Ergo foundation box.
     *
-    * The script allows to collect coins, if:
-    * - First transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
-    * and is protected by the same script AND
+    * The script allows to spend the foundation box, if:
+    * - first transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
+    * and is protected by the same script
     * - satisfies conditions from the first non-mandatory register
     */
   def foundationScript(s: MonetarySettings): Value[SBoolean.type] = {
