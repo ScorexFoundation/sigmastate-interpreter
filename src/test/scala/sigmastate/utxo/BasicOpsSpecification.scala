@@ -504,4 +504,17 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         IntConstant(3)),
     )
   }
+
+  property("buildValue rep") {
+    test("bb", env, ext,
+      """
+        |OUTPUTS.forall({(out:Box) =>
+        |  out.R5[Int].get >= HEIGHT + 30 &&
+        |  blake2b256(out.propositionBytes) == Coll[Byte](1.toByte)
+        |})
+      """.stripMargin,
+      IntConstant(1),
+      false
+    )
+  }
 }
