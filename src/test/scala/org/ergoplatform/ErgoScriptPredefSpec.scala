@@ -57,7 +57,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  property("collect coins from founders box") {
+  property("collect coins from the founders' box") {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
     val prover = new ErgoLikeTestProvingInterpreter
@@ -113,7 +113,6 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
-
   }
 
   property("collect coins from rewardOutputScript") {

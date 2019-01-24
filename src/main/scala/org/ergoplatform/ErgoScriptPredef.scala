@@ -106,7 +106,7 @@ object ErgoScriptPredef {
   /**
     * Script for Ergo foundation box.
     *
-    * The script allows to spend the foundation box, if:
+    * The script allows to collect Ergs from the foundation box, if:
     * - first transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
     * and is protected by the same script
     * - satisfies conditions from the first non-mandatory register
