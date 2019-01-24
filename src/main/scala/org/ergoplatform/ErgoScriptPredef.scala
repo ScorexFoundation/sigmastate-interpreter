@@ -109,7 +109,7 @@ object ErgoScriptPredef {
     * The script allows to collect Ergs from the foundation box, if:
     * - first transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
     * and is protected by the same script
-    * - satisfies conditions from the first non-mandatory register
+    * - satisfies conditions from the first non-mandatory register (R4)
     */
   def foundationScript(s: MonetarySettings): Value[SBoolean.type] = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
