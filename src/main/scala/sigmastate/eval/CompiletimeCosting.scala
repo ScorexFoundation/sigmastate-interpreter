@@ -26,9 +26,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
-        eval(SigmaPropConstant(node.asSigmaBoolean))
-
       // Rule: allOf(arr) --> AND(arr)
       case Terms.Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
         eval(mkAND(arr))
@@ -63,12 +60,11 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         eval(mkBoolToSigmaProp(bool))
 
       case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-        eval(SigmaPropConstant(
-          mkProveDiffieHellmanTuple(
-            g.asGroupElement,
-            h.asGroupElement,
-            u.asGroupElement,
-            v.asGroupElement)))
+        eval(mkProveDiffieHellmanTuple(
+          g.asGroupElement,
+          h.asGroupElement,
+          u.asGroupElement,
+          v.asGroupElement))
 
       case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
         eval(mkTreeModifications(tree, operations, proof))
