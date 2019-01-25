@@ -8,7 +8,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.ZKProofBlock
+import sigmastate.lang.Terms.{Apply, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
@@ -78,6 +78,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
+  }
+
+  property("user-defined functions") {
+    comp("{ def f(i: Int) = { i + 1 }; f(2) }") shouldBe Apply(
+      FuncValue(Vector((1,SInt)),Plus(ValUse(1,SInt), IntConstant(1))),
+      Vector(IntConstant(2)))
   }
 
   property("negative tests") {
