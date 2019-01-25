@@ -505,15 +505,15 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("buildValue rep") {
-    test("bb", env, ext,
+  property("missing variable in env buildValue error") {
+    test("missingVar", env, ext,
       """
         |OUTPUTS.forall({(out:Box) =>
         |  out.R5[Int].get >= HEIGHT + 30 &&
         |  blake2b256(out.propositionBytes) == Coll[Byte](1.toByte)
         |})
       """.stripMargin,
-      IntConstant(1),
+      TrueLeaf,
       false
     )
   }
