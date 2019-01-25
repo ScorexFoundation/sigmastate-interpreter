@@ -236,13 +236,13 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("Tuple as Collection operations") {
-    test("TupCol1", env, ext,
+    test("TupColl1", env, ext,
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p.size == 2 }""".stripMargin,
     {
       TrueLeaf
     }, true)
-    test("TupCol2", env, ext,
+    test("TupColl2", env, ext,
     """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
      |  p(0) == 1 }""".stripMargin,
     {
@@ -250,12 +250,12 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     })
 
     val dataVar = (lastExtVar + 1).toByte
-    val Cols = IR.sigmaDslBuilderValue.Cols
+    val Colls = IR.sigmaDslBuilderValue.Colls
     val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SCollection(SByte), SLong))
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
-    test("TupCol3", env1, ext1,
+    test("TupColl3", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
         |  data.size == 1
@@ -265,7 +265,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         EQ(SizeOf(data), IntConstant(1))
       }
     )
-    test("TupCol4", env1, ext1,
+    test("TupColl4", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
         |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
@@ -279,7 +279,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         )
       }
     )
-    test("TupCol5", env1, ext1,
+    test("TupColl5", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
         |  data.forall({ (p: (Coll[Byte], Long)) => p._1.size > 0 })
@@ -293,7 +293,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         )
       }
     )
-    test("TupCol6", env1, ext1,
+    test("TupColl6", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
         |  data.map({ (p: (Coll[Byte], Long)) => (p._2, p._1)}).size == 1

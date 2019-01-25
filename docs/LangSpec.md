@@ -19,7 +19,7 @@
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
-- collection literals: `Col(1, 2, 3, 4)`
+- collection literals: `Coll(1, 2, 3, 4)`
 - generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
@@ -582,7 +582,7 @@ class Coll[A] {
   /** Produces a new collection which contains all distinct elements of this collection and also all elements of
    *  a given collection that are not in this collection.
    *  This is order preserving operation considering only first occurrences of each distinct elements.
-   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Col()).
+   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Coll()).
    *
    *  NOTE: Use append if you don't need set semantics.
    *
@@ -668,7 +668,7 @@ class Coll[A] {
    *  @return  A new collection which contains the first occurrence of every element of this collection.
    *  @since 2.0
    */
-  def distinct: Col[A]
+  def distinct: Coll[A]
 
   /** Tests whether this collection contains the given sequence at a given index.
    *
@@ -688,7 +688,7 @@ class Coll[A] {
     *  @return `true` if this collection has `that` as a suffix, `false` otherwise.
     *  @since 2.0
     */
-  def endsWith(that: Col[A]): Boolean
+  def endsWith(that: Coll[A]): Boolean
 
 }
 ```
@@ -830,7 +830,7 @@ def fromBase64(input: String): Coll[Byte]
 
 /**
   * It is executed in compile time.
-  * The compiler takes Base64 encoding of public key as String literal and create GroupElement constant. 
+  * The compiler takes Base58 encoding of public key as String literal and create GroupElement constant. 
   * Then the compiler used this constant to construct proveDlog public key out of it.
   * @since 1.9
   */

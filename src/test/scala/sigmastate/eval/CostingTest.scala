@@ -31,7 +31,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WBigInteger._
   import ProveDlogEvidence._
   import Context._; import SigmaContract._
-  import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._;
+  import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
   import TrivialSigma._
   import Liftables._
@@ -54,11 +54,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(SGroupElement, g, CryptoConstants.groupSize)
     check(SSigmaProp, DLogProtocol.ProveDlog(g), CryptoConstants.groupSize + 1)
     check(sigmastate.SOption(SInt), Some(10), 1 + 4)
-    def checkCol(elemTpe: SType, arr: Array[Any], exp: Long) =
+    def checkColl(elemTpe: SType, arr: Array[Any], exp: Long) =
       check(sigmastate.SCollection(SInt), arr, exp)
-    checkCol(SInt, Array(10,20), 2 + 2L * 4)
-    checkCol(SInt, Array(), 2)
-    checkCol(SBigInt, Array(BigInteger.ZERO, BigInteger.valueOf(Long.MaxValue)), 2 + 0 + 8)
+    checkColl(SInt, Array(10,20), 2 + 2L * 4)
+    checkColl(SInt, Array(), 2)
+    checkColl(SBigInt, Array(BigInteger.ZERO, BigInteger.valueOf(Long.MaxValue)), 2 + 0 + 8)
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
@@ -71,7 +71,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
     val symArr1 = colBuilder.fromArray(liftConst(arr1))
     checkInEnv(env, "arr", "arr1",
-      {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
+      {_ => symArr1}, {_ => constCost[Coll[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
       {_ => colBuilder.fromArray(liftConst(arr1)).length },
       { _ =>

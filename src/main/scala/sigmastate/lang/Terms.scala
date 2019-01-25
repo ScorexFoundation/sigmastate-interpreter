@@ -96,7 +96,7 @@ object Terms {
     override val opCode: OpCode = OpCodes.FuncApplyCode
     override lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
-      case tCol: SCollectionType[_] => tCol.elemType
+      case tColl: SCollectionType[_] => tColl.elemType
       case _ => NoType
     }
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)

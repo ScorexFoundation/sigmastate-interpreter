@@ -5,11 +5,11 @@ import java.math.BigInteger
 
 import org.ergoplatform._
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, CollectionConstant, ConcreteCollection, Constant, EvaluatedValue, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{FuncValue, Constant, EvaluatedValue, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, CostTableStat, ExtractAmount, SizeOf}
+import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf, CostTableStat}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -20,19 +20,21 @@ import org.bouncycastle.math.ec.ECPoint
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
-import scalan.Nullable
+import scalan.{Nullable, RType}
+import RType._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
+import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import special.collection.CollOverArrayBuilder
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
-  import Col._
-  import ReplCol._
-  import CReplCol._
+  import Coll._
+  import ReplColl._
+  import CReplColl._
   import Box._
   import AvlTree._
-  import ColBuilder._
+  import CollBuilder._
   import SigmaDslBuilder._
   import CostedBuilder._
   import CCostedBuilder._
@@ -52,10 +54,10 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
-  private val ColM = ColMethods
+  private val CollM = CollMethods
   private val BoxM = BoxMethods
   private val AvlM = AvlTreeMethods
-  private val CBM = ColBuilderMethods
+  private val CBM = CollBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
   private val AM = WArrayMethods
   private val OM = WOptionMethods
@@ -74,7 +76,7 @@ trait Evaluation extends RuntimeCosting { IR =>
          ContextM.getVar(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
-    case ColM.length(_) | ColM.map(_,_) | ColM.sum(_,_) | ColM.zip(_,_) | ColM.slice(_,_,_) | ColM.apply(_,_) | ColM.append(_,_) =>
+    case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) | CollM.append(_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
     case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
     case AvlM.dataSize(_) =>
@@ -128,7 +130,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   def getDataEnv: DataEnv = {
     val env = Map[Sym, AnyRef](
       sigmaDslBuilder -> sigmaDslBuilderValue,
-      sigmaDslBuilder.Cols -> sigmaDslBuilderValue.Cols,
+      sigmaDslBuilder.Colls -> sigmaDslBuilderValue.Colls,
       costedBuilder -> costedBuilderValue,
       costedBuilder.monoidBuilder -> monoidBuilderValue,
       costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid,
@@ -143,7 +145,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
-      case col: special.collection.Col[_] => s"Coll(${trim(col.arr).mkString(",")})"
+      case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: ECPoint => CryptoFunctions.showECPoint(p)
       case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
       case ProveDHTuple(
@@ -200,14 +202,14 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)
-          case FieldApply(In(data: special.collection.Col[a]), IsTupleFN(i)) =>
+          case FieldApply(In(data: special.collection.Coll[a]), IsTupleFN(i)) =>
             out(data(i-1))
           case wc: LiftedConst[_,_] => out(wc.constValue)
-          case _: DslBuilder | _: ColBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
+          case _: DslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
-            out(sigmaDslBuilderValue.Cols.fromArray(sigmaBool.bytes))
+            out(sigmaDslBuilderValue.Colls.fromArray(sigmaBool.bytes))
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
 
@@ -236,26 +238,26 @@ trait Evaluation extends RuntimeCosting { IR =>
 //            val th = y.asInstanceOf[() => SigmaBoolean]
 //            out(OR(l, th()).function(null, null))
 
-          case SDBM.anyZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
-            out(COR.normalized(items.arr.toSeq))
-          case SDBM.allZK(_, In(items: special.collection.Col[SigmaBoolean]@unchecked)) =>
-            out(CAND.normalized(items.arr.toSeq))
-          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Col[SigmaBoolean]@unchecked)) =>
-            out(AtLeast.reduce(bound, children.arr.toSeq))
+          case SDBM.anyZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+            out(COR.normalized(items.toArray.toSeq))
+          case SDBM.allZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+            out(CAND.normalized(items.toArray.toSeq))
+          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+            out(AtLeast.reduce(bound, children.toArray.toSeq))
           case SDBM.sigmaProp(_, In(b: Boolean)) =>
             val res = sigmastate.TrivialProp(b)
             out(res)
           case SDBM.substConstants(_,
-            In(input: special.collection.Col[Byte]@unchecked),
-            In(positions: special.collection.Col[Int]@unchecked),
-            In(newVals: special.collection.Col[Any]@unchecked), _) =>
-            val typedNewVals = newVals.arr.map(_.asInstanceOf[Value[SType]])
-            val byteArray = SubstConstants.eval(input.arr, positions.arr, typedNewVals)
-            out(sigmaDslBuilderValue.Cols.fromArray(byteArray))
+            In(input: special.collection.Coll[Byte]@unchecked),
+            In(positions: special.collection.Coll[Int]@unchecked),
+            In(newVals: special.collection.Coll[Any]@unchecked), _) =>
+            val typedNewVals = newVals.toArray.map(_.asInstanceOf[Value[SType]])
+            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)
+            out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
-          case CBM.replicate(In(b: special.collection.ColBuilder), In(n: Int), xSym @ In(x)) =>
-            out(b.replicate(n, x)(xSym.elem.classTag))
+          case CBM.replicate(In(b: special.collection.CollBuilder), In(n: Int), xSym @ In(x)) =>
+            out(b.replicate(n, x)(xSym.elem.sourceType.asInstanceOf[RType[Any]]))
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
@@ -324,8 +326,8 @@ trait Evaluation extends RuntimeCosting { IR =>
             val res = ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
             out(res)
 
-          case CReplColCtor(In(value), In(len: Int)) =>
-            val res = sigmaDslBuilderValue.Cols.replicate(len, value)
+          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
+            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(valueSym.elem.sourceType.asInstanceOf[RType[Any]])
             out(res)
           case CostOf(opName, tpe) =>
             val operId = OperationId(opName, tpe)
@@ -350,7 +352,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case SimpleStruct(_, fields) =>
             val items = fields.map { case (_, In(fieldValue)) => fieldValue }.toArray
-            out(sigmaDslBuilderValue.Cols.fromArray(items))
+            out(sigmaDslBuilderValue.Colls.fromArray(items)(AnyType))
 
           case _ =>
             !!!(s"Don't know how to evaluate($te)")
@@ -361,7 +363,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           te.sym.getMetadata(OperationIdKey) match {
             case Some(opId: OperationId) =>
               if (opId.opType.tRange.isCollection) {
-                val col = res._1(res._2).asInstanceOf[SCol[Any]]
+                val col = res._1(res._2).asInstanceOf[SColl[Any]]
                 val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
                 CostTableStat.addOpTime(opId, colTime, col.length)
               }
@@ -390,9 +392,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
-        case col: special.collection.Col[_] =>
+        case col: special.collection.Coll[_] =>
           val et = elemToSType(f.elem.eRange).asCollection[SType]
-          CollectionConstant(col.arr.asInstanceOf[Array[SType#WrappedType]], et.elemType)
+          CollectionConstant(col.toArray.asInstanceOf[Array[SType#WrappedType]], et.elemType)
         case x => builder.liftAny(x).get
       }
     }
@@ -400,4 +402,57 @@ trait Evaluation extends RuntimeCosting { IR =>
   }
 }
 
+object Evaluation {
+  import special.sigma._
+  import special.collection._
+  case class GenericRType[T <: AnyRef](classTag : ClassTag[T]) extends RType[T]
 
+  def AnyRefRType[T <: AnyRef: ClassTag]: RType[T] = GenericRType[T](scala.reflect.classTag[T])
+
+  def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
+    case SBoolean => BooleanType
+    case SByte => ByteType
+    case SShort => ShortType
+    case SInt => IntType
+    case SLong => LongType
+    case SString => StringType
+    case SAny => AnyType
+    case SBigInt => BigIntegerRType
+    case SBox => BoxRType
+    case SGroupElement => ECPointRType
+    case SAvlTree => AvlTreeRType
+    case SSigmaProp => SigmaPropRType
+    case STuple(items) =>
+      val b = new CollOverArrayBuilder()
+      val types = b.fromArray(items.toArray)(AnyRefRType[SType])
+      val names = types.indices.map(i => STuple.componentNameByIndex(i))
+      val rtrt = asType[SomeType](rtypeRType[Any])
+      structRType(names.toArray, types.map(t => stypeToRType(t).asInstanceOf[SomeType])(rtrt).toArray)
+    case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
+    case _ => sys.error(s"Don't know how to convert SType $t to RType")
+  }).asInstanceOf[RType[T#WrappedType]]
+
+  def rtypeToSType[T](t: RType[T]): SType = t match {
+    case BooleanType => SBoolean
+    case ByteType => SByte
+    case ShortType => SShort
+    case IntType => SInt
+    case LongType => SLong
+    case StringType => SString
+    case AnyType => SAny
+    case BigIntegerRType => SBigInt
+    case ECPointRType => SGroupElement
+    case AvlTreeRType => SAvlTree
+    case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
+    case BoxRType => SBox
+    case SigmaPropRType => SSigmaProp
+    case st: StructType =>
+//      assert(st.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
+      STuple(st.fieldTypes.map(rtypeToSType(_)).toIndexedSeq)
+    case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
+    case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
+    case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
+    case _ => sys.error(s"Don't know how to convert Elem $t to SType")
+  }
+
+}

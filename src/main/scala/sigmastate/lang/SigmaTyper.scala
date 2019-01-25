@@ -172,12 +172,12 @@ class SigmaTyper(val builder: SigmaBuilder) {
       val newObj = assignType(env, obj)
       val newArgs = args.map(assignType(env, _))
       newObj.tpe match {
-        case tCol: SCollectionType[a] => (m, newArgs) match {
+        case tColl: SCollectionType[a] => (m, newArgs) match {
           case ("++", Seq(r)) =>
-            if (r.tpe == tCol)
+            if (r.tpe == tColl)
               mkAppend(newObj.asCollection[a], r.asCollection[a])
             else
-              error(s"Invalid argument type for $m, expected $tCol but was ${r.tpe}")
+              error(s"Invalid argument type for $m, expected $tColl but was ${r.tpe}")
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs")
         }

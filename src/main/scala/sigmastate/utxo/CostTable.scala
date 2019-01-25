@@ -340,8 +340,8 @@ object CostTableStat {
     stat.map { case (opId, item) =>
       val cost = item.sum / item.count
       val avgLen = item.sumLen / item.count
-      val isCol = opId.opType.tRange.isCollection
-      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isCol) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
+      val isColl = opId.opType.tRange.isCollection
+      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isColl) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
     }.mkString("Seq(", "", "\n)")
   }
 }

@@ -62,7 +62,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     backerPubKeyId -> backerPubKey,
     projectPubKeyId -> projectPubKey,
     3.toByte -> bigIntArr1
-  )).arr
+  )).toArray
 
   val boxToSpend = ErgoBox(10, TrueLeaf, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))

@@ -6,12 +6,12 @@ import scalan.BaseCtxTests
 
 class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit {
   import IR._
-  import Col._
+  import Coll._
   lazy val compiler = new SigmaCompiler(builder)
 
   test("split cols") {
     emit("split_cols",
-      split3(fun { in: Rep[(Col[Int], Byte)] =>
+      split3(fun { in: Rep[(Coll[Int], Byte)] =>
         dataCost(in, None)
       })
     )
