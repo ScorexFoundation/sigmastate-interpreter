@@ -332,8 +332,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = SigmaAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).asSigmaProp,
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).asSigmaProp)
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
@@ -636,5 +636,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     an[RuntimeException] should be thrownBy
       prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+  }
+
+  property("non-const ProveDHT") {
+    import sigmastate.interpreter.CryptoConstants.dlogGroup
+    compileWithCosting(Map("gA" -> dlogGroup.generator),
+      "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
+    ).asInstanceOf[BlockValue].result shouldBe a [ProveDHTuple]
+  }
+
+  property("non-const ProveDlog") {
+    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [ProveDlog]
   }
 }
