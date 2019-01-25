@@ -105,16 +105,25 @@ object ErgoScriptPredef {
 
   /**
     * Script for Ergo foundation box.
-    *
-    * The script allows to collect Ergs from the foundation box, if:
+    * The script allows to spend a box, if:
     * - first transaction output contains at least EmissionRules.remainingFoundationAtHeight coins in it
-    * and is protected by the same script
-    * - satisfies conditions from the first non-mandatory register (R4)
+    * - first transaction output is protected by this script
+    * - conditions from the first non-mandatory register (R4) are satisfied
+    *
+    * Thus, this script always controls the level of emission and does not allow to take
+    * more coins, that is defined in emission rules. In addition it is protected by
+    * custom proposition R4, that is assumed to be a simple 2-of-3 multisignature with
+    * public keys of foundation members in the beginning. When foundation members spend
+    * this box, they are free to put any proposition they wish to R4 register, thus they
+    * may add or remove members, or change it to something more complicated like
+    * `tokenThresholdScript`.
     */
   def foundationScript(s: MonetarySettings): Value[SBoolean.type] = {
-    val rewardOut = ByIndex(Outputs, IntConstant(0))
+    // new output of the foundation
+    val newFoundationBox = ByIndex(Outputs, IntConstant(0))
+    // calculate number of coins, that are not issued yet and should be kept in `newFoundationBox`
+    // the same as Emission.remainingFoundationRewardAtHeight rewritten in Ergo script
     val remainingAmount = {
-      // Emission.remainingFoundationRewardAtHeight in Ergo script
       val full15reward = (s.foundersInitialReward - 2 * s.oneEpochReduction) * s.epochLength
       val full45reward = (s.foundersInitialReward - s.oneEpochReduction) * s.epochLength
       val fixedRatePeriodMinus1: Int = s.fixedRatePeriod - 1
@@ -142,9 +151,14 @@ object ErgoScriptPredef {
         )
       )
     }
-    val amountCorrect = GE(ExtractAmount(rewardOut), remainingAmount)
-    val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
-    AND(amountCorrect, sameScriptRule, DeserializeRegister(ErgoBox.R4, SBoolean))
+    // check, that `newFoundationBox` contains at least `remainingAmount`
+    val amountCorrect = GE(ExtractAmount(newFoundationBox), remainingAmount)
+    // check, that `newFoundationBox` have the same protecting script
+    val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(newFoundationBox))
+    // check, that additional rules defined by foundation members are satisfied
+    val customProposition = DeserializeRegister(ErgoBox.R4, SBoolean)
+    // combine 3 conditions above with AND conjunction
+    AND(amountCorrect, sameScriptRule, customProposition)
   }
 
   /**
