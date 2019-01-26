@@ -447,8 +447,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case CostedBoxM.creationInfo(boxC) =>
         val info = boxC.value.creationInfo
-        val l = RCCostedPrim(info._1, 0, 4L)
-        val r = mkCostedCol(info._2, 34, boxC.cost)
+        val cost = boxC.cost + sigmaDslBuilder.CostModel.SelectField
+        val l = RCCostedPrim(info._1, cost, 4L)
+        val r = mkCostedCol(info._2, 34, cost)
         RCCostedPair(l, r)
 
       case CostedOptionM.get(optC @ CostedBoxM.getReg(_, Def(Const(2)), regE)) /*if regId == ErgoBox.R2.asIndex*/ =>

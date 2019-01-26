@@ -29,7 +29,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     3L * EmissionRules.CoinsInOneErgo, 720, 75L * EmissionRules.CoinsInOneErgo / 10)
   private val emission = new EmissionRules(settings)
 
-  ignore("boxCreationHeight") {
+  property("boxCreationHeight") {
     val verifier = new ErgoLikeTestInterpreter
     val prover = new ErgoLikeTestProvingInterpreter
     val minerProp = prover.dlogSecrets.head.publicImage
