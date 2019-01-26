@@ -232,11 +232,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array literals") {
-    val emptyCol = Apply(Ident("Coll"), IndexedSeq.empty)
-    parse("Coll()") shouldBe emptyCol
-    val emptyCol2 = Apply(Ident("Coll"), IndexedSeq(emptyCol))
-    parse("Coll(Coll())") shouldBe emptyCol2
-    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyCol2))
+    val emptyColl = Apply(Ident("Coll"), IndexedSeq.empty)
+    parse("Coll()") shouldBe emptyColl
+    val emptyColl2 = Apply(Ident("Coll"), IndexedSeq(emptyColl))
+    parse("Coll(Coll())") shouldBe emptyColl2
+    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyColl2))
 
     parse("Coll(1)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1)))
     parse("Coll(1, X)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1), Ident("X")))

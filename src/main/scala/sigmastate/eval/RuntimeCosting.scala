@@ -31,12 +31,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import WECPoint._;
   import WBigInteger._;
   import WOption._
-  import Col._;
-  import ColBuilder._;
+  import Coll._;
+  import CollBuilder._;
   import SigmaProp._;
   import TrivialSigma._
   import Box._
-  import ColOverArrayBuilder._;
+  import CollOverArrayBuilder._;
   import CostedBuilder._
   import CCostedBuilder._
   import Costed._;
@@ -48,8 +48,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import CCostedPair._;
   import CostedFunc._;
   import CCostedFunc._;
-  import CostedCol._;
-  import CCostedCol._;
+  import CostedColl._;
+  import CCostedColl._;
   import CostedBox._;
   import CCostedBox._;
   import CostedBuilder._;
@@ -80,15 +80,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   def createSliceAnalyzer = new SliceAnalyzer
 
-  val ColMarking = new TraversableMarkingFor[Col]
+  val CollMarking = new TraversableMarkingFor[Coll]
   val WOptionMarking = new TraversableMarkingFor[WOption]
 
   override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: ColOverArrayBuilderElem =>
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
       EmptyBaseMarking(eT)
-    case ae: ColElem[a,_] =>
+    case ae: CollElem[a,_] =>
       val eA = ae.eItem
-      ColMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
+      CollMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
     case ae: WOptionElem[a,_] =>
       val eA = ae.eItem
       WOptionMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
@@ -97,11 +97,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: ColOverArrayBuilderElem =>
+    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
       AllBaseMarking(e)
-    case colE: ColElem[a,_] =>
+    case colE: CollElem[a,_] =>
       implicit val eA = colE.eItem
-      ColMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
+      CollMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
     case optE: WOptionElem[a,_] =>
       implicit val eA = optE.eItem
       WOptionMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
@@ -163,14 +163,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
     def cost: Rep[Int] = {
       val costs = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.cost }
-      val costsCol = colBuilder.fromItems(costs:_*)
-      costsCol.sum(intPlusMonoid)
+      val costsColl = colBuilder.fromItems(costs:_*)
+      costsColl.sum(intPlusMonoid)
     }
 
     def dataSize: Rep[Long] = {
       val sizes = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.dataSize }
-      val sizesCol = colBuilder.fromItems(sizes:_*)
-      sizesCol.sum(longPlusMonoid)
+      val sizesColl = colBuilder.fromItems(sizes:_*)
+      sizesColl.sum(longPlusMonoid)
     }
   }
 
@@ -187,8 +187,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override def sizeOf[T](value: Rep[T]): Rep[Long] = value.elem match {
     case _: BoxElem[_] =>
       asRep[Box](value).dataSize
-    case ce: ColElem[a,_] =>
-      val xs = asRep[Col[a]](value)
+    case ce: CollElem[a,_] =>
+      val xs = asRep[Coll[a]](value)
       implicit val eA = xs.elem.eItem
       val tpe = elemToSType(eA)
       if (tpe.isConstantSize)
@@ -226,8 +226,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case _ => super.formatDef(d)
   }
 
-  type RCol[T] = Rep[Col[T]]
-  type RCostedCol[T] = Rep[CostedCol[T]]
+  type RColl[T] = Rep[Coll[T]]
+  type RCostedColl[T] = Rep[CostedColl[T]]
   type RCostedFunc[A,B] = Rep[Costed[A] => Costed[B]]
 
   implicit class RCostedFuncOps[A,B](f: RCostedFunc[A,B]) {
@@ -252,18 +252,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   }
 
-  type CostedColFunc[A,B] = Costed[A] => CostedCol[B]
-  type RCostedColFunc[A,B] = Rep[CostedColFunc[A, B]]
+  type CostedCollFunc[A,B] = Costed[A] => CostedColl[B]
+  type RCostedCollFunc[A,B] = Rep[CostedCollFunc[A, B]]
 
-  implicit class RCostedColFuncOps[A,B](f: RCostedColFunc[A,B]) {
+  implicit class RCostedCollFuncOps[A,B](f: RCostedCollFunc[A,B]) {
     implicit val eA = f.elem.eDom.eVal
-    def sliceValues: Rep[A => Col[B]] = fun { x: Rep[A] => f(RCCostedPrim(x, 0, 0L)).values }
-    def sliceCosts: Rep[((A, (Int,Long))) => (Col[Int], Int)] = fun { in: Rep[(A, (Int, Long))] =>
+    def sliceValues: Rep[A => Coll[B]] = fun { x: Rep[A] => f(RCCostedPrim(x, 0, 0L)).values }
+    def sliceCosts: Rep[((A, (Int,Long))) => (Coll[Int], Int)] = fun { in: Rep[(A, (Int, Long))] =>
       val Pair(x, Pair(c, s)) = in
       val colC = f(RCCostedPrim(x, c, s))
       Pair(colC.costs, colC.valuesCost)
     }
-    def sliceSizes: Rep[((A, Long)) => Col[Long]] = fun { in: Rep[(A, Long)] =>
+    def sliceSizes: Rep[((A, Long)) => Coll[Long]] = fun { in: Rep[(A, Long)] =>
       val Pair(x, s) = in
       f(RCCostedPrim(x, 0, s)).sizes
     }
@@ -274,8 +274,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   implicit def extendCostedElem[A](elem: Elem[Costed[A]]): CostedElem[A, Costed[A]] =
     elem.asInstanceOf[CostedElem[A, Costed[A]]]
 
-  implicit def extendCostedColElem[A](elem: Elem[CostedCol[A]]): CostedColElem[A, CostedCol[A]] =
-    elem.asInstanceOf[CostedColElem[A, CostedCol[A]]]
+  implicit def extendCostedCollElem[A](elem: Elem[CostedColl[A]]): CostedCollElem[A, CostedColl[A]] =
+    elem.asInstanceOf[CostedCollElem[A, CostedColl[A]]]
 
   def splitCostedFunc2[A,B](f: RCostedFunc[A,B]): (Rep[A=>B], Rep[((A, (Int, Long))) => Int]) = {
     implicit val eA = f.elem.eDom.eVal
@@ -297,7 +297,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     (calcF, costF, sizeF)
   }
 
-  def splitCostedColFunc[A,B](f: RCostedColFunc[A,B]): (Rep[A=>Col[B]], Rep[((A, (Int, Long))) => (Col[Int], Int)], Rep[((A, Long)) => Col[Long]]) = {
+  def splitCostedCollFunc[A,B](f: RCostedCollFunc[A,B]): (Rep[A=>Coll[B]], Rep[((A, (Int, Long))) => (Coll[Int], Int)], Rep[((A, Long)) => Coll[Long]]) = {
     implicit val eA = f.elem.eDom.eVal
     val calcF = f.sliceValues
     val costF = f.sliceCosts
@@ -339,12 +339,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
-  object IsConstSizeCostedCol {
-    def unapply(d: Def[_]): Nullable[Rep[Costed[Col[A]]] forSome {type A}] = d.selfType match {
-      case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedColElem[_, _]] =>
+  object IsConstSizeCostedColl {
+    def unapply(d: Def[_]): Nullable[Rep[Costed[Coll[A]]] forSome {type A}] = d.selfType match {
+      case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedCollElem[_, _]] =>
         ce.eVal match {
-          case colE: ColElem[a,_] if colE.eItem.isConstantSize =>
-            val res = d.self.asInstanceOf[Rep[Costed[Col[A]]] forSome {type A}]
+          case colE: CollElem[a,_] if colE.eItem.isConstantSize =>
+            val res = d.self.asInstanceOf[Rep[Costed[Coll[A]]] forSome {type A}]
             Nullable(res)
           case _ => Nullable.None
         }
@@ -359,14 +359,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   type CostedThunk[T] = Th[Costed[T]]
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
-    val CBM = ColBuilderMethods
+    val CBM = CollBuilderMethods
     val SigmaM = SigmaPropMethods
-    val CCM = CostedColMethods
+    val CCM = CostedCollMethods
     val CostedM = CostedMethods
     val CostedOptionM = CostedOptionMethods
     val CostedBoxM = CostedBoxMethods
     val WOptionM = WOptionMethods
-    val CM = ColMethods
+    val CM = CollMethods
     val CostedBuilderM = CostedBuilderMethods
     val SPCM = WSpecialPredefCompanionMethods
 
@@ -391,7 +391,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case TrivialSigmaCtor(SigmaM.isValid(p)) => p
 
-      case CCM.mapCosted(xs: RCostedCol[a], _f: RCostedFunc[_, b]) =>
+      case CCM.mapCosted(xs: RCostedColl[a], _f: RCostedFunc[_, b]) =>
         val f = asRep[Costed[a] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
         val vals = xs.values.map(calcF)
@@ -412,9 +412,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           colBuilder.replicate(xs.sizes.length, typeSize(tpeB))
         } else
           xs.sizes.map(sizeF)
-        RCCostedCol(vals, costs, sizes, xs.valuesCost)
+        RCCostedColl(vals, costs, sizes, xs.valuesCost)
 
-      case CCM.foldCosted(xs: RCostedCol[a], zero: RCosted[b], _f) =>
+      case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
         val f = asRep[Costed[(b,a)] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[(b,a), b](f)
         val resV = xs.values.fold(zero.value, calcF)
@@ -437,27 +437,27 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             error(s"Cost of the folded function depends on data: $d")
         }
 
-//      case CCM.filterCosted(xs: RCostedCol[a], _f: RCostedFunc[_,_]) =>
+//      case CCM.filterCosted(xs: RCostedColl[a], _f: RCostedFunc[_,_]) =>
 //        val f = asRep[Costed[a] => Costed[Boolean]](_f)
 //        val (calcF, costF, _) = splitCostedFunc[a, Boolean](f)
 //        val vals = xs.values.filter(calcF)
 //        val costs = xs.costs.zip(xs.sizes).map(costF)  // TODO how to filter our sizes and costs
 //        val sizes = colBuilder.replicate(xs.sizes.length, 1L)
-//        RCostedCol(vals, costs, sizes, xs.valuesCost)
+//        RCostedColl(vals, costs, sizes, xs.valuesCost)
 
       case CostedBoxM.creationInfo(boxC) =>
         val info = boxC.value.creationInfo
         val l = RCCostedPrim(info._1, 0, 4L)
-        val r = mkCostedCol(info._2, 34, boxC.cost)
+        val r = mkCostedColl(info._2, 34, boxC.cost)
         RCCostedPair(l, r)
 
       case CostedOptionM.get(optC @ CostedBoxM.getReg(_, Def(Const(2)), regE)) /*if regId == ErgoBox.R2.asIndex*/ =>
-        require(regE.isInstanceOf[ColElem[_,_]],
+        require(regE.isInstanceOf[CollElem[_,_]],
           s"Predefined register R${ErgoBox.R2.asIndex} should have Coll[(Coll[Byte], Long)] type but was $regE")
-        val values = asRep[Col[(Col[Byte], Long)]](optC.value.get)
+        val values = asRep[Coll[(Coll[Byte], Long)]](optC.value.get)
         val costs = colBuilder.replicate(values.length, 0)
         val sizes = colBuilder.replicate(values.length, Blake2b256.DigestSize.toLong + SLong.dataSize(0.asWrappedType))
-        RCCostedCol(values, costs, sizes, optC.cost + sigmaDslBuilder.CostModel.SelectField)
+        RCCostedColl(values, costs, sizes, optC.cost + sigmaDslBuilder.CostModel.SelectField)
 
       case CostedM.value(Def(CCostedFuncCtor(_, func: RCostedFunc[a,b], _,_))) =>
         func.sliceCalc
@@ -514,23 +514,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             val p = asRep[(a,b)](v)
             // TODO costing: this is approximation (we essentially double the cost and size)
             RCCostedPair(RCCostedPrim(p._1, c, s), RCCostedPrim(p._2, c, s))
-          case ce: ColElem[a,_] if ce.eItem.isConstantSize =>
-            val col = asRep[Col[a]](v)
-            mkCostedCol(col, col.length, c)
+          case ce: CollElem[a,_] if ce.eItem.isConstantSize =>
+            val col = asRep[Coll[a]](v)
+            mkCostedColl(col, col.length, c)
           case _ => super.rewriteDef(d)
         }
 
       case CostedBuilderM.costedValue(b, x, SPCM.some(cost)) =>
         dataCost(x, Some(asRep[Int](cost)))
 
-      case IsConstSizeCostedCol(col) =>
-        mkCostedCol(col.value, col.value.length, col.cost)
+      case IsConstSizeCostedColl(col) =>
+        mkCostedColl(col.value, col.value.length, col.cost)
 
       case _ if isCostingProcess =>
         // apply special rules for costing function
         d match {
-          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RCol[a]@unchecked,_)), Def(ThunkDef(_e,_)))))  =>
-            val e = asRep[Col[a]](_e)
+          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RColl[a]@unchecked,_)), Def(ThunkDef(_e,_)))))  =>
+            val e = asRep[Coll[a]](_e)
             t.length max e.length
           case _ => super.rewriteDef(d)
         }
@@ -559,7 +559,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
-  var _colBuilder: Rep[ColBuilder] = _
+  var _colBuilder: Rep[CollBuilder] = _
   var _costedBuilder: Rep[CostedBuilder] = _
   var _intPlusMonoid: Rep[Monoid[Int]] = _
   var _longPlusMonoid: Rep[Monoid[Long]] = _
@@ -567,14 +567,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   init() // initialize global context state
 
-  def colBuilder: Rep[ColBuilder] = _colBuilder
+  def colBuilder: Rep[CollBuilder] = _colBuilder
   def costedBuilder: Rep[CostedBuilder] = _costedBuilder
   def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid
   def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid
   def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder
 
   protected def init(): Unit = {
-    _colBuilder = RColOverArrayBuilder()
+    _colBuilder = RCollOverArrayBuilder()
     _costedBuilder = RCCostedBuilder()
     _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
     _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
@@ -583,8 +583,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
 // This is experimental alternative which is 10x faster in MeasureIRContext benchmark
 // However it is not fully correct. It can be used if current implementation is not fast enough.
-//  def colBuilder: Rep[ColBuilder] = {
-//    if (_colBuilder == null) _colBuilder = RColOverArrayBuilder()
+//  def colBuilder: Rep[CollBuilder] = {
+//    if (_colBuilder == null) _colBuilder = RCollOverArrayBuilder()
 //    _colBuilder
 //  }
 //  def costedBuilder: Rep[CostedBuilder] = {
@@ -674,7 +674,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
-    case c: SCollectionType[a] => colElement(stypeToElem(c.elemType))
+    case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
 
@@ -695,7 +695,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case se: StructElem[_] =>
       assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
       STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
-    case ce: ColElem[_, _] => SCollection(elemToSType(ce.eItem))
+    case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
     case _ => error(s"Don't know how to convert Elem $e to SType")
@@ -706,7 +706,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case e: AvlTreeElem[_] => costedAvlTreeElement
     case e: BoxElem[_] => costedBoxElement
     case oe: WOptionElem[a,_] => costedOptionElement(oe.eItem)
-    case ce: ColElem[a,_] => costedColElement(ce.eItem)
+    case ce: CollElem[a,_] => costedCollElement(ce.eItem)
     case fe: FuncElem[_, _] => costedFuncElement(UnitElement, fe.eDom, fe.eRange)
     case pe: PairElem[_, _] => costedPairElement(pe.eFst, pe.eSnd)
     case _ => costedElement(e)
@@ -805,17 +805,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
     /** Helper to create costed collection of bytes */
-  def mkCostedCol[T](col: Rep[Col[T]], len: Rep[Int], cost: Rep[Int]): Rep[CostedCol[T]] = {
+  def mkCostedColl[T](col: Rep[Coll[T]], len: Rep[Int], cost: Rep[Int]): Rep[CostedColl[T]] = {
     val costs = colBuilder.replicate(len, 0)
     val sizes = colBuilder.replicate(len, typeSize(col.elem.eItem))
-    RCCostedCol(col, costs, sizes, cost)
+    RCCostedColl(col, costs, sizes, cost)
   }
 
   def mkCosted[T](v: Rep[T], cost: Rep[Int], size: Rep[Long]): Rep[Costed[T]] = {
     val res = v.elem match {
-      case colE: ColElem[a,_] =>
-        val xs = asRep[Col[a]](v)
-        mkCostedCol(xs, xs.length, cost)
+      case colE: CollElem[a,_] =>
+        val xs = asRep[Coll[a]](v)
+        mkCostedColl(xs, xs.length, cost)
       case _ =>
         RCCostedPrim(v, cost, size)
     }
@@ -840,7 +840,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       asRep[Any](costed) match {
         case Def(CCostedPrimCtor(v, c, s)) =>
           v.setMetadata(OperationIdKey)(node.opId)
-        case Def(CCostedColCtor(vs,_,_,_)) =>
+        case Def(CCostedCollCtor(vs,_,_,_)) =>
           vs.setMetadata(OperationIdKey)(node.opId)
         case _ =>
       }
@@ -853,8 +853,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
-    class InCol[T] { def unapply(v: SValue): Nullable[Rep[CostedCol[T]]] = Nullable(asRep[CostedCol[T]](evalNode(ctx, env, v))) }
-    val InColByte = new InCol[Byte]; val InColAny = new InCol[Any]; val InColInt = new InCol[Int]
+    class InColl[T] { def unapply(v: SValue): Nullable[Rep[CostedColl[T]]] = Nullable(asRep[CostedColl[T]](evalNode(ctx, env, v))) }
+    val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]; val InCollInt = new InColl[Int]
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
       val res = items.map { x: SValue =>
         val xC = eval(x)
@@ -911,7 +911,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
                   val sizesArr = liftConst(sizesConst)
                   colBuilder.fromArray(sizesArr)
                 }
-              RCCostedCol(resVals, resCosts, resSizes, costOf(c))
+              RCCostedColl(resVals, resCosts, resSizes, costOf(c))
           }
         case box: ErgoBox =>
           val boxV = liftConst(box.toTestBox(false)(IR))
@@ -982,7 +982,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         RCCostedPrim(value, costOf(node), CryptoConstants.groupSize.toLong)
 
       case sigmastate.ByteArrayToBigInt(In(_arr)) =>
-        val arrC = asRep[Costed[Col[Byte]]](_arr)
+        val arrC = asRep[Costed[Coll[Byte]]](_arr)
         val arr = arrC.value
         val value = sigmaDslBuilder.byteArrayToBigInt(arr)
         val size = arrC.dataSize
@@ -995,25 +995,25 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val col = sigmaDslBuilder.longToByteArray(x) // below we assume col.length == typeSize[Long]
         val cost = xC.cost + costOf(node)
         val len = typeSize[Long].toInt
-        mkCostedCol(col, len, cost)
+        mkCostedColl(col, len, cost)
 
-      case TreeLookup(In(_tree), InColByte(key), InColByte(proof)) =>
+      case TreeLookup(In(_tree), InCollByte(key), InCollByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeLookup(tree.value, key.value, proof.value)
         val size = tree.dataSize + key.dataSize + proof.dataSize
         val cost = tree.cost + key.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Col[Byte]]](
+        value.fold[CostedOption[Coll[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, size.toInt, cost)) })
+          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
 
-      case TreeModifications(In(_tree), InColByte(operations), InColByte(proof)) =>
+      case TreeModifications(In(_tree), InCollByte(operations), InCollByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
         val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Col[Byte]]](
+        value.fold[CostedOption[Coll[Byte]]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Col[Byte]] => RCostedSome(mkCostedCol(x, size.toInt, cost)) })
+          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
@@ -1034,7 +1034,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         _tup.elem.eVal.asInstanceOf[Elem[_]] match {
           case se: StructElem[_] =>
             val tup = asRep[Costed[Struct]](_tup)
-            val fn = STuple.componentNames(fieldIndex - 1)
+            val fn = STuple.componentNameByIndex(fieldIndex - 1)
             withDefaultSize(tup.value.getUntyped(fn), costedBuilder.SelectFieldCost)
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
@@ -1049,8 +1049,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case node: BooleanTransformer[_] =>
         val eIn = stypeToElem(node.input.tpe.elemType)
-        val xs = asRep[CostedCol[Any]](eval(node.input))
-        val eAny = xs.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        val xs = asRep[CostedColl[Any]](eval(node.input))
+        val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         implicit val eArg: Elem[Costed[Any]] = eAny match {
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
@@ -1068,16 +1068,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             }
           case _: SigmaPropElem[_] =>
             if (node.isInstanceOf[ForAll[_]])
-              sigmaDslBuilder.allZK(asRep[Col[SigmaProp]](values))
+              sigmaDslBuilder.allZK(asRep[Coll[SigmaProp]](values))
             else
-              sigmaDslBuilder.anyZK(asRep[Col[SigmaProp]](values))
+              sigmaDslBuilder.anyZK(asRep[Coll[SigmaProp]](values))
         }
         withDefaultSize(value, cost)
 
       case MapCollection(input, sfunc) =>
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any], _]].eVal.eA
+        val inputC = asRep[CostedColl[Any]](evalNode(ctx, env, input))
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Coll[Any], _]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val mapperC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, sfunc)).func
         val res = inputC.mapCosted(mapperC)
@@ -1087,8 +1087,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val eItem = stypeToElem(input.tpe.elemType)
         val eState = stypeToElem(zero.tpe)
         (eState, eItem) match { case (eState: Elem[s], eItem: Elem[a]) =>
-          val inputC = asRep[CostedCol[a]](eval(input))
-          implicit val eA = inputC.elem.asInstanceOf[CostedElem[Col[a],_]].eVal.eA
+          val inputC = asRep[CostedColl[a]](eval(input))
+          implicit val eA = inputC.elem.asInstanceOf[CostedElem[Coll[a],_]].eVal.eA
           assert(eItem == eA, s"Types should be equal: but $eItem != $eA")
 
           val zeroC = asRep[Costed[s]](eval(zero))
@@ -1110,7 +1110,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
 
       case op @ Slice(In(input), In(from), In(until)) =>
-        val inputC = asRep[CostedCol[Any]](input)
+        val inputC = asRep[CostedColl[Any]](input)
         val fromC = asRep[Costed[Int]](from)
         val untilC = asRep[Costed[Int]](until)
         val f = fromC.value
@@ -1118,22 +1118,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val vals = inputC.values.slice(f, u)
         val costs = inputC.costs.slice(f, u)
         val sizes = inputC.sizes.slice(f, u)
-        RCCostedCol(vals, costs, sizes, inputC.valuesCost + costOf(op))
+        RCCostedColl(vals, costs, sizes, inputC.valuesCost + costOf(op))
 
       case Append(In(_col1), In(_col2)) =>
-        val col1 = asRep[CostedCol[Any]](_col1)
-        val col2 = asRep[CostedCol[Any]](_col2)
+        val col1 = asRep[CostedColl[Any]](_col1)
+        val col2 = asRep[CostedColl[Any]](_col2)
         val values = col1.values.append(col2.values)
         val costs = col1.costs.append(col2.costs)
         val sizes = col1.sizes.append(col2.sizes)
-        RCCostedCol(values, costs, sizes, costOf(node))
+        RCCostedColl(values, costs, sizes, costOf(node))
 
       case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
         val input = col.asValue[SCollection[SType]]
         val cond = body.asValue[SBoolean.type]
         val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Col[Any],_]].eVal.eA
+        val inputC = asRep[CostedColl[Any]](evalNode(ctx, env, input))
+        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
         assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
         val condC = fun { x: Rep[Costed[Any]] =>
           evalNode(ctx, env + (n -> x), cond)
@@ -1152,12 +1152,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val fC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, f))
         val xC = asRep[Costed[Any]](evalNode(ctx, env, x))
         if (f.tpe.asFunc.tRange.isCollection) {
-          val (calcF, costF, sizeF) = splitCostedColFunc(asRep[CostedColFunc[Any,Any]](fC.func))
+          val (calcF, costF, sizeF) = splitCostedCollFunc(asRep[CostedCollFunc[Any,Any]](fC.func))
           val value = xC.value
-          val values: Rep[Col[Any]] = Apply(calcF, value, false)
-          val costRes: Rep[(Col[Int], Int)] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
-          val sizes: Rep[Col[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
-          RCCostedCol(values, costRes._1, sizes, costRes._2)
+          val values: Rep[Coll[Any]] = Apply(calcF, value, false)
+          val costRes: Rep[(Coll[Int], Int)] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
+          val sizes: Rep[Coll[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
+          RCCostedColl(values, costRes._1, sizes, costRes._2)
         }
         else {
           val (calcF, costF, sizeF) = splitCostedFunc(fC.func)
@@ -1172,20 +1172,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         error(s"Option constructors are not supported: $opt")
 
       case CalcBlake2b256(In(input)) =>
-        val bytesC = asRep[Costed[Col[Byte]]](input)
+        val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
         val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
-        mkCostedCol(res, Blake2b256.DigestSize, cost)
+        mkCostedColl(res, Blake2b256.DigestSize, cost)
       case CalcSha256(In(input)) =>
-        val bytesC = asRep[Costed[Col[Byte]]](input)
+        val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
         val cost = bytesC.cost + perKbCostOf(node, bytesC.dataSize)
-        mkCostedCol(res, Sha256.DigestSize, cost)
+        mkCostedColl(res, Sha256.DigestSize, cost)
 
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal match {
-          case ce: ColElem[a,_] =>
-            val xsC = asRep[Costed[Col[a]]](xs)
+          case ce: CollElem[a,_] =>
+            val xsC = asRep[Costed[Coll[a]]](xs)
             val v = xsC.value.length
             withDefaultSize(v, xsC.cost + costOf(node))
           case se: StructElem[_] =>
@@ -1194,7 +1194,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
 
       case ByIndex(xs, i, default) =>
-        val xsC = asRep[CostedCol[Any]](eval(xs))
+        val xsC = asRep[CostedColl[Any]](eval(xs))
         val iC = asRep[Costed[Int]](eval(i))
         val iV = iC.value
         val size = xsC.sizes(iV)
@@ -1220,24 +1220,24 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val v = pC.value.propBytes
         withDefaultSize(v, pC.cost + costOf(node))
 
-      case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedColFixed for fixed-size collections
+      case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedCollFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
         val id = boxC.value.id
-        mkCostedCol(id, Blake2b256.DigestSize, boxC.cost + costOf(node))
+        mkCostedColl(id, Blake2b256.DigestSize, boxC.cost + costOf(node))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        mkCostedCol(boxC.value.bytesWithoutRef, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
+        mkCostedColl(boxC.value.bytesWithoutRef, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
       case utxo.ExtractAmount(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         withDefaultSize(boxC.value.value, boxC.cost + costOf(node))
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.propositionBytes
-        mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
+        mkCostedColl(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
       case utxo.ExtractBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
-        mkCostedCol(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
+        mkCostedColl(bytes, ErgoBox.MaxBoxSize, boxC.cost + costOf(node))
       case utxo.ExtractCreationInfo(In(box)) =>
         val boxC = asRep[CostedBox](box)
         boxC.creationInfo
@@ -1253,14 +1253,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         RCCostedPrim(value, boolC.cost + costOf(node), 1L)
 
       case AtLeast(bound, input) =>
-        val inputC = asRep[CostedCol[Any]](evalNode(ctx, env, input))
+        val inputC = asRep[CostedColl[Any]](evalNode(ctx, env, input))
         if (inputC.values.length.isConst) {
           val inputCount = inputC.values.length.asValue
           if (inputCount > AtLeast.MaxChildrenCount)
             error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount")
         }
         val boundC = eval(bound)
-        val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Col[SigmaProp]](inputC.values))
+        val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Coll[SigmaProp]](inputC.values))
         val cost = boundC.cost + inputC.cost + costOf(node)
         RCCostedPrim(res, cost, CryptoConstants.groupSize.toLong)
 
@@ -1314,7 +1314,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
           withDefaultSize(res, cost)
         case _ =>
-          val inputC = asRep[CostedCol[Boolean]](eval(input))
+          val inputC = asRep[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.anyOf(inputC.value)
           val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
           withDefaultSize(res, cost)
@@ -1328,7 +1328,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
           withDefaultSize(res, cost)
         case _ =>
-          val inputC = asRep[CostedCol[Boolean]](eval(input))
+          val inputC = asRep[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.allOf(inputC.value)
           val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
           withDefaultSize(res, cost)
@@ -1419,7 +1419,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val values = colBuilder.fromItems(vs: _*)
         val costs = colBuilder.fromItems(cs: _*)
         val sizes = colBuilder.fromItems(ss: _*)
-        RCCostedCol(values, costs, sizes, costOf(col))
+        RCCostedColl(values, costs, sizes, costOf(col))
 
       case sigmastate.Upcast(In(inputC), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
@@ -1437,13 +1437,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = inputC.cost + costOf(node)
         withDefaultSize(res, cost)
 
-      case Xor(InColByte(l), InColByte(r)) =>
+      case Xor(InCollByte(l), InCollByte(r)) =>
         val values = colBuilder.xor(l.value, r.value)
         val sizes = r.sizes
         val len = sizes.length
         val costs = colBuilder.replicate(len, 0)
         val cost = perKbCostOf(node, len.toLong)
-        RCCostedCol(values, costs, sizes, cost)
+        RCCostedColl(values, costs, sizes, cost)
 
 // TODO should be
 //      case ErgoAddressToSigmaProp(input) =>
@@ -1455,13 +1455,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = constantPlaceholder(index)(elem)
         withDefaultSize(res, costOf(node))
 
-      case SubstConstants(InColByte(bytes), InColInt(positions), InColAny(newValues)) =>
+      case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
         val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)(AnyElement)
         val len = bytes.sizes.length.toLong + newValues.sizes.sum(longPlusMonoid)
         val cost = bytes.cost + positions.cost + newValues.cost + perKbCostOf(node, len)
-        mkCostedCol(values, len.toInt, cost)
+        mkCostedColl(values, len.toInt, cost)
 
-      case DecodePoint(InColByte(bytes)) =>
+      case DecodePoint(InCollByte(bytes)) =>
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 

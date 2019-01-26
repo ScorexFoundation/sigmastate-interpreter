@@ -2,6 +2,8 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ErgoLikeContext.Metadata.NetworkPrefix
+import scalan.RType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
@@ -9,7 +11,7 @@ import sigmastate.interpreter.{ContextExtension, Context}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utxo.CostTable.Cost
-import special.collection.Col
+import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, TestValue, Box}
 
@@ -42,9 +44,9 @@ class ErgoLikeContext(val currentHeight: Height,
       if (spendingTransaction == null) noOutputs
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
-    val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
+    val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
     val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.arr, isCost)
+    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.toArray, isCost)
   }
 
 }
@@ -91,29 +93,30 @@ object ErgoLikeContext {
 
   def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
     case (arr: Array[a], SCollectionType(elemType)) =>
+      implicit val elemRType = Evaluation.stypeToRType(elemType)
       elemType match {
         case SCollectionType(_) | STuple(_) =>
           val testArr = arr.map(x => toTestData(x, elemType, isCost))
-          IR.sigmaDslBuilderValue.Cols.fromArray(testArr)
+          IR.sigmaDslBuilderValue.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
         case _ =>
-          IR.sigmaDslBuilderValue.Cols.fromArray(arr)
+          IR.sigmaDslBuilderValue.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
       }
     case (arr: Array[a], STuple(items)) =>
       val res = arr.zip(items).map { case (x, t) => toTestData(x, t, isCost)}
-      IR.sigmaDslBuilderValue.Cols.fromArray(res)
+      IR.sigmaDslBuilderValue.Colls.fromArray(res)(RType.AnyType)
     case (b: ErgoBox, SBox) => b.toTestBox(isCost)
     case (t: AvlTreeData, SAvlTree) => CostingAvlTree(IR, t)
     case (x, _) => x
   }
 
-  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Col[AnyValue] = {
+  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
     val res = new Array[AnyValue](maxKey + 1)
     for ((id, v) <- m) {
       assert(res(id) == null, s"register $id is defined more then once")
       res(id) = new TestValue(v)
     }
-    IR.sigmaDslBuilderValue.Cols.fromArray(res)
+    IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
