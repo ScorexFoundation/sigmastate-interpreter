@@ -17,16 +17,16 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.12" % "2.4.20",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "commons-io" % "commons-io" % "2.5",
-  "io.github.scalan" % "common_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "core_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "library-api_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "library-impl_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "library_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "macros_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "meta_2.12" % "i8-more-ops-d7c2b8b4-SNAPSHOT",
-  "io.github.scalan" % "sigma-api_2.12" % "new-ops-105b47d0-SNAPSHOT",
-  "io.github.scalan" % "sigma-impl_2.12" % "new-ops-105b47d0-SNAPSHOT",
-  "io.github.scalan" % "sigma-library_2.12" % "new-ops-105b47d0-SNAPSHOT",
+  "io.github.scalan" % "common_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "core_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "library-api_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "library-impl_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "library_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "macros_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "meta_2.12" % "master-ff1257ef-SNAPSHOT",
+  "io.github.scalan" % "sigma-api_2.12" % "master-652f8e7e-SNAPSHOT",
+  "io.github.scalan" % "sigma-impl_2.12" % "master-652f8e7e-SNAPSHOT",
+  "io.github.scalan" % "sigma-library_2.12" % "master-652f8e7e-SNAPSHOT",
   "javax.activation" % "activation" % "1.1",
   "jline" % "jline" % "2.14.3",
   "org.apache.ant" % "ant" % "1.9.6",
@@ -53,4 +53,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "spire_2.12" % "0.14.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 67728aa0791dd3d8bc0790503f83456bcc983661
+// LIBRARY_DEPENDENCIES_HASH c874b35ae303f1f6632b9796e3151c8292f93b12

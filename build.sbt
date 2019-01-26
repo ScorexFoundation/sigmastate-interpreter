@@ -59,12 +59,12 @@ version in ThisBuild := {
 
 git.gitUncommittedChanges in ThisBuild := true
 
-val specialVersion = "i8-more-ops-d7c2b8b4-SNAPSHOT"
+val specialVersion = "master-ff1257ef-SNAPSHOT"
 val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
 
-val specialSigmaVersion = "new-ops-105b47d0-SNAPSHOT"
+val specialSigmaVersion = "master-652f8e7e-SNAPSHOT"
 val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
 val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
 
