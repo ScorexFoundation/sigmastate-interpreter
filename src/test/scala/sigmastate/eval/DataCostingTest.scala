@@ -1,13 +1,11 @@
 package sigmastate.eval
 
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
-
+import sigmastate.lang.LangTests
 import scalan.BaseCtxTests
 
 class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit {
   import IR._
   import Coll._
-  lazy val compiler = new SigmaCompiler(builder)
 
   test("split cols") {
     emit("split_cols",

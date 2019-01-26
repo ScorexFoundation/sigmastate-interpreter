@@ -1,8 +1,6 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoBox.ReferenceRegId
 import org.ergoplatform.ErgoLikeContext.Height
-import org.ergoplatform.ErgoLikeContext.Metadata.NetworkPrefix
 import scalan.RType
 import sigmastate.Values._
 import sigmastate._
@@ -10,7 +8,6 @@ import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingB
 import sigmastate.interpreter.{ContextExtension, Context}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.Cost
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, TestValue, Box}
