@@ -257,7 +257,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.CollBuilder), In(n: Int), xSym @ In(x)) =>
-            out(b.replicate(n, x)(xSym.elem.sourceType.asInstanceOf[RType[Any]]))
+            out(b.replicate(n, x)(asType[Any](xSym.elem.sourceType)))
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
@@ -327,7 +327,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
-            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(valueSym.elem.sourceType.asInstanceOf[RType[Any]])
+            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
             out(res)
           case CostOf(opName, tpe) =>
             val operId = OperationId(opName, tpe)
