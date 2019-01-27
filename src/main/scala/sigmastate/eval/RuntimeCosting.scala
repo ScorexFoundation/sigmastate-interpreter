@@ -74,9 +74,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
 
-  this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+  this.isInlineThunksOnForce = true  // this required for splitting of cost graph
+  this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
 //  this.useAlphaEquality = false
 //  unfoldWithOriginalFunc = unfoldWithOrig
+
+  /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
+    * true - substitute; false - create CostOf nodes */
+  var substFromCostTable: Boolean = true
 
   def createSliceAnalyzer = new SliceAnalyzer
 
@@ -109,9 +114,21 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       super.createAllMarking(e)
   }
 
-  case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int]
+  case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
+    override def transform(t: Transformer): Def[IntPlusMonoidData] = this
+    def eval: Int = {
+      val operId = OperationId(opName, opType)
+      val cost = CostTable.DefaultCosts(operId)
+      cost
+    }
+  }
 
-  def costOf(opName: String, opType: SFunc): Rep[Int] = CostOf(opName, opType)
+  def costOf(opName: String, opType: SFunc): Rep[Int] = {
+    val costOp = CostOf(opName, opType)
+    val res = if (substFromCostTable) toRep(costOp.eval)
+              else (costOp: Rep[Int])
+    res
+  }
   def costOfProveDlog = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
   def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
 
@@ -143,8 +160,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     constCost(tpe)
   }
 
-  def costOf(v: SValue): Rep[Int] = {
-    costOf(v.opName, v.opType)
+  def costOf(v: SValue): Rep[Int] = v match {
+    case l: Terms.Lambda =>
+      constCost(l.tpe)
+    case l: FuncValue =>
+      constCost(l.tpe)
+    case _ =>
+      costOf(v.opName, v.opType)
   }
 
   trait CostedStruct extends Costed[Struct] { }
@@ -175,6 +197,23 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def RCostedStruct(costedFields: Rep[Struct], structCost: Rep[Int]): Rep[Costed[Struct]] = CostedStructCtor(costedFields, structCost)
+
+  // CostedThunk =============================================
+  trait CostedThunk[A] extends Costed[Thunk[A]] { }
+
+  case class CostedThunkCtor[A](costedBlock: Rep[Thunk[Costed[A]]], thunkCost: Rep[Int]) extends CostedThunk[A] {
+    override def transform(t: Transformer) = CostedThunkCtor(t(costedBlock), t(thunkCost))
+    implicit val eVal: Elem[Thunk[A]] = thunkElement(costedBlock.elem.eItem.eVal)
+    val selfType: Elem[Costed[Thunk[A]]] = costedElement(eVal)
+
+    def builder: Rep[CostedBuilder] = costedBuilder
+    def value: Rep[Thunk[A]] = Thunk { costedBlock.force().value }
+    def cost: Rep[Int] = costedBlock.force().cost
+    def dataSize: Rep[Long] = costedBlock.force().dataSize
+  }
+
+  def RCostedThunk[A](costedBlock: Rep[Thunk[Costed[A]]], thunkCost: Rep[Int]): Rep[Costed[Thunk[A]]] = CostedThunkCtor(costedBlock, thunkCost)
+  // ---------------------------------------------------------
 
   object ConstantSizeType {
     def unapply(e: Elem[_]): Nullable[SType] = {
@@ -356,7 +395,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     def isConstantSize: Boolean = elemToSType(e).isConstantSize
   }
 
-  type CostedThunk[T] = Th[Costed[T]]
+  type CostedTh[T] = Th[Costed[T]]
 
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = CollBuilderMethods
@@ -538,15 +577,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
-//  override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
-//    // not the same as super because mkMethodCall can produce a more precise return type
-//    case MethodCall(receiver, method, args, neverInvoke) =>
-//      val args1 = args.map(transformProductParam(_, t).asInstanceOf[AnyRef])
-//      val receiver1 = t(receiver)
-//      // in the case neverInvoke is false, the method is invoked in rewriteDef
-//      mkMethodCall(receiver1, method, args1, neverInvoke).asInstanceOf[Rep[A]]
-//    case _ => super.transformDef(d, t)
-//  }
+  override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
+    case c: CostOf => c.self
+    case _ => super.transformDef(d, t)
+  }
 
   lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
@@ -1056,7 +1090,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case _: BoxElem[_] => element[CostedBox].asElem[Costed[Any]]
           case _ => costedElement(eAny)
         }
-        val condC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, node.condition)).func
+        val conditionC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, node.condition))
+        val condC = conditionC.func
         val (calcF, costF) = splitCostedFunc2(condC, okRemoveIsValid = true)
         val values = xs.values.map(calcF)
         val cost = xs.values.zip(xs.costs.zip(xs.sizes)).map(costF).sum(intPlusMonoid)
@@ -1342,9 +1377,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case BinAnd(l, r) =>
         val lC = evalNode(ctx, env, l)
-        val rValTh = Thunk(evalNode(ctx, env, r).value)
-        val rCost = evalNode(ctx, env, r).cost
-        withDefaultSize(And.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
+        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
+        val v = And.applyLazy(lC.value, rC.value)
+        val c = lC.cost + rC.cost + costOf(node)
+        withDefaultSize(v, c)
 
       case SigmaAnd(items) =>
         val itemsC = items.map(eval)

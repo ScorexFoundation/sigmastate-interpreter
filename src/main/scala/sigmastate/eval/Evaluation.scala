@@ -329,10 +329,8 @@ trait Evaluation extends RuntimeCosting { IR =>
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
             out(res)
-          case CostOf(opName, tpe) =>
-            val operId = OperationId(opName, tpe)
-            val cost = CostTable.DefaultCosts(operId)
-            out(cost)
+          case costOp: CostOf =>
+            out(costOp.eval)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {

@@ -57,9 +57,9 @@ Id    |   Type
 6     |   BigInt (java.math.BigInteger)
 7     |   GroupElement (org.bouncycastle.math.ec.ECPoint)
 8     |   SigmaProp 
-9     |   reserved for Char
-10    |   reserved for String 
-11    |   reserved for Double
+9     |   reserved for Char 
+10    |   reserved for Double 
+11    |   reserved 
 
 For each type constructor like Coll or Option we use the encoding schema defined below.
 Type constructor has associated _base code_ (e.g. 12 for `Coll[_]`, 24 for `Coll[Coll[_]]` etc. ), which is multiple of 12.
@@ -93,8 +93,9 @@ Interval            | Type constructor   | Description
 0x63(99)            |  `Box`             | Box type 
 0x64(100)           |  `AvlTree`         | AvlTree type 
 0x65(101)           |  `Context`         | Context type 
-0x65(102)           |                    | reserved for String type
-0x66(103) - 0x6E(110)|                   | reserved for future use 
+0x65(102)           |  `String`          | String 
+0x66(103)           |  `IV`              | TypeIdent 
+0x67(104)- 0x6E(110)|                   | reserved for future use 
 0x6F(111)           |                    | Reserved for future `Class` type (e.g. user-defined types) 
 
 
