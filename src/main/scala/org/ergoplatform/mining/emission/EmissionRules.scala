@@ -8,8 +8,8 @@ import scala.annotation.tailrec
   * Ergo coin emission curve.
   *
   * Mainnet properties:
-  * 1000000000 parts of one coin
-  * block every 2 minutes
+  * 1000000000 nanoErgs (minimal non-divisible parts) in one Erg
+  * a block is coming every 2 minutes
   * fixed rate 75 coins during first 2 years
   * reward reduction for 3 coins every 3 month after that
   * 19710000 coins after the first year
@@ -37,8 +37,7 @@ class EmissionRules(val settings: MonetarySettings) {
   val minersCoinsTotal: Long = coinsTotal - foundersCoinsTotal
 
   /**
-    * Emission rules.
-    * Return number of coins, issued at height `h` and all previous heights
+    * Returns number of coins issued at height `h` and before that
     */
   def issuedCoinsAfterHeight(h: Long): Long = {
     if (h < settings.fixedRatePeriod) {
@@ -58,7 +57,7 @@ class EmissionRules(val settings: MonetarySettings) {
   }
 
   /**
-    * Number not issued yet coins, after height `h`
+    * Number not issued yet coins after height `h`
     */
   def remainingCoinsAfterHeight(h: Long): Long = coinsTotal - issuedCoinsAfterHeight(h)
 
@@ -75,7 +74,7 @@ class EmissionRules(val settings: MonetarySettings) {
   }.ensuring(_ >= 0, s"Negative at $h")
 
   /**
-    * Return number of coins, issued at height `h` in favour of a miner
+    * Returns number of coins issued at height `h` in favour of a miner
     */
   def minersRewardAtHeight(h: Long): Long = {
     if (h < settings.fixedRatePeriod + 2 * settings.epochLength) {
@@ -87,7 +86,7 @@ class EmissionRules(val settings: MonetarySettings) {
   }
 
   /**
-    * Return number of coins, that should be kept in the foundation box at height `h`
+    * Returns number of coins which should be kept in the foundation box at height `h`
     */
   def remainingFoundationRewardAtHeight(h: Long): Long = {
     val foundersInitialReward = settings.foundersInitialReward
@@ -109,7 +108,7 @@ class EmissionRules(val settings: MonetarySettings) {
   }
 
   /**
-    * Return number of coins, issued at height `h` in favour of the foundation
+    * Returns number of coins issued at height `h` in favour of the foundation
     */
   def foundationRewardAtHeight(h: Long): Long = {
     if (h < settings.fixedRatePeriod) {
