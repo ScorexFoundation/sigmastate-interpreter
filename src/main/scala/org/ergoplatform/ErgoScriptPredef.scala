@@ -56,8 +56,8 @@ object ErgoScriptPredef {
   }
 
   /**
-    * Proposition, that allows to send coins to a box, that is protected by the following proposition:
-    * prove dlog of miners public key and height is at least `delta` blocks bigger then the current one
+    * Proposition that allows to send coins to a box which is protected by the following proposition:
+    * prove dlog of miner's public key and height is at least `delta` blocks bigger then the current one.
     */
   def feeProposition(delta: Int = 720): Value[SBoolean.type] = {
     val out = ByIndex(Outputs, IntConstant(0))
@@ -69,8 +69,7 @@ object ErgoScriptPredef {
   }
 
   /**
-    * Proposition box, that only allows to collect a part of all coins
-    * to a box with miner proposition.
+    * A contract that only allows to collect emission reward by a box with miner proposition.
     */
   def emissionBoxProp(s: MonetarySettings): Value[SBoolean.type] = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
@@ -109,10 +108,10 @@ object ErgoScriptPredef {
     * - conditions from the first non-mandatory register (R4) are satisfied
     *
     * Thus, this script always controls the level of emission and does not allow to take
-    * more coins, that is defined in emission rules. In addition it is protected by
-    * custom proposition R4, that is assumed to be a simple 2-of-3 multisignature with
+    * more coinы than prescribed by emission rules. In addition, it is protected by
+    * custom proposition in R4 which is assumed to be a simple 2-of-3 multisignature with
     * public keys of foundation members in the beginning. When foundation members spend
-    * this box, they are free to put any proposition they wish to R4 register, thus they
+    * this box, they are free to put any new proposition to the R4 register, thus they
     * may add or remove members, or change it to something more complicated like
     * `tokenThresholdScript`.
     */
