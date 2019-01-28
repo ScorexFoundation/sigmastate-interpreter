@@ -12,9 +12,11 @@ import sigmastate.utxo._
 import sigmastate._
 
 /**
-  * Coin emission specification.
-  * Instead of having implicit emission via coinbase transaction, we implement 1 output in a state with script
-  * that controls emission rules
+  * An example of currency emission contract.
+  * Instead of having implicit emission via coinbase transaction, we put 1 coin into genesis state with a script
+  * that controls emission.
+  * This script is corresponding to the whitepaper. Please note that Ergo has different contract
+  * defined in ErgoScriptPredef.
   */
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
