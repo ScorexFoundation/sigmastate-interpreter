@@ -234,24 +234,20 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("Collection.indices") {
-    testMissingCosting("Coll(true, false).indices",
+    comp("Coll(true, false).indices") shouldBe
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
         SCollection.IndicesMethod,
         Vector()
       )
-    )
   }
 
   property("SCollection.flatMap") {
-    testMissingCosting("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })",
+    comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
       mkMethodCall(Outputs,
         SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
-        Vector(Terms.Lambda(
-          Vector(("out",SBox)),
-          SCollection(SBoolean),
-          Some(ConcreteCollection(Vector(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))),SBoolean)))))
-    )
+        Vector(FuncValue(1,SBox,
+          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))))
   }
 
   property("SNumeric.toBytes") {
@@ -445,13 +441,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.indexOf") {
-    testMissingCosting("Coll(1, 2).indexOf(1, 0)",
+    comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0))
       )
-    )
   }
 
   property("SCollection.lastIndexOf") {

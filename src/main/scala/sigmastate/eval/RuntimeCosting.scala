@@ -1531,6 +1531,31 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
+        val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
+        val argsCostVals = args.map {
+          case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
+            val funC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, sfunc)).func
+            val (calcF, costF) = splitCostedFunc2(funC, okRemoveIsValid = true)
+            val cost = xsC.values.zip(xsC.costs.zip(xsC.sizes)).map(costF).sum(intPlusMonoid)
+            (cost, calcF)
+          case a@_ =>
+            val aC = eval(a)
+            (aC.cost, aC.value)
+        }
+        val argsCosts = argsCostVals.map(_._1)
+        // todo add costOf(node)
+        val cost = argsCosts.foldLeft(xsC.cost)({ case (s, e) => s + e }) // + costOf(node)
+        val argsVals = argsCostVals.map(_._2)
+        val xsV = xsC.value
+        val value = (method.name, argsVals) match {
+          case (SCollection.IndexOfMethod.name, Seq(e, from)) => xsV.indexOf(e, asRep[Int](from))
+          case (SCollection.IndicesMethod.name, _) => xsV.indices
+          case (SCollection.FlatMapMethod.name, Seq(f)) => xsV.flatMap(asRep[Any => Coll[Any]](f))
+          case _ => error(s"method $method is not supported")
+        }
+        withDefaultSize(value, cost)
+
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }

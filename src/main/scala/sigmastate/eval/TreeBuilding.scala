@@ -228,6 +228,21 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
+      case CollM.indexOf(colSym, elemSym, In(from)) =>
+        val col = recurse(colSym)
+        val elem = recurse(elemSym)
+        val tpe = elemToSType(elemSym.elem)
+        val method = SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> tpe))
+        builder.mkMethodCall(col, method, IndexedSeq(elem, from))
+      case CollM.indices(colSym) =>
+        val col = recurse(colSym)
+        builder.mkMethodCall(col, SCollection.IndicesMethod, IndexedSeq())
+      case CollM.flatMap(colSym, fSym) =>
+        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
+        val tpe = elemToSType(colSym.elem).asCollection
+        val method = SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType,
+          SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
+        builder.mkMethodCall(col, method, IndexedSeq(f))
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
