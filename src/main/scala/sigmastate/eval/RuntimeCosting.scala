@@ -1431,21 +1431,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val resCost = cC.cost + (tC.cost max eC.cost) + costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT))
         mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
 
-      case op: Relation[t,_] if op.tpe == SBigInt =>
-        import OpCodes._
-        op.opCode match {
-          case GtCode =>
-            val x = asRep[Costed[WBigInteger]](evalNode(ctx, env, op.left))
-            val y = asRep[Costed[WBigInteger]](evalNode(ctx, env, op.right))
-            val resSize = x.dataSize.min(y.dataSize)
-            val cost = x.cost + y.cost + costOf(op) + costOf(">_per_item", op.opType) * resSize.toInt
-            RCCostedPrim(x.value.compareTo(y.value) > 0, cost, resSize)
-          //          case MinusCode => NumericMinus(elemToNumeric(eT))(eT)
-          //          case MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
-          //          case DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
-          //          case ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
-          case _ => error(s"Cannot perform Costing.evalNode($op)")
-        }
       case rel: Relation[t, _] =>
         val tpe = rel.left.tpe
         val et = stypeToElem(tpe)
@@ -1455,7 +1440,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
           val value = binop.apply(x.value, asRep[t#WrappedType](y.value))
           val cost =
-            if (tpe.isConstantSize) x.cost + y.cost
+            if (tpe.isConstantSize) {
+              val opCost = if (tpe == SBigInt) {
+                costOf(rel.opName, SBigInt.RelationOpType)
+              } else
+                costOf(rel)
+              x.cost + y.cost + opCost
+            }
             else x.cost + y.cost + perKbCostOf(node, x.dataSize + y.dataSize)
           val res = withDefaultSize(value, cost)
           res
@@ -1543,12 +1534,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
       val res = evalNode(ctxC, env, tree)
       res
-//      val res1 = res match {
-//        case RCostedPrim(SigmaPropMethods.isProven(p), Def(ApplyBinOp(op, l, r)), s) if op.isInstanceOf[NumericPlus[_]] =>
-//          RCostedPrim(p, l.asRep[Int], s)
-//        case _ => res
-//      }
-//      res1.asRep[Costed[T#WrappedType]]
     }
   }
 
