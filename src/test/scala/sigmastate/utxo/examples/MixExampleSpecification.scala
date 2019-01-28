@@ -22,7 +22,7 @@ import sigmastate.utxo._
 class MixExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
-  property("Evaluation - Mix Example") {
+  ignore("Evaluation - Mix Example") {
     import CryptoConstants.dlogGroup
 
     val g = dlogGroup.generator

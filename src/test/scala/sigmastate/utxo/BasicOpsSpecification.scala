@@ -61,7 +61,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     }
 
     val prop = compileWithCosting(env, script).asBoolValue
-    prop shouldBe propExp
+    if (propExp != null)
+      prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
     val boxToSpend = ErgoBox(10, prop, additionalRegisters = Map(
@@ -70,7 +71,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       creationHeight = 5)
 
     val newBox1 = ErgoBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
-      reg1 -> SigmaPropConstant(p3),
+      reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
     val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(newBox1))
 
@@ -527,6 +528,43 @@ class BasicOpsSpecification extends SigmaTestingCommons {
           GE(ExtractRegisterAs(ValUse(1,SBox), ErgoBox.R5, SOption(SInt)).get, Plus(Height, IntConstant(10))),
           NEQ(CalcBlake2b256(ExtractScriptBytes(ValUse(1,SBox))), ConcreteCollection(Vector(ByteConstant(1.toByte)), SByte))
         ))),
+      true
+    )
+  }
+
+  property("Nested logical ops 1") {
+   test("nestedLogic1", env, ext,
+     """{
+      |    val c = OUTPUTS(0).R4[Int].get
+      |    val d = OUTPUTS(0).R5[Int].get
+      |
+      |    OUTPUTS.size == 2 &&
+      |    OUTPUTS(0).value == SELF.value &&
+      |    OUTPUTS(1).value == SELF.value
+      |} == false""".stripMargin,
+     null,
+     true
+   )
+  }
+
+  ignore("Nested logical ops 2") {
+    test("nestedLogic", env, ext,
+      """{
+       |    val c = OUTPUTS(0).R4[Int].get
+       |    val d = OUTPUTS(0).R5[Int].get
+       |
+       |    OUTPUTS.size == 2 &&
+       |    OUTPUTS(0).value == SELF.value &&
+       |    OUTPUTS(1).value == SELF.value &&
+       |    blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&
+       |    blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&
+       |    OUTPUTS(1).R4[GroupElement].get == d &&
+       |    OUTPUTS(1).R5[GroupElement].get == c && {
+       |      proveDHTuple(g, c, u, d) ||
+       |      proveDHTuple(g, d, u, c)
+       |    }
+       |}""".stripMargin,
+      FalseLeaf,
       true
     )
   }

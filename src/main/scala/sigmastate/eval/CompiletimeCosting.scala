@@ -26,9 +26,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
-        eval(SigmaPropConstant(node.asSigmaBoolean))
-
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 

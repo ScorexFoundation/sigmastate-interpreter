@@ -83,6 +83,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     * true - substitute; false - create CostOf nodes */
   var substFromCostTable: Boolean = true
 
+//  /** Pass configuration which is used by default in IRContext. */
+//  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
+//
+//  /** Pass configuration which is used during splitting cost function out of cost graph.
+//    * @see `RuntimeCosting.split2` */
+//  val costPass = new DefaultPass("costPass", Pass.defaultPassConfig.copy(constantPropagation = true))
+//
+//  beginPass(costPass)
+
   def createSliceAnalyzer = new SliceAnalyzer
 
   val CollMarking = new TraversableMarkingFor[Coll]
@@ -405,11 +414,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val CostedOptionM = CostedOptionMethods
     val CostedBoxM = CostedBoxMethods
     val WOptionM = WOptionMethods
+    val WArrayM = WArrayMethods
     val CM = CollMethods
     val CostedBuilderM = CostedBuilderMethods
     val SPCM = WSpecialPredefCompanionMethods
 
     d match {
+      case WArrayM.length(Def(arrC: WArrayConst[_,_])) => arrC.constValue.length
+      // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
         val r = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](root)))
@@ -419,6 +431,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           l || r
         res.isValid
 
+      // Rule: l op Thunk {... prop.isValid} => (TrivialSigma(l) op prop).isValid
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
         val l1 = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](l)))
         // don't need new Thunk because sigma logical ops always strict
@@ -1375,9 +1388,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case BinOr(l, r) =>
         val lC = evalNode(ctx, env, l)
-        val rValTh = Thunk(evalNode(ctx, env, r).value)
-        val rCost = evalNode(ctx, env, r).cost   // cost graph is built without Thunk (upper bound approximation)
-        withDefaultSize(Or.applyLazy(lC.value, rValTh), lC.cost + rCost + costOf(node))
+        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
+        val v = Or.applyLazy(lC.value, rC.value)
+        val c = lC.cost + rC.cost + costOf(node)
+        withDefaultSize(v, c)
+
 
       case BinAnd(l, r) =>
         val lC = evalNode(ctx, env, l)
@@ -1399,6 +1414,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
         val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
         withDefaultSize(res, cost)
+
+//      case If(c, t, e) =>
+//        val cC = evalNode(ctx, env, c)
+//        val tC = RCostedThunk(Thunk(evalNode(ctx, env, t)), 0)
+//        val eC = RCostedThunk(Thunk(evalNode(ctx, env, e)), 0)
+//        val resV = IF (cC.value) THEN tC.value ELSE eC.value
+//        val resCost = cC.cost + (tC.cost max eC.cost) + costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT))
+//        mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
+
+      case If(c, t, e) =>
+        val cC = evalNode(ctx, env, c)
+        def tC = evalNode(ctx, env, t)
+        def eC = evalNode(ctx, env, e)
+        val resV = IF (cC.value) THEN tC.value ELSE eC.value
+        val resCost = cC.cost + (tC.cost max eC.cost) + costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT))
+        mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
 
       case op: Relation[t,_] if op.tpe == SBigInt =>
         import OpCodes._
@@ -1429,14 +1460,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val res = withDefaultSize(value, cost)
           res
         }
-
-      case If(c, t, e) =>
-        val cC = evalNode(ctx, env, c)
-        def tC = evalNode(ctx, env, t)
-        def eC = evalNode(ctx, env, e)
-        val resV = IF (cC.value) THEN tC.value ELSE eC.value
-        val resCost = cC.cost + (tC.cost max eC.cost) + costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT))
-        mkCosted(resV, resCost, tC.dataSize max eC.dataSize)
 
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
         val eAny = stypeToElem(argTpe).asElem[Any]

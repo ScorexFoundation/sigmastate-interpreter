@@ -13,7 +13,9 @@ import sigmastate.utxo.ExtractAmount
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification with SigmaTestingCommons {
 
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext {
+    beginPass(noConstPropagationPass)
+  }
 
   private def passThroughTreeBuilder(tree: Value[SType]): Value[SType] = {
     val env = Map[String, Any]()
