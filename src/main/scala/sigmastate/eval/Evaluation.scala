@@ -20,24 +20,19 @@ trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
   import Col._
-  import ReplCol._
   import CReplCol._
   import Box._
   import AvlTree._
   import ColBuilder._
   import SigmaDslBuilder._
   import CostedBuilder._
-  import CCostedBuilder._
-  import Monoid._
   import MonoidBuilder._
-  import MonoidBuilderInst._
   import TrivialSigma._
   import ProveDlogEvidence._
   import ProveDHTEvidence._
   import WBigInteger._
   import WArray._
   import WOption._
-  import WECPoint._
   import Liftables._
 
   val okPrintEvaluatedEntries: Boolean = false
