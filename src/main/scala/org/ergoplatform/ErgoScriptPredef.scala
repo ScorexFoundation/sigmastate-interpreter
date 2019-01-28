@@ -28,17 +28,15 @@ object ErgoScriptPredef {
     * Byte array value of the serialized reward output script proposition with pk being substituted
     * with given pk
     *
-    * @param delta           - number of blocks miner should hold this box before spending it
+    * @param delta           - number of blocks for which miner should hold this box before spending it
     * @param minerPkBytesVal - byte array val for pk to substitute in the reward script
     */
   def expectedMinerOutScriptBytesVal(delta: Int, minerPkBytesVal: Value[SByteArray]): Value[SByteArray] = {
     val genericPk = ProveDlog(CryptoConstants.dlogGroup.generator)
     val genericMinerProp = rewardOutputScript(delta, genericPk)
     val genericMinerPropBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(genericMinerProp)
-    val expectedGenericMinerProp = AND(
-      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
-      genericPk
-    )
+    val expectedGenericMinerProp = rewardOutputScript(delta, genericPk)
+
     assert(genericMinerProp == expectedGenericMinerProp, s"reward output script changed, check and update constant position for substitution below")
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))

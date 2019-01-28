@@ -53,6 +53,7 @@ class EmissionSpec extends SigmaTestingCommons {
     checkHeight(settings.fixedRatePeriod)
     checkHeight(settings.fixedRatePeriod + settings.epochLength)
     checkHeight(settings.fixedRatePeriod + 2 * settings.epochLength)
+    checkHeight(settings.fixedRatePeriod + 8 * settings.epochLength)
   }
 
 }
