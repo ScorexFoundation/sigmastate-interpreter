@@ -13,7 +13,7 @@ import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperExcep
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
@@ -532,6 +532,34 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  property("SCollection.mapReduce") {
+    testMissingCosting(
+      "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.MapReduceMethod.withConcreteTypes(Map(
+          SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
+        Vector(
+          Lambda(List(),
+            Vector(("i", SInt)),
+            STuple(SBoolean, SLong),
+            Some(Tuple(Vector(
+              GT(Ident("i", SInt).asIntValue, IntConstant(0)),
+              Upcast(Ident("i", SInt).asIntValue, SLong)
+            )))
+          ),
+          Lambda(List(),
+            Vector(("tl", STuple(SLong, SLong))),
+            SLong,
+            Some(Plus(
+              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 1).asInstanceOf[Value[SLong.type]],
+              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 2).asInstanceOf[Value[SLong.type]])
+            )
+          )
+        )
+      )
+    )
+  }
 
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)

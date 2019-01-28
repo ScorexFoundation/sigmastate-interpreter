@@ -688,6 +688,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val tIV = STypeIdent("IV")
   val tOV = STypeIdent("OV")
+  val tK = STypeIdent("K")
+  val tV = STypeIdent("V")
   val SizeMethod = SMethod(this, "size", SInt, 1)
   val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))), 2, Some {
     case (builder, obj, method, Seq(index, defaultValue)) =>
@@ -771,6 +773,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val PartitionMethod = SMethod(this, "partition",
     SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), STuple(SCollection(tIV), SCollection(tIV)), Seq(STypeParam(tIV))),
     33, MethodCallIrBuilder)
+  val MapReduceMethod = SMethod(this, "mapReduce",
+    SFunc(
+      IndexedSeq(SCollection(tIV), SFunc(tIV, STuple(tK, tV)), SFunc(STuple(tV, tV), tV)),
+      SCollection(STuple(tK, tV)),
+      Seq(STypeParam(tIV), STypeParam(tK), STypeParam(tV))),
+    34, MethodCallIrBuilder)
 
   lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
@@ -806,6 +814,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     StartsWithMethod,
     EndsWithMethod,
     PartitionMethod,
+    MapReduceMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
