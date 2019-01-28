@@ -47,7 +47,7 @@ Type Name        |   Description
 `SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
 `AvlTree`        | authenticated dynamic dictionary
 `GroupElement`   | elliptic curve points
-`Box`            | a box containing a value, tokens and registers along with a guarding proposition
+`Box`            | a box containing a monetary value (in NanoErgs), tokens and registers along with a guarding proposition
 `Option[T]`      | a container which either have some value of type `T` or none.
 `Coll[T]`        | a collection of arbitrary length with all values of type `T` 
 `(T1,...,Tn)`    | tuples, a collection of element where T1, ..., Tn can be different types

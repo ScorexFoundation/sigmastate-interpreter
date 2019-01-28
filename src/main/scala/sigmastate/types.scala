@@ -90,7 +90,7 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
@@ -259,7 +259,7 @@ object SPrimType {
   def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
 
   /** Type code of the last valid prim type so that (1 to LastPrimTypeCode) is a range of valid codes. */
-  final val LastPrimTypeCode: Byte = 9: Byte
+  final val LastPrimTypeCode: Byte = 8: Byte
 
   /** Upper limit of the interval of valid type codes for primitive types */
   final val MaxPrimTypeCode: Byte = 11: Byte
@@ -404,6 +404,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
   }
 }
 
+/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
@@ -450,7 +451,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
 case object SString extends SProduct with STypeCompanion {
   override type WrappedType = String
   override def ancestors: Seq[SType] = Nil
-  override val typeCode: TypeCode = 101: Byte
+  override val typeCode: TypeCode = 102: Byte
   override def typeId = typeCode
   override val methods: Seq[SMethod] = Nil
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
@@ -783,7 +784,7 @@ case class STypeIdent(name: String) extends SType {
   override def toString = name
 }
 object STypeIdent {
-  val TypeCode = 102: Byte
+  val TypeCode = 103: Byte
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

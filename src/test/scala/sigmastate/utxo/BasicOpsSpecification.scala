@@ -2,8 +2,9 @@ package sigmastate.utxo
 
 import java.lang.reflect.InvocationTargetException
 
-import org.ergoplatform.ErgoBox.{R4, R6, R8}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, Height, Self}
+import org.ergoplatform.ErgoBox.{R6, R4, R8}
+import org.ergoplatform.ErgoLikeContext.dummyPubkey
+import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
@@ -14,7 +15,9 @@ import special.sigma.InvalidType
 import scalan.BaseCtxTests
 
 class BasicOpsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR = new TestingIRContext {
+    override val okPrintEvaluatedEntries: Boolean = false
+  }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters.tail.head
@@ -61,22 +64,28 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     prop shouldBe propExp
 
     val p3 = prover.dlogSecrets(2).publicImage
-    val outputToSpend = ErgoBox(10, prop, additionalRegisters = Map(
+    val boxToSpend = ErgoBox(10, prop, additionalRegisters = Map(
       reg1 -> SigmaPropConstant(p3),
       reg2 -> IntConstant(1)),
       creationHeight = 5)
 
-    val ctx = ErgoLikeContext.dummy(outputToSpend)
+    val newBox1 = ErgoBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
+      reg1 -> SigmaPropConstant(p3),
+      reg2 -> IntConstant(10)))
+    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(newBox1))
 
-    val namedEnv = env + (ScriptNameProp -> name)
-    val pr = prover.prove(namedEnv, prop, ctx, fakeMessage).get
+    val ctx = ErgoLikeContext(currentHeight = 0,
+      lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
+      spendingTransaction = tx, self = boxToSpend)
+
+    val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), prop, ctx, fakeMessage).get
 
     val ctxExt = ctx.withExtension(pr.extension)
 
     val verifier = new ErgoLikeTestInterpreter
     if (!onlyPositive)
-      verifier.verify(namedEnv, prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
-    verifier.verify(namedEnv, prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
+      verifier.verify(env + (ScriptNameProp -> s"${name}_verify"), prop, ctx, pr.proof, fakeMessage).map(_._1).getOrElse(false) shouldBe false //context w/out extensions
+    verifier.verify(env + (ScriptNameProp -> s"${name}_verify_ext"), prop, ctxExt, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
   property("Relation operations") {
@@ -502,6 +511,23 @@ class BasicOpsSpecification extends SigmaTestingCommons {
           Vector(IntConstant(2))
         ),
         IntConstant(3)),
+    )
+  }
+
+  property("missing variable in env buildValue error") {
+    test("missingVar", env, ext,
+      """
+        |OUTPUTS.forall({(out:Box) =>
+        |  out.R5[Int].get >= HEIGHT + 10 &&
+        |  blake2b256(out.propositionBytes) != Coll[Byte](1.toByte)
+        |})
+      """.stripMargin,
+      ForAll(Outputs, FuncValue(Vector((1,SBox)),
+        BinAnd(
+          GE(ExtractRegisterAs(ValUse(1,SBox), ErgoBox.R5, SOption(SInt)).get, Plus(Height, IntConstant(10))),
+          NEQ(CalcBlake2b256(ExtractScriptBytes(ValUse(1,SBox))), ConcreteCollection(Vector(ByteConstant(1.toByte)), SByte))
+        ))),
+      true
     )
   }
 }
