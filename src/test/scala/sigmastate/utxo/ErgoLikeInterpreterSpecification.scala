@@ -419,7 +419,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val brother = ErgoBox(10, pubkey1, 0)
-    val brotherWithWrongId = ErgoBox(10, pubkey1, 0, boxId = 120: Short)
+    val brotherWithWrongId = ErgoBox(10, pubkey1, 0, boxIndex = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2, 0)
 
@@ -493,7 +493,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val friend = ErgoBox(10, pubkey1, 0)
-    val friendWithWrongId = ErgoBox(10, pubkey1, 0, boxId = 120: Short)
+    val friendWithWrongId = ErgoBox(10, pubkey1, 0, boxIndex = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2, 0)
 
@@ -504,7 +504,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compileWithCosting(env,
       """{
         |
-        | val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
+        | def isFriend(inputBox: Box) = inputBox.id == friend.id
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 

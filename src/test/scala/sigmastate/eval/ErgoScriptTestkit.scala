@@ -1,13 +1,15 @@
 package sigmastate.eval
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+
 import scala.util.Success
 import sigmastate.{AvlTreeData, SInt, SLong, SType}
 import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.utxo.CostTable
 import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
-import sigmastate.lang.LangTests
+import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -25,7 +27,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import Context._
   import WBigInteger._
 
-
+  lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
@@ -62,7 +64,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     backerPubKeyId -> backerPubKey,
     projectPubKeyId -> projectPubKey,
     3.toByte -> bigIntArr1
-  )).arr
+  )).toArray
 
   val boxToSpend = ErgoBox(10, TrueLeaf, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
@@ -128,7 +130,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
     def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
       val costed = script match {
-        case Code(code) => cost(env, code)
+        case Code(code) => compileAndCost(env, code)
         case Tree(tree) => cost(env, tree)
       }
       val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
@@ -224,13 +226,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def checkInEnv(env: ScriptEnv, name: String, script: String,
                  expectedCalc: Rep[Context] => Rep[Any],
                  expectedCost: Rep[Context] => Rep[Int] = null,
-                 expectedSize: Rep[Context] => Rep[Long] = null
+                 expectedSize: Rep[Context] => Rep[Long] = null,
+                 printGraphs: Boolean = true
                 ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
     val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
       Option(expectedCost),
-      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs = true )
+      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs)
     val res = tc.doCosting
     res
   }
@@ -238,10 +241,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def check(name: String, script: String,
       expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
-      expectedSize: Rep[Context] => Rep[Long] = null
+      expectedSize: Rep[Context] => Rep[Long] = null,
+      printGraphs: Boolean = true
       ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
+    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
   }
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
@@ -254,8 +258,13 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
+  def compileAndCost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
+    val typed = compiler.typecheck(env, code)
+    cost(env, typed)
+  }
+
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
-    val costed = cost(env, script)
+    val costed = compileAndCost(env, script)
     val Tuple(valueF, costF, sizeF) = split3(costed)
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))

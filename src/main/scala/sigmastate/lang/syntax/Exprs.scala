@@ -3,9 +3,9 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.SigmaPredef.ZKProofSym
 import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCallLike, Apply, Val, ValueOps, Select, Ident}
 import sigmastate.lang._
+import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
@@ -30,6 +30,9 @@ trait Exprs extends Core with Types {
 
   val TypeExpr = ExprCtx.Expr
 
+  private val predefFuncRegistry = new PredefinedFuncRegistry(builder)
+  import predefFuncRegistry._
+
   //noinspection TypeAnnotation,ForwardReference
   class WsCtx(semiInference: Boolean, arrowTypeAscriptions: Boolean){
 
@@ -43,7 +46,7 @@ trait Exprs extends Core with Types {
           case (c, t, e) => builder.mkIf(c.asValue[SBoolean.type], t, e)
         }
       }
-//      val Fun = P( /* `fun` ~/ */ FunDef)
+      val Fun = P(`def` ~ FunDef)
 
       val LambdaRhs = if (semiInference) P( BlockChunk.map {
         case (_ , b)  => mkBlock(b)
@@ -61,7 +64,7 @@ trait Exprs extends Core with Types {
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
 //      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
-      P( If /*| Fun*/ | SmallerExprOrLambda )
+      P( If | Fun | SmallerExprOrLambda )
     }
 
     val SuperPostfixSuffix = P( (`=` ~/ Expr).? /*~ MatchAscriptionSuffix.?*/ )
@@ -192,7 +195,7 @@ trait Exprs extends Core with Types {
       case STypeApply("", targs) => mkApplyTypes(acc, targs)
       case arg: SValue => acc match {
         case Ident(name, _) if name == "ZKProof" => arg match {
-          case Terms.Block(_, body) => Apply(ZKProofSym, IndexedSeq(body))
+          case Terms.Block(_, body) => Apply(ZKProofFunc.sym, IndexedSeq(body))
           case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock")
         }
         case _ => mkApply(acc, IndexedSeq(arg))
@@ -202,13 +205,20 @@ trait Exprs extends Core with Types {
     rhs
   }
 
-//  val FunDef = {
-//    val Body = P( WL ~ `=>` ~ StatCtx.Expr )
-//    P( FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-//      case (_ @ Seq(args), resType, body) => builder.mkLambda(args.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-//      case (secs, resType, body) => error(s"Function can only have single argument list: fun ($secs): $resType = $body")
-//    }
-//  }
+  val FunDef = {
+    val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
+    P(DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
+      case (None, n, args, resType, body) =>
+        val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        builder.mkVal(n, resType.getOrElse(NoType), lambda)
+      case (Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
+        val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
+        val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        builder.mkVal(n, resType.getOrElse(NoType), lambda)
+      case (dottyExt, n, secs, resType, body) =>
+        error(s"Function can only have single argument list: def ${dottyExt.getOrElse("")} $n($secs): ${resType.getOrElse(NoType)} = $body")
+    }
+  }
 
   val SimplePattern = {
     val TupleEx = P( "(" ~/ Pattern.repTC() ~ ")" )

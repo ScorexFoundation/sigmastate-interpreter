@@ -30,7 +30,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   private val coinsInOneErgo: Long = 100000000
   private val blocksPerHour: Int = 30
 
-  case class MonetarySettings(fixedRatePeriod: Long,
+  case class MonetarySettings(fixedRatePeriod: Int,
                               epochLength: Int,
                               fixedRate: Long,
                               oneEpochReduction: Long)
@@ -50,7 +50,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     loop(0, 0)
   }
 
-  def emissionAtHeight(h: Long): Long = {
+  def emissionAtHeight(h: Int): Long = {
     if (h < s.fixedRatePeriod) {
       s.fixedRate
     } else {
@@ -67,14 +67,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))
 
-    val epoch = Plus(LongConstant(1), Divide(Minus(Height, LongConstant(s.fixedRatePeriod)), LongConstant(s.epochLength)))
-    val coinsToIssue = If(LT(Height, LongConstant(s.fixedRatePeriod)),
+    val epoch = Plus(IntConstant(1), Divide(Minus(Height, IntConstant(s.fixedRatePeriod)), IntConstant(s.epochLength)))
+    val coinsToIssue = If(LT(Height, IntConstant(s.fixedRatePeriod)),
       s.fixedRate,
-      Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch))
+      Minus(s.fixedRate, Multiply(s.oneEpochReduction, Upcast(epoch, SLong)))
     )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
-    val heightCorrect = EQ(ExtractRegisterAs[SLong.type](rewardOut, register).get, Height)
-    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register).get)
+    val heightCorrect = EQ(ExtractRegisterAs[SInt.type](rewardOut, register).get, Height)
+    val heightIncreased = GT(Height, ExtractRegisterAs[SInt.type](Self, register).get)
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
     val outputsNum = EQ(SizeOf(Outputs), 2)
@@ -99,11 +99,11 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val epoch = 1 + ((HEIGHT - fixedRatePeriod) / epochLength)
         |    val out = OUTPUTS(0)
         |    val minerOut = OUTPUTS(1)
-        |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
+        |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch.toLong)
         |    val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |    val sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    val heightIncreased = HEIGHT > SELF.R4[Long].get
-        |    val heightCorrect = out.R4[Long].get == HEIGHT
+        |    val heightIncreased = HEIGHT > SELF.R4[Int].get
+        |    val heightCorrect = out.R4[Int].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    val outputsNum = OUTPUTS.size == 2
         |    val correctMinerProposition = minerOut.propositionBytes ==
@@ -117,7 +117,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val minerPubkey = minerImage.pkBytes
     val minerProp = minerImage
 
-    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(register -> LongConstant(-1)))
+    val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal, prop, 0, Seq(), Map(register -> IntConstant(-1)))
     val initBlock = BlockchainSimulationSpecification.Block(
       IndexedSeq(
         ErgoLikeTransaction(
@@ -140,15 +140,15 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       val ut = if (emissionBox.value > s.oneEpochReduction) {
         val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Seq(), Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Seq(), Map(register -> LongConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Seq(), Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Seq(), Map(register -> LongConstant(height)))
-        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Seq(), Map(register -> LongConstant(height)))
+        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Seq(), Map(register -> IntConstant(height)))
+        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Seq(), Map(register -> IntConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox1, minerBox2)

@@ -66,8 +66,8 @@ class EvaluationTest extends BaseCtxTests
     // access R5 and call g only if f returns false
     reduce(emptyEnv, "lam4",
       """{
-       |  val f = { (out: Box) => out.value >= 0L };
-       |  val g = { (x: Int) => x < 0 };
+       |  def f(out: Box) = out.value >= 0L;
+       |  def g(x: Int) = x < 0;
        |  f(SELF) || g(SELF.R5[Int].get)
        | }""".stripMargin, ctx, true)
 
@@ -85,7 +85,18 @@ class EvaluationTest extends BaseCtxTests
       ctx = new RuntimeIRContext
     }
     println(s"Def count: ${ctx.defCount}")
+    /*
+    Iter 0: 4 ms
+        ...
+    Iter 96: 2 ms
+    Iter 97: 1 ms
+    Iter 98: 2 ms
+    Iter 99: 2 ms
+    Total time: 244 ms
+    Def count: 20
+    */
   }
+  
 //  test("Crowd Funding") {
 //    val backerProver = new ErgoLikeProvingInterpreter
 //    val projectProver = new ErgoLikeProvingInterpreter

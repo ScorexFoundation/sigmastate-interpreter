@@ -379,7 +379,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val code =
       """{
         |  val indexCollection = Coll(0, 1, 2, 3, 4, 5)
-        |  val elementRule = {(index: Int) =>
+        |  def elementRule(index: Int) = {
         |    val boundaryIndex = if (index == 0) 5 else (index - 1)
         |    boundaryIndex >= 0 && boundaryIndex <= 5
         |  }

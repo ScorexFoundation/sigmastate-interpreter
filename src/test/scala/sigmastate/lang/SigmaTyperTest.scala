@@ -1,6 +1,7 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Inputs}
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.{ErgoAddressEncoder, Height, Inputs}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
@@ -15,14 +16,18 @@ import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+  import predefFuncRegistry._
+
   def typecheck(env: ScriptEnv, x: String, expected: SValue = null): SType = {
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder)
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(builder)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       if (expected != null) typed shouldBe expected
       typed.tpe
@@ -35,10 +40,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     try {
       val builder = TransformingSigmaBuilder
       val parsed = SigmaParser(x, builder).get.value
-      val binder = new SigmaBinder(env, builder)
+      val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+      val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
       val st = new SigmaTree(bound)
-      val typer = new SigmaTyper(builder)
+      val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       assert(false, s"Should not typecheck: $x")
     } catch {
@@ -87,7 +93,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("predefined functions") {
-    typecheck(env, "allOf") shouldBe AllSym.tpe
+    typecheck(env, "allOf") shouldBe AllOfFunc.declaration.tpe
     typecheck(env, "allOf(Coll(c1, c2))") shouldBe SBoolean
     typecheck(env, "getVar[Byte](10).get") shouldBe SByte
     typecheck(env, "getVar[Coll[Byte]](10).get") shouldBe SByteArray
@@ -103,8 +109,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("111")""") shouldBe SSigmaProp
-    typecheck(env, """PK("111")""") shouldBe SSigmaProp
+    typecheck(env, """PK("tJPvNjccEZZF2Cwb6WNsRFmUa79Dy3npbmnfUKnBRREq2cuaULCo2R")""") shouldBe SSigmaProp
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }
@@ -242,8 +247,12 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "{ (a) => a + 1 }", "undefined type of argument")
   }
 
-  property("function definitions") {
+  property("function definitions via val") {
     typecheck(env, "{ val f = { (x: Int) => x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
+  }
+
+  property("function definitions") {
+    typecheck(env, "{ def f(x: Int) = { x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
   }
 
   property("predefined primitives") {
@@ -488,4 +497,91 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.plusModQ(1)")
     an[TyperException] should be thrownBy typecheck(env, "10.toBigInt.minusModQ(1)")
   }
+
+  property("byteArrayToLong") {
+    typecheck(env, "byteArrayToLong(Coll[Byte](1.toByte))") shouldBe SLong
+    an[TyperException] should be thrownBy typecheck(env, "byteArrayToLong(Coll[Int](1))")
+  }
+
+  property("decodePoint") {
+    typecheck(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe SGroupElement
+    an[TyperException] should be thrownBy typecheck(env, "decodePoint(Coll[Int](1))")
+  }
+
+  property("xorOf") {
+    typecheck(env, "xorOf(Coll[Boolean](true, false))") shouldBe SBoolean
+    an[TyperException] should be thrownBy typecheck(env, "xorOf(Coll[Int](1))")
+  }
+
+  property("outerJoin") {
+    typecheck(env,
+      """outerJoin[Byte, Short, Int, Long](
+        | Coll[(Byte, Short)]((1.toByte, 2.toShort)),
+        | Coll[(Byte, Int)]((1.toByte, 3.toInt)),
+        | { (b: Byte, s: Short) => (b + s).toLong },
+        | { (b: Byte, i: Int) => (b + i).toLong },
+        | { (b: Byte, s: Short, i: Int) => (b + s + i).toLong }
+        | )""".stripMargin) shouldBe SCollection(STuple(SByte, SLong))
+  }
+
+  property("AtLeast (invalid parameters)") {
+    an [TyperException] should be thrownBy typecheck(env, "atLeast(2, 2)")
+  }
+
+  property("substConstants") {
+    typecheck(env, "substConstants[Long](Coll[Byte](1.toByte), Coll[Int](1), Coll[Long](1L))") shouldBe SByteArray
+  }
+
+  property("executeFromVar") {
+    typecheck(env, "executeFromVar[Boolean](1)") shouldBe SBoolean
+  }
+
+  property("LogicalNot") {
+    typecheck(env, "!true") shouldBe SBoolean
+    an [TyperException] should be thrownBy typecheck(env, "!getVar[SigmaProp](1).get")
+  }
+
+  property("Negation") {
+    typecheck(env, "-HEIGHT") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "-true")
+  }
+
+  property("BitInversion") {
+    typecheck(env, "~1") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "~true")
+  }
+
+  property("LogicalXor") {
+    typecheck(env, "true ^ false") shouldBe SBoolean
+  }
+
+  property("BitwiseOr") {
+    typecheck(env, "1 | 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true | false")
+  }
+
+  property("BitwiseAnd") {
+    typecheck(env, "1 & 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true & false")
+  }
+
+  property("BitwiseXor") {
+    typecheck(env, "1 ^ 2") shouldBe SInt
+  }
+
+  property("BitShiftRight") {
+    typecheck(env, "1 >> 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true >> false")
+  }
+
+  property("BitShiftLeft") {
+    typecheck(env, "1 << 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true << false")
+  }
+
+  property("BitShiftRightZeroed") {
+    typecheck(env, "1 >>> 2") shouldBe SInt
+    an [TyperException] should be thrownBy typecheck(env, "true >>> false")
+  }
+
 }

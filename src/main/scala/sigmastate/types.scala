@@ -14,7 +14,7 @@ import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
-import special.collection.Col
+import special.collection.Coll
 
 import scala.collection.mutable
 import scala.language.implicitConversions
@@ -90,7 +90,7 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
@@ -137,8 +137,8 @@ object SType {
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
       case t: STuple => reflect.classTag[Array[Any]]
-      case tCol: SCollection[a] =>
-        val elemType = tCol.elemType
+      case tColl: SCollection[a] =>
+        val elemType = tColl.elemType
         implicit val ca = elemType.classTag[elemType.WrappedType]
         reflect.classTag[Array[elemType.WrappedType]]
       case _ => sys.error(s"Cannot get ClassTag for type $tpe")
@@ -259,7 +259,7 @@ object SPrimType {
   def unapply(t: SType): Option[SType] = SType.allPredefTypes.find(_ == t)
 
   /** Type code of the last valid prim type so that (1 to LastPrimTypeCode) is a range of valid codes. */
-  final val LastPrimTypeCode: Byte = 9: Byte
+  final val LastPrimTypeCode: Byte = 8: Byte
 
   /** Upper limit of the interval of valid type codes for primitive types */
   final val MaxPrimTypeCode: Byte = 11: Byte
@@ -404,6 +404,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
   }
 }
 
+/** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
@@ -450,7 +451,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
 case object SString extends SProduct with STypeCompanion {
   override type WrappedType = String
   override def ancestors: Seq[SType] = Nil
-  override val typeCode: TypeCode = 101: Byte
+  override val typeCode: TypeCode = 102: Byte
   override def typeId = typeCode
   override val methods: Seq[SMethod] = Nil
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
@@ -588,7 +589,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
     CollectionConstant(v, elemType).asValue[this.type]
 
   override def dataSize(v: SType#WrappedType): Long = {
-    val arr = (v match { case col: Col[_] => col.arr case _ => v}).asInstanceOf[Array[T#WrappedType]]
+    val arr = (v match { case col: Coll[_] => col.toArray case _ => v}).asInstanceOf[Array[T#WrappedType]]
     val header = 2
     val res =
       if (arr.isEmpty)
@@ -643,7 +644,7 @@ object SCollection extends STypeCompanion {
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
-  def unapply[T <: SType](tCol: SCollection[T]): Option[T] = Some(tCol.elemType)
+  def unapply[T <: SType](tColl: SCollection[T]): Option[T] = Some(tColl.elemType)
 
   type SBooleanArray      = SCollection[SBoolean.type]
   type SByteArray         = SCollection[SByte.type]
@@ -672,7 +673,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override val typeCode = STuple.TupleTypeCode
 
   override def dataSize(v: SType#WrappedType) = {
-    val arr = (v match { case col: Col[_] => col.arr case _ => v}).asInstanceOf[Array[Any]]
+    val arr = (v match { case col: Coll[_] => col.toArray case _ => v}).asInstanceOf[Array[Any]]
     assert(arr.length == items.length)
     var sum: Long = 2 // header
     for (i <- arr.indices) {
@@ -685,7 +686,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
 
   override val methods: Seq[SMethod] = {
     val tupleMethods = Array.tabulate(items.size) { i =>
-      SMethod(STuple, componentNames(i), items(i), (i + 1).toByte)
+      SMethod(STuple, componentNameByIndex(i), items(i), (i + 1).toByte)
     }
     colMethods ++ tupleMethods
   }
@@ -726,13 +727,21 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val componentNames = Array.tabulate(31){ i => s"_${i + 1}" }
+  val MaxTupleLength = 255
+  private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
+  def componentNameByIndex(i: Int): String =
+    try componentNames(i)
+    catch {
+      case e: IndexOutOfBoundsException =>
+        throw new IllegalArgumentException(
+          s"Tuple component '_${i+1}' is not defined: valid range (1 .. $MaxTupleLength)", e)
+    }
 }
 
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil)
       extends SType with SGenericType
 {
-  override type WrappedType = Seq[Any] => tRange.WrappedType
+  override type WrappedType = Array[Any] => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
   override def isConstantSize = false
   override def toString = {
@@ -775,7 +784,7 @@ case class STypeIdent(name: String) extends SType {
   override def toString = name
 }
 object STypeIdent {
-  val TypeCode = 102: Byte
+  val TypeCode = 103: Byte
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 

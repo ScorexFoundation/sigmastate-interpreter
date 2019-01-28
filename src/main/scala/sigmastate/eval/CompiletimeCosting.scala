@@ -26,51 +26,8 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
 
-      // Rule: allOf(arr) --> AND(arr)
-      case Terms.Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkAND(arr))
-
-      // Rule: anyOf(arr) --> OR(arr)
-      case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkOR(arr))
-
-      // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
-      case Terms.Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
-        eval(mkAtLeast(bound.asIntValue, arr))
-
-      case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcBlake2b256(arg))
-
-      case Terms.Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcSha256(arg))
-
-      case Terms.Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkIsMember(tree, key, proof))
-
-      case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-        eval(mkProveDlog(g))
-
-      case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-        eval(mkLongToByteArray(arg))
-
-      case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
-        eval(mkByteArrayToBigInt(arr))
-
-      case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
-        eval(mkBoolToSigmaProp(bool))
-
-      case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-        eval(mkProveDiffieHellmanTuple(
-          g.asGroupElement,
-          h.asGroupElement,
-          u.asGroupElement,
-          v.asGroupElement))
-
-      case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeModifications(tree, operations, proof))
-
-      case Terms.Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeLookup(tree, key, proof))
+      case _: DLogProtocol.ProveDlog | _: ProveDHTuple =>
+        eval(SigmaPropConstant(node.asSigmaBoolean))
 
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))

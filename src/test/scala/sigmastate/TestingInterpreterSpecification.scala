@@ -355,7 +355,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     // block with nested lambda (assigned to a val)
     testEval(
       """ Coll[Int](1,2,3).exists { (a: Int) =>
-        |   val g = { (c: Int) => c == 1 }
+        |   def g(c: Int) = c == 1
         |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }
@@ -376,7 +376,7 @@ case class TestingContext(height: Int,
     val inputs = Array[Box]()
     val outputs = Array[Box]()
     val vars = Array[AnyValue]()
-    val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
+    val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
     val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
     new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
       lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,

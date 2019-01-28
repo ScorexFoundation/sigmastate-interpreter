@@ -96,7 +96,7 @@ object Terms {
     override val opCode: OpCode = OpCodes.FuncApplyCode
     override lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
-      case tCol: SCollectionType[_] => tCol.elemType
+      case tColl: SCollectionType[_] => tColl.elemType
       case _ => NoType
     }
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
@@ -165,6 +165,8 @@ object Terms {
   object Lambda {
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
+    def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =
+      Lambda(Nil, args, resTpe, body)
     def apply(args: IndexedSeq[(String,SType)], body: Value[SType]): Lambda = Lambda(Nil, args, NoType, Some(body))
   }
 

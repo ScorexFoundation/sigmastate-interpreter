@@ -39,7 +39,7 @@ trait Core extends syntax.Literals {
   val `_` = W("_")
   val `type` = W("type")
   val `val` = W("val")
-  val `fun` = W("fun")
+  val `def` = W("def")
   val `case` = W("case")
   val `then` = W("then")
   val `else` = W("else")
