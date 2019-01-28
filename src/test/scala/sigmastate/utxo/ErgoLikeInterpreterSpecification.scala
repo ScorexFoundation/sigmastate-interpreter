@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Bytes
-import org.ergoplatform.ErgoLikeContext._
+import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
@@ -9,7 +9,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -332,8 +332,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = SigmaAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).asSigmaProp,
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).asSigmaProp)
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
@@ -613,5 +613,39 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
     //todo: check failing branches
+  }
+
+  property("DeserializeRegister value type mismatch") {
+    val prover = new ErgoLikeTestProvingInterpreter
+
+    val sigmaProp = SigmaPropConstant(prover.dlogSecrets.head.publicImage)
+    // put SigmaProp into the register
+    val regValue = ByteArrayConstant(ValueSerializer.serialize(sigmaProp))
+    val box = ErgoBox(20, TrueLeaf, 0, Seq(), Map(R4 -> regValue))
+
+    // expect SBoolean in the register
+    val prop = DeserializeRegister(R4, SBoolean)
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(box),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, TrueLeaf, 0))),
+      self = box)
+
+    an[RuntimeException] should be thrownBy
+      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+  }
+
+  property("non-const ProveDHT") {
+    import sigmastate.interpreter.CryptoConstants.dlogGroup
+    compileWithCosting(Map("gA" -> dlogGroup.generator),
+      "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
+    ).asInstanceOf[BlockValue].result shouldBe a [ProveDHTuple]
+  }
+
+  property("non-const ProveDlog") {
+    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [ProveDlog]
   }
 }

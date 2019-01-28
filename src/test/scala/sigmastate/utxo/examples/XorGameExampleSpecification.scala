@@ -70,6 +70,21 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |  }
         |}""".stripMargin
     ).asBoolValue
+    //    val fullGameScript = compileWithCosting(fullGameEnv,
+    //      """{
+    //        |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
+    //        |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
+    //        |  val b           = SELF.R4[Byte].get          // Bob's public bit b (represented as a byte)
+    //        |  val bobPubKey   = SELF.R5[SigmaProp].get
+    //        |  val bobDeadline = SELF.R6[Int].get           // after this height, Bob gets to spend unconditionally
+    //        |
+    //        |  (bobPubKey && HEIGHT > bobDeadline) || {
+    //        |    blake2b256(s ++ Coll(a)) == h && {         // h is Alice's original commitment from the halfGameScript
+    //        |      alicePubKey && a == b || bobPubKey && a != b
+    //        |    }
+    //        |  }
+    //        |}""".stripMargin
+    //    ).asBoolValue
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",

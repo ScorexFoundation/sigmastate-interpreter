@@ -105,6 +105,15 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |}""".stripMargin
     ).asBoolValue
 
+    //    val depositScriptBad = compileWithCosting(depositEnv,
+    //      """{
+    //        |  alicePubKey && OUTPUTS.forall({(out:Box) =>
+    //        |    out.R5[Int].get >= HEIGHT + 30 &&
+    //        |    blake2b256(out.propositionBytes) == withdrawScriptHash
+    //        |  })
+    //        |}""".stripMargin
+    //    ).asBoolValue
+
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
     val depositAddress = Pay2SHAddress(depositScript)
