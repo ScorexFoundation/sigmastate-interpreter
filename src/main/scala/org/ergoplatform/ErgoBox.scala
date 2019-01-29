@@ -150,8 +150,8 @@ object ErgoBox {
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
-            boxId: Short = 0): ErgoBox =
-    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxId, creationHeight)
+            boxIndex: Short = 0): ErgoBox =
+    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxIndex, creationHeight)
 
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 

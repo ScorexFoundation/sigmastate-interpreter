@@ -106,7 +106,7 @@ represent cost and size (costing information, costing properties).
 Note, that `cost` and `dataSize` are independent parameters because some _costed_ values may have 
 very small `dataSize`, but at the same time very high `cost`, e.g. result of contract may be `true` 
 boolean value whose `dataSize` is 1 byte, but its `cost` is the cost of executing the whole contract. 
-The opposite is also possible. For example a context variable of `Col[Byte]` type have `cost` equal 0,
+The opposite is also possible. For example a context variable of `Coll[Byte]` type have `cost` equal 0,
 but may have very big `dataSize`.
 
 From this perspective Costed Graph `graphC` is a data flow graph between costed values.
@@ -210,23 +210,23 @@ CCostedPair(
     CCostedPrim(true, costOf("Const:() => Boolean"), sizeOf[Boolean])))
 ```
 
-##### Costed Values of Col Type
+##### Costed Values of Coll Type
 
-If `Item` is a type of array element, then costed value of type `Col[Item]` is 
-represented by the following specializations of `Costed[Col[Item]]` type
+If `Item` is a type of array element, then costed value of type `Coll[Item]` is 
+represented by the following specializations of `Costed[Coll[Item]]` type
 ```scala 
-class CCostedCol[Item](
+class CCostedColl[Item](
       val values: Coll[Item], val costs: Coll[Int],
-      val sizes: Coll[Long], val valuesCost: Int) extends CostedCol[Item] {
+      val sizes: Coll[Long], val valuesCost: Int) extends CostedColl[Item] {
   def value: Coll[Item] = values
   def cost: Int = valuesCost + costs.sum
   def dataSize: Long = sizes.sum
-  def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedCol[Res] = rewritableMethod
+  def mapCosted[Res](f: Costed[Item] => Costed[Res]): CostedColl[Res] = rewritableMethod
   def foldCosted[B](zero: Costed[B], op: Costed[(B, Item)] => Costed[B]): Costed[B] = rewritableMethod
 }
 ```
-For constant, context variables and registers values of `Col` type the costing information 
-of `CCostedCol` is computed from actual data.
+For constant, context variables and registers values of `Coll` type the costing information 
+of `CCostedColl` is computed from actual data.
 
 Note methods `mapCosted` and `foldCosted`, these methods represent costed version of original
 collection methods. Note the methods are defined as rewritable, meaning their implementation 
@@ -309,7 +309,7 @@ explicit by using `eval` helper and also employ other idioms of staged evaluatio
 ```scala
   case MapCollection(input, id, mapper) =>
     val eIn = stypeToElem(input.tpe.elemType)   // translate sigma type to Special type descriptor
-    val xs = asRep[CostedCol[Any]](eval(input)) // recursively build subgraph for input argument
+    val xs = asRep[CostedColl[Any]](eval(input)) // recursively build subgraph for input argument
     implicit val eAny = xs.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
     assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
     val mapperC = fun { x: Rep[Costed[Any]] => // x argument is already costed
@@ -409,13 +409,13 @@ of the specific cases into reusable modules.
 to hook into graph building process and perform on the fly substitution of
 specific sub-graphs with equivalent but different sub-graphs.
 The following rule uses auto-generated extractor `mapCosted` which recognizes invocations of method 
-`CostedCol.mapCosted` (Remember, this method was used in costing rule for `MapCollection` tree node).
+`CostedColl.mapCosted` (Remember, this method was used in costing rule for `MapCollection` tree node).
 
 ```scala
 override def rewriteDef[T](d: Def[T]): Rep[_] = {
-  val CCM = CostedColMethods
+  val CCM = CostedCollMethods
   d match {
-  case CCM.mapCosted(xs: RCostedCol[a], _f: RCostedFunc[_, b]) =>
+  case CCM.mapCosted(xs: RCostedColl[a], _f: RCostedFunc[_, b]) =>
     val f = asRep[Costed[a] => Costed[b]](_f)
     val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
     val vals = xs.values.map(calcF)
@@ -436,7 +436,7 @@ override def rewriteDef[T](d: Def[T]): Rep[_] = {
       colBuilder.replicate(xs.sizes.length, typeSize(tpeB))
     } else
       xs.sizes.map(sizeF)
-    RCCostedCol(vals, costs, sizes, xs.valuesCost)
+    RCCostedColl(vals, costs, sizes, xs.valuesCost)
   case _ => super.rewriteDef(d)
   }
 }

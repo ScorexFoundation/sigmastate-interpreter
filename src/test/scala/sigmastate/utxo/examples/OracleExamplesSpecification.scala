@@ -108,7 +108,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
         reg2 -> GroupElementConstant(a),
         reg3 -> BigIntConstant(z),
         reg4 -> LongConstant(ts)),
-      boxId = 1
+      boxIndex = 1
     )
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
@@ -152,7 +152,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
-    val newBox1 = ErgoBox(20, alicePubKey, 0, boxId = 2)
+    val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
@@ -161,14 +161,14 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
 
-    val sAlice = ErgoBox(10, propAlice, 0, Seq(), Map(), boxId = 3)
+    val sAlice = ErgoBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
-    val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxId = 4)
+    val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -417,13 +417,13 @@ class Rule110Specification extends SigmaTestingCommons {
       require(row >= 1)
 
       (0 until bitsInString).map { col =>
-        val leftCol = if (col == 0) lastBitIndex else col - 1
-        val centerCol = col
-        val rightCol = if (col == lastBitIndex) 0 else col + 1
+        val leftColl = if (col == 0) lastBitIndex else col - 1
+        val centerColl = col
+        val rightColl = if (col == lastBitIndex) 0 else col + 1
 
-        val left = byPos(state, row - 1, leftCol)
-        val center = byPos(state, row - 1, centerCol)
-        val right = byPos(state, row - 1, rightCol)
+        val left = byPos(state, row - 1, leftColl)
+        val center = byPos(state, row - 1, centerColl)
+        val right = byPos(state, row - 1, rightColl)
 
         val lv = left.get(ValueReg).get.asInstanceOf[BooleanConstant].value
         val cv = center.get(ValueReg).get.asInstanceOf[BooleanConstant].value

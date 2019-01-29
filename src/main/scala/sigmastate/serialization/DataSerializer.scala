@@ -39,16 +39,16 @@ object DataSerializer {
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
       AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
-    case tCol: SCollectionType[a] =>
-      val arr = v.asInstanceOf[tCol.WrappedType]
+    case tColl: SCollectionType[a] =>
+      val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
-      tCol.elemType match {
+      tColl.elemType match {
         case SBoolean =>
           w.putBits(arr.asInstanceOf[Array[Boolean]])
         case SByte =>
           w.putBytes(arr.asInstanceOf[Array[Byte]])
         case _ =>
-          arr.foreach(x => serialize(x, tCol.elemType, w))
+          arr.foreach(x => serialize(x, tColl.elemType, w))
       }
 
     case t: STuple =>
@@ -90,12 +90,12 @@ object DataSerializer {
       ErgoBox.serializer.parseBody(r)
     case SAvlTree =>
       AvlTreeData.serializer.parseBody(r)
-    case tCol: SCollectionType[a] =>
+    case tColl: SCollectionType[a] =>
       val len = r.getUShort()
-      if (tCol.elemType == SByte)
+      if (tColl.elemType == SByte)
         r.getBytes(len)
       else
-        deserializeArray(len, tCol.elemType, r)
+        deserializeArray(len, tColl.elemType, r)
     case tuple: STuple =>
       val arr =  tuple.items.map { t =>
         deserialize(t, r)

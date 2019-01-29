@@ -3,13 +3,20 @@ package sigmastate.utxo
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
-
 import scala.collection.mutable
 
 case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
+  @inline private def cleanOperId(operId: OperationId): OperationId = {
+    if (operId.opType.tpeParams.isEmpty) operId
+    else operId.copy(opType = operId.opType.copy(tpeParams = Nil))
+  }
+  @inline final def get(operId: OperationId): Option[Int] = {
+    val cleanId = cleanOperId(operId)
+    operCosts.get(cleanId)
+  }
   override def apply(operId: OperationId): Int = {
-    val cleanOperId = operId.copy(opType = operId.opType.copy(tpeParams = Nil))
-    operCosts.get(cleanOperId) match {
+    val costOpt = this.get(operId)
+    costOpt match {
       case Some(cost) => cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
@@ -26,6 +33,7 @@ object CostTable {
   val multiplyGroup = 50
   val groupElementConst = 1
   val constCost = 1
+  val lambdaCost = 1
 
   val plusMinus = 2
   val multiply = 10
@@ -65,6 +73,10 @@ object CostTable {
     ("Const", "() => SigmaProp", constCost),
     ("Const", "() => Coll[IV]", constCost),
     ("Const", "() => Box", constCost),
+    ("Const", "() => AvlTree", constCost),
+
+    ("Lambda", "() => (D1) => R", lambdaCost),
+
     ("ConcreteCollection", "() => Coll[IV]", constCost),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
@@ -340,8 +352,8 @@ object CostTableStat {
     stat.map { case (opId, item) =>
       val cost = item.sum / item.count
       val avgLen = item.sumLen / item.count
-      val isCol = opId.opType.tRange.isCollection
-      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isCol) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
+      val isColl = opId.opType.tRange.isCollection
+      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isColl) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
     }.mkString("Seq(", "", "\n)")
   }
 }
