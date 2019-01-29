@@ -9,7 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.AvlTreeData
 import sigmastate.Values.{ByteConstant, GroupElementConstant, IntConstant, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
+import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -31,38 +31,38 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
-    val u = alicePubKey.h // u is Alice's public key (u = g^x)
+    val g_x = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
     // Alternative 1:
-    //      val u = alicePubKey.value // u is Alice's public key (u = g^x)
+    //      val g_x = alicePubKey.value
     // Alternative 2:
     //    Generate x ourselves (e.g., val x = BigInt(randomBytes).bigInteger)
-    //    To generate u from a BigInteger x, and to generate alicePubKey as ProveDlog type from u, use the following:
-    //      val u:EcPointType = dlogGroup.exponentiate(dlogGroup.generator, x)
-    //      val alicePubKey:ProveDlog = ProveDlog(u)
+    //    To generate g_x from a BigInteger x, and to generate alicePubKey as ProveDlog type from g_x, use the following:
+    //      val g_x:EcPointType = dlogGroup.exponentiate(g, x)
+    //      val alicePubKey:ProveDlog = ProveDlog(g_x)
 
     val fullMixEnv = Map(
       ScriptNameProp -> "fullMixEnv",
       "g" -> g,
-      "u" -> u
+      "g_x" -> g_x
     )
 
-    ProveDlog(u) shouldBe alicePubKey
+    ProveDlog(g_x) shouldBe alicePubKey
 
     // y is Bob's secret key and h = g^y is kind of like his "public key"
-    // The Diffie-Hellman solution is v = h^x = u^y = g^xy.
+    // The Diffie-Hellman solution is g_xy = g_y^x = g_x^y = g^xy.
     val fullMixScript = compileWithCosting(fullMixEnv,
       """{
         |  val e = SELF.R4[GroupElement].get
         |  val f = SELF.R5[GroupElement].get
-        |  proveDlog(f) ||          // either f is g^y
-        |  proveDHTuple(g, e, u, f) // or f is u^y = g^xy
+        |  proveDlog(f) ||            // either f is g^y
+        |  proveDHTuple(g, e, g_x, f) // or f is u^y = g^xy
         |}""".stripMargin
     ).asBoolValue
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
-      "u" -> u,
+      "g_x" -> g_x,
       "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
     )
 
@@ -75,15 +75,6 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     val halfMixScript = compileWithCosting(halfMixEnv,
       """{
-        |  val h = OUTPUTS(0).R4[GroupElement].get
-        |  val v = OUTPUTS(0).R5[GroupElement].get
-        |
-        |  proveDHTuple(g, u, h, v)
-        |}""".stripMargin
-    ).asBoolValue
-
-    val halfMixScriptActual = compileWithCosting(halfMixEnv,
-      """{
         |  val c = OUTPUTS(0).R4[GroupElement].get
         |  val d = OUTPUTS(0).R5[GroupElement].get
         |
@@ -94,8 +85,8 @@ class MixExampleSpecification extends SigmaTestingCommons {
         |  blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&
         |  OUTPUTS(1).R4[GroupElement].get == d &&
         |  OUTPUTS(1).R5[GroupElement].get == c && {
-        |    proveDHTuple(g, c, u, d) ||
-        |    proveDHTuple(g, d, u, c)
+        |    proveDHTuple(g, g_x, c, d) ||
+        |    proveDHTuple(g, g_x, d, c)
         |  }
         |}""".stripMargin
     ).asBoolValue
@@ -128,22 +119,23 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
-    val h:GroupElementConstant = GroupElementConstant(bobPubKey.h) // g^y
-    val hAlt = GroupElementConstant(dlogGroup.exponentiate(g, y))
+    val g_y = GroupElementConstant(bobPubKey.h) // g^y
+    val g_y_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
 
-    h shouldBe hAlt
+    g_y shouldBe g_y_alt
 
-    val v:GroupElementConstant = GroupElementConstant(dlogGroup.exponentiate(u, y))
-    val vAlt = GroupElementConstant(dlogGroup.exponentiate(h, x))
+    // To Do: Extract below g_x from halfMixOutput
+    val g_xy = GroupElementConstant(dlogGroup.exponentiate(g_x, y))
+    val g_xy_alt = GroupElementConstant(dlogGroup.exponentiate(g_y, x))
 
-    v shouldBe vAlt
+    g_xy shouldBe g_xy_alt
 
     val randomBit = scala.util.Random.nextBoolean
     // randomBit is interpreted as follows
     //     0 is false
     //     1 is true
 
-    val (c0, c1) = if (randomBit) (v, h) else (h, v)
+    val (c0, c1) = if (randomBit) (g_xy, g_y) else (g_y, g_xy)
 
     val fullMixCreationHeight = 80
 
@@ -176,9 +168,85 @@ class MixExampleSpecification extends SigmaTestingCommons {
     )
 
     // bob (2nd player) is generating a proof and it is passing verification
-    val proofFullMix = bob.prove(halfMixEnv, halfMixScript, fullMixContext, fakeMessage).get.proof
+    // To Do: Extract below g_x from halfMixOutput
+    val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
 
-//    verifier.verify(halfMixEnv, halfMixScript, fullMixContext, proofFullMix, fakeMessage).get._1 shouldBe true
+    val proofFullMix = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+      Seq(dhtBob)
+    ).prove(halfMixEnv, halfMixScript, fullMixContext, fakeMessage).get.proof
+
+    verifier.verify(halfMixEnv, halfMixScript, fullMixContext, proofFullMix, fakeMessage).get._1 shouldBe true
+
+    //////////////////////////////////////////////
+    //// Setup for spending the above created outputs (fullMixOutput0, fullMixOutput1)
+    //////////////////////////////////////////////
+
+    // some 3rd person that will be paid
+    val carol = new ErgoLikeTestProvingInterpreter
+    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+
+    val spendHeight = 90
+    val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
+
+    // normally this transaction would be invalid, but we're not checking it in this test
+    val spendingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolOutput))
+
+    //////////////////////////////////////////////
+    //// Alice spending her output
+    //////////////////////////////////////////////
+
+    val fullMixOutput0_R4 = fullMixOutput0.additionalRegisters(R4).v
+    val fullMixOutput0_R5 = fullMixOutput0.additionalRegisters(R5).v
+
+    fullMixOutput0_R4 shouldBe c0
+    fullMixOutput0_R5 shouldBe c1
+
+    val r4_x = dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x) // R4^x
+
+    // if R4^x == R5 then this fullMixOutput0 is Alice's output else its Bob's output.
+    val (aliceAnonBox, bobAnonBox) = if (r4_x == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
+      println("First output is Alice's")
+      (fullMixOutput0, fullMixOutput1)
+    } else {
+      println("First output is Bob's")
+      dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
+      (fullMixOutput1, fullMixOutput0)
+    }
+
+    val aliceSpendContext = ErgoLikeContext(
+      currentHeight = spendHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(aliceAnonBox),
+      spendingTransaction = spendingTx,
+      self = aliceAnonBox
+    )
+
+    // To Do: Extract below g_y, g_xy from fullMixOutputs registers
+    val dhtAlice = DiffieHellmanTupleProverInput(x, ProveDHTuple(g, g_y, g_x, g_xy))
+
+    val proofAliceSpend = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+      Seq(dhtAlice)
+    ).prove(fullMixEnv, fullMixScript, aliceSpendContext, fakeMessage).get.proof
+
+    verifier.verify(fullMixEnv, fullMixScript, aliceSpendContext, proofAliceSpend, fakeMessage).get._1 shouldBe true
+
+    //////////////////////////////////////////////
+    //// Bob spending his output
+    //////////////////////////////////////////////
+
+    val bobSpendContext = ErgoLikeContext(
+      currentHeight = spendHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(bobAnonBox),
+      spendingTransaction = spendingTx,
+      self = bobAnonBox
+    )
+
+    val proofBobSpend = bob.prove(fullMixEnv, fullMixScript, bobSpendContext, fakeMessage).get.proof
+
+    verifier.verify(fullMixEnv, fullMixScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
 
   }
 
