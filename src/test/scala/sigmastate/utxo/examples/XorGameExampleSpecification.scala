@@ -3,18 +3,18 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ByteConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedBox, ValDef, ValUse}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
 class XorGameExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
   /** XOR game:
 
      Alice creates a XOR game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
@@ -70,21 +70,6 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |  }
         |}""".stripMargin
     ).asBoolValue
-    //    val fullGameScript = compileWithCosting(fullGameEnv,
-    //      """{
-    //        |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
-    //        |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
-    //        |  val b           = SELF.R4[Byte].get          // Bob's public bit b (represented as a byte)
-    //        |  val bobPubKey   = SELF.R5[SigmaProp].get
-    //        |  val bobDeadline = SELF.R6[Int].get           // after this height, Bob gets to spend unconditionally
-    //        |
-    //        |  (bobPubKey && HEIGHT > bobDeadline) || {
-    //        |    blake2b256(s ++ Coll(a)) == h && {         // h is Alice's original commitment from the halfGameScript
-    //        |      alicePubKey && a == b || bobPubKey && a != b
-    //        |    }
-    //        |  }
-    //        |}""".stripMargin
-    //    ).asBoolValue
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",

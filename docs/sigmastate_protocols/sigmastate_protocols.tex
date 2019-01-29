@@ -303,13 +303,13 @@ Alice's spending condition for $A$ is that the transaction should be as follows:
 	\begin{enumerate}
 		\item It has two inputs of equal value, one of which is $A$. %The value of the second input should be the same as in $A$. 
 		\item It has two outputs $(O_0, O_1)$ with data $(g, c, u, d)$ and $(g, d, u, c)$ respectively.
-		\item The spender of $A$ must satisfy $\texttt{ProveDHTuple}(g, c, u, d)\lor \texttt{ProveDHTuple}(g, d, u, c)$.
+		\item The spender of $A$ must satisfy $\texttt{ProveDHTuple}(g, u, c, d)\lor \texttt{ProveDHTuple}(g, u, d, c)$.
 		\item The outputs should be protected by the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
 		%Additionally, the spending condition for $O_0, O_1$ is $s_\textsf{Alice}(g_A, y_A, c_0, c_1) \lor s_\textsf{Bob}(g_A, y_A, c_0, c_1)$.
 	\end{enumerate}
 	
 	
-	\item \textbf{Mix:} Bob randomly picks one unspent box from the pool, for instance, $A$. Bob then picks a random secret bit $b$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values such that $C_b$ is spendable only by Alice and $C_{1-b}$ is spendable only by Bob. This is done as follows:
+	\item \textbf{Mix:} Bob randomly picks one unspent box from the pool, for instance, $A$. Bob then picks a random secret bit $b \in \mathbb{Z}_2$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values such that $C_b$ is spendable only by Alice and $C_{1-b}$ is spendable only by Bob. This is done as follows:
 	
 	\begin{enumerate}
 		%\item Bob selects a secret bit $b$. Then output $O_b$ is spendable by Bob alone, while $O_{1-b}$ is spendable by Alice alone. %Lets call these the intermediate boxes. 
