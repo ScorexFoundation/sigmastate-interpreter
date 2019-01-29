@@ -1533,20 +1533,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
-        val argsCostVals = args.map {
+        val (argsVals, argsCosts) = args.map {
           case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
             val funC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, sfunc)).func
             val (calcF, costF) = splitCostedFunc2(funC, okRemoveIsValid = true)
             val cost = xsC.values.zip(xsC.costs.zip(xsC.sizes)).map(costF).sum(intPlusMonoid)
-            (cost, calcF)
-          case a@_ =>
+            (calcF, cost)
+          case a =>
             val aC = eval(a)
-            (aC.cost, aC.value)
-        }
-        val argsCosts = argsCostVals.map(_._1)
+            (aC.value, aC.cost)
+        }.unzip
         // todo add costOf(node)
         val cost = argsCosts.foldLeft(xsC.cost)({ case (s, e) => s + e }) // + costOf(node)
-        val argsVals = argsCostVals.map(_._2)
         val xsV = xsC.value
         val value = (method.name, argsVals) match {
           case (SCollection.IndexOfMethod.name, Seq(e, from)) => xsV.indexOf(e, asRep[Int](from))
