@@ -466,13 +466,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("indices") {
     assertProof("OUTPUTS.indices == Coll(0)",
+      EQ(MethodCall(Outputs, SCollection.IndicesMethod, Vector()), ConcreteCollection(IntConstant(0))),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("segmentLength") {
+    assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
       EQ(
         MethodCall(Outputs,
-          SCollection.IndicesMethod,
-          Vector()
+          SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          )
         ),
-        ConcreteCollection(IntConstant(0))
-      ),
-      IndexedSeq(1L, 1L))
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
   }
 }
