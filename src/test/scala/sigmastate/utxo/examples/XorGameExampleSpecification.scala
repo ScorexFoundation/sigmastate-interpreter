@@ -87,7 +87,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    val b             = out.R4[Byte].get
         |    val bobDeadline   = out.R6[Int].get
         |    val validBobInput = b == 0 || b == 1
-        |
+        |    // Bob needs to ensure that out.R5 contains bobPubKey
         |    OUTPUTS.size == 1 &&
         |    bobDeadline >= HEIGHT+30 &&
         |    out.value >= SELF.value * 2 &&

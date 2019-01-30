@@ -1,0 +1,307 @@
+
+package sigmastate.utxo.examples
+
+import org.ergoplatform.ErgoBox.{R4, R5, R6, R7}
+import org.ergoplatform._
+import scorex.crypto.hash.Blake2b256
+import scorex.utils.Random
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoolean, SigmaPropConstant}
+import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
+import sigmastate.utxo._
+
+class RPSGameExampleSpecification extends SigmaTestingCommons {
+  implicit lazy val IR = new TestingIRContext
+  /** XOR game:
+
+     Alice creates a RPS game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
+     Another player (Bob) then sends a transaction spending Alice's UTXO and creating two outputs called "fullGameOutputs" ("Full game" UTXOs).
+     After Alice opens her commitment (see below), the fullGameOutputs can be spent by the winner.
+     The transactions encode the following protocol.
+
+     protocol:
+       Step 1: Alice commits to secret number a in {0, 1, 2} as follows:
+                  Generate random s and compute h = Hash(s||a)
+                  h is the commitment to a
+               Alice also selects the "play amount", the amount each player must spend to participate.
+               She generates a halfGameOutput encoding h and some spending condition given below by halfGameScript
+       Step 2: Bob chooses random number b from {0, 1, 2} (public) and creates a new tx spending Alice's UTXO along with
+               some others and creating two outputs that has the spending conditions given by fullGameScript.
+               (one of the conditions being that the amount of that output is >= twice the play amount.)
+       Step 3: Alice reveals (s, a) to open her commitment and winner is decided as per RPS rules.
+               If Alice fails to open her commitment before some deadline then Bob automatically wins.
+
+    For simplicity, we will use following bytes to designate choices
+        0x00 = 0 = rock
+        0x01 = 1 = paper
+        0x02 = 2 = scissors
+
+    */
+  property("Evaluation - RpsGame Example") {
+
+    // Alice is first player, who initiates the game
+    val alice = new ErgoLikeTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+
+    val a:Byte = (scala.util.Random.nextInt.abs % 3).toByte
+    val s:Array[Byte] = Random.randomBytes(31) // random padding
+    val h = Blake2b256(s :+ a) // Alice's commitment
+
+    val fullGameEnv = Map(
+      ScriptNameProp -> "fullGameScriptEnv",
+      "alicePubKey" -> alicePubKey,
+      "h" -> h
+    )
+
+    val fullGameScript = compileWithCosting(fullGameEnv,
+      """{
+        |  val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
+        |  val a = getVar[Byte](1).get        // Alice's secret choice a (represented as a byte)
+        |  val b = SELF.R4[Byte].get          // Bob's public choice b (represented as a byte)
+        |  val bobPubKey = SELF.R5[SigmaProp].get
+        |  val bobDeadline = SELF.R6[Int].get // after this height, Bob gets to spend unconditionally
+        |  val drawPubKey = SELF.R7[SigmaProp].get
+        |
+        |  (bobPubKey && HEIGHT > bobDeadline) || {
+        |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == h
+        |    valid_a && {
+        |      val a_minus_b = a - b
+        |      if (a_minus_b == 0) drawPubKey else {
+        |        if ((a_minus_b) == 1 || (a_minus_b) == -2) alicePubKey else bobPubKey
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+    ).asBoolValue
+
+    val halfGameEnv = Map(
+      ScriptNameProp -> "halfGameScript",
+      "alicePubKey" -> alicePubKey,
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
+    )
+
+    // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
+    // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
+    // before some minimum height.
+    val halfGameScript = compileWithCosting(halfGameEnv,
+      """{
+        |  OUTPUTS.forall{(out:Box) =>
+        |    val b             = out.R4[Byte].get
+        |    val bobDeadline   = out.R6[Int].get
+        |    val validBobInput = b == 0 || b == 1 || b == 2
+        |    // Bob needs to ensure that out.R5 contains bobPubKey
+        |    bobDeadline >= HEIGHT+30 &&
+        |    out.value >= SELF.value &&
+        |    validBobInput &&
+        |    blake2b256(out.propositionBytes) == fullGameScriptHash
+        |  } && OUTPUTS.size == 2 &&
+        |  OUTPUTS(0).R7[SigmaProp].get == alicePubKey // Alice does not care for Bob's draw case
+        |  // Bob needs to ensure that OUTPUTS(1).R7 contains his public key
+        |}
+      """.stripMargin).asBoolValue
+
+    /////////////////////////////////////////////////////////
+    //// Alice starts creating a Half-Game
+    /////////////////////////////////////////////////////////
+
+    // she creates a transaction that outputs a box with halfGame script.
+    // In the example, we don't create the transaction; we just create a box below
+
+    val halfGameCreationHeight = 70
+    val playAmount = 10      // LongConstant(10)
+
+    val halfGameOutput = ErgoBox(playAmount, halfGameScript, halfGameCreationHeight)
+
+    /////////////////////////////////////////////////////////
+    //// above halfGameOutput is a Half-Game "box" created by Alice.
+    /////////////////////////////////////////////////////////
+
+    //a blockchain node verifying a block containing a spending transaction
+    val verifier = new ErgoLikeTestInterpreter
+
+    /////////////////////////////////////////////////////////
+    //// Bob will spend halfGameOutput and generate a full game
+    /////////////////////////////////////////////////////////
+
+    // a variable indicating height at which the tx spending halfGameTx is created
+    val fullGameCreationHeight = halfGameCreationHeight + 10
+
+    val bob = new ErgoLikeTestProvingInterpreter
+    val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
+    val bobDeadline = 120 // height after which it become's Bob's money
+    val b:Byte = (scala.util.Random.nextInt.abs % 3).toByte
+
+    val fullGameOutput0 = ErgoBox(playAmount, fullGameScript, fullGameCreationHeight, Nil,
+      Map(
+        R4 -> ByteConstant(b),
+        R5 -> SigmaPropConstant(bobPubKey),
+        R6 -> IntConstant(bobDeadline),
+        R7 -> SigmaPropConstant(alicePubKey)
+      )
+    )
+
+    val fullGameOutput1 = ErgoBox(playAmount, fullGameScript, fullGameCreationHeight, Nil,
+      Map(
+        R4 -> ByteConstant(b),
+        R5 -> SigmaPropConstant(bobPubKey),
+        R6 -> IntConstant(bobDeadline),
+        R7 -> SigmaPropConstant(bobPubKey)
+      )
+    )
+
+    //normally this transaction would invalid (why?), but we're not checking it in this test
+    val fullGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullGameOutput0, fullGameOutput1))
+
+    val fullGameContext = ErgoLikeContext(
+      currentHeight = fullGameCreationHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(halfGameOutput),
+      spendingTransaction = fullGameTx,
+      self = halfGameOutput // what is the use of self?
+    )
+
+    // bob (2nd player) is generating a proof and it is passing verification
+    val proofFullGame = bob.prove(halfGameEnv, halfGameScript, fullGameContext, fakeMessage).get.proof
+
+    verifier.verify(halfGameEnv, halfGameScript, fullGameContext, proofFullGame, fakeMessage).get._1 shouldBe true
+
+    /////////////////////////////////////////////////////////
+    //// fullGameOutput represents the Full-Game "box" created by Bob.
+    /////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////
+    // Possibility 1: Alice reveals secret
+    /////////////////////////////////////////////////////////
+
+    val gameOverHeight = fullGameCreationHeight + 10
+    // assume paying to Carol
+    val carol = new ErgoLikeTestProvingInterpreter
+    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+
+    // note that playAmount below is not checked. It could be anything.
+    val gameOverOutput = ErgoBox(playAmount, carolPubKey, gameOverHeight)
+
+    // normally this transaction would be invalid, but we're not checking it in this test
+    val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
+
+    val aliceProver = alice.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
+    val bobProver = bob.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
+
+    val winContext0 = ErgoLikeContext(
+      currentHeight = gameOverHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
+      spendingTransaction = gameOverTx,
+      self = fullGameOutput0
+    )
+
+    val winContext1 = ErgoLikeContext(
+      currentHeight = gameOverHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
+      spendingTransaction = gameOverTx,
+      self = fullGameOutput1
+    )
+
+    a - b match {
+      case 0 => // draw
+        println("Draw")
+        /////////////////////////////////////////////////////////
+        // Possibility 1.1: draw
+        /////////////////////////////////////////////////////////
+
+        val drawContextAlice = ErgoLikeContext(
+          currentHeight = gameOverHeight,
+          lastBlockUtxoRoot = AvlTreeData.dummy,
+          minerPubkey = ErgoLikeContext.dummyPubkey,
+          boxesToSpend = IndexedSeq(fullGameOutput0),
+          spendingTransaction = gameOverTx,
+          self = fullGameOutput0
+        )
+
+        val proofAliceDraw = aliceProver.prove(fullGameEnv, fullGameScript, drawContextAlice, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, drawContextAlice, proofAliceDraw, fakeMessage).get._1 shouldBe true
+
+        val drawContextBob = ErgoLikeContext(
+          currentHeight = gameOverHeight,
+          lastBlockUtxoRoot = AvlTreeData.dummy,
+          minerPubkey = ErgoLikeContext.dummyPubkey,
+          boxesToSpend = IndexedSeq(fullGameOutput1),
+          spendingTransaction = gameOverTx,
+          self = fullGameOutput1
+        )
+
+        val proofBobDraw = bobProver.prove(fullGameEnv, fullGameScript, drawContextBob, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, drawContextBob, proofBobDraw, fakeMessage).get._1 shouldBe true
+
+      case 1 | -2 => // alice wins
+        println("Alice won")
+        /////////////////////////////////////////////////////////
+        // Possibility 1.2: Alice wins
+        /////////////////////////////////////////////////////////
+
+        val proofAliceWin0 = aliceProver.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, winContext0, proofAliceWin0, fakeMessage).get._1 shouldBe true
+
+        val proofAliceWin1 = aliceProver.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, winContext1, proofAliceWin1, fakeMessage).get._1 shouldBe true
+      case _ => // bob wins
+        println("Bob won")
+        /////////////////////////////////////////////////////////
+        // Possibility 1.3: Bob wins
+        /////////////////////////////////////////////////////////
+        val proofBobWin0 = bobProver.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, winContext0, proofBobWin0, fakeMessage).get._1 shouldBe true
+
+        val proofBobWin1 = bobProver.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
+        verifier.verify(fullGameEnv, fullGameScript, winContext1, proofBobWin1, fakeMessage).get._1 shouldBe true
+    }
+
+    /////////////////////////////////////////////////////////
+    // Possibility 2: (Bob wins and Alice does not reveal secret) OR (Alice wins and does not spend before bobDeadline)
+    // Bob can spend after bobDeadline.
+    /////////////////////////////////////////////////////////
+
+    val defaultWinHeight = bobDeadline + 1
+
+    // assume Bob is paying to Carol
+    // note that playAmount*2 below is not checked. It could be anything.
+    val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
+
+    //normally this transaction would invalid (why?), but we're not checking it in this test
+    val defaultWinTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(defaultWinOutput))
+
+    val defaultWinContext0 = ErgoLikeContext(
+      currentHeight = defaultWinHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
+      spendingTransaction = defaultWinTx,
+      self = fullGameOutput0 // what is the use of self?
+    )
+    val defaultWinContext1 = ErgoLikeContext(
+      currentHeight = defaultWinHeight,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
+      spendingTransaction = defaultWinTx,
+      self = fullGameOutput1 // what is the use of self?
+    )
+
+    val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
+    val aDummy:Byte = 0
+    // below we need to specify a and s (even though they are not needed)
+    val proofDefaultWin0 = bobProver.prove(fullGameEnv, fullGameScript, defaultWinContext0, fakeMessage).get
+    verifier.verify(fullGameEnv, fullGameScript, defaultWinContext0, proofDefaultWin0, fakeMessage).get._1 shouldBe true
+
+    val proofDefaultWin1 = bobProver.prove(fullGameEnv, fullGameScript, defaultWinContext1, fakeMessage).get
+    verifier.verify(fullGameEnv, fullGameScript, defaultWinContext1, proofDefaultWin1, fakeMessage).get._1 shouldBe true
+  }
+
+}
