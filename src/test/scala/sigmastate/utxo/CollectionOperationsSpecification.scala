@@ -434,4 +434,45 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     assertProof(code, expectedPropTree, outputBoxValues)
   }
+
+  property("flatMap") {
+    assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
+      EQ(
+        ByIndex(
+          MethodCall(Outputs,
+            SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)),
+            Vector(FuncValue(1, SBox,
+              ExtractScriptBytes(ValUse(1, SBox))
+            ))
+          ).asCollection[SByte.type],
+          IntConstant(0)
+        ),
+        ByteConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("indexOf") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
+      EQ(
+        MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+          SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+          Vector(LongConstant(1), IntConstant(0))
+        ),
+        IntConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("indices") {
+    assertProof("OUTPUTS.indices == Coll(0)",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.IndicesMethod,
+          Vector()
+        ),
+        ConcreteCollection(IntConstant(0))
+      ),
+      IndexedSeq(1L, 1L))
+  }
 }
