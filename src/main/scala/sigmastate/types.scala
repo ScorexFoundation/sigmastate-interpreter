@@ -723,7 +723,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean), SInt), SInt, Seq(STypeParam(tIV))),
     16, MethodCallIrBuilder)
   val IndexWhereMethod = SMethod(this, "indexWhere",
-    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),
+    SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean), SInt), SInt, Seq(STypeParam(tIV))),
     17, MethodCallIrBuilder)
   val LastIndexWhereMethod = SMethod(this, "lastIndexWhere",
     SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SInt, Seq(STypeParam(tIV))),

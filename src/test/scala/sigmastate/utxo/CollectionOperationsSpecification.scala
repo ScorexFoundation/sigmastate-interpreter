@@ -483,4 +483,19 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         IntConstant(1)),
       IndexedSeq(1L, 2L))
   }
+
+  property("indexWhere") {
+    assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          )
+        ),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
 }

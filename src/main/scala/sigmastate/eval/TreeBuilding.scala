@@ -248,6 +248,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val tpe = elemToSType(colSym.elem).asCollection
         val method = SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType))
         builder.mkMethodCall(col, method, IndexedSeq(f, from))
+      case CollM.indexWhere(colSym, fSym, In(from)) =>
+        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
+        val tpe = elemToSType(colSym.elem).asCollection
+        val method = SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType))
+        builder.mkMethodCall(col, method, IndexedSeq(f, from))
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
