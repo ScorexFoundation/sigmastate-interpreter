@@ -17,7 +17,9 @@ import sigmastate.utxo.{ByIndex, GetVar}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR = new TestingIRContext {
+    beginPass(noConstPropagationPass)
+  }
 
   private def comp(env: ScriptEnv, x: String): Value[SType] = compileWithCosting(env, x)
   private def comp(x: String): Value[SType] = compileWithCosting(env, x)

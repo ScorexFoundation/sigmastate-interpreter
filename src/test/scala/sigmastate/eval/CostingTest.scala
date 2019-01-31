@@ -99,7 +99,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ =>
         val c1 = IntConstant(1);
-        costOf(c1) + costOf(c1)
+        costOf(c1) + costOf(c1) + costOf(GT(c1,c1))
       })
 //    checkInEnv(env, "or", "1 > 1 || n1 < big", {_ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big)},
 //      { _ =>

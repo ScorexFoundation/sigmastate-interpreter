@@ -124,12 +124,28 @@ object CostTable {
     ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+
+    ("GT", "(T,T) => Boolean", comparisonCost),
+    ("GE", "(T,T) => Boolean", comparisonCost),
+    ("LE", "(T,T) => Boolean", comparisonCost),
+    ("LT", "(T,T) => Boolean", comparisonCost),
+    ("EQ", "(T,T) => Boolean", comparisonCost),
+    ("NEQ", "(T,T) => Boolean", comparisonCost),
+
     ("GT_per_kb", "(T,T) => Boolean", comparisonCost),
     ("GE_per_kb", "(T,T) => Boolean", comparisonCost),
     ("LE_per_kb", "(T,T) => Boolean", comparisonCost),
     ("LT_per_kb", "(T,T) => Boolean", comparisonCost),
     ("EQ_per_kb", "(T,T) => Boolean", comparisonCost),
     ("NEQ_per_kb", "(T,T) => Boolean", comparisonCost),
+
+    ("GT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("GE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("LE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("LT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("EQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("NEQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+//    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("+", "(Byte, Byte) => Byte", plusMinus),
     ("+", "(Short, Short) => Short", plusMinus),
@@ -155,9 +171,6 @@ object CostTable {
     ("%", "(Short, Short) => Short", multiply),
     ("%", "(Int, Int) => Int", multiply),
     ("%", "(Long, Long) => Long", multiply),
-
-    ("GT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),

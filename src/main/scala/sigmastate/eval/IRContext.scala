@@ -12,7 +12,11 @@ trait IRContext extends Evaluation with TreeBuilding {
 
   override val builder = TransformingSigmaBuilder
 
-  beginPass(new DefaultPass("mypass", Pass.defaultPassConfig.copy(constantPropagation = false)))
+  /** Pass configuration which is used to turn-off constant propagation.
+    * @see `beginPass(noCostPropagationPass)`  */
+  lazy val noConstPropagationPass = new DefaultPass(
+    "noCostPropagationPass",
+    Pass.defaultPassConfig.copy(constantPropagation = false))
 
   override val sigmaDslBuilderValue = new CostingSigmaDslBuilder(this)
   override val costedBuilderValue = new special.collection.CCostedBuilder()

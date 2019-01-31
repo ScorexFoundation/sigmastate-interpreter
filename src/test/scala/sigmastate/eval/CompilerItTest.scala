@@ -281,7 +281,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40674, 1L)
+      Result({ TrivialProp.FalseProp }, 40686, 1L)
     )
   }
   test("crowdFunding_Case") {

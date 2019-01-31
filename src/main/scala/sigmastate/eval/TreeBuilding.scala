@@ -296,9 +296,20 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(TrivialSigmaCtor(In(cond))) =>
         mkBoolToSigmaProp(cond.asBoolValue)
       case Def(ProveDlogEvidenceCtor(In(g))) =>
-        SigmaPropConstant(mkProveDlog(g.asGroupElement))
+        g match {
+          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(mkProveDlog(gc))
+          case _ => mkProveDlog(g.asGroupElement)
+        }
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
-        SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+        (g, h, u, v) match {
+          case (gc: Constant[SGroupElement.type]@unchecked,
+          hc: Constant[SGroupElement.type]@unchecked,
+          uc: Constant[SGroupElement.type]@unchecked,
+          vc: Constant[SGroupElement.type]@unchecked) =>
+            SigmaPropConstant(mkProveDiffieHellmanTuple(gc, hc, uc, vc))
+          case _ =>
+            mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
+        }
 
       case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)

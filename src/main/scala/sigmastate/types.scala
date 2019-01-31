@@ -411,6 +411,9 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
   override def typeId: TypeCode = typeCode
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
 
+  /** Type of Relation binary op like GE, LE, etc. */
+  val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
+
   /** The maximum size of BigInteger value in byte array representation. */
   val MaxSizeInBytes: Long = 32L
 

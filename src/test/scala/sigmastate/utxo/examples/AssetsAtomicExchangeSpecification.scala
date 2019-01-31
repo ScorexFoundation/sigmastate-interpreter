@@ -96,18 +96,17 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
 
     val sellerProp = BlockValue(
       Vector(
-        ValDef(1, SigmaPropConstant(tokenSellerKey)),
-        ValDef(2, ByIndex(Outputs, 1))
+        ValDef(1, ByIndex(Outputs, 1))
       ),
       SigmaOr(
         SigmaAnd(
           GT(Height, deadline).toSigmaProp,
-          ValUse(1, SSigmaProp)),
+          SigmaPropConstant(tokenSellerKey)),
         AND(
-          GE(ExtractAmount(ValUse(2, SBox)), LongConstant(100)),
-          EQ(ExtractRegisterAs(ValUse(2, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self)),
+          GE(ExtractAmount(ValUse(1, SBox)), LongConstant(100)),
+          EQ(ExtractRegisterAs(ValUse(1, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self)),
           // right protection seller
-          EQ(ExtractScriptBytes(ValUse(2, SBox)), ValUse(1, SSigmaProp).propBytes)
+          EQ(ExtractScriptBytes(ValUse(1, SBox)), SigmaPropConstant(tokenSellerKey).propBytes)
         ).toSigmaProp
       )
     ).asBoolValue
@@ -158,9 +157,8 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = input1)
 
-    val pr2 = tokenSeller.prove(sellerProp, sellerCtx, fakeMessage).get
-    verifier.verify(sellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
-
+    val pr2 = tokenSeller.prove(sellerEnv, altSellerProp, sellerCtx, fakeMessage).get
+    verifier.verify(sellerEnv, altSellerProp, sellerCtx, pr2, fakeMessage).get._1 shouldBe true
   }
 
   /**

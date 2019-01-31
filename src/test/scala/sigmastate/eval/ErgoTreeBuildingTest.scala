@@ -17,6 +17,10 @@ import sigmastate.utxo._
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
 
+  implicit override lazy val IR = new TestContext with IRContext with CompiletimeCosting {
+    beginPass(noConstPropagationPass)
+  }
+
   test("constants") {
     build(emptyEnv, "oneInt", "1", IntConstant(1))
     build(emptyEnv, "oneLong", "1L", LongConstant(1L))
