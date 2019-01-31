@@ -75,8 +75,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       Minus(s.fixedRate, Multiply(s.oneEpochReduction, epoch))
     )
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(rewardOut))
-    val heightCorrect = EQ(ExtractRegisterAs[SLong.type](rewardOut, register).get, Height)
-    val heightIncreased = GT(Height, ExtractRegisterAs[SLong.type](Self, register).get)
+    val heightCorrect = EQ(ExtractRegisterAs[SInt.type](rewardOut, register).get, Height)
+    val heightIncreased = GT(Height, ExtractRegisterAs[SInt.type](Self, register).get)
     val correctCoinsConsumed = EQ(coinsToIssue, Minus(ExtractAmount(Self), ExtractAmount(rewardOut)))
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
@@ -97,8 +97,8 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val coinsToIssue = if(HEIGHT < fixedRatePeriod) fixedRate else fixedRate - (oneEpochReduction * epoch)
         |    val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
         |    val sameScriptRule = SELF.propositionBytes == out.propositionBytes
-        |    val heightIncreased = HEIGHT > SELF.R4[Long].get
-        |    val heightCorrect = out.R4[Long].get == HEIGHT
+        |    val heightIncreased = HEIGHT > SELF.R4[Int].get
+        |    val heightCorrect = out.R4[Int].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Coll(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue
