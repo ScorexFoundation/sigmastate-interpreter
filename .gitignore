@@ -10,7 +10,7 @@
 
 *.log
 test-out/
-
+flamegraphs/
 # sbt specific
 .cache
 .lib/

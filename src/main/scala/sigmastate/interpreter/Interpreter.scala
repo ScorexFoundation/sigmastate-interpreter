@@ -169,6 +169,7 @@ trait Interpreter extends ScorexLogging {
       case cProp: SigmaBoolean =>
         cProp match {
           case TrivialProp.TrueProp => true
+          case TrivialProp.FalseProp => false
           case _ =>
             // Perform Verifier Steps 1-3
             SigSerializer.parseAndComputeChallenges(cProp, proof) match {
