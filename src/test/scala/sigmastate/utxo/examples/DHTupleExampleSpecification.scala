@@ -62,7 +62,8 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
-    val g_y = GroupElementConstant(dlogGroup.exponentiate(g, y)) // g^y
+   val bobPubKey: ProveDlog = bob.dlogSecrets.head.publicImage
+   val g_y = GroupElementConstant(bobPubKey.h) // Bob's public key g^y
 
     val g_xy = GroupElementConstant(dlogGroup.exponentiate(g_x, y)) // g^xy
 
