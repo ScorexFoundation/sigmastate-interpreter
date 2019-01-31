@@ -15,7 +15,7 @@ import sigmastate.utxo._
 
 class RPSGameExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  /** XOR game:
+  /** RPS game:
 
      Alice creates a RPS game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
      Another player (Bob) then sends a transaction spending Alice's UTXO and creating two outputs called "fullGameOutputs" ("Full game" UTXOs).
@@ -52,7 +52,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
 
     val fullGameEnv = Map(
       ScriptNameProp -> "fullGameScriptEnv",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "h" -> h
     )
 
@@ -61,16 +61,16 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |  val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a = getVar[Byte](1).get        // Alice's secret choice a (represented as a byte)
         |  val b = SELF.R4[Byte].get          // Bob's public choice b (represented as a byte)
-        |  val bobPubKey = SELF.R5[SigmaProp].get
+        |  val bob = SELF.R5[SigmaProp].get
         |  val bobDeadline = SELF.R6[Int].get // after this height, Bob gets to spend unconditionally
         |  val drawPubKey = SELF.R7[SigmaProp].get
         |
-        |  (bobPubKey && HEIGHT > bobDeadline) || {
+        |  (bob && HEIGHT > bobDeadline) || {
         |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == h
         |    valid_a && {
         |      val a_minus_b = a - b
         |      if (a_minus_b == 0) drawPubKey else {
-        |        if ((a_minus_b) == 1 || (a_minus_b) == -2) alicePubKey else bobPubKey
+        |        if ((a_minus_b) == 1 || (a_minus_b) == -2) alice else bob
         |      }
         |    }
         |  }
@@ -79,7 +79,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
@@ -98,7 +98,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |    validBobInput &&
         |    blake2b256(out.propositionBytes) == fullGameScriptHash
         |  } && OUTPUTS.size == 2 &&
-        |  OUTPUTS(0).R7[SigmaProp].get == alicePubKey // Alice does not care for Bob's draw case
+        |  OUTPUTS(0).R7[SigmaProp].get == alice // Alice does not care for Bob's draw case
         |  // Bob needs to ensure that OUTPUTS(1).R7 contains his public key
         |}
       """.stripMargin).asBoolValue

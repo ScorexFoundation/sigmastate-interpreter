@@ -51,7 +51,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     val fullGameEnv = Map(
       ScriptNameProp -> "fullGameScriptEnv",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "h" -> h
     )
 
@@ -60,12 +60,12 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
         |  val b           = SELF.R4[Byte].get          // Bob's public bit b (represented as a byte)
-        |  val bobPubKey   = SELF.R5[SigmaProp].get
+        |  val bob         = SELF.R5[SigmaProp].get     // Bob's public key
         |  val bobDeadline = SELF.R6[Int].get           // after this height, Bob gets to spend unconditionally
         |
-        |  (bobPubKey && HEIGHT > bobDeadline) || {
+        |  (bob && HEIGHT > bobDeadline) || {
         |    blake2b256(s ++ Coll(a)) == h && {         // h is Alice's original commitment from the halfGameScript
-        |      alicePubKey && a == b || bobPubKey && a != b
+        |      alice && a == b || bob && a != b
         |    }
         |  }
         |}""".stripMargin
@@ -73,7 +73,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
@@ -82,12 +82,12 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     // before some minimum height.
     val halfGameScript = compileWithCosting(halfGameEnv,
       """{
-        |  alicePubKey || {
+        |  alice || {
         |    val out           = OUTPUTS(0)
         |    val b             = out.R4[Byte].get
         |    val bobDeadline   = out.R6[Int].get
         |    val validBobInput = b == 0 || b == 1
-        |    // Bob needs to ensure that out.R5 contains bobPubKey
+        |    // Bob needs to ensure that out.R5 contains his public key
         |    OUTPUTS.size == 1 &&
         |    bobDeadline >= HEIGHT+30 &&
         |    out.value >= SELF.value * 2 &&
