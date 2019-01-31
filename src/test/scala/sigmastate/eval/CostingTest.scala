@@ -161,16 +161,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-
-  test("substConstants") {
-    import org.ergoplatform.ErgoScriptPredef._
-    val minerRewardDelay = 720
-    val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
-    val costed = cost(env, prop)
-    val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
-    emit("substConstants", calcF, costF, sizeF)
-  }
-
   test("Crowd Funding") {
     val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage

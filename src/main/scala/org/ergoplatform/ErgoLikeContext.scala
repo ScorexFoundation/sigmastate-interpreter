@@ -35,13 +35,12 @@ class ErgoLikeContext(val currentHeight: Height,
   import ErgoLikeContext._
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
-    implicit val IRForBox = IR
+    implicit val IRForBox: Evaluation = IR
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
     val outputs =
       if (spendingTransaction == null) noOutputs
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
-    val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
     val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
     new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.toArray, isCost)
   }
@@ -85,12 +84,12 @@ object ErgoLikeContext {
       proverExtension)
   }
 
-  val noInputs = Array[Box]()
-  val noOutputs = Array[Box]()
+  val noInputs: Array[Box] = Array[Box]()
+  val noOutputs: Array[Box] = Array[Box]()
 
   def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
     case (arr: Array[a], SCollectionType(elemType)) =>
-      implicit val elemRType = Evaluation.stypeToRType(elemType)
+      implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
       elemType match {
         case SCollectionType(_) | STuple(_) =>
           val testArr = arr.map(x => toTestData(x, elemType, isCost))
