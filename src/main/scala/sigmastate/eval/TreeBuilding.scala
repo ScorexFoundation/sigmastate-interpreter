@@ -228,31 +228,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
-      case CollM.indexOf(colSym, elemSym, In(from)) =>
+
+      case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
+        val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
+        val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym)
-        val elem = recurse(elemSym)
-        val tpe = elemToSType(elemSym.elem)
-        val method = SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> tpe))
-        builder.mkMethodCall(col, method, IndexedSeq(elem, from))
-      case CollM.indices(colSym) =>
-        val col = recurse(colSym)
-        builder.mkMethodCall(col, SCollection.IndicesMethod, IndexedSeq())
-      case CollM.flatMap(colSym, fSym) =>
-        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        val tpe = elemToSType(colSym.elem).asCollection
-        val method = SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType,
-          SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
-        builder.mkMethodCall(col, method, IndexedSeq(f))
-      case CollM.segmentLength(colSym, fSym, In(from)) =>
-        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        val tpe = elemToSType(colSym.elem).asCollection
-        val method = SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType))
-        builder.mkMethodCall(col, method, IndexedSeq(f, from))
-      case CollM.indexWhere(colSym, fSym, In(from)) =>
-        val Seq(col, f) = Seq(colSym, fSym).map(recurse)
-        val tpe = elemToSType(colSym.elem).asCollection
-        val method = SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> tpe.elemType))
-        builder.mkMethodCall(col, method, IndexedSeq(f, from))
+        val colTpe = elemToSType(colSym.elem).asCollection
+        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
+          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
+            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
+          case (Some(mth), _) => mth
+          case (None, _) => error(s"unknown method Coll.${m.getName}")
+        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
+        builder.mkMethodCall(col, method, args.toIndexedSeq)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
