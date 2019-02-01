@@ -120,12 +120,12 @@ class Numeric {
    /** Absolute value of this numeric value. 
     * @since 2.0
     */  
-  def abs: Numeric 
+  def toAbs: Numeric 
   
   /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
    * `this` is less than, equal to, or greater than `that`.
    */
-  def compare(that: SNumeric): Int 
+  def compareTo(that: SNumeric): Int 
 }
 
 class Short extends Numeric

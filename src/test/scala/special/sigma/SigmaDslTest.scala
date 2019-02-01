@@ -22,24 +22,57 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     assert(b1 == b2)
   }
 
-  property("Int methods equivalence") {
-    val toByte = checkEq(func[Int,Byte]("{ (n: Int) => n.toByte }"))(n => n.toByte)
-    val toShort = checkEq(func[Int,Short]("{ (n: Int) => n.toShort }"))(n => n.toShort)
-    val toInt = checkEq(func[Int,Int]("{ (n: Int) => n.toInt }"))(n => n.toInt)
-    val toLong = checkEq(func[Int,Long]("{ (n: Int) => n.toLong }"))(n => n.toLong)
-    val toBigInt = checkEq(func[Int,BigInteger]("{ (n: Int) => n.toBigInt }"))(n => n.toBigInt)
-//    val toBytes = checkEq(func[Int,Coll[Byte]]("{ (n: Int) => n.toBytes }"))(n => n.toBytes)
-
-    forAll(valGen) { (n: Int) =>
-      whenever(Byte.MinValue <= n && n <= Byte.MaxValue) {
-        toByte(n)
-      }
-      whenever(Short.MinValue <= n && n <= Short.MaxValue) {
-        toShort(n)
-      }
-      toInt(n)
-      toLong(n)
-//      toBytes(n)
+  property("Boolean methods equivalence") {
+    lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))(x => x.toByte)
+    forAll { (x: Boolean) =>
+//       toByte(x)
     }
   }
+
+  property("Byte methods equivalence") {
+    val toByte = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toByte }"))(x => x.toByte)
+    val toShort = checkEq(func[Byte,Short]("{ (x: Byte) => x.toShort }"))(x => x.toShort)
+    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
+    val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
+    val toBigInt = checkEq(func[Byte,BigInteger]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
+    lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
+    lazy val toBits = checkEq(func[Byte,Coll[Boolean]]("{ (x: Byte) => x.toBits }"))(x => x.toBits)
+    lazy val toAbs = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toAbs }"))(x => x.toAbs)
+    lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
+
+    forAll { x: Byte =>
+      Seq(toInt, toLong, toBigInt/*, toBytes, toBits, toAbs*/).foreach(_(x))
+    }
+    forAll { x: (Byte, Byte) =>
+//      compareTo(x)
+    }
+  }
+
+  property("Int methods equivalence") {
+    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
+    val toShort = checkEq(func[Int,Short]("{ (x: Int) => x.toShort }"))(x => x.toShort)
+    val toInt = checkEq(func[Int,Int]("{ (x: Int) => x.toInt }"))(x => x.toInt)
+    val toLong = checkEq(func[Int,Long]("{ (x: Int) => x.toLong }"))(x => x.toLong)
+    val toBigInt = checkEq(func[Int,BigInteger]("{ (x: Int) => x.toBigInt }"))(x => x.toBigInt)
+    lazy val toBytes = checkEq(func[Int,Coll[Byte]]("{ (x: Int) => x.toBytes }"))(x => x.toBytes)
+    lazy val toBits = checkEq(func[Int,Coll[Boolean]]("{ (x: Int) => x.toBits }"))(x => x.toBits)
+    lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
+    lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+
+    forAll(valGen) { x: Int =>
+      whenever(Byte.MinValue <= x && x <= Byte.MaxValue) {
+        toByte(x)
+      }
+      whenever(Short.MinValue <= x && x <= Short.MaxValue) {
+        toShort(x)
+      }
+      Seq(toInt, toLong, toBigInt/*, toBytes, toBits, toAbs*/).foreach(_(x))
+    }
+    forAll { x: (Int, Int) =>
+      //      compareTo(x)
+    }
+  }
+
+  // TODO add tests for Short, Long, BigInt operations
+
 }
