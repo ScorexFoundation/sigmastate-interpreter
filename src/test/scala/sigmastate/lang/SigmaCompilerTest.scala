@@ -351,17 +351,16 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.lastIndexWhere") {
-    testMissingCosting("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L })",
+    comp("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L }, 1)") shouldBe
       mkMethodCall(Outputs,
         SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
         Vector(
-          Terms.Lambda(
-            Vector(("out",SBox)),
-            SBoolean,
-            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+          FuncValue(
+            Vector((1, SBox)),
+            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+          IntConstant(1)
         )
       )
-    )
   }
 
   property("SCollection.patch") {

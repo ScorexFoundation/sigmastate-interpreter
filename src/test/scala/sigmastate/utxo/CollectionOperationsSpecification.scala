@@ -498,4 +498,18 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 2L))
   }
 
+  property("lastIndexWhere") {
+    assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(1)
+          )
+        ),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
 }

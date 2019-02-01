@@ -1554,6 +1554,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             xsV.segmentLength(asRep[Any => Boolean](f), asRep[Int](from))
           case (SCollection.IndexWhereMethod.name, Seq(f, from)) =>
             xsV.indexWhere(asRep[Any => Boolean](f), asRep[Int](from))
+          case (SCollection.LastIndexWhereMethod.name, Seq(f, end)) =>
+            xsV.lastIndexWhere(asRep[Any => Boolean](f), asRep[Int](end))
           case _ => error(s"method $method is not supported")
         }
         withDefaultSize(value, cost)
