@@ -4,7 +4,7 @@ import special.wrappers.WrappersTests
 import scala.language.reflectiveCalls
 import scalan.SigmaLibrary
 
-class SigmaDslTests extends WrappersTests with ContractsTestkit {
+class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
   class Ctx extends WrappersCtx with SigmaLibrary {
     import TestSigmaDslBuilder._
     val sigmaDslBuilder = RTestSigmaDslBuilder()

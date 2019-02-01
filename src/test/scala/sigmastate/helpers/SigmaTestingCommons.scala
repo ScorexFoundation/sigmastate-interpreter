@@ -1,22 +1,22 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.{SGroupElement, SBoolean, SType}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalan.{TestUtils, TestContexts}
+import scalan.{TestUtils, TestContexts, RType}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -45,6 +45,7 @@ trait SigmaTestingCommons extends PropSpec
     IR.buildTree(calcF)
   }
 
+
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
@@ -63,6 +64,30 @@ trait SigmaTestingCommons extends PropSpec
           emit(name, res)
         case _ =>
       }
+    }
+  }
+
+  def func[A:RType,B](func: String)(implicit IR: IRContext): A => B = {
+    val tA = RType[A]
+    val tpeA = Evaluation.rtypeToSType(tA)
+    val code =
+      s"""{
+        |  val func = $func
+        |  val res = func(getVar[${tA.name}](1).get)
+        |  res
+        |}
+      """.stripMargin
+    val env = Interpreter.emptyEnv
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, IR.asRep[IR.Context => SBoolean.WrappedType](calcF))
+
+    (x: A) => {
+      val context = ErgoLikeContext.dummy(createBox(0, TrueLeaf))
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val res = valueFun(calcCtx)
+      TransformingSigmaBuilder.unliftAny(res).get.asInstanceOf[B]
     }
   }
 

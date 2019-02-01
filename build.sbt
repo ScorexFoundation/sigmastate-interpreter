@@ -66,11 +66,11 @@ git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
 val scripto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1" 
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
-val specialVersion = "master-4e1b2bdb-SNAPSHOT"
+val specialVersion = "i8-more-ops-4e1b2bdb-SNAPSHOT"
 val specialCommon  = "io.github.scalan" %% "common" % specialVersion
 val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
@@ -100,7 +100,7 @@ lazy val testSettings = Seq(
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
   test in assembly := {})
-  
+
 libraryDependencies ++= Seq(
   scripto,
   scorexUtil,

@@ -223,6 +223,11 @@ trait SigmaBuilder {
     case v: SValue => Nullable(v)
     case _ => Nullable.None
   }
+
+  def unliftAny(v: SValue): Nullable[Any] = v match {
+    case Constant(v, t) => Nullable(v)
+    case _ => Nullable.None
+  }
 }
 
 class StdSigmaBuilder extends SigmaBuilder {

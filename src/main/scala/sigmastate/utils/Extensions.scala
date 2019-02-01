@@ -1,9 +1,10 @@
 package sigmastate.utils
 
+import java.math.BigInteger
 import java.nio.ByteBuffer
 
 import sigmastate.SType
-import sigmastate.Values.{SValue, Value}
+import sigmastate.Values.{Value, SValue}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 
 import scala.collection.generic.CanBuildFrom
@@ -77,6 +78,8 @@ object Extensions {
         throw new ArithmeticException("Short overflow")
       x.toShort
     }
+
+    def toBigInt: BigInteger = BigInteger.valueOf(x.toLong)
   }
 
   implicit class LongOps(val x: Long) extends AnyVal {
