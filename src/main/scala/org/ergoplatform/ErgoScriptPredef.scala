@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
@@ -13,17 +14,19 @@ import special.sigma.{SigmaDslBuilder, Context, SigmaContract}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utxo._
+import special.collection.Coll
 
 /** Each method defines the corresponding predef script using ErgoDsl.
   * This can be used to stepping through the code using IDE's debugger.
   * It can also be used in unit tests */
 class ErgoDslPredef(ctx: Context, val builder: SigmaDslBuilder) extends SigmaContract {
+  import ctx._; import builder._
 
-//  def rewardOutputScript(minerPubkey: ECPoint, delta: Int): Boolean = {
-//    val createdAtHeight = SELF.creationInfo._1
-//    HEIGHT >= createdAtHeight + delta &&
-//        proveDlog(decodePoint(placeholder[Coll[Byte]](0)))
-//  }
+  def rewardOutputScript(minerPubkey: ECPoint, delta: Int): Boolean = {
+    val createdAtHeight = SELF.creationInfo._1
+    HEIGHT >= createdAtHeight + delta /*&&
+        proveDlog(decodePoint(placeholder[Coll[Byte]](0)))*/
+  }
   override def canOpen(ctx: Context): Boolean = ???
 }
 

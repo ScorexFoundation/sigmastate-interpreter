@@ -25,6 +25,11 @@ lazy val commonSettings = Seq(
           <name>Alexander Chepurnoy</name>
           <url>http://chepurnoy.org/</url>
         </developer>
+        <developer>
+          <id>aslesarenko</id>
+          <name>Alexander Slesarenko</name>
+          <url>https://github.com/aslesarenko/</url>
+        </developer>
       </developers>
 )
 
@@ -59,14 +64,22 @@ version in ThisBuild := {
 
 git.gitUncommittedChanges in ThisBuild := true
 
+val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
+val scripto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1" 
+val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
+val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
+
 val specialVersion = "master-4e1b2bdb-SNAPSHOT"
-val specialCommon = "io.github.scalan" %% "common" % specialVersion
-val specialCore = "io.github.scalan" %% "core" % specialVersion
+val specialCommon  = "io.github.scalan" %% "common" % specialVersion
+val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
 
-val specialSigmaVersion = "master-981fb1f0-SNAPSHOT"
-val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
-val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
+val meta        = "io.github.scalan" %% "meta" % specialVersion
+val plugin      = "io.github.scalan" %% "plugin" % specialVersion
+val libraryapi  = "io.github.scalan" %% "library-api" % specialVersion
+val libraryimpl = "io.github.scalan" %% "library-impl" % specialVersion
+val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
@@ -77,19 +90,24 @@ val testingDependencies = Seq(
   specialCommon, (specialCommon % Test).classifier("tests"),
   specialCore, (specialCore % Test).classifier("tests"),
   specialLibrary, (specialLibrary % Test).classifier("tests"),
-  sigmaImpl, (sigmaImpl % Test).classifier("tests"),
-  sigmaLibrary, (sigmaLibrary % Test).classifier("tests"),
 )
 
+lazy val testSettings = Seq(
+  libraryDependencies ++= testingDependencies,
+  parallelExecution in Test := false,
+  baseDirectory in Test := file("."),
+  publishArtifact in Test := true,
+  publishArtifact in(Test, packageSrc) := true,
+  publishArtifact in(Test, packageDoc) := false,
+  test in assembly := {})
+  
 libraryDependencies ++= Seq(
-  "org.scorexfoundation" %% "scrypto" % "2.1.4",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.1",
+  scripto,
+  scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
-  sigmaImpl,
-  sigmaLibrary,
 ) ++ testingDependencies
 
 
@@ -97,7 +115,6 @@ scalacOptions ++= Seq("-feature", "-deprecation")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
-
 
 publishMavenStyle := true
 
@@ -119,7 +136,61 @@ credentials ++= (for {
   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
-lazy val sigma = (project in file(".")).settings(commonSettings: _*)
+def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
+  scalacOptions ++= Seq(
+    //    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-optimizations-51cf49fb-SNAPSHOT.jar"
+  )
+)
+
+lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
+    .settings(commonSettings,
+      libraryDependencies ++= Seq(
+        plugin, libraryconf
+      ))
+
+lazy val scalanizer = Project("scalanizer", file("scalanizer"))
+    .dependsOn(sigmaconf)
+    .settings(commonSettings,
+      libraryDependencies ++= Seq(meta, plugin, libraryapi, libraryimpl),
+      publishArtifact in(Compile, packageBin) := false,
+      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+      artifact in(Compile, assembly) := {
+        val art = (artifact in(Compile, assembly)).value
+        art.withClassifier(Some("assembly"))
+      },
+      addArtifact(artifact in(Compile, assembly), assembly)
+    )
+
+lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
+    .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
+      libraryDependencies ++= Seq(
+        specialCommon, meta, libraryapi, macroCompat, scripto, bouncycastleBcprov
+      ))
+
+lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
+    .dependsOn(sigmaapi % allConfigDependency)
+    .settings(libraryDefSettings,
+      libraryDependencies ++= Seq(
+        libraryapi, libraryimpl, scripto, bouncycastleBcprov
+      ))
+
+lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
+    .dependsOn(sigmaimpl % allConfigDependency)
+    .settings(libraryDefSettings,
+      libraryDependencies ++= Seq(
+        specialCommon, (specialCommon % Test).classifier("tests"),
+        specialCore, (specialCore % Test).classifier("tests"),
+        libraryapi, (libraryapi % Test).classifier("tests"),
+        libraryimpl, (libraryimpl % Test).classifier("tests"),
+        specialLibrary, (specialLibrary % Test).classifier("tests"),
+        scripto,
+        bouncycastleBcprov
+      ))
+
+lazy val sigma = (project in file("."))
+    .aggregate(sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
+    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+    .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "fix-i372-sigmastate"
