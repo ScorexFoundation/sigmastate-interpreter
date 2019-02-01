@@ -143,7 +143,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // should not be able to collect before minerRewardDelay
     val prove = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage) shouldBe 'failure
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage)
+      .fold(t => throw t, x => x) should matchPattern { case (false,_) => }
 
     // should be able to collect after minerRewardDelay
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
