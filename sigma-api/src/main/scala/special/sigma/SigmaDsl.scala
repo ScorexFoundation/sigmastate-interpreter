@@ -15,24 +15,26 @@ import scalan.RType
 
 @scalan.Liftable
 trait CostModel {
-  def AccessBox: Int //= "AccessBox: Context => Box"
-  def AccessAvlTree: Int //= "AccessAvlTree: Context => AvlTree"
+  def AccessBox: Int // costOf("AccessBox: Context => Box")
+  def AccessAvlTree: Int // costOf("AccessAvlTree: Context => AvlTree")
 
-  def GetVar: Int // = "ContextVar: (Context, Byte) => Option[T]"
-  def DeserializeVar: Int // = "DeserializeVar: (Context, Byte) => Option[T]"
+  def GetVar: Int // costOf("ContextVar: (Context, Byte) => Option[T]")
+  def DeserializeVar: Int // costOf("DeserializeVar: (Context, Byte) => Option[T]")
 
-  def GetRegister: Int // = "AccessRegister: (Box,Byte) => Option[T]"
-  def DeserializeRegister: Int // = "DeserializeRegister: (Box,Byte) => Option[T]"
+  def GetRegister: Int // costOf("AccessRegister: (Box,Byte) => Option[T]")
+  def DeserializeRegister: Int // costOf("DeserializeRegister: (Box,Byte) => Option[T]")
 
-  def SelectField: Int // = "SelectField"
-  def CollectionConst: Int // = "Const: () => Array[IV]"
-  def AccessKiloByteOfData: Int // = "AccessKiloByteOfData"
+  def SelectField: Int // costOf("SelectField")
+  def CollectionConst: Int // costOf("Const: () => Array[IV]")
+  def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
   def PubKeySize: Long = 32
 }
 
 trait DslBuilder {}
+
+@Internal
 trait DslObject {
   def builder: SigmaDslBuilder
 }

@@ -22,6 +22,7 @@ import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import RType._
+import sigma.types.PrimValueType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.collection.CollOverArrayBuilder
@@ -450,7 +451,8 @@ object Evaluation {
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
-    case _ => sys.error(s"Don't know how to convert Elem $t to SType")
+    case pvt: PrimValueType[_,_] => rtypeToSType(pvt.tVal)
+    case _ => sys.error(s"Don't know how to convert RType $t to SType")
   }
 
 }

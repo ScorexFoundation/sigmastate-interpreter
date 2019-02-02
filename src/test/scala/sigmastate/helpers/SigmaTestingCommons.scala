@@ -1,7 +1,7 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoAddressEncoder, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
@@ -16,7 +16,9 @@ import sigmastate.{SGroupElement, SBoolean, SType}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalan.{TestUtils, TestContexts, RType}
+import scalan.{TestUtils, TestContexts, Nullable, RType}
+import sigma.types.{PrimType, IsPrimValue}
+import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -82,12 +84,23 @@ trait SigmaTestingCommons extends PropSpec
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
     val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, IR.asRep[IR.Context => SBoolean.WrappedType](calcF))
 
-    (x: A) => {
+    (in: A) => {
+      implicit val cA = tA.classTag
+      val x = in match {
+        case IsPrimValue(v) => v
+        case _ => in
+      }
       val context = ErgoLikeContext.dummy(createBox(0, TrueLeaf))
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = valueFun(calcCtx)
-      TransformingSigmaBuilder.unliftAny(res).get.asInstanceOf[B]
+      (TransformingSigmaBuilder.unliftAny(res) match {
+        case Nullable(x) => PrimType.mkPrimValue(x) match {
+          case Opt(pv) => pv
+          case _ => x
+        }
+        case _ => res
+      }).asInstanceOf[B]
     }
   }
 

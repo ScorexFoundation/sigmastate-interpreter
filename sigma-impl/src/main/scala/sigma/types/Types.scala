@@ -17,3 +17,4 @@ case class CInt(value: scala.Int) extends Int {
 
   override def +(y: Int): Int = CInt(value + y.value)
 }
+
