@@ -17,7 +17,7 @@ import sigmastate.{SGroupElement, SBoolean, SType}
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scalan.{TestUtils, TestContexts, Nullable, RType}
-import sigma.types.{PrimType, IsPrimValue}
+import sigma.types.{PrimType, IsPrimValue, PrimValueType}
 import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
@@ -69,8 +69,9 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def func[A:RType,B](func: String)(implicit IR: IRContext): A => B = {
+  def func[A:RType,B:RType](func: String)(implicit IR: IRContext): A => B = {
     val tA = RType[A]
+    val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
     val code =
       s"""{
@@ -95,10 +96,15 @@ trait SigmaTestingCommons extends PropSpec
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = valueFun(calcCtx)
       (TransformingSigmaBuilder.unliftAny(res) match {
-        case Nullable(x) => PrimType.mkPrimValue(x) match {
-          case Opt(pv) => pv
-          case _ => x
-        }
+        case Nullable(x) => // x is a value extracted from Constant
+          tB match {
+            case _: PrimValueType[_,_] => // need to wrap value into PrimValue
+              PrimType.mkPrimValue(x) match {
+                case Opt(pv) => pv
+                case _ => x  // cannot wrap, so just return as is
+              }
+            case _ => x  // don't need to wrap
+          }
         case _ => res
       }).asInstanceOf[B]
     }
