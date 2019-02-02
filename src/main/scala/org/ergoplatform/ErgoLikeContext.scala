@@ -41,7 +41,7 @@ class ErgoLikeContext(val currentHeight: Height,
       if (spendingTransaction == null) noOutputs
       else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
     val vars = contextVars(extension.values)
-    val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
+    val avlTree = CostingAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.toArray, isCost)
   }
 
@@ -101,7 +101,7 @@ object ErgoLikeContext {
       val res = arr.zip(items).map { case (x, t) => toTestData(x, t, isCost)}
       IR.sigmaDslBuilderValue.Colls.fromArray(res)(RType.AnyType)
     case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-    case (t: AvlTreeData, SAvlTree) => CostingAvlTree(IR, t)
+    case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
     case (x, _) => x
   }
 

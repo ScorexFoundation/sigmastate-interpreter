@@ -32,15 +32,8 @@ trait CostModel {
   def PubKeySize: Long = 32
 }
 
-trait DslBuilder {}
-
-@Internal
-trait DslObject {
-  def builder: SigmaDslBuilder
-}
-
 @scalan.Liftable
-trait SigmaProp extends DslObject {
+trait SigmaProp {
   def isValid: Boolean
   def propBytes: Coll[Byte]
   @OverloadId("and_sigma") def &&(other: SigmaProp): SigmaProp
@@ -57,7 +50,7 @@ trait AnyValue {
 }
 
 @scalan.Liftable
-trait Box extends DslObject {
+trait Box {
   def id: Coll[Byte]
   def value: Long
   def bytes: Coll[Byte]
@@ -96,7 +89,7 @@ trait Box extends DslObject {
 }
 
 @scalan.Liftable
-trait AvlTree extends DslObject {
+trait AvlTree {
   def startingDigest: Coll[Byte]
   def keyLength: Int
   def valueLengthOpt: Option[Int]
@@ -166,7 +159,7 @@ trait SigmaContract {
 }
 
 @scalan.Liftable
-trait SigmaDslBuilder extends DslBuilder {
+trait SigmaDslBuilder {
   def Colls: CollBuilder
   def Monoids: MonoidBuilder
   def Costing: CostedBuilder

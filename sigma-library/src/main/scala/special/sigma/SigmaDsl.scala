@@ -13,8 +13,6 @@ package special.sigma {
     import CostedBuilder._;
     import CostedColl._;
     import CostedOption._;
-    import DslBuilder._;
-    import DslObject._;
     import MonoidBuilder._;
     import SigmaContract._;
     import SigmaDslBuilder._;
@@ -35,12 +33,8 @@ package special.sigma {
       @Reified(value = "T") def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long];
       def PubKeySize: Rep[Long] = toRep(32L.asInstanceOf[Long])
     };
-    trait DslBuilder extends Def[DslBuilder];
-    trait DslObject { // manual fix
-      def builder: Rep[SigmaDslBuilder]
-    };
     // manual fix (Def)
-    @Liftable trait SigmaProp extends Def[SigmaProp] with DslObject {
+    @Liftable trait SigmaProp extends Def[SigmaProp] {
       def isValid: Rep[Boolean];
       def propBytes: Rep[Coll[Byte]];
       @OverloadId(value = "and_sigma") def &&(other: Rep[SigmaProp]): Rep[SigmaProp];
@@ -56,7 +50,7 @@ package special.sigma {
       def dataSize: Rep[Long]
     };
     // manual fix (Def)
-    @Liftable trait Box extends Def[Box] with DslObject {
+    @Liftable trait Box extends Def[Box] {
       def id: Rep[Coll[Byte]];
       def value: Rep[Long];
       def bytes: Rep[Coll[Byte]];
@@ -80,7 +74,7 @@ package special.sigma {
       def creationInfo: Rep[scala.Tuple2[Int, Coll[Byte]]]
     };
     // manual fix (Def)
-    @Liftable trait AvlTree extends Def[AvlTree] with DslObject {
+    @Liftable trait AvlTree extends Def[AvlTree] {
       def startingDigest: Rep[Coll[Byte]];
       def keyLength: Rep[Int];
       def valueLengthOpt: Rep[WOption[Int]];
@@ -128,7 +122,7 @@ package special.sigma {
       def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
     };
     // manual fix (Def)
-    @Liftable trait SigmaDslBuilder extends Def[SigmaDslBuilder] with DslBuilder {
+    @Liftable trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Rep[CollBuilder];
       def Monoids: Rep[MonoidBuilder];
       def Costing: Rep[CostedBuilder];
@@ -159,8 +153,6 @@ package special.sigma {
       def decodePoint(encoded: Rep[Coll[Byte]]): Rep[WECPoint]
     };
     trait CostModelCompanion;
-    trait DslBuilderCompanion;
-    trait DslObjectCompanion;
     trait SigmaPropCompanion;
     trait AnyValueCompanion;
     trait BoxCompanion;

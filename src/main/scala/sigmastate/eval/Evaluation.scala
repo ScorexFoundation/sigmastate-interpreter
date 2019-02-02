@@ -206,7 +206,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case FieldApply(In(data: special.collection.Coll[a]), IsTupleFN(i)) =>
             out(data(i-1))
           case wc: LiftedConst[_,_] => out(wc.constValue)
-          case _: DslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
+          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
           case SigmaM.propBytes(prop) =>
             val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]

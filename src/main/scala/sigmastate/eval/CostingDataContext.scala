@@ -19,8 +19,8 @@ import scala.reflect.ClassTag
 import scala.util.{Success, Failure}
 import scalan.RType
 
-case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
-  override val builder = new CostingSigmaDslBuilder(IR)
+case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree {
+  val builder = new CostingSigmaDslBuilder()
   def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
 
   def keyLength: Int = treeData.keyLength
@@ -50,7 +50,7 @@ class CostingBox(val IR: Evaluation,
     regs(ebox)(IR)
   )
 {
-  override val builder = new CostingSigmaDslBuilder(IR)
+  override val builder = new CostingSigmaDslBuilder()
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
     if (isCost) {
@@ -114,7 +114,7 @@ object CostingBox {
 
 }
 
-class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { dsl =>
+class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   override val Costing = new CCostedBuilder {
     import RType._
     override def defaultValue[T](valueType: RType[T]): T = (valueType match {
@@ -126,7 +126,7 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
       case StringType => ""
       case p: PairType[a, b] => (defaultValue(p.tFst), defaultValue(p.tSnd))
       case col: CollType[a] => dsl.Colls.emptyColl(col.tItem)
-      case AvlTreeRType => CostingAvlTree(IR, AvlTreeData.dummy)
+      case AvlTreeRType => CostingAvlTree(AvlTreeData.dummy)
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }
@@ -180,7 +180,7 @@ class CostingDataContext(
     var isCost: Boolean)
     extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, minerPubKey, vars)
 {
-  override val builder = new CostingSigmaDslBuilder(IR)
+  override val builder = new CostingSigmaDslBuilder()
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]) =
     if (isCost) {

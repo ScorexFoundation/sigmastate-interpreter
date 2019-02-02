@@ -22,8 +22,6 @@ import CostModel._
 import CostedBuilder._
 import CostedColl._
 import CostedOption._
-import DslBuilder._
-import DslObject._
 import MonoidBuilder._
 import SigmaContract._
 import SigmaDslBuilder._
@@ -421,154 +419,6 @@ object CostModel extends EntityObject("CostModel") {
 } // of object CostModel
   registerEntityObject("CostModel", CostModel)
 
-object DslBuilder extends EntityObject("DslBuilder") {
-  // entityAdapter for DslBuilder trait
-  case class DslBuilderAdapter(source: Rep[DslBuilder])
-      extends DslBuilder with Def[DslBuilder] {
-    val selfType: Elem[DslBuilder] = element[DslBuilder]
-    override def transform(t: Transformer) = DslBuilderAdapter(t(source))
-  }
-
-  // entityProxy: single proxy for each type family
-  implicit def proxyDslBuilder(p: Rep[DslBuilder]): DslBuilder = {
-    if (p.rhs.isInstanceOf[DslBuilder@unchecked]) p.rhs.asInstanceOf[DslBuilder]
-    else
-      DslBuilderAdapter(p)
-  }
-
-  // familyElem
-  class DslBuilderElem[To <: DslBuilder]
-    extends EntityElem[To] {
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override lazy val tag = {
-      weakTypeTag[DslBuilder].asInstanceOf[WeakTypeTag[To]]
-    }
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[DslBuilder] => convertDslBuilder(x) }
-      tryConvert(element[DslBuilder], this, x, conv)
-    }
-
-    def convertDslBuilder(x: Rep[DslBuilder]): Rep[To] = {
-      x.elem match {
-        case _: DslBuilderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have DslBuilderElem[_], but got $e", x)
-      }
-    }
-    override def getDefaultRep: Rep[To] = ???
-  }
-
-  implicit lazy val dslBuilderElement: Elem[DslBuilder] =
-    new DslBuilderElem[DslBuilder]
-
-  implicit case object DslBuilderCompanionElem extends CompanionElem[DslBuilderCompanionCtor] {
-    lazy val tag = weakTypeTag[DslBuilderCompanionCtor]
-    protected def getDefaultRep = RDslBuilder
-  }
-
-  abstract class DslBuilderCompanionCtor extends CompanionDef[DslBuilderCompanionCtor] with DslBuilderCompanion {
-    def selfType = DslBuilderCompanionElem
-    override def toString = "DslBuilder"
-  }
-  implicit def proxyDslBuilderCompanionCtor(p: Rep[DslBuilderCompanionCtor]): DslBuilderCompanionCtor =
-    proxyOps[DslBuilderCompanionCtor](p)
-
-  lazy val RDslBuilder: Rep[DslBuilderCompanionCtor] = new DslBuilderCompanionCtor {
-    private val thisClass = classOf[DslBuilderCompanion]
-  }
-
-  object DslBuilderMethods {
-  }
-
-  object DslBuilderCompanionMethods {
-  }
-} // of object DslBuilder
-  registerEntityObject("DslBuilder", DslBuilder)
-
-object DslObject extends EntityObject("DslObject") {
-  // entityAdapter for DslObject trait
-  case class DslObjectAdapter(source: Rep[DslObject])
-      extends DslObject with Def[DslObject] {
-    val selfType: Elem[DslObject] = element[DslObject]
-    override def transform(t: Transformer) = DslObjectAdapter(t(source))
-    private val thisClass = classOf[DslObject]
-
-    def builder: Rep[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        thisClass.getMethod("builder"),
-        List(),
-        true, true, element[SigmaDslBuilder]))
-    }
-  }
-
-  // entityProxy: single proxy for each type family
-  implicit def proxyDslObject(p: Rep[DslObject]): DslObject = {
-    if (p.rhs.isInstanceOf[DslObject@unchecked]) p.rhs.asInstanceOf[DslObject]
-    else
-      DslObjectAdapter(p)
-  }
-
-  // familyElem
-  class DslObjectElem[To <: DslObject]
-    extends EntityElem[To] {
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override lazy val tag = {
-      weakTypeTag[DslObject].asInstanceOf[WeakTypeTag[To]]
-    }
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[DslObject] => convertDslObject(x) }
-      tryConvert(element[DslObject], this, x, conv)
-    }
-
-    def convertDslObject(x: Rep[DslObject]): Rep[To] = {
-      x.elem match {
-        case _: DslObjectElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have DslObjectElem[_], but got $e", x)
-      }
-    }
-    override def getDefaultRep: Rep[To] = ???
-  }
-
-  implicit lazy val dslObjectElement: Elem[DslObject] =
-    new DslObjectElem[DslObject]
-
-  implicit case object DslObjectCompanionElem extends CompanionElem[DslObjectCompanionCtor] {
-    lazy val tag = weakTypeTag[DslObjectCompanionCtor]
-    protected def getDefaultRep = RDslObject
-  }
-
-  abstract class DslObjectCompanionCtor extends CompanionDef[DslObjectCompanionCtor] with DslObjectCompanion {
-    def selfType = DslObjectCompanionElem
-    override def toString = "DslObject"
-  }
-  implicit def proxyDslObjectCompanionCtor(p: Rep[DslObjectCompanionCtor]): DslObjectCompanionCtor =
-    proxyOps[DslObjectCompanionCtor](p)
-
-  lazy val RDslObject: Rep[DslObjectCompanionCtor] = new DslObjectCompanionCtor {
-    private val thisClass = classOf[DslObjectCompanion]
-  }
-
-  object DslObjectMethods {
-    object builder {
-      def unapply(d: Def[_]): Nullable[Rep[DslObject]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[DslObjectElem[_]] && method.getName == "builder" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[DslObject]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[DslObject]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object DslObjectCompanionMethods {
-  }
-} // of object DslObject
-  registerEntityObject("DslObject", DslObject)
-
 object SigmaProp extends EntityObject("SigmaProp") {
   // entityConst: single const for each entity
   import Liftables._
@@ -753,7 +603,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   // familyElem
   class SigmaPropElem[To <: SigmaProp]
-    extends DslObjectElem[To] {
+    extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = LiftableSigmaProp.asLiftable[SSigmaProp, To]
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
@@ -763,7 +613,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
         ))
     }
 
-    override lazy val parent: Option[Elem[_]] = Some(dslObjectElement)
+    override lazy val parent: Option[Elem[_]] = None
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SigmaProp].asInstanceOf[WeakTypeTag[To]]
@@ -1060,14 +910,6 @@ object Box extends EntityObject("Box") {
 
     private val BoxClass = classOf[Box]
 
-    // manual fix
-    override def builder: Rep[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(self,
-        BoxClass.getMethod("builder"),
-        List(),
-        true, isAdapterCall = false, element[SigmaDslBuilder]))
-    }
-
     override def id: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         BoxClass.getMethod("id"),
@@ -1261,7 +1103,7 @@ object Box extends EntityObject("Box") {
 
   // familyElem
   class BoxElem[To <: Box]
-    extends DslObjectElem[To] {
+    extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = LiftableBox.asLiftable[SBox, To]
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
@@ -1271,7 +1113,7 @@ object Box extends EntityObject("Box") {
         ))
     }
 
-    override lazy val parent: Option[Elem[_]] = Some(dslObjectElement)
+    override lazy val parent: Option[Elem[_]] = None
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[Box].asInstanceOf[WeakTypeTag[To]]
@@ -1606,14 +1448,6 @@ object AvlTree extends EntityObject("AvlTree") {
 
     private val AvlTreeClass = classOf[AvlTree]
 
-    // manual fix
-    override def builder: Rep[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(self,
-        AvlTreeClass.getMethod("builder"),
-        List(),
-        true, isAdapterCall = false, element[SigmaDslBuilder]))
-    }
-
     override def startingDigest: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         AvlTreeClass.getMethod("startingDigest"),
@@ -1751,7 +1585,7 @@ object AvlTree extends EntityObject("AvlTree") {
 
   // familyElem
   class AvlTreeElem[To <: AvlTree]
-    extends DslObjectElem[To] {
+    extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = LiftableAvlTree.asLiftable[SAvlTree, To]
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
@@ -1761,7 +1595,7 @@ object AvlTree extends EntityObject("AvlTree") {
         ))
     }
 
-    override lazy val parent: Option[Elem[_]] = Some(dslObjectElement)
+    override lazy val parent: Option[Elem[_]] = None
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[AvlTree].asInstanceOf[WeakTypeTag[To]]
@@ -3176,7 +3010,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   // familyElem
   class SigmaDslBuilderElem[To <: SigmaDslBuilder]
-    extends DslBuilderElem[To] {
+    extends EntityElem[To] {
     override val liftable: Liftables.Liftable[_, To] = LiftableSigmaDslBuilder.asLiftable[SSigmaDslBuilder, To]
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
@@ -3186,7 +3020,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         ))
     }
 
-    override lazy val parent: Option[Elem[_]] = Some(dslBuilderElement)
+    override lazy val parent: Option[Elem[_]] = None
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SigmaDslBuilder].asInstanceOf[WeakTypeTag[To]]
