@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import sigma.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 

@@ -6,9 +6,8 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
 import Values._
-
+import scalan.util.CollectionUtil._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy

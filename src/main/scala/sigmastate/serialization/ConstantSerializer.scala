@@ -5,7 +5,7 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.utxo.CostTable.Cost
 

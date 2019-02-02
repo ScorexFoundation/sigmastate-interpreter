@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import special.collection.Coll
 import special.collections.CollGens
 

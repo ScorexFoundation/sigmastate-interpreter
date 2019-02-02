@@ -10,7 +10,7 @@ import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueD
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 

@@ -5,7 +5,7 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import special.sigma
 
 /**

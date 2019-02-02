@@ -1,8 +1,9 @@
 package sigmastate.utils
 
+import sigma.util.ByteArrayBuilder
 import sigmastate.SType
 import sigmastate.Values.Value
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValueSerializer}
+import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
 
 class SigmaByteWriter(b: ByteArrayBuilder,
                       val constantExtractionStore: Option[ConstantStore]) extends ByteArrayWriter(b) {

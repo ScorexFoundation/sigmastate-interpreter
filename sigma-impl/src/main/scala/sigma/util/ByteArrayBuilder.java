@@ -1,4 +1,4 @@
-package sigmastate.utils;
+package sigma.util;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

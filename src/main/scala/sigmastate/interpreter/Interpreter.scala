@@ -23,7 +23,7 @@ import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractivePro
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
 import sigmastate.{SType, _}
