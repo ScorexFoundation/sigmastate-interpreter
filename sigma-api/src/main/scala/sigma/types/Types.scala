@@ -4,25 +4,25 @@ import scalan.{Internal, Nullable}
 import special.collection.Coll
 
 @Internal
-private[types] trait PrimValue[@specialized Val] {
+private[types] trait PrimView[@specialized Val] {
   private[types] def value: Val
 }
 
-trait Boolean extends PrimValue[scala.Boolean] {
+trait Boolean extends PrimView[scala.Boolean] {
   /** Convert true to 1 and false to 0
     * @since 2.0
     */
   def toByte: Byte
 }
 
-trait Byte extends PrimValue[scala.Byte] {
+trait Byte extends PrimView[scala.Byte] {
 //  def toShort: Short
   def toInt: Int
 //  def toLong: Long
   def + (y: Byte): Byte
 }
 
-trait Int extends PrimValue[scala.Int] {
+trait Int extends PrimView[scala.Int] {
   def toByte: Byte
   def + (y: Int): Int
 

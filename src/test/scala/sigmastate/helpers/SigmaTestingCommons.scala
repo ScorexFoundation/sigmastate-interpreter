@@ -17,7 +17,7 @@ import sigmastate.{SGroupElement, SBoolean, SType}
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scalan.{TestUtils, TestContexts, Nullable, RType}
-import sigma.types.{PrimType, IsPrimValue, PrimValueType}
+import sigma.types.{View, IsPrimView, PrimViewType}
 import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
@@ -88,7 +88,7 @@ trait SigmaTestingCommons extends PropSpec
     (in: A) => {
       implicit val cA = tA.classTag
       val x = in match {
-        case IsPrimValue(v) => v
+        case IsPrimView(v) => v
         case _ => in
       }
       val context = ErgoLikeContext.dummy(createBox(0, TrueLeaf))
@@ -98,8 +98,8 @@ trait SigmaTestingCommons extends PropSpec
       (TransformingSigmaBuilder.unliftAny(res) match {
         case Nullable(x) => // x is a value extracted from Constant
           tB match {
-            case _: PrimValueType[_,_] => // need to wrap value into PrimValue
-              PrimType.mkPrimValue(x) match {
+            case _: PrimViewType[_,_] => // need to wrap value into PrimValue
+              View.mkPrimView(x) match {
                 case Opt(pv) => pv
                 case _ => x  // cannot wrap, so just return as is
               }

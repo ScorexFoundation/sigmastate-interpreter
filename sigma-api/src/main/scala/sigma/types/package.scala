@@ -7,13 +7,17 @@ package types {
 
   import scala.reflect.ClassTag
 
-  case class PrimValueType[T, Val](classTag: ClassTag[T], tVal: RType[Val]) extends RType[T] {
+  trait ViewType[T, Val] extends RType[T] {
+    def tVal: RType[Val]
+  }
+
+  case class PrimViewType[T, Val](classTag: ClassTag[T], tVal: RType[Val]) extends ViewType[T, Val] {
     override def name: String = tVal.name
   }
-  
-  object IsPrimValue {
-    def unapply(pv: PrimValue[_]): Nullable[Any] = (pv match {
-      case pv: PrimValue[_]  => Nullable(pv.value)
+
+  object IsPrimView {
+    def unapply(pv: PrimView[_]): Nullable[Any] = (pv match {
+      case pv: PrimView[_]  => Nullable(pv.value)
       case _ => Nullable.None
     })
   }
@@ -21,7 +25,7 @@ package types {
 }
 
 package object types {
-  implicit val booleanRType: RType[Boolean] = PrimValueType[Boolean, scala.Boolean](classTag[Boolean], RType[scala.Boolean])
-  implicit val byteRType: RType[Byte] = PrimValueType[Byte, scala.Byte](classTag[Byte], RType[scala.Byte])
-  implicit val intRType: RType[Int] = PrimValueType[Int, scala.Int](classTag[Int], RType[scala.Int])
+  implicit val booleanRType: RType[Boolean] = PrimViewType[Boolean, scala.Boolean](classTag[Boolean], RType[scala.Boolean])
+  implicit val byteRType: RType[Byte] = PrimViewType[Byte, scala.Byte](classTag[Byte], RType[scala.Byte])
+  implicit val intRType: RType[Int] = PrimViewType[Int, scala.Int](classTag[Int], RType[scala.Int])
 }
