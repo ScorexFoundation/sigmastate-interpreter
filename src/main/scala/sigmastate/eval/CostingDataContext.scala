@@ -34,6 +34,8 @@ case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree {
   def cost: Int = 1
 
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
+
+  override def digest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
 }
 
 import CostingBox._
@@ -78,7 +80,7 @@ class CostingBox(val IR: Evaluation,
       super.getReg(i)(tT)
 
   override def creationInfo: (Int, Coll[Byte]) = {
-    this.R3[(Int, Coll[Byte])].get.asInstanceOf[Any] match {
+    this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
       case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
         (arr(0).asInstanceOf[Int], builder.Colls.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>

@@ -470,7 +470,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
         val f = asRep[Costed[(b,a)] => Costed[b]](_f)
         val (calcF, costF, sizeF) = splitCostedFunc[(b,a), b](f)
-        val resV = xs.values.fold(zero.value, calcF)
+        val resV = xs.values.foldLeft(zero.value, calcF)
         val mRes = AllMarking(element[Int])
         val mCostF = sliceAnalyzer.analyzeFunc(costF, mRes)
 

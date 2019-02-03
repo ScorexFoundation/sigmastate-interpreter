@@ -43,11 +43,13 @@ class TestBox(
   @NeverInline
   def dataSize = bytes.length
 
-  def creationInfo: (Int, Coll[Byte]) = this.R3[(Int, Coll[Byte])].get
+  def creationInfo: (Int, Coll[Byte]) = this.getReg[(Int, Coll[Byte])](3).get
 
   def tokens: Coll[(Coll[Byte], Long)] = {
-    this.R2[Coll[(Coll[Byte], Long)]].get
+    this.getReg[Coll[(Coll[Byte], Long)]](2).get
   }
+  @NeverInline
+  override def executeFromRegister[T](regId: Byte): T = ???
 }
 
 case class TestAvlTree(
@@ -61,6 +63,8 @@ case class TestAvlTree(
   def dataSize = startingDigest.length + 4 + valueLengthOpt.fold(0L)(_ => 4)
   @NeverInline
   def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
+  @NeverInline
+  def digest: Coll[Byte] = ???
 }
 
 class TestValue[T](val value: T) extends AnyValue {
@@ -92,7 +96,7 @@ class TestContext(
   def OUTPUTS = builder.Colls.fromArray(outputs)
 
   @NeverInline
-  def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+  def lastBlockUtxoRoot = lastBlockUtxoRootHash
 
   @NeverInline
   def MinerPubKey = builder.Colls.fromArray(minerPubKey)
@@ -124,8 +128,17 @@ class TestContext(
   def dataSize = {
     val inputsSize = INPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
     val outputsSize = OUTPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + LastBlockUtxoRootHash.dataSize
+    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + lastBlockUtxoRoot.dataSize
   }
+
+  @NeverInline
+  override def selfBoxIndex: Int = ???
+
+  @NeverInline
+  override def headers: Coll[Header] = ???
+
+  @NeverInline
+  override def preheader: Preheader = ???
 }
 
 class TestSigmaDslBuilder extends SigmaDslBuilder {
@@ -167,7 +180,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
     if (bound <= 0) return TrivialSigma(true)
     if (bound > props.length) return TrivialSigma(false)
     var nValids = 0
-    for (p <- props) {
+    for (p <- props.toArray) {
       if (p.isValid)  nValids += 1
       if (nValids == bound) return TrivialSigma(true)
     }
@@ -341,6 +354,7 @@ case class ProveDHTEvidence(val gv: ECPoint, val hv: ECPoint, val uv: ECPoint, v
 
 trait DefaultContract extends SigmaContract {
   def builder: SigmaDslBuilder = new TestSigmaDslBuilder
+  override def canOpen(ctx: Context): Boolean = ???
 }
 
 

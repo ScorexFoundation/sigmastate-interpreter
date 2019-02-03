@@ -63,14 +63,14 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
 
   case class Contract1(base64_pk1: String) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {
+    override def canOpen(ctx: Context): Boolean = {
       val pk: SigmaProp = SigmaDsl.PubKey(base64_pk1)
       pk.isValid
     }
   }
 
   case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {
+    override def canOpen(ctx: Context): Boolean = {
       val pkA: SigmaProp = SigmaDsl.PubKey(base64_pkA)
       val pkB: SigmaProp = SigmaDsl.PubKey(base64_pkB)
       val pkC: SigmaProp = SigmaDsl.PubKey(base64_pkC)
@@ -79,7 +79,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   case class FriendContract(friend: Box) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
+    override def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
   }
 
 

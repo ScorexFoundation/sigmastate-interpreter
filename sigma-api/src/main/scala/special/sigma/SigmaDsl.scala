@@ -1,17 +1,10 @@
 package special.sigma
 
 import java.math.BigInteger
-
 import org.bouncycastle.math.ec.ECPoint
-import special.SpecialPredef
-
 import scala.reflect.ClassTag
 import special.collection._
-
-import scalan._
-import scalan.RType
-import scalan.Internal
-import scalan.RType
+import scalan.{Internal, RType, _}
 
 @scalan.Liftable
 trait CostModel {
@@ -30,6 +23,95 @@ trait CostModel {
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
   def PubKeySize: Long = 32
+}
+
+/**
+  * All `modQ` operations assume that Q is a global constant (an order of the only one cryptographically strong group
+  * which is used for all cryptographic operations).
+  * So it is globally and implicitly used in all methods.
+  * */
+@scalan.Liftable
+trait BigInt {
+  /** Convert this BigInt value to Byte.
+    * @throws ArithmeticException if overflow happens.
+    */
+  def toByte: Byte
+
+  /** Convert this BigInt value to Short.
+    * @throws ArithmeticException if overflow happens.
+    */
+  def toShort: Short
+
+  /** Convert this BigInt value to Int.
+    * @throws ArithmeticException if overflow happens.
+    */
+  def toInt: Int
+
+  /** Convert this BigInt value to Int.
+    * @throws ArithmeticException if overflow happens.
+    */
+  def toLong: Long
+
+  /** Returns a big-endian representation of this BigInt in a collection of bytes.
+    * For example, the value {@code 0x1213141516171819} would yield the
+    * byte array {@code {0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19}}.
+    * @since 2.0
+    */
+  def toBytes: Coll[Byte]
+
+  /** Returns a big-endian representation of this BigInt in a collection of Booleans.
+    * Each boolean corresponds to one bit of the representation.
+    * @since 2.0
+    */
+  def toBits: Coll[Boolean]
+
+  /** Absolute value of this numeric value.
+    * @since 2.0
+    */
+  def toAbs: BigInt
+
+  /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
+    * `this` is less than, equal to, or greater than `that`.
+    */
+  def compareTo(that: BigInt): Int
+
+  /** Returns this `mod` Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.
+    * @since 2.0
+    */
+  def modQ: BigInt
+
+  /** Adds this number with `other` by module Q.
+    * @since 2.0
+    */
+  def plusModQ(other: BigInt): BigInt
+
+  /** Subracts this number with `other` by module Q.
+    * @since 2.0
+    */
+  def minusModQ(other: BigInt): BigInt
+
+  /** Multiply this number with `other` by module Q.
+    * @since 2.0
+    */
+  def multModQ(other: BigInt): BigInt
+
+  /** Multiply this number with `other` by module Q.
+    * @since Mainnet
+    */
+  def inverseModQ: BigInt // ??? @kushti do we need it
+}
+
+/** Base class for points on elliptic curves.
+  */
+@scalan.Liftable
+trait GroupElement {
+
+  def isIdentity: Boolean
+
+  /** this should replace the currently used ^
+    * @since 2.0
+    */
+  def exp(n: BigInt): GroupElement
 }
 
 @scalan.Liftable
@@ -51,39 +133,53 @@ trait AnyValue {
 
 @scalan.Liftable
 trait Box {
+  /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
+
+  /** Mandatory: Monetary value, in Ergo tokens */
   def value: Long
-  def bytes: Coll[Byte]
-  def bytesWithoutRef: Coll[Byte]
+
+  /** Serialized bytes of guarding script, which should be evaluated to true in order to
+    * open this box. (aka spend it in a transaction)*/
   def propositionBytes: Coll[Byte]
+
+  /** Serialized bytes of this box's content, including proposition bytes. */
+  def bytes: Coll[Byte]
+
+  /** Serialized bytes of this box's content, excluding transactionId and index of output. */
+  def bytesWithoutRef: Coll[Byte]
   def cost: Int
   def dataSize: Long
   def registers: Coll[AnyValue]
 
+  /** Extracts register by id and type.
+    * @param regId zero-based identifier of the register.
+    * @tparam T expected type of the register.
+    * @return Some(value) if the register is defined and has given type.
+    *         None otherwise
+    * @since 2.0
+    */
   def getReg[@Reified T](i: Int)(implicit cT: RType[T]): Option[T]
 
-  /** Mandatory: Monetary value, in Ergo tokens */
-  def R0[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](0)
 
-  /** Mandatory: Guarding script */
-  def R1[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](1)
-
-  /** Mandatory: Secondary tokens */
-  def R2[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](2)
-
-  /** Mandatory: Reference to transaction and output id where the box was created */
-  def R3[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](3)
-
-  // Non-mandatory registers
-  def R4[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](4)
-  def R5[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](5)
-  def R6[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](6)
-  def R7[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](7)
-  def R8[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](8)
-  def R9[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](9)
-
+  /** Secondary tokens */
   def tokens: Coll[(Coll[Byte], Long)]
+
+  /** If `tx` is a transaction which generated this box, then `creationInfo._1` is a height of the tx's block.
+    *  The `creationInfo._2` is a serialized transaction identifier followed by box index in the transaction outputs.
+    */
   def creationInfo: (Int, Coll[Byte])
+
+  /** Extracts register as Coll[Byte], deserializes it to script and then executes this script in the current context.
+    * The original Coll[Byte] of the script is available as getReg[Coll[Byte]](id)
+    * @param regId identifier of the register
+    * @tparam T result type of the deserialized script.
+    * @throws IllegalArgumentException if the actual script type doesn't conform to `T`
+    * @return result of the script execution in the current context
+    * @since Mainnet
+    */
+  def executeFromRegister[T](regId: Byte): T
+
   @Internal
   override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"
 }
@@ -97,16 +193,78 @@ trait AvlTree {
   def maxDeletes: Option[Int]
   def cost: Int
   def dataSize: Long
+  /** Returns digest of the state represent by this tree.
+    * @since 2.0
+    */
+  def digest: Coll[Byte]
+}
+
+/** Represents data of the block headers available in scripts.
+  * @since 2.0
+  */
+trait Header {
+  def version: Byte
+
+  /** Bytes representation of ModifierId of the previous block in the blockchain */
+  def parentId: Coll[Byte] //
+
+  def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
+  def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
+  def transactionsRoot: Coll[Byte]  // Digest32
+  def timestamp: Long
+  def nBits: Long  // actually it is unsigned Int
+  def height: Int
+  def extensionRoot: Coll[Byte] // Digest32
+  def minerPk: GroupElement    // pk
+  def powOnetimePk: GroupElement  // w
+  def powNonce: Coll[Byte]        // n
+  def powDistance: BigInt        // d
+}
+
+/** Only header fields that can be predicted by a miner
+  * @since 2.0
+  */
+trait Preheader { // Testnet2
+  def version: Byte
+  def parentId: Coll[Byte] // ModifierId
+  def timestamp: Long
+  def nBits: Long  // actually it is unsigned Int
+  def height: Int
+  def minerPk: GroupElement
 }
 
 @scalan.Liftable
 trait Context {
   def builder: SigmaDslBuilder
+
+  /** A collection of outputs of the current transaction. */
   def OUTPUTS: Coll[Box]
+
+  /** A collection of inputs of the current transaction, the transaction where selfBox is one of the inputs. */
   def INPUTS: Coll[Box]
+
+  /** Height (block number) of the block which is currently being validated. */
   def HEIGHT: Int
+
+  /** Box whose proposition is being currently executing */
   def SELF: Box
-  def LastBlockUtxoRootHash: AvlTree
+
+  /** Zero based index in `inputs` of `selfBox`. */
+  def selfBoxIndex: Int
+
+  /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
+  def lastBlockUtxoRoot: AvlTree
+
+  /**
+    * @since 2.0
+    */
+  def headers: Coll[Header]
+
+  /**
+    * @since 2.0
+    */
+  def preheader: Preheader
+
   def MinerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
   def getConstant[T](id: Byte)(implicit cT: RType[T]): T
