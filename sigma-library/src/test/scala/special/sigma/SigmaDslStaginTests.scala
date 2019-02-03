@@ -50,6 +50,6 @@ class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
     check(p1, { env: EnvRep[RSigmaProp] => for { p1 <- env; arg <- lifted(p2) } yield p1 && arg }, p1 && p2)
 
     val th = () => p2
-    check(p1, { env: EnvRep[RSigmaProp] => for { p1 <- env; thL <- lifted(th) } yield p1.lazyAnd(thL) }, p1.lazyAnd(th()))
+//    check(p1, { env: EnvRep[RSigmaProp] => for { p1 <- env; thL <- lifted(th) } yield p1.lazyAnd(thL) }, p1.lazyAnd(th()))
   }
 }

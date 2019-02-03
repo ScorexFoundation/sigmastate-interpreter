@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ConcreteCollection, IntConstant, LongConstant, ShortConstant, SigmaPropConstant, ValDef, ValUse, Value}
+import sigmastate.Values.{ShortConstant, LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, IntConstant, ValDef, ValUse, ConcreteCollection}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -12,6 +12,8 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
+import special.collection.Coll
+import special.sigma.{SigmaProp, Context, SpecContext, ContractSpec}
 
 /**
   * An example of an atomic ergo <=> asset exchange.
@@ -36,8 +38,73 @@ import sigmastate.utxo._
   *
   * //todo: make an example of multiple orders being matched
   */
-class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
+class AssetsAtomicExchangeSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
+
+  case class AssetsAtomicExchange(
+      pkA: SigmaProp, pkB: SigmaProp,
+      deadline: Int, token1: Coll[Byte]
+  )(implicit val specContext: SpecContext) extends ContractSpec {
+    import syntax._
+
+    lazy val altBuyerProp = proposition("buyer", { ctx: Context =>
+      import ctx._
+      (HEIGHT > deadline && pkA) || {
+        val tokenData = OUTPUTS(0).getReg[Coll[(Coll[Byte], Long)]](2).get(0)
+        allOf(Coll(
+          tokenData._1 == token1,
+          tokenData._2 >= 60L,
+          OUTPUTS(0).propositionBytes == pkA.propBytes,
+          OUTPUTS(0).getReg[Coll[Byte]](4).get == SELF.id
+        ))
+      }
+    },
+    Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "token1" -> token1),
+    """{
+     |  (HEIGHT > deadline && pkA) || {
+     |    val tokenData = OUTPUTS(0).getReg[Coll[(Coll[Byte], Long)]](2).get(0)
+     |    allOf(Coll(
+     |      tokenData._1 == token1,
+     |      tokenData._2 >= 60L,
+     |      OUTPUTS(0).propositionBytes == pkA.propBytes,
+     |      OUTPUTS(0).getReg[Coll[Byte]](4).get == SELF.id
+     |    ))
+     |  }
+     |}
+    """.stripMargin)
+
+    lazy val altSellerProp = proposition("seller", {ctx: Context =>
+      import ctx._
+      (HEIGHT > deadline && pkB) ||
+          allOf(Coll(
+            OUTPUTS(1).value >= 100,
+            OUTPUTS(1).getReg[Coll[Byte]](4).get == SELF.id,
+            OUTPUTS(1).propositionBytes == pkB.propBytes
+          ))
+    },
+    Env(),
+    """{
+     |  (HEIGHT > deadline && pkB) ||
+     |    allOf(Coll(
+     |      OUTPUTS(1).value >= 100,
+     |      OUTPUTS(1).getReg[Coll[Byte]](4).get == SELF.id,
+     |      OUTPUTS(1).propositionBytes == pkB.propBytes
+     |    ))
+     |}
+    """.stripMargin)
+  }
+
+  property("atomic exchange spec") {
+    implicit val spec = SpecContext(suite)
+    import spec._
+
+    val tokenBuyer = ProvingParty("Alice")
+    val tokenSeller = ProvingParty("Bob")
+    val verifier = VerifyingParty("Miner")
+
+    val contract = AssetsAtomicExchange(tokenBuyer.pubKey, tokenSeller.pubKey, 70, Blake2b256("token1"))
+
+  }
 
   /**
     * A simpler example with single-chain atomic exchange contracts.
@@ -50,7 +117,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
     val tokenId = Blake2b256("token1")
     val deadline = 70
     val tokenBuyerKey = tokenBuyer.dlogSecrets.head.publicImage
-    val tokenSellerKey = tokenBuyer.dlogSecrets.head.publicImage
+    val tokenSellerKey = tokenSeller.dlogSecrets.head.publicImage
 
     def extractToken(box: Value[SBox.type]) = ByIndex(
       ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
@@ -64,7 +131,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
       SigmaOr(List(
         SigmaAnd(List(
           GT(Height, deadline).toSigmaProp,
-          SigmaPropConstant(tokenSellerKey))
+          SigmaPropConstant(tokenBuyerKey))
         ),
         AND(
           // extract toked id
@@ -72,7 +139,7 @@ class AssetsAtomicExchangeSpecification extends SigmaTestingCommons {
           // extract token amount
           GE(SelectField(ValUse(2, STuple(SByteArray, SLong)), 2), LongConstant(60)),
           // right protection buyer
-          EQ(ExtractScriptBytes(ValUse(1, SBox)), SigmaPropConstant(tokenSellerKey).propBytes),
+          EQ(ExtractScriptBytes(ValUse(1, SBox)), SigmaPropConstant(tokenBuyerKey).propBytes),
           EQ(ExtractRegisterAs(ValUse(1, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
         ).toSigmaProp
       ))

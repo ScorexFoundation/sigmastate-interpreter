@@ -118,12 +118,24 @@ trait GroupElement {
 trait SigmaProp {
   def isValid: Boolean
   def propBytes: Coll[Byte]
+
+  /** Logical AND between this SigmaProp and other SigmaProp.
+    * This constructs a new CAND node of sigma tree with two children. */
   @OverloadId("and_sigma") def &&(other: SigmaProp): SigmaProp
+
+  /** Logical AND between this `SigmaProp` and `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
+    * This constructs a new CAND node of sigma tree with two children. */
   @OverloadId("and_bool")  def &&(other: Boolean): SigmaProp
+
+  /** Logical OR between this SigmaProp and other SigmaProp.
+    * This constructs a new COR node of sigma tree with two children. */
   @OverloadId("or_sigma") def ||(other: SigmaProp): SigmaProp
+
+  /** Logical OR between this `SigmaProp` and `Boolean` value on the right.
+    * The boolean value will be wrapped into `SigmaProp` using `sigmaProp` function.
+    * This constructs a new COR node of sigma tree with two children. */
   @OverloadId("or_bool")  def ||(other: Boolean): SigmaProp
-  def lazyAnd(other: => SigmaProp): SigmaProp
-  def lazyOr(other: => SigmaProp): SigmaProp
 }
 
 @scalan.Liftable
@@ -136,7 +148,7 @@ trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
 
-  /** Mandatory: Monetary value, in Ergo tokens */
+  /** Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)*/
   def value: Long
 
   /** Serialized bytes of guarding script, which should be evaluated to true in order to
@@ -161,6 +173,25 @@ trait Box {
     */
   def getReg[@Reified T](i: Int)(implicit cT: RType[T]): Option[T]
 
+  /** Mandatory: Monetary value, in Ergo tokens */
+  def R0[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](0)
+
+  /** Mandatory: Guarding script */
+  def R1[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](1)
+
+  /** Mandatory: Secondary tokens */
+  def R2[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](2)
+
+  /** Mandatory: Reference to transaction and output id where the box was created */
+  def R3[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](3)
+
+  // Non-mandatory registers
+  def R4[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](4)
+  def R5[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](5)
+  def R6[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](6)
+  def R7[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](7)
+  def R8[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](8)
+  def R9[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](9)
 
   /** Secondary tokens */
   def tokens: Coll[(Coll[Byte], Long)]
@@ -253,7 +284,7 @@ trait Context {
   def selfBoxIndex: Int
 
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
-  def lastBlockUtxoRoot: AvlTree
+  def LastBlockUtxoRootHash: AvlTree
 
   /**
     * @since 2.0

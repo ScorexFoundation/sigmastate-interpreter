@@ -96,7 +96,7 @@ class TestContext(
   def OUTPUTS = builder.Colls.fromArray(outputs)
 
   @NeverInline
-  def lastBlockUtxoRoot = lastBlockUtxoRootHash
+  def LastBlockUtxoRootHash = lastBlockUtxoRootHash
 
   @NeverInline
   def MinerPubKey = builder.Colls.fromArray(minerPubKey)
@@ -128,7 +128,7 @@ class TestContext(
   def dataSize = {
     val inputsSize = INPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
     val outputsSize = OUTPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + lastBlockUtxoRoot.dataSize
+    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + LastBlockUtxoRootHash.dataSize
   }
 
   @NeverInline
@@ -275,10 +275,10 @@ trait DefaultSigma extends SigmaProp {
   @OverloadId("or_bool")
   def ||(other: Boolean): SigmaProp = new TrivialSigma(isValid || other)
 
-  @NeverInline
-  def lazyAnd(other: => SigmaProp): SigmaProp = new TrivialSigma(isValid && other.isValid)
-  @NeverInline
-  def lazyOr(other: => SigmaProp): SigmaProp = new TrivialSigma(isValid || other.isValid)
+//  @NeverInline
+//  def lazyAnd(other: => SigmaProp): SigmaProp = new TrivialSigma(isValid && other.isValid)
+//  @NeverInline
+//  def lazyOr(other: => SigmaProp): SigmaProp = new TrivialSigma(isValid || other.isValid)
 }
 
 /**NOTE: this should extend SigmaProp because semantically it subclass of SigmaProp
@@ -300,10 +300,10 @@ case class TrivialSigma(val _isValid: Boolean) extends SigmaProp with DefaultSig
   @NeverInline
   @OverloadId("or_bool")
   override def ||(other: Boolean) = super.||(other)
-  @NeverInline
-  override def lazyAnd(other: => SigmaProp) = super.lazyAnd(other)
-  @NeverInline
-  override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
+//  @NeverInline
+//  override def lazyAnd(other: => SigmaProp) = super.lazyAnd(other)
+//  @NeverInline
+//  override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
 }
 
 case class ProveDlogEvidence(val value: ECPoint) extends SigmaProp with DefaultSigma {
@@ -323,10 +323,6 @@ case class ProveDlogEvidence(val value: ECPoint) extends SigmaProp with DefaultS
   @NeverInline
   @OverloadId("or_bool")
   override def ||(other: Boolean) = super.||(other)
-  @NeverInline
-  override def lazyAnd(other: => SigmaProp) = super.lazyAnd(other)
-  @NeverInline
-  override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
 }
 
 case class ProveDHTEvidence(val gv: ECPoint, val hv: ECPoint, val uv: ECPoint, val vv: ECPoint) extends SigmaProp with DefaultSigma {
@@ -346,10 +342,6 @@ case class ProveDHTEvidence(val gv: ECPoint, val hv: ECPoint, val uv: ECPoint, v
   @NeverInline
   @OverloadId("or_bool")
   override def ||(other: Boolean) = super.||(other)
-  @NeverInline
-  override def lazyAnd(other: => SigmaProp) = super.lazyAnd(other)
-  @NeverInline
-  override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
 }
 
 trait DefaultContract extends SigmaContract {
