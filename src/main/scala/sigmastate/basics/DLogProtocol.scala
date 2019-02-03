@@ -3,16 +3,14 @@ package sigmastate.basics
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
-import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.Cost
 
 object DLogProtocol {
 
@@ -38,13 +36,6 @@ object DLogProtocol {
     def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
 
     val Code: PropositionCode = 102: Byte
-
-    def fromBytes(bytes: Array[Byte]): ProveDlog = {
-      val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
-      val xy = GroupAgnosticEcElement(x, y)
-      val h = dlogGroup.reconstructElement(bCheckMembership = true, xy).get //todo: .get
-      ProveDlog(h)
-    }
   }
 
   case class DLogProverInput(w: BigInteger)
