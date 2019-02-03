@@ -13,7 +13,7 @@ import scala.collection.mutable
 import scala.util.Try
 
 
-abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
+abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) extends DlogGroup[ElemType] {
 
   lazy val curve = x9params.getCurve
 
@@ -413,7 +413,7 @@ abstract class BcDlogFp[ElemType <: ECPoint](val x9params: X9ECParameters) exten
   }
 }
 
-object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) with App {
+object SecP384R1 extends BcDlogGroup[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) with App {
   val elems = 5000
   val base = generator
   val exps = (1 to elems).map { _ =>
@@ -435,7 +435,7 @@ object SecP384R1 extends BcDlogFp[SecP384R1Point](CustomNamedCurves.getByName("s
   println(System.currentTimeMillis() - t0)
 }
 
-object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
+object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
   val elems = 1000
   val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
   val exps = (1 to elems).map { _ =>
@@ -462,4 +462,4 @@ object SecP521R1 extends BcDlogFp[SecP521R1Point](CustomNamedCurves.getByName("s
   println(naive == ll)
 }
 
-object Curve25519 extends BcDlogFp[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
+object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))

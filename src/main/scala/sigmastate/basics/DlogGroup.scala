@@ -2,14 +2,11 @@ package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom
-
 import org.bouncycastle.math.ec.ECPoint
-
-import scala.util.Try
 
 
 /**
-  * This is the general interface for the discrete logarithm group.
+  * This is the general interface for the discrete logarithm prime-order group.
   * Every class in the DlogGroup family implements this interface.
   *
   *
@@ -43,7 +40,8 @@ trait DlogGroup[ElemType <: ECPoint] {
   val secureRandom = new SecureRandom()
 
   /**
-    * The generator g of the group is an element of the group such that, when written multiplicatively, every element of the group is a power of g.
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
     * @return the generator of this Dlog group
     */
   def generator: ElemType
@@ -57,7 +55,7 @@ trait DlogGroup[ElemType <: ECPoint] {
 
   /**
     *
-    * @return the identity of this Dlog group
+    * @return the identity element of this Dlog group
     */
   def identity: ElemType
 
@@ -159,4 +157,5 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @return k the maximum length of a string to be encoded to a Group Element of this group. k can be zero if there is no maximum.
     */
   def maxLengthOfByteArrayForEncoding: Int
+
 }
