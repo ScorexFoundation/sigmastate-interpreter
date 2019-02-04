@@ -524,4 +524,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         IntConstant(2)),
       IndexedSeq(1L, 2L))
   }
+
+  property("partition") {
+    assertProof("OUTPUTS.partition({ (box: Box) => box.value < 2L})._1.size == 1",
+      EQ(
+        SizeOf(
+          SelectField(
+            MethodCall(Outputs,
+              SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+              Vector(
+                FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
+              )
+            ).asValue[STuple],
+            1
+          ).asCollection[SType]
+        ),
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
+  }
 }
