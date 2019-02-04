@@ -53,7 +53,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val fullGameEnv = Map(
       ScriptNameProp -> "fullGameScriptEnv",
       "alice" -> alicePubKey,
-      "h" -> h
+      "k" -> h
     )
 
     val fullGameScript = compileWithCosting(fullGameEnv,
@@ -66,7 +66,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |  val drawPubKey = SELF.R7[SigmaProp].get
         |
         |  (bob && HEIGHT > bobDeadline) || {
-        |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == h
+        |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
         |    valid_a && {
         |      val a_minus_b = a - b
         |      if (a_minus_b == 0) drawPubKey else {

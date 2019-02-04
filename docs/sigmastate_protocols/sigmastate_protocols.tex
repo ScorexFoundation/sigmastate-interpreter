@@ -80,21 +80,21 @@ We use \langname to create  several protocols such as an XOR game (a simplified 
 \end{abstract}
 
 \section{Introduction to $\Sigma$-protocols}
+\label{intro:sigma}
+A key feature of \langname is the use of \emph{$\Sigma$-protocols} (pronounced ``sigma-protocols'') as underlying primitives. A transaction's output is protected by a statement. In order to spend the output, the statement needs to be proven true by attaching a proof. The combination of the statement and the proof forms a $\Sigma$-protocol. We refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10} for details of $\Sigma$-protocols. %Here we give a brief overview. 
 
-A key feature of \langname is that it uses \emph{$\Sigma$-protocols} (pronounced ``sigma-protocols''). A transaction's output is protected by a statement known as a $\Sigma$-statement. In order to spend the output, the statement needs to be proven true by attaching a $\Sigma$-proof. The combination of the protecting script and the spending proof forms a $\Sigma$-protocol. We refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10} for details of $\Sigma$-protocols. Here we give a brief overview. 
-
-The classic example of a $\Sigma$-protocol is the following 3-step identification protocol due to~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ be a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
+The classic example of a $\Sigma$-protocol is the following 3-step identification scheme due to~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
 \begin{enumerate}
 	\item \textbf{Commit:} Alice selects a random $r$, computes $t = g^r$ and sends $t$ to Bob.
 	\item \textbf{Challenge:} Bob selects a random $c\in\mathbb{Z}_q$ and sends $c$ to Alice.
-	\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob. Bob accepts iff $g^z = t\cdot y^c$.
+	\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob. Bob accepts iff $g^z = t\cdot u^c$.
 \end{enumerate}
 
-The above protocol is a proof of knowledge because Bob can extract $x$ if he can get Alice to respond twice for the same $r$ and different $c$. As an example, for $c = 1, 2$, Bob can obtain $r+x$ and $r+2x$, the difference of which gives $x$. This is also called (special) soundness. Above protocol is also (honest verifier) zero-knowledge because anyone can impersonate Alice if the challenge $c$ of Step 2 is known in advance, simply by computing $z \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and $t = g^z/u^c$. 
+The above protocol is a proof of knowledge because Bob can extract $x$ if he can get Alice to respond twice for the same $r$ and different $c$. As an example, for $c = 1, 2$, Bob can obtain $r+x$ and $r+2x$, the difference of which gives $x$. This is also called (special) soundness. The above protocol is also (honest verifier) zero-knowledge because anyone can impersonate Alice if the challenge $c$ of Step 2 is known in advance, simply by picking random $z \in\mathbb{Z}_q$ and computing $t = g^z/u^c$. The statement ``I know the discrete log of $u$ to base $g$'' is called the {\em proposition}, which we denote by $\tau$.
 
-Any protocol that has the above 3-move structure (Alice $\stackrel{t}{\rightarrow}$ Bob, Alice $\stackrel{c}{\leftarrow}$ Bob, Alice $\stackrel{z}{\rightarrow}$ Bob), along with zero-knowledge and soundness property for some statement $\tau$ is called a $\Sigma$-protocol. 
+Any protocol that has the above 3-move structure (Alice $\stackrel{t}{\rightarrow}$ Bob, Bob $\stackrel{c}{\rightarrow}$ Alice, Alice $\stackrel{z}{\rightarrow}$ Bob), along with zero-knowledge and soundness property is called a $\Sigma$-protocol. 
 
-For any $\Sigma$-protocol of some statement $\tau$ with messages $(t, c, z)$, we can apply the Fiat-Shamir transform to convert it into a non-interactive proof of $s$ by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $c$ depends deterministically on $t$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. 
+For any $\Sigma$-protocol with messages $(t, c, z)$, we can apply the Fiat-Shamir transform to convert it into a non-interactive one by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $c$ depends deterministically on $t$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. 
 
 Conceptually, $\Sigma$-proofs \cite{Cra96} are generalizations~\cite{CL06} of digital signatures.
 In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is a special case of the above identification protocol with $c = H(t \Vert m)$, where $m$ is the message. The signature proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. 
@@ -106,18 +106,18 @@ Although \langname uses $\Sigma$-protocols, it does so transparently. Developers
 
 \langname provides as primitives two elementary $\Sigma$-protocols over an elliptic curve group of prime order, written here in multiplicative notation:
 \begin{enumerate}
-	\item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $u$, the proof convinces a verifier that the prover knows $x$ such that $u=g^x$, where $g$ is the group generator (also known as base point), without revealing $x$. This is the Schnorr signature with public key $u$, described in Section~\ref{digital-sig}.
+	\item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $u$, the proof convinces a verifier that the prover knows $x$ such that $u=g^x$, where $g$ is the group generator (also known as base point), without revealing $x$. This is the Schnorr signature with public key $u$ and is essentially the protocol given in Section~\ref{intro:sigma}. 
 	We call this primtive \texttt{proveDLog}$(u)$. Note that there is a default generator $g$ in the method. 
 	
 
-	\item A proof of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the prover, Alice convinces a verifier Bob that she knows $x$ such that $u={g}^x$ and $v={h}^x$, without revealing $x$. This is done as follows. 
+	\item A proof of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the prover, Alice convinces a verifier Bob that she knows $x$ such that $u={g}^x$ and $v={h}^x$. This is done by extending the protocol of Section~\ref{intro:sigma} as follows. 
 	\begin{enumerate}
-		\item \textbf{Commit:} Alice picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_g, t_h) = ({g}^r, {h}^r)$ and sends $(t_g, t_h)$ to Bob.
+		\item \textbf{Commit:} Alice picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_0, t_1) = ({g}^r, {h}^r)$ and sends $(t_0, t_1)$ to Bob.
 		\item \textbf{Challenge:} Bob picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to Alice.
-		\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob, who accepts if ${g}^z = {t_g}\cdot {u}^c$ and $h^z=t_h\cdot v^c$. % for $b \in \{0,1\}$.
+		\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$. % for $b \in \{0,1\}$.
 	\end{enumerate}
 	
-	We use the non-interactive variant of this protocol, where the challenge is computed as $c = H(t_g \Vert t_h)$. We call this primitive \texttt{proveDHTuple}$(g, h, u, v)$.
+	We use the non-interactive variant of this protocol, where $c = H(t_0 \Vert t_1)$. We call this primitive \texttt{proveDHTuple}$(g, h, u, v)$.
 	%This can also be used in a DDH-easy group. 
 	
 \end{enumerate}
@@ -125,13 +125,12 @@ Although \langname uses $\Sigma$-protocols, it does so transparently. Developers
 
 \subsection{Complex $\Sigma$-Protocols}
 
-Any two $\Sigma$-protocols of statements $\tau_0, \tau_1$ with messages $(t_0, c_0, z_0), (t_1, c_1, z_1)$ respectively can be combined into a $\Sigma$-protocol of $s_0 \land s_1$ with messages $(t, c, z) = (t_0\Vert t_1,c_0\Vert c_1, c_0\Vert c_1)$. We call such a construction an $\andnode$ operator on the protocols. %Such a protocol proves both statements simultaneously. 
-
-More interestingly, as shown in \cite{CDS94},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one of the statements without revealing which one. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting convesations for $\tau_0, \tau_1$ respectively. We call such a construction an $\ornode$ operator. 
+Any two $\Sigma$-protocols of propositions $\tau_0, \tau_1$ with messages $(t_0, c_0, z_0), (t_1, c_1, z_1)$ respectively can be combined into a $\Sigma$-protocol of $\tau_0 \land \tau_1$ with messages $(t, c, z) = (t_0\Vert t_1,c_0\Vert c_1, c_0\Vert c_1)$. We call such a construction an $\andnode$ operator on the protocols. 
+More interestingly, as shown in \cite{CDS94},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one proposition, without revealing which. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting convesations for $\tau_0, \tau_1$ respectively. We call such a construction an $\ornode$ operator. 
 
 Clearly, both the $\andnode$ and $\ornode$ operators also result in $\Sigma$-protocols that can be further combined or made non-interactive via the Fiat-Shamir transform. 
 
-There is one more operator that we need called $\tnode$, which allows us to construct a $k$-out-of-$n$ $\Sigma$-protocol~\cite{CDS94} as follows. Given $n$ statements, Alice can prove knowledge of witnesses for at least $k$ statements without revealing which statements were used. 
+There is one more operator that we need called $\tnode$, which allows us to construct a $k$-out-of-$n$ $\Sigma$-protocol~\cite{CDS94} as follows. Given $n$ propositions, Alice can prove knowledge of witnesses for at least $k$ propositions without revealing which. 
 
 \langname gives the ability to build more sophisticated $\Sigma$-protocols using the connectives $\andnode$, $\ornode$, and $\tnode$. 
 Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows. For example, in \langname a ring signature by public keys $u_1, \dots, u_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $u_1, \dots, u_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
@@ -212,9 +211,46 @@ The above script requires that the transaction spending the half-game box must e
 \end{enumerate}
  
 The game ensure security and fairness as follows. Since Alice's choice is hidden from Bob when he creates the full-game output, he does not have any advantage in selecting $b$. Secondly, Alice is sure to lose if she commits to a value other than 0 or 1. Finally, if Alice refuses to open her commitment, then Bob is sure to win after about 30 blocks. 
+\subsection{Rock-Paper-Scissors Game}
+
+Compared to Rock-Paper-Scissors (RPS), the XOR game is simpler (and efficient) because there is no draw condition and for this reason should be prefered in practice. However, it is useful to consider the RPS game as an example of more complex protocols.
+
+Let $a, b\in \mathbb{Z}_3$ be the choices Alice and Bob, with the understanding that 0, 1 and 2 represent rock, paper and scissors respectively. If $a = b$ then the game is a draw, otherwise Alice wins if $a-b \in \{1, -2\}$ else Bob wins. The game is similar to XOR, except that Bob must now generate two outputs. In the draw case each player gets one output, otherwise the winner gets both. 
+As before, Alice's commitment $k=H(a||s)$ and public key \texttt{alice} is given via \texttt{env} to the compiler	:
+
+\begin{verbatim}
+val fullGameScript = compile(env, """{
+  val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
+  val a = getVar[Byte](1).get  // Alice's secret choice a (represented as a byte)
+  val b = SELF.R4[Byte].get    // Bob's public choice b (represented as a byte)
+  val bob = SELF.R5[SigmaProp].get
+  val bobDeadline = SELF.R6[Int].get // after this, it becomes Bob's coin
+  val drawPubKey = SELF.R7[SigmaProp].get
+  val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
+
+  (bob && HEIGHT > bobDeadline) || { valid_a && 
+    if (a == b) drawPubKey 
+    else { if ((a - b) == 1 || (a - b) == -2) alice else bob }}}""")
+\end{verbatim}
+
+The code is derived from the XOR game by adding \texttt{drawPubKey}. A hash of the above script is computed as \texttt{val scriptHash = Blake2b256(fullGameScript)} for use in the half-game script:
+
+\begin{verbatim}
+OUTPUTS.forall{(out:Box) =>
+  val b             = out.R4[Byte].get
+  val bobDeadline   = out.R6[Int].get
+
+  bobDeadline >= HEIGHT+30 && out.value >= SELF.value && 
+  (b == 0 || b == 1 || b == 2) && blake2b256(out.propositionBytes) == scriptHash
+} && OUTPUTS.size == 2 && OUTPUTS(0).R7[SigmaProp].get == alice 
+\end{verbatim}
+
+% // Bob needs to ensure that out.R5 contains bobPubKey
+
+The above code ensures that \texttt{R7} of the first output contains Alice's public key (for the draw scenario). Bob should ensure that \texttt{R7} of the second output contains his public key. 
 
 
-\subsection{The Mixing Protocol}
+\subsection{Mixing Protocol}
 
 We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
 %The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
@@ -223,7 +259,7 @@ We describe a mixing protocol called \mixname, whose security depends on the har
 \mixname has a pool, called the {\em Half-Mix} pool (H-pool), which contains coins ready for mixing. 
 To mix an arbitrary coin (which could itself be the output of a previous mix), any one of the two actions can be performed:
 \begin{enumerate}
-	\item Pick another coin from the H-pool (if its non-empty), ``mix'' them by converting them to two indistinguisble coins, each spendable by their respective owner. We call this the {\em mix} Step.
+	\item Pick another coin from the H-pool (if it is non-empty), ``mix'' them by converting them to two indistinguisble coins, each spendable by their respective owner. We call this the {\em mix} Step.
 	\item Add the coin to the H-pool and wait for someone to mix them. This is the {\em pool} Step.
 \end{enumerate}
 
@@ -248,15 +284,15 @@ Alice's spending condition for $A$ is that any transaction spending $A$ should b
 		The box $O_b$ contains data $(g, h, u, v)$ and $O_{1-b}$ contains $(g, v, u, h)$. If the DDH problem in $G$ is hard, the distributions $(g, {g}^{y}, {g}^{x}, {g}^{xy})$ and 
 		$(g, {g}^{xy}, {g}^{x}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
 		\item  Let 
-		$\tau_\textsf{A}$ be the statement: ``Parse data as $(g, h, u, v)$ and
+		$\tau_\textsf{A}$ be the proposition: ``Parse data as $(g, h, u, v)$ and
 		prove knowledge of $x$ such that $u = {g}^{x}$ and ${v} = {h}^{x}$.'' This is encoded as $\texttt{proveDHTuple}(g, h, u, v)$.
 		
-		\item Let $\tau_{\textsf{B}}$ be the statement: ``Parse data as $(g, v, u, h)$ and
+		\item Let $\tau_{\textsf{B}}$ be the proposition: ``Parse data as $(g, v, u, h)$ and
 		prove knowledge of $y$ such that $h = {g}^{y}$.'' 
 %		Observe that $h, v$ have been swapped from $\tau_\textsf{A}$. 
 This is encoded as $\texttt{proveDlog}(h)$, keeping $g$ as the default generator.
 		
-		\item Each box is protected by the statement $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
+		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
 		
 	\end{enumerate}
 	\item \textbf{Spend:} Both Alice and Bob later spent their respective boxes using their secrets. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
@@ -265,7 +301,7 @@ This is encoded as $\texttt{proveDlog}(h)$, keeping $g$ as the default generator
 \textbf{Security:} We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
 For this to work, each output must be of a fixed value and the fee should be zero. We discuss below how to handle non-zero fee. 
 
-\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is proportional to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
+\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
 
 To encode this protocol in \langname, first define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{g\_x} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
 
@@ -324,7 +360,7 @@ This is done by storing the hot-wallet funds in a special type of address denote
 
 Thus, all funds sent from such addresses have a temporary lock of 100 blocks. Note that the number 100 can be replaced by any desired value but it must be decided at the time of address generation. All hot-wallet funds must be stored in and sent from the above safe address only. 
 
-Let \texttt{bob} be the public key of a customer who is withdrawing. The sender (\texttt{alice}) must ensure that register \texttt{R4} of the created UTXO contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the UTXO after around 100 blocks. 
+Let \texttt{bob} be the public key of a customer who is withdrawing. The sender (\texttt{alice}) must ensure that register \texttt{R4} of the created UTXO contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the UTXO after around 100 blocks (with the exact number depending on \texttt{bobDeadline}). 
 
 If an unauthorized transaction is detected from \texttt{alice}, an ``abort procedure'' is triggered via \texttt{carol}: all funds sent from \texttt{alice} currently in the locked state are suspect and need to diverted elsewhere. Additionally, UTXOs currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
@@ -333,17 +369,17 @@ Note that such reversible addresses are designed for storing large amount of fun
 Concretely, such an address is created as follows. First hardcode \texttt{carol} inside \texttt{withdrawEnv}. Then create a script and compile it to get its binary version called \texttt{withdrawScript}:
 \begin{verbatim}
 val withdrawScript = compile(withdrawEnv, """{
-val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
-val bobDeadline = SELF.R5[Int].get       // max locking height
-(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) }""")
+  val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
+  val bobDeadline = SELF.R5[Int].get       // max locking height
+  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) }""")
 \end{verbatim}
 
 Compute \texttt{scriptHash = Blake2b256(withdrawScript)}. Then hardcode \texttt{alice} and \texttt{scriptHash} inside \texttt{depositEnv} to create a compiled script called \texttt{depositScript}:
 
 \begin{verbatim}
 val depositScript = compile(depositEnv, """{ 
-alice && OUTPUTS.size == 1 && OUTPUTS(0).R5[Int].get >= HEIGHT + 30 &&
-blake2b256(OUTPUTS(0).propositionBytes) == scriptHash }""")
+  alice && OUTPUTS.size == 1 && OUTPUTS(0).R5[Int].get >= HEIGHT + 30 &&
+  blake2b256(OUTPUTS(0).propositionBytes) == scriptHash }""")
 \end{verbatim}
 
 Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
