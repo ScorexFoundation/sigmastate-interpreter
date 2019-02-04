@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.asn1.x9.X9ECParameters
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.{SecP384R1Point, SecP521R1Point}
+import org.bouncycastle.math.ec.custom.sec.{SecP256K1Point, SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
 
@@ -463,3 +463,5 @@ object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName
 }
 
 object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
+
+object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))

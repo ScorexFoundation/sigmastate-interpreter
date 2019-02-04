@@ -8,10 +8,10 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.Cost
+
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
   override type A = FirstDiffieHellmanTupleProverMessage
