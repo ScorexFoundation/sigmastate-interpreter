@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.scalatest.{FunSuite, Matchers}
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
-  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialSigma(b)
+  implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
   test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
     // border cases

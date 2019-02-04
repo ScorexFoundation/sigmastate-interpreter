@@ -29,8 +29,8 @@ class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
     val ctx: SContext = newContext(10, boxA1)
       .withInputs(boxA2)
       .withVariables(Map(1 -> 30, 2 -> 40))
-    val p1: SSigmaProp = new special.sigma.TrivialSigma(true)
-    val p2: SSigmaProp = new special.sigma.TrivialSigma(false)
+    val p1: SSigmaProp = new special.sigma.MockSigma(true)
+    val p2: SSigmaProp = new special.sigma.MockSigma(false)
 
     val dsl: SSigmaDslBuilder = SigmaDsl
 
