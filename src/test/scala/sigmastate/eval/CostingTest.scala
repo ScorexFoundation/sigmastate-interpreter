@@ -29,11 +29,9 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WArray._
   import WECPoint._
   import WBigInteger._
-  import ProveDlogEvidence._
   import Context._; import SigmaContract._
   import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
-  import TrivialSigma._
   import Liftables._
   
   test("SType.dataSize") {
@@ -86,7 +84,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes }
+      { _ => dsl.proveDlog(g1Sym).asRep[SigmaProp].propBytes }
     )
   }
 
@@ -169,11 +167,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     checkInEnv(env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = dsl.proveDlog(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = dsl.proveDlog(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val projectBytes = projectPubKey.propBytes
-        val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
+        val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
+        val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectBytes)
@@ -225,7 +223,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val regScript = dsl.proveDlog(liftConst(script)).asRep[SigmaProp]
       val selfBytes = ctx.SELF.propositionBytes
       val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(

@@ -34,7 +34,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import Coll._;
   import CollBuilder._;
   import SigmaProp._;
-  import TrivialSigma._
   import Box._
   import CollOverArrayBuilder._;
   import CostedBuilder._
@@ -56,10 +55,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import CostedOption._;
   import CostedNone._
   import CostedSome._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
   import SigmaDslBuilder._
-  import TrivialSigma._
   import MonoidBuilder._
   import MonoidBuilderInst._
   import AvlTree._
@@ -419,13 +415,14 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val CM = CollMethods
     val CostedBuilderM = CostedBuilderMethods
     val SPCM = WSpecialPredefCompanionMethods
+    val SDBM = SigmaDslBuilderMethods
 
     d match {
       case WArrayM.length(Def(arrC: WArrayConst[_,_])) => arrC.constValue.length
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
-        val r = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](root)))
+        val r = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](root)))
         val res = if (op == And)
           l && r
         else
@@ -434,7 +431,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       // Rule: l op Thunk {... prop.isValid} => (TrivialSigma(l) op prop).isValid
       case ApplyBinOpLazy(op, l, Def(ThunkDef(root @ SigmaM.isValid(prop), sch))) if l.elem == BooleanElement =>
-        val l1 = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](l)))
+        val l1 = asRep[SigmaProp](sigmaDslBuilder.sigmaProp(asRep[Boolean](l)))
         // don't need new Thunk because sigma logical ops always strict
         val res = if (op == And)
           l1 && prop
@@ -442,7 +439,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           l1 || prop
         res.isValid
 
-      case TrivialSigmaCtor(SigmaM.isValid(p)) => p
+      case SDBM.sigmaProp(_, SigmaM.isValid(p)) => p
 
       case CCM.mapCosted(xs: RCostedColl[a], _f: RCostedFunc[_, b]) =>
         val f = asRep[Costed[a] => Costed[b]](_f)
@@ -966,7 +963,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case _ @ DLogProtocol.ProveDlog(v) =>
         val ge = asRep[Costed[WECPoint]](eval(v))
-        val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
         RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
 
       case _ @ ProveDHTuple(gv, hv, uv, vv) =>
@@ -974,7 +971,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val hvC = asRep[Costed[WECPoint]](eval(hv))
         val uvC = asRep[Costed[WECPoint]](eval(uv))
         val vvC = asRep[Costed[WECPoint]](eval(vv))
-        val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
         val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
         RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 

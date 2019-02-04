@@ -33,9 +33,6 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import SigmaDslBuilder._
   import CCostedBuilder._
   import MonoidBuilderInst._
-  import TrivialSigma._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -293,14 +290,14 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkSigmaPropIsProven(prop.asSigmaProp)
       case SigmaM.propBytes(In(prop)) =>
         mkSigmaPropBytes(prop.asSigmaProp)
-      case Def(TrivialSigmaCtor(In(cond))) =>
+      case Def(SDBM.sigmaProp(_, In(cond))) =>
         mkBoolToSigmaProp(cond.asBoolValue)
-      case Def(ProveDlogEvidenceCtor(In(g))) =>
+      case Def(SDBM.proveDlog(_, In(g))) =>
         g match {
           case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(mkProveDlog(gc))
           case _ => mkProveDlog(g.asGroupElement)
         }
-      case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
+      case Def(SDBM.proveDHTuple(_, In(g), In(h), In(u), In(v))) =>
         (g, h, u, v) match {
           case (gc: Constant[SGroupElement.type]@unchecked,
           hc: Constant[SGroupElement.type]@unchecked,

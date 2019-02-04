@@ -42,9 +42,6 @@ trait Evaluation extends RuntimeCosting { IR =>
   import Monoid._
   import MonoidBuilder._
   import MonoidBuilderInst._
-  import TrivialSigma._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -323,14 +320,14 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(th)
 
-          case TrivialSigmaCtor(In(isValid: Boolean)) =>
-            val res = sigmastate.TrivialProp(isValid)
+          case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
+            val res = CostingSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
-          case ProveDlogEvidenceCtor(In(g: EcPointType)) =>
-            val res = DLogProtocol.ProveDlog(GroupElementConstant(g))
+          case SDBM.proveDlog(_, In(g: EcPointType)) =>
+            val res = CostingSigmaProp(DLogProtocol.ProveDlog(GroupElementConstant(g)))
             out(res)
-          case ProveDHTEvidenceCtor(In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v))
+          case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
+            val res = CostingSigmaProp(ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)))
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>

@@ -26,6 +26,7 @@ class CompilerItTest extends BaseCtxTests
   import WArray._
   import WOption._
   import CollBuilder._
+  import SigmaDslBuilder._
   import Context._
   import Coll._
   import SigmaProp._
@@ -33,8 +34,6 @@ class CompilerItTest extends BaseCtxTests
   import CCostedColl._
   import WBigInteger._
   import WECPoint._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
   import sigmastate.serialization.OpCodes._
   import Liftables._
   import SType.AnyOps
@@ -93,7 +92,7 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def sigmaPropConstCase = {
-    val resSym = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
+    val resSym = dsl.proveDlog(liftConst(g1.asInstanceOf[ECPoint]))
     val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
@@ -107,8 +106,8 @@ class CompilerItTest extends BaseCtxTests
 
   def andSigmaPropConstsCase = {
     import SigmaDslBuilder._
-    val p1Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g1.asInstanceOf[ECPoint]))
-    val p2Sym: Rep[SigmaProp] = RProveDlogEvidence(liftConst(g2.asInstanceOf[ECPoint]))
+    val p1Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g1.asInstanceOf[ECPoint]))
+    val p2Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g2.asInstanceOf[ECPoint]))
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
       cost = null,
@@ -241,7 +240,6 @@ class CompilerItTest extends BaseCtxTests
 
   def crowdFunding_Case = {
     import SCollection._
-    import TrivialSigma._
     import SigmaDslBuilder._
     import Box._
     import Values._
@@ -252,10 +250,10 @@ class CompilerItTest extends BaseCtxTests
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     Case(env, "crowdFunding_Case", crowdFundingScript, ergoCtx,
       { ctx: Rep[Context] =>
-        val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
-        val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
+        val backerPubKey = dsl.proveDlog(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = dsl.proveDlog(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
+        val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
