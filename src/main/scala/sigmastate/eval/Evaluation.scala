@@ -205,8 +205,12 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)
-          case FieldApply(In(data: special.collection.Coll[a]), IsTupleFN(i)) =>
-            out(data(i-1))
+          case FieldApply(In(data), IsTupleFN(i)) => data match {
+            case coll: special.collection.Coll[a] =>
+              out(coll(i - 1))
+            case tup: Product =>
+              out(tup.productElement(i - 1))
+          }
           case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))

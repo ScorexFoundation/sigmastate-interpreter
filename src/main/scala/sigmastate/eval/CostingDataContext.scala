@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import java.awt.MultipleGradientPaint.ColorSpaceType
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
@@ -8,7 +9,7 @@ import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, SomeValue, ErgoTree, SigmaBoolean, NoneValue}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, SomeValue, Value, ErgoTree, SigmaBoolean, GroupElementConstant, NoneValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, Serializer, OperationSerializer}
@@ -18,6 +19,9 @@ import special.sigma._
 import scala.reflect.ClassTag
 import scala.util.{Success, Failure}
 import scalan.RType
+import scorex.crypto.hash.{Sha256, Blake2b256}
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp {
@@ -194,8 +198,70 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], exponent)
   }
 
-  override def atLeast(bound: Int, children: Coll[SigmaProp]): SigmaProp = {
-    Interpreter.error("Should not be called. Method calls of atLeast should be handled in Evaluation.compile.evaluate rule")
+  private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
+    props.map { case csp: CostingSigmaProp => csp.sigmaTree }
+  }
+
+  private def toGroupElementConst(p: ECPoint): GroupElementConstant =
+    GroupElementConstant(p.asInstanceOf[EcPointType])
+
+  override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
+    val sigmaTrees = toSigmaTrees(props.toArray)
+    val tree = AtLeast.reduce(bound, sigmaTrees)
+    CostingSigmaProp(tree)
+  }
+
+  override def allZK(props: Coll[SigmaProp]): SigmaProp = {
+    val sigmaTrees = toSigmaTrees(props.toArray)
+    val tree = CAND.normalized(sigmaTrees)
+    CostingSigmaProp(tree)
+  }
+
+  override def anyZK(props: Coll[SigmaProp]): SigmaProp = {
+    val sigmaTrees = toSigmaTrees(props.toArray)
+    val tree = COR.normalized(sigmaTrees)
+    CostingSigmaProp(tree)
+  }
+
+  override def sigmaProp(b: Boolean): SigmaProp = {
+    CostingSigmaProp(TrivialProp(b))
+  }
+
+  override def blake2b256(bytes: Coll[Byte]): Coll[Byte] = {
+    val h = Blake2b256.hash(bytes.toArray)
+    Colls.fromArray(h)
+  }
+
+  override def sha256(bytes: Coll[Byte]): Coll[Byte] = {
+    val h = Sha256.hash(bytes.toArray)
+    Colls.fromArray(h)
+  }
+
+  override def proveDlog(g: ECPoint): SigmaProp =
+    CostingSigmaProp(ProveDlog(g.asInstanceOf[EcPointType]))
+
+  override def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = {
+    val dht = ProveDHTuple(
+      toGroupElementConst(g), toGroupElementConst(g),
+      toGroupElementConst(u), toGroupElementConst(v))
+    CostingSigmaProp(dht)
+  }
+
+  override def groupGenerator: ECPoint = {
+    CryptoConstants.dlogGroup.generator
+  }
+
+  override def substConstants[T](scriptBytes: Coll[Byte],
+      positions: Coll[Int],
+      newValues: Coll[T])
+      (implicit cT: RType[T]): Coll[Byte] = {
+    val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
+    val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
+    Colls.fromArray(res)
+  }
+
+  override def decodePoint(encoded: Coll[Byte]): ECPoint = {
+    CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray)
   }
 }
 

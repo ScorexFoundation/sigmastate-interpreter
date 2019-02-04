@@ -5,6 +5,7 @@ class CrowdFundingContract(
     val backerPubKey: SigmaProp,
     val projectPubKey: SigmaProp
 ) extends CrowdFunding with DefaultContract {
+  override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
 }
 
 class DemurrageCurrencyContract(
@@ -12,5 +13,6 @@ class DemurrageCurrencyContract(
     val demurrageCost: Long,
     val regScript: SigmaProp
 ) extends DemurrageCurrency with DefaultContract {
+  override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
 }
 

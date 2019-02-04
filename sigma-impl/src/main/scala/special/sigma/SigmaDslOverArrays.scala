@@ -193,9 +193,9 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def anyOf(conditions: Coll[Boolean]): Boolean = conditions.exists(c => c)
 
   @NeverInline
-  def allZK(proofs: Coll[SigmaProp]): SigmaProp = new TrivialSigma(proofs.forall(p => p.isValid))
+  def allZK(props: Coll[SigmaProp]): SigmaProp = new TrivialSigma(props.forall(p => p.isValid))
   @NeverInline
-  def anyZK(proofs: Coll[SigmaProp]): SigmaProp = new TrivialSigma(proofs.exists(p => p.isValid))
+  def anyZK(props: Coll[SigmaProp]): SigmaProp = new TrivialSigma(props.exists(p => p.isValid))
 
   @NeverInline
   def sigmaProp(b: Boolean): SigmaProp = TrivialSigma(b)
@@ -348,7 +348,6 @@ case class ProveDHTEvidence(val gv: ECPoint, val hv: ECPoint, val uv: ECPoint, v
 }
 
 trait DefaultContract extends SigmaContract {
-  def builder: SigmaDslBuilder = new TestSigmaDslBuilder
   override def canOpen(ctx: Context): Boolean = ???
 }
 

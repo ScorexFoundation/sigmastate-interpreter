@@ -9,7 +9,7 @@ import SType.AnyOps
 import sigmastate.Values.{ErgoTree, Constant, EvaluatedValue}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.{IRContext, Evaluation, CostingSigmaProp}
+import sigmastate.eval.{CostingSigmaProp, IRContext, Evaluation, CostingSigmaDslBuilder}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, CostedProverResult}
@@ -24,7 +24,7 @@ import scala.util.Try
 
 
 case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) {
-  val dsl: SigmaDslBuilder = new TestSigmaDslBuilder
+  val dsl: SigmaDslBuilder = new CostingSigmaDslBuilder
   type PropositionFunc = Context => SigmaProp
   type TokenId = Coll[Byte]
   case class ErgoScript(env: ScriptEnv, code: String)
@@ -38,6 +38,8 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
   }
   
   trait ContractSyntax { contract: SigmaContract =>
+    override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder
+
     val syntax = new ExtensionMethods(builder)
 
     def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)

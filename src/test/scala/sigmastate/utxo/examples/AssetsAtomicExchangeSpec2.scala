@@ -3,8 +3,10 @@ package sigmastate.utxo.examples
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
 import org.ergoplatform.ErgoBox.R4
-import special.sigma.{SpecContext, Context, SigmaProp}
+import special.sigma.{Context, SpecContext, SigmaProp}
 import scorex.crypto.hash.Blake2b256
+import sigmastate.TrivialProp
+import sigmastate.eval.CostingSigmaProp
 
 class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
   implicit lazy val spec = SpecContext(suite)(new TestingIRContext)
@@ -97,11 +99,9 @@ class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
 
     val input0 = spendingTx.inputs(0)
     val res = input0.runDsl()
+    res shouldBe CostingSigmaProp(TrivialProp.TrueProp)
 
     val buyerProof = tokenBuyer.prove(input0).get
-    //Though we use separate provers below, both inputs do not contain any secrets, thus
-    //a spending transaction could be created and posted by anyone.
-
     verifier.verify(input0, buyerProof) shouldBe true
   }
 }

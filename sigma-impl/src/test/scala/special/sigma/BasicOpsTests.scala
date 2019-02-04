@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.scalatest.{FunSuite, Matchers}
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
+  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialSigma(b)
   test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
     // border cases
@@ -63,6 +64,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
 
   case class Contract1(base64_pk1: String) extends DefaultContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {
       val pk: SigmaProp = SigmaDsl.PubKey(base64_pk1)
       pk.isValid
@@ -70,6 +72,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends DefaultContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {
       val pkA: SigmaProp = SigmaDsl.PubKey(base64_pkA)
       val pkB: SigmaProp = SigmaDsl.PubKey(base64_pkB)
@@ -79,6 +82,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   case class FriendContract(friend: Box) extends DefaultContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
   }
 
