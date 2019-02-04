@@ -3,21 +3,50 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SomeValue, NoneValue}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, SomeValue, ErgoTree, SigmaBoolean, NoneValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
-import special.collection.{Coll, CCostedBuilder, CollType}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, Serializer, OperationSerializer}
+import special.collection.{Coll, CCostedBuilder, CollType, Builder}
 import special.sigma._
 
 import scala.reflect.ClassTag
 import scala.util.{Success, Failure}
 import scalan.RType
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+
+case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp {
+  override def isValid: Boolean = sigmaTree match {
+    case TrivialProp(cond) => cond
+    case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
+  }
+
+  override def propBytes: Coll[Byte] = {
+    val bytes = DefaultSerializer.serializeWithSegregation(SigmaPropConstant(sigmaTree))
+    Builder.DefaultCollBuilder.fromArray(bytes)
+  }
+
+  override def &&(other: SigmaProp): SigmaProp = other match {
+    case other: CostingSigmaProp =>
+      CostingSigmaProp(CAND.normalized(Seq(sigmaTree, other.sigmaTree)))
+  }
+
+  override def &&(other: Boolean): SigmaProp =
+    CostingSigmaProp(CAND.normalized(Seq(sigmaTree, TrivialProp(other))))
+
+  override def ||(other: SigmaProp): SigmaProp = other match {
+    case other: CostingSigmaProp =>
+      CostingSigmaProp(COR.normalized(Seq(sigmaTree, other.sigmaTree)))
+  }
+
+  override def ||(other: Boolean): SigmaProp =
+    CostingSigmaProp(COR.normalized(Seq(sigmaTree, TrivialProp(other))))
+}
 
 case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree {
   val builder = new CostingSigmaDslBuilder()

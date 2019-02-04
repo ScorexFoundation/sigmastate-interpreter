@@ -9,7 +9,7 @@ import SType.AnyOps
 import sigmastate.Values.{ErgoTree, Constant, EvaluatedValue}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.{IRContext, Evaluation}
+import sigmastate.eval.{IRContext, Evaluation, CostingSigmaProp}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, CostedProverResult}
@@ -30,7 +30,11 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
   case class ErgoScript(env: ScriptEnv, code: String)
 
   case class PropositionSpec(name: String, dslSpec: PropositionFunc, scriptSpec: ErgoScript) {
-    lazy val ergoTree: ErgoTree = testSuite.compileWithCosting(scriptSpec.env, scriptSpec.code)
+    lazy val ergoTree: ErgoTree = {
+      val value = testSuite.compileWithCosting(scriptSpec.env, scriptSpec.code)
+      val tree: ErgoTree = value
+      tree
+    }
   }
   
   trait ContractSyntax { contract: SigmaContract =>
@@ -40,7 +44,7 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
 
     def proposition(name: String, dslSpec: PropositionFunc, scriptEnv: ScriptEnv, scriptCode: String) = {
       val env = scriptEnv.mapValues(v => v match {
-        case sp: ProveDlogEvidence => ProveDlog.apply(sp.value.asInstanceOf[EcPointType])
+        case sp: CostingSigmaProp => sp.sigmaTree
         case coll: Coll[SType#WrappedType]@unchecked =>
           val elemTpe = Evaluation.rtypeToSType(coll.tItem)
           IR.builder.mkCollectionConstant[SType](coll.toArray, elemTpe)
@@ -60,7 +64,7 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
 
   case class ProvingParty(name: String) extends ProtocolParty {
     private val prover = new ErgoLikeTestProvingInterpreter
-    val pubKey: SigmaProp = ProveDlogEvidence(prover.dlogSecrets.head.publicImage.h)
+    val pubKey: SigmaProp = CostingSigmaProp(prover.dlogSecrets.head.publicImage)
 
     def prove(inBox: InBox): Try[CostedProverResult] = {
       val boxToSpend = inBox.utxoBox

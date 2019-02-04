@@ -308,7 +308,10 @@ case class TrivialSigma(val _isValid: Boolean) extends SigmaProp with DefaultSig
 
 case class ProveDlogEvidence(val value: ECPoint) extends SigmaProp with DefaultSigma {
   @NeverInline
-  def propBytes: Coll[Byte] = new CollOverArray(value.getEncoded(true))
+  def propBytes: Coll[Byte] = {
+    
+    new CollOverArray(value.getEncoded(true))
+  }
   @NeverInline
   def isValid: Boolean = true
   @NeverInline
