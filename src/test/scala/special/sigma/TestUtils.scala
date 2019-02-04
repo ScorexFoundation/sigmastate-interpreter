@@ -5,11 +5,14 @@ import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scalan.{Nullable, RType}
 import scorex.crypto.hash.Digest32
 import sigmastate.{AvlTreeData, SType}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
+import SType.AnyOps
+import sigmastate.Values.{ErgoTree, Constant, EvaluatedValue}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, Evaluation}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.{ProverResult, CostedProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
 import sigmastate.utxo.ErgoLikeTestInterpreter
 import special.collection.Coll
@@ -35,8 +38,16 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
 
     def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
-    def proposition(name: String, dslSpec: PropositionFunc, scriptEnv: ScriptEnv, scriptCode: String) =
-      PropositionSpec(name, dslSpec, ErgoScript(scriptEnv, scriptCode))
+    def proposition(name: String, dslSpec: PropositionFunc, scriptEnv: ScriptEnv, scriptCode: String) = {
+      val env = scriptEnv.mapValues(v => v match {
+        case sp: ProveDlogEvidence => ProveDlog.apply(sp.value.asInstanceOf[EcPointType])
+        case coll: Coll[SType#WrappedType]@unchecked =>
+          val elemTpe = Evaluation.rtypeToSType(coll.tItem)
+          IR.builder.mkCollectionConstant[SType](coll.toArray, elemTpe)
+        case _ => v
+      })
+      PropositionSpec(name, dslSpec, ErgoScript(env, scriptCode))
+    }
 
     def Env(entries: (String, Any)*): ScriptEnv = Map(entries:_*)
   }
@@ -77,7 +88,7 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
 
   case class InBox(tx: Transaction, utxoBox: OutBox) {
     def toErgoContext: ErgoLikeContext = {
-      val propSpec: PropositionSpec = utxoBox.propSpec
+      val propSpec = utxoBox.propSpec
       val ctx = ErgoLikeContext(
         currentHeight = tx.block.height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -86,6 +97,11 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
         spendingTransaction = ErgoLikeTransaction(IndexedSeq(), tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
       ctx
+    }
+    def runDsl(): SigmaProp = {
+      val ctx = toErgoContext.toSigmaContext(IR, false)
+      val res = utxoBox.propSpec.dslSpec(ctx)
+      res
     }
   }
 

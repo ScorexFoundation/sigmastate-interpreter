@@ -2,6 +2,7 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Height
 import scalan.RType
+import scalan.RType.PairType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
@@ -88,6 +89,18 @@ object ErgoLikeContext {
   val noOutputs: Array[Box] = Array[Box]()
 
   def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
+    case (c: Constant[_], tpe) => toTestData(c.value, c.tpe, isCost)
+    case (_, STuple(Seq(tpeA, tpeB))) =>
+      value match {
+        case tup: Tuple2[_,_] =>
+          val valA = toTestData(tup._1, tpeA, isCost)
+          val valB = toTestData(tup._2, tpeB, isCost)
+          (valA, valB)
+        case arr: Array[Any] =>
+          val valA = toTestData(arr(0), tpeA, isCost)
+          val valB = toTestData(arr(1), tpeB, isCost)
+          (valA, valB)
+      }
     case (arr: Array[a], SCollectionType(elemType)) =>
       implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
       elemType match {

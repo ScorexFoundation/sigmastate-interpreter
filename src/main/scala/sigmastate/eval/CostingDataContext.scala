@@ -3,7 +3,7 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
@@ -49,7 +49,7 @@ class CostingBox(val IR: Evaluation,
     colBytes(ebox.bytes)(IR),
     colBytes(ebox.bytesWithNoRef)(IR),
     colBytes(ebox.propositionBytes)(IR),
-    regs(ebox)(IR)
+    regs(ebox, isCost)(IR)
   )
 {
   override val builder = new CostingSigmaDslBuilder()
@@ -94,22 +94,22 @@ object CostingBox {
 
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
-  def regs(ebox: ErgoBox)(implicit IR: Evaluation): Coll[AnyValue] = {
+  def regs(ebox: ErgoBox, isCost: Boolean)(implicit IR: Evaluation): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)
 
     def checkNotYetDefined(id: Int, newValue: SValue) =
       require(res(id) == null, s"register $id is defined more then once: previous value ${res(id)}, new value $newValue")
 
-    for ((k, v) <- ebox.additionalRegisters) {
+    for ((k, v: SValue) <- ebox.additionalRegisters) {
       checkNotYetDefined(k.number, v)
-      res(k.number) = new TestValue(v)
+      res(k.number) = new TestValue(ErgoLikeContext.toTestData(v, v.tpe, isCost))
     }
 
     for (r <- ErgoBox.mandatoryRegisters) {
       val regId = r.number
       val v = ebox.get(r).get
       checkNotYetDefined(regId, v)
-      res(regId) = new TestValue(v)
+      res(regId) = new TestValue(ErgoLikeContext.toTestData(v, v.tpe, isCost))
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }

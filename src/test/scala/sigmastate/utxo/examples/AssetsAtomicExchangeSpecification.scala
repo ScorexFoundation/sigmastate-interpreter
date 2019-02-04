@@ -40,108 +40,15 @@ import special.sigma.{SigmaProp, Context, SpecContext}
   * //todo: make an example of multiple orders being matched
   */
 class AssetsAtomicExchangeSpecification extends SigmaTestingCommons { suite =>
-
-  implicit lazy val spec = SpecContext(suite)(new TestingIRContext)
-  import spec._
-
-  case class AssetsAtomicExchange(
-      pkA: SigmaProp, pkB: SigmaProp,
-      deadline: Int, tokenId: Coll[Byte]
-  )(implicit val specContext: SpecContext) extends ContractSpec {
-    import syntax._
-    val env = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "tokenId" -> tokenId)
-
-    lazy val altBuyerProp = proposition("buyer", { ctx: Context =>
-      import ctx._
-      (HEIGHT > deadline && pkA) || {
-        val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
-        allOf(Coll(
-          tokenData._1 == tokenId,
-          tokenData._2 >= 60L,
-          OUTPUTS(0).propositionBytes == pkA.propBytes,
-          OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
-        ))
-      }
-    },
-    env,
-    """{
-     |  (HEIGHT > deadline && pkA) || {
-     |    val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
-     |    allOf(Coll(
-     |      tokenData._1 == tokenId,
-     |      tokenData._2 >= 60L,
-     |      OUTPUTS(0).propositionBytes == pkA.propBytes,
-     |      OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
-     |    ))
-     |  }
-     |}
-    """.stripMargin)
-
-    lazy val altSellerProp = proposition("seller", {ctx: Context =>
-      import ctx._
-      (HEIGHT > deadline && pkB) ||
-          allOf(Coll(
-            OUTPUTS(1).value >= 100,
-            OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
-            OUTPUTS(1).propositionBytes == pkB.propBytes
-          ))
-    },
-    env,
-    """{
-     |  (HEIGHT > deadline && pkB) ||
-     |    allOf(Coll(
-     |      OUTPUTS(1).value >= 100,
-     |      OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
-     |      OUTPUTS(1).propositionBytes == pkB.propBytes
-     |    ))
-     |}
-    """.stripMargin)
-
-    lazy val buyerSignature  = proposition("buyerSignature", _ => pkA, env, "pkA")
-    lazy val sellerSignature = proposition("sellerSignature", _ => pkB, env, "pkB")
-  }
-
-  property("atomic exchange spec") {
-
-    val tokenBuyer = ProvingParty("Alice")
-    val tokenSeller = ProvingParty("Bob")
-    val verifier = VerifyingParty("Miner")
-
-    val contract = AssetsAtomicExchange(tokenBuyer.pubKey, tokenSeller.pubKey, 70, Blake2b256("token1"))
-
-
-    // setup block, tx, and output boxes which we will spend
-    val creatingTx = block(0).transaction()
-    val out0 = creatingTx.outBox(100, contract.altBuyerProp)
-    val out1 = creatingTx
-          .outBox(1, contract.altSellerProp)
-            .withTokens(contract.tokenId -> 60)
-
-    // setup spending transaction
-    val spendingTx = block(50).transaction().spending(out0, out1)
-    spendingTx.outBox(1, contract.buyerSignature)
-        .withTokens(contract.tokenId -> 60)
-        .withRegs(R4 -> out0.id)
-    spendingTx.outBox(100, contract.sellerSignature)
-        .withRegs(R4 -> out1.id)
-
-    val input0 = spendingTx.inputs(0)
-    val buyerProof = tokenBuyer.prove(input0).get
-
-    //Though we use separate provers below, both inputs do not contain any secrets, thus
-    //a spending transaction could be created and posted by anyone.
-
-    verifier.verify(input0, buyerProof) shouldBe true
-  }
+  implicit lazy val IR: IRContext = new TestingIRContext
 
   /**
     * A simpler example with single-chain atomic exchange contracts.
     */
   property("atomic exchange") {
-    implicit lazy val IR: IRContext = new TestingIRContext
-    val tokenBuyer = new ErgoLikeTestProvingInterpreter()(IR)
-    val tokenSeller = new ErgoLikeTestProvingInterpreter()(IR)
-    val verifier = new ErgoLikeTestInterpreter()(IR)
+    val tokenBuyer = new ErgoLikeTestProvingInterpreter
+    val tokenSeller = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
 
     val tokenId = Blake2b256("token1")
     val deadline = 70

@@ -193,6 +193,8 @@ trait Evaluation extends RuntimeCosting { IR =>
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
                 Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
+              case Some(v) =>
+                valueInReg
               case None => None
               case _ => throw new InvalidType(
                 s"Expected Some(Constant($declaredTpe)) but found $valueInReg value of register: $d")
@@ -421,12 +423,13 @@ object Evaluation {
     case SGroupElement => ECPointRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
+    case STuple(Seq(tpeA, tpeB)) =>
+      pairRType(stypeToRType(tpeA), stypeToRType(tpeB))
     case STuple(items) =>
       val b = new CollOverArrayBuilder()
-      val types = b.fromArray(items.toArray)(AnyRefRType[SType])
-      val names = types.indices.map(i => STuple.componentNameByIndex(i))
+      val types = items.toArray
       val rtrt = asType[SomeType](rtypeRType[Any])
-      structRType(names.toArray, types.map(t => stypeToRType(t).asInstanceOf[SomeType])(rtrt).toArray)
+      tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
