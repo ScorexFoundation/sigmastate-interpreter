@@ -1560,6 +1560,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isOption =>
+        val optC = asRep[CostedOption[Any]](eval(obj))
+        val argsC = args.map(eval)
+        (method.name, argsC) match {
+          case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
+          case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
+          case _ => error(s"method $method is not supported")
+        }
+
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
