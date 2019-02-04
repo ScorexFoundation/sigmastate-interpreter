@@ -501,13 +501,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.zip") {
-    testMissingCosting("Coll(1, 2).zip(Coll(1, 1))",
+    comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
+        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
       )
-    )
   }
 
   property("SCollection.partition") {

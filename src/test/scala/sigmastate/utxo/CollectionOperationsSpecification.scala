@@ -512,4 +512,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 2L))
   }
 
+  property("zip") {
+    assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
+      EQ(
+        SizeOf(MethodCall(Outputs,
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            ConcreteCollection(IntConstant(1), IntConstant(2))
+          )
+        ).asCollection[STuple]),
+        IntConstant(2)),
+      IndexedSeq(1L, 2L))
+  }
 }
