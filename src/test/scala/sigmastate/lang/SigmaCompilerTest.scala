@@ -510,17 +510,15 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.partition") {
-    testMissingCosting("Coll(1, 2).partition({ (i: Int) => i > 0 })",
+    comp("Coll(1, 2).partition({ (i: Int) => i > 0 })") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(Terms.Lambda(
-          Vector(("i", SInt)),
-          SBoolean,
-          Some(GT(Ident("i", SInt), IntConstant(0)))
+        Vector(FuncValue(
+          Vector((1, SInt)),
+          GT(ValUse(1, SInt), IntConstant(0))
         ))
       )
-    )
   }
 
   property("SCollection.mapReduce") {
