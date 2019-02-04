@@ -296,7 +296,7 @@ OUTPUTS.size == 2 && {proveDHTuple(g, g_x, c, d) || proveDHTuple(g, g_x, d, c)}
 \subsection{Preventing Theft using Reversible Addresses}
 
 In this section, we use \langname to design useful primitives called {\em reversible addresses}, which have anti-theft features in the following sense:
-any funds sent to a safe address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. 
+any funds sent to a reversible address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. 
 
 To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. The irreversibility of fund transfers, usually considered a feature, has now become a bug.
 
