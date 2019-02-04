@@ -64,7 +64,7 @@
 
 \begin{document}
 
-\title{\langname Overview (working title)}
+\title{Protocols in \langname: From Games to Mixers}
 
 \author{authors}
 
@@ -73,85 +73,86 @@
 
 
 \begin{abstract}
-This paper describes uses \langname to design games and mixing protocols
+%This article describes \langname via examples. 
+We use \langname to create  several protocols such as an XOR game (a simplified version of {\em rock-paper-scissors}), {\em reversible addresses} that have anti-theft features, and {\em \mixname}, a mixing protocol to enhance anonymity. 
+
+%We create several protocols using \langname, such as games and mixing protocols. 
 \end{abstract}
-\section{Overview of \langname}
 
-\paragraph{Built-in $\Sigma$-protocols}
-Our language incorporates proofs as first-class citizens, giving developers access to cryptographic primitives for non-interactive {\em proofs of knowledge} known as $\Sigma$-protocols (pronounced ``sigma-protocols''). A transaction's output is protected by a statement known as a $\Sigma$-statement. In order to spend the output, the statement needs to be proven true (by providing a $\Sigma$-proof). The combination of the protecting script and the spending proof forms a $\Sigma$-protocol.
+\section{Introduction to $\Sigma$-protocols}
 
-\subsection{Sigma Protocols}
-For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}. Here we give a brief overview. The classic example of a $\Sigma$-proof is the following 3-step identification protocol due to~\cite{Sch91}. $G$ is a cyclic multiplicative group of prime order $q$ such that computing discrete logarithms in $G$ is hard. Let $g$ be a generator of $G$. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
+A key feature of \langname is that it uses \emph{$\Sigma$-protocols} (pronounced ``sigma-protocols''). A transaction's output is protected by a statement known as a $\Sigma$-statement. In order to spend the output, the statement needs to be proven true by attaching a $\Sigma$-proof. The combination of the protecting script and the spending proof forms a $\Sigma$-protocol. We refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10} for details of $\Sigma$-protocols. Here we give a brief overview. 
+
+The classic example of a $\Sigma$-protocol is the following 3-step identification protocol due to~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ be a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
 \begin{enumerate}
 	\item \textbf{Commit:} Alice selects a random $r$, computes $t = g^r$ and sends $t$ to Bob.
 	\item \textbf{Challenge:} Bob selects a random $c\in\mathbb{Z}_q$ and sends $c$ to Alice.
 	\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob. Bob accepts iff $g^z = t\cdot y^c$.
 \end{enumerate}
 
-The above protocol is a proof of knowledge because Bob can extract $x$ if he can get Alice to respond twice for the same $r$ and different $c$. As an example, for $c = 1, 2$, Bob can obtain $r+x$ and $r+2x$, the difference of which gives $x$. This is also called (special) soundness. Above protocol is also (honest verifier) zero-knowledge because anyone can impersonate Alice if the challenge $c$ of Step 2 is known in advance simply by computing $z \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and $t = g^z/u^c$. 
+The above protocol is a proof of knowledge because Bob can extract $x$ if he can get Alice to respond twice for the same $r$ and different $c$. As an example, for $c = 1, 2$, Bob can obtain $r+x$ and $r+2x$, the difference of which gives $x$. This is also called (special) soundness. Above protocol is also (honest verifier) zero-knowledge because anyone can impersonate Alice if the challenge $c$ of Step 2 is known in advance, simply by computing $z \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and $t = g^z/u^c$. 
 
 Any protocol that has the above 3-move structure (Alice $\stackrel{t}{\rightarrow}$ Bob, Alice $\stackrel{c}{\leftarrow}$ Bob, Alice $\stackrel{z}{\rightarrow}$ Bob), along with zero-knowledge and soundness property for some statement $\tau$ is called a $\Sigma$-protocol. 
 
-\subsection{Non-Interactive Sigma Protocols}
 For any $\Sigma$-protocol of some statement $\tau$ with messages $(t, c, z)$, we can apply the Fiat-Shamir transform to convert it into a non-interactive proof of $s$ by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $c$ depends deterministically on $t$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. 
 
-\subsubsection{Digital Signatures from Sigma Protocols}
-\label{digital-sig}
 Conceptually, $\Sigma$-proofs \cite{Cra96} are generalizations~\cite{CL06} of digital signatures.
 In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is a special case of the above identification protocol with $c = H(t \Vert m)$, where $m$ is the message. The signature proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. 
 
-\subsection{Combining Sigma Protocols}
+\section{Overview of \langname}
+Although \langname uses $\Sigma$-protocols, it does so transparently. Developers are not required to understand the cryptography behind such protocols in order to use them. Here we describe \langname ``under the hood'' -- how it works and what primitives it uses.
 
-Any two $\Sigma$-protocols of statements $\tau_0, \tau_1$ with messages $(t_0, c_0, z_0), (t_1, c_1, z_1)$ respectively can be combined into a $\Sigma$-protocol of $s_0 \land s_1$ with messages $(t, c, z) = (t_0\Vert t_1,c_0\Vert c_1, c_0\Vert c_1)$. We call such a construction an $\andnode$ operator on the protocols. %Such a protocol proves both statements simultaneously. 
-
-More interestingly, as shown in \cite{orprotocol},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one of the statements without revealing which one. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting convesations for $\tau_0, \tau_1$ respectively. We call such a construction an $\ornode$ operator. 
-
-Clearly, both the $\andnode$ and $\ornode$ operators also result in $\Sigma$-protocols that can be further combined or made non-interactive via the Fiat-Shamir transform. 
-
-There is one more operator that we need called $\tnode$, which allows us to construct a $k$-out-of-$n$ $\Sigma$-protocol in the following sense~\cite{threshold}: given $n$ statements, Alice can prove knowledge of witnesses for at least $k$ statements without revealing which statements were true. 
-
-\snote{Describe Threshold briefly}
-\section{Primitives in ErgoScript}
+\subsection{Elementary $\Sigma$-Protocols}
 
 \langname provides as primitives two elementary $\Sigma$-protocols over an elliptic curve group of prime order, written here in multiplicative notation:
 \begin{enumerate}
-\item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $u$, the proof convinces a verifier that the prover knows $x$ such that $u=g^x$, where $g$ is the group generator (also known as base point), without revealing $x$. This is the Schnorr signature with public key $u$, described in Section~\ref{digital-sig}.
-We call this primtive \texttt{proveDLog}$(u)$. Note that there is a default generator $g$ in the method. 
- 
-\snote{What is the exact input to the hash function? (what forms the message?)}
+	\item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $u$, the proof convinces a verifier that the prover knows $x$ such that $u=g^x$, where $g$ is the group generator (also known as base point), without revealing $x$. This is the Schnorr signature with public key $u$, described in Section~\ref{digital-sig}.
+	We call this primtive \texttt{proveDLog}$(u)$. Note that there is a default generator $g$ in the method. 
+	
 
-\item A proof of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the prover, Alice convinces a verifier Bob that she knows $x$ such that $u={g}^x$ and $v={h}^x$, without revealing $x$. This is done as follows. 
-\begin{enumerate}
-	\item \textbf{Commit:} Alice picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_g, t_h) = ({g}^r, {h}^r)$ and sends $(t_g, t_h)$ to Bob.
-	\item \textbf{Challenge:} Bob picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to Alice.
-	\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob, who accepts if ${g}^z = {t_g}\cdot {u}^c$ and $h^z=t_h\cdot v^c$. % for $b \in \{0,1\}$.
+	\item A proof of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g, h, u, v$, the prover, Alice convinces a verifier Bob that she knows $x$ such that $u={g}^x$ and $v={h}^x$, without revealing $x$. This is done as follows. 
+	\begin{enumerate}
+		\item \textbf{Commit:} Alice picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_g, t_h) = ({g}^r, {h}^r)$ and sends $(t_g, t_h)$ to Bob.
+		\item \textbf{Challenge:} Bob picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to Alice.
+		\item \textbf{Response:} Alice computes $z = r + cx$ and sends $z$ to Bob, who accepts if ${g}^z = {t_g}\cdot {u}^c$ and $h^z=t_h\cdot v^c$. % for $b \in \{0,1\}$.
+	\end{enumerate}
+	
+	We use the non-interactive variant of this protocol, where the challenge is computed as $c = H(t_g \Vert t_h)$. We call this primitive \texttt{proveDHTuple}$(g, h, u, v)$.
+	%This can also be used in a DDH-easy group. 
+	
 \end{enumerate}
 
-We use the non-interactive variant of this protocol, where the challenge is computed as $c = H(t_g \Vert t_h)$. We call this primitive \texttt{proveDHTuple}$(g, h, u, v)$.
-%This can also be used in a DDH-easy group. 
 
-\snote{What is the exact input to the hash function?}
+\subsection{Complex $\Sigma$-Protocols}
 
-\end{enumerate}
+Any two $\Sigma$-protocols of statements $\tau_0, \tau_1$ with messages $(t_0, c_0, z_0), (t_1, c_1, z_1)$ respectively can be combined into a $\Sigma$-protocol of $s_0 \land s_1$ with messages $(t, c, z) = (t_0\Vert t_1,c_0\Vert c_1, c_0\Vert c_1)$. We call such a construction an $\andnode$ operator on the protocols. %Such a protocol proves both statements simultaneously. 
+
+More interestingly, as shown in \cite{CDS94},the two protocols can also be used to construct a $\Sigma$-protocol for $\tau_0\lor \tau_1$, where Alice proves knowledge of the witness of one of the statements without revealing which one. Let $b\in \{0, 1\}$ be the bit such that Alice knows the witness for $\tau_b$ but not for $\tau_{1-b}$. Alice will run the correct protocol for $\tau_b$ and a simulation for $\tau_{1-b}$. First she generates a random challenge $c_{1-b}$. She then generates $(t_{1-b}, z_{1-b})$ by using the simulator on $c_{1-b}$. She also generates $t_b$ by following the protocol correctly. The pair $(t_0, t_1)$ is sent to Bob, who responds with a challenge $c$. Alice then computes $c_b = c\oplus c_{1-b}$. She computes $z_b$ using $(t_b, c_b)$. Her response to Bob is $((z_0, c_0), (z_1, c_1))$, who accepts if: (1) $c = c_0 \oplus c_1$ and (2) $(t_0, c_0, z_0), (t_1, c_1, z_1)$ are both accepting convesations for $\tau_0, \tau_1$ respectively. We call such a construction an $\ornode$ operator. 
+
+Clearly, both the $\andnode$ and $\ornode$ operators also result in $\Sigma$-protocols that can be further combined or made non-interactive via the Fiat-Shamir transform. 
+
+There is one more operator that we need called $\tnode$, which allows us to construct a $k$-out-of-$n$ $\Sigma$-protocol~\cite{CDS94} as follows. Given $n$ statements, Alice can prove knowledge of witnesses for at least $k$ statements without revealing which statements were used. 
 
 \langname gives the ability to build more sophisticated $\Sigma$-protocols using the connectives $\andnode$, $\ornode$, and $\tnode$. 
 Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal which of the relevant values the prover knows. For example, in \langname a ring signature by public keys $u_1, \dots, u_n$ can be specified as an $\ornode$ of $\Sigma$-protocols for proving knowledge of discrete logarithms of $u_1, \dots, u_n$. The proof can be constructed with the knowledge of just one such discrete logarithm, and does not reveal which one was used in its construction. 
 
-\paragraph{Rich context, enabling self-replication}
+\subsection{Other Features of \langname} 
+
+%Rich context, enabling self-replication
 In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
 
-\langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
+%\langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
-\snote{This seems incomplete. In particular, we should describe all context variables and operations allowed, possibly using BNF or some grammar.}
+%\snote{This seems incomplete. In particular, we should describe all context variables and operations allowed, possibly using BNF or some grammar.}
 
 
-\paragraph{Running time estimation and safety checks}
-\lnote{someone should fill this in, because I know very little about it}
-See Section \ref{sec:safety} for more details.
+%\paragraph{Running time estimation and safety checks}
+%\lnote{someone should fill this in, because I know very little about it}
+%See Section \ref{sec:safety} for more details.
 
 \section{\langname Examples}
 
-We give some examples of \langname to illustrate its usage. 
+We give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository.
 \subsection{The XOR Game}
 
 We describe a simple game called ``Same or different'' or the XOR game. Alice and Bob both submit a coin each and select a bit independently. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires 3 transactions (steps). 
@@ -176,7 +177,7 @@ val fullGameScript = compile(env, """{
   val s     = getVar[Coll[Byte]](0).get // bit string s 
   val a     = getVar[Byte](1).get       // bit a (represented as a byte)
   val b     = SELF.R4[Byte].get         // bit b (represented as a byte)
-  val bob   = SELF.R5[SigmaProp].get
+  val bob   = SELF.R5[SigmaProp].get    // Bob's public key
   val bobDeadline = SELF.R6[Int].get 
    
   (bob && HEIGHT > bobDeadline) || 
@@ -186,19 +187,19 @@ val fullGameScript = compile(env, """{
 Then a hash of the above compiled script is computed:
 
 \begin{verbatim}
-  val fullGameScriptHash = Blake2b256(fullGameScript)
+  val scriptHash = Blake2b256(fullGameScript)
 \end{verbatim}
 
-Finally, Alice sets \texttt{fullGameScriptHash} as an environment variable for the compiler and creates her half-game output with the following spending condition:
+Finally, Alice sets \texttt{scriptHash} as an environment variable for the compiler and creates her half-game output with the following spending condition:
 
 \begin{verbatim}
   val out           = OUTPUTS(0) 
   val b             = out.R4[Byte].get
   val bobDeadline   = out.R6[Int].get
   val validBobInput = b == 0 || b == 1
-  alice || {
-    OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value*2 &&
-    validBobInput && blake2b256(out.propositionBytes) == fullGameScriptHash }
+
+  alice || { validBobInput && blake2b256(out.propositionBytes) == scriptHash &&
+  OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value * 2 }
 \end{verbatim}
 
 The above script requires that the transaction spending the half-game box must either be signed by Alice or generate exactly one output box with the following properties:
@@ -207,17 +208,97 @@ The above script requires that the transaction spending the half-game box must e
 	\item Its value must be at least twice that of the half-game box.
 	\item Register \texttt{R4} must contain a byte that is either 0 or 1. This encodes Bob's choice $b$.
 	\item Register \texttt{R6} must contain an integer that is at least 30 more than the height at which the box is generated. This will correspond to the height at which Bob automatically wins.
-	\item It must be protected by a script whose hash equals \texttt{fullGameScriptHash}.
+	\item It must be protected by a script whose hash equals \texttt{scriptHash}.
 \end{enumerate}
  
 The game ensure security and fairness as follows. Since Alice's choice is hidden from Bob when he creates the full-game output, he does not have any advantage in selecting $b$. Secondly, Alice is sure to lose if she commits to a value other than 0 or 1. Finally, if Alice refuses to open her commitment, then Bob is sure to win after about 30 blocks. 
 
-\subsection{Theft-Proof Addresses}
 
-In this section, we use \langname to design a useful primitive called a {\em reversible address}, which has anti-theft features in the following sense.
-Any funds sent to a safe address can only be spent using a {\em reversible transaction}. That is, any transaction spending funds from a safe address must create outputs that allow funds to be reversed for a certain time. 
+\subsection{The Mixing Protocol}
 
-To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized withdraw transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. The irreversibility of fund transfers, usually considered a feature, has now become a bug.
+We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
+%The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
+\mixname essentially mixes two coins and so provides ``50\% anonymity'' in one round. A coin can be successively mixed to increase the anonymity to any desired level (say 99.99999\%). 
+
+\mixname has a pool, called the {\em Half-Mix} pool (H-pool), which contains coins ready for mixing. 
+To mix an arbitrary coin (which could itself be the output of a previous mix), any one of the two actions can be performed:
+\begin{enumerate}
+	\item Pick another coin from the H-pool (if its non-empty), ``mix'' them by converting them to two indistinguisble coins, each spendable by their respective owner. We call this the {\em mix} Step.
+	\item Add the coin to the H-pool and wait for someone to mix them. This is the {\em pool} Step.
+\end{enumerate}
+
+Without loss of generality, Alice will pool and Bob will mix. In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
+
+\begin{enumerate}
+	\item \textbf{Pool:} To add a coin to the pool, Alice picks random generator $g\in G$ and $x\in \mathbb{Z}_q$. Let $u = g^{x}$. Alice creates an output box $A$ containing $(g, u)$ and protected by the script given below. She waits for Bob to join by spending $A$ subject to the conditions given in the script. 
+Alice's spending condition for $A$ is that any transaction spending $A$ should be as follows: 
+	
+	\begin{enumerate}
+		\item It has two inputs of equal value, one of which is $A$. %The value of the second input should be the same as in $A$. 
+		\item It has two outputs $(O_0, O_1)$ with data tuples $(g, c, u, d)$ and $(g, d, u, c)$ respectively. That is, the data of each output contains a 4-tuple where the first and third elements are $g$ and $u$ respectively and the second and fourth elements are swapped. 
+		\item The spender of $A$ must satisfy $\texttt{proveDHTuple}(g, u, c, d)\lor \texttt{proveDHTuple}(g, u, d, c)$.
+		\item The outputs should be protected by the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
+	\end{enumerate}
+	
+	
+	\item \textbf{Mix:} Bob randomly picks one unspent box from the pool, for instance, $A$. Bob then picks a random secret bit $b \in \mathbb{Z}_2$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values (and indistinguishable) such that $O_b$ is spendable only by Alice and $O_{1-b}$ is spendable only by Bob. This is done as follows:
+	
+	\begin{enumerate}
+		\item Bob picks secret $y\in \mathbb{Z}_q$. Let $h = {g}^{y}$ and $v = {u}^{y}$.  %Let $c_b = g^y$ and $c_{1-b} = g^{xy}$. Bob 
+		The box $O_b$ contains data $(g, h, u, v)$ and $O_{1-b}$ contains $(g, v, u, h)$. If the DDH problem in $G$ is hard, the distributions $(g, {g}^{y}, {g}^{x}, {g}^{xy})$ and 
+		$(g, {g}^{xy}, {g}^{x}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
+		\item  Let 
+		$\tau_\textsf{A}$ be the statement: ``Parse data as $(g, h, u, v)$ and
+		prove knowledge of $x$ such that $u = {g}^{x}$ and ${v} = {h}^{x}$.'' This is encoded as $\texttt{proveDHTuple}(g, h, u, v)$.
+		
+		\item Let $\tau_{\textsf{B}}$ be the statement: ``Parse data as $(g, v, u, h)$ and
+		prove knowledge of $y$ such that $h = {g}^{y}$.'' 
+%		Observe that $h, v$ have been swapped from $\tau_\textsf{A}$. 
+This is encoded as $\texttt{proveDlog}(h)$, keeping $g$ as the default generator.
+		
+		\item Each box is protected by the statement $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
+		
+	\end{enumerate}
+	\item \textbf{Spend:} Both Alice and Bob later spent their respective boxes using their secrets. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
+\end{enumerate}
+
+\textbf{Security:} We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
+For this to work, each output must be of a fixed value and the fee should be zero. We discuss below how to handle non-zero fee. 
+
+\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is proportional to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
+
+To encode this protocol in \langname, first define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{g\_x} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
+
+\begin{verbatim}
+val fullMixScript = compile(env, """{
+  val e = SELF.R4[GroupElement].get
+  val f = SELF.R5[GroupElement].get
+  proveDlog(f) || proveDHTuple(g, e, g_x, f) }""")
+\end{verbatim}
+
+Compute a hash of the above compiled script: \texttt{val scriptHash = Blake2b256(fullMixScript)}
+Alice's Half-Mix box is protected by the following \langname code:
+
+\begin{verbatim}
+val c = OUTPUTS(0).R4[GroupElement].get
+val d = OUTPUTS(0).R5[GroupElement].get
+  
+OUTPUTS(0).value == SELF.value && OUTPUTS(1).value == SELF.value &&
+blake2b256(OUTPUTS(0).propositionBytes) == scriptHash &&
+blake2b256(OUTPUTS(1).propositionBytes) == scriptHash &&
+OUTPUTS(1).R4[GroupElement].get == d && OUTPUTS(1).R5[GroupElement].get == c && 
+OUTPUTS.size == 2 && {proveDHTuple(g, g_x, c, d) || proveDHTuple(g, g_x, d, c)}
+\end{verbatim}
+
+\textbf{Handling Fee:} TBD
+%\snote{To do: describe fee handling.}
+
+\subsection{Preventing Theft using Reversible Addresses}
+
+In this section, we use \langname to design useful primitives called {\em reversible addresses}, which have anti-theft features in the following sense:
+any funds sent to a safe address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. 
+
+To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. The irreversibility of fund transfers, usually considered a feature, has now become a bug.
 
 We would like that in the event of such a compromise, we are able to save all funds stored in this wallet and move them to another address, provided that the breach is discovered within a specified time (such as 24 hours) of the first unauthorized withdraw. 
 
@@ -234,7 +315,7 @@ This is done by storing the hot-wallet funds in a special type of address denote
 		\item ``My register \texttt{R5} contains an arbitrary integer called \texttt{bobDeadline}.'' 
 		\item ``I can only be spent by \texttt{carol} if blockchain height $\leq$ \texttt{bobDeadline}.''
 		\item ``I can only be spent by \texttt{bob} if blockchain height $>$ \texttt{bobDeadline}.''	
-    \end{enumerate}  
+	\end{enumerate}  
 	\item Any UTXO created by spending me must satisfy the following: 	
 	\begin{enumerate}
 		\item Its register \texttt{R5} must contain a number that is at least 100 more than the current height. 
@@ -249,80 +330,24 @@ If an unauthorized transaction is detected from \texttt{alice}, an ``abort proce
 
 Note that such reversible addresses are designed for storing large amount of funds needed for automated withdraws (such as an exchange hot-wallet). They are not designed for storing funds for personal use (such as paying for a coffee).
 
-Concretely, such an address is created as follows. First hardwire \texttt{carol} inside \texttt{withdrawEnv}. Then create a script and compile it to get its binary version called \texttt{withdrawScript}:
+Concretely, such an address is created as follows. First hardcode \texttt{carol} inside \texttt{withdrawEnv}. Then create a script and compile it to get its binary version called \texttt{withdrawScript}:
 \begin{verbatim}
 val withdrawScript = compile(withdrawEnv, """{
-  val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
-  val bobDeadline = SELF.R5[Int].get       // max locking height
-  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) }""")
+val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
+val bobDeadline = SELF.R5[Int].get       // max locking height
+(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) }""")
 \end{verbatim}
 
-Then compute \texttt{withdrawScriptHash = Blake2b256(withdrawScript)}. Next, hardwire \texttt{alice} and \texttt{withdrawScriptHash} inside \texttt{depositEnv} and create a compiled script called \texttt{depositScript}:
+Compute \texttt{scriptHash = Blake2b256(withdrawScript)}. Then hardcode \texttt{alice} and \texttt{scriptHash} inside \texttt{depositEnv} to create a compiled script called \texttt{depositScript}:
 
 \begin{verbatim}
 val depositScript = compile(depositEnv, """{ 
-  alice && OUTPUTS.size == 1 && OUTPUTS(0).R5[Int].get >= HEIGHT + 30 &&
-  blake2b256(OUTPUTS(0).propositionBytes) == withdrawScriptHash }""")
+alice && OUTPUTS.size == 1 && OUTPUTS(0).R5[Int].get >= HEIGHT + 30 &&
+blake2b256(OUTPUTS(0).propositionBytes) == scriptHash }""")
 \end{verbatim}
 
-Finally the reversible P2SH address is obtained as:
+Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
 
- \texttt{val depositAddress = Pay2SHAddress(depositScript)}.
-
-\subsection{The Mixing Protocol}
-
-We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. The protocol is motivated from ZeroCash (ZC) to overcomes some of its drawbacks (discussed later). 
-%The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
-\mixname essentially mixes two coins and so provides ``50\% anonymity'' in one round. A coin can be successively mixed to increase the anonymity to any desired level (say 99.99999\%). 
-
-\mixname has a pool, called the {\em Half-Mix} pool (H-pool), which contains coins ready for mixing. 
-To mix an arbitrary coin (which could itself be the output of a previous mix), any one of the two actions can be performed:
-\begin{enumerate}
-	\item Pick another coin from the H-pool (if its non-empty), ``mix'' them by converting them to two indistinguisble coins, each spendable by their respective owner. We call this the {\em mix} Step.
-	\item Add the coin to the H-pool and wait for someone to mix them. This is the {\em pool} Step.
-\end{enumerate}
-
-Without loss of generality, Alice will pool and Bob will mix. In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
-
-\begin{enumerate}
-	\item \textbf{Pool:} To add a coin to the pool, Alice picks random generator $g\in G$ and $x\in \mathbb{Z}_q$. Let $u = g^{x}$. Alice creates an output box $A$ containing $(g, u)$ and protected by the script given below. She waits for Bob to join by spending $A$ subject to the conditions given in the script. 
-Alice's spending condition for $A$ is that the transaction should be as follows: 
-	
-	\begin{enumerate}
-		\item It has two inputs of equal value, one of which is $A$. %The value of the second input should be the same as in $A$. 
-		\item It has two outputs $(O_0, O_1)$ with data tuples $(g, c, u, d)$ and $(g, d, u, c)$ respectively. That is, the data of each output contains a 4-tuple where the first and third elements are $g$ and $u$ respectively and the second and fourth elements are swapped. 
-		\item The spender of $A$ must satisfy $\texttt{ProveDHTuple}(g, u, c, d)\lor \texttt{ProveDHTuple}(g, u, d, c)$.
-		\item The outputs should be protected by the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
-	\end{enumerate}
-	
-	
-	\item \textbf{Mix:} Bob randomly picks one unspent box from the pool, for instance, $A$. Bob then picks a random secret bit $b \in \mathbb{Z}_2$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values (and indistinguishable) such that $C_b$ is spendable only by Alice and $C_{1-b}$ is spendable only by Bob. This is done as follows:
-	
-	\begin{enumerate}
-		\item Bob picks secret $y\in \mathbb{Z}_q$. Let $h = {g}^{y}$ and $v = {u}^{y}$.  %Let $c_b = g^y$ and $c_{1-b} = g^{xy}$. Bob 
-		The box $O_b$ contains data $(g, h, u, v)$ and $O_{1-b}$ contains $(g, v, u, h)$. If the DDH problem in $G$ is hard, the distributions $(g, {g}^{y}, {g}^{x}, {g}^{xy})$ and 
-		$(g, {g}^{xy}, {g}^{x}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
-		\item  Let 
-		$\tau_\textsf{A}$ be the statement: ``Parse data as $(g, h, u, v)$ and
-		prove knowledge of $x$ such that $u = {g}^{x}$ and ${v} = {h}^{x}$.'' This is encoded as $\texttt{proveDHTuple}(g, h, u, v)$.
-		
-		\item Let $\tau_{\textsf{B}}$ be the statement: ``Parse data as $(g, v, u, h)$ and
-		prove knowledge of $y$ such that $h = {g}^{y}$.'' 
-%		Observe that $h, v$ have been swapped from $\tau_\textsf{A}$. 
-This is encoded as $\texttt{proveDLog}(h)$, keeping $g$ as the default generator.
-		
-		\item Each box is protected by the statement $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
-		
-	\end{enumerate}
-	\item \textbf{Spend:} Both Alice and Bob later spent their respective boxes using their secrets. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
-\end{enumerate}
-
-We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
-For this to work, each output must be of a fixed value, say 1 Erg and the fee should be zero. We discuss below how to handle fee. 
- 
-\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is proportional to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
-
-\textbf{Handling Fee:} 
-\snote{To do: describe fee handling.}
-
+\bibliographystyle{unsrt}
+\bibliography{sigmastate_protocols}
 \end{document}
