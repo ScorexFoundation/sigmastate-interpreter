@@ -57,7 +57,7 @@ trait SigmaTestingCommons extends PropSpec
   def createBox(value: Int,
                 proposition: Value[SBoolean.type],
                 creationHeight: Int)
-    = ErgoBox(value, proposition, creationHeight, Seq(), Map(), Array.fill[Byte](32)(0.toByte).toModifierId)
+    = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
