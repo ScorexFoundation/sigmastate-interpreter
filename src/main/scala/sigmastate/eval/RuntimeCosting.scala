@@ -89,7 +89,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //  /** Pass configuration which is used during splitting cost function out of cost graph.
 //    * @see `RuntimeCosting.split2` */
 //  val costPass = new DefaultPass("costPass", Pass.defaultPassConfig.copy(constantPropagation = true))
-//
+
+/**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
 //  beginPass(costPass)
 
   def createSliceAnalyzer = new SliceAnalyzer
@@ -464,7 +465,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           colBuilder.replicate(xs.sizes.length, typeSize(tpeB))
         } else
           xs.sizes.map(sizeF)
-        RCCostedColl(vals, costs, sizes, xs.valuesCost)
+        RCCostedColl(vals, costs, sizes, xs.valuesCost) // TODO add cost of map node
 
       case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
         val f = asRep[Costed[(b,a)] => Costed[b]](_f)
