@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, Nullable, SigmaLibrary}
+import scalan.{Lazy, SigmaLibrary, Nullable}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -19,17 +19,19 @@ import sigmastate.utxo._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
-import scorex.crypto.hash.{Blake2b256, Sha256}
+import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
 import scalan.staged.Slicing
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
+import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import special.sigma.CGroupElement
+import special.sigma.Extensions._
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
   import WArray._;
-  import WECPoint._;
-  import WBigInteger._;
+  import GroupElement._;
+  import BigInt._;
   import WOption._
   import Coll._;
   import CollBuilder._;
@@ -95,7 +97,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   val WOptionMarking = new TraversableMarkingFor[WOption]
 
   override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
+    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
       EmptyBaseMarking(eT)
     case ae: CollElem[a,_] =>
       val eA = ae.eItem
@@ -108,7 +110,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
-    case _: BoxElem[_] | _: WBigIntegerElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
+    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: CollOverArrayBuilderElem =>
       AllBaseMarking(e)
     case colE: CollElem[a,_] =>
       implicit val eA = colE.eItem
@@ -264,7 +266,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
-    case WECPointConst(p) => CryptoFunctions.showECPoint(p)
+    case GroupElementConst(p) => p.showToString
     case ac: WArrayConst[_,_] =>
       val trimmed = ac.constValue.take(ac.constValue.length min 10)
       s"WArray(len=${ac.constValue.length}; ${trimmed.mkString(",")},...)"
@@ -594,12 +596,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case _ => super.transformDef(d, t)
   }
 
-  lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
+//  lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
 
-  override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
-    case BigIntegerElement => Const(x)
-    case _ => super.toRep(x)
-  }
+//  override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
+//    case BigIntegerElement => Const(x)
+//    case _ => super.toRep(x)
+//  }
 
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
@@ -714,9 +716,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case SLong => LongElement
     case SString => StringElement
     case SAny => AnyElement
-    case SBigInt => wBigIntegerElement
+    case SBigInt => bigIntElement
     case SBox => boxElement
-    case SGroupElement => wECPointElement
+    case SGroupElement => groupElementElement
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
@@ -732,8 +734,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case LongElement => SLong
     case StringElement => SString
     case AnyElement => SAny
-    case _: WBigIntegerElem[_] => SBigInt
-    case _: WECPointElem[_] => SGroupElement
+    case _: BigIntElem[_] => SBigInt
+    case _: GroupElementElem[_] => SGroupElement
     case _: AvlTreeElem[_] => SAvlTree
     case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
@@ -767,8 +769,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case LongElement => LongIsLiftable
     case StringElement => StringIsLiftable
     case UnitElement => UnitIsLiftable
-    case e: WBigIntegerElem[_] => LiftableBigInteger
-    case e: WECPointElem[_] => LiftableECPoint
+    case e: BigIntElem[_] => LiftableBigInt
+    case e: GroupElementElem[_] => LiftableGroupElement
     case ae: WArrayElem[t,_] =>
       implicit val lt = liftableFromElem[t](ae.eItem)
       liftableArray(lt)
@@ -780,21 +782,21 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     (ShortElement, numeric[Short]),
     (IntElement, numeric[Int]),
     (LongElement, numeric[Long]),
-    (BigIntegerElement, numeric[BigInteger])
+    (bigIntElement, numeric[SBigInt])
   )
   private lazy val elemToIntegralMap = Map[Elem[_], Integral[_]](
     (ByteElement, integral[Byte]),
     (ShortElement, integral[Short]),
     (IntElement, integral[Int]),
     (LongElement, integral[Long]),
-    (BigIntegerElement, integral[BigInteger])
+    (bigIntElement, integral[SBigInt])
   )
   private lazy val elemToOrderingMap = Map[Elem[_], Ordering[_]](
     (ByteElement, implicitly[Ordering[Byte]]),
     (ShortElement, implicitly[Ordering[Short]]),
     (IntElement, implicitly[Ordering[Int]]),
     (LongElement, implicitly[Ordering[Long]]),
-    (BigIntegerElement, implicitly[Ordering[BigInteger]])
+    (bigIntElement, implicitly[Ordering[SBigInt]])
   )
 
   def elemToNumeric [T](e: Elem[T]): Numeric[T]  = elemToNumericMap(e).asInstanceOf[Numeric[T]]
@@ -924,11 +926,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case p: ProveDHTuple => eval(p)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
-          val resV = liftConst(bi)
+          val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
           RCCostedPrim(resV, costOf(c), SBigInt.MaxSizeInBytes)
-        case ge: ECPoint =>
+        case p: ECPoint =>
           assert(tpe == SGroupElement)
-          val resV = liftConst(ge)
+          val resV = liftConst(new CGroupElement(p): SGroupElement)
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
@@ -962,15 +964,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       }
 
       case _ @ DLogProtocol.ProveDlog(v) =>
-        val ge = asRep[Costed[WECPoint]](eval(v))
+        val ge = asRep[Costed[GroupElement]](eval(v))
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
         RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
 
       case _ @ ProveDHTuple(gv, hv, uv, vv) =>
-        val gvC = asRep[Costed[WECPoint]](eval(gv))
-        val hvC = asRep[Costed[WECPoint]](eval(hv))
-        val uvC = asRep[Costed[WECPoint]](eval(uv))
-        val vvC = asRep[Costed[WECPoint]](eval(vv))
+        val gvC = asRep[Costed[GroupElement]](eval(gv))
+        val hvC = asRep[Costed[GroupElement]](eval(hv))
+        val uvC = asRep[Costed[GroupElement]](eval(uv))
+        val vvC = asRep[Costed[GroupElement]](eval(vv))
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
         val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
         RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
@@ -1014,15 +1016,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
-        val l = asRep[Costed[WECPoint]](_l)
-        val r = asRep[Costed[WBigInteger]](_r)
-        val value = sigmaDslBuilder.exponentiate(l.value, r.value)
+        val l = asRep[Costed[GroupElement]](_l)
+        val r = asRep[Costed[BigInt]](_r)
+        val value = l.value.multiply(r.value)
         val cost = l.cost + r.cost + costOf(node)
         RCCostedPrim(value, cost, CryptoConstants.groupSize.toLong)
 
       case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
-        val l = asRep[Costed[WECPoint]](_l)
-        val r = asRep[Costed[WECPoint]](_r)
+        val l = asRep[Costed[GroupElement]](_l)
+        val r = asRep[Costed[GroupElement]](_r)
         val value = l.value.add(r.value)
         val cost = l.cost + r.cost + costOf(node)
         RCCostedPrim(value, cost, CryptoConstants.groupSize.toLong)
@@ -1317,10 +1319,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
-        val xC = asRep[Costed[WBigInteger]](eval(op.left))
-        val yC = asRep[Costed[WBigInteger]](eval(op.right))
+        val xC = asRep[Costed[BigInt]](eval(op.left))
+        val yC = asRep[Costed[BigInt]](eval(op.right))
         val opName = op.opName
-        var v: Rep[WBigInteger] = null;
+        var v: Rep[BigInt] = null;
         val s: Rep[Long] = SBigInt.MaxSizeInBytes
         op.opCode match {
           case PlusCode =>

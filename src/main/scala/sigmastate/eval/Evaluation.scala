@@ -26,6 +26,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.collection.CollOverArrayBuilder
+import special.sigma.Extensions._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -45,7 +46,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WBigInteger._
   import WArray._
   import WOption._
-  import WECPoint._
+  import GroupElement._
   import Liftables._
 
   val okPrintEvaluatedEntries: Boolean = false
@@ -144,11 +145,11 @@ trait Evaluation extends RuntimeCosting { IR =>
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
-      case p: ECPoint => CryptoFunctions.showECPoint(p)
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${CryptoFunctions.showECPoint(g)})"
+      case p: SGroupElement => p.showToString
+      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${showECPoint(g)})"
       case ProveDHTuple(
               GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${CryptoFunctions.showECPoint(g)},${CryptoFunctions.showECPoint(h)},${CryptoFunctions.showECPoint(u)},${CryptoFunctions.showECPoint(v)})"
+        s"ProveDHT(${showECPoint(g)},${showECPoint(h)},${showECPoint(u)},${showECPoint(v)})"
       case _ => x.toString
     }
     sym match {

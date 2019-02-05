@@ -256,6 +256,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 }
 
+object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
+
 class CostingDataContext(
     val IR: Evaluation,
     inputs: Array[Box],

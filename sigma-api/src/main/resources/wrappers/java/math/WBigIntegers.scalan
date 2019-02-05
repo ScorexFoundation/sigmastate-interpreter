@@ -50,15 +50,12 @@ package wrappers.java.math {
       @External def multiply(x$1: Rep[WBigInteger]): Rep[WBigInteger];
       @External def subtract(x$1: Rep[WBigInteger]): Rep[WBigInteger];
       @External def add(x$1: Rep[WBigInteger]): Rep[WBigInteger];
-      @External def toByteArray: Rep[WArray[Byte]];
-      @External def toString(x$1: Rep[Int]): Rep[String]
+      @External def toByteArray: Rep[WArray[Byte]]
     };
     trait WBigIntegerCompanion {
       @Constructor @OverloadId(value = "constructor_1") def apply(x$1: Rep[Int], x$2: Rep[WArray[Byte]]): Rep[WBigInteger];
       @Constructor @OverloadId(value = "constructor_2") def apply(x$1: Rep[String]): Rep[WBigInteger];
-      @External def valueOf(x$1: Rep[Long]): Rep[WBigInteger];
-      @External def ONE: Rep[WBigInteger];
-      @External def ZERO: Rep[WBigInteger]
+      @External def valueOf(x$1: Rep[Long]): Rep[WBigInteger]
     }
   }
 }

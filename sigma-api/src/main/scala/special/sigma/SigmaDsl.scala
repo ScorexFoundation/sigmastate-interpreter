@@ -34,6 +34,7 @@ trait CostModel {
   * */
 @scalan.Liftable
 trait BigInt {
+  @Internal
   private[sigma] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
@@ -180,12 +181,20 @@ trait BigInt {
     *         { @code val}.  If they are equal, either may be returned.
     */
   def max(that: BigInt): BigInt
+
+  /** Returns a BigInt whose value is {@code (-this)}.
+    * @return { @code -this}
+    */
+  def negate(): BigInt
 }
 
 /** Base class for points on elliptic curves.
   */
 @scalan.Liftable
 trait GroupElement {
+  @Internal
+  private[sigma] def value: ECPoint
+  
   def isInfinity: Boolean
 
   /** Multiplies this <code>GroupElement</code> by the given number.

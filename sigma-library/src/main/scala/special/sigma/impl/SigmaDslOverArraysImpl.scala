@@ -12,6 +12,7 @@ import IsoUR._
 import Converter._
 import AnyValue._
 import AvlTree._
+import BigInt._
 import Box._
 import CCostedBuilder._
 import Coll._
@@ -22,13 +23,13 @@ import Costed._
 import CostedBuilder._
 import CostedColl._
 import CostedOption._
+import GroupElement._
 import MonoidBuilder._
 import MonoidBuilderInst._
 import SigmaDslBuilder._
 import SigmaProp._
 import TestSigmaDslBuilder._
 import WBigInteger._
-import WECPoint._
 import WOption._
 import WSpecialPredef._
 import TestAvlTree._
@@ -430,11 +431,11 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[SigmaProp]))
     }
 
-    override def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(self,
+    override def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
         thisClass.getMethod("byteArrayToBigInt", classOf[Sym]),
         List(bytes),
-        true, false, element[WBigInteger]))
+        true, false, element[BigInt]))
     }
 
     override def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = {
@@ -444,14 +445,14 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
-    override def proveDlog(g: Rep[WECPoint]): Rep[SigmaProp] = {
+    override def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         thisClass.getMethod("proveDlog", classOf[Sym]),
         List(g),
         true, false, element[SigmaProp]))
     }
 
-    override def proveDHTuple(g: Rep[WECPoint], h: Rep[WECPoint], u: Rep[WECPoint], v: Rep[WECPoint]): Rep[SigmaProp] = {
+    override def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         thisClass.getMethod("proveDHTuple", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         List(g, h, u, v),
@@ -479,18 +480,11 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[WOption[Coll[Byte]]]))
     }
 
-    override def groupGenerator: Rep[WECPoint] = {
-      asRep[WECPoint](mkMethodCall(self,
+    override def groupGenerator: Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
         thisClass.getMethod("groupGenerator"),
         List(),
-        true, false, element[WECPoint]))
-    }
-
-    override def exponentiate(base: Rep[WECPoint], exponent: Rep[WBigInteger]): Rep[WECPoint] = {
-      asRep[WECPoint](mkMethodCall(self,
-        thisClass.getMethod("exponentiate", classOf[Sym], classOf[Sym]),
-        List(base, exponent),
-        true, false, element[WECPoint]))
+        true, false, element[GroupElement]))
     }
 
     override def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = {
@@ -501,11 +495,25 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
-    override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[WECPoint] = {
-      asRep[WECPoint](mkMethodCall(self,
+    override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
         thisClass.getMethod("decodePoint", classOf[Sym]),
         List(encoded),
-        true, false, element[WECPoint]))
+        true, false, element[GroupElement]))
+    }
+
+    override def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        thisClass.getMethod("BigInt", classOf[Sym]),
+        List(n),
+        true, false, element[BigInt]))
+    }
+
+    override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = {
+      asRep[WBigInteger](mkMethodCall(self,
+        thisClass.getMethod("toBigInteger", classOf[Sym]),
+        List(n),
+        true, false, element[WBigInteger]))
     }
   }
   // elem for concrete class
@@ -850,26 +858,26 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
     }
 
     object proveDlog {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = d match {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "proveDlog" =>
           val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])]]
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = exp match {
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
     }
 
     object proveDHTuple {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint])] = d match {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "proveDHTuple" =>
           val res = (receiver, args(0), args(1), args(2), args(3))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint])]]
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint], Rep[WECPoint])] = exp match {
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
@@ -927,19 +935,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
       }
     }
 
-    object exponentiate {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WBigInteger])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "exponentiate" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WBigInteger])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint], Rep[WBigInteger])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object substConstants {
       def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "substConstants" =>
@@ -961,6 +956,32 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object BigInt {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "BigInt" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object toBigInteger {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "toBigInteger" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

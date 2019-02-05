@@ -4,6 +4,7 @@ package special.sigma {
   trait SigmaDslOverArrays extends Base { self: SigmaDslOverArraysModule =>
     import AnyValue._;
     import AvlTree._;
+    import BigInt._;
     import Box._;
     import CCostedBuilder._;
     import Coll._;
@@ -14,13 +15,13 @@ package special.sigma {
     import CostedBuilder._;
     import CostedColl._;
     import CostedOption._;
+    import GroupElement._;
     import MonoidBuilder._;
     import MonoidBuilderInst._;
     import SigmaDslBuilder._;
     import SigmaProp._;
     import TestSigmaDslBuilder._;
     import WBigInteger._;
-    import WECPoint._;
     import WOption._;
     import WSpecialPredef._;
     abstract class TestAvlTree(val startingDigest: Rep[Coll[Byte]], val keyLength: Rep[Int], val valueLengthOpt: Rep[WOption[Int]], val maxNumOperations: Rep[WOption[Int]], val maxDeletes: Rep[WOption[Int]]) extends AvlTree with Product with Serializable {
@@ -66,17 +67,18 @@ package special.sigma {
       @NeverInline def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline def PubKey(base64String: Rep[String]): Rep[SigmaProp] = delayInvoke;
-      @NeverInline def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[WBigInteger] = delayInvoke;
+      @NeverInline def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = delayInvoke;
       @NeverInline def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = delayInvoke;
-      @NeverInline def proveDlog(g: Rep[WECPoint]): Rep[SigmaProp] = delayInvoke;
-      @NeverInline def proveDHTuple(g: Rep[WECPoint], h: Rep[WECPoint], u: Rep[WECPoint], v: Rep[WECPoint]): Rep[SigmaProp] = delayInvoke;
+      @NeverInline def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
+      @NeverInline def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = delayInvoke;
       @NeverInline def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = delayInvoke;
       @NeverInline def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = delayInvoke;
-      @NeverInline def groupGenerator: Rep[WECPoint] = delayInvoke;
-      @NeverInline def exponentiate(base: Rep[WECPoint], exponent: Rep[WBigInteger]): Rep[WECPoint] = delayInvoke;
+      @NeverInline def groupGenerator: Rep[GroupElement] = delayInvoke;
       @Reified(value = "T") @NeverInline override def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = delayInvoke;
-      @NeverInline override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[WECPoint] = delayInvoke
+      @NeverInline override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement] = delayInvoke;
+      @NeverInline override def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = delayInvoke;
+      @NeverInline override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = delayInvoke
     };
     trait TestAvlTreeCompanion;
     trait TestValueCompanion;

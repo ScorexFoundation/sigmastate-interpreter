@@ -316,13 +316,6 @@ object WBigInteger extends EntityObject("WBigInteger") {
         List(),
         true, false, element[WArray[Byte]]))
     }
-
-    override def toString(x$1: Rep[Int]): Rep[String] = {
-      asRep[String](mkMethodCall(self,
-        WBigIntegerClass.getMethod("toString", classOf[Sym]),
-        List(x$1),
-        true, false, element[String]))
-    }
   }
 
   implicit object LiftableBigInteger
@@ -626,13 +619,6 @@ object WBigInteger extends EntityObject("WBigInteger") {
         List(),
         true, true, element[WArray[Byte]]))
     }
-
-    def toString(x$1: Rep[Int]): Rep[String] = {
-      asRep[String](mkMethodCall(source,
-        thisClass.getMethod("toString", classOf[Sym]),
-        List(x$1),
-        true, true, element[String]))
-    }
   }
 
   // entityProxy: single proxy for each type family
@@ -650,7 +636,7 @@ object WBigInteger extends EntityObject("WBigInteger") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredWrapperMethods(_BigIntegerWrapSpec, classOf[WBigInteger], Set(
-        "longValueExact", "intValueExact", "shortValueExact", "byteValueExact", "longValue", "intValue", "shortValue", "byteValue", "signum", "negate", "abs", "shiftRight", "shiftLeft", "isProbablePrime", "bitLength", "bitCount", "getLowestSetBit", "flipBit", "clearBit", "setBit", "testBit", "pow", "andNot", "not", "xor", "or", "and", "gcd", "max", "min", "compareTo", "divide", "remainder", "modPow", "modInverse", "mod", "multiply", "subtract", "add", "toByteArray", "toString"
+        "longValueExact", "intValueExact", "shortValueExact", "byteValueExact", "longValue", "intValue", "shortValue", "byteValue", "signum", "negate", "abs", "shiftRight", "shiftLeft", "isProbablePrime", "bitLength", "bitCount", "getLowestSetBit", "flipBit", "clearBit", "setBit", "testBit", "pow", "andNot", "not", "xor", "or", "and", "gcd", "max", "min", "compareTo", "divide", "remainder", "modPow", "modInverse", "mod", "multiply", "subtract", "add", "toByteArray"
         ))
     }
 
@@ -701,20 +687,6 @@ object WBigInteger extends EntityObject("WBigInteger") {
       asRep[WBigInteger](mkMethodCall(self,
         thisClass.getMethod("valueOf", classOf[Sym]),
         List(x$1),
-        true, false, element[WBigInteger]))
-    }
-
-    def ONE: Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(self,
-        thisClass.getMethod("ONE"),
-        List(),
-        true, false, element[WBigInteger]))
-    }
-
-    def ZERO: Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(self,
-        thisClass.getMethod("ZERO"),
-        List(),
         true, false, element[WBigInteger]))
     }
   }
@@ -1239,20 +1211,6 @@ object WBigInteger extends EntityObject("WBigInteger") {
         case _ => Nullable.None
       }
     }
-
-    // manual fix (method name)
-    object toStringMethod {
-      def unapply(d: Def[_]): Nullable[(Rep[WBigInteger], Rep[Int])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[WBigIntegerElem[_]] && method.getName == "toString" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[WBigInteger], Rep[Int])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[WBigInteger], Rep[Int])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
   }
 
   object WBigIntegerCompanionMethods {
@@ -1294,32 +1252,6 @@ object WBigInteger extends EntityObject("WBigInteger") {
         case _ => Nullable.None
       }
     }
-// manual fix
-//    object ONE {
-//      def unapply(d: Def[_]): Nullable[Unit] = d match {
-//        case MethodCall(receiver, method, _, _) if receiver.elem == WBigIntegerCompanionElem && method.getName == "ONE" =>
-//          val res = ()
-//          Nullable(res).asInstanceOf[Nullable[Unit]]
-//        case _ => Nullable.None
-//      }
-//      def unapply(exp: Sym): Nullable[Unit] = exp match {
-//        case Def(d) => unapply(d)
-//        case _ => Nullable.None
-//      }
-//    }
-//
-//    object ZERO {
-//      def unapply(d: Def[_]): Nullable[Unit] = d match {
-//        case MethodCall(receiver, method, _, _) if receiver.elem == WBigIntegerCompanionElem && method.getName == "ZERO" =>
-//          val res = ()
-//          Nullable(res).asInstanceOf[Nullable[Unit]]
-//        case _ => Nullable.None
-//      }
-//      def unapply(exp: Sym): Nullable[Unit] = exp match {
-//        case Def(d) => unapply(d)
-//        case _ => Nullable.None
-//      }
-//    }
   }
 } // of object WBigInteger
   registerEntityObject("WBigInteger", WBigInteger)

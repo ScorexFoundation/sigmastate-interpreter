@@ -46,4 +46,6 @@ class CBigInt(private[sigma] val value: BigInteger) extends BigInt {
   override def min(that: BigInt): BigInt = new CBigInt(value.min(that.value))
 
   override def max(that: BigInt): BigInt = new CBigInt(value.max(that.value))
+
+  override def negate(): BigInt = new CBigInt(value.negate())
 }

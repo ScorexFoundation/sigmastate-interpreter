@@ -20,7 +20,7 @@ import sigmastate.utxo.CostTable.Cost
 import sigma.util.Extensions._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-
+import special.sigma.Extensions._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
@@ -121,7 +121,7 @@ object Values {
 
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement =>
-        s"ConstantNode(${CryptoFunctions.showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+        s"ConstantNode(${showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
       case SInt => s"IntConstant($value)"
       case SLong => s"LongConstant($value)"
       case SBoolean if value == true => "TrueLeaf"

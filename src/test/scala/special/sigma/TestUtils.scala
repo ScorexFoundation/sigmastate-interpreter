@@ -40,7 +40,7 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
   trait ContractSyntax { contract: SigmaContract =>
     override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder
 
-    val syntax = new ExtensionMethods(builder)
+    val syntax = new DslSyntaxExtensions(builder)
 
     def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
