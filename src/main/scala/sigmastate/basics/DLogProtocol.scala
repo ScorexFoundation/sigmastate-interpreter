@@ -30,12 +30,9 @@ object DLogProtocol {
   }
 
   object ProveDlog {
-
-    import CryptoConstants.dlogGroup
+    val Code: PropositionCode = 102: Byte
 
     def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
-
-    val Code: PropositionCode = 102: Byte
   }
 
   case class DLogProverInput(w: BigInteger)
