@@ -550,11 +550,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
-            Vector(
-              IntConstant(0),
-              ConcreteCollection(LongConstant(3)),
-              IntConstant(1)
-            )
+            Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1))
           ).asCollection[SType],
           IntConstant(0)
         ),
@@ -569,10 +565,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
-            Vector(
-              IntConstant(0),
-              LongConstant(3)
-            )
+            Vector(IntConstant(0), LongConstant(3))
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updateMany") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3)))
           ).asCollection[SType],
           IntConstant(0)
         ),

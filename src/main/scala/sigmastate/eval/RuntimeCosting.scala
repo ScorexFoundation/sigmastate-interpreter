@@ -1562,6 +1562,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             xsV.patch(asRep[Int](from), asRep[Coll[Any]](col), asRep[Int](repl))
           case (SCollection.UpdatedMethod.name, Seq(index, elem)) =>
             xsV.updated(asRep[Int](index), asRep[Any](elem))
+          case (SCollection.UpdateManyMethod.name, Seq(indexCol, elemCol)) =>
+            xsV.updateMany(asRep[Coll[Int]](indexCol), asRep[Coll[Any]](elemCol))
           case _ => error(s"method $method is not supported")
         }
         withDefaultSize(value, cost)
