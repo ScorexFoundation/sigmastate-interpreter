@@ -1,35 +1,28 @@
 package sigmastate.interpreter
 
+import java.math.BigInteger
 import java.util
-import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
 import sigmastate.basics.{BcDlogGroup, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
-import sigmastate.utils.Extensions._
-import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import special.sigma.InvalidType
 
-import scala.util.{Success, Failure, Try}
+import scala.util.Try
 
 
 object CryptoConstants {
@@ -50,6 +43,9 @@ object CryptoConstants {
   /** Number of bytes to represent any group element as byte array */
   val groupSize: Int = 256 / 8 //32 bytes
 
+  /** Group order, i.e. number of elements in the group */
+  val groupOrder: BigInteger = dlogGroup.order
+
   //size of challenge in Sigma protocols, in bits
   //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
   //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
@@ -58,7 +54,7 @@ object CryptoConstants {
 }
 
 object CryptoFunctions {
-  lazy val soundnessBytes = CryptoConstants.soundnessBits / 8
+  lazy val soundnessBytes: Int = CryptoConstants.soundnessBits / 8
 
   def hashFn(input: Array[Byte]): Array[Byte] = {
     Blake2b256.hash(input).take(soundnessBytes)
@@ -73,7 +69,6 @@ object CryptoFunctions {
 
 trait Interpreter extends ScorexLogging {
 
-  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context
