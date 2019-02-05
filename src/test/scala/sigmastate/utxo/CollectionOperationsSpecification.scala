@@ -542,4 +542,25 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         IntConstant(1)),
       IndexedSeq(1L, 2L))
   }
+
+  property("patch") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).patch(0, Coll(3L), 1)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs,
+              FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))
+            ),
+            SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(
+              IntConstant(0),
+              ConcreteCollection(LongConstant(3)),
+              IntConstant(1)
+            )
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
 }

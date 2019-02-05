@@ -364,13 +364,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.patch") {
-    testMissingCosting("Coll(1, 2).patch(1, Coll(3), 1)",
+    comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1))
       )
-    )
   }
 
   property("SCollection.updated") {
