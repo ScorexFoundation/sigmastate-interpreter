@@ -548,14 +548,30 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       EQ(
         ByIndex(
           MethodCall(
-            MapCollection(Outputs,
-              FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))
-            ),
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
             Vector(
               IntConstant(0),
               ConcreteCollection(LongConstant(3)),
               IntConstant(1)
+            )
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updated") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updated(0, 3L)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(
+              IntConstant(0),
+              LongConstant(3)
             )
           ).asCollection[SType],
           IntConstant(0)
