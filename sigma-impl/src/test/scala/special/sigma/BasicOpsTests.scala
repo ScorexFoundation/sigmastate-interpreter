@@ -27,11 +27,11 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.subtract(BigInteger.ONE).toByteArray)
-    ).compareTo(BigInteger.ONE) shouldBe 1
+    ).compareTo(SigmaDsl.BigInt(BigInteger.ONE)) shouldBe 1
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.toByteArray)
-    ).compareTo(BigInteger.ONE) shouldBe 1
+    ).compareTo(SigmaDsl.BigInt(BigInteger.ONE)) shouldBe 1
 
     an [RuntimeException] should be thrownBy
       SigmaDsl.byteArrayToBigInt(Colls.fromArray(groupOrder.add(BigInteger.ONE).toByteArray))

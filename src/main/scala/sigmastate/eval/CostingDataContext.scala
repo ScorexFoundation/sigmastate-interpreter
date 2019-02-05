@@ -194,8 +194,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     }
   }
 
-  override def exponentiate(base: ECPoint, exponent: BigInteger) = {
-    CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], exponent)
+  override def exponentiate(base: ECPoint, exponent: BigInt) = {
+    CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], toBigInteger(exponent))
   }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {

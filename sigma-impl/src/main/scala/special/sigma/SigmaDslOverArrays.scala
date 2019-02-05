@@ -7,14 +7,10 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.math.ec.ECPoint
 import scalan.RType
 import scalan.RType._
-import scalan.{Internal, NeverInline, OverloadId, Reified}
+import scalan.{Internal, NeverInline, Reified, OverloadId}
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
-
-import scala.reflect.ClassTag
-
-
 
 case class TestAvlTree(
     startingDigest: Coll[Byte],
@@ -98,13 +94,13 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def PubKey(base64String: String): SigmaProp = ???
 
   @NeverInline
-  def byteArrayToBigInt(bytes: Coll[Byte]): BigInteger = {
+  def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
     val dlogGroupOrder = __curve__.getN
     val bi = new BigInteger(1, bytes.toArray)
     if (bi.compareTo(dlogGroupOrder) == 1) {
       throw new RuntimeException(s"BigInt value exceeds the order of the dlog group (${__curve__}). Expected to be less than: $dlogGroupOrder, actual: $bi")
     }
-    bi
+    new CBigInt(bi)
   }
 
   @NeverInline
@@ -132,7 +128,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def groupGenerator: ECPoint = __g__
 
   @NeverInline
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint = ???
+  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint = ???
 
   @Reified("T")
   @NeverInline
@@ -143,5 +139,11 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def decodePoint(encoded: Coll[Byte]): ECPoint = __curve__.getCurve.decodePoint(encoded.toArray)
+
+  @NeverInline
+  override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
+
+  @NeverInline
+  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].value
 }
 

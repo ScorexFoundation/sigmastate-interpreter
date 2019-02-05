@@ -1,7 +1,9 @@
 package special.sigma
 
 import java.math.BigInteger
+
 import org.bouncycastle.math.ec.ECPoint
+
 import scala.reflect.ClassTag
 import special.collection._
 import scalan.{Internal, RType, _}
@@ -99,6 +101,84 @@ trait BigInt {
     * @since Mainnet
     */
   def inverseModQ: BigInt // ??? @kushti do we need it
+
+  /** Returns the signum function of this BigInt.
+    *
+    * @return -1, 0 or 1 as the value of this BigInt is negative, zero or
+    *         positive.
+    */
+  def signum: Int
+
+  /** Returns a BigInt whose value is {@code (this + that)}.
+    *
+    * @param  that value to be added to this BigInt.
+    * @return { @code this + that}
+    */
+  def add(that: BigInt): BigInt
+
+  /** Returns a BigInt whose value is {@code (this - that)}.
+    *
+    * @param  that value to be subtracted from this BigInt.
+    * @return { @code this - that}
+    */
+  def subtract(that: BigInt): BigInt
+
+  /** Returns a BigInt whose value is {@code (this * that)}.
+    *
+    * @implNote An implementation may offer better algorithmic
+    *           performance when { @code that == this}.
+    * @param  that value to be multiplied by this BigInt.
+    * @return { @code this * that}
+    */
+  def multiply(that: BigInt): BigInt
+
+  /** Returns a BigInt whose value is {@code (this / that)}.
+    *
+    * @param  that value by which this BigInt is to be divided.
+    * @return { @code this / that}
+    * @throws ArithmeticException if { @code that} is zero.
+    */
+  def divide(that: BigInt): BigInt
+
+  /**
+    * Returns a BigInt whose value is {@code (this mod m}).  This method
+    * differs from {@code remainder} in that it always returns a
+    * <i>non-negative</i> BigInteger.
+    *
+    * @param  m the modulus.
+    * @return { @code this mod m}
+    * @throws ArithmeticException { @code m} &le; 0
+    * @see #remainder
+    */
+  def mod(m: BigInt): BigInt
+
+  /**
+    * Returns a BigInt whose value is {@code (this % that)}.
+    *
+    * @param  that value by which this BigInt is to be divided, and the
+    *             remainder computed.
+    * @return { @code this % that}
+    * @throws ArithmeticException if { @code that} is zero.
+    */
+  def remainder(that: BigInt): BigInt
+
+  /**
+    * Returns the minimum of this BigInteger and {@code val}.
+    *
+    * @param  val value with which the minimum is to be computed.
+    * @return the BigInteger whose value is the lesser of this BigInteger and
+    *         { @code val}.  If they are equal, either may be returned.
+    */
+  def min(that: BigInt): BigInt
+
+  /**
+    * Returns the maximum of this BigInteger and {@code val}.
+    *
+    * @param  val value with which the maximum is to be computed.
+    * @return the BigInteger whose value is the greater of this and
+    *         { @code val}.  If they are equal, either may be returned.
+    */
+  def max(that: BigInt): BigInt
 }
 
 /** Base class for points on elliptic curves.
@@ -329,7 +409,7 @@ trait SigmaContract {
   def blake2b256(bytes: Coll[Byte]): Coll[Byte] = this.builder.blake2b256(bytes)
   def sha256(bytes: Coll[Byte]): Coll[Byte] = this.builder.sha256(bytes)
 
-  def byteArrayToBigInt(bytes: Coll[Byte]): BigInteger = this.builder.byteArrayToBigInt(bytes)
+  def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = this.builder.byteArrayToBigInt(bytes)
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
 
   def proveDlog(g: ECPoint): SigmaProp = this.builder.proveDlog(g)
@@ -340,7 +420,7 @@ trait SigmaContract {
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeModifications(tree, operations, proof)
 
   def groupGenerator: ECPoint = this.builder.groupGenerator
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint = this.builder.exponentiate(base, exponent)
+  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint = this.builder.exponentiate(base, exponent)
 
   @clause def canOpen(ctx: Context): Boolean
 
@@ -378,7 +458,7 @@ trait SigmaDslBuilder {
   def blake2b256(bytes: Coll[Byte]): Coll[Byte]
   def sha256(bytes: Coll[Byte]): Coll[Byte]
 
-  def byteArrayToBigInt(bytes: Coll[Byte]): BigInteger
+  def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
   def longToByteArray(l: Long): Coll[Byte]
 
   def proveDlog(g: ECPoint): SigmaProp
@@ -389,9 +469,15 @@ trait SigmaDslBuilder {
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
   def groupGenerator: ECPoint
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint
+  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
   def decodePoint(encoded: Coll[Byte]): ECPoint
+
+  /** Create DSL big integer from existing `java.math.BigInteger`*/
+  def BigInt(n: BigInteger): BigInt
+
+  /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
+  def toBigInteger(n: BigInt): BigInteger
 }
 
