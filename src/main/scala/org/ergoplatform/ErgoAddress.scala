@@ -9,6 +9,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values.{ConcreteCollection, ConstantNode, GetVarByteArray, IntConstant, Value}
 import sigmastate._
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
 

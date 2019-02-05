@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, Height, Inputs}
+import org.ergoplatform.{Height, Inputs}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection.SByteArray
@@ -9,10 +9,10 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
-import sigmastate.lang.Terms.{Ident, Select}
+import sigmastate.lang.Terms.Select
 import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{Append, ExtractCreationInfo, SizeOf}
+import sigmastate.utxo.{Append, ExtractCreationInfo}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
@@ -109,7 +109,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("tJPvNjccEZZF2Cwb6WNsRFmUa79Dy3npbmnfUKnBRREq2cuaULCo2R")""") shouldBe SSigmaProp
+    typecheck(env, """PK("6C1wAzWGtsKEGQ7FL6w8RwuBRQtemm3eNvW8BqqmyiPZiX21Zhy3gy")""") shouldBe SSigmaProp
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }

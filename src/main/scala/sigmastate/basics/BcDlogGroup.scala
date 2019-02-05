@@ -462,6 +462,6 @@ object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName
   println(naive == ll)
 }
 
-object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
+//object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
 
 object SecP256K1 extends BcDlogGroup[SecP256K1Point](CustomNamedCurves.getByName("secp256k1"))

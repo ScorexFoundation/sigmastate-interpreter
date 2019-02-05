@@ -5,11 +5,7 @@ import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
-import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
