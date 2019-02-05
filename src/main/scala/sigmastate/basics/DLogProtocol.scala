@@ -9,7 +9,7 @@ import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigmastate.serialization.OpCodes.OpCode
 
 object DLogProtocol {
@@ -26,7 +26,7 @@ object DLogProtocol {
     override val opCode: OpCode = OpCodes.ProveDlogCode
     //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
-    lazy val pkBytes: Array[Byte] = h.getEncoded(true)
+    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
   }
 
   object ProveDlog {
@@ -60,9 +60,7 @@ object DLogProtocol {
 
   case class FirstDLogProverMessage(ecData: CryptoConstants.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
-      val bytes = ecData.getEncoded(true)
-
-      Array(bytes.length.toByte) ++ bytes
+      GroupElementSerializer.toBytes(ecData)
     }
   }
 
