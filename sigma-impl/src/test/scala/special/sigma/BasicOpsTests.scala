@@ -22,7 +22,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   test("ByteArrayToBigInt should always produce big int less than dlog group order") {
-    val groupOrder = CustomNamedCurves.getByName("curve25519").getN
+    val groupOrder = CustomNamedCurves.getByName("secp256k1").getN
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.subtract(BigInteger.ONE).toByteArray)

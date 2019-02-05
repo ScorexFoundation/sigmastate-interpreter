@@ -4,11 +4,11 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.bouncycastle.math.ec.ECPoint
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import scalan.RType
 import scalan.RType._
 import scalan.{Internal, NeverInline, OverloadId, Reified}
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Sha256}
 import special.SpecialPredef
 import special.collection._
 
@@ -210,10 +210,10 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
 
   @NeverInline
-  def proveDlog(g: ECPoint): SigmaProp = new ProveDlogEvidence(g)
+  def proveDlog(g: SecP256K1Point): SigmaProp = new ProveDlogEvidence(g)
 
   @NeverInline
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = ???
+  def proveDHTuple(g: SecP256K1Point, h: SecP256K1Point, u: SecP256K1Point, v: SecP256K1Point): SigmaProp = ???
 
   @NeverInline
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = treeLookup(tree, key, proof).isDefined
@@ -224,14 +224,14 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
 
-  @Internal val __curve__ = CustomNamedCurves.getByName("curve25519")
-  @Internal val __g__ = __curve__.getG
+  @Internal val __curve__ = CustomNamedCurves.getByName("secp256k1")
+  @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]
 
   @NeverInline
-  def groupGenerator: ECPoint = __g__
+  def groupGenerator: SecP256K1Point = __g__
 
   @NeverInline
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint = ???
+  def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point = ???
 
   @Reified("T")
   @NeverInline
@@ -241,7 +241,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
       (implicit cT: RType[T]): Coll[Byte] = ???
 
   @NeverInline
-  override def decodePoint(encoded: Coll[Byte]): ECPoint = __curve__.getCurve.decodePoint(encoded.toArray)
+  override def decodePoint(encoded: Coll[Byte]): SecP256K1Point =
+    __curve__.getCurve.decodePoint(encoded.toArray).asInstanceOf[SecP256K1Point]
 }
 
 trait DefaultSigma extends SigmaProp {
@@ -293,7 +294,7 @@ case class TrivialSigma(val _isValid: Boolean) extends SigmaProp with DefaultSig
   override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
 }
 
-case class ProveDlogEvidence(val value: ECPoint) extends SigmaProp with DefaultSigma {
+case class ProveDlogEvidence(val value: SecP256K1Point) extends SigmaProp with DefaultSigma {
   @NeverInline
   def propBytes: Coll[Byte] = new CollOverArray(value.getEncoded(true))
   @NeverInline
@@ -316,7 +317,7 @@ case class ProveDlogEvidence(val value: ECPoint) extends SigmaProp with DefaultS
   override def lazyOr(other: => SigmaProp) = super.lazyOr(other)
 }
 
-case class ProveDHTEvidence(val gv: ECPoint, val hv: ECPoint, val uv: ECPoint, val vv: ECPoint) extends SigmaProp with DefaultSigma {
+case class ProveDHTEvidence(val gv: SecP256K1Point, val hv: SecP256K1Point, val uv: SecP256K1Point, val vv: SecP256K1Point) extends SigmaProp with DefaultSigma {
   @NeverInline
   def propBytes: Coll[Byte] = new CollOverArray(gv.getEncoded(true))
   @NeverInline

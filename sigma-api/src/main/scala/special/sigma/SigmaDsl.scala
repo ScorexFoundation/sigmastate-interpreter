@@ -2,14 +2,11 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
-import special.SpecialPredef
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 
 import scala.reflect.ClassTag
 import special.collection._
-
 import scalan._
-import scalan.RType
 import scalan.Internal
 import scalan.RType
 
@@ -148,15 +145,15 @@ trait SigmaContract {
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInteger = this.builder.byteArrayToBigInt(bytes)
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
 
-  def proveDlog(g: ECPoint): SigmaProp = this.builder.proveDlog(g)
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
+  def proveDlog(g: SecP256K1Point): SigmaProp = this.builder.proveDlog(g)
+  def proveDHTuple(g: SecP256K1Point, h: SecP256K1Point, u: SecP256K1Point, v: SecP256K1Point): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeModifications(tree, operations, proof)
 
-  def groupGenerator: ECPoint = this.builder.groupGenerator
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint = this.builder.exponentiate(base, exponent)
+  def groupGenerator: SecP256K1Point = this.builder.groupGenerator
+  def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point = this.builder.exponentiate(base, exponent)
 
   @clause def canOpen(ctx: Context): Boolean
 
@@ -197,17 +194,17 @@ trait SigmaDslBuilder extends DslBuilder {
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInteger
   def longToByteArray(l: Long): Coll[Byte]
 
-  def proveDlog(g: ECPoint): SigmaProp
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp
+  def proveDlog(g: SecP256K1Point): SigmaProp
+  def proveDHTuple(g: SecP256K1Point, h: SecP256K1Point, u: SecP256K1Point, v: SecP256K1Point): SigmaProp
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
-  def groupGenerator: ECPoint
-  def exponentiate(base: ECPoint, exponent: BigInteger): ECPoint
+  def groupGenerator: SecP256K1Point
+  def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
-  def decodePoint(encoded: Coll[Byte]): ECPoint
+  def decodePoint(encoded: Coll[Byte]): SecP256K1Point
 }
 

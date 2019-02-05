@@ -109,7 +109,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("6C1wAzWGtsKEGQ7FL6w8RwuBRQtemm3eNvW8BqqmyiPZiX21Zhy3gy")""") shouldBe SSigmaProp
+    typecheck(env, """PK("tJPvN6qfap6VvrtSzGE1n4dduaxSMnjE3F34RkQBD2YcEYMWvCtCwH")""") shouldBe SSigmaProp
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }

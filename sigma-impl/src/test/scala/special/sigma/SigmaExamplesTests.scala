@@ -1,11 +1,12 @@
 package special.sigma
 
+import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.scalatest.FunSuite
 
 class SigmaExamplesTests extends FunSuite with ContractsTestkit {
 
-  val backer = new ProveDlogEvidence(SigmaDsl.groupGenerator.twice())
-  val project = new ProveDlogEvidence(SigmaDsl.groupGenerator.threeTimes())
+  val backer = new ProveDlogEvidence(SigmaDsl.groupGenerator.twice().asInstanceOf[SecP256K1Point])
+  val project = new ProveDlogEvidence(SigmaDsl.groupGenerator.threeTimes().asInstanceOf[SecP256K1Point])
   val selfId = collection[Byte](0, 1)
   val outId = collection[Byte](0, 2)
 

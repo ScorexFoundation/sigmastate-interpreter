@@ -18,7 +18,7 @@ class WECPointTests extends WrappersTests {
     import Liftables._
     import EnvRep._
 
-    val obj = CustomNamedCurves.getByName("curve25519").getG
+    val obj = CustomNamedCurves.getByName("secp256k1").getG
     val ten = BigInteger.valueOf(10L)
     check(obj, { env: EnvRep[WECPoint] => for { xs <- env } yield xs.add(xs) }, obj.add(obj))
     check(obj, { env: EnvRep[WECPoint] => for { xs <- env; tenL <- lifted(ten) } yield xs.multiply(tenL) }, obj.multiply(ten))
