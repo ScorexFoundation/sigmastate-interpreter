@@ -1098,7 +1098,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         List(other, o),
         true, false, element[SigmaProp]))
     }
-
   }
 
   implicit object LiftableSigmaProp

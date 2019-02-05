@@ -17,7 +17,6 @@ import CCostedBuilder._
 import Coll._
 import CollBuilder._
 import CollOverArrayBuilder._
-import Context._
 import CostModel._
 import Costed._
 import CostedBuilder._
@@ -25,7 +24,6 @@ import CostedColl._
 import CostedOption._
 import MonoidBuilder._
 import MonoidBuilderInst._
-import SigmaContract._
 import SigmaDslBuilder._
 import SigmaProp._
 import TestSigmaDslBuilder._
@@ -33,100 +31,8 @@ import WBigInteger._
 import WECPoint._
 import WOption._
 import WSpecialPredef._
-import DefaultContract._
 import TestAvlTree._
 import TestValue._
-
-object DefaultContract extends EntityObject("DefaultContract") {
-  // entityAdapter for DefaultContract trait
-  case class DefaultContractAdapter(source: Rep[DefaultContract])
-      extends DefaultContract with Def[DefaultContract] {
-    val selfType: Elem[DefaultContract] = element[DefaultContract]
-    override def transform(t: Transformer) = DefaultContractAdapter(t(source))
-    private val thisClass = classOf[DefaultContract]
-
-    def builder: Rep[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        thisClass.getMethod("builder"),
-        List(),
-        true, true, element[SigmaDslBuilder]))
-    }
-
-    override def Collection[T](items: Rep[T]*)(implicit cT: Elem[T]): Rep[Coll[T]] = {
-      asRep[Coll[T]](mkMethodCall(source,
-        thisClass.getMethod("Collection", classOf[Seq[_]], classOf[Elem[_]]),
-        List(items, cT),
-        true, true, element[Coll[T]]))
-    }
-  }
-
-  // entityProxy: single proxy for each type family
-  implicit def proxyDefaultContract(p: Rep[DefaultContract]): DefaultContract = {
-    if (p.rhs.isInstanceOf[DefaultContract@unchecked]) p.rhs.asInstanceOf[DefaultContract]
-    else
-      DefaultContractAdapter(p)
-  }
-
-  // familyElem
-  class DefaultContractElem[To <: DefaultContract]
-    extends SigmaContractElem[To] {
-    override lazy val parent: Option[Elem[_]] = Some(sigmaContractElement)
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override lazy val tag = {
-      weakTypeTag[DefaultContract].asInstanceOf[WeakTypeTag[To]]
-    }
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[DefaultContract] => convertDefaultContract(x) }
-      tryConvert(element[DefaultContract], this, x, conv)
-    }
-
-    def convertDefaultContract(x: Rep[DefaultContract]): Rep[To] = {
-      x.elem match {
-        case _: DefaultContractElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have DefaultContractElem[_], but got $e", x)
-      }
-    }
-    override def getDefaultRep: Rep[To] = ???
-  }
-
-  implicit lazy val defaultContractElement: Elem[DefaultContract] =
-    new DefaultContractElem[DefaultContract]
-
-  implicit case object DefaultContractCompanionElem extends CompanionElem[DefaultContractCompanionCtor] {
-    lazy val tag = weakTypeTag[DefaultContractCompanionCtor]
-    protected def getDefaultRep = RDefaultContract
-  }
-
-  abstract class DefaultContractCompanionCtor extends CompanionDef[DefaultContractCompanionCtor] with DefaultContractCompanion {
-    def selfType = DefaultContractCompanionElem
-    override def toString = "DefaultContract"
-  }
-  implicit def proxyDefaultContractCompanionCtor(p: Rep[DefaultContractCompanionCtor]): DefaultContractCompanionCtor =
-    proxyOps[DefaultContractCompanionCtor](p)
-
-  lazy val RDefaultContract: Rep[DefaultContractCompanionCtor] = new DefaultContractCompanionCtor {
-    private val thisClass = classOf[DefaultContractCompanion]
-  }
-
-  object DefaultContractMethods {
-    object canOpen {
-      def unapply(d: Def[_]): Nullable[(Rep[DefaultContract], Rep[Context])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[DefaultContractElem[_]] && method.getName == "canOpen" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[DefaultContract], Rep[Context])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[DefaultContract], Rep[Context])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object DefaultContractCompanionMethods {
-  }
-} // of object DefaultContract
-  registerEntityObject("DefaultContract", DefaultContract)
 
 object TestAvlTree extends EntityObject("TestAvlTree") {
   case class TestAvlTreeCtor

@@ -11,7 +11,6 @@ package special.sigma {
     import Coll._;
     import CollBuilder._;
     import CollOverArrayBuilder._;
-    import Context._;
     import CostModel._;
     import Costed._;
     import CostedBuilder._;
@@ -19,7 +18,6 @@ package special.sigma {
     import CostedOption._;
     import MonoidBuilder._;
     import MonoidBuilderInst._;
-    import SigmaContract._;
     import SigmaDslBuilder._;
     import SigmaProp._;
     import TestSigmaDslBuilder._;
@@ -29,9 +27,6 @@ package special.sigma {
     import CostedNone._; // manual fix
     import CostedSome._; // manuaf fix
     import WSpecialPredef._;
-    trait DefaultContract extends SigmaContract {
-      override def canOpen(ctx: Rep[Context]): Rep[Boolean] = scala.Predef.???
-    };
     abstract class TestAvlTree(val startingDigest: Rep[Coll[Byte]], val keyLength: Rep[Int], val valueLengthOpt: Rep[WOption[Int]], val maxNumOperations: Rep[WOption[Int]], val maxDeletes: Rep[WOption[Int]]) extends AvlTree with Product with Serializable {
       def builder: Rep[TestSigmaDslBuilder] = RTestSigmaDslBuilder();
       @NeverInline def dataSize: Rep[Long] = delayInvoke;
@@ -90,7 +85,6 @@ package special.sigma {
       @Reified(value = "T") @NeverInline override def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[WECPoint] = delayInvoke
     };
-    trait DefaultContractCompanion;
     trait TestAvlTreeCompanion;
     trait TestValueCompanion;
     trait TestSigmaDslBuilderCompanion
