@@ -5,7 +5,6 @@ import java.math.BigInteger
 
 class CBigInt(private[sigma] val value: BigInteger) extends BigInt {
   val dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  @inline implicit def adaptBigInt(x: BigInt) = x.asInstanceOf[CBigInt]
 
   override def toByte : Byte  = value.byteValueExact()
   override def toShort: Short = value.shortValueExact()

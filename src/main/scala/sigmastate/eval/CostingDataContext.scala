@@ -1,22 +1,17 @@
 package sigmastate.eval
 
-import java.awt.MultipleGradientPaint.ColorSpaceType
-import java.math.BigInteger
-
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, SomeValue, Value, ErgoTree, SigmaBoolean, GroupElementConstant, NoneValue}
+import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, Serializer, OperationSerializer}
+import sigmastate.serialization.{Serializer, OperationSerializer}
 import special.collection.{Coll, CCostedBuilder, CollType, Builder}
 import special.sigma._
 
-import scala.reflect.ClassTag
 import scala.util.{Success, Failure}
 import scalan.RType
 import scorex.crypto.hash.{Sha256, Blake2b256}
@@ -71,7 +66,7 @@ case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree {
   override def digest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
 }
 
-import CostingBox._
+import sigmastate.eval.CostingBox._
 
 class CostingBox(val IR: Evaluation,
                  isCost: Boolean,
@@ -194,15 +189,11 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     }
   }
 
-  override def exponentiate(base: ECPoint, exponent: BigInt) = {
-    CryptoConstants.dlogGroup.exponentiate(base.asInstanceOf[EcPointType], toBigInteger(exponent))
-  }
-
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     props.map { case csp: CostingSigmaProp => csp.sigmaTree }
   }
 
-  private def toGroupElementConst(p: ECPoint): GroupElementConstant =
+  private def toGroupElementConst(p: GroupElement): GroupElementConstant =
     GroupElementConstant(p.asInstanceOf[EcPointType])
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
@@ -237,18 +228,18 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     Colls.fromArray(h)
   }
 
-  override def proveDlog(g: ECPoint): SigmaProp =
+  override def proveDlog(g: GroupElement): SigmaProp =
     CostingSigmaProp(ProveDlog(g.asInstanceOf[EcPointType]))
 
-  override def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = {
+  override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
     val dht = ProveDHTuple(
       toGroupElementConst(g), toGroupElementConst(g),
       toGroupElementConst(u), toGroupElementConst(v))
     CostingSigmaProp(dht)
   }
 
-  override def groupGenerator: ECPoint = {
-    CryptoConstants.dlogGroup.generator
+  override def groupGenerator: GroupElement = {
+    new CGroupElement(CryptoConstants.dlogGroup.generator)
   }
 
   override def substConstants[T](scriptBytes: Coll[Byte],
@@ -260,8 +251,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     Colls.fromArray(res)
   }
 
-  override def decodePoint(encoded: Coll[Byte]): ECPoint = {
-    CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray)
+  override def decodePoint(encoded: Coll[Byte]): GroupElement = {
+    new CGroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
   }
 }
 

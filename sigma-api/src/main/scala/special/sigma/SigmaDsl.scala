@@ -34,6 +34,7 @@ trait CostModel {
   * */
 @scalan.Liftable
 trait BigInt {
+  private[sigma] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
     */
@@ -185,14 +186,31 @@ trait BigInt {
   */
 @scalan.Liftable
 trait GroupElement {
+  def isInfinity: Boolean
 
-  def isIdentity: Boolean
-
-  /** this should replace the currently used ^
+  /** Multiplies this <code>GroupElement</code> by the given number.
+    * @param k The multiplicator.
+    * @return <code>k * this</code>.
     * @since 2.0
     */
-  def exp(n: BigInt): GroupElement
+  def multiply(k: BigInt): GroupElement
+
+  /** Group operation. */
+  def add(that: GroupElement): GroupElement
+
+  /** Inverse element in the group. */
+  def negate: GroupElement
+
+  /**
+    * Get an encoding of the point value, optionally in compressed format.
+    *
+    * @param compressed whether to generate a compressed point encoding.
+    * @return the point encoding
+    */
+  def getEncoded(compressed: Boolean): Coll[Byte]
 }
+
+
 
 @scalan.Liftable
 trait SigmaProp {
@@ -412,15 +430,14 @@ trait SigmaContract {
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = this.builder.byteArrayToBigInt(bytes)
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
 
-  def proveDlog(g: ECPoint): SigmaProp = this.builder.proveDlog(g)
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
+  def proveDlog(g: GroupElement): SigmaProp = this.builder.proveDlog(g)
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeModifications(tree, operations, proof)
 
-  def groupGenerator: ECPoint = this.builder.groupGenerator
-  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint = this.builder.exponentiate(base, exponent)
+  def groupGenerator: GroupElement = this.builder.groupGenerator
 
   @clause def canOpen(ctx: Context): Boolean
 
@@ -461,18 +478,18 @@ trait SigmaDslBuilder {
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
   def longToByteArray(l: Long): Coll[Byte]
 
-  def proveDlog(g: ECPoint): SigmaProp
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp
+  def proveDlog(g: GroupElement): SigmaProp
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
-  def groupGenerator: ECPoint
-  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint
+  def groupGenerator: GroupElement
+
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
-  def decodePoint(encoded: Coll[Byte]): ECPoint
+  def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
   def BigInt(n: BigInteger): BigInt

@@ -107,10 +107,10 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
 
   @NeverInline
-  def proveDlog(g: ECPoint): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])
+  def proveDlog(g: GroupElement): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])
 
   @NeverInline
-  def proveDHTuple(g: ECPoint, h: ECPoint, u: ECPoint, v: ECPoint): SigmaProp = ???
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???
 
   @NeverInline
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = treeLookup(tree, key, proof).isDefined
@@ -125,10 +125,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @Internal val __g__ = __curve__.getG
 
   @NeverInline
-  def groupGenerator: ECPoint = __g__
-
-  @NeverInline
-  def exponentiate(base: ECPoint, exponent: BigInt): ECPoint = ???
+  def groupGenerator: GroupElement = new CGroupElement(__g__)
 
   @Reified("T")
   @NeverInline
@@ -138,7 +135,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
       (implicit cT: RType[T]): Coll[Byte] = ???
 
   @NeverInline
-  override def decodePoint(encoded: Coll[Byte]): ECPoint = __curve__.getCurve.decodePoint(encoded.toArray)
+  override def decodePoint(encoded: Coll[Byte]): GroupElement =
+    new CGroupElement(__curve__.getCurve.decodePoint(encoded.toArray))
 
   @NeverInline
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
