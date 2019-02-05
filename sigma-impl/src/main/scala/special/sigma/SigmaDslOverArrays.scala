@@ -38,10 +38,6 @@ class TestValue[T](val value: T) extends AnyValue {
   override def toString = s"Value($value)"
 }
 
-trait DefaultContract extends SigmaContract {
-  override def canOpen(ctx: Context): Boolean = ???
-}
-
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder

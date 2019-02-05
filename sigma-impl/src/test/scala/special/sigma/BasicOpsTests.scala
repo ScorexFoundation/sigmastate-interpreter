@@ -7,7 +7,7 @@ import org.scalatest.{FunSuite, Matchers}
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
-  test("atLeast") {
+  ignore("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
     // border cases
     SigmaDsl.atLeast(0, props).isValid shouldBe true
@@ -63,7 +63,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
 
-  case class Contract1(base64_pk1: String) extends DefaultContract {
+  case class Contract1(base64_pk1: String) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {
       val pk: SigmaProp = SigmaDsl.PubKey(base64_pk1)
@@ -71,7 +71,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     }
   }
 
-  case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends DefaultContract {
+  case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {
       val pkA: SigmaProp = SigmaDsl.PubKey(base64_pkA)
@@ -81,7 +81,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     }
   }
 
-  case class FriendContract(friend: Box) extends DefaultContract {
+  case class FriendContract(friend: Box) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
   }

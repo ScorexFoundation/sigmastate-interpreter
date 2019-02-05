@@ -70,9 +70,7 @@ trait ContractsTestkit {
         contextVars(vars.map { case (k, v) => (k.toByte, v) }).toArray)
   }
 
-//  implicit def boolToSigma(b: Boolean): SigmaProp = TrivialSigma(b)
-  
-  case class NoEnvContract(condition: Context => Boolean) extends DefaultContract {
+  case class NoEnvContract(condition: Context => Boolean) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
     override def canOpen(ctx: Context): Boolean = condition(ctx)
   }

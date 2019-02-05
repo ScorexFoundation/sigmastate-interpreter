@@ -58,7 +58,9 @@ case class SpecContext(testSuite: SigmaTestingCommons)(implicit val IR: IRContex
     def Env(entries: (String, Any)*): ScriptEnv = Map(entries:_*)
   }
 
-  trait ContractSpec extends DefaultContract with ContractSyntax
+  trait ContractSpec extends SigmaContract with ContractSyntax {
+    override def canOpen(ctx: Context): Boolean = ???
+  }
 
   trait ProtocolParty {
     def name: String
