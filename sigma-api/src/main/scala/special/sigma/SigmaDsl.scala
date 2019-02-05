@@ -209,7 +209,7 @@ trait Box {
     * @return result of the script execution in the current context
     * @since Mainnet
     */
-  def executeFromRegister[T](regId: Byte): T
+  def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
 
   @Internal
   override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"

@@ -12,6 +12,8 @@ package sigma {
 }
 
 package object sigma {
+  implicit val BigIntRType: RType[BigInt] = RType.fromClassTag(classTag[BigInt])
+  implicit val GroupElementRType: RType[GroupElement] = RType.fromClassTag(classTag[GroupElement])
   implicit val SigmaPropRType: RType[SigmaProp] = RType.fromClassTag(classTag[SigmaProp])
   implicit val BoxRType: RType[Box] = RType.fromClassTag(classTag[Box])
   implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])

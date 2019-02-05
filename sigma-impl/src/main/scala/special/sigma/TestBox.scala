@@ -2,7 +2,7 @@ package special.sigma
 
 import scala.reflect.ClassTag
 import special.collection.Coll
-import scalan.{NeverInline, RType}
+import scalan.{NeverInline, RType, Reified}
 
 class TestBox(
   val id: Coll[Byte],
@@ -38,6 +38,7 @@ class TestBox(
   def tokens: Coll[(Coll[Byte], Long)] = {
     this.getReg[Coll[(Coll[Byte], Long)]](2).get
   }
+
   @NeverInline
-  override def executeFromRegister[T](regId: Byte): T = ???
+  override def executeFromRegister[@Reified T](regId: Byte)(implicit cT: RType[T]): T = ???
 }

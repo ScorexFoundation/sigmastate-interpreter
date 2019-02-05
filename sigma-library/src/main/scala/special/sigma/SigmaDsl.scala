@@ -5,6 +5,7 @@ package special.sigma {
   trait SigmaDsl extends Base { self: SigmaLibrary =>
     import AnyValue._;
     import AvlTree._;
+    import BigInt._;
     import Box._;
     import Coll._;
     import CollBuilder._;
@@ -13,7 +14,10 @@ package special.sigma {
     import CostedBuilder._;
     import CostedColl._;
     import CostedOption._;
+    import GroupElement._;
+    import Header._;
     import MonoidBuilder._;
+    import Preheader._;
     import SigmaContract._;
     import SigmaDslBuilder._;
     import SigmaProp._;
@@ -33,7 +37,25 @@ package special.sigma {
       @Reified(value = "T") def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long];
       def PubKeySize: Rep[Long] = toRep(32L.asInstanceOf[Long])
     };
-    // manual fix (Def)
+    @Liftable trait BigInt extends Def[BigInt] {
+      def toByte: Rep[Byte];
+      def toShort: Rep[Short];
+      def toInt: Rep[Int];
+      def toLong: Rep[Long];
+      def toBytes: Rep[Coll[Byte]];
+      def toBits: Rep[Coll[Boolean]];
+      def toAbs: Rep[BigInt];
+      def compareTo(that: Rep[BigInt]): Rep[Int];
+      def modQ: Rep[BigInt];
+      def plusModQ(other: Rep[BigInt]): Rep[BigInt];
+      def minusModQ(other: Rep[BigInt]): Rep[BigInt];
+      def multModQ(other: Rep[BigInt]): Rep[BigInt];
+      def inverseModQ: Rep[BigInt]
+    };
+    @Liftable trait GroupElement extends Def[GroupElement] {
+      def isIdentity: Rep[Boolean];
+      def exp(n: Rep[BigInt]): Rep[GroupElement]
+    };
     @Liftable trait SigmaProp extends Def[SigmaProp] {
       def isValid: Rep[Boolean];
       def propBytes: Rep[Coll[Byte]];
@@ -43,19 +65,16 @@ package special.sigma {
       @OverloadId(value = "or_sigma") def ||(other: Rep[SigmaProp]): Rep[SigmaProp];
       // manual fix
       @OverloadId(value = "or_bool") def ||(other: Rep[Boolean])(implicit o: Overloaded1): Rep[SigmaProp];
-      def lazyAnd(other: Rep[Thunk[SigmaProp]]): Rep[SigmaProp];
-      def lazyOr(other: Rep[Thunk[SigmaProp]]): Rep[SigmaProp]
     };
     @Liftable trait AnyValue extends Def[AnyValue] {
       def dataSize: Rep[Long]
     };
-    // manual fix (Def)
     @Liftable trait Box extends Def[Box] {
       def id: Rep[Coll[Byte]];
       def value: Rep[Long];
+      def propositionBytes: Rep[Coll[Byte]];
       def bytes: Rep[Coll[Byte]];
       def bytesWithoutRef: Rep[Coll[Byte]];
-      def propositionBytes: Rep[Coll[Byte]];
       def cost: Rep[Int];
       def dataSize: Rep[Long];
       def registers: Rep[Coll[AnyValue]];
@@ -71,9 +90,9 @@ package special.sigma {
       def R8[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(8.asInstanceOf[Int]));
       def R9[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(9.asInstanceOf[Int]));
       def tokens: Rep[Coll[scala.Tuple2[Coll[Byte], Long]]];
-      def creationInfo: Rep[scala.Tuple2[Int, Coll[Byte]]]
+      def creationInfo: Rep[scala.Tuple2[Int, Coll[Byte]]];
+      def executeFromRegister[T](regId: Rep[Byte])(implicit cT: Elem[T]): Rep[T]
     };
-    // manual fix (Def)
     @Liftable trait AvlTree extends Def[AvlTree] {
       def startingDigest: Rep[Coll[Byte]];
       def keyLength: Rep[Int];
@@ -81,7 +100,31 @@ package special.sigma {
       def maxNumOperations: Rep[WOption[Int]];
       def maxDeletes: Rep[WOption[Int]];
       def cost: Rep[Int];
-      def dataSize: Rep[Long]
+      def dataSize: Rep[Long];
+      def digest: Rep[Coll[Byte]]
+    };
+    trait Header extends Def[Header] {
+      def version: Rep[Byte];
+      def parentId: Rep[Coll[Byte]];
+      def ADProofsRoot: Rep[Coll[Byte]];
+      def stateRoot: Rep[Coll[Byte]];
+      def transactionsRoot: Rep[Coll[Byte]];
+      def timestamp: Rep[Long];
+      def nBits: Rep[Long];
+      def height: Rep[Int];
+      def extensionRoot: Rep[Coll[Byte]];
+      def minerPk: Rep[GroupElement];
+      def powOnetimePk: Rep[GroupElement];
+      def powNonce: Rep[Coll[Byte]];
+      def powDistance: Rep[BigInt]
+    };
+    trait Preheader extends Def[Preheader] {
+      def version: Rep[Byte];
+      def parentId: Rep[Coll[Byte]];
+      def timestamp: Rep[Long];
+      def nBits: Rep[Long];
+      def height: Rep[Int];
+      def minerPk: Rep[GroupElement]
     };
     @Liftable trait Context extends Def[Context] {
       def builder: Rep[SigmaDslBuilder];
@@ -89,7 +132,10 @@ package special.sigma {
       def INPUTS: Rep[Coll[Box]];
       def HEIGHT: Rep[Int];
       def SELF: Rep[Box];
+      def selfBoxIndex: Rep[Int];
       def LastBlockUtxoRootHash: Rep[AvlTree];
+      def headers: Rep[Coll[Header]];
+      def preheader: Rep[Preheader];
       def MinerPubKey: Rep[Coll[Byte]];
       def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]];
       def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[T];
@@ -121,7 +167,6 @@ package special.sigma {
       @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
       def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
     };
-    // manual fix (Def)
     @Liftable trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Rep[CollBuilder];
       def Monoids: Rep[MonoidBuilder];
@@ -153,10 +198,14 @@ package special.sigma {
       def decodePoint(encoded: Rep[Coll[Byte]]): Rep[WECPoint]
     };
     trait CostModelCompanion;
+    trait BigIntCompanion;
+    trait GroupElementCompanion;
     trait SigmaPropCompanion;
     trait AnyValueCompanion;
     trait BoxCompanion;
     trait AvlTreeCompanion;
+    trait HeaderCompanion;
+    trait PreheaderCompanion;
     trait ContextCompanion;
     trait SigmaContractCompanion;
     trait SigmaDslBuilderCompanion
