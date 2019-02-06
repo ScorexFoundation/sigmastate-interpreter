@@ -171,6 +171,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         wc.constValue match {
           case cb: CostingBox =>
             mkConstant[tpe.type](cb.ebox.asInstanceOf[tpe.WrappedType], tpe)
+          case ge: special.sigma.GroupElement =>
+            mkConstant[tpe.type](CostingSigmaDslBuilder.toECPoint(ge).asInstanceOf[tpe.WrappedType], tpe)
+          case n: special.sigma.BigInt =>
+            mkConstant[tpe.type](CostingSigmaDslBuilder.toBigInteger(n).asInstanceOf[tpe.WrappedType], tpe)
           case _ =>
             mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
         }

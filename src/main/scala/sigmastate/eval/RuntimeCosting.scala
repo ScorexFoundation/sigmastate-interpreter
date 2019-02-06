@@ -24,7 +24,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
 import scalan.staged.Slicing
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import special.sigma.CGroupElement
+import special.sigma.TestGroupElement
 import special.sigma.Extensions._
 
 trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
@@ -930,7 +930,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           RCCostedPrim(resV, costOf(c), SBigInt.MaxSizeInBytes)
         case p: ECPoint =>
           assert(tpe == SGroupElement)
-          val resV = liftConst(new CGroupElement(p): SGroupElement)
+          val resV = liftConst(sigmaDslBuilderValue.GroupElement(p): SGroupElement)
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>

@@ -120,8 +120,10 @@ object Values {
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
-      case SGroupElement =>
+      case SGroupElement if value.isInstanceOf[ECPoint] =>
         s"ConstantNode(${showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case SGroupElement  =>
+        sys.error(s"Invalid value in Constant($value, $tpe)")
       case SInt => s"IntConstant($value)"
       case SLong => s"LongConstant($value)"
       case SBoolean if value == true => "TrueLeaf"

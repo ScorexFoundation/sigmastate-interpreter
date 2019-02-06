@@ -100,7 +100,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
     if (bi.compareTo(dlogGroupOrder) == 1) {
       throw new RuntimeException(s"BigInt value exceeds the order of the dlog group (${__curve__}). Expected to be less than: $dlogGroupOrder, actual: $bi")
     }
-    new CBigInt(bi)
+    this.BigInt(bi)
   }
 
   @NeverInline
@@ -125,7 +125,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @Internal val __g__ = __curve__.getG
 
   @NeverInline
-  def groupGenerator: GroupElement = new CGroupElement(__g__)
+  def groupGenerator: GroupElement = this.GroupElement(__g__)
 
   @Reified("T")
   @NeverInline
@@ -136,12 +136,18 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def decodePoint(encoded: Coll[Byte]): GroupElement =
-    new CGroupElement(__curve__.getCurve.decodePoint(encoded.toArray))
+    this.GroupElement(__curve__.getCurve.decodePoint(encoded.toArray))
 
   @NeverInline
-  override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
+  override def BigInt(n: BigInteger): BigInt = SpecialPredef.rewritableMethod
 
   @NeverInline
-  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[CBigInt].value
+  override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[TestBigInt].value
+
+  /** Create DSL's group element from existing `org.bouncycastle.math.ec.ECPoint`. */
+  def GroupElement(p: ECPoint): GroupElement = SpecialPredef.rewritableMethod
+
+  /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
+  def toECPoint(ge: GroupElement): ECPoint = ge.value
 }
 

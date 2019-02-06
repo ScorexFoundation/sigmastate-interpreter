@@ -122,8 +122,8 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
 
-  val sigmaDslBuilderValue: special.sigma.SigmaDslBuilder
-  val costedBuilderValue: special.collection.CCostedBuilder
+  val sigmaDslBuilderValue: CostingSigmaDslBuilder
+  val costedBuilderValue: special.collection.CostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
 
   def getDataEnv: DataEnv = {
@@ -256,7 +256,10 @@ trait Evaluation extends RuntimeCosting { IR =>
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
             In(newVals: special.collection.Coll[Any]@unchecked), _) =>
-            val typedNewVals = newVals.toArray.map(_.asInstanceOf[Value[SType]])
+            val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
+              case Nullable(v) => v
+              case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
+            })
             val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)
             out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
 

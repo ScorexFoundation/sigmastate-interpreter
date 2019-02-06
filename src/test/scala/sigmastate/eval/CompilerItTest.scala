@@ -34,6 +34,8 @@ class CompilerItTest extends BaseCtxTests
   import CCostedColl._
   import WBigInteger._
   import WECPoint._
+  import BigInt._
+  import GroupElement._
   import sigmastate.serialization.OpCodes._
   import Liftables._
   import SType.AnyOps
@@ -92,8 +94,8 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def sigmaPropConstCase = {
-    val resSym = dsl.proveDlog(liftConst(g1.asInstanceOf[ECPoint]))
-    val res = DLogProtocol.ProveDlog(g1) // NOTE! this value cannot be produced by test script
+    val resSym = dsl.proveDlog(liftConst(g1))
+    val res = DLogProtocol.ProveDlog(ecp1) // NOTE! this value cannot be produced by test script
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
       cost = null,
@@ -106,8 +108,8 @@ class CompilerItTest extends BaseCtxTests
 
   def andSigmaPropConstsCase = {
     import SigmaDslBuilder._
-    val p1Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g1.asInstanceOf[ECPoint]))
-    val p2Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g2.asInstanceOf[ECPoint]))
+    val p1Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g1))
+    val p2Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g2))
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
       cost = null,
@@ -250,8 +252,8 @@ class CompilerItTest extends BaseCtxTests
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     Case(env, "crowdFunding_Case", crowdFundingScript, ergoCtx,
       { ctx: Rep[Context] =>
-        val backerPubKey = dsl.proveDlog(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = dsl.proveDlog(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(backer))).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(project))).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),

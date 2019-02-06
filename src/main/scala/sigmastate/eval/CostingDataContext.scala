@@ -1,5 +1,8 @@
 package sigmastate.eval
 
+import java.math.BigInteger
+
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
@@ -9,7 +12,7 @@ import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, Sigma
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{Serializer, OperationSerializer}
-import special.collection.{Coll, CCostedBuilder, CollType, Builder}
+import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
 
 import scala.util.{Success, Failure}
@@ -18,6 +21,14 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+
+case class CBigInt(override val value: BigInteger) extends TestBigInt(value) {
+  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+}
+
+case class CGroupElement(override val value: ECPoint) extends TestGroupElement(value) {
+  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+}
 
 case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp {
   override def isValid: Boolean = sigmaTree match {
@@ -145,7 +156,7 @@ object CostingBox {
 }
 
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
-  override val Costing = new CCostedBuilder {
+  override val Costing: CostedBuilder = new CCostedBuilder {
     import RType._
     override def defaultValue[T](valueType: RType[T]): T = (valueType match {
       case BooleanType  => false
@@ -160,6 +171,13 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }
+
+  override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
+
+  override def GroupElement(p: ECPoint): GroupElement = new CGroupElement(p)
+
+  /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
+  def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CostingSigmaProp].sigmaTree
 
   override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
     val keyBytes = key.toArray
@@ -193,8 +211,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     props.map { case csp: CostingSigmaProp => csp.sigmaTree }
   }
 
-  private def toGroupElementConst(p: GroupElement): GroupElementConstant =
-    GroupElementConstant(p.asInstanceOf[EcPointType])
+  private def toGroupElementConst(ge: GroupElement): GroupElementConstant =
+    GroupElementConstant(toECPoint(ge).asInstanceOf[EcPointType])
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
@@ -228,8 +246,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     Colls.fromArray(h)
   }
 
-  override def proveDlog(g: GroupElement): SigmaProp =
-    CostingSigmaProp(ProveDlog(g.asInstanceOf[EcPointType]))
+  override def proveDlog(ge: GroupElement): SigmaProp =
+    CostingSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
 
   override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
     val dht = ProveDHTuple(
@@ -239,7 +257,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   override def groupGenerator: GroupElement = {
-    new CGroupElement(CryptoConstants.dlogGroup.generator)
+    this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 
   override def substConstants[T](scriptBytes: Coll[Byte],
@@ -252,7 +270,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   override def decodePoint(encoded: Coll[Byte]): GroupElement = {
-    new CGroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
+    this.GroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
   }
 }
 

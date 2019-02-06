@@ -49,6 +49,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
   lazy val dsl = sigmaDslBuilder
+  lazy val dslValue = sigmaDslBuilderValue
   lazy val bigSym = liftConst(big)
   lazy val n1Sym = liftConst(n1)
 

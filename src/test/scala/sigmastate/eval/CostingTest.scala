@@ -28,6 +28,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import IR._
   import WArray._
   import WECPoint._
+  import GroupElement._
   import WBigInteger._
   import Context._; import SigmaContract._
   import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
@@ -80,7 +81,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val n1Sym = liftConst(n1)
     checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[WBigInteger] }, { _ => sizeOf(n1Sym) })
 
-    val g1Sym = liftConst(g1.asInstanceOf[ECPoint])
+    val g1Sym = liftConst(g1)
     checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
@@ -167,8 +168,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     checkInEnv(env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = dsl.proveDlog(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = dsl.proveDlog(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(backer))).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(project))).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val projectBytes = projectPubKey.propBytes
         val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
@@ -223,7 +224,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = dsl.proveDlog(liftConst(script)).asRep[SigmaProp]
+      val regScript = dsl.proveDlog(liftConst(dslValue.GroupElement(script))).asRep[SigmaProp]
       val selfBytes = ctx.SELF.propositionBytes
       val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(
