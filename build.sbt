@@ -30,7 +30,14 @@ lazy val commonSettings = Seq(
           <name>Alexander Slesarenko</name>
           <url>https://github.com/aslesarenko/</url>
         </developer>
-      </developers>
+      </developers>,
+  publishMavenStyle := true,
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    if (isSnapshot.value) { Some("snapshots" at nexus + "content/repositories/snapshots") }
+    else { Some("releases" at nexus + "service/local/staging/deploy/maven2") }
+  }
+
 )
 
 enablePlugins(GitVersioning)
@@ -116,16 +123,8 @@ scalacOptions ++= Seq("-feature", "-deprecation")
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
 
-publishMavenStyle := true
-
 parallelExecution in Test := false
 publishArtifact in Test := false
-
-publishTo := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value) { Some("snapshots" at nexus + "content/repositories/snapshots") }
-  else { Some("releases"  at nexus + "service/local/staging/deploy/maven2") }
-}
 
 pomIncludeRepository := { _ => false }
 
@@ -153,7 +152,7 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
     .settings(commonSettings,
       libraryDependencies ++= Seq(meta, plugin, libraryapi, libraryimpl),
       publishArtifact in(Compile, packageBin) := false,
-      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = false) },
       artifact in(Compile, assembly) := {
         val art = (artifact in(Compile, assembly)).value
         art.withClassifier(Some("assembly"))
