@@ -936,7 +936,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
-          val coll = toEvalData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
+          val coll = toDslData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
           val tpeA = tpe.asCollection[SType].elemType
           stypeToElem(tpeA) match {
             case eWA: Elem[wa] =>

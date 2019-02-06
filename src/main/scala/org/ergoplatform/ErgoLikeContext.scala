@@ -92,43 +92,69 @@ object ErgoLikeContext {
   val noInputs: Array[Box] = Array[Box]()
   val noOutputs: Array[Box] = Array[Box]()
 
-  def fromEvalData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = {
-    val dsl = IR.sigmaDslBuilderValue
-    value match {
-      case w: WrapperOf[_] => w.wrappedValue
-      case coll: Coll[a] =>
-        val elemTpe = tpe.asCollection[SType].elemType
-        coll.toArray.map(x => fromEvalData(x, elemTpe))
-      case _ => value
-    }
+  import special.sigma._
+  import sigmastate.SType._
+  def toErgoTreeType(dslType: RType[_]): RType[_] = dslType match {
+    case p: PrimitiveType[_] => p
+    case w: WrapperType[_] =>
+      w match {
+        case BigIntRType => BigIntegerRType
+        case GroupElementRType => ECPointRType
+        case SigmaPropRType => SigmaBooleanRType
+        case BoxRType => ErgoBoxRType
+        case AvlTreeRType => AvlTreeDataRType
+        case _ => sys.error(s"Unknown WrapperType: $w")
+      }
+    case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
+    case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
+    case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
+    case p: PairType[_,_] => pairRType(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd))
+    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
+    case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
+    case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
+    case AnyType | AnyRefType | NothingType | StringType => dslType
+    case _ =>
+      sys.error(s"Don't know how to toErgoTreeType($dslType)")
   }
 
-  def toEvalData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
+  def fromDslData[T](value: Any, tRes: RType[T])(implicit IR: Evaluation): T = {
+    val dsl = IR.sigmaDslBuilderValue
+    val res = (value, tRes) match {
+      case (w: WrapperOf[_], _) => w.wrappedValue
+      case (coll: Coll[a], tarr: ArrayType[a1]) =>
+        val tItem = tarr.tA
+        coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
+      case _ => value
+    }
+    res.asInstanceOf[T]
+  }
+
+  def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
     val dsl = IR.sigmaDslBuilderValue
     (value, tpe) match {
-      case (c: Constant[_], tpe) => toEvalData(c.value, c.tpe, isCost)
+      case (c: Constant[_], tpe) => toDslData(c.value, c.tpe, isCost)
       case (_, STuple(Seq(tpeA, tpeB))) =>
         value match {
           case tup: Tuple2[_,_] =>
-            val valA = toEvalData(tup._1, tpeA, isCost)
-            val valB = toEvalData(tup._2, tpeB, isCost)
+            val valA = toDslData(tup._1, tpeA, isCost)
+            val valB = toDslData(tup._2, tpeB, isCost)
             (valA, valB)
           case arr: Array[Any] =>
-            val valA = toEvalData(arr(0), tpeA, isCost)
-            val valB = toEvalData(arr(1), tpeB, isCost)
+            val valA = toDslData(arr(0), tpeA, isCost)
+            val valB = toDslData(arr(1), tpeB, isCost)
             (valA, valB)
         }
       case (arr: Array[a], SCollectionType(elemType)) =>
         implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
         elemRType.asInstanceOf[RType[_]] match {
           case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toEvalData(x, elemType, isCost))
+            val testArr = arr.map(x => toDslData(x, elemType, isCost))
             dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
           case _ =>
             dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
         }
       case (arr: Array[a], STuple(items)) =>
-        val res = arr.zip(items).map { case (x, t) => toEvalData(x, t, isCost)}
+        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
         dsl.Colls.fromArray(res)(RType.AnyType)
       case (b: ErgoBox, SBox) => b.toTestBox(isCost)
       case (n: BigInteger, SBigInt) =>

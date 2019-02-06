@@ -3,6 +3,7 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import scalan.RType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
@@ -18,12 +19,13 @@ import special.collection.Coll
 
 import scala.collection.mutable
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 import scalan.meta.ScalanAst.STypeArgAnnotation
 import sigmastate.SBoolean.typeCode
 import sigmastate.SByte.typeCode
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
@@ -87,6 +89,10 @@ object SType {
   implicit val typeBox = SBox
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
+
+  implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
+  implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
+  implicit val AvlTreeDataRType: RType[AvlTreeData] = RType.fromClassTag(classTag[AvlTreeData])
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */

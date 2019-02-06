@@ -151,14 +151,14 @@ object CostingBox {
 
     for ((k, v: SValue) <- ebox.additionalRegisters) {
       checkNotYetDefined(k.number, v)
-      res(k.number) = new TestValue(ErgoLikeContext.toEvalData(v, v.tpe, isCost))
+      res(k.number) = new TestValue(ErgoLikeContext.toDslData(v, v.tpe, isCost))
     }
 
     for (r <- ErgoBox.mandatoryRegisters) {
       val regId = r.number
       val v = ebox.get(r).get
       checkNotYetDefined(regId, v)
-      res(regId) = new TestValue(ErgoLikeContext.toEvalData(v, v.tpe, isCost))
+      res(regId) = new TestValue(ErgoLikeContext.toDslData(v, v.tpe, isCost))
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }

@@ -22,7 +22,7 @@ import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import RType._
-import org.ergoplatform.ErgoLikeContext.fromEvalData
+import org.ergoplatform.ErgoLikeContext.fromDslData
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
@@ -179,7 +179,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toEvalData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(ErgoLikeContext.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
               case None => None
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
             }
@@ -191,7 +191,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toEvalData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(ErgoLikeContext.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -408,7 +408,9 @@ trait Evaluation extends RuntimeCosting { IR =>
         case x =>
           val eRes = f.elem.eRange
           val tpeRes = elemToSType(eRes)
-          val constValue = fromEvalData(x, tpeRes)(IR)
+          val tRes = Evaluation.stypeToRType(tpeRes)
+          val treeType = ErgoLikeContext.toErgoTreeType(tRes)
+          val constValue = fromDslData(x, treeType)(IR)
           builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
       }
     }

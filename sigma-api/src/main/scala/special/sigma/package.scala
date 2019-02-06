@@ -29,6 +29,7 @@ package object sigma {
   implicit val ContextRType: RType[Context] = RType.fromClassTag(classTag[Context])
   implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
+
   implicit val BigIntegerRType: RType[BigInteger] = RType.fromClassTag(classTag[BigInteger])
   implicit val ECPointRType: RType[ECPoint] = RType.fromClassTag(classTag[ECPoint])
 }

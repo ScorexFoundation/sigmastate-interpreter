@@ -80,8 +80,7 @@ class CompilerItTest extends BaseCtxTests
 
   def arrayConstCase = {
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val arr1Sym = liftConst(arr1)
-    val col1Sym = colBuilder.fromArray[Byte](arr1Sym)
+    val col1Sym = liftConst(Colls.fromArray(arr1))
     val res = Colls.fromArray(arr1).toArray
     Case(env, "arrayConst", "arr1", ergoCtx,
       calc = {_ => col1Sym },
