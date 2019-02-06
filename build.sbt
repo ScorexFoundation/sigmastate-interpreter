@@ -221,7 +221,7 @@ ergoUnitTest := {
   runErgoTask("test", sigmastateVersion, log) 
 }
 
-ergoUnitTest := ergoUnitTest.dependsOn(publishLocal).value
+ergoUnitTest := ergoUnitTest.dependsOn(publishLocal in sigma).value
 
 lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
 ergoItTest := {
@@ -230,4 +230,4 @@ ergoItTest := {
   runErgoTask("it:test", sigmastateVersion, log)
 }
 
-ergoItTest := ergoItTest.dependsOn(publishLocal).value
+ergoItTest := ergoItTest.dependsOn(publishLocal in sigma).value
