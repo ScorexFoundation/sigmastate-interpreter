@@ -9,7 +9,7 @@ import sigmastate.basics.{BcDlogGroup, SecP256K1}
 object CryptoConstants {
   type EcPointType = SecP256K1Point
 
-  val PublicKeyLength: Byte = 33
+  val EncodedGroupElementLength: Byte = 33
 
   val dlogGroup: BcDlogGroup[EcPointType] = SecP256K1
 
