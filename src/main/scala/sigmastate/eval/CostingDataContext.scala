@@ -22,15 +22,20 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
-case class CBigInt(override val value: BigInteger) extends TestBigInt(value) {
+trait WrapperOf[T] {
+  def wrappedValue: T
+}
+
+case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
   override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
 }
 
-case class CGroupElement(override val value: ECPoint) extends TestGroupElement(value) {
+case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
   override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
 }
 
-case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp {
+case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
+  override def wrappedValue: SigmaBoolean = sigmaTree
   override def isValid: Boolean = sigmaTree match {
     case TrivialProp(cond) => cond
     case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
@@ -58,8 +63,11 @@ case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp {
     CostingSigmaProp(COR.normalized(Seq(sigmaTree, TrivialProp(other))))
 }
 
-case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree {
+case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
   val builder = new CostingSigmaDslBuilder()
+
+  override def wrappedValue: AvlTreeData = treeData
+
   def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
 
   def keyLength: Int = treeData.keyLength
@@ -89,9 +97,11 @@ class CostingBox(val IR: Evaluation,
     colBytes(ebox.bytesWithNoRef)(IR),
     colBytes(ebox.propositionBytes)(IR),
     regs(ebox, isCost)(IR)
-  )
+  ) with WrapperOf[ErgoBox]
 {
   override val builder = new CostingSigmaDslBuilder()
+
+  override def wrappedValue: ErgoBox = ebox
 
   override def getReg[T](i: Int)(implicit tT: RType[T]): Option[T] =
     if (isCost) {
@@ -141,14 +151,14 @@ object CostingBox {
 
     for ((k, v: SValue) <- ebox.additionalRegisters) {
       checkNotYetDefined(k.number, v)
-      res(k.number) = new TestValue(ErgoLikeContext.toTestData(v, v.tpe, isCost))
+      res(k.number) = new TestValue(ErgoLikeContext.toEvalData(v, v.tpe, isCost))
     }
 
     for (r <- ErgoBox.mandatoryRegisters) {
       val regId = r.number
       val v = ebox.get(r).get
       checkNotYetDefined(regId, v)
-      res(regId) = new TestValue(ErgoLikeContext.toTestData(v, v.tpe, isCost))
+      res(regId) = new TestValue(ErgoLikeContext.toEvalData(v, v.tpe, isCost))
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }
@@ -175,6 +185,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
   override def GroupElement(p: ECPoint): GroupElement = new CGroupElement(p)
+
+  def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CostingSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
   def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CostingSigmaProp].sigmaTree

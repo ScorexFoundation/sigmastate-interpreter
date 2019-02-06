@@ -145,9 +145,11 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[TestBigInt].value
 
   /** Create DSL's group element from existing `org.bouncycastle.math.ec.ECPoint`. */
+  @NeverInline
   def GroupElement(p: ECPoint): GroupElement = SpecialPredef.rewritableMethod
 
   /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
+  @NeverInline
   def toECPoint(ge: GroupElement): ECPoint = ge.value
 }
 

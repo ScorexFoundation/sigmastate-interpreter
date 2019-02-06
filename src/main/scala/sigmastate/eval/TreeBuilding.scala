@@ -13,7 +13,7 @@ import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.{ConstantStore, ValueSerializer}
 import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
-
+import ErgoLikeContext._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.{ClassTag, classTag}
@@ -33,7 +33,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import SigmaDslBuilder._
   import CCostedBuilder._
   import MonoidBuilderInst._
-  import WBigInteger._
+  import BigInt._
   import WArray._
   import WOption._
   import WECPoint._
@@ -46,7 +46,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   private val SDBM = SigmaDslBuilderMethods
   private val AM = WArrayMethods
   private val OM = WOptionMethods
-  private val BIM = WBigIntegerMethods
+  private val BIM = BigIntMethods
 
   /** Describes assignment of valIds for symbols which become ValDefs.
     * Each ValDef in current scope have entry in this map */
@@ -168,16 +168,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
-        wc.constValue match {
-          case cb: CostingBox =>
-            mkConstant[tpe.type](cb.ebox.asInstanceOf[tpe.WrappedType], tpe)
-          case ge: special.sigma.GroupElement =>
-            mkConstant[tpe.type](CostingSigmaDslBuilder.toECPoint(ge).asInstanceOf[tpe.WrappedType], tpe)
-          case n: special.sigma.BigInt =>
-            mkConstant[tpe.type](CostingSigmaDslBuilder.toBigInteger(n).asInstanceOf[tpe.WrappedType], tpe)
-          case _ =>
-            mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
-        }
+        val v = fromEvalData(wc.constValue, tpe)(IR)
+        mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)

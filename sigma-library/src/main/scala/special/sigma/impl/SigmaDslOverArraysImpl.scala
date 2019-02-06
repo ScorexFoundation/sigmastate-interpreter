@@ -30,6 +30,7 @@ import SigmaDslBuilder._
 import SigmaProp._
 import TestSigmaDslBuilder._
 import WBigInteger._
+import WECPoint._
 import WOption._
 import WSpecialPredef._
 import TestAvlTree._
@@ -515,6 +516,20 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         List(n),
         true, false, element[WBigInteger]))
     }
+
+    override def GroupElement(p: Rep[WECPoint]): Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
+        thisClass.getMethod("GroupElement", classOf[Sym]),
+        List(p),
+        true, false, element[GroupElement]))
+    }
+
+    override def toECPoint(ge: Rep[GroupElement]): Rep[WECPoint] = {
+      asRep[WECPoint](mkMethodCall(self,
+        thisClass.getMethod("toECPoint", classOf[Sym]),
+        List(ge),
+        true, false, element[WECPoint]))
+    }
   }
   // elem for concrete class
   class TestSigmaDslBuilderElem(val iso: Iso[TestSigmaDslBuilderData, TestSigmaDslBuilder])
@@ -982,6 +997,32 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object GroupElement {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "GroupElement" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object toECPoint {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "toECPoint" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

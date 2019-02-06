@@ -592,6 +592,13 @@ object BigInt extends EntityObject("BigInt") {
         List(that),
         true, false, element[BigInt]))
     }
+
+    override def negate: Rep[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        BigIntClass.getMethod("negate"),
+        List(),
+        true, false, element[BigInt]))
+    }
   }
 
   implicit object LiftableBigInt
@@ -768,6 +775,13 @@ object BigInt extends EntityObject("BigInt") {
         List(that),
         true, true, element[BigInt]))
     }
+
+    def negate: Rep[BigInt] = {
+      asRep[BigInt](mkMethodCall(source,
+        thisClass.getMethod("negate"),
+        List(),
+        true, true, element[BigInt]))
+    }
   }
 
   // entityProxy: single proxy for each type family
@@ -785,7 +799,7 @@ object BigInt extends EntityObject("BigInt") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[BigInt], classOf[SBigInt], Set(
-        "toByte", "toShort", "toInt", "toLong", "toBytes", "toBits", "toAbs", "compareTo", "modQ", "plusModQ", "minusModQ", "multModQ", "inverseModQ", "signum", "add", "subtract", "multiply", "divide", "mod", "remainder", "min", "max"
+        "toByte", "toShort", "toInt", "toLong", "toBytes", "toBits", "toAbs", "compareTo", "modQ", "plusModQ", "minusModQ", "multModQ", "inverseModQ", "signum", "add", "subtract", "multiply", "divide", "mod", "remainder", "min", "max", "negate"
         ))
     }
 
@@ -1109,6 +1123,19 @@ object BigInt extends EntityObject("BigInt") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object negate {
+      def unapply(d: Def[_]): Nullable[Rep[BigInt]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BigIntElem[_]] && method.getName == "negate" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

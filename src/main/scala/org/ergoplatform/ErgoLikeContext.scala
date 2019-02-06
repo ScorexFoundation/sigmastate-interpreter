@@ -1,17 +1,21 @@
 package org.ergoplatform
 
+import java.math.BigInteger
+
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoLikeContext.Height
 import scalan.RType
-import scalan.RType.PairType
+import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
+import sigmastate.eval._
 import sigmastate.interpreter.{ContextExtension, Context}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.collection.Coll
+import special.collection.{Coll, CollType}
 import special.sigma
-import special.sigma.{AnyValue, TestValue, Box}
+import special.sigma.{AnyValue, TestValue, Box, WrapperType}
+import RType._
 
 import scala.util.Try
 
@@ -88,34 +92,52 @@ object ErgoLikeContext {
   val noInputs: Array[Box] = Array[Box]()
   val noOutputs: Array[Box] = Array[Box]()
 
-  def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
-    case (c: Constant[_], tpe) => toTestData(c.value, c.tpe, isCost)
-    case (_, STuple(Seq(tpeA, tpeB))) =>
-      value match {
-        case tup: Tuple2[_,_] =>
-          val valA = toTestData(tup._1, tpeA, isCost)
-          val valB = toTestData(tup._2, tpeB, isCost)
-          (valA, valB)
-        case arr: Array[Any] =>
-          val valA = toTestData(arr(0), tpeA, isCost)
-          val valB = toTestData(arr(1), tpeB, isCost)
-          (valA, valB)
-      }
-    case (arr: Array[a], SCollectionType(elemType)) =>
-      implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
-      elemType match {
-        case SCollectionType(_) | STuple(_) =>
-          val testArr = arr.map(x => toTestData(x, elemType, isCost))
-          IR.sigmaDslBuilderValue.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
-        case _ =>
-          IR.sigmaDslBuilderValue.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
-      }
-    case (arr: Array[a], STuple(items)) =>
-      val res = arr.zip(items).map { case (x, t) => toTestData(x, t, isCost)}
-      IR.sigmaDslBuilderValue.Colls.fromArray(res)(RType.AnyType)
-    case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-    case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
-    case (x, _) => x
+  def fromEvalData(value: Any, tpe: SType)(implicit IR: Evaluation): Any = {
+    val dsl = IR.sigmaDslBuilderValue
+    value match {
+      case w: WrapperOf[_] => w.wrappedValue
+      case coll: Coll[a] =>
+        val elemTpe = tpe.asCollection[SType].elemType
+        coll.toArray.map(x => fromEvalData(x, elemTpe))
+      case _ => value
+    }
+  }
+
+  def toEvalData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
+    val dsl = IR.sigmaDslBuilderValue
+    (value, tpe) match {
+      case (c: Constant[_], tpe) => toEvalData(c.value, c.tpe, isCost)
+      case (_, STuple(Seq(tpeA, tpeB))) =>
+        value match {
+          case tup: Tuple2[_,_] =>
+            val valA = toEvalData(tup._1, tpeA, isCost)
+            val valB = toEvalData(tup._2, tpeB, isCost)
+            (valA, valB)
+          case arr: Array[Any] =>
+            val valA = toEvalData(arr(0), tpeA, isCost)
+            val valB = toEvalData(arr(1), tpeB, isCost)
+            (valA, valB)
+        }
+      case (arr: Array[a], SCollectionType(elemType)) =>
+        implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
+        elemRType.asInstanceOf[RType[_]] match {
+          case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
+            val testArr = arr.map(x => toEvalData(x, elemType, isCost))
+            dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
+          case _ =>
+            dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
+        }
+      case (arr: Array[a], STuple(items)) =>
+        val res = arr.zip(items).map { case (x, t) => toEvalData(x, t, isCost)}
+        dsl.Colls.fromArray(res)(RType.AnyType)
+      case (b: ErgoBox, SBox) => b.toTestBox(isCost)
+      case (n: BigInteger, SBigInt) =>
+        dsl.BigInt(n)
+      case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
+      case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
+      case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
+      case (x, _) => x
+    }
   }
 
   def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Coll[AnyValue] = {

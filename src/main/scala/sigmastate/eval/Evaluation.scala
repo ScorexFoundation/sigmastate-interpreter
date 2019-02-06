@@ -22,6 +22,7 @@ import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import RType._
+import org.ergoplatform.ErgoLikeContext.fromEvalData
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
@@ -178,7 +179,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(ErgoLikeContext.toEvalData(v, declaredTpe, ctxObj.isCost)(IR))
               case None => None
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
             }
@@ -190,7 +191,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toTestData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(ErgoLikeContext.toEvalData(v, declaredTpe, ctxObj.isCost)(IR))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -212,30 +213,30 @@ trait Evaluation extends RuntimeCosting { IR =>
           case wc: LiftedConst[_,_] => out(wc.constValue)
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
-          case SigmaM.propBytes(prop) =>
-            val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
-            out(sigmaDslBuilderValue.Colls.fromArray(sigmaBool.bytes))
+//          case SigmaM.propBytes(prop) =>
+//            val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
+//            out(sigmaDslBuilderValue.Colls.fromArray(sigmaBool.bytes))
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
 
-          case SigmaM.and_sigma_&&(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-            out(CAND.normalized(Seq(l, r)))
+//          case SigmaM.and_sigma_&&(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
+//            out(CAND.normalized(Seq(l, r)))
 
-          case SigmaM.or_sigma_||(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-            out(COR.normalized(Seq(l, r)))
+//          case SigmaM.or_sigma_||(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
+//            out(COR.normalized(Seq(l, r)))
 
-          case SigmaM.and_bool_&&(In(l: SigmaBoolean), In(b: Boolean)) =>
-            if (b) {
-              out(l)
-            } else
-              out(TrivialProp.FalseProp)
-
-          case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
-            if (b)
-              out(TrivialProp.TrueProp)
-            else {
-              out(l)
-            }
+//          case SigmaM.and_bool_&&(In(l: SigmaBoolean), In(b: Boolean)) =>
+//            if (b) {
+//              out(l)
+//            } else
+//              out(TrivialProp.FalseProp)
+//
+//          case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
+//            if (b)
+//              out(TrivialProp.TrueProp)
+//            else {
+//              out(l)
+//            }
 //          case SigmaM.lazyAnd(In(l: SigmaBoolean), In(y)) =>
 //            val th = y.asInstanceOf[() => SigmaBoolean]
 //            out(AND(l, th()).function(null, null))
@@ -243,15 +244,15 @@ trait Evaluation extends RuntimeCosting { IR =>
 //            val th = y.asInstanceOf[() => SigmaBoolean]
 //            out(OR(l, th()).function(null, null))
 
-          case SDBM.anyZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-            out(COR.normalized(items.toArray.toSeq))
-          case SDBM.allZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-            out(CAND.normalized(items.toArray.toSeq))
-          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-            out(AtLeast.reduce(bound, children.toArray.toSeq))
-          case SDBM.sigmaProp(_, In(b: Boolean)) =>
-            val res = sigmastate.TrivialProp(b)
-            out(res)
+//          case SDBM.anyZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+//            out(COR.normalized(items.toArray.toSeq))
+//          case SDBM.allZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+//            out(CAND.normalized(items.toArray.toSeq))
+//          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Coll[SigmaBoolean]@unchecked)) =>
+//            out(AtLeast.reduce(bound, children.toArray.toSeq))
+//          case SDBM.sigmaProp(_, In(b: Boolean)) =>
+//            val res = sigmastate.TrivialProp(b)
+//            out(res)
           case SDBM.substConstants(_,
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
@@ -342,8 +343,14 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-              case SAvlTree => data.asInstanceOf[special.sigma.AvlTree].dataSize
-              case _ => tpe.dataSize(data.asWrappedType)
+              case SAvlTree =>
+                data.asInstanceOf[special.sigma.AvlTree].dataSize
+              case _ => data match {
+                case w: WrapperOf[_] =>
+                  tpe.dataSize(w.wrappedValue.asWrappedType)
+                case _ =>
+                  tpe.dataSize(data.asWrappedType)
+              }
             }
             out(size)
           case TypeSize(tpe) =>
@@ -398,10 +405,11 @@ trait Evaluation extends RuntimeCosting { IR =>
       fun(ctx) match {
         case sb: SigmaBoolean => builder.liftAny(sb).get
         case v: Value[_] => v
-        case col: special.collection.Coll[_] =>
-          val et = elemToSType(f.elem.eRange).asCollection[SType]
-          CollectionConstant(col.toArray.asInstanceOf[Array[SType#WrappedType]], et.elemType)
-        case x => builder.liftAny(x).get
+        case x =>
+          val eRes = f.elem.eRange
+          val tpeRes = elemToSType(eRes)
+          val constValue = fromEvalData(x, tpeRes)(IR)
+          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
       }
     }
     res.asInstanceOf[ContextFunc[T]]
@@ -423,9 +431,9 @@ object Evaluation {
     case SLong => LongType
     case SString => StringType
     case SAny => AnyType
-    case SBigInt => BigIntegerRType
+    case SBigInt => BigIntRType
     case SBox => BoxRType
-    case SGroupElement => ECPointRType
+    case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
     case STuple(Seq(tpeA, tpeB)) =>

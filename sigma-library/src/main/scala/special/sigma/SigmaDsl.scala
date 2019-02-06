@@ -58,7 +58,8 @@ package special.sigma {
       def mod(m: Rep[BigInt]): Rep[BigInt];
       def remainder(that: Rep[BigInt]): Rep[BigInt];
       def min(that: Rep[BigInt]): Rep[BigInt];
-      def max(that: Rep[BigInt]): Rep[BigInt]
+      def max(that: Rep[BigInt]): Rep[BigInt];
+      def negate: Rep[BigInt]
     };
     @Liftable trait GroupElement extends Def[GroupElement] {
       def isInfinity: Rep[Boolean];

@@ -895,6 +895,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
+  @inline def Colls = sigmaDslBuilderValue.Colls
+
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
 
@@ -934,20 +936,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
+          val coll = toEvalData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
           val tpeA = tpe.asCollection[SType].elemType
           stypeToElem(tpeA) match {
             case eWA: Elem[wa] =>
               implicit val l = liftableFromElem[wa](eWA).asInstanceOf[Liftable[a,wa]]
-              val arrSym = liftConst[Array[a], WArray[wa]](arr)
-              val resVals  = colBuilder.fromArray(arrSym)
-              val resCosts = colBuilder.replicate(arrSym.length, 0)
+              val resVals = liftConst[SColl[a], Coll[wa]](coll)
+              val resCosts = liftConst(Colls.replicate(coll.length, 0))
               val resSizes =
                 if (tpeA.isConstantSize)
-                  colBuilder.replicate(resVals.length, typeSize(tpeA))
+                  colBuilder.replicate(coll.length, typeSize(tpeA))
                 else {
                   val sizesConst: Array[Long] = arr.map { x: a => tpeA.dataSize(x.asWrappedType) }
-                  val sizesArr = liftConst(sizesConst)
-                  colBuilder.fromArray(sizesArr)
+                  val sizesArr = liftConst(Colls.fromArray(sizesConst))
+                  sizesArr
                 }
               RCCostedColl(resVals, resCosts, resSizes, costOf(c))
           }

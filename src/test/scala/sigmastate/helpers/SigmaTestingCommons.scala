@@ -74,6 +74,7 @@ trait SigmaTestingCommons extends PropSpec
     val tA = RType[A]
     val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
+    val tpeB = Evaluation.rtypeToSType(tB)
     val code =
       s"""{
         |  val func = $func
@@ -84,7 +85,7 @@ trait SigmaTestingCommons extends PropSpec
     val env = Interpreter.emptyEnv
     val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, IR.asRep[IR.Context => SBoolean.WrappedType](calcF))
+    val valueFun = IR.compile[tpeB.type](IR.getDataEnv, IR.asRep[IR.Context => tpeB.WrappedType](calcF))
 
     (in: A) => {
       implicit val cA = tA.classTag

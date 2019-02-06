@@ -30,6 +30,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WECPoint._
   import GroupElement._
   import WBigInteger._
+  import BigInt._
   import Context._; import SigmaContract._
   import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
@@ -62,27 +63,27 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("constants") {
-    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
-    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
-    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
-    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
-
+//    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
+//    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
+//    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
+//    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
+//
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val symArr1 = colBuilder.fromArray(liftConst(arr1))
+    val symArr1 = liftConst(Colls.fromArray(arr1))
     checkInEnv(env, "arr", "arr1",
       {_ => symArr1}, {_ => constCost[Coll[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
-      {_ => colBuilder.fromArray(liftConst(arr1)).length },
+      {_ => liftConst(Colls.fromArray(arr1)).length },
       { _ =>
         val c = ByteArrayConstant(arr1)
         costOf(c) + costOf(utxo.SizeOf(c))
       })
 
-    val n1Sym = liftConst(n1)
-    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[WBigInteger] }, { _ => sizeOf(n1Sym) })
+    val n1Sym = liftConst(dslValue.BigInt(n1))
+    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[BigInt] }, { _ => sizeOf(n1Sym) })
 
     val g1Sym = liftConst(g1)
-    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
+    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[GroupElement]}, { _ => typeSize[GroupElement] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
       { _ => dsl.proveDlog(g1Sym).asRep[SigmaProp].propBytes }
@@ -94,7 +95,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
       {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
-    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(big).subtract(liftConst(n1))})
+    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(dslValue.BigInt(big)).subtract(liftConst(dslValue.BigInt(n1)))})
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ =>
         val c1 = IntConstant(1);

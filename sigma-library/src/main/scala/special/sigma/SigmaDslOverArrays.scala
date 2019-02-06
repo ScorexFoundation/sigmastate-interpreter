@@ -24,6 +24,7 @@ package special.sigma {
     import SigmaProp._;
     import TestSigmaDslBuilder._;
     import WBigInteger._;
+    import WECPoint._;
     import WOption._;
     import CostedNone._; // manual fix
     import CostedSome._; // manuaf fix
@@ -85,7 +86,9 @@ package special.sigma {
       @Reified(value = "T") @NeverInline override def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline override def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement] = delayInvoke;
       @NeverInline override def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = delayInvoke;
-      @NeverInline override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = delayInvoke
+      @NeverInline override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = delayInvoke;
+      @NeverInline def GroupElement(p: Rep[WECPoint]): Rep[GroupElement] = delayInvoke;
+      @NeverInline def toECPoint(ge: Rep[GroupElement]): Rep[WECPoint] = delayInvoke
     };
     trait TestAvlTreeCompanion;
     trait TestValueCompanion;
