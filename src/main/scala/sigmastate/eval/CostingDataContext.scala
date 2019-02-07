@@ -263,7 +263,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
     val dht = ProveDHTuple(
-      toGroupElementConst(g), toGroupElementConst(g),
+      toGroupElementConst(g), toGroupElementConst(h),
       toGroupElementConst(u), toGroupElementConst(v))
     CostingSigmaProp(dht)
   }
