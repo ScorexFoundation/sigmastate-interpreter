@@ -19,7 +19,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   import predefFuncRegistry._
 
   def parse(x: String): SValue = {
-    SigmaParser(x, TransformingSigmaBuilder) match {
+    SigmaParser(x, TransformingSigmaBuilder).parse match {
       case Parsed.Success(v, _) => v
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
@@ -34,7 +34,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def fail(x: String, index: Int): Unit = {
     try {
-      val res = SigmaParser(x, TransformingSigmaBuilder).get.value
+      val res = SigmaParser(x, TransformingSigmaBuilder).parse.get.value
       assert(false, s"Error expected")
     } catch {
       case e: TestFailedException =>

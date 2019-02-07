@@ -6,6 +6,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import SCollection.SBooleanArray
+import scalan.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
@@ -39,11 +40,11 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
-      for (Val(n, _, b) <- bs) {
-        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+      for (Val(n, _, b, Nullable(srcCtx)) <- bs) {
+        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", srcCtx)
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += mkVal(n, b1.tpe, b1)
+        bs1 += mkVal(n, b1.tpe, b1, srcCtx)
       }
       val res1 = assignType(curEnv, res)
       mkBlock(bs1, res1)
@@ -586,4 +587,5 @@ object SigmaTyper {
   }
 
   def error(msg: String) = throw new TyperException(msg, None)
+  def error(msg: String, srcCtx: SourceContext) = throw new TyperException(msg, Some(srcCtx))
 }

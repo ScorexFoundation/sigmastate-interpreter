@@ -20,7 +20,7 @@ import sigmastate.lang.syntax.ParserException
 class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
 
   def parse(x: String): SValue = {
-    SigmaParser(x, builder) match {
+    SigmaParser(x, builder).parse match {
       case Success(v, i) => v
       case f: Parsed.Failure[_,_] =>
         throw new ParserException(s"Syntax error: $f", Some(f))

@@ -21,7 +21,7 @@ import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms
+import sigmastate.lang.{SourceContext, Terms}
 import scalan.staged.Slicing
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.TestGroupElement
@@ -1004,8 +1004,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case Terms.Block(binds, res) =>
         var curEnv = env
-        for (Val(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+        for (Val(n, _, b, Nullable(srcCtx)) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", srcCtx)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1554,4 +1554,5 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def error(msg: String) = throw new CosterException(msg, None)
+  def error(msg: String, srcCtx: SourceContext) = throw new CosterException(msg, Some(srcCtx))
 }

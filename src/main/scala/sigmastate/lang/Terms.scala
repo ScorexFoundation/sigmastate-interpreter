@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.Self
+import scalan.Nullable
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
@@ -54,7 +55,10 @@ object Terms {
     val body: SValue
   }
 
-  case class ValNode(name: String, givenType: SType, body: SValue) extends Val {
+  case class ValNode(name: String,
+                     givenType: SType,
+                     body: SValue,
+                     override val sourceContext: Nullable[SourceContext] = Nullable.None) extends Val {
     override val opCode: OpCode = OpCodes.Undefined
     override def tpe: SType = givenType ?: body.tpe
     /** This is not used as operation, but rather to form a program structure */
@@ -63,8 +67,8 @@ object Terms {
   object Val {
     def apply(name: String, body: SValue): Val = ValNode(name, NoType, body)
     def apply(name: String, givenType: SType, body: SValue): Val = ValNode(name, givenType, body)
-    def unapply(v: SValue): Option[(String, SType, SValue)] = v match {
-      case ValNode(name, givenType, body) => Some((name, givenType, body))
+    def unapply(v: SValue): Option[(String, SType, SValue, Nullable[SourceContext])] = v match {
+      case ValNode(name, givenType, body, srcCtx) => Some((name, givenType, body, srcCtx))
       case _ => None
     }
   }

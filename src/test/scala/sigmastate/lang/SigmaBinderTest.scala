@@ -19,7 +19,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
 
   def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
-    val ast = SigmaParser(x, builder).get.value
+    val ast = SigmaParser(x, builder).parse.get.value
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
       new PredefinedFuncRegistry(builder))
     binder.bind(ast)
@@ -178,4 +178,9 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
+  property("val fails (already defined in env)") {
+    val script= "{val x = 10; x > 2}"
+    val e = the[BinderException] thrownBy bind(env, script)
+    e.source shouldBe Some(SourceContext(1, 6, script))
+  }
 }

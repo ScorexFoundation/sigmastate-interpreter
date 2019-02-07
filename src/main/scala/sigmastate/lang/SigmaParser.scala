@@ -11,9 +11,12 @@ import sigmastate.lang.syntax.{Core, Exprs}
 
 import scala.collection.mutable
 
-object SigmaParser extends Exprs with Types with Core {
+class SigmaParser(str: String,
+                  override val builder: SigmaBuilder) extends Exprs with Types with Core {
   import fastparse.noApi._
   import WhitespaceApi._
+
+  override def srcCtx(parserIndex: Int): SourceContext = SourceContext(parserIndex, str)
 
   val TmplBody = {
     val Prelude = P( (Annot ~ OneNLMax).rep )
@@ -25,9 +28,9 @@ object SigmaParser extends Exprs with Types with Core {
 //    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkVal(name, NoType, lam) }
 //  }
 
-  val ValVarDef = P( BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
-    case (Ident(n,_), t, body) => builder.mkVal(n, t.getOrElse(NoType), body)
-    case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
+  val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
+    case (index, Ident(n,_), t, body) => builder.mkVal(n, t.getOrElse(NoType), body, srcCtx(index))
+    case (_, pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
   val BlockDef = P( Dcl )
@@ -78,16 +81,24 @@ object SigmaParser extends Exprs with Types with Core {
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  def apply(str: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
-    builder = sigmaBuilder
-    (StatCtx.Expr ~ End).parse(str)
-  }
+  def parse: core.Parsed[Value[_ <: SType], Char, String] = (StatCtx.Expr ~ End).parse(str)
 
-  def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
+  def parsedType: core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
 
-  def parseType(x: String): SType = {
-    val res = parsedType(x).get.value
+  def parseType: SType = {
+    val res = parsedType.get.value
     res
   }
 
+}
+
+object SigmaParser {
+
+  def apply(str: String, sigmaBuilder: SigmaBuilder): SigmaParser =
+    new SigmaParser(str, sigmaBuilder)
+
+  def parsedType(str: String): core.Parsed[SType, Char, String] =
+    new SigmaParser(str, StdSigmaBuilder).parsedType
+
+  def parseType(x: String): SType = new SigmaParser(x, StdSigmaBuilder).parseType
 }

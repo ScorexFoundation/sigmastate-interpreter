@@ -3,6 +3,7 @@ package sigmastate.lang
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{reduce, rewrite, strategy}
 import org.ergoplatform.ErgoAddressEncoder.{NetworkPrefix, TestnetNetworkPrefix}
 import org.ergoplatform._
+import scalan.Nullable
 import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection._
 import sigmastate.Values.Value.Typed
@@ -33,8 +34,8 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Val(n, _, b) <- binds) {
-        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+      for (Val(n, _, b, Nullable(srcCtx)) <- binds) {
+        if (curEnv.contains(n)) error(s"$srcCtx Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)
       }
@@ -175,4 +176,5 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 object SigmaSpecializer {
 
   def error(msg: String) = throw new SpecializerException(msg, None)
+  def error(msg: String, srcCtx: SourceContext) = throw new SpecializerException(msg, Some(srcCtx))
 }

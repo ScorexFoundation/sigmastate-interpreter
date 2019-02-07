@@ -4,7 +4,8 @@ import fastparse.all._
 import fastparse.CharPredicates._
 import fastparse.all
 import fastparse.core.Parsed.Failure
-import sigmastate.lang.exceptions.{SigmaException, SourceContext}
+import sigmastate.lang.SourceContext
+import sigmastate.lang.exceptions.SigmaException
 
 object Basic {
   val digits = "0123456789"
@@ -43,7 +44,7 @@ object Basic {
 }
 
 class ParserException(message: String, val parseError: Option[Failure[_,_]])
-  extends SigmaException(message, parseError.map(e => SourceContext(e.index)))
+  extends SigmaException(message, parseError.map(e => SourceContext(e.index, e.extra.input.toString)))
 
 /**
   * Most keywords don't just require the correct characters to match,

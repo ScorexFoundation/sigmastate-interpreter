@@ -8,10 +8,11 @@ import fastparse.{all, core}
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 
-import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder}
+import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 
 trait Literals { l =>
-  var builder: SigmaBuilder = StdSigmaBuilder
+  val builder: SigmaBuilder = StdSigmaBuilder
+  def srcCtx(parserIndex: Int): SourceContext
   def Block: P[Value[SType]]
   def Pattern: P0
 

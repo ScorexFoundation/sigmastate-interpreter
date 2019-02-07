@@ -1,6 +1,6 @@
 package sigmastate.lang.exceptions
 
-case class SourceContext(index: Int)
+import sigmastate.lang.SourceContext
 
 class SigmaException(val message: String, val source: Option[SourceContext] = None)
     extends Exception(message)

@@ -1,20 +1,21 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import scalan.Nullable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, OpCodes, ConstantStore}
+import sigmastate.serialization.{ConstantStore, ErgoTreeSerializer, OpCodes, ValueSerializer}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigma.util.Extensions._
@@ -27,6 +28,7 @@ import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import special.sigma.{Extensions, AnyValue, TestValue}
+import sigmastate.lang.SourceContext
 
 
 object Values {
@@ -63,6 +65,8 @@ object Values {
     def opName: String = this.getClass.getSimpleName
 
     def opId: OperationId = OperationId(opName, opType)
+
+    def sourceContext: Nullable[SourceContext] = Nullable.None
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {

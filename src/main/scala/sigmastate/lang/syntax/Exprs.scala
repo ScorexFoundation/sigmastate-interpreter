@@ -3,7 +3,7 @@ package sigmastate.lang.syntax
 import fastparse.noApi._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Lambda, ApplyTypes, MethodCallLike, Apply, Val, ValueOps, Select, Ident}
+import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, MethodCallLike, Select, Val, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
@@ -207,15 +207,15 @@ trait Exprs extends Core with Types {
 
   val FunDef = {
     val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
-    P(DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
-      case (None, n, args, resType, body) =>
+    P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
+      case (index, None, n, args, resType, body) =>
         val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.mkVal(n, resType.getOrElse(NoType), lambda)
-      case (Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
+        builder.mkVal(n, resType.getOrElse(NoType), lambda, srcCtx(index))
+      case (index, Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
         val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
         val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.mkVal(n, resType.getOrElse(NoType), lambda)
-      case (dottyExt, n, secs, resType, body) =>
+        builder.mkVal(n, resType.getOrElse(NoType), lambda, srcCtx(index))
+      case (index, dottyExt, n, secs, resType, body) =>
         error(s"Function can only have single argument list: def ${dottyExt.getOrElse("")} $n($secs): ${resType.getOrElse(NoType)} = $body")
     }
   }
