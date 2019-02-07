@@ -20,7 +20,7 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
   override def serializeBody(point: EcPointType, w: SigmaByteWriter): Unit = {
-    val bytes = if(point.isInfinity) {
+    val bytes = if (point.isInfinity) {
       identityPointEncoding
     } else {
       val normed = point.normalize()
@@ -36,7 +36,7 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
 
   override def parseBody(r: SigmaByteReader): EcPointType = {
     val encoded = r.getBytes(encodingSize)
-    if(encoded.head != 0) {
+    if (encoded.head != 0) {
       curve.curve.decodePoint(encoded).asInstanceOf[EcPointType]
     } else {
       curve.identity
