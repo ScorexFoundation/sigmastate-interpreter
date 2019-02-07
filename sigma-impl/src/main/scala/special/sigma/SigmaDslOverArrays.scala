@@ -27,13 +27,6 @@ case class TestAvlTree(
   def digest: Coll[Byte] = ???
 }
 
-class TestValue[T](val value: T) extends AnyValue {
-  @NeverInline
-  def dataSize = SigmaPredef.dataSize(value)
-  @Internal
-  override def toString = s"Value($value)"
-}
-
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder

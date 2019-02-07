@@ -14,6 +14,7 @@ import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{Serializer, OperationSerializer}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
+import special.sigma.Extensions._
 
 import scala.util.{Success, Failure}
 import scalan.RType
@@ -130,6 +131,7 @@ class CostingBox(val IR: Evaluation,
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
+      case info: Tuple2[Int, Coll[Byte]] @unchecked => info
       case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
         (arr(0).asInstanceOf[Int], builder.Colls.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>
@@ -140,7 +142,8 @@ class CostingBox(val IR: Evaluation,
 }
 
 object CostingBox {
-
+  import Evaluation._
+  import sigmastate.SType._
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
   def regs(ebox: ErgoBox, isCost: Boolean)(implicit IR: Evaluation): Coll[AnyValue] = {
@@ -149,16 +152,18 @@ object CostingBox {
     def checkNotYetDefined(id: Int, newValue: SValue) =
       require(res(id) == null, s"register $id is defined more then once: previous value ${res(id)}, new value $newValue")
 
-    for ((k, v: SValue) <- ebox.additionalRegisters) {
+    for ((k, v: Value[t]) <- ebox.additionalRegisters) {
       checkNotYetDefined(k.number, v)
-      res(k.number) = new TestValue(ErgoLikeContext.toDslData(v, v.tpe, isCost))
+      val dslData = toDslData(v, v.tpe, isCost)
+      res(k.number) = toAnyValue(dslData.asWrappedType)(stypeToRType(v.tpe))
     }
 
     for (r <- ErgoBox.mandatoryRegisters) {
       val regId = r.number
       val v = ebox.get(r).get
       checkNotYetDefined(regId, v)
-      res(regId) = new TestValue(ErgoLikeContext.toDslData(v, v.tpe, isCost))
+      val dslData = Evaluation.toDslData(v, v.tpe, isCost)
+      res(regId) = toAnyValue(dslData.asWrappedType)(stypeToRType(v.tpe))
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }

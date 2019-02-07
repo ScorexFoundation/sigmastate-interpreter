@@ -21,9 +21,11 @@ import sigma.util.Extensions._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import special.sigma.Extensions._
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
+import special.sigma.{AnyValue, TestValue, Extensions}
 
 
 object Values {
@@ -603,6 +605,7 @@ object Values {
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
+    def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
   }
 
   implicit class BoolValueOps(val b: BoolValue) extends AnyVal {

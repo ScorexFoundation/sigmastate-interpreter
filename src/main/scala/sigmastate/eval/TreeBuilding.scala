@@ -169,8 +169,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
         val t = Evaluation.stypeToRType(tpe)
-        val tRes = ErgoLikeContext.toErgoTreeType(t)
-        val v = fromDslData(wc.constValue, tRes)(IR)
+        val tRes = Evaluation.toErgoTreeType(t)
+        val v = Evaluation.fromDslData(wc.constValue, tRes)(IR)
         mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>

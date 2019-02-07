@@ -3,7 +3,6 @@ package special.sigma {
   import scalan._
 
   trait SigmaDslOverArrays extends Base { self: SigmaLibrary =>
-    import AnyValue._;
     import AvlTree._;
     import BigInt._;
     import Box._;
@@ -34,9 +33,6 @@ package special.sigma {
       @NeverInline def dataSize: Rep[Long] = delayInvoke;
       @NeverInline def cost: Rep[Int] = delayInvoke;
       @NeverInline def digest: Rep[Coll[Byte]] = delayInvoke
-    };
-    abstract class TestValue[T](val value: Rep[T]) extends AnyValue {
-      @NeverInline def dataSize: Rep[Long] = delayInvoke
     };
     abstract class TestSigmaDslBuilder extends SigmaDslBuilder {
       def Colls: Rep[CollBuilder] = RCollOverArrayBuilder();
@@ -91,7 +87,6 @@ package special.sigma {
       @NeverInline def toECPoint(ge: Rep[GroupElement]): Rep[WECPoint] = delayInvoke
     };
     trait TestAvlTreeCompanion;
-    trait TestValueCompanion;
     trait TestSigmaDslBuilderCompanion
   }
 }

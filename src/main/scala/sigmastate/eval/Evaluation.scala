@@ -1,5 +1,8 @@
 package sigmastate.eval
 
+import java.math.BigInteger
+
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
@@ -13,7 +16,6 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import scalan.RType._
-import org.ergoplatform.ErgoLikeContext.fromDslData
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
@@ -165,7 +167,8 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+              case opt @ Some(v) => opt
               case None => None
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
             }
@@ -177,7 +180,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(ErgoLikeContext.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -397,8 +400,8 @@ trait Evaluation extends RuntimeCosting { IR =>
           val eRes = f.elem.eRange
           val tpeRes = elemToSType(eRes)
           val tRes = Evaluation.stypeToRType(tpeRes)
-          val treeType = ErgoLikeContext.toErgoTreeType(tRes)
-          val constValue = fromDslData(x, treeType)(IR)
+          val treeType = Evaluation.toErgoTreeType(tRes)
+          val constValue = Evaluation.fromDslData(x, treeType)(IR)
           builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
       }
     }
@@ -409,6 +412,8 @@ trait Evaluation extends RuntimeCosting { IR =>
 object Evaluation {
   import special.sigma._
   import special.collection._
+  import ErgoLikeContext._
+  
   case class GenericRType[T <: AnyRef](classTag : ClassTag[T]) extends RType[T]
 
   def AnyRefRType[T <: AnyRef: ClassTag]: RType[T] = GenericRType[T](scala.reflect.classTag[T])
@@ -449,14 +454,134 @@ object Evaluation {
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case SigmaPropRType => SSigmaProp
-    case st: StructType =>
-//      assert(st.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
-      STuple(st.fieldTypes.map(rtypeToSType(_)).toIndexedSeq)
+    case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
+//    case st: StructType =>
+////      assert(st.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
+//      STuple(st.fieldTypes.map(rtypeToSType(_)).toIndexedSeq)
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
     case pvt: PrimViewType[_,_] => rtypeToSType(pvt.tVal)
     case _ => sys.error(s"Don't know how to convert RType $t to SType")
+  }
+
+  /** Tries to reconstruct RType of the given value.
+    * If not successfull returns failure. */
+  def rtypeOf(value: Any): Try[RType[_]] = Try { value match {
+    case arr if arr.getClass.isArray =>
+      val itemClass = arr.getClass.getComponentType
+      if (itemClass.isPrimitive) {
+        val itemTag = ClassTag[Any](itemClass)
+        RType.fromClassTag(itemTag)
+      } else
+        sys.error(s"Cannot compute rtypeOf($value): non-primitive type of array items")
+
+    case coll: Coll[_] => collRType(coll.tItem)
+    
+    // all primitive types
+    case v: Boolean => BooleanType
+    case v: Byte  => ByteType
+    case v: Short => ShortType
+    case v: Int   => IntType
+    case v: Long  => LongType
+    case v: Char  => CharType
+    case v: Float  => FloatType
+    case v: Double  => DoubleType
+    case v: String  => StringType
+    case v: Unit  => UnitType
+
+    case v: BigInteger => BigIntegerRType
+    case n: special.sigma.BigInt => BigIntRType
+
+    case v: ECPoint => ECPointRType
+    case ge: GroupElement => GroupElementRType
+
+    case b: ErgoBox => ErgoBoxRType
+    case b: Box => BoxRType
+
+    case avl: AvlTreeData => AvlTreeDataRType
+    case avl: AvlTree => AvlTreeRType
+
+    case sb: SigmaBoolean => SigmaBooleanRType
+    case p: SigmaProp => SigmaPropRType
+
+    case _ =>
+      sys.error(s"Don't know how to compute typeOf($value)")
+  }}
+
+  /** Generic translation of any ErgoDsl type to the corresponding type used in ErgoTree. */
+  def toErgoTreeType(dslType: RType[_]): RType[_] = dslType match {
+    case p: PrimitiveType[_] => p
+    case w: WrapperType[_] =>
+      w match {
+        case BigIntRType => BigIntegerRType
+        case GroupElementRType => ECPointRType
+        case SigmaPropRType => SigmaBooleanRType
+        case BoxRType => ErgoBoxRType
+        case AvlTreeRType => AvlTreeDataRType
+        case _ => sys.error(s"Unknown WrapperType: $w")
+      }
+    case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
+    case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
+    case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
+    case p: PairType[_,_] => pairRType(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd))
+    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
+    case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
+    case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
+    case AnyType | AnyRefType | NothingType | StringType => dslType
+    case _ =>
+      sys.error(s"Don't know how to toErgoTreeType($dslType)")
+  }
+
+  /** Generic converter from types used in ErgoDsl to types used in ErgoTree values. */
+  def fromDslData[T](value: Any, tRes: RType[T])(implicit IR: Evaluation): T = {
+    val dsl = IR.sigmaDslBuilderValue
+    val res = (value, tRes) match {
+      case (w: WrapperOf[_], _) => w.wrappedValue
+      case (coll: Coll[a], tarr: ArrayType[a1]) =>
+        val tItem = tarr.tA
+        coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
+      case _ => value
+    }
+    res.asInstanceOf[T]
+  }
+
+  /** Generic converter from types used in ErgoTree values to types used in ErgoDsl. */
+  def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
+    val dsl = IR.sigmaDslBuilderValue
+    (value, tpe) match {
+      case (c: Constant[_], tpe) => toDslData(c.value, c.tpe, isCost)
+      case (_, STuple(Seq(tpeA, tpeB))) =>
+        value match {
+          case tup: Tuple2[_,_] =>
+            val valA = toDslData(tup._1, tpeA, isCost)
+            val valB = toDslData(tup._2, tpeB, isCost)
+            (valA, valB)
+          case arr: Array[Any] =>
+            val valA = toDslData(arr(0), tpeA, isCost)
+            val valB = toDslData(arr(1), tpeB, isCost)
+            (valA, valB)
+        }
+      case (arr: Array[a], SCollectionType(elemType)) =>
+        implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
+        elemRType.asInstanceOf[RType[_]] match {
+          case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
+            val testArr = arr.map(x => toDslData(x, elemType, isCost))
+            dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
+          case _ =>
+            dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
+        }
+      case (arr: Array[a], STuple(items)) =>
+        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
+        dsl.Colls.fromArray(res)(RType.AnyType)
+      case (b: ErgoBox, SBox) => b.toTestBox(isCost)
+      case (n: BigInteger, SBigInt) =>
+        dsl.BigInt(n)
+      case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
+      case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
+      case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
+      case (x, _) => x
+    }
   }
 
 }

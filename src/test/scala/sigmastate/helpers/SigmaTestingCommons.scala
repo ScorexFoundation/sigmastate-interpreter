@@ -120,7 +120,7 @@ trait SigmaTestingCommons extends PropSpec
     catch {
       case e: Throwable =>
         if (!assertion(e))
-          fail(s"exception check failed on $e (caused by: ${e.getCause}")
+          fail(s"exception check failed on $e (root cause: ${rootCause(e)})")
     }
   }
 

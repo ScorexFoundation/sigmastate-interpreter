@@ -3,6 +3,7 @@ package special.sigma
 import special.wrappers.WrappersTests
 import scala.language.reflectiveCalls
 import scalan.SigmaLibrary
+import special.sigma.Extensions._
 
 class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
   class Ctx extends WrappersCtx with SigmaLibrary {
@@ -24,11 +25,11 @@ class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
     type RContext = cake.Context
     type RBox = cake.Box
     type RSigmaProp = cake.SigmaProp
-    val boxA1 = newAliceBox(1, 100, Map(1 -> 20, 3 -> (10 -> Array.emptyByteArray)))
+    val boxA1 = newAliceBox(1, 100, Map(1 -> toAnyValue(20), 3 -> toAnyValue((10 -> Array.emptyByteArray))))
     val boxA2 = newAliceBox(2, 200)
     val ctx: SContext = newContext(10, boxA1)
       .withInputs(boxA2)
-      .withVariables(Map(1 -> 30, 2 -> 40))
+      .withVariables(Map(1 -> toAnyValue(30), 2 -> toAnyValue(40)))
     val p1: SSigmaProp = new special.sigma.MockSigma(true)
     val p2: SSigmaProp = new special.sigma.MockSigma(false)
 

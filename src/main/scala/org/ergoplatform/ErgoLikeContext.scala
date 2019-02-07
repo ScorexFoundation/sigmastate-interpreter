@@ -15,8 +15,9 @@ import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
 import special.sigma
 import special.sigma.{AnyValue, TestValue, Box, WrapperType}
+import SType._
 import RType._
-
+import special.sigma.Extensions._
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -38,16 +39,27 @@ class ErgoLikeContext(val currentHeight: Height,
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, newSpendingTransaction, self, extension)
 
   import ErgoLikeContext._
+  import Evaluation._
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
-    val outputs =
-      if (spendingTransaction == null) noOutputs
-      else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
-    val vars = contextVars(extension.values)
+    val outputs = if (spendingTransaction == null)
+        noOutputs
+      else
+        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
+    val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
+      val tVal = stypeToRType[SType](v.tpe)
+      val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
+      toAnyValue(dslData.asWrappedType)(tVal)
+    }
+    val vars = contextVars(varMap)
     val avlTree = CostingAvlTree(lastBlockUtxoRoot)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.toArray, isCost)
+    new CostingDataContext(IR,
+      inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
+      minerPubkey,
+      vars.toArray,
+      isCost)
   }
 
 }
@@ -94,84 +106,13 @@ object ErgoLikeContext {
 
   import special.sigma._
   import sigmastate.SType._
-  def toErgoTreeType(dslType: RType[_]): RType[_] = dslType match {
-    case p: PrimitiveType[_] => p
-    case w: WrapperType[_] =>
-      w match {
-        case BigIntRType => BigIntegerRType
-        case GroupElementRType => ECPointRType
-        case SigmaPropRType => SigmaBooleanRType
-        case BoxRType => ErgoBoxRType
-        case AvlTreeRType => AvlTreeDataRType
-        case _ => sys.error(s"Unknown WrapperType: $w")
-      }
-    case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
-    case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
-    case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
-    case p: PairType[_,_] => pairRType(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd))
-    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
-    case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
-    case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
-    case AnyType | AnyRefType | NothingType | StringType => dslType
-    case _ =>
-      sys.error(s"Don't know how to toErgoTreeType($dslType)")
-  }
 
-  def fromDslData[T](value: Any, tRes: RType[T])(implicit IR: Evaluation): T = {
-    val dsl = IR.sigmaDslBuilderValue
-    val res = (value, tRes) match {
-      case (w: WrapperOf[_], _) => w.wrappedValue
-      case (coll: Coll[a], tarr: ArrayType[a1]) =>
-        val tItem = tarr.tA
-        coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
-      case _ => value
-    }
-    res.asInstanceOf[T]
-  }
-
-  def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
-    val dsl = IR.sigmaDslBuilderValue
-    (value, tpe) match {
-      case (c: Constant[_], tpe) => toDslData(c.value, c.tpe, isCost)
-      case (_, STuple(Seq(tpeA, tpeB))) =>
-        value match {
-          case tup: Tuple2[_,_] =>
-            val valA = toDslData(tup._1, tpeA, isCost)
-            val valB = toDslData(tup._2, tpeB, isCost)
-            (valA, valB)
-          case arr: Array[Any] =>
-            val valA = toDslData(arr(0), tpeA, isCost)
-            val valB = toDslData(arr(1), tpeB, isCost)
-            (valA, valB)
-        }
-      case (arr: Array[a], SCollectionType(elemType)) =>
-        implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
-        elemRType.asInstanceOf[RType[_]] match {
-          case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toDslData(x, elemType, isCost))
-            dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
-          case _ =>
-            dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
-        }
-      case (arr: Array[a], STuple(items)) =>
-        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
-        dsl.Colls.fromArray(res)(RType.AnyType)
-      case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-      case (n: BigInteger, SBigInt) =>
-        dsl.BigInt(n)
-      case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
-      case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
-      case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
-      case (x, _) => x
-    }
-  }
-
-  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Coll[AnyValue] = {
+  def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
     val res = new Array[AnyValue](maxKey + 1)
     for ((id, v) <- m) {
       assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
+      res(id) = v
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }

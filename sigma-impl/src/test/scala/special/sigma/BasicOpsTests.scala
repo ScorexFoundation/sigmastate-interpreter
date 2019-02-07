@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.scalatest.{FunSuite, Matchers}
+import special.sigma.Extensions._
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
@@ -58,7 +59,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   test("box.creationInfo._1 is Int") {
-    val box = newAliceBox(1, 100, Map(3 -> (20 -> Array.emptyByteArray)))
+    val box = newAliceBox(1, 100, Map(3 -> toAnyValue((20 -> Array.emptyByteArray))))
     box.creationInfo._1 shouldBe a [Integer]
   }
 

@@ -576,7 +576,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case CostedBuilderM.costedValue(b, x, SPCM.some(cost)) =>
         dataCost(x, Some(asRep[Int](cost)))
 
-      case IsConstSizeCostedColl(col) =>
+      case IsConstSizeCostedColl(col) if !d.isInstanceOf[MethodCall] => // see also rewriteNonInvokableMethodCall
         mkCostedColl(col.value, col.value.length, col.cost)
 
       case _ if isCostingProcess =>
@@ -589,6 +589,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
       case _ => super.rewriteDef(d)
     }
+  }
+
+  override def rewriteNonInvokableMethodCall(mc: MethodCall): Rep[_] = mc match {
+    case IsConstSizeCostedColl(col) =>
+      mkCostedColl(col.value, col.value.length, col.cost)
+    case _ =>
+      super.rewriteNonInvokableMethodCall(mc)
   }
 
   override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
@@ -721,6 +728,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case SGroupElement => groupElementElement
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
+    case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
@@ -936,7 +944,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withDefaultSize(resV, costOf(c))
         case arr: Array[a] =>
-          val coll = toDslData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
+          val coll = Evaluation.toDslData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
           val tpeA = tpe.asCollection[SType].elemType
           stypeToElem(tpeA) match {
             case eWA: Elem[wa] =>

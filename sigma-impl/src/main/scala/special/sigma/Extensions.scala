@@ -1,6 +1,7 @@
 package special.sigma
 
 import org.bouncycastle.math.ec.ECPoint
+import scalan.RType
 
 class DslSyntaxExtensions(dsl: SigmaDslBuilder) {
   implicit class BooleanOps(source: Boolean) {
@@ -23,4 +24,6 @@ object Extensions {
   implicit class GroupElementOps(source: GroupElement) {
     def showToString: String = showECPoint(source.value)
   }
+
+  def toAnyValue[A:RType](x: A) = new TestValue(x)
 }

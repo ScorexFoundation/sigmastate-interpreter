@@ -3,17 +3,18 @@ package sigmastate.eval
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SInt, SLong, SType}
-import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import sigmastate.{SInt, AvlTreeData, SLong, SType}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.utxo.CostTable
-import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{LangTests, SigmaCompiler}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.serialization.{ConstantStore, ErgoTreeSerializer}
+import sigmastate.serialization.ErgoTreeSerializer
+import special.sigma.{ContractsTestkit, Context => DContext, _}
+import special.sigma.Extensions._
 
 import scala.language.implicitConversions
 
@@ -63,9 +64,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
   lazy val ctxVars = contextVars(Map(
-    backerPubKeyId -> backerPubKey,
-    projectPubKeyId -> projectPubKey,
-    3.toByte -> bigIntegerArr1
+    backerPubKeyId -> backerPubKey.toAnyValue,
+    projectPubKeyId -> projectPubKey.toAnyValue,
+    3.toByte -> toAnyValue(bigIntegerArr1)
   )).toArray
 
   val boxToSpend = ErgoBox(10, TrueLeaf, 0,

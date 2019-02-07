@@ -124,7 +124,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     import TrivialProp._
     val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp)
-    val (reducedProp, cost) = reduceToCrypto(ctx, env, propTree).get
+    val tried = reduceToCrypto(ctx, env, propTree)
+    val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
     def errorReducedToFalse = error("Script reduced to false")
 

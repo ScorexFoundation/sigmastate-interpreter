@@ -29,28 +29,28 @@ trait ContractsTestkit {
 
   def collection[T:RType](items: T*) = Colls.fromArray(items.toArray)
 
-  def regs(m: Map[Byte, Any]): Coll[AnyValue] = {
+  def regs(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
     val res = new Array[AnyValue](10)
     for ((id, v) <- m) {
       assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
+      res(id) = v
     }
     Colls.fromArray(res)
   }
 
-  def contextVars(m: Map[Byte, Any]): Coll[AnyValue] = {
+  def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
     val res = new Array[AnyValue](maxKey)
     for ((id, v) <- m) {
       val i = id - 1
       assert(res(i) == null, s"register $id is defined more then once")
-      res(i) = new TestValue(v)
+      res(i) = v
     }
     Colls.fromArray(res)
   }
 
   val AliceId = Array[Byte](1) // 0x0001
-  def newAliceBox(id: Byte, value: Long, registers: Map[Int, Any] = Map()): Box = new TestBox(
+  def newAliceBox(id: Byte, value: Long, registers: Map[Int, AnyValue] = Map()): Box = new TestBox(
     Colls.fromArray(Array[Byte](0, id)), value,
     Colls.fromArray(AliceId), noBytes, noBytes,
     regs(registers.map { case (k, v) => (k.toByte, v) })
@@ -65,7 +65,7 @@ trait ContractsTestkit {
       new TestContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
     def withOutputs(outputs: Box*) =
       new TestContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
-    def withVariables(vars: Map[Int, Any]) =
+    def withVariables(vars: Map[Int, AnyValue]) =
       new TestContext(ctx.inputs, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey,
         contextVars(vars.map { case (k, v) => (k.toByte, v) }).toArray)
   }
