@@ -24,7 +24,7 @@ class TestBox(
         case value: TestValue[_] if value.value != null =>
           Some(value.value.asInstanceOf[T])
         case _ =>
-          throw new InvalidType(s"Cannot getVar($id): invalid type of value $value at id=$id")
+          throw new InvalidType(s"Cannot getReg($id): invalid type of value $value at id=$id")
       }
     } else None
   }

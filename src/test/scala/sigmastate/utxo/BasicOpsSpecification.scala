@@ -348,8 +348,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // wrong type
     assertExceptionThrown(
       test("Extract2", env, ext,
-        "{ SELF.R4[Int].isDefined }",
-        ExtractRegisterAs[SInt.type](Self, reg1).isDefined,
+        "{ SELF.R4[Long].isDefined }",
+        ExtractRegisterAs[SLong.type](Self, reg1).isDefined,
         true
       ),
       _.getCause.isInstanceOf[InvalidType])

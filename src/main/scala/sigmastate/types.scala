@@ -682,7 +682,11 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override val typeCode = STuple.TupleTypeCode
 
   override def dataSize(v: SType#WrappedType) = {
-    val arr = (v match { case col: Coll[_] => col.toArray case _ => v}).asInstanceOf[Array[Any]]
+    val arr = (v match {
+      case col: Coll[_] => col.toArray
+      case p: Tuple2[_,_] => p.toArray
+      case _ => v
+    }).asInstanceOf[Array[Any]]
     assert(arr.length == items.length)
     var sum: Long = 2 // header
     for (i <- arr.indices) {

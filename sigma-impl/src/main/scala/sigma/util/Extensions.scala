@@ -186,6 +186,19 @@ object Extensions {
     def ?:(whenNone: => T): T = if (opt.isDefined) opt.get else whenNone
   }
 
+  implicit class ProductOps(val source: Product) extends AnyVal {
+    def toArray: Array[Any] = {
+      val arity = source.productArity
+      val res = new Array[Any](arity)
+      var i = 0
+      while (i < arity) {
+        res(i) = source.productElement(i)
+        i += 1
+      }
+      res
+    }
+  }
+
   implicit class ByteArrayBuilderOps(val b: ByteArrayBuilder) extends AnyVal {
     def appendOption[T](opt: Option[T])(putValue: T => Unit): ByteArrayBuilder = {
       opt match {

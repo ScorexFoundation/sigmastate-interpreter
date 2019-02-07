@@ -1,49 +1,36 @@
 package sigmastate.eval
 
-import java.lang.reflect.Method
-import java.math.BigInteger
-
 import org.ergoplatform._
 import sigmastate._
-import sigmastate.Values.{FuncValue, Constant, EvaluatedValue, SValue, BlockValue, SigmaPropConstant, CollectionConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
-import sigmastate.lang.Terms.{OperationId, ValueOps}
-import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf, CostTableStat}
+import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
+import sigmastate.lang.Terms.OperationId
+import sigmastate.utxo.CostTableStat
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 import scala.util.Try
-import SType._
-import org.bouncycastle.math.ec.ECPoint
+import sigmastate.SType._
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.CryptoFunctions
 import special.sigma.InvalidType
 import scalan.{Nullable, RType}
-import RType._
+import scalan.RType._
 import org.ergoplatform.ErgoLikeContext.fromDslData
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import special.collection.CollOverArrayBuilder
 import special.sigma.Extensions._
+import sigma.util.Extensions._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
   import Coll._
-  import ReplColl._
   import CReplColl._
   import Box._
   import AvlTree._
   import CollBuilder._
   import SigmaDslBuilder._
   import CostedBuilder._
-  import CCostedBuilder._
-  import Monoid._
   import MonoidBuilder._
-  import MonoidBuilderInst._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -118,7 +105,6 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
   }
   import sigmastate._
-  import Values.{TrueLeaf, FalseLeaf}
   import special.sigma.{Context => SigmaContext}
 
   type ContextFunc[T <: SType] = SigmaContext => Value[T]
@@ -307,7 +293,8 @@ trait Evaluation extends RuntimeCosting { IR =>
                 val (e, _) = evaluate(ctxSym, te).run(env)
                 e
               }
-              resEnv(y)
+              val res = resEnv(y)
+              res
             }
             out(f)
           case Apply(In(_f), In(x: AnyRef), _) =>
@@ -354,6 +341,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(size)
           case TypeSize(tpe) =>
+            assert(tpe.isConstantSize)
             val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case Downcast(In(from), eTo) =>
@@ -441,9 +429,7 @@ object Evaluation {
     case STuple(Seq(tpeA, tpeB)) =>
       pairRType(stypeToRType(tpeA), stypeToRType(tpeB))
     case STuple(items) =>
-      val b = new CollOverArrayBuilder()
       val types = items.toArray
-      val rtrt = asType[SomeType](rtypeRType[Any])
       tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
