@@ -214,20 +214,30 @@ def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   if (res != 0) sys.error(s"Ergo $task failed!")
 }
 
-lazy val ergoUnitTest = TaskKey[Unit]("ergoUnitTest", "run ergo unit tests with current version")
-ergoUnitTest := {
+lazy val ergoUnitTestTask = TaskKey[Unit]("ergoUnitTestTask", "run ergo unit tests with current version")
+ergoUnitTestTask := {
   val log = streams.value.log
   val sigmastateVersion = version.value
   runErgoTask("test", sigmastateVersion, log) 
 }
 
-ergoUnitTest := ergoUnitTest.dependsOn(publishLocal in sigma).value
+commands += Command.command("ergoUnitTest") { state =>
+  "clean" ::
+    "publishLocal" ::
+    "ergoUnitTestTask" ::
+    state
+}
 
-lazy val ergoItTest = TaskKey[Unit]("ergoItTest", "run ergo it:test with current version")
-ergoItTest := {
+lazy val ergoItTestTask = TaskKey[Unit]("ergoItTestTask", "run ergo it:test with current version")
+ergoItTestTask := {
   val log = streams.value.log
   val sigmastateVersion = version.value
   runErgoTask("it:test", sigmastateVersion, log)
 }
 
-ergoItTest := ergoItTest.dependsOn(publishLocal in sigma).value
+commands += Command.command("ergoItTest") { state =>
+  "clean" ::
+    "publishLocal" ::
+    "ergoItTestTask" ::
+    state
+}
