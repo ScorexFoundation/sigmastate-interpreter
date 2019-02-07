@@ -1,19 +1,16 @@
 package sigmastate.lang
 
 import java.lang.reflect.InvocationTargetException
-import java.math.BigInteger
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
-import sigmastate.lang.Terms._
-import sigmastate._
-import Values._
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
-import scorex.util.encode.Base58
+import sigmastate.Values._
+import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
-import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
 
 /**
   * @param env
@@ -24,7 +21,6 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
                   networkPrefix: NetworkPrefix,
                   predefFuncRegistry: PredefinedFuncRegistry) {
   import SigmaBinder._
-  import SigmaPredef._
   import builder._
 
   private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)

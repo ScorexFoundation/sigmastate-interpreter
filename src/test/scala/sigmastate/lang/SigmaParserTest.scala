@@ -232,11 +232,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array literals") {
-    val emptyCol = Apply(Ident("Coll"), IndexedSeq.empty)
-    parse("Coll()") shouldBe emptyCol
-    val emptyCol2 = Apply(Ident("Coll"), IndexedSeq(emptyCol))
-    parse("Coll(Coll())") shouldBe emptyCol2
-    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyCol2))
+    val emptyColl = Apply(Ident("Coll"), IndexedSeq.empty)
+    parse("Coll()") shouldBe emptyColl
+    val emptyColl2 = Apply(Ident("Coll"), IndexedSeq(emptyColl))
+    parse("Coll(Coll())") shouldBe emptyColl2
+    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyColl2))
 
     parse("Coll(1)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1)))
     parse("Coll(1, X)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1), Ident("X")))
@@ -405,7 +405,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     // nested lambda
     parse(
       """f { (a: Int) =>
-        |val g = { (c: Int) => c - 1 }
+        |def g(c: Int) = c - 1
         |a - g(a)
         |}""".stripMargin) shouldBe Apply(Ident("f"), IndexedSeq(
       Lambda(IndexedSeq("a" -> SInt),
@@ -416,7 +416,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       )))
   }
 
-  property("function definitions") {
+  property("function definitions via val") {
     parse("{val f = { (x: Int) => x - 1 }; f}") shouldBe
       Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
     parse(
@@ -424,6 +424,97 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
        |f}
       """.stripMargin) shouldBe
         Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
+  }
+
+  property("function (one arg) definition expr body") {
+    parse("{ def f(x: Int): Int = x - 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition with no res type, expr body") {
+    parse("{ def f(x: Int) = x - 1 }") shouldBe Block(List(),
+      Val("f", NoType, Lambda(IndexedSeq("x" -> SInt), NoType, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition brackets body") {
+    val expectedTree = Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))))
+    parse("{ def f(x: Int): Int = { x - 1 } }") shouldBe expectedTree
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+        }
+      """.stripMargin) shouldBe expectedTree
+  }
+
+  property("function(two arg) definition expr body") {
+    parse("{ def f(x: Int, y: Int): Int = x - y }") shouldBe Block(List(),
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt, "y" -> SInt), SInt, mkMinus(IntIdent("x"), IntIdent("y")))))
+  }
+
+  property("function definition and application") {
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+         f(5)
+        }
+      """.stripMargin) shouldBe Block(
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))),
+      Apply(Ident("f"), Vector(IntConstant(5)))
+    )
+  }
+
+  property("function with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def f[A, B](x: A, y: B): (A, B) = (x, y) }") shouldBe Block(List(),
+      Val("f",
+        STuple(tA, tB),
+        Lambda(IndexedSeq("x" -> tA, "y" -> tB),
+          STuple(tA, tB),
+          Tuple(Ident("x"), Ident("y"))
+        )
+      )
+    )
+  }
+
+  property("function (no args) definition expr body") {
+    parse("{ def f: Int = 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq(), SInt, IntConstant(1))))
+  }
+
+  property("method extension(dotty)(no args) with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def (pairs: Coll[(A,B)]) f[A, B]: Coll[(B, A)] = pairs.magicSwap }") shouldBe Block(List(),
+      Val("f",
+        SCollection(STuple(tB, tA)),
+        Lambda(IndexedSeq("pairs" -> SCollection(STuple(tA, tB))),
+          SCollection(STuple(tB, tA)),
+          Select(Ident("pairs"), "magicSwap")
+        )
+      )
+    )
+  }
+
+  property("method extension(dotty)(one arg) with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def (pairs: Coll[(A,B)]) take[A, B](i: Int): Coll[(A, B)] = pairs.drop(i) }") shouldBe Block(List(),
+      Val("take",
+        SCollection(STuple(tA, tB)),
+        Lambda(IndexedSeq("pairs" -> SCollection(STuple(tA, tB)), "i" -> SInt),
+          SCollection(STuple(tA, tB)),
+          Apply(Select(Ident("pairs"), "drop"), Vector(Ident("i")))
+        )
+      )
+    )
   }
 
   property("get field of ref") {

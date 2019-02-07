@@ -57,12 +57,14 @@ version in ThisBuild := {
   }
 }
 
-val specialVersion = "master-6eca3f22-SNAPSHOT"
+git.gitUncommittedChanges in ThisBuild := true
+
+val specialVersion = "master-4e1b2bdb-SNAPSHOT"
 val specialCommon = "io.github.scalan" %% "common" % specialVersion
 val specialCore = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
 
-val specialSigmaVersion = "master-354d6254-SNAPSHOT"
+val specialSigmaVersion = "master-981fb1f0-SNAPSHOT"
 val sigmaImpl = "io.github.scalan" %% "sigma-impl" % specialSigmaVersion
 val sigmaLibrary = "io.github.scalan" %% "sigma-library" % specialSigmaVersion
 
@@ -120,7 +122,7 @@ credentials ++= (for {
 lazy val sigma = (project in file(".")).settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "v2.0"
+  val ergoBranch = "fix-i372-sigmastate"
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")

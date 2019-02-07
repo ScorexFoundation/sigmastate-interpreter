@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 import scorex.util.Extensions._
@@ -33,8 +33,8 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
-  def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
+  def toBox(txId: ModifierId, boxIndex: Short) =
+    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxIndex)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

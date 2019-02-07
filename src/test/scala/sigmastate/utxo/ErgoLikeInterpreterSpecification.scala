@@ -332,8 +332,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = SigmaAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).asSigmaProp,
+      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).asSigmaProp)
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
@@ -419,7 +419,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val brother = ErgoBox(10, pubkey1, 0)
-    val brotherWithWrongId = ErgoBox(10, pubkey1, 0, boxId = 120: Short)
+    val brotherWithWrongId = ErgoBox(10, pubkey1, 0, boxIndex = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2, 0)
 
@@ -493,7 +493,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey2 = prover.dlogSecrets(1).publicImage
 
     val friend = ErgoBox(10, pubkey1, 0)
-    val friendWithWrongId = ErgoBox(10, pubkey1, 0, boxId = 120: Short)
+    val friendWithWrongId = ErgoBox(10, pubkey1, 0, boxIndex = 120: Short)
 
     val newBox = ErgoBox(20, pubkey2, 0)
 
@@ -504,7 +504,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prop = compileWithCosting(env,
       """{
         |
-        | val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
+        | def isFriend(inputBox: Box) = inputBox.id == friend.id
         | INPUTS.exists (isFriend)
          }""".stripMargin).asBoolValue
 
@@ -636,5 +636,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     an[RuntimeException] should be thrownBy
       prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+  }
+
+  property("non-const ProveDHT") {
+    import sigmastate.interpreter.CryptoConstants.dlogGroup
+    compileWithCosting(Map("gA" -> dlogGroup.generator),
+      "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
+    ).asInstanceOf[BlockValue].result shouldBe a [ProveDHTuple]
+  }
+
+  property("non-const ProveDlog") {
+    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [ProveDlog]
   }
 }

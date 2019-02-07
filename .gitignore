@@ -1,13 +1,12 @@
-sigma.pdf
-sigma.toc
-sigma.aux
-sigma.log
-sigma.out
-sigma.bbl
-sigma.blg
-sigma.fls
-sigma.synctex.gz
-sigma.fdb_latexmk
+*.pdf
+*.toc
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
 
 *.log
 test-out/

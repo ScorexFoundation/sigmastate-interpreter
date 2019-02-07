@@ -31,7 +31,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import WBigInteger._
   import ProveDlogEvidence._
   import Context._; import SigmaContract._
-  import Cost._; import ColBuilder._; import Col._; import Box._; import SigmaProp._;
+  import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
   import TrivialSigma._
   import Liftables._
@@ -54,11 +54,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(SGroupElement, g, CryptoConstants.groupSize)
     check(SSigmaProp, DLogProtocol.ProveDlog(g), CryptoConstants.groupSize + 1)
     check(sigmastate.SOption(SInt), Some(10), 1 + 4)
-    def checkCol(elemTpe: SType, arr: Array[Any], exp: Long) =
+    def checkColl(elemTpe: SType, arr: Array[Any], exp: Long) =
       check(sigmastate.SCollection(SInt), arr, exp)
-    checkCol(SInt, Array(10,20), 2 + 2L * 4)
-    checkCol(SInt, Array(), 2)
-    checkCol(SBigInt, Array(BigInteger.ZERO, BigInteger.valueOf(Long.MaxValue)), 2 + 0 + 8)
+    checkColl(SInt, Array(10,20), 2 + 2L * 4)
+    checkColl(SInt, Array(), 2)
+    checkColl(SBigInt, Array(BigInteger.ZERO, BigInteger.valueOf(Long.MaxValue)), 2 + 0 + 8)
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
@@ -71,7 +71,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
     val symArr1 = colBuilder.fromArray(liftConst(arr1))
     checkInEnv(env, "arr", "arr1",
-      {_ => symArr1}, {_ => constCost[Col[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
+      {_ => symArr1}, {_ => constCost[Coll[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
       {_ => colBuilder.fromArray(liftConst(arr1)).length },
       { _ =>
@@ -99,7 +99,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ =>
         val c1 = IntConstant(1);
-        costOf(c1) + costOf(c1)
+        costOf(c1) + costOf(c1) + costOf(GT(c1,c1))
       })
 //    checkInEnv(env, "or", "1 > 1 || n1 < big", {_ => (toRep(1) > 1) lazy_|| Thunk(toRep(n1) < big)},
 //      { _ =>
@@ -152,21 +152,13 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }",
       ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
+    check("lam4", "{ def f(out: Box) = out.value >= 0L ; f }",
+      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
   }
 
   test("if then else") {
     check("lam1", "{ val x = if (OUTPUTS.size > 0) OUTPUTS(0).value else SELF.value; x }",
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
-  }
-
-
-  test("substConstants") {
-    import org.ergoplatform.ErgoScriptPredef._
-    val minerRewardDelay = 720
-    val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
-    val costed = cost(env, prop)
-    val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
-    emit("substConstants", calcF, costF, sizeF)
   }
 
   test("Crowd Funding") {
@@ -211,12 +203,20 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       res = eval(i)
 
     println("Processing ...")
-    measure(1) { k =>
-      for (i <- 1 to 2000)
+    measure(3) { k =>
+      for (i <- 1 to 1000)
         res = eval(i)
     }
     
     emit("Crowd_Funding_measure", res)
+    /*
+    Warming up ...
+    Processing ...
+    Iter 0: 2138 ms
+    Iter 1: 1864 ms
+    Iter 2: 1864 ms
+    Total time: 5866 ms
+    */
   }
 
   test("Demurrage") {
@@ -242,11 +242,19 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   test("measure: costed context data") {
     var res: Rep[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
-      measure(j*500 + 10, false) { i =>
+      measure(j*1000 + 10, false) { i =>
         res = check("", s"INPUTS.size + OUTPUTS.size + $i", null
-          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/)
+          /*ctx => ctx.INPUTS.length + ctx.OUTPUTS.length + i*/, printGraphs = false)
       }
     }
+    emit("costed_context_data", res)
+    /*
+    Total time: 2676 ms
+    Iter 0: 2676 ms
+    Total time: 6966 ms
+    Iter 1: 6970 ms
+    Total time: 9646 ms
+    */
   }
 
 

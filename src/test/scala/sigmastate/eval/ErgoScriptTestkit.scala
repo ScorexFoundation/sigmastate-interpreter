@@ -64,7 +64,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     backerPubKeyId -> backerPubKey,
     projectPubKeyId -> projectPubKey,
     3.toByte -> bigIntArr1
-  )).arr
+  )).toArray
 
   val boxToSpend = ErgoBox(10, TrueLeaf, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
@@ -226,13 +226,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def checkInEnv(env: ScriptEnv, name: String, script: String,
                  expectedCalc: Rep[Context] => Rep[Any],
                  expectedCost: Rep[Context] => Rep[Int] = null,
-                 expectedSize: Rep[Context] => Rep[Long] = null
+                 expectedSize: Rep[Context] => Rep[Long] = null,
+                 printGraphs: Boolean = true
                 ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
     val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
       Option(expectedCost),
-      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs = true )
+      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs)
     val res = tc.doCosting
     res
   }
@@ -240,10 +241,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def check(name: String, script: String,
       expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
-      expectedSize: Rep[Context] => Rep[Long] = null
+      expectedSize: Rep[Context] => Rep[Long] = null,
+      printGraphs: Boolean = true
       ): Rep[(Context => Any, (Context => Int, Context => Long))] =
   {
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
+    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
   }
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {

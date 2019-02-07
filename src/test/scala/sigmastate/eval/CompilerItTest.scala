@@ -12,11 +12,12 @@ import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
 import sigmastate.utxo._
-import special.collection.{Col => VCol}
+import special.collection.{Coll => VColl}
 import special.sigma.{TestValue => VTestValue}
 import scalan.BaseCtxTests
 import scalan.util.BenchmarkUtil._
 import sigmastate.basics.DLogProtocol
+import special.sigma._
 
 class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -24,12 +25,12 @@ class CompilerItTest extends BaseCtxTests
   import builder._
   import WArray._
   import WOption._
-  import ColBuilder._
+  import CollBuilder._
   import Context._
-  import Col._
+  import Coll._
   import SigmaProp._
-  import CostedCol._
-  import CCostedCol._
+  import CostedColl._
+  import CCostedColl._
   import WBigInteger._
   import WECPoint._
   import ProveDlogEvidence._
@@ -80,10 +81,10 @@ class CompilerItTest extends BaseCtxTests
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
     val arr1Sym = liftConst(arr1)
     val col1Sym = colBuilder.fromArray[Byte](arr1Sym)
-    val res = Cols.fromArray(arr1).arr
+    val res = Colls.fromArray(arr1).toArray
     Case(env, "arrayConst", "arr1", ergoCtx,
       calc = {_ => col1Sym },
-      cost = {_ => constCost[Col[Byte]] },
+      cost = {_ => constCost[Coll[Byte]] },
       size = {_ => sizeOf(col1Sym) },
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
@@ -122,7 +123,7 @@ class CompilerItTest extends BaseCtxTests
 
   def bigIntArray_Map_Case = {
     import SCollection._
-    val res = Cols.fromArray(bigIntArr1).map(n => n.add(n1)).arr
+    val res = Colls.fromArray(bigIntArr1).map(n => n.add(n1)).toArray
     val arrSym = colBuilder.fromArray(liftConst(bigIntArr1))
     Case(env, "bigIntArray_Map",
       "bigIntArr1.map { (i: BigInt) => i + n1 }", ergoCtx,
@@ -131,7 +132,7 @@ class CompilerItTest extends BaseCtxTests
         val vals = colBuilder.fromArray(arr)
         val costs = colBuilder.replicate(arr.length, constCost[WBigInteger])
         val sizes = colBuilder.fromArray(liftConst(bigIntArr1.map(x => SBigInt.dataSize(x.asWrappedType))))
-        val arrC = RCCostedCol(vals, costs, sizes, constCost[Col[WBigInteger]])
+        val arrC = RCCostedColl(vals, costs, sizes, constCost[Coll[WBigInteger]])
         vals.map(fun(n => n.add(liftConst(n1))))
       },
       cost = null,
@@ -200,6 +201,14 @@ class CompilerItTest extends BaseCtxTests
     measure(5) { i =>
       register_BigIntArr_Case.doReduce()
     }
+    /*
+    Iter 0: 3074 ms
+    Iter 1: 29 ms
+    Iter 2: 31 ms
+    Iter 3: 26 ms
+    Iter 4: 24 ms
+    Total time: 3184 ms
+    */
   }
 
   def register_BigIntArr_Map_Case = {
@@ -272,7 +281,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40674, 1L)
+      Result({ TrivialProp.FalseProp }, 40686, 1L)
     )
   }
   test("crowdFunding_Case") {

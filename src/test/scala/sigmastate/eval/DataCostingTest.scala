@@ -1,16 +1,15 @@
 package sigmastate.eval
 
-import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
-
+import sigmastate.lang.LangTests
 import scalan.BaseCtxTests
 
 class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit {
   import IR._
-  import Col._
+  import Coll._
 
   test("split cols") {
     emit("split_cols",
-      split3(fun { in: Rep[(Col[Int], Byte)] =>
+      split3(fun { in: Rep[(Coll[Int], Byte)] =>
         dataCost(in, None)
       })
     )

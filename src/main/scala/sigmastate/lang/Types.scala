@@ -21,8 +21,11 @@ trait Types extends Core {
 
   /** This map should be in sync with SType.allPredefTypes*/
   val predefTypes = Map(
-    "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,  "ByteArray" -> SByteArray,
-    "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp, "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
+    "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,
+    "ByteArray" -> SByteArray,
+    "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp,
+    "String" -> SString,
+    "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )
 
   def typeFromName(tn: String): Option[SType] = predefTypes.get(tn)
@@ -105,16 +108,20 @@ trait Types extends Core {
     }
   }
 
-//  val FunSig = {
-//    val FunArg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
-//      case (n, Some(t)) => (n, t)
-//      case (n, None) => (n, NoType)
-//    }
-//    val Args = P( FunArg.repTC(1) )
-//    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
-//    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
-//    P( FunTypeArgs.? ~~ FunArgs.rep )
-//  }
+  val FunSig = {
+    val FunArg = P( Annot.rep ~ Id.! ~ (`:` ~/ Type).? ).map {
+      case (n, Some(t)) => (n, t)
+      case (n, None) => (n, NoType)
+    }
+    val Args = P( FunArg.repTC(1) )
+    val FunArgs = P( OneNLMax ~ "(" ~/ Args.? ~ ")" ).map(_.toSeq.flatten)
+    val FunTypeArgs = P( "[" ~/ (Annot.rep ~ TypeArg).repTC(1) ~ "]" )
+    P( FunTypeArgs.? ~~ FunArgs.rep )
+  }
+
+  // extension method subject (type that being extended)
+  // see dotty extension method http://dotty.epfl.ch/blog/2019/01/21/12th-dotty-milestone-release.html
+  val DottyExtMethodSubj = P( "(" ~/ Id.! ~  `:` ~/ Type ~ ")" )
 
   val TypeBounds: P0 = P( (`>:` ~/ Type).? ~ (`<:` ~/ Type).? ).ignore
   val TypeArg: P0 = {
