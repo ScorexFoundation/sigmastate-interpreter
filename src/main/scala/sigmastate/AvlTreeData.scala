@@ -6,6 +6,25 @@ import scorex.crypto.authds.ADDigest
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
+case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean)
+
+object AvlTreeFlags {
+  def apply(serializedFlags: Byte): AvlTreeFlags = {
+    val insertAllowed = (serializedFlags & 0x01) != 0
+    val updateAllowed = (serializedFlags & 0x02) != 0
+    val removeAllowed = (serializedFlags & 0x04) != 0
+    AvlTreeFlags(insertAllowed, updateAllowed, removeAllowed)
+  }
+
+  def serializeFlags(avlTreeFlags: AvlTreeFlags): Byte = {
+    val readOnly = 0
+    val i = if(avlTreeFlags.insertAllowed) readOnly | 0x01 else readOnly
+    val u = if(avlTreeFlags.updateAllowed) i | 0x02 else i
+    val r = if(avlTreeFlags.removeAllowed) u | 0x04 else u
+    r.toByte
+  }
+}
+
 case class AvlTreeData( startingDigest: ADDigest,
                         keyLength: Int,
                         valueLengthOpt: Option[Int] = None,

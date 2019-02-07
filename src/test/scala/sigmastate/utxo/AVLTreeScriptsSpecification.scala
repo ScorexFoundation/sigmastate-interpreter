@@ -189,7 +189,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  element >= 120 && isMember(tree, elementKey, proof)
         |}""".stripMargin).asBoolValue
 
-    // TODO propCompiled shouldBe prop
+    //TODO: propCompiled shouldBe prop
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
