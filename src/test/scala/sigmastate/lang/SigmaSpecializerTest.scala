@@ -33,7 +33,7 @@ class SigmaSpecializerTest extends PropSpec
 
   def typed(env: Map[String, SValue], x: String): SValue = {
     val builder = TransformingSigmaBuilder
-    val parsed = SigmaParser(x, builder).parse.get.value
+    val parsed = SigmaParser(x, builder).get.value
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)

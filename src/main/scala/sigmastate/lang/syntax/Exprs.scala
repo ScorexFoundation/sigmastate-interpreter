@@ -211,13 +211,13 @@ trait Exprs extends Core with Types {
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
         val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+        atSourcePos(index) {
           builder.mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
         val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
         val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+        atSourcePos(index) {
           builder.mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, dottyExt, n, secs, resType, body) =>

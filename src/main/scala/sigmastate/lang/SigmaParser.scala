@@ -11,13 +11,19 @@ import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
 
 import scala.collection.mutable
+import scala.util.DynamicVariable
 
-class SigmaParser(str: String,
-                  override val builder: SigmaBuilder) extends Exprs with Types with Core {
+object SigmaParser extends Exprs with Types with Core {
   import fastparse.noApi._
   import WhitespaceApi._
 
-  override def srcCtx(parserIndex: Int): SourceContext = SourceContext(parserIndex, str)
+  val currentInput = new DynamicVariable[String]("")
+
+  override def atSourcePos[A](parserIndex: Int)(thunk: => A): A = {
+    builder.currentSrcCtx.withValue(Nullable(SourceContext(parserIndex, currentInput.value))) {
+      thunk
+    }
+  }
 
   val TmplBody = {
     val Prelude = P( (Annot ~ OneNLMax).rep )
@@ -31,7 +37,7 @@ class SigmaParser(str: String,
 
   val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
     case (index, Ident(n,_), t, body) =>
-      builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+      atSourcePos(index) {
         builder.mkVal(n, t.getOrElse(NoType), body)
       }
     case (_, pat,_,_) => error(s"Only single name patterns supported but was $pat")
@@ -85,24 +91,15 @@ class SigmaParser(str: String,
     case _ => error(s"Unknown binary operation $opName")
   }
 
-  def parse: core.Parsed[Value[_ <: SType], Char, String] = (StatCtx.Expr ~ End).parse(str)
+  def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
 
-  def parsedType: core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
-
-  def parseType: SType = {
-    val res = parsedType.get.value
+  def parseType(str: String): SType = {
+    val res = parsedType(str).get.value
     res
   }
 
-}
-
-object SigmaParser {
-
-  def apply(str: String, sigmaBuilder: SigmaBuilder): SigmaParser =
-    new SigmaParser(str, sigmaBuilder)
-
-  def parsedType(str: String): core.Parsed[SType, Char, String] =
-    new SigmaParser(str, StdSigmaBuilder).parsedType
-
-  def parseType(x: String): SType = new SigmaParser(x, StdSigmaBuilder).parseType
+  def apply(script: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] =
+    currentInput.withValue(script) {
+      (StatCtx.Expr ~ End).parse(script)
+    }
 }
