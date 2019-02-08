@@ -34,8 +34,8 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
 
     case _ @ Block(binds, res) =>
       var curEnv = env
-      for (Val(n, _, b, Nullable(srcCtx)) <- binds) {
-        if (curEnv.contains(n)) error(s"$srcCtx Variable $n already defined ($n = ${curEnv(n)}")
+      for (v @ Val(n, _, b) <- binds) {
+        if (curEnv.contains(n)) error(s"${v.sourceContext} Variable $n already defined ($n = ${curEnv(n)}")
         val b1 = eval(curEnv, b)
         curEnv = curEnv + (n -> b1)
       }

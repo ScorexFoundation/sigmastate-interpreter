@@ -12,6 +12,7 @@ import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
+import sigmastate.utils.Extensions._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,11 +41,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
-      for (Val(n, _, b, Nullable(srcCtx)) <- bs) {
-        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", srcCtx)
+      for (v @ Val(n, _, b) <- bs) {
+        if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        bs1 += mkVal(n, b1.tpe, b1, srcCtx)
+        currentSrcCtx.withValue(v.sourceContext) {
+          bs1 += mkVal(n, b1.tpe, b1)
+        }
       }
       val res1 = assignType(curEnv, res)
       mkBlock(bs1, res1)
@@ -587,5 +590,5 @@ object SigmaTyper {
   }
 
   def error(msg: String) = throw new TyperException(msg, None)
-  def error(msg: String, srcCtx: SourceContext) = throw new TyperException(msg, Some(srcCtx))
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new TyperException(msg, srcCtx)
 }

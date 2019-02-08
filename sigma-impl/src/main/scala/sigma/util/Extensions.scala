@@ -5,6 +5,15 @@ import java.nio.ByteBuffer
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
 
+import scalan.Nullable
+import sigmastate.SType
+import sigmastate.Values.{SValue, Value}
+import sigmastate.serialization.{TypeSerializer, ValueSerializer}
+
+import scala.collection.generic.CanBuildFrom
+import scala.language.higherKinds
+import scala.reflect.ClassTag
+
 object Extensions {
   implicit class BooleanOps(val b: Boolean) extends AnyVal {
     /** Convert true to 1 and false to 0
@@ -232,4 +241,8 @@ object Extensions {
     }
   }
 
+  implicit def nullableToOption[A](nullable: Nullable[A]): Option[A] = nullable match {
+    case Nullable(v) => Some(v)
+    case _ => None
+  }
 }

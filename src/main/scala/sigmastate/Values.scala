@@ -80,7 +80,14 @@ object Values {
     * This property will not participate in equality and other operations, so will be invisible for existing code.
     * But Builder can use it to set sourceContext if it is present.
     */
-    def sourceContext: Nullable[SourceContext] = Nullable.None
+    private[sigmastate] var _sourceContext: Nullable[SourceContext] = Nullable.None
+    def sourceContext: Nullable[SourceContext] = _sourceContext
+    def sourceContext_=(srcCtx: Nullable[SourceContext]): Unit =
+      if (_sourceContext.isEmpty) {
+        _sourceContext = srcCtx
+      } else {
+        sys.error("_sourceContext can be set only once")
+      }
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {

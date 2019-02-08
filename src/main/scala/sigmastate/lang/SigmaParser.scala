@@ -4,6 +4,7 @@ import fastparse.core.Logger
 import fastparse.core
 import sigmastate._
 import Values._
+import scalan.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
@@ -29,7 +30,10 @@ class SigmaParser(str: String,
 //  }
 
   val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
-    case (index, Ident(n,_), t, body) => builder.mkVal(n, t.getOrElse(NoType), body, srcCtx(index))
+    case (index, Ident(n,_), t, body) =>
+      builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+        builder.mkVal(n, t.getOrElse(NoType), body)
+      }
     case (_, pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 

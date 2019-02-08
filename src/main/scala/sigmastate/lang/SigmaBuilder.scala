@@ -21,7 +21,11 @@ import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.{GroupElement, SigmaProp}
 
+import scala.util.DynamicVariable
+
 trait SigmaBuilder {
+
+  val currentSrcCtx = new DynamicVariable[Nullable[SourceContext]](Nullable.None)
 
   def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
   def mkNEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
@@ -159,7 +163,7 @@ trait SigmaBuilder {
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
   def mkValUse(valId: Int, tpe: SType): Value[SType]
   def mkZKProofBlock(body: Value[SSigmaProp.type]): Value[SBoolean.type]
-  def mkVal(name: String, givenType: SType, body: Value[SType], srcCtx: SourceContext): Val
+  def mkVal(name: String, givenType: SType, body: Value[SType]): Val
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
   def mkIdent(name: String, tpe: SType): Value[SType]
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
@@ -490,8 +494,11 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkVal(name: String,
                      givenType: SType,
-                     body: Value[SType], srcCtx: SourceContext): Val =
-    ValNode(name, givenType, body, Nullable(srcCtx))
+                     body: Value[SType]): Val = {
+    val v = ValNode(name, givenType, body)
+    v.sourceContext = currentSrcCtx.value
+    v
+  }
 
   override def mkSelect(obj: Value[SType],
                         field: String,

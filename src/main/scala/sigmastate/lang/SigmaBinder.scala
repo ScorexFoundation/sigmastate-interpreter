@@ -12,6 +12,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
+import sigmastate.utils.Extensions._
 
 /**
   * @param env
@@ -94,10 +95,12 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     case Block(Seq(), body) => Some(body)
 
     case block @ Block(binds, t) =>
-      val newBinds = for (Val(n, t, b, Nullable(srcCtx)) <- binds) yield {
-        if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}", srcCtx)
+      val newBinds = for (v @ Val(n, t, b) <- binds) yield {
+        if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}", v.sourceContext)
         val b1 = eval(b, env)
-        mkVal(n, if (t != NoType) t else b1.tpe, b1, srcCtx)
+        currentSrcCtx.withValue(v.sourceContext) {
+          mkVal(n, if (t != NoType) t else b1.tpe, b1)
+        }
       }
       val t1 = eval(t, env)
       val newBlock = mkBlock(newBinds, t1)
@@ -118,5 +121,5 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 
 object SigmaBinder {
   def error(msg: String) = throw new BinderException(msg, None)
-  def error(msg: String, srcCtx: SourceContext) = throw new BinderException(msg, Some(srcCtx))
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new BinderException(msg, srcCtx)
 }

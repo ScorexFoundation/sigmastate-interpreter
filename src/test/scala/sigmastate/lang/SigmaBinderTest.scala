@@ -179,8 +179,12 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("val fails (already defined in env)") {
-    val script= "{val x = 10; x > 2}"
+    val script= """{
+        |val x = 10
+        |x > 2
+        |
+        |}""".stripMargin
     val e = the[BinderException] thrownBy bind(env, script)
-    e.source shouldBe Some(SourceContext(1, 6, script))
+    e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
   }
 }

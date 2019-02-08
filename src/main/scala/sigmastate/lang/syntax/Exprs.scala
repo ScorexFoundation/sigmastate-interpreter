@@ -1,6 +1,7 @@
 package sigmastate.lang.syntax
 
 import fastparse.noApi._
+import scalan.Nullable
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, MethodCallLike, Select, Val, ValueOps}
@@ -210,11 +211,15 @@ trait Exprs extends Core with Types {
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
         val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.mkVal(n, resType.getOrElse(NoType), lambda, srcCtx(index))
+        builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+          builder.mkVal(n, resType.getOrElse(NoType), lambda)
+        }
       case (index, Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
         val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
         val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
-        builder.mkVal(n, resType.getOrElse(NoType), lambda, srcCtx(index))
+        builder.currentSrcCtx.withValue(Nullable(srcCtx(index))) {
+          builder.mkVal(n, resType.getOrElse(NoType), lambda)
+        }
       case (index, dottyExt, n, secs, resType, body) =>
         error(s"Function can only have single argument list: def ${dottyExt.getOrElse("")} $n($secs): ${resType.getOrElse(NoType)} = $body")
     }

@@ -16,6 +16,7 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
+import sigmastate.utils.Extensions.nullableToOption
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
@@ -1004,8 +1005,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case Terms.Block(binds, res) =>
         var curEnv = env
-        for (Val(n, _, b, Nullable(srcCtx)) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", srcCtx)
+        for (v @ Val(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1554,5 +1555,5 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def error(msg: String) = throw new CosterException(msg, None)
-  def error(msg: String, srcCtx: SourceContext) = throw new CosterException(msg, Some(srcCtx))
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
 }
