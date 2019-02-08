@@ -22,7 +22,7 @@ import scalan.RType
 
 case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree {
   override val builder = new CostingSigmaDslBuilder(IR)
-  def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
+  def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.digest)
 
   def keyLength: Int = treeData.keyLength
 

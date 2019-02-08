@@ -839,7 +839,7 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = {
     val tree = v.asInstanceOf[AvlTreeData]
-    tree.startingDigest.length +
+    tree.digest.length +
         4 + // keyLength
         tree.valueLengthOpt.fold(0)(_ => 4) +
         tree.maxNumOperations.fold(0)(_ => 4) +

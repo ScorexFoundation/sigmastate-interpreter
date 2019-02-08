@@ -279,7 +279,7 @@ object Values {
   implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
-        c.value.startingDigest,
+        c.value.digest,
         proof,
         c.value.keyLength,
         c.value.valueLengthOpt,

@@ -203,7 +203,7 @@ object BlockchainSimulationSpecification {
       assert(blockCost <= maxCost, s"Block cost $blockCost exceeds limit $maxCost")
 
       boxesReader.applyBlock(block)
-      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(startingDigest = boxesReader.digest))
+      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = boxesReader.digest))
       ValidationState(newState, boxesReader)
     }
   }
