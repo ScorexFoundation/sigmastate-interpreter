@@ -7,7 +7,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
-import sigmastate._
+import sigmastate.{TrivialProp, _}
 import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
@@ -38,7 +38,7 @@ case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupEl
 case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
   override def isValid: Boolean = sigmaTree match {
-    case TrivialProp(cond) => cond
+    case p: TrivialProp => p.condition
     case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
   }
 
@@ -180,9 +180,21 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case IntType  => 0
       case LongType => 0L
       case StringType => ""
+      case CharType => 0.toChar
+      case FloatType => 0.0f
+      case DoubleType => 0.0d
       case p: PairType[a, b] => (defaultValue(p.tFst), defaultValue(p.tSnd))
       case col: CollType[a] => dsl.Colls.emptyColl(col.tItem)
+      case tup: TupleType => tup.items.map(t => defaultValue(t))
+      case SType.AvlTreeDataRType => AvlTreeData.dummy
       case AvlTreeRType => CostingAvlTree(AvlTreeData.dummy)
+
+      case SType.SigmaBooleanRType => TrivialProp.FalseProp
+      case SigmaPropRType => sigmaProp(false)
+
+      case ECPointRType => CryptoConstants.dlogGroup.generator
+      case GroupElementRType => groupGenerator
+
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }

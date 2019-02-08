@@ -379,7 +379,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         NEQ(ExtractRegisterAs[SSigmaProp.type](Self, R8).get.propBytes, GetVarSigmaProp(propVar1).get.propBytes),
         true
       ),
-      _.getCause.getCause.isInstanceOf[InvocationTargetException])
+      rootCause(_).isInstanceOf[NoSuchElementException])
   }
 
   property("OptionGetOrElse") {
