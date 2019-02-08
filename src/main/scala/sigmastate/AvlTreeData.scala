@@ -25,7 +25,19 @@ object AvlTreeFlags {
   }
 }
 
+/**
+  * Type of data which efficiently authenticates
+  *
+  * @param startingDigest
+  * @param treeFlags
+  * @param keyLength
+  * @param valueLengthOpt
+  * @param maxNumOperations
+  * @param maxDeletes
+  */
+
 case class AvlTreeData( startingDigest: ADDigest,
+                        treeFlags: AvlTreeFlags,
                         keyLength: Int,
                         valueLengthOpt: Option[Int] = None,
                         maxNumOperations: Option[Int] = None,
@@ -46,7 +58,7 @@ case class AvlTreeData( startingDigest: ADDigest,
 }
 
 object AvlTreeData {
-  val dummy = new AvlTreeData(ADDigest @@ Array.fill(32)(0:Byte), keyLength = 32)
+  val dummy = new AvlTreeData(ADDigest @@ Array.fill(33)(0:Byte), keyLength = 32)
 
   object serializer extends Serializer[AvlTreeData, AvlTreeData] {
 
