@@ -869,4 +869,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     )
   }
 
+  property("single name pattern fail") {
+    fail("{val (a,b) = (1,2)}", 1, 6)
+  }
 }

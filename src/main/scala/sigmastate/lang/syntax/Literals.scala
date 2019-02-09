@@ -13,6 +13,7 @@ import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 trait Literals { l =>
   val builder: SigmaBuilder = StdSigmaBuilder
   def atSourcePos[A](parserIndex: Int)(thunk: => A): A
+  def srcCtx(parserIndex: Int): SourceContext
   def Block: P[Value[SType]]
   def Pattern: P0
 
