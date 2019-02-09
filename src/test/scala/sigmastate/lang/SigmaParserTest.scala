@@ -33,19 +33,6 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     SigmaParser.parseType(x)
   }
 
-  def fail(x: String, index: Int): Unit = {
-    try {
-      val res = SigmaParser(x, TransformingSigmaBuilder).get.value
-      assert(false, s"Error expected")
-    } catch {
-      case e: TestFailedException =>
-        throw e
-      case pe: ParseError[_,_] =>
-        val l = pe.failure.index
-        l shouldBe index
-    }
-  }
-
   def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val compiler = SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
     val sourceContext = (the[ParserException] thrownBy compiler.parse(x)).source.get
@@ -565,13 +552,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("negative tests") {
-    fail("(10", 3)
-    fail("10)", 2)
-    fail("X)", 1)
-    fail("(X", 2)
-    fail("{ X", 3)
-    fail("{ val X", 7)
-    fail("\"str", 4)
+    fail("(10", 1, 4)
+    fail("10)", 1, 3)
+    fail("X)", 1, 2)
+    fail("(X", 1, 3)
+    fail("{ X", 1, 4)
+    fail("{ val X", 1, 8)
+    fail("\"str", 1, 5)
   }
 
   property("not(yet) supported lambda syntax") {
