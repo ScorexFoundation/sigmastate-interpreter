@@ -14,7 +14,7 @@ import sigmastate.utxo._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import special.collection.Coll
-import special.sigma.{SigmaProp, Context, SpecContext}
+import special.sigma.{SigmaProp, Context, TestContractSpec}
 
 /**
   * An example of an atomic ergo <=> asset exchange.

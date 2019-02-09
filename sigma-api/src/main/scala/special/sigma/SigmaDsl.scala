@@ -292,12 +292,17 @@ trait Box {
   /** Mandatory: Reference to transaction and output id where the box was created */
   def R3[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](3)
 
-  // Non-mandatory registers
+  /** Non-mandatory register */
   def R4[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](4)
+  /** Non-mandatory register */
   def R5[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](5)
+  /** Non-mandatory register */
   def R6[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](6)
+  /** Non-mandatory register */
   def R7[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](7)
+  /** Non-mandatory register */
   def R8[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](8)
+  /** Non-mandatory register */
   def R9[@Reified T](implicit cT:RType[T]): Option[T] = this.getReg[T](9)
 
   /** Secondary tokens */
