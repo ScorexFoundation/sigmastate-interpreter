@@ -20,7 +20,7 @@ object SigmaParser extends Exprs with Types with Core {
   val currentInput = new DynamicVariable[String]("")
 
   override def atSourcePos[A](parserIndex: Int)(thunk: => A): A = {
-    builder.currentSrcCtx.withValue(Nullable(SourceContext(parserIndex, currentInput.value))) {
+    builder.currentSrcCtx.withValue(Nullable(SourceContext.fromParserIndex(parserIndex, currentInput.value))) {
       thunk
     }
   }
@@ -40,7 +40,7 @@ object SigmaParser extends Exprs with Types with Core {
       atSourcePos(index) {
         builder.mkVal(n, t.getOrElse(NoType), body)
       }
-    case (_, pat,_,_) => error(s"Only single name patterns supported but was $pat")
+    case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat")
   }
 
   val BlockDef = P( Dcl )

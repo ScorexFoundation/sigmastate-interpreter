@@ -45,7 +45,7 @@ object Basic {
 
 class ParserException(message: String, val parseError: Option[Failure[_,String]])
   extends SigmaException(message,
-    parseError.map(e => SourceContext(e.index, e.extra.input.slice(0, e.extra.input.length))))
+    parseError.map(e => SourceContext.fromParserIndex(e.index, e.extra.input.slice(0, e.extra.input.length))))
 
 /**
   * Most keywords don't just require the correct characters to match,
