@@ -22,8 +22,8 @@ class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
       case Success(v, i) => v
-      case f: Parsed.Failure[_,_] =>
-        throw new ParserException(s"Syntax error: $f", Some(f))
+      case f: Parsed.Failure[_,String] =>
+        throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
   }
 

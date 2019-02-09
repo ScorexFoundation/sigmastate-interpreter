@@ -1,5 +1,7 @@
 package sigmastate.lang
 
+import fastparse.core.Parsed.Failure
+
 import scala.io.Source
 
 case class SourceContext(line: Int, column: Int, sourceLine: String) {
@@ -21,4 +23,6 @@ object SourceContext {
       }.get
   }
 
+  def fromParserFailure(e: Failure[_, String]): SourceContext =
+    fromParserIndex(e.index , e.extra.input.slice(0, e.extra.input.length))
 }
