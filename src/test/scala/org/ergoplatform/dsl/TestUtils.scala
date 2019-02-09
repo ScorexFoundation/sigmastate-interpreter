@@ -5,19 +5,16 @@ import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 import scalan.{Nullable, RType}
 import scorex.crypto.hash.Digest32
 import sigmastate.{AvlTreeData, SType}
-import SType.AnyOps
-import org.ergoplatform.dsl.ContractSyntax.{TokenId, ErgoScript, Proposition, Token}
-import sigmastate.Values.{ErgoTree, Constant, EvaluatedValue}
-import sigmastate.basics.DLogProtocol.ProveDlog
+import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.eval.{CostingSigmaProp, IRContext, CostingSigmaDslBuilder, Evaluation}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv, emptyEnv}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.utxo.ErgoLikeTestInterpreter
 import special.collection.Coll
-import special.sigma.{SigmaProp, SigmaContract, Context, DslSyntaxExtensions, SigmaDslBuilder}
+import special.sigma.{SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -89,7 +86,7 @@ trait ContractSpec {
 
     /** Generate proof for the given `inBox`. The input box has attached guarding proposition,
       * which is executed in the Context, specifically created for `inBox`.*/
-    def prove(inBox: InBox): Try[CostedProverResult]
+    def prove(inBox: InBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult]
   }
   object ProvingParty {
     def apply(name: String): ProvingParty = mkProvingParty(name)
@@ -108,7 +105,7 @@ trait ContractSpec {
   trait InBox {
     def tx: Transaction
     def utxoBox: OutBox
-    def runDsl(): SigmaProp
+    def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp
     private [dsl] def toErgoContext: ErgoLikeContext
   }
 
@@ -161,7 +158,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
     val pubKey: SigmaProp = CostingSigmaProp(prover.dlogSecrets.head.publicImage)
 
-    def prove(inBox: InBox): Try[CostedProverResult] = {
+    def prove(inBox: InBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult] = {
       val boxToSpend = inBox.utxoBox
       val propSpec: PropositionSpec = boxToSpend.propSpec
       val ctx = inBox.toErgoContext
@@ -201,7 +198,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         self = utxoBox.ergoBox)
       ctx
     }
-    def runDsl(): SigmaProp = {
+    def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {
       val ctx = toErgoContext.toSigmaContext(IR, false)
       val res = utxoBox.propSpec.dslSpec(ctx)
       res
