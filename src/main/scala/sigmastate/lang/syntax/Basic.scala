@@ -39,12 +39,13 @@ object Basic {
   val Lower: Parser[Unit] = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
   val Upper: Parser[Unit] = P( CharPred(isUpper) )
 
-  def error(msg: String, parseError: Option[Failure[_,_]] = None) =
+  def error(msg: String, parseError: Option[Failure[_, String]] = None) =
     throw new ParserException(msg, parseError)
 }
 
-class ParserException(message: String, val parseError: Option[Failure[_,_]])
-  extends SigmaException(message, parseError.map(e => SourceContext(e.index, e.extra.input.toString)))
+class ParserException(message: String, val parseError: Option[Failure[_,String]])
+  extends SigmaException(message,
+    parseError.map(e => SourceContext(e.index, e.extra.input.slice(0, e.extra.input.length))))
 
 /**
   * Most keywords don't just require the correct characters to match,

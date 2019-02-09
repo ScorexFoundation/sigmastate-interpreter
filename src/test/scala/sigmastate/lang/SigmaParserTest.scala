@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import fastparse.core.{ParseError, Parsed}
+import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
@@ -43,6 +44,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         val l = pe.failure.index
         l shouldBe index
     }
+  }
+
+  def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val compiler = SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
+    val sourceContext = (the[ParserException] thrownBy compiler.parse(x)).source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
   }
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
@@ -568,7 +576,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("not(yet) supported lambda syntax") {
     // passing a lambda without curly braces is not supported yet :)
-    fail("arr.exists ( (a: Int) => a >= 1 )", 15)
+    fail("arr.exists ( (a: Int) => a >= 1 )", 1, 16)
     // no argument type
     an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
     an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
