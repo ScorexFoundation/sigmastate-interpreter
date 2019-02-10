@@ -4,8 +4,10 @@ import fastparse.all._
 import fastparse.CharPredicates._
 import fastparse.all
 import fastparse.core.Parsed.Failure
+import scalan.Nullable
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.SigmaException
+import sigmastate.utils.Extensions.nullableToOption
 
 object Basic {
   val digits = "0123456789"
@@ -39,8 +41,8 @@ object Basic {
   val Lower: Parser[Unit] = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
   val Upper: Parser[Unit] = P( CharPred(isUpper) )
 
-  def error(msg: String) = throw new ParserException(msg, None)
-  def error(msg: String, srcCtx: SourceContext) = throw new ParserException(msg, Some(srcCtx))
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new ParserException(msg, srcCtx)
+  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx)
 }
 
 class ParserException(message: String, source: Option[SourceContext])

@@ -19,7 +19,7 @@ object SigmaParser extends Exprs with Types with Core {
 
   val currentInput = new DynamicVariable[String]("")
 
-  override def atSourcePos[A](parserIndex: Int)(thunk: => A): A =
+  override def atSrcPos[A](parserIndex: Int)(thunk: => A): A =
     builder.currentSrcCtx.withValue(Nullable(srcCtx(parserIndex))) { thunk }
 
   override def srcCtx(parserIndex: Int): SourceContext =
@@ -37,10 +37,10 @@ object SigmaParser extends Exprs with Types with Core {
 
   val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
     case (index, Ident(n,_), t, body) =>
-      atSourcePos(index) {
+      atSrcPos(index) {
         builder.mkVal(n, t.getOrElse(NoType), body)
       }
-    case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat", srcCtx(index))
+    case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat", Some(srcCtx(index)))
   }
 
   val BlockDef = P( Dcl )
@@ -64,12 +64,12 @@ object SigmaParser extends Exprs with Types with Core {
           builder.mkConstant[SInt.type](-value, SInt)
         case LongConstant(value) =>
           builder.mkConstant[SLong.type](-value, SLong)
-        case _ => error(s"cannot prefix $arg with op $opName")
+        case _ => error(s"cannot prefix $arg with op $opName", arg.sourceContext)
       }
     case "!" => builder.mkLogicalNot(arg.asBoolValue)
     case "-" => builder.mkNegation(arg.asNumValue)
     case "~" => builder.mkBitInversion(arg.asNumValue)
-    case _ => error(s"Unknown prefix operation $opName for $arg")
+    case _ => error(s"Unknown prefix operation $opName for $arg", arg.sourceContext)
   }
 
   val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
@@ -88,7 +88,7 @@ object SigmaParser extends Exprs with Types with Core {
       MethodCallLike(l, opName, IndexedSeq(r))
     case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
     case "%"  => builder.mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
-    case _ => error(s"Unknown binary operation $opName")
+    case _ => error(s"Unknown binary operation $opName", l.sourceContext)
   }
 
   def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)

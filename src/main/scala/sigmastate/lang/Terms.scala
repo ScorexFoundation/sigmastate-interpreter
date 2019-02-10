@@ -203,5 +203,9 @@ object Terms {
       else
         mkUpcast(tV, targetType)
     }
+    def withSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
+      v.sourceContext = sourceContext
+      v.asValue[T]
+    }
   }
 }

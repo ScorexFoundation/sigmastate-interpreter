@@ -35,7 +35,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
     val compiler = SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
-    val sourceContext = (the[ParserException] thrownBy compiler.parse(x)).source.get
+    val exception = the[ParserException] thrownBy compiler.parse(x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
     sourceContext.line shouldBe expectedLine
     sourceContext.column shouldBe expectedCol
   }
@@ -616,7 +618,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("invalid ZKProof (non block parameter)") {
-    an[ParserException] should be thrownBy  parse("ZKProof HEIGHT > 1000 ")
+    fail("ZKProof 1 > 1", 1, 9)
   }
 
   property("sigmaProp") {
@@ -871,5 +873,33 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("single name pattern fail") {
     fail("{val (a,b) = (1,2)}", 1, 6)
+  }
+
+  property("unknown prefix in unary op") {
+    fail("+1", 1, 2)
+  }
+
+  property("empty lines before invalid op") {
+    fail(
+      """
+        |
+        |
+        |+1""".stripMargin, 4, 2)
+  }
+
+  property("unknown binary op") {
+    fail("1**1", 1, 1)
+  }
+
+  property("compound types not supported") {
+    fail("Coll[Int with Sortable](1)", 1, 6)
+  }
+
+  property("path types not supported") {
+    fail("Coll[Int.A](1)", 1, 10)
+  }
+
+  property("block contains non-Val binding before expression") {
+    fail("{1 ; 1 == 1}", 1, 2)
   }
 }

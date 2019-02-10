@@ -12,7 +12,7 @@ import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 
 trait Literals { l =>
   val builder: SigmaBuilder = StdSigmaBuilder
-  def atSourcePos[A](parserIndex: Int)(thunk: => A): A
+  def atSrcPos[A](parserIndex: Int)(thunk: => A): A
   def srcCtx(parserIndex: Int): SourceContext
   def Block: P[Value[SType]]
   def Pattern: P0
@@ -86,15 +86,17 @@ trait Literals { l =>
     class InterpCtx(interp: Option[P0]){
       //noinspection TypeAnnotation
       val Literal = P(
-        ("-".!.? ~ /*Float |*/ Int.!).map {
-            case (signOpt, lit) =>
+        ("-".!.? ~ Index ~ ( /*Float |*/ Int.!)).map {
+            case (signOpt, index, lit) =>
               val sign = if (signOpt.isDefined) -1 else 1
               val suffix = lit.charAt(lit.length - 1)
               val (digits, radix) = if (lit.startsWith("0x")) (lit.substring(2), 16) else (lit, 10)
-              if (suffix == 'L' || suffix == 'l')
-                builder.mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
-              else
-                builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
+              atSrcPos(index) {
+                if (suffix == 'L' || suffix == 'l')
+                  builder.mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
+                else
+                  builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
+              }
           }
         | Bool
         | (String | "'" ~/ (Char | Symbol) | Null).!.map { lit: String =>
