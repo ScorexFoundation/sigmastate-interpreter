@@ -71,9 +71,10 @@ abstract class AssetsPartialFilling[Spec <: ContractSpec]
 
       val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
       val tokenId = tokenData._1
+      val tokenValue = tokenData._2
+
       val selfTokenData = SELF.R2[Coll[(Coll[Byte], Long)]].get(0)
       val selfTokenId = selfTokenData._1
-      val tokenValue = tokenData._2
       val selfTokenValue = selfTokenData._2
 
       val selfValue = SELF.value
@@ -82,11 +83,12 @@ abstract class AssetsPartialFilling[Spec <: ContractSpec]
       val sold = selfTokenValue - tokenValue
 
       val price = 495
+      val outR4 = out.R4[Coll[Byte]].get
 
       allOf(Coll(
         sold >= 1,
         (outValue - selfValue) >= sold*price,
-        out.R4[Coll[Byte]].get == SELF.id,
+        outR4 == SELF.id,
         out.propositionBytes == pkB.propBytes
       ))
     }
@@ -98,9 +100,10 @@ abstract class AssetsPartialFilling[Spec <: ContractSpec]
    |
    |   val tokenData = out.R2[Coll[(Coll[Byte], Long)]].get(0)
    |   val tokenId = tokenData._1
+   |   val tokenValue = tokenData._2
+   |
    |   val selfTokenData = SELF.R2[Coll[(Coll[Byte], Long)]].get(0)
    |   val selfTokenId = selfTokenData._1
-   |   val tokenValue = tokenData._2
    |   val selfTokenValue = selfTokenData._2
    |
    |   val selfValue = SELF.value

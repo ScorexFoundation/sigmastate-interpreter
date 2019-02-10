@@ -1,14 +1,18 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.{Height, Outputs, ErgoBox, Self}
 import org.ergoplatform.ErgoBox.R4
 import sigmastate.helpers.SigmaTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
-import sigmastate.TrivialProp
-import sigmastate.eval.CostingSigmaProp
+import sigmastate.SCollection.SByteArray
+import sigmastate._
+import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, ValDef, ValUse}
+import sigmastate.eval.{CostingSigmaProp, Evaluation}
+import sigmastate.lang.Terms.ValueOps
+import sigmastate.utxo._
 import special.sigma.Extensions._
-
 
 class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
@@ -19,6 +23,33 @@ class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
       val tokenBuyer = ProvingParty("Alice")
       val tokenSeller = ProvingParty("Bob")
       val verifier = VerifyingParty("Miner")
+
+      def extractToken(box: Value[SBox.type]) = ByIndex(
+        ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
+
+      val expectedBuyerTree = BlockValue(
+        Vector(
+          ValDef(1, ByIndex(Outputs, 0)),
+          // token
+          ValDef(2, extractToken(ValUse(1, SBox)))
+        ),
+        SigmaOr(List(
+          SigmaAnd(List(
+            GT(Height, deadline).toSigmaProp,
+            tokenBuyer.pubKey.toTreeData.asSigmaProp
+          )),
+          AND(
+            // extract toked id
+            EQ(SelectField(ValUse(2, STuple(SByteArray, SLong)), 1), ByteArrayConstant(tokenId.toArray)),
+            // extract token amount
+            GE(SelectField(ValUse(2, STuple(SByteArray, SLong)), 2), LongConstant(60)),
+            // right protection buyer
+            EQ(ExtractScriptBytes(ValUse(1, SBox)), tokenBuyer.pubKey.toTreeData.asSigmaProp.propBytes),
+            EQ(ExtractRegisterAs(ValUse(1, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
+          ).toSigmaProp
+        ))
+      ).asBoolValue
+      buyerProp.ergoTree.proposition shouldBe expectedBuyerTree
     }
 
     import contract.spec._
@@ -83,10 +114,10 @@ class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
 
     // setup spending transaction
     val spendingTx = block(0).newTransaction().spending(buyerHolder, sellerHolder)
-    spendingTx.outBox(5050, contract.buyerProp)
+    spendingTx.outBox(5050, contract.buyerSignature)
         .withTokens(Token(contract.token1, 10))
         .withRegs(R4 -> buyerHolder.id)
-    spendingTx.outBox(4950, contract.sellerProp)
+    spendingTx.outBox(4950 + sellerHolder.value, contract.sellerSignature)
         .withTokens(Token(contract.token1, 50))
         .withRegs(R4 -> sellerHolder.id)
 

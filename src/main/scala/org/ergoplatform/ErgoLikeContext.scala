@@ -41,7 +41,7 @@ class ErgoLikeContext(val currentHeight: Height,
   import ErgoLikeContext._
   import Evaluation._
 
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
     val outputs = if (spendingTransaction == null)
@@ -53,7 +53,7 @@ class ErgoLikeContext(val currentHeight: Height,
       val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
       toAnyValue(dslData.asWrappedType)(tVal)
     }
-    val vars = contextVars(varMap)
+    val vars = contextVars(varMap ++ extensions)
     val avlTree = CostingAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(IR,
       inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
