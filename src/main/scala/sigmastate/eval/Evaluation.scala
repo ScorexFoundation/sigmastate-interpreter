@@ -349,10 +349,16 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(size)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
-            out(tpe.downcast(from.asInstanceOf[AnyVal]))
+            if (tpe == SBigInt)
+              out(sigmaDslBuilderValue.BigInt(SBigInt.downcast(from.asInstanceOf[AnyVal])))
+            else
+              out(tpe.downcast(from.asInstanceOf[AnyVal]))
           case Upcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
-            out(tpe.upcast(from.asInstanceOf[AnyVal]))
+            if (tpe == SBigInt)
+              out(sigmaDslBuilderValue.BigInt(SBigInt.upcast(from.asInstanceOf[AnyVal])))
+            else
+              out(tpe.upcast(from.asInstanceOf[AnyVal]))
 
           case SimpleStruct(_, fields) =>
             val items = fields.map { case (_, In(fieldValue)) => fieldValue }.toArray

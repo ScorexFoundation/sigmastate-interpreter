@@ -14,7 +14,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
 import special.sigma.Extensions._
 
-class AssetsAtomicExchangeSpec2 extends SigmaTestingCommons { suite =>
+class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
 
   property("atomic exchange spec") {
