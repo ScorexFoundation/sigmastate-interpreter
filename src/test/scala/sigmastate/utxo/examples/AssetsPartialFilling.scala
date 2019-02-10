@@ -141,23 +141,4 @@ abstract class AssetsPartialFilling[Spec <: ContractSpec]
     (buyerHolder, sellerHolder)
   }
 
-  /** Having two boxes prepared for token exchange, this method creates spending transaction which
-    * completes the exchange protocol.
-    * @param  targetBlock   block in which the spending transaction will be created
-    * @param  buyerHolder   holder box with buyer's Ergs
-    * @param  sellerHolder  holder box with seller's tokens
-    * @return               a pair of boxes with buyers's tokens and seller's Ergs
-    * */
-  def finishExchange(targetBlock: Block, buyerHolder: OutBox, sellerHolder: OutBox): (OutBox, OutBox) = {
-    require(buyerHolder.propSpec == buyerProp && sellerHolder.propSpec == sellerProp)
-    val spendingTx = targetBlock.newTransaction().spending(buyerHolder, sellerHolder)
-    val buyerTokens = spendingTx
-        .outBox(sellerHolder.value, buyerSignature)
-        .withTokens(Token(token1, sellerHolder.token(token1).value))
-        .withRegs(R4 -> buyerHolder.id)
-    val sellerErgs = spendingTx
-        .outBox(buyerHolder.value, sellerSignature)
-        .withRegs(R4 -> sellerHolder.id)
-    (buyerTokens, sellerErgs)
-  }
 }

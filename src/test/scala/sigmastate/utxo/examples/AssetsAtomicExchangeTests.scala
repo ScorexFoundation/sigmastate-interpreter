@@ -14,6 +14,28 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
 import special.sigma.Extensions._
 
+/** An example of an atomic ergo <=> asset exchange.
+  * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob
+  * is willing to be a counterparty in this deal.
+  *
+  * Alice is creating a box of 100 coins protected by the script "I demand a spending transaction to create a box
+  * which is protected by my public key pubkey_A and contains at least 60 assets of type "token1" and also 1 ergo coin"
+  * (the last condition ensures that the box is easily spendable).
+  *
+  * Similarly, Bob is creating a box protected by a script like "I demand a spending transaction to create a box
+  * which is protected by my public ket pubkey_B and contains at least 100 ergo tokens".
+  *
+  * (Please note that we are skipping some practically important details, for example, order cancellation conditions).
+  *
+  * Please note that once both box are on the blockchain, a correct exchange transaction could be created and
+  * posted by anyone.
+  *
+  * Please note that more complex protocols could be build on top of the atomic exchange. For example, transactions
+  * creating both boxes could be sent off-chain to a matching service, and be posted on the blockchain along with
+  * the exchange transaction.
+  *
+  * //todo: make an example of multiple orders being matched
+  */
 class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
 
