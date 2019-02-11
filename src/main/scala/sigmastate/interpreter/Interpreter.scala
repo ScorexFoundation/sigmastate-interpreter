@@ -1,6 +1,5 @@
 package sigmastate.interpreter
 
-import java.math.BigInteger
 import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
