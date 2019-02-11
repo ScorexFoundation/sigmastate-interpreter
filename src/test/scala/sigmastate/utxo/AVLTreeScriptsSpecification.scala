@@ -22,7 +22,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
   def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
-  property("avl tree modification") {
+  property("avl tree - simple modification") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -69,6 +69,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
+  property("avl tree - composite modifications") {
+    true shouldBe false
   }
 
   property("avl tree lookup") {
