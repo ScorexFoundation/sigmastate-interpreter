@@ -72,8 +72,8 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
-val scripto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1" 
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
@@ -107,9 +107,9 @@ lazy val testSettings = Seq(
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
   test in assembly := {})
-  
+
 libraryDependencies ++= Seq(
-  scripto,
+  scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
@@ -163,14 +163,14 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
     .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
       libraryDependencies ++= Seq(
-        specialCommon, meta, libraryapi, macroCompat, scripto, bouncycastleBcprov
+        specialCommon, meta, libraryapi, macroCompat, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
     .dependsOn(sigmaapi % allConfigDependency)
     .settings(libraryDefSettings,
       libraryDependencies ++= Seq(
-        libraryapi, libraryimpl, scripto, bouncycastleBcprov
+        libraryapi, libraryimpl, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
@@ -182,7 +182,7 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
         libraryapi, (libraryapi % Test).classifier("tests"),
         libraryimpl, (libraryimpl % Test).classifier("tests"),
         specialLibrary, (specialLibrary % Test).classifier("tests"),
-        scripto,
+        scrypto,
         bouncycastleBcprov
       ))
 
