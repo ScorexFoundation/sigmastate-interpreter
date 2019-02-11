@@ -1,5 +1,6 @@
 package sigmastate
 
+import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
@@ -60,7 +61,7 @@ case class AvlTreeData(digest: ADDigest,
                        treeFlags: AvlTreeFlags,
                        keyLength: Int,
                        valueLengthOpt: Option[Int] = None) {
-  override def equals(arg: Any) = arg match {
+  override def equals(arg: Any): Boolean = arg match {
     case x: AvlTreeData =>
       Arrays.equals(digest, x.digest) &&
       keyLength == x.keyLength &&
@@ -69,13 +70,13 @@ case class AvlTreeData(digest: ADDigest,
     case _ => false
   }
 
-  override def hashCode() =
-    (Arrays.hashCode(digest) * 31 +
+  override def hashCode(): Int =
+    (util.Arrays.hashCode(digest) * 31 +
         keyLength.hashCode()) * 31 + Objects.hash(valueLengthOpt, treeFlags)
 }
 
 object AvlTreeData {
-  val DigestSize = CryptoConstants.hashLength + 1 //please read class comments above for details
+  val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
 
   val dummy =
     new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), AvlTreeFlags.AllOperationsAllowed, keyLength = 32)
