@@ -91,12 +91,18 @@ trait Box extends DslObject {
 }
 
 @scalan.Liftable
+trait TreeFlags extends DslObject {
+  def insertAllowed: Boolean
+  def updateAllowed: Boolean
+  def removeAllowed: Boolean
+}
+
+@scalan.Liftable
 trait AvlTree extends DslObject {
   def startingDigest: Coll[Byte]
+  def treeFlags: TreeFlags
   def keyLength: Int
   def valueLengthOpt: Option[Int]
-  def maxNumOperations: Option[Int]
-  def maxDeletes: Option[Int]
   def cost: Int
   def dataSize: Long
 }

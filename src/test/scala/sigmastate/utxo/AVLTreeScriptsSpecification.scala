@@ -32,7 +32,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Insert(inKey, genValue("init value")))
     avlProver.generateProof()
     val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, 32, None)
+    val flags = AvlTreeFlags.AllOperationsAllowed
+    val treeData = new AvlTreeData(digest, flags, 32, None)
 
     val operations: Seq[Operation] = (0 to 10).map(i => Insert(genKey(i.toString), genValue(i.toString))) :+
       Update(inKey, genValue("updated value"))
@@ -87,8 +88,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, 32, None)
-
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
@@ -134,7 +134,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
     val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
@@ -169,7 +169,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, 32, None)
+    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
     val proofId = 0: Byte
     val elementId = 1: Byte
 
@@ -232,7 +232,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val proofId = 31: Byte
 

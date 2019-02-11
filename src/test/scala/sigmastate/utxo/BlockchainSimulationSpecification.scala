@@ -1,23 +1,23 @@
 package sigmastate.utxo
 
-import java.io.{FileWriter, File}
+import java.io.{File, FileWriter}
 
 import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
-import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Matchers, PropSpec}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.helpers.{SigmaTestingCommons}
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{GE, AvlTreeData}
+import sigmastate.{AvlTreeData, AvlTreeFlags, GE}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -225,7 +225,7 @@ object BlockchainSimulationSpecification {
       val prover = new BatchProver(keySize, None)
 
       val digest = prover.digest
-      val utxoRoot = AvlTreeData(digest, keySize)
+      val utxoRoot = AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, keySize)
 
       val bs = BlockchainState(currentHeight = -2, utxoRoot)
 

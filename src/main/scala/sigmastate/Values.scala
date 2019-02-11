@@ -12,10 +12,9 @@ import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, OpCodes, ConstantStore}
+import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utils.Extensions._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -282,9 +281,7 @@ object Values {
         c.value.digest,
         proof,
         c.value.keyLength,
-        c.value.valueLengthOpt,
-        c.value.maxNumOperations,
-        c.value.maxDeletes)
+        c.value.valueLengthOpt)
   }
 
   object ContextConstant {

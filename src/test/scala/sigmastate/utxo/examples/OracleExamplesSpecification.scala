@@ -115,7 +115,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val lastBlockUtxoDigest = avlProver.digest
 
-    val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
+    val treeData = new AvlTreeData(lastBlockUtxoDigest, AvlTreeFlags.ReadOnly, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
       ExtractRegisterAs[T](GetVarBox(22: Byte).get, Rn)(tT).get

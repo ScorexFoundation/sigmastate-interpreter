@@ -52,10 +52,9 @@ class TestBox(
 
 case class TestAvlTree(
     startingDigest: Coll[Byte],
+    treeFlags: TreeFlags,
     keyLength: Int,
-    valueLengthOpt: Option[Int] = None,
-    maxNumOperations: Option[Int] = None,
-    maxDeletes: Option[Int] = None ) extends AvlTree {
+    valueLengthOpt: Option[Int] = None) extends AvlTree {
   def builder = new TestSigmaDslBuilder
   @NeverInline
   def dataSize = startingDigest.length + 4 + valueLengthOpt.fold(0L)(_ => 4)

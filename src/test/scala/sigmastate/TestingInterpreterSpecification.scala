@@ -1,16 +1,13 @@
 package sigmastate
 
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import sigmastate.eval.{IRContext, CostingDataContext, Evaluation, CostingBox}
+import sigmastate.eval.{IRContext, CostingDataContext, Evaluation}
 import special.sigma
 import org.ergoplatform.{Height, ErgoBox, ErgoLikeContext}
 import scorex.util.encode.Base58
@@ -377,7 +374,7 @@ case class TestingContext(height: Int,
     val outputs = Array[Box]()
     val vars = Array[AnyValue]()
     val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
-    val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
+    val emptyAvlTree = TestAvlTree(noBytes, AvlTreeFlags.ReadOnly.downCast(IR), 0, None)
     new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
       lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,
       vars = vars, isCost = isCost)

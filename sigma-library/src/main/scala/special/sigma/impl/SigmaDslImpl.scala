@@ -1757,7 +1757,7 @@ object AvlTree extends EntityObject("AvlTree") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[AvlTree], classOf[SAvlTree], Set(
-        "startingDigest", "keyLength", "valueLengthOpt", "maxNumOperations", "maxDeletes", "cost", "dataSize"
+          "startingDigest", "flags", "keyLength", "valueLengthOpt", "cost", "dataSize"
         ))
     }
 

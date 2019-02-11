@@ -13,19 +13,12 @@ import sigmastate.lang.SigmaTyper
 import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
 import special.collection.Coll
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scalan.meta.ScalanAst.STypeArgAnnotation
-import sigmastate.SBoolean.typeCode
-import sigmastate.SByte.typeCode
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-//import sigmastate.SNumericType._
-import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
 
 /** Base type for all AST nodes of sigma lang. */
@@ -820,7 +813,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
-  // should be lazy to solve resursive initialization
+  // should be lazy to solve recursive initialization
   lazy val methods = Vector(
     SMethod(this, Value, SLong, 1), // see ExtractAmount
     SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
@@ -839,11 +832,10 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = {
     val tree = v.asInstanceOf[AvlTreeData]
-    tree.digest.length +
+    AvlTreeData.DigestSize + // digest
+        1 + // flags
         4 + // keyLength
-        tree.valueLengthOpt.fold(0)(_ => 4) +
-        tree.maxNumOperations.fold(0)(_ => 4) +
-        tree.maxDeletes.fold(0)(_ => 4)
+        tree.valueLengthOpt.fold(0)(_ => 4)
   }
   override def isConstantSize = false
   def ancestors = Nil

@@ -3,11 +3,22 @@ package sigmastate
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
+import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import special.sigma.{SigmaDslBuilder, TreeFlags}
 
-case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean)
+
+case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {
+  def downCast(IR: Evaluation): TreeFlags = new TreeFlags {
+    override def removeAllowed: Boolean = removeAllowed
+    override def updateAllowed: Boolean = updateAllowed
+    override def insertAllowed: Boolean = insertAllowed
+
+    override def builder: SigmaDslBuilder = IR.sigmaDslBuilderValue
+  }
+}
 
 object AvlTreeFlags {
 
@@ -66,13 +77,13 @@ case class AvlTreeData(digest: ADDigest,
 object AvlTreeData {
   val DigestSize = CryptoConstants.hashLength + 1 //please read class comments above for details
 
-  val dummy = new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), keyLength = 32)
+  val dummy =
+    new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), AvlTreeFlags.AllOperationsAllowed, keyLength = 32)
 
   object serializer extends Serializer[AvlTreeData, AvlTreeData] {
 
     override def serializeBody(data: AvlTreeData, w: SigmaByteWriter): Unit = {
       val tf = AvlTreeFlags.serializeFlags(data.treeFlags)
-
       w.putBytes(data.digest)
         .putUByte(tf)
         .putUInt(data.keyLength)

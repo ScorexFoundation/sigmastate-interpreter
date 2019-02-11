@@ -167,13 +167,18 @@ trait ValueGenerators extends TypeGenerators {
           yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
       }
 
+  def avlTreeFlagsGen: Gen[AvlTreeFlags] = for {
+    insert <- arbBool.arbitrary
+    update <- arbBool.arbitrary
+    remove <- arbBool.arbitrary
+  } yield AvlTreeFlags(insert, update, remove)
+
   def avlTreeDataGen: Gen[AvlTreeData] = for {
-    digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
+    digest <- Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(_.toArray)
+    flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-    mn <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-    md <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-  } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
+  } yield AvlTreeData(ADDigest @@ digest, flags, keyLength, vl)
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 

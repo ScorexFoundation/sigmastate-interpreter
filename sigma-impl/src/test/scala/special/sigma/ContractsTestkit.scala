@@ -25,7 +25,12 @@ trait ContractsTestkit {
   val noInputs = Array[Box]()
   val noOutputs = Array[Box]()
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
-  val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
+  val emptyAvlTree = new TestAvlTree(noBytes, new TreeFlags {
+    override def removeAllowed: Boolean = true
+    override def updateAllowed: Boolean = true
+    override def insertAllowed: Boolean = true
+    override def builder: SigmaDslBuilder = SigmaDsl
+  }, 0, None)
 
   def collection[T:RType](items: T*) = Colls.fromArray(items.toArray)
 

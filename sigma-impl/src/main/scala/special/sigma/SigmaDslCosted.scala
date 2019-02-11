@@ -62,10 +62,9 @@ class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
 class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
   def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
   def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.startingDigest, dsl.CostModel.PubKeySize.toInt, 1)
+  override def treeFlags: Costed[TreeFlags] = ???
   def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
   def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
-  def maxNumOperations: CostedOption[Int] = dsl.costOption(tree.maxNumOperations, dsl.CostModel.SelectField)
-  def maxDeletes: CostedOption[Int] = dsl.costOption(tree.maxDeletes, dsl.CostModel.SelectField)
 
   def value = tree
   def dataSize = tree.dataSize

@@ -243,7 +243,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println("proof size: " + proof.length)
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val key1 = genKey("key1")
     val value1 = genValue("value1")

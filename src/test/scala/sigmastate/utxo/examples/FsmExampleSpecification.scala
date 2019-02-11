@@ -71,7 +71,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
 
     val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, 34, Some(0))
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 34, Some(0))
 
     val fsmDescRegister = ErgoBox.nonMandatoryRegisters.head
     val currentStateRegister = ErgoBox.nonMandatoryRegisters(1)

@@ -34,7 +34,6 @@ trait CostedBox extends CostedSigmaObject[Box] {
 trait CostedAvlTree extends CostedSigmaObject[AvlTree] {
   def startingDigest: CostedColl[Byte]
   def keyLength: Costed[Int]
+  def treeFlags: Costed[TreeFlags]
   def valueLengthOpt: CostedOption[Int]
-  def maxNumOperations: CostedOption[Int]
-  def maxDeletes: CostedOption[Int]
 }

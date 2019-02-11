@@ -2,21 +2,19 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SValue, SomeValue}
+import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, SValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{OperationSerializer, Serializer}
 import special.collection.{CCostedBuilder, Coll, CollType}
 import special.sigma._
 
-import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 import scalan.RType
 
@@ -26,11 +24,17 @@ case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree
 
   def keyLength: Int = treeData.keyLength
 
+  def treeFlags = new TreeFlags {
+    override def removeAllowed: Boolean = treeData.treeFlags.removeAllowed
+
+    override def updateAllowed: Boolean = treeData.treeFlags.updateAllowed
+
+    override def insertAllowed: Boolean = treeData.treeFlags.insertAllowed
+
+    override def builder: SigmaDslBuilder = IR.sigmaDslBuilderValue
+  }
+
   def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
-
-  def maxNumOperations: Option[Int] = treeData.maxNumOperations
-
-  def maxDeletes: Option[Int] = treeData.maxDeletes
 
   def cost: Int = 1
 
