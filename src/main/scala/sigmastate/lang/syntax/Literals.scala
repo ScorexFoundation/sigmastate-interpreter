@@ -12,6 +12,7 @@ import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 
 trait Literals { l =>
   val builder: SigmaBuilder = StdSigmaBuilder
+  import builder._
   def atSrcPos[A](parserIndex: Int)(thunk: => A): A
   def srcCtx(parserIndex: Int): SourceContext
   def Block: P[Value[SType]]
@@ -57,7 +58,10 @@ trait Literals { l =>
 
     val Int: Parser[Unit] = P( (HexNum | DecNum) ~ CharIn("Ll").? )
 
-    val Bool: Parser[BooleanConstant] = P( Key.W("true").map(_ => TrueLeaf) | Key.W("false").map(_ => FalseLeaf)  )
+    val Bool: Parser[BooleanConstant] =
+      P( (Index ~ (Key.W("true").! | Key.W("false").!)).map {
+        case (i, lit) => atSrcPos(i) { mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean) }
+      })
 
     // Comments cannot have cuts in them, because they appear before every
     // terminal node. That means that a comment before any terminal will
@@ -93,16 +97,18 @@ trait Literals { l =>
               val (digits, radix) = if (lit.startsWith("0x")) (lit.substring(2), 16) else (lit, 10)
               atSrcPos(index) {
                 if (suffix == 'L' || suffix == 'l')
-                  builder.mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
+                  mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
                 else
-                  builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
+                  mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
               }
           }
         | Bool
-        | (String | "'" ~/ (Char | Symbol) | Null).!.map { lit: String =>
+        | (Index ~ (String | "'" ~/ (Char | Symbol) | Null).!).map { case (index, lit) =>
           // strip single or triple quotes
           def strip(s: String): String = if (!s.startsWith("\"")) s else strip(s.stripPrefix("\"").stripSuffix("\""))
-          builder.mkConstant[SString.type](strip(lit), SString)
+          atSrcPos(index) {
+            mkConstant[SString.type](strip(lit), SString)
+          }
         })
 
       val Interp: Parser[Unit] = interp match{

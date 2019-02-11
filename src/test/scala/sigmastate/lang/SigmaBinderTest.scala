@@ -91,7 +91,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple constructor") {
-    bind(env, "()") shouldBe UnitConstant
+    bind(env, "()") shouldBe UnitConstant()
     bind(env, "(1)") shouldBe IntConstant(1)
     bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     bind(env, "(1, x - 1)") shouldBe Tuple(IntConstant(1), Minus(10, 1))

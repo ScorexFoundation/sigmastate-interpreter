@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, UnitConstant, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
@@ -207,6 +207,8 @@ trait SigmaBuilder {
   def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
   def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
 
+  def mkUnitConstant: Value[SUnit.type]
+
   def liftAny(v: Any): Nullable[SValue] = v match {
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
@@ -281,25 +283,25 @@ class StdSigmaBuilder extends SigmaBuilder {
       .withSrcCtx(currentSrcCtx.value)
 
   override def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.PlusCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.PlusCode)
 
   override def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.MinusCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.MinusCode)
 
   override def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.MultiplyCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.MultiplyCode)
 
   override def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.DivisionCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.DivisionCode)
 
   override def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.ModuloCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.ModuloCode)
 
   override def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.MinCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.MinCode)
 
   override def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T] =
-    mkArith(left, right, OpCodes.MaxCode).withSrcCtx(currentSrcCtx.value)
+    mkArith(left, right, OpCodes.MaxCode)
 
   override def mkOR(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     OR(input).withSrcCtx(currentSrcCtx.value)
@@ -515,7 +517,8 @@ class StdSigmaBuilder extends SigmaBuilder {
                         resType: Option[SType] = None): Value[SType] =
     Select(obj, field, resType).withSrcCtx(currentSrcCtx.value)
 
-  override def mkIdent(name: String, tpe: SType): Value[SType] = Ident(name, tpe)
+  override def mkIdent(name: String, tpe: SType): Value[SType] =
+    Ident(name, tpe).withSrcCtx(currentSrcCtx.value)
 
   override def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] =
     Apply(func, args).withSrcCtx(currentSrcCtx.value)
@@ -607,6 +610,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
     BitOp(bits, shift, OpCodes.BitShiftRightZeroedCode).withSrcCtx(currentSrcCtx.value)
+
+  override def mkUnitConstant: Value[SUnit.type] = UnitConstant().withSrcCtx(currentSrcCtx.value)
 }
 
 trait TypeConstraintCheck {

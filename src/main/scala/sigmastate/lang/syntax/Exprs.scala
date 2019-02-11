@@ -4,7 +4,7 @@ import fastparse.noApi._
 import scalan.Nullable
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Apply, ApplyTypes, Ident, Lambda, MethodCallLike, Select, Val, ValueOps}
+import sigmastate.lang.Terms.{Ident, Val, ValueOps}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
@@ -15,6 +15,7 @@ import scala.annotation.tailrec
 trait Exprs extends Core with Types {
 
   import WhitespaceApi._
+  import builder._
   def AnonTmpl: P0
   def BlockDef: P[Value[SType]]
 
@@ -44,13 +45,13 @@ trait Exprs extends Core with Types {
       val If = {
         val Else = P( Semi.? ~ `else` ~/ Expr )
         P( Index ~ `if` ~/ "(" ~ ExprCtx.Expr ~ ")" ~ Expr ~ Else ).map {
-          case (i, c, t, e) => atSrcPos(i) { builder.mkIf(c.asValue[SBoolean.type], t, e) }
+          case (i, c, t, e) => atSrcPos(i) { mkIf(c.asValue[SBoolean.type], t, e) }
         }
       }
       val Fun = P(`def` ~ FunDef)
 
-      val LambdaRhs = if (semiInference) P( BlockChunk.map {
-        case (_ , b)  => mkBlock(b)
+      val LambdaRhs = if (semiInference) P( (Index ~ BlockChunk).map {
+        case (index, (_ , b))  => atSrcPos(index) { block(b) }
       } )
       else P( Expr )
 //      val ParenedLambda = P( Parened ~~ (WL ~ `=>` ~ LambdaRhs.? /*| ExprSuffix ~~ PostfixSuffix ~ SuperPostfixSuffix*/) ).map {
@@ -60,11 +61,11 @@ trait Exprs extends Core with Types {
       val PostfixLambda = P( Index ~ PostfixExpr ~ (`=>` ~ LambdaRhs.? | SuperPostfixSuffix).? ).map {
         case (_, e, None) => e
         case (_, e, Some(None)) => e
-        case (i, Tuple(args), Some(Some(body))) => atSrcPos(i) { mkLambda(args, body) }
+        case (i, Tuple(args), Some(Some(body))) => atSrcPos(i) { lambda(args, body) }
         case (i, e, Some(body)) => error(s"Invalid declaration of lambda $e => $body", Some(srcCtx(i)))
       }
       val SmallerExprOrLambda = P( /*ParenedLambda |*/ PostfixLambda )
-//      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => Ident(IndexedSeq(n), t)}
+//      val Arg = (Id.! ~ `:` ~/ Type).map { case (n, t) => mkIdent(IndexedSeq(n), t)}
       P( If | Fun | SmallerExprOrLambda )
     }
 
@@ -74,7 +75,7 @@ trait Exprs extends Core with Types {
     val MatchAscriptionSuffix = P(`match` ~/ "{" ~ CaseClauses | Ascription)
     val ExprPrefix = P( WL ~ CharIn("-+!~").! ~~ !syntax.Basic.OpChar ~ WS)
     val ExprSuffix = P(
-      (WL ~ "." ~/ (Index ~ Id.!).map{ case (i, s) => atSrcPos(i) { builder.mkIdent(s, NoType)} }
+      (WL ~ "." ~/ (Index ~ Id.!).map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
       | WL ~ TypeArgs.map(items => STypeApply("", items.toIndexedSeq))
       | NoSemis ~ ArgList ).repX /* ~~ (NoSemis  ~ `_`).? */
     )
@@ -92,7 +93,7 @@ trait Exprs extends Core with Types {
         (op, rhs)
     }
     val PostFix = P( NoSemis ~~ WL ~~ (Index ~ Id.!) ~ Newline.? )
-      .map{ case (i, s) => atSrcPos(i) { builder.mkIdent(s, NoType)} }
+      .map{ case (i, s) => atSrcPos(i) { mkIdent(s, NoType)} }
 
     val PostfixSuffix = P( InfixSuffix.repX ~~ PostFix.?)
 
@@ -102,7 +103,9 @@ trait Exprs extends Core with Types {
         val obj = mkInfixTree(lhs, infixOps)
         postfix.fold(obj) {
           case Ident(name, _) =>
-            builder.mkMethodCallLike(obj, name, IndexedSeq.empty)
+            builder.currentSrcCtx.withValue(obj.sourceContext) {
+              mkMethodCallLike(obj, name, IndexedSeq.empty)
+            }
         }
     }
 
@@ -112,32 +115,21 @@ trait Exprs extends Core with Types {
 
       P( /*New | */ BlockExpr
         | ExprLiteral
-        | StableId //.map { case Ident(ps, t) => mkIdent(ps, t) }
-        | `_`.!.map(Ident(_))
-        | Parened.map(items =>
-            if (items.isEmpty) UnitConstant
-            else if (items.lengthCompare(1) == 0) items.head
-            else builder.mkTuple(items)) )
+        | StableId //.map { case Ident(ps, t) => Ident(ps, t) }
+        | (Index ~ `_`.!).map { case (i, lit) => atSrcPos(i) { mkIdent(lit, NoType) } }
+        | (Index ~ Parened).map {
+        case (index, Seq()) => atSrcPos(index) { mkUnitConstant }
+        case (_, Seq(item)) => item
+        case (index, items) => atSrcPos(index) { mkTuple(items) }
+      }
+      )
     }
     val Guard : P0 = P( `if` ~/ PostfixExpr ).ignore
   }
 
-  protected def mkIdent(nameParts: String, tpe: SType = NoType): SValue = {
-    builder.mkIdent(nameParts, tpe)
-  }
-
-  protected def mkLambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
+  protected def lambda(args: Seq[Value[SType]], body: Value[SType]): Value[SType] = {
     val names = args.map { case Ident(n, t) => (n, t) }
-    builder.mkLambda(names.toIndexedSeq, NoType, Some(body))
-  }
-
-  protected def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType] = (func, args) match {
-    case _ => builder.mkApply(func, args)
-  }
-
-  def mkApplyTypes(input: Value[SType], targs: IndexedSeq[SType]): Value[SType] = {
-//    val subst = targs.zipWithIndex.map { case (t, i) => (STypeIdent(s"_${i + 1}") -> t) }.toMap
-    builder.mkApplyTypes(input, targs)
+    mkLambda(names.toIndexedSeq, NoType, Some(body))
   }
 
   /** The precedence of an infix operator is determined by the operator's first character.
@@ -190,36 +182,38 @@ trait Exprs extends Core with Types {
 
 
   protected def applySuffix(f: Value[SType], args: Seq[SigmaNode]): Value[SType] = {
-    val rhs = args.foldLeft(f)((acc, arg) => arg match {
-      case Ident(name, _) => builder.mkSelect(acc, name)
-      case UnitConstant => mkApply(acc, IndexedSeq.empty)
-      case Tuple(xs) => mkApply(acc, xs)
-      case STypeApply("", targs) => mkApplyTypes(acc, targs)
-      case arg: SValue => acc match {
-        case Ident(name, _) if name == "ZKProof" => arg match {
-          case Terms.Block(_, body) => Apply(ZKProofFunc.sym, IndexedSeq(body))
-          case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)
+    builder.currentSrcCtx.withValue(f.sourceContext) {
+      val rhs = args.foldLeft(f)((acc, arg) => arg match {
+        case Ident(name, _) => mkSelect(acc, name)
+        case UnitConstant() => mkApply(acc, IndexedSeq.empty)
+        case Tuple(xs) => mkApply(acc, xs)
+        case STypeApply("", targs) => mkApplyTypes(acc, targs)
+        case arg: SValue => acc match {
+          case Ident(name, _) if name == "ZKProof" => arg match {
+            case Terms.Block(_, body) => mkApply(ZKProofFunc.sym, IndexedSeq(body))
+            case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)
+          }
+          case _ => mkApply(acc, IndexedSeq(arg))
         }
-        case _ => mkApply(acc, IndexedSeq(arg))
-      }
-      case _ => error(s"Error after expression $f: invalid suffixes $args", f.sourceContext)
-    })
-    rhs
+        case _ => error(s"Error after expression $f: invalid suffixes $args", f.sourceContext)
+      })
+      rhs
+    }
   }
 
   val FunDef = {
     val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
-        val lambda = builder.mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        val lambda = mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
         atSrcPos(index) {
-          builder.mkVal(n, resType.getOrElse(NoType), lambda)
+          mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
         val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
-        val lambda = builder.mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
+        val lambda = mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
         atSrcPos(index) {
-          builder.mkVal(n, resType.getOrElse(NoType), lambda)
+          mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, dottyExt, n, secs, resType, body) =>
         error(s"Function can only have single argument list: def ${dottyExt.getOrElse("")} $n($secs): ${resType.getOrElse(NoType)} = $body", Some(srcCtx(index)))
@@ -230,7 +224,8 @@ trait Exprs extends Core with Types {
     val TupleEx = P( "(" ~/ Pattern.repTC() ~ ")" )
     val Extractor = P( StableId /* ~ TypeArgs.?*/ ~ TupleEx.? )
 //    val Thingy = P( `_` ~ (`:` ~/ TypePat).? ~ !("*" ~~ !syntax.Basic.OpChar) )
-    P( /*Thingy | PatLiteral |*/ TupleEx | Extractor | VarId.!.map(Ident(_)))
+    P( /*Thingy | PatLiteral |*/ TupleEx | Extractor
+      | (Index ~ VarId.!).map { case (i, lit) => atSrcPos(i) { mkIdent(lit, NoType) } })
   }
 
   val BlockExpr = P( "{" ~/ (/*CaseClauses |*/ Block ~ "}") )
@@ -262,12 +257,12 @@ trait Exprs extends Core with Types {
       (lets.toList, stats.last)
     }
     else
-      (Seq(), UnitConstant)
+      (Seq(), mkUnitConstant)
   }
 
-  protected def mkBlock(stats: Seq[SValue]): SValue = {
+  protected def block(stats: Seq[SValue]): SValue = {
     val (lets, body) = extractBlockStats(stats)
-    builder.mkBlock(lets, body)
+    mkBlock(lets, body)
   }
 
   def BaseBlock(end: P0)(implicit name: sourcecode.Name): P[Value[SType]] = {
@@ -275,18 +270,20 @@ trait Exprs extends Core with Types {
     val Body = P( BlockChunk.repX(sep = Semis) )
     P( Index ~ Semis.? ~ BlockLambda.? ~ Body ~/ BlockEnd ).map {
       case (index, Some(args), Seq((Seq(), Seq(b)))) =>
-        atSrcPos(index) { builder.mkLambda(args.toIndexedSeq, NoType, Some(b)) }
+        atSrcPos(index) { mkLambda(args.toIndexedSeq, NoType, Some(b)) }
       case (index, Some(args), bodyItems) =>
-          val block = mkBlock(bodyItems.flatMap {
+        atSrcPos(index) {
+          val b = block(bodyItems.flatMap {
             case (Seq(), exprs) => exprs
           })
-        atSrcPos(index) {
-          builder.mkLambda(args.toIndexedSeq, NoType, Some(block))
+          mkLambda(args.toIndexedSeq, NoType, Some(b))
         }
-      case (_, None, bodyItems) =>
-        mkBlock(bodyItems.flatMap {
-          case (Seq(), exprs) => exprs
-        })
+      case (index, None, bodyItems) =>
+        atSrcPos(index) {
+          block(bodyItems.flatMap {
+            case (Seq(), exprs) => exprs
+          })
+        }
     }
   }
   val Block = BaseBlock("}")
@@ -303,9 +300,9 @@ trait Exprs extends Core with Types {
   }
 
   val TypePat = P( CompoundType )
-  val ParenArgList = P( "(" ~/ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
-    case Some(exprs) => builder.mkTuple(exprs)
-    case None => UnitConstant
+  val ParenArgList = P( "(" ~/ Index ~ Exprs /*~ (`:` ~/ `_*`).?*/.? ~ TrailingComma ~ ")" ).map {
+    case (index, Some(exprs)) => atSrcPos(index) { mkTuple(exprs) }
+    case (index, None) => atSrcPos(index) { mkUnitConstant }
   }
   val ArgList = P( ParenArgList | OneNLMax ~ BlockExpr )
 

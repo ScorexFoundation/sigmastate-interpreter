@@ -197,7 +197,7 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  case object UnitConstant extends EvaluatedValue[SUnit.type] {
+  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
     override def tpe = SUnit
     val value = ()

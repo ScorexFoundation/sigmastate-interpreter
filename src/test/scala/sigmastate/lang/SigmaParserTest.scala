@@ -21,7 +21,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def parse(x: String): SValue = {
     SigmaParser(x, TransformingSigmaBuilder) match {
-      case Parsed.Success(v, _) => v
+      case Parsed.Success(v, _) =>
+        v.sourceContext.isDefined shouldBe true
+        v
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
         println(s"\nTRACE: ${traced.trace}")
@@ -116,7 +118,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple operations") {
-    parse("()") shouldBe UnitConstant
+    parse("()") shouldBe UnitConstant()
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     parse("(1, X - 1)") shouldBe Tuple(IntConstant(1), mkMinus(IntIdent("X"), 1))
