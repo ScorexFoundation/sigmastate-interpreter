@@ -219,8 +219,7 @@ trait GroupElement {
   def getEncoded(compressed: Boolean): Coll[Byte]
 }
 
-
-
+/** Proposition which can be proven and verified by sigma protocol. */
 @scalan.Liftable
 trait SigmaProp {
   def isValid: Boolean

@@ -26,13 +26,12 @@ abstract class AssetsAtomicExchange[Spec <: ContractSpec]
     (HEIGHT > deadline && pkA) || {
       val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
       val knownId = OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
-      val c = allOf(Coll(
+      allOf(Coll(
         tokenData._1 == tokenId,
         tokenData._2 >= 60L,
         OUTPUTS(0).propositionBytes == pkA.propBytes,
         knownId
       ))
-      c
     }
   },
   env,
@@ -52,12 +51,14 @@ abstract class AssetsAtomicExchange[Spec <: ContractSpec]
 
   lazy val sellerProp = proposition("seller", {ctx: Context =>
     import ctx._
-    (HEIGHT > deadline && pkB) ||
-        allOf(Coll(
-          OUTPUTS(1).value >= 100,
-          OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
-          OUTPUTS(1).propositionBytes == pkB.propBytes
-        ))
+    (HEIGHT > deadline && pkB) || {
+      val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
+      allOf(Coll(
+        OUTPUTS(1).value >= 100,
+        knownBoxId,
+        OUTPUTS(1).propositionBytes == pkB.propBytes
+      ))
+    }
   },
   env,
   """{

@@ -25,7 +25,8 @@ import special.sigma.Extensions._
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
-import special.sigma.{AnyValue, TestValue, Extensions}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import special.sigma.{Extensions, AnyValue, TestValue}
 
 
 object Values {
@@ -45,7 +46,7 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    lazy val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(this)
+    lazy val bytes = DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -744,7 +745,7 @@ object Values {
     assert(isConstantSegregation || constants.isEmpty)
 
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
-    @inline def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(this)
+    @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
   }
 
   object ErgoTree {
@@ -783,8 +784,8 @@ object Values {
     implicit def fromProposition(prop: SValue): ErgoTree = {
       // get ErgoTree with segregated constants
       // todo rewrite with everywherebu?
-      ErgoTreeSerializer.DefaultSerializer
-        .deserializeErgoTree(ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(prop))
+      val nonSigmaBooleanProp = prop match { case sb: SigmaBoolean => SigmaPropConstant(sb) case _ => prop }
+      DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(nonSigmaBooleanProp))
     }
   }
 
