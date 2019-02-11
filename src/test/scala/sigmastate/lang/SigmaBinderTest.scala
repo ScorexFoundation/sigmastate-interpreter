@@ -22,7 +22,9 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     val ast = SigmaParser(x, builder).get.value
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
       new PredefinedFuncRegistry(builder))
-    binder.bind(ast)
+    val res = binder.bind(ast)
+    res.sourceContext.isDefined shouldBe true
+    res
   }
 
   property("simple expressions") {

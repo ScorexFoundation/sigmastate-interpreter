@@ -2,10 +2,9 @@ package sigmastate.lang
 
 import java.lang.reflect.InvocationTargetException
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+import org.bitbucket.inkytonik.kiama.rewriting.CallbackRewriter
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform._
-import scalan.Nullable
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -13,6 +12,14 @@ import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
 import sigmastate.utils.Extensions._
+
+object SrcCtxCallbackRewriter extends CallbackRewriter {
+  override def rewriting[T](oldTerm: T, newTerm: T): T = (oldTerm, newTerm) match {
+    case (o: SValue, n: SValue) if o.sourceContext.isDefined && n.sourceContext.isEmpty =>
+      n.withSrcCtx(o.sourceContext).asInstanceOf[T]
+    case _ => newTerm
+  }
+}
 
 /**
   * @param env
@@ -24,6 +31,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
                   predefFuncRegistry: PredefinedFuncRegistry) {
   import SigmaBinder._
   import builder._
+  import SrcCtxCallbackRewriter._
 
   private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)
 
@@ -98,7 +106,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
       val newBinds = for (v @ Val(n, t, b) <- binds) yield {
         if (env.contains(n)) error(s"Variable $n already defined ($n = ${env(n)}", v.sourceContext)
         val b1 = eval(b, env)
-        currentSrcCtx.withValue(v.sourceContext) {
+        builder.currentSrcCtx.withValue(v.sourceContext) {
           mkVal(n, if (t != NoType) t else b1.tpe, b1)
         }
       }
