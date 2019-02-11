@@ -77,7 +77,7 @@ trait ValueGenerators extends TypeGenerators {
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
   val groupElementConstGen: Gen[GroupElementConstant] = for {
     _ <- Gen.const(1)
-    el = CryptoConstants.dlogGroup.createRandomGenerator()
+    el = CryptoConstants.dlogGroup.createRandomElement()
   } yield mkConstant[SGroupElement.type](el, SGroupElement)
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {

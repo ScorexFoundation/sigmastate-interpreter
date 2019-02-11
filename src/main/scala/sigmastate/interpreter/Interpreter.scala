@@ -1,79 +1,29 @@
 package sigmastate.interpreter
 
+import java.math.BigInteger
 import java.util
-import java.util.Objects
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
-import scorex.crypto.hash.Blake2b256
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, _}
+import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
-import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
+import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
-import sigmastate.utils.Extensions._
-import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import special.sigma.InvalidType
 
-import scala.util.{Success, Failure, Try}
+import scala.util.Try
 
-
-object CryptoConstants {
-  type EcPointType = Curve25519Point
-
-  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
-  lazy val secureRandom = dlogGroup.secureRandom
-
-  def secureRandomBytes(howMany: Int) = {
-    val bytes = new Array[Byte](howMany)
-    secureRandom.nextBytes(bytes)
-    bytes
-  }
-
-  /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
-  val groupSizeBits: Int = 256
-
-  /** Number of bytes to represent any group element as byte array */
-  val groupSize: Int = 256 / 8 //32 bytes
-
-  //size of challenge in Sigma protocols, in bits
-  //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
-  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
-  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
-  implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
-}
-
-object CryptoFunctions {
-  lazy val soundnessBytes = CryptoConstants.soundnessBits / 8
-
-  def hashFn(input: Array[Byte]): Array[Byte] = {
-    Blake2b256.hash(input).take(soundnessBytes)
-  }
-
-  def showECPoint(p: ECPoint) = {
-    val rawX = p.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.getRawYCoord.toString.substring(0, 6)
-    s"ECPoint($rawX,$rawY,...)"
-  }
-}
 
 trait Interpreter extends ScorexLogging {
 
-  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context
@@ -169,6 +119,7 @@ trait Interpreter extends ScorexLogging {
       case cProp: SigmaBoolean =>
         cProp match {
           case TrivialProp.TrueProp => true
+          case TrivialProp.FalseProp => false
           case _ =>
             // Perform Verifier Steps 1-3
             SigSerializer.parseAndComputeChallenges(cProp, proof) match {
@@ -235,6 +186,7 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     verify(Interpreter.emptyEnv, exp, context, SigSerializer.toBytes(proof), message)
   }
+
 }
 
 object Interpreter {
@@ -246,4 +198,5 @@ object Interpreter {
   val ScriptNameProp = "ScriptName"
 
   def error(msg: String) = throw new InterpreterException(msg)
+
 }

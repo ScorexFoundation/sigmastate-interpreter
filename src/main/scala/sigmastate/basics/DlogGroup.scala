@@ -2,14 +2,11 @@ package sigmastate.basics
 
 import java.math.BigInteger
 import java.security.SecureRandom
-
 import org.bouncycastle.math.ec.ECPoint
-
-import scala.util.Try
 
 
 /**
-  * This is the general interface for the discrete logarithm group.
+  * This is the general interface for the discrete logarithm prime-order group.
   * Every class in the DlogGroup family implements this interface.
   *
   *
@@ -43,7 +40,8 @@ trait DlogGroup[ElemType <: ECPoint] {
   val secureRandom = new SecureRandom()
 
   /**
-    * The generator g of the group is an element of the group such that, when written multiplicatively, every element of the group is a power of g.
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
     * @return the generator of this Dlog group
     */
   def generator: ElemType
@@ -57,17 +55,9 @@ trait DlogGroup[ElemType <: ECPoint] {
 
   /**
     *
-    * @return the identity of this Dlog group
+    * @return the identity element of this Dlog group
     */
   def identity: ElemType
-
-  /**
-    * Checks if the given element is a member of this Dlog group
-    * @param element possible group element for which to check that it is a member of this group
-    * @return <code>true</code> if the given element is a member of this group;<p>
-    * 		   <code>false</code> otherwise.
-    */
-  def isMember(element: ElemType): Boolean
 
   /**
     * Checks if the order of this group is greater than `2^numBits`
@@ -128,15 +118,6 @@ trait DlogGroup[ElemType <: ECPoint] {
   }
 
   /**
-    * Reconstructs a GroupElement given the GroupElementSendableData data, which might have been received through a Channel open between the party holding this DlogGroup and
-    * some other party.
-    * @param bCheckMembership whether to check that the data provided can actually reconstruct an element of this DlogGroup. Since this action is expensive it should be used only if necessary.
-    * @param data the GroupElementSendableData from which we wish to "reconstruct" an element of this DlogGroup
-    * @return the reconstructed GroupElement
-    */
-  def reconstructElement(bCheckMembership: Boolean, data: GroupAgnosticEcElement): Try[ElemType]
-
-  /**
     * Computes the product of several exponentiations with distinct bases
     * and distinct exponents.
     * Instead of computing each part separately, an optimization is used to
@@ -169,37 +150,6 @@ trait DlogGroup[ElemType <: ECPoint] {
   def endExponentiateWithPreComputedValues(base: ElemType)
 
   /**
-    * This function takes any string of length up to k bytes and encodes it to a Group Element.
-    * k can be obtained by calling getMaxLengthOfByteArrayForEncoding() and it is calculated upon
-    * construction of this group; it depends on the length in bits of p.<p>
-    * The encoding-decoding functionality is not a bijection, that is, it is a 1-1 function
-    * but is not onto.
-    * Therefore, any string of length in bytes up to k can be encoded to a group element
-    * but not every group element can be decoded to a binary string in the group of binary strings
-    * of length up to `2^k`.<p>
-    * Thus, the right way to use this functionality is first to encode a byte array and then to
-    * decode it, and not the opposite.
-    *
-    * @param binaryString the byte array to encode
-    * @return the encoded group Element <B> or null </B>if element could not be encoded
-    */
-  def encodeByteArrayToGroupElement(binaryString: Array[Byte]): Try[ElemType]
-
-  /**
-    * This function decodes a group element to a byte array. This function is guaranteed
-    * to work properly ONLY if the group element was obtained as a result of
-    * encoding a binary string of length in bytes up to k.<p>
-    * This is because the encoding-decoding functionality is not a bijection, that is, it is a 1-1 function but is not onto.
-    * Therefore, any string of length in bytes up to k can be encoded to a group element but not any group element can be decoded
-    * to a binary sting in the group of binary strings of length up to `2^k`.
-    *
-    * @param groupElement the element to decode
-    * @return the decoded byte array
-    */
-  def decodeGroupElementToByteArray(groupElement: ElemType): Array[Byte]
-
-
-  /**
     * This function returns the value <I>k</I> which is the maximum length of a string to be encoded to a Group Element of this group.<p>
     * Any string of length <I>k</I> has a numeric value that is less than (p-1)/2 - 1.
     * <I>k</I> is the maximum length a binary string is allowed to be in order to encode the said binary string to a group element and vice-versa.<p>
@@ -208,10 +158,4 @@ trait DlogGroup[ElemType <: ECPoint] {
     */
   def maxLengthOfByteArrayForEncoding: Int
 
-  /**
-    * This function maps a group element of this dlog group to a byte array.<p>
-    * This function does not have an inverse function, that is, it is not possible to re-construct the original group element from the resulting byte array.
-    * @return a byte array representation of the given group element
-    */
-  def mapAnyGroupElementToByteArray(groupElement: ElemType): Array[Byte]
 }
