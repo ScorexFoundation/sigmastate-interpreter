@@ -60,6 +60,8 @@ case class TestAvlTree(
   def dataSize = startingDigest.length + 4 + valueLengthOpt.fold(0L)(_ => 4)
   @NeverInline
   def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
+
+  def updateDigest(newDigest: Coll[Byte]): AvlTree = this.copy(startingDigest = newDigest)
 }
 
 class TestValue[T](val value: T) extends AnyValue {
@@ -221,7 +223,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
 
   @NeverInline
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
+  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = ???
 
   @Internal val __curve__ = CustomNamedCurves.getByName("secp256k1")
   @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]

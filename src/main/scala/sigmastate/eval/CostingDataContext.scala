@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, SValue}
@@ -39,6 +39,11 @@ case class CostingAvlTree(IR: Evaluation, treeData: AvlTreeData) extends AvlTree
   def cost: Int = 1
 
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
+
+  def updateDigest(newDigest: Coll[Byte]): AvlTree = {
+    val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
+    this.copy(treeData = td)
+  }
 }
 
 import CostingBox._
@@ -150,7 +155,7 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
     }
   }
 
-  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]) = {
+  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
     val operationsBytes = operations.toArray
     val proofBytes = proof.toArray
     val treeData = tree.asInstanceOf[CostingAvlTree].treeData
@@ -159,7 +164,7 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
     val ops: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
     ops.foreach(o => bv.performOneOperation(o))
     bv.digest match {
-      case Some(v) => Some(Colls.fromArray(v))
+      case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
       case _ => None
     }
   }

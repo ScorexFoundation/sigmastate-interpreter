@@ -5,10 +5,9 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
@@ -56,7 +55,7 @@ trait SigmaBuilder {
 
   def mkTreeModifications(tree: Value[SAvlTree.type],
                           operations: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SOption[SByteArray]]
+                          proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
 
   def mkTreeLookup(tree: Value[SAvlTree.type],
                    key: Value[SByteArray],
@@ -315,7 +314,7 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkTreeModifications(tree: Value[SAvlTree.type],
                                    operations: Value[SByteArray],
-                                   proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+                                   proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
     TreeModifications(tree, operations, proof)
 
   override def mkIsMember(tree: Value[SAvlTree.type],

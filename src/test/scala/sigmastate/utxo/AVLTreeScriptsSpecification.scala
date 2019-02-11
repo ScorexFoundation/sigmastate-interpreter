@@ -14,7 +14,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
@@ -42,12 +42,14 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     operations.foreach(o => avlProver.performOneOperation(o))
     val proof = avlProver.generateProof()
     val endDigest = avlProver.digest
+    val endTreeData = treeData.copy(digest = endDigest)
 
     val prop = EQ(TreeModifications(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(opsBytes),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest))
+      ByteArrayConstant(proof)).get, ExtractRegisterAs[SAvlTree.type](Self, reg2).get)
     val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
+    val propCompiled = compileWithCosting(env,
+      """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get""").asBoolValue
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -55,7 +57,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> AvlTreeConstant(endTreeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -105,6 +105,8 @@ trait AvlTree extends DslObject {
   def valueLengthOpt: Option[Int]
   def cost: Int
   def dataSize: Long
+
+  def updateDigest(newDigest: Coll[Byte]): AvlTree
 }
 
 @scalan.Liftable
@@ -156,7 +158,7 @@ trait SigmaContract {
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeModifications(tree, operations, proof)
+  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = this.builder.treeModifications(tree, operations, proof)
 
   def groupGenerator: SecP256K1Point = this.builder.groupGenerator
   def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point = this.builder.exponentiate(base, exponent)
@@ -205,7 +207,7 @@ trait SigmaDslBuilder extends DslBuilder {
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
 
   def groupGenerator: SecP256K1Point
   def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point

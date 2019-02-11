@@ -567,14 +567,14 @@ case class TreeLookup(tree: Value[SAvlTree.type],
 /**
   * Perform modification of in the tree with root `tree` using proof `proof`.
   * Throws exception if proof is incorrect
-  * Return Some(newTree) if successfull
+  * Return Some(newTree) if successful
   * Return None if operations were not performed.
   */
 case class TreeModifications(tree: Value[SAvlTree.type],
                              operations: Value[SByteArray],
-                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SAvlTree.type]] {
 
-  override def tpe = SOption[SByteArray]
+  override def tpe = SOption[SAvlTree.type]
 
   override val opCode: OpCode = OpCodes.TreeModificationsCode
 
