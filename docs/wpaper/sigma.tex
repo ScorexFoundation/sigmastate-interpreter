@@ -81,7 +81,7 @@ Since its early days, Bitcoin~\cite{Nak08} has allowed more than simple money tr
 
 The Bitcoin Script language is a primitive stack-based language without loops~\cite{bscript}. To spend an output protected by a program, a spending transaction must provide a program in the same language, and the concatenation of the two programs must evaluate to \emph{true}. The creator of the spending transaction can be viewed as a prover (for example, proving knowledge of the secret key by producing a signature), where the statement that needs to be proven is specified by the output that is being spent. Transaction validity is verified by evaluating programs. Bounded validation time is ensured by the absence of loops in the programming language and a maximum program size of 10 kilobytes. Even so, some denial-of-service attacks exploiting script validation time have appeared \cite{bitcoindos, fivehrs, ethattacks}. On the other hand, the deliberate simplicity of the programming language limits the kinds of contracts that can be created on the Bitcoin platform.
 
-On other end of the generality spectrum, Ethereum allows for arbitrary Turing-complete programs~\cite{wood2014ethereum}. This approach requires charging for computation \knote{it is also required to have gas limit per block, otherwise DoS is possible anyway if there are enough resources to pay for it, also, a miner can do DoS for free} in order to prevent denial-of-service attacks, because the running time of a Turing-complete program cannot, in general, be estimated without actually running the program.
+On other end of the generality spectrum, Ethereum allows for arbitrary Turing-complete programs~\cite{wood2014ethereum}. This approach requires charging for computation, in order to prevent denial-of-service attacks, because the running time of a Turing-complete program cannot, in general, be estimated without actually running the program. It is also needed in this case to have gas limit per block, otherwise, DoS is possible anyway, for example, a miner can do attack the network for free.
 
 A variety of cryptocurrency languages have appeared. We do not survey them here, but refer the reader to \cite[p. 11]{Scilla}. \lnote{if time, can talk about Simplicity, Plutus, TypeCoin, Rholang, Scilla \dots} \knote{As detailed comparison would be time-consuming, lets just provide links to all the competitors. }
 
@@ -474,6 +474,7 @@ many operations it is required to compute the statement?".
 
 The Cost Function is instantiated by the following steps:
     \begin{enumerate}
+        \item{}
     \end{enumerate}
 
  The idea is that the complexity of obtaining the Cost Function ($genCF$) is
