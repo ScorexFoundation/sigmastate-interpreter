@@ -569,7 +569,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("Option.map") {
+  ignore("Option.map") {
     test("Option.map", env, ext,
       "getVar[Int](intVar1).map({(i: Int) => i + 1}).get == 2",
       null,
@@ -577,7 +577,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("Option.filter") {
+  ignore("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
       null,

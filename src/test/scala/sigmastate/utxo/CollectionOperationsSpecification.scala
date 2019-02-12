@@ -435,7 +435,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  property("flatMap") {
+  ignore("flatMap") {
     assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
       EQ(
         ByIndex(
@@ -464,7 +464,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
-  property("indices") {
+  ignore("indices") {
     assertProof("OUTPUTS.indices == Coll(0)",
       EQ(MethodCall(Outputs, SCollection.IndicesMethod, Vector()), ConcreteCollection(IntConstant(0))),
       IndexedSeq(1L, 1L))

@@ -288,7 +288,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
-  property("SOption.map") {
+  ignore("SOption.map") {
     testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
       mkMethodCall(GetVarInt(1),
         SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
@@ -300,7 +300,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
-  property("SOption.filter") {
+  ignore("SOption.filter") {
     testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
       mkMethodCall(GetVarInt(1),
         SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
