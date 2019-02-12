@@ -37,12 +37,12 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
   private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)
 
   /**
-    * Set source context to all nodes missing it in the given tree
+    * Set source context to all nodes missing source context in the given tree.
     * @param tree AST to traverse
     * @param srcCtx source context to set
     * @return AST where all nodes with missing source context are set to the given srcCtx
     */
-  def propagateSrcCtx(tree: SValue, srcCtx: Nullable[SourceContext]): SValue = {
+  private def propagateSrcCtx(tree: SValue, srcCtx: Nullable[SourceContext]): SValue = {
     import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
     rewrite(everywherebu(rule[SValue] {
       case node if node.sourceContext.isEmpty =>
