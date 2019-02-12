@@ -24,6 +24,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
       new PredefinedFuncRegistry(builder))
     val res = binder.bind(ast)
     res.sourceContext.isDefined shouldBe true
+    assertSrcCtxForAllNodes(res)
     res
   }
 
@@ -66,6 +67,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
+    bind(env, "max(1, 2L)") shouldBe Max(Upcast(IntConstant(1), SLong), LongConstant(2))
   }
 
   property("min/max fail (invalid arguments)") {
