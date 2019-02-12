@@ -189,9 +189,11 @@ trait Exprs extends Core with Types {
         case Tuple(xs) => mkApply(acc, xs)
         case STypeApply("", targs) => mkApplyTypes(acc, targs)
         case arg: SValue => acc match {
-          case Ident(name, _) if name == "ZKProof" => arg match {
-            case Terms.Block(_, body) => mkApply(ZKProofFunc.sym, IndexedSeq(body))
-            case nonBlock => error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)
+          case Ident(name, _) if name == ZKProofFunc.name => arg match {
+            case Terms.Block(_, body) =>
+              mkApply(mkIdent(ZKProofFunc.name, ZKProofFunc.declaration.tpe), IndexedSeq(body))
+            case nonBlock =>
+              error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)
           }
           case _ => mkApply(acc, IndexedSeq(arg))
         }
@@ -205,14 +207,14 @@ trait Exprs extends Core with Types {
     val Body = P( WL ~ `=` ~/ FreeCtx.Expr )
     P(Index ~ DottyExtMethodSubj.? ~ Id.! ~ FunSig ~ (`:` ~/ Type).? ~~ Body ).map {
       case (index, None, n, args, resType, body) =>
-        val lambda = mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
         atSrcPos(index) {
+          val lambda = mkLambda(args.headOption.getOrElse(Seq()).toIndexedSeq, resType.getOrElse(NoType), Some(body))
           mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, Some(dottyExtSubj), n, args, resType, body) if args.length <= 1 =>
         val combinedArgs = Seq(dottyExtSubj) ++ args.headOption.getOrElse(Seq())
-        val lambda = mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
         atSrcPos(index) {
+          val lambda = mkLambda(combinedArgs.toIndexedSeq, resType.getOrElse(NoType), Some(body))
           mkVal(n, resType.getOrElse(NoType), lambda)
         }
       case (index, dottyExt, n, secs, resType, body) =>

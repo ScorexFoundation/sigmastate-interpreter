@@ -23,6 +23,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     SigmaParser(x, TransformingSigmaBuilder) match {
       case Parsed.Success(v, _) =>
         v.sourceContext.isDefined shouldBe true
+        assertSrcCtxForAllNodes(v)
         v
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
