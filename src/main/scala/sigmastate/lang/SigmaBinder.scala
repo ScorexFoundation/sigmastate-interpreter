@@ -53,43 +53,40 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
       }
     }
 
-    // Rule: Array[Int](...) -->
+    // Rule: Coll[Int](...) -->
     case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
-      val resTpe = if (args.isEmpty) tpe
-      else {
-        val elemType = args(0).tpe
-        if (elemType != tpe)
-          error(s"Invalid construction of array $e: expected type $tpe, actual type $elemType")
-        elemType
+      args.foreach{ e =>
+        if (e.tpe != tpe)
+          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",
+            e.sourceContext)
       }
-      Some(mkConcreteCollection(args, resTpe))
+      Some(mkConcreteCollection(args, tpe))
 
-    // Rule: Array(...) -->
+    // Rule: Coll(...) -->
     case Apply(Ident("Coll", _), args) =>
       val tpe = if (args.isEmpty) NoType else args(0).tpe
       Some(mkConcreteCollection(args, tpe))
 
     // Rule: Some(x) -->
-    case Apply(Ident("Some", _), args) =>
-      val arg =
-        if (args.length == 1) args(0)
-        else error(s"Invalid arguments of Some: expected one argument but found $args")
-      Some(mkSomeValue(arg))
+    case Apply(i @ Ident("Some", _), args) => args match {
+      case Seq(arg) => Some(mkSomeValue(arg))
+      case _ => error(s"Invalid arguments of Some: expected one argument but found $args", i.sourceContext)
+    }
 
     // Rule: min(x, y) -->
-    case Apply(Ident("min", _), args) => args match {
+    case Apply(i @ Ident("min", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
         Some(mkMin(l.asNumValue, r.asNumValue))
       case _ =>
-        throw new InvalidArguments(s"Invalid arguments for min: $args")
+        throw new InvalidArguments(s"Invalid arguments for min: $args", i.sourceContext)
     }
 
     // Rule: max(x, y) -->
-    case Apply(Ident("max", _), args) => args match {
+    case Apply(i @ Ident("max", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
         Some(mkMax(l.asNumValue, r.asNumValue))
       case _ =>
-        throw new InvalidArguments(s"Invalid arguments for max: $args")
+        throw new InvalidArguments(s"Invalid arguments for max: $args", i.sourceContext)
     }
 
     // Rule: lambda (...) = ... --> lambda (...): T = ...
@@ -128,6 +125,5 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 }
 
 object SigmaBinder {
-  def error(msg: String) = throw new BinderException(msg, None)
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new BinderException(msg, srcCtx)
 }

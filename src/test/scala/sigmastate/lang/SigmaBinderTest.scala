@@ -27,6 +27,18 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     res
   }
 
+  private def fail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val builder = TransformingSigmaBuilder
+    val ast = SigmaParser(x, builder).get.value
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
+      new PredefinedFuncRegistry(builder))
+    val exception = the[BinderException] thrownBy binder.bind(ast)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
+  }
+
   property("simple expressions") {
     bind(env, "x") shouldBe IntConstant(10)
     bind(env, "b1") shouldBe ByteConstant(1)
@@ -54,8 +66,11 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
-    an[InvalidArguments] should be thrownBy bind(env, "min(1, 2, 3)")
-    an[InvalidArguments] should be thrownBy bind(env, "max(1)")
+  }
+
+  property("min/max fail (invalid arguments)") {
+    fail(env, "min(1, 2, 3)", 1, 1)
+    fail(env, "max(1)", 1, 1)
   }
 
   property("val constructs") {
@@ -194,5 +209,14 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
                   |}""".stripMargin
     val e = the[BinderException] thrownBy bind(env, script)
     e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
+  }
+
+  property("fail Coll construction (type mismatch)") {
+    fail(env, "Coll[Long](1L, 2)", 1, 16)
+  }
+
+  property("fail Some (invalid arguments)") {
+    fail(env, "Some(1, 2)", 1, 1)
+    fail(env, "Some()", 1, 1)
   }
 }
