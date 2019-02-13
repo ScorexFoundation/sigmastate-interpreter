@@ -181,7 +181,7 @@ Alice's address is computed as: \texttt{val aliceAddress = Pay2SHAddress(aliceSc
 \end{enumerate}
 
 Observe that if the transaction is not mined before height $i$ then the transaction becomes invalid. When paying at a coffee shop, for example, Alice can set $i$ close to the height $h$ at the time of broadcast, for instance, $i = h + 10$. 
-Alice can still send non-timed payments by making $i$ very large. Since the context variables are part of the message in constructing the zero-knowledge proof, a miner cannot change it (in an attemmake this transaction valid by changing it. 
+Alice can still send non-timed payments by making $i$ very large. Since the context variables are part of the message in constructing the zero-knowledge proof, a miner cannot change it (to make this transaction valid). 
 
 \subsection{Preventing Theft using Reversible Addresses}
 
