@@ -251,13 +251,13 @@ Assume an address is protected by 2 private keys, corresponding to the public ke
 Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the variables \texttt{percent} and \texttt{minSpend} respectively. Set all these parameters in environment \texttt{env} along with the public keys \texttt{alice} and \texttt{bob} to get a compiled script:
 \begin{alltt}
 val script = compile(env, """ \Hi{\{}
-  \Hi{val r4 = SELF.R4[Int].get // blocks at which the period started}
+  \Hi{val r4 = SELF.R4[Int].get // block at which the period started}
   \Hi{val min = SELF.R5[Long].get // min Balance needed in this period}
   \Hi{val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations}
 
   \Hi{val start = if (depth < r4) depth else r4 // set start to lower of two}
 
-  \Hi{val notExpired = HEIGHT - start > blocksIn24h // expired if 24 hrs passed}  
+  \Hi{val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed}  
 
   \Hi{val newStart:Int = if (notExpired) start else HEIGHT}
 

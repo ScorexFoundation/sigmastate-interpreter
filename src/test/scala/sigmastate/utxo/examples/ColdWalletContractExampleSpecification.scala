@@ -36,7 +36,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
         |  val min = SELF.R5[Long].get // min Balance needed in this period
         |  val depth = HEIGHT - SELF.creationInfo._1
         |  val start = if (depth < r4) depth else r4
-        |  val notExpired = HEIGHT - start > blocksIn24h
+        |  val notExpired = HEIGHT - start <= blocksIn24h
         |
         |  val newStart:Int = if (notExpired) start else HEIGHT
         |  val toKeep:Long = SELF.value - SELF.value * percent / 100
