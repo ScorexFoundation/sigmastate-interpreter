@@ -28,7 +28,7 @@ case class MockSigma(val _isValid: Boolean) extends SigmaProp {
 
 }
 
-class MockProveDlog(var isValid: Boolean, val propBytes: Coll[Byte]) extends DefaultSigma {
+case class MockProveDlog(var isValid: Boolean, val propBytes: Coll[Byte]) extends SigmaProp {
   val curve = CustomNamedCurves.getByName("secp256k1")
   def value = curve.getG
   def setValid(v: Boolean) = { isValid = v }

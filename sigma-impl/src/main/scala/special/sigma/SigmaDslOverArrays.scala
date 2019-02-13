@@ -4,11 +4,11 @@ import java.math.BigInteger
 
 import com.google.common.primitives.Longs
 import org.bouncycastle.crypto.ec.CustomNamedCurves
+import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
-import scalan.RType
 import scalan.RType._
-import scalan.{Internal, NeverInline, OverloadId, Reified}
-import scorex.crypto.hash.{Blake2b256, Sha256}
+import scalan.{RType, Internal, NeverInline, Reified}
+import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
 
