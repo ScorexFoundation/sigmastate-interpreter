@@ -814,32 +814,6 @@ object CostedAvlTree extends EntityObject("CostedAvlTree") {
         case _ => Nullable.None
       }
     }
-
-    object maxNumOperations {
-      def unapply(d: Def[_]): Nullable[Rep[CostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedAvlTreeElem[_]] && method.getName == "maxNumOperations" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object maxDeletes {
-      def unapply(d: Def[_]): Nullable[Rep[CostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedAvlTreeElem[_]] && method.getName == "maxDeletes" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
   }
 
   object CostedAvlTreeCompanionMethods {
