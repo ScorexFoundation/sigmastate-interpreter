@@ -1,12 +1,12 @@
 package special.sigma
 
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.scalatest.FunSuite
+import special.sigma.Extensions._
 
 class SigmaExamplesTests extends FunSuite with ContractsTestkit {
 
-  val backer = new ProveDlogEvidence(SigmaDsl.groupGenerator.twice().asInstanceOf[SecP256K1Point])
-  val project = new ProveDlogEvidence(SigmaDsl.groupGenerator.threeTimes().asInstanceOf[SecP256K1Point])
+  val backer = MockProveDlog(true, noBytes)
+  val project = MockProveDlog(true, noBytes)
   val selfId = collection[Byte](0, 1)
   val outId = collection[Byte](0, 2)
 
@@ -42,7 +42,7 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
     val outHeight = 100
     val outValue = 10L
     val curHeight = outHeight + demurragePeriod
-    val out = new TestBox(outId, outValue, noBytes, noBytes, prop, regs(Map(R4 -> curHeight)))
+    val out = new TestBox(outId, outValue, noBytes, noBytes, prop, regs(Map(R4 -> toAnyValue(curHeight))))
 
     { //case 1: demurrage time hasn't come yet
       val ctxForProject = new TestContext(
@@ -53,7 +53,7 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
           selfId, outValue,
           noBytes, noBytes,
           prop,
-          regs(Map(R4 -> outHeight))),
+          regs(Map(R4 -> toAnyValue(outHeight)))),
         emptyAvlTree,
         dummyPubkey,
         vars = Array()
@@ -76,7 +76,7 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
           selfId, outValue,
           noBytes, noBytes,
           prop,
-          regs(Map(R4 -> outHeight))),
+          regs(Map(R4 -> toAnyValue(outHeight)))),
         emptyAvlTree,
         dummyPubkey,
         vars = Array()
@@ -89,7 +89,7 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
     { //case 3: demurrage time has come (miner can spend "demurrageCost" tokens)
       val minerOut = new TestBox(outId, outValue - demurrageCost,
         noBytes, noBytes,
-        prop, regs(Map(R4 -> curHeight)))
+        prop, regs(Map(R4 -> toAnyValue(curHeight))))
       val ctxForMiner = new TestContext(
         inputs = Array(),
         outputs = Array(minerOut),
@@ -98,7 +98,7 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
           selfId, outValue,
           noBytes, noBytes,
           prop,
-          regs(Map(R4 -> outHeight))),
+          regs(Map(R4 -> toAnyValue(outHeight)))),
         emptyAvlTree,
         dummyPubkey,
         vars = Array()

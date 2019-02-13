@@ -3,17 +3,18 @@ package sigmastate.eval
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SInt, SLong, SType}
-import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import sigmastate.{SInt, AvlTreeData, SLong, SType}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import sigmastate.utxo.CostTable
-import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
-import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{LangTests, SigmaCompiler}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.serialization.{ConstantStore, ErgoTreeSerializer}
+import sigmastate.serialization.ErgoTreeSerializer
+import special.sigma.{ContractsTestkit, Context => DContext, _}
+import special.sigma.Extensions._
 
 import scala.language.implicitConversions
 
@@ -25,7 +26,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import IR._
   import Liftables._
   import Context._
-  import WBigInteger._
+//  import WBigInteger._
+  import BigInt._
 
   lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
 
@@ -49,8 +51,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
   lazy val dsl = sigmaDslBuilder
-  lazy val bigSym = liftConst(big)
-  lazy val n1Sym = liftConst(n1)
+  lazy val dslValue = sigmaDslBuilderValue
+  lazy val bigSym = liftConst(dslValue.BigInt(big))
+  lazy val n1Sym = liftConst(dslValue.BigInt(n1))
 
   val timeout = 100
   val minToRaise = 1000L
@@ -61,13 +64,13 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
   lazy val ctxVars = contextVars(Map(
-    backerPubKeyId -> backerPubKey,
-    projectPubKeyId -> projectPubKey,
-    3.toByte -> bigIntArr1
+    backerPubKeyId -> backerPubKey.toAnyValue,
+    projectPubKeyId -> projectPubKey.toAnyValue,
+    3.toByte -> toAnyValue(bigIntegerArr1)
   )).toArray
 
   val boxToSpend = ErgoBox(10, TrueLeaf, 0,
-    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
+    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
   lazy val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
@@ -81,7 +84,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     extension = ContextExtension(Map(
       backerPubKeyId -> SigmaPropConstant(backerPubKey),
       projectPubKeyId -> SigmaPropConstant(projectPubKey),
-      3.toByte -> BigIntArrayConstant(bigIntArr1)
+      3.toByte -> BigIntArrayConstant(bigIntegerArr1)
     )))
 
   case class Result(calc: Option[Any], cost: Option[Int], size: Option[Long])

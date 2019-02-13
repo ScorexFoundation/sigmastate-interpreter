@@ -18,7 +18,6 @@ trait SigmaLibrary extends Library
   import Coll._
   import CollBuilder._
   import SigmaProp._
-  import TrivialSigma._
   import SigmaContract._
   import WECPoint._
   import SigmaDslBuilder._
@@ -82,13 +81,13 @@ trait SigmaLibrary extends Library
       if (bools.isEmpty)
         zkAll.isValid
       else
-        (RTrivialSigma(sigmaDslBuilder.allOf(b.fromItems(bools:_*))).asRep[SigmaProp] && zkAll).isValid
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
     case AnyOf(b, HasSigmas(bs, ss), _) =>
       val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
       if (bs.isEmpty)
         zkAny.isValid
       else
-        (RTrivialSigma(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))).asRep[SigmaProp] || zkAny).isValid
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
     case AllOf(_,items,_) if items.length == 1 => items(0)
     case AnyOf(_,items,_) if items.length == 1 => items(0)
     case AllZk(_,items,_) if items.length == 1 => items(0)

@@ -4,7 +4,7 @@ import sigmastate.{SCollection, SType}
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
   extends ValueSerializer[ConcreteCollection[_ <: SType]] {

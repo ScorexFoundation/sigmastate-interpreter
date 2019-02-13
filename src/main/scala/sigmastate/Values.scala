@@ -10,19 +10,23 @@ import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
+import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
 import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
+import special.sigma.Extensions._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import special.sigma.{Extensions, AnyValue, TestValue}
 
 
 object Values {
@@ -42,7 +46,7 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    lazy val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(this)
+    lazy val bytes = DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -119,8 +123,10 @@ object Values {
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
-      case SGroupElement =>
-        s"ConstantNode(${CryptoFunctions.showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case SGroupElement if value.isInstanceOf[ECPoint] =>
+        s"ConstantNode(${showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case SGroupElement  =>
+        sys.error(s"Invalid value in Constant($value, $tpe)")
       case SInt => s"IntConstant($value)"
       case SLong => s"LongConstant($value)"
       case SBoolean if value == true => "TrueLeaf"
@@ -600,6 +606,7 @@ object Values {
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
+    def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
   }
 
   implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
@@ -738,7 +745,7 @@ object Values {
     assert(isConstantSegregation || constants.isEmpty)
 
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
-    @inline def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(this)
+    @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
   }
 
   object ErgoTree {
@@ -777,8 +784,8 @@ object Values {
     implicit def fromProposition(prop: SValue): ErgoTree = {
       // get ErgoTree with segregated constants
       // todo rewrite with everywherebu?
-      ErgoTreeSerializer.DefaultSerializer
-        .deserializeErgoTree(ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(prop))
+      val nonSigmaBooleanProp = prop match { case sb: SigmaBoolean => SigmaPropConstant(sb) case _ => prop }
+      DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(nonSigmaBooleanProp))
     }
   }
 

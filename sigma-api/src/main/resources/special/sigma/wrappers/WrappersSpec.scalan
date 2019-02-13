@@ -15,10 +15,7 @@ package special.sigma.wrappers {
     trait BigIntegerWrapSpec extends WrapSpecBase {
       def fromString(s: Rep[String]): Rep[WBigInteger] = RWBigInteger(s);
       def fromArray(sig: Rep[Int], arr: Rep[WArray[Byte]]): Rep[WBigInteger] = RWBigInteger(sig, arr);
-      def ZERO: Rep[WBigInteger] = RWBigInteger.ZERO;
-      def ONE: Rep[WBigInteger] = RWBigInteger.ONE;
       def valueOf(l: Rep[Long]): Rep[WBigInteger] = RWBigInteger.valueOf(l);
-      def toString(l: Rep[WBigInteger], radix: Rep[Int]): Rep[String] = l.toString(radix);
       def toByteArray(l: Rep[WBigInteger]): Rep[WArray[Byte]] = l.toByteArray;
       def add(l: Rep[WBigInteger], r: Rep[WBigInteger]): Rep[WBigInteger] = l.add(r);
       def subtract(l: Rep[WBigInteger], r: Rep[WBigInteger]): Rep[WBigInteger] = l.subtract(r);

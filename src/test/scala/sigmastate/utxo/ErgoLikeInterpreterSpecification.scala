@@ -34,11 +34,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val exp = TrueLeaf
     e shouldBe exp
 
-    verifier.reduceToCrypto(ctx, exp)
-      .get._1.isInstanceOf[TrueLeaf.type] shouldBe true
+    val res = verifier.reduceToCrypto(ctx, exp).get._1
+    res shouldBe TrueLeaf
 
-    verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes)))
-      .get._1.isInstanceOf[FalseLeaf.type] shouldBe true
+    val res2 = verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes))).get._1
+    res2 shouldBe FalseLeaf
   }
 
   property("DH tuple") {

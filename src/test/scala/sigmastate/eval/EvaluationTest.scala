@@ -127,16 +127,17 @@ class EvaluationTest extends BaseCtxTests
 //  }
 
   test("SubstConst") {
-    def script(pk: ProveDlog): Value[SType] = AND(EQ(IntConstant(1), IntConstant(1)), pk)
+    def script(pk: ProveDlog): Value[SType] = AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven)
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
+    val script2 = script(pk2)
     val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script1)
     val positions = IntArrayConstant(Array[Int](2))
     // in ergo we have only byte array of a serialized group element
-    val newVals = ConcreteCollection(Vector[SigmaPropValue](ProveDlog(DecodePoint(pk2.pkBytes))), SSigmaProp)
-    val script2 = script(pk2)
+    val newVals = ConcreteCollection(Vector[SigmaPropValue](SigmaPropConstant(ProveDlog(DecodePoint(pk2.pkBytes)))), SSigmaProp)
+
     val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script2)
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "SubstConst",

@@ -10,7 +10,7 @@ import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueD
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 
@@ -61,7 +61,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
     TwoArgumentsSerializer(MinCode, mkMin[SNumericType]),
     TwoArgumentsSerializer(MaxCode, mkMax[SNumericType]),
-    ProveDiffieHellmanTupleSerializer(mkProveDiffieHellmanTuple),
+    ProveDHTupleSerializer(mkProveDiffieHellmanTuple),
     ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
@@ -75,6 +75,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
+    CaseObjectSerialization(TrivialPropFalseCode, TrivialProp.FalseProp),
+    CaseObjectSerialization(TrivialPropTrueCode, TrivialProp.TrueProp),
     ConcreteCollectionSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
@@ -135,7 +137,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
     if (serializer == null)
-      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode=$opCode")
+      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - LastConstantCode}")
     serializer
   }
 

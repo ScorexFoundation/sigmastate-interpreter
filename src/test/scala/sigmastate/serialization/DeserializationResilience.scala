@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.{AND, SBoolean}
 
 class DeserializationResilience extends SerializationSpecification {
