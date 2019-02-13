@@ -245,6 +245,59 @@ trait SigmaProp {
   @OverloadId("or_bool")  def ||(other: Boolean): SigmaProp
 }
 
+/** Represents information about proposition and make it available for operations
+  * of Sigma. The type is safe and costing-friendly, because it is basically
+  * improved version of propBytes with additional access to sub-components.
+  * Only safe operations are available for Proposition, which makes it impossible
+  * to create malicious Propositions.
+  * Every `Box` has `proposition: Proposition` property, whose safety is checked
+  * during transaction validation.
+  * Default implementation CProposition is a wrapper around ErgoTree.
+  */
+@scalan.Liftable
+trait Proposition {
+  /** A collection of all parameter values, in the proposition template, which can be substituted.
+    * This is immutable property of a Proposition, which contains all the constants in the proposition
+    * expression which can be replaced by new values using `applyParameters` method.
+    * In general, not every constant can be replaced since it doesn't always make sense. */*/
+  def parameters: Coll[Any]
+
+  /** Creates a new proposition with new values for all parameters.
+    * Require: newValues.length == this.parameterIndexes.length.
+    * @param   newValues  new values for all parameters
+    * @return             new proposition with the same template as this but with all it's parameters
+    *                     replaced with `newValues` */
+  def applyParameters(newValues: Coll[Any]): Proposition
+
+  /** The bytes of this proposition obtained by serializing underlying ErgoTree. */
+  def propositionBytes: Coll[Byte]
+
+  /** Returns the template of this proposition. In the template all parameters are replaced by placeholders.
+    * Placeholder is a special node in ErgoTree of proposition, which holds the corresponding position in
+    * the tree and can be replaced with concrete value using `applyParameters`.
+    * Prop1:
+    * If `p1` and `p2` are two propositions which are different only in the values of parameters, then
+    * `p1.template == p2.template`.
+    * This can be used to recognize different Boxes as belonging to the same contracts (as long as contract
+    * and template is the same thing).
+    * Getting a template of a given proposition is constant time (`O(1)`) operation since parameters are
+    * stored separately from template.
+    */
+  def template: Proposition
+
+  /** Transforms this proposition into executable function.
+    * This it similar to what happens during validation of propositions in the input boxes:
+    * - size check of underlying ErgoTree against limits
+    * - construction of `calcF` and `costF` graphs, both are stored together with resulting function.
+    * - check the types of `calcF` graph to be compatible with expected types A and B
+    * If anything goes wrong, this operation fails and if it is used in the script, the script also fails.
+    *
+    * When f is obtained as `val f = p.toFunc[Int, Int]` then any application `f(x)` involves size estimation
+    * using `costF(x)`.
+    * */
+  def toFunc[@Reified A, @Reified B](implicit tA: RType[A], tB: RType[B]): A => B
+}
+
 @scalan.Liftable
 trait AnyValue {
   def dataSize: Long
