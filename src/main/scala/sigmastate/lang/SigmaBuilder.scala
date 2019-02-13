@@ -57,6 +57,10 @@ trait SigmaBuilder {
                           operations: Value[SByteArray],
                           proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
 
+  def mkTreeRemovals(tree: Value[SAvlTree.type],
+                          operations: Value[SCollection[SByteArray]],
+                          proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
+
   def mkTreeLookup(tree: Value[SAvlTree.type],
                    key: Value[SByteArray],
                    proof: Value[SByteArray]): Value[SOption[SByteArray]]
@@ -316,6 +320,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                    operations: Value[SByteArray],
                                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
     TreeModifications(tree, operations, proof)
+
+  def mkTreeRemovals(tree: Value[SAvlTree.type],
+                     operations: Value[SCollection[SByteArray]],
+                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
+    TreeRemovals(tree, operations, proof)
 
   override def mkIsMember(tree: Value[SAvlTree.type],
                           key: Value[SByteArray],

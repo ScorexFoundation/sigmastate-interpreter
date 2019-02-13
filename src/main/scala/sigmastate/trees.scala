@@ -583,6 +583,48 @@ case class TreeModifications(tree: Value[SAvlTree.type],
   override lazy val third = proof
 }
 
+trait TreeMods[S <: SType] extends Quadruple[SAvlTree.type, S, SByteArray, SOption[SAvlTree.type]]{
+
+  val tree: Value[SAvlTree.type]
+  val operations: Value[S]
+  val proof: Value[SByteArray]
+
+  override def tpe = SOption[SAvlTree.type]
+
+  override lazy val first = tree
+  override lazy val second = operations
+  override lazy val third = proof
+}
+
+case class TreeInserts(tree: Value[SAvlTree.type],
+                       operations: Value[SCollection[STuple]], //key -> value
+                       proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
+  override def tpe = SOption[SAvlTree.type]
+  override val opCode: OpCode = OpCodes.TreeModificationsCode
+}
+
+case class TreeUpdates(tree: Value[SAvlTree.type],
+                       operations: Value[SCollection[STuple]], //key -> value
+                       proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
+  override def tpe = SOption[SAvlTree.type]
+  override val opCode: OpCode = OpCodes.TreeModificationsCode
+}
+
+case class TreeInsertOrUpdates(tree: Value[SAvlTree.type],
+                       operations: Value[SCollection[STuple]], //key -> value
+                       proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
+  override def tpe = SOption[SAvlTree.type]
+  override val opCode: OpCode = OpCodes.TreeModificationsCode
+}
+
+case class TreeRemovals(tree: Value[SAvlTree.type],
+                        operations: Value[SCollection[SByteArray]], //keys
+                        proof: Value[SByteArray]) extends TreeMods[SCollection[SByteArray]] {
+  override def tpe = SOption[SAvlTree.type]
+  override val opCode: OpCode = OpCodes.TreeRemovalsCode
+}
+
+
 /**
   * If conditional function.
   * Non-lazy - evaluate both branches.

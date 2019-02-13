@@ -118,6 +118,7 @@ package special.sigma {
       @NeverInline def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = delayInvoke;
       @NeverInline def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = delayInvoke;
       @NeverInline def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = delayInvoke;
+      @NeverInline def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = delayInvoke;
       @NeverInline def groupGenerator: Rep[WECPoint] = delayInvoke;
       @NeverInline def exponentiate(base: Rep[WECPoint], exponent: Rep[WBigInteger]): Rep[WECPoint] = delayInvoke;
       @Reified(value = "T") @NeverInline override def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = delayInvoke;

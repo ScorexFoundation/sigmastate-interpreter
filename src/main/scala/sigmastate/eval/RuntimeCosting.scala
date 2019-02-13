@@ -904,6 +904,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
     class InColl[T] { def unapply(v: SValue): Nullable[Rep[CostedColl[T]]] = Nullable(asRep[CostedColl[T]](evalNode(ctx, env, v))) }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]; val InCollInt = new InColl[Int]
+    val InCollCollByte = new InColl[Coll[Byte]]
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
       val res = items.map { x: SValue =>
         val xC = eval(x)
@@ -1062,6 +1063,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case TreeModifications(In(_tree), InCollByte(operations), InCollByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
+        val size = tree.dataSize + operations.dataSize + proof.dataSize
+        val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
+        value.fold[CostedOption[Coll[Byte]]](
+          Thunk(RCostedNone(cost)),
+          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
+
+      case TreeRemovals(In(_tree), InCollCollByte(operations), InCollByte(proof)) =>
+        val tree = asRep[CostedAvlTree](_tree)
+        val value = sigmaDslBuilder.treeRemovals(tree.value, operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
         val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
         value.fold[CostedOption[Coll[Byte]]](

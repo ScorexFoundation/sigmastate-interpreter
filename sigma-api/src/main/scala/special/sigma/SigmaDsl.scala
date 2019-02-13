@@ -208,6 +208,8 @@ trait SigmaDslBuilder extends DslBuilder {
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
+  def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+
 
   def groupGenerator: SecP256K1Point
   def exponentiate(base: SecP256K1Point, exponent: BigInteger): SecP256K1Point

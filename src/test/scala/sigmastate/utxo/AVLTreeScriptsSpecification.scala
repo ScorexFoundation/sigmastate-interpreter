@@ -140,6 +140,65 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
+
+  property("avl tree - removals") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    (0 to 10).map{i =>
+      val op = Insert(genKey(i.toString), genValue(i.toString))
+      avlProver.performOneOperation(op)
+    }
+    avlProver.generateProof()
+    val digest = avlProver.digest
+    val flags = AvlTreeFlags.AllOperationsAllowed
+    val initTreeData = new AvlTreeData(digest, flags, 32, None)
+
+    val removalKeys = (0 to 10).map(i => genKey(i.toString))
+    val removals: Seq[Operation] = removalKeys.map(k => Remove(k))
+    removals.foreach(o => avlProver.performOneOperation(o))
+    val proof = avlProver.generateProof()
+    val endDigest = avlProver.digest
+    val endTreeData = initTreeData.copy(digest = endDigest)
+
+    /*val prop = EQ(
+      TreeModifications(
+        TreeModifications(
+          ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+          ByteArrayConstant(opsBytes0),
+          ByteArrayConstant(proof0)).get,
+        ByteArrayConstant(opsBytes1),
+        ByteArrayConstant(proof1)).get,
+      ExtractRegisterAs[SAvlTree.type](Self, reg2).get)*/
+    val env = Map(
+      "ops" -> ConcreteCollection.apply[SByteArray](removalKeys.map(ByteArrayConstant.apply)),
+      "proof" -> proof,
+      "endDigest" -> endDigest)
+    val prop = compileWithCosting(env,
+      """treeRemovals(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get""").asBoolValue
+    //prop shouldBe propCompiled
+
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(initTreeData), reg2 -> AvlTreeConstant(endTreeData)))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(s),
+      spendingTransaction,
+      self = s)
+
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
   property("avl tree lookup") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter

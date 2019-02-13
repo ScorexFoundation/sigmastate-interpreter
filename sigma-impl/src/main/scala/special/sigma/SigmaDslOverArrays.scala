@@ -225,6 +225,9 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = ???
 
+  @NeverInline
+  override def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = ???
+
   @Internal val __curve__ = CustomNamedCurves.getByName("secp256k1")
   @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]
 

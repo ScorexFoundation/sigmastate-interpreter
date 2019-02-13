@@ -5,13 +5,11 @@ import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
 import scorex.util.encode.{Base58, Base64}
 import sigmastate.SCollection.{SByteArray, SIntArray}
-import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntConstant, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value}
+import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value}
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.lang.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
-import special.sigma.SigmaProp
 
 object SigmaPredef {
 
@@ -219,6 +217,14 @@ object SigmaPredef {
       }
     )
 
+    val TreeRemovalsFunc = PredefinedFunc("treeRemovals",
+      Lambda(Vector("tree" -> SAvlTree, "ops" -> SCollection[SByteArray], "proof" -> SByteArray), SOption[SByteArray], None),
+      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SCollection[SByteArray]]@unchecked,
+      proof: Value[SByteArray]@unchecked)) =>
+        mkTreeRemovals(tree, operations, proof)
+      }
+    )
+
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
       undefined
@@ -264,6 +270,7 @@ object SigmaPredef {
       IsMemberFunc,
       TreeLookupFunc,
       TreeModificationsFunc,
+      TreeRemovalsFunc,
       XorOfFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,

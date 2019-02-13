@@ -122,6 +122,7 @@ package special.sigma {
       def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = this.builder.isMember(tree, key, proof);
       def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = this.builder.treeLookup(tree, key, proof);
       def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = this.builder.treeModifications(tree, operations, proof);
+      def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = this.builder.treeRemovals(tree, operations, proof);
       def groupGenerator: Rep[WECPoint] = this.builder.groupGenerator;
       def exponentiate(base: Rep[WECPoint], exponent: Rep[WBigInteger]): Rep[WECPoint] = this.builder.exponentiate(base, exponent);
       @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
@@ -153,6 +154,7 @@ package special.sigma {
       def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];
       def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
       def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
+      def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
       def groupGenerator: Rep[WECPoint];
       def exponentiate(base: Rep[WECPoint], exponent: Rep[WBigInteger]): Rep[WECPoint];
       @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]];
