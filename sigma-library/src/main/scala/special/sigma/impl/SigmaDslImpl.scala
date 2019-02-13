@@ -3571,7 +3571,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

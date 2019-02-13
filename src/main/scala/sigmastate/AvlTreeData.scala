@@ -25,7 +25,7 @@ object AvlTreeFlags {
 
   lazy val ReadOnly = AvlTreeFlags(insertAllowed = false, updateAllowed = false, removeAllowed = false)
 
-  lazy val AllOperationsAllowed = AvlTreeFlags(insertAllowed = false, updateAllowed = false, removeAllowed = false)
+  lazy val AllOperationsAllowed = AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true)
 
   def apply(serializedFlags: Byte): AvlTreeFlags = {
     val insertAllowed = (serializedFlags & 0x01) != 0

@@ -1259,6 +1259,13 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[WOption[Coll[Byte]]]))
     }
 
+    override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
+      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+        thisClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(tree, operations, proof),
+        true, false, element[WOption[Coll[Byte]]]))
+    }
+
     override def groupGenerator: Rep[WECPoint] = {
       asRep[WECPoint](mkMethodCall(self,
         thisClass.getMethod("groupGenerator"),
