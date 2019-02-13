@@ -37,7 +37,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     */
   def assignType(env: Map[String, SType],
                  bound: SValue,
-                 expected: Option[SType] = None): SValue = bound match {
+                 expected: Option[SType] = None): SValue = ( bound match {
     case Block(bs, res) =>
       var curEnv = env
       val bs1 = ArrayBuffer[Val]()
@@ -45,7 +45,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
         val b1 = assignType(curEnv, b)
         curEnv = curEnv + (n -> b1.tpe)
-        currentSrcCtx.withValue(v.sourceContext) {
+        builder.currentSrcCtx.withValue(v.sourceContext) {
           bs1 += mkVal(n, b1.tpe, b1)
         }
       }
@@ -113,7 +113,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
-              val newApply = mkApply(mkSelect(newObj, n, Some(concrFunTpe)), newArgs)
+              val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
+              val newApply = mkApply(newSelect, newArgs)
               newApply
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes")
@@ -137,7 +138,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               adaptSigmaPropToBoolean(typedArgs, argTypes)
             case (Ident(GetVarFunc.name | ExecuteFromVarFunc.name, _), Seq(id: Constant[SNumericType]@unchecked))
               if id.tpe.isNumType =>
-                Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])))
+                Seq(ByteConstant(SByte.downcast(id.value.asInstanceOf[AnyVal])).withSrcCtx(id.sourceContext))
             case _ => typedArgs
           }
           val actualTypes = adaptedTypedArgs.map(_.tpe)
@@ -147,8 +148,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {
-            case Seq(Constant(index, _: SNumericType)) =>
-              mkByIndex[SType](new_f.asCollection, SInt.upcast(index.asInstanceOf[AnyVal]), None)
+            case Seq(c @ Constant(index, _: SNumericType)) =>
+              val indexConst = IntConstant(SInt.upcast(index.asInstanceOf[AnyVal])).withSrcCtx(c.sourceContext)
+              mkByIndex[SType](new_f.asCollection, indexConst, None)
             case Seq(index) =>
               val typedIndex = assignType(env, index)
               typedIndex.tpe match {
@@ -352,7 +354,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       defaultValue match {
         case Some(v) if v.tpe.typeCode != c1.tpe.elemType.typeCode =>
             error(s"Invalid operation ByIndex: expected default value type (${c1.tpe.elemType}); actual: (${v.tpe})")
-        case ref @ _ => ByIndex(c1, i, ref)
+        case ref @ _ => mkByIndex(c1, i, ref)
       }
 
     case SizeOf(col) =>
@@ -398,7 +400,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case v @ Select(_, _, Some(_)) => v
     case v =>
       error(s"Don't know how to assignType($v)")
-  }
+  }).withEnsuredSrcCtx(bound.sourceContext)
 
   def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: IndexedSeq[Value[SType]]) = {
     val types = newItems.map(_.tpe).distinct
@@ -410,7 +412,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       msgTypeOf(types).getOrElse(
         error(s"All element of array $cc should have the same type but found $types"))
     }
-    ConcreteCollection(newItems)(tItem)
+    builder.currentSrcCtx.withValue(cc.sourceContext) { mkConcreteCollection(newItems, tItem) }
   }
 
   def adaptSigmaPropToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {

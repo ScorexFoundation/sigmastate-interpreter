@@ -36,25 +36,11 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 
   private val PKFunc = predefFuncRegistry.PKFunc(networkPrefix)
 
-  /**
-    * Set source context to all nodes missing source context in the given tree.
-    * @param tree AST to traverse
-    * @param srcCtx source context to set
-    * @return AST where all nodes with missing source context are set to the given srcCtx
-    */
-  private def propagateSrcCtx(tree: SValue, srcCtx: Nullable[SourceContext]): SValue = {
-    import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
-    rewrite(everywherebu(rule[SValue] {
-      case node if node.sourceContext.isEmpty =>
-        node.withSrcCtx(srcCtx)
-    }))(tree)
-  }
-
   /** Rewriting of AST with respect to environment to resolve all references to global names
     * and infer their types. */
   private def eval(e: SValue, env: ScriptEnv): SValue = rewrite(reduce(strategy[SValue]({
     case i @ Ident(n, NoType) => env.get(n) match {
-      case Some(v) => Option(propagateSrcCtx(liftAny(v).get, i.sourceContext))
+      case Some(v) => Option(liftAny(v).get.withPropagatedSrcCtx(i.sourceContext))
       case None => n match {
         case "HEIGHT" => Some(Height)
         case "MinerPubkey" => Some(MinerPubkey)
@@ -91,7 +77,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     // Rule: min(x, y) -->
     case Apply(i @ Ident("min", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
-        builder.currentSrcCtx.withValue(i.sourceContext) { Some(mkMin(l.asNumValue, r.asNumValue)) }
+        Some(mkMin(l.asNumValue, r.asNumValue))
       case _ =>
         throw new InvalidArguments(s"Invalid arguments for min: $args", i.sourceContext)
     }
@@ -99,7 +85,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     // Rule: max(x, y) -->
     case Apply(i @ Ident("max", _), args) => args match {
       case Seq(l: SValue, r: SValue) =>
-        builder.currentSrcCtx.withValue(i.sourceContext) { Some(mkMax(l.asNumValue, r.asNumValue)) }
+        Some(mkMax(l.asNumValue, r.asNumValue))
       case _ =>
         throw new InvalidArguments(s"Invalid arguments for max: $args", i.sourceContext)
     }
@@ -129,8 +115,8 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
       else
         None
 
-    case Apply(PKFunc.symNoType, args) =>
-      Some(PKFunc.irBuilder(PKFunc.sym, args))
+    case a @ Apply(PKFunc.symNoType, args) =>
+      Some(PKFunc.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
   })))(e)
 

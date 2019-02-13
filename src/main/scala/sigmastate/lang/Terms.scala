@@ -1,6 +1,6 @@
 package sigmastate.lang
 
-import org.ergoplatform.Self
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -8,7 +8,6 @@ import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{ExtractRegisterAs, Slice, SigmaPropIsProven}
@@ -201,11 +200,31 @@ object Terms {
         s"Invalid upcast from $tV to $targetType: target type should be larger than source type.")
       if (targetType == tV.tpe) v.asValue[T]
       else
-        mkUpcast(tV, targetType)
+        mkUpcast(tV, targetType).withSrcCtx(v.sourceContext)
     }
     def withSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
       v.sourceContext = sourceContext
       v.asValue[T]
     }
+    /**
+      * Set source context only if it's empty
+      */
+    def withEnsuredSrcCtx[T <: SType](sourceContext: Nullable[SourceContext]): Value[T] = {
+      if (v.sourceContext.isEmpty) v.sourceContext = sourceContext
+      v.asValue[T]
+    }
+    /**
+      * Set source context to all nodes missing source context in the given tree.
+      * @param tree AST to traverse
+      * @param srcCtx source context to set
+      * @return AST where all nodes with missing source context are set to the given srcCtx
+      */
+    def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
+      rewrite(everywherebu(rule[SValue] {
+        case node if node.sourceContext.isEmpty =>
+          node.withSrcCtx(srcCtx)
+      }))(v).asValue[T]
+    }
+
   }
 }

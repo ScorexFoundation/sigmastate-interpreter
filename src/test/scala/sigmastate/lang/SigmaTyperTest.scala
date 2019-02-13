@@ -29,6 +29,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
+      assertSrcCtxForAllNodes(typed)
       if (expected != null) typed shouldBe expected
       typed.tpe
     } catch {
