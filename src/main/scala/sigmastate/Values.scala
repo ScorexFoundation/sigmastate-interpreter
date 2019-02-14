@@ -498,14 +498,10 @@ object Values {
   }
 
   /**
-    * For sigma statements
+    * Algebraic data type of sigma proposition expressions.
+    * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
-    override def tpe = SBoolean
-
-    def fields: Seq[(String, SType)] = SigmaBoolean.fields
-    /** This is not used as operation, but rather as data value of SigmaProp type. */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
+  trait SigmaBoolean {
   }
 
   object SigmaBoolean {
