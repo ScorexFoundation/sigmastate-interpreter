@@ -932,8 +932,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
-        case p: DLogProtocol.ProveDlog => eval(p)
-        case p: ProveDHTuple => eval(p)
+        case p: DLogProtocol.ProveDlog =>
+          val ge = asRep[Costed[GroupElement]](eval(p.value))
+          val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
+          RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
+        case p: ProveDHTuple =>
+          val gvC = asRep[Costed[GroupElement]](eval(p.gv))
+          val hvC = asRep[Costed[GroupElement]](eval(p.hv))
+          val uvC = asRep[Costed[GroupElement]](eval(p.uv))
+          val vvC = asRep[Costed[GroupElement]](eval(p.vv))
+          val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
+          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
+          RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
@@ -972,20 +982,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))
       }
-
-      case _ @ DLogProtocol.ProveDlog(v) =>
-        val ge = asRep[Costed[GroupElement]](eval(v))
-        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
-        RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
-
-      case _ @ ProveDHTuple(gv, hv, uv, vv) =>
-        val gvC = asRep[Costed[GroupElement]](eval(gv))
-        val hvC = asRep[Costed[GroupElement]](eval(hv))
-        val uvC = asRep[Costed[GroupElement]](eval(uv))
-        val vvC = asRep[Costed[GroupElement]](eval(vv))
-        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-        val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
-        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 
       case Height  => ctx.HEIGHT
       case Inputs  => ctx.INPUTS

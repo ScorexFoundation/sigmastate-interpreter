@@ -59,7 +59,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
   }
 
 
-  private def roundTrip(uncheckedTree: UncheckedTree, exp: Value[SBoolean.type]): Assertion = {
+  private def roundTrip(uncheckedTree: UncheckedTree, exp: SigmaBoolean): Assertion = {
     val bytes = SigSerializer.toBytes(uncheckedTree)
     val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, bytes)
     isEquivalent(uncheckedTree, parsedUncheckedTree) shouldBe true

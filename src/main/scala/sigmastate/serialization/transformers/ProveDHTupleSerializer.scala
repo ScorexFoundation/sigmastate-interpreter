@@ -1,11 +1,11 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SGroupElement
-import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
+import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, DataSerializer, OpCodes, SigmaSerializer}
 import sigma.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
@@ -13,9 +13,7 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
                                          Value[SGroupElement.type],
                                          Value[SGroupElement.type],
                                          Value[SGroupElement.type]) => SigmaBoolean)
-  extends ValueSerializer[ProveDHTuple] {
-
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  extends SigmaSerializer[ProveDHTuple, ProveDHTuple] {
 
   private val constCodePrefix: Byte = 0
 

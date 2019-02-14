@@ -4,12 +4,12 @@ import java.util
 
 import com.google.common.primitives.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
-import sigmastate.Values.{ConcreteCollection, ConstantNode, GetVarByteArray, IntConstant, Value}
+import sigmastate.Values.{GetVarByteArray, ConstantNode, SigmaPropConstant, Value, IntConstant, ConcreteCollection}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
 
 import scala.util.Try
@@ -212,7 +212,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
     proposition match {
-      case d @ ProveDlog(_) => P2PKAddress(d)
+      case SigmaPropConstant(d @ ProveDlog(_)) => P2PKAddress(d)
       //TODO move this pattern to PredefScripts
       case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
         Pay2SHAddress(a)

@@ -507,10 +507,6 @@ object Values {
   object SigmaBoolean {
     val PropBytes = "propBytes"
     val IsProven = "isProven"
-    val fields = Seq(
-      PropBytes -> SByteArray,
-      IsProven -> SBoolean
-    )
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {

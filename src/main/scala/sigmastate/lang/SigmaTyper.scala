@@ -61,16 +61,6 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         case None => error(s"Cannot assign type for variable '$n' because it is not found in env $env")
       }
 
-    case sel @ Select(obj: SigmaBoolean, n, None) =>
-      val newObj = assignType(env, obj).asSigmaBoolean
-      val iField = newObj.fields.indexWhere(_._1 == n)
-      val tRes = if (iField != -1) {
-        obj.fields(iField)._2
-      }
-      else
-        error(s"Cannot find field '$n' in the object $obj of Sigma type with fields ${obj.fields}")
-      mkSelect(newObj, n, Some(tRes))
-
     case sel @ Select(obj, n, None) =>
       val newObj = assignType(env, obj)
       newObj.tpe match {

@@ -98,13 +98,9 @@ trait Interpreter extends ScorexLogging {
     }
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
+    val valueFun = IR.compile[SSigmaProp.type](IR.getDataEnv, calcF.asRep[IR.Context => SSigmaProp.WrappedType])
     val res = valueFun(calcCtx)
-    val resValue = res match {
-      case SigmaPropConstant(sb) => sb
-      case _ => res
-    }
-    resValue -> estimatedCost
+    res -> estimatedCost
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
@@ -195,7 +191,7 @@ trait Interpreter extends ScorexLogging {
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-  type ReductionResult = (Value[SBoolean.type], Long)
+  type ReductionResult = (Value[SSigmaProp.type], Long)
 
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map()

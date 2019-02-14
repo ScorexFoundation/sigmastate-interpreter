@@ -100,11 +100,11 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
         case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
       }
 
-    case node @ Select(obj: SigmaBoolean, field, _) =>
-      field match {
-        case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
-        case _ => None
-      }
+//    case node @ Select(obj: SigmaBoolean, field, _) =>
+//      field match {
+//        case SigmaBoolean.PropBytes => Some(ByteArrayConstant(obj.bytes))
+//        case _ => None
+//      }
 
     case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
       val index = fn.substring(1).toByte
