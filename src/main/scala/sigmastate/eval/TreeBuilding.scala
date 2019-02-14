@@ -366,7 +366,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)
-        curEnv = curEnv + (s -> (curId, elemToSType(s.elem)))  // assign valId to s, so it can be use in ValUse
+        curEnv = curEnv + (s -> (curId, vd.tpe))  // assign valId to s, so it can be use in ValUse
         valdefs += vd
       }
     }
