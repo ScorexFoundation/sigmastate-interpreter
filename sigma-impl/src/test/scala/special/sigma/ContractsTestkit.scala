@@ -19,7 +19,7 @@ trait ContractsTestkit {
 
 
   val Colls = new CollOverArrayBuilder
-  val SigmaDsl = new TestSigmaDslBuilder
+  val SigmaDsl: SigmaDslBuilder = new TestSigmaDslBuilder
   val noRegisters = collection[AnyValue]()
   val noBytes = collection[Byte]()
   val noInputs = Array[Box]()

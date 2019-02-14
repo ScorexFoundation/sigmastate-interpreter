@@ -3,14 +3,10 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
-import sigmastate._
-import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, EvaluatedValue, NoneValue, SValue, SomeValue}
 import sigmastate.{TrivialProp, _}
 import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -20,8 +16,7 @@ import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Col
 import special.sigma._
 import special.sigma.Extensions._
 
-import scala.reflect.ClassTag
-import scala.util.{Failure, Success}
+import scala.util.{Success, Failure}
 import scalan.RType
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog

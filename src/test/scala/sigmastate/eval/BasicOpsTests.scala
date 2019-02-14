@@ -1,12 +1,17 @@
-package special.sigma
+package sigmastate.eval
 
 import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{Matchers, FunSuite}
 import special.sigma.Extensions._
+import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestContext, TestSigmaDslBuilder, SigmaDslBuilder}
+
+import scala.language.implicitConversions
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
+  override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
+
   implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
   ignore("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
@@ -59,7 +64,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   test("box.creationInfo._1 is Int") {
-    val box = newAliceBox(1, 100, Map(3 -> toAnyValue((20 -> Array.emptyByteArray))))
+    val box = newAliceBox(1, 100, Map(3 -> toAnyValue((20 -> SigmaDsl.Colls.fromArray(Array.emptyByteArray)))))
     box.creationInfo._1 shouldBe a [Integer]
   }
 

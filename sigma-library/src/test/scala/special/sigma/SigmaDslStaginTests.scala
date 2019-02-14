@@ -21,19 +21,18 @@ class SigmaDslStaginTests extends WrappersTests with ContractsTestkit {
     import SigmaDslBuilder._
     import EnvRep._
 
+    val dsl: SSigmaDslBuilder = SigmaDsl
     type RSigmaDslBuilder = cake.SigmaDslBuilder
     type RContext = cake.Context
     type RBox = cake.Box
     type RSigmaProp = cake.SigmaProp
-    val boxA1 = newAliceBox(1, 100, Map(1 -> toAnyValue(20), 3 -> toAnyValue((10 -> Array.emptyByteArray))))
+    val boxA1 = newAliceBox(1, 100, Map(1 -> toAnyValue(20), 3 -> toAnyValue((10 -> SigmaDsl.Colls.fromArray(Array.emptyByteArray)))))
     val boxA2 = newAliceBox(2, 200)
     val ctx: SContext = newContext(10, boxA1)
       .withInputs(boxA2)
       .withVariables(Map(1 -> toAnyValue(30), 2 -> toAnyValue(40)))
     val p1: SSigmaProp = new special.sigma.MockSigma(true)
     val p2: SSigmaProp = new special.sigma.MockSigma(false)
-
-    val dsl: SSigmaDslBuilder = SigmaDsl
 
     check(dsl,  { env: EnvRep[RSigmaDslBuilder] =>
       for { dsl <- env; arg <- lifted(true) } yield dsl.sigmaProp(arg) }, dsl.sigmaProp(true))
