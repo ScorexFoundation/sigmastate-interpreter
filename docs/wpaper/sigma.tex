@@ -389,8 +389,8 @@ a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} r
                                  else fixedRate - (oneEpochReduction * epoch)
               val correctCoinsConsumed = coinsToIssue == (SELF.value - out.value)
               val sameScriptRule = SELF.propositionBytes == out.propositionBytes
-              val heightIncreased = HEIGHT > SELF.R4[Long].get
-              val heightCorrect = out.R4[Long].get == HEIGHT
+              val heightIncreased = HEIGHT > SELF.R4[Int].get
+              val heightCorrect = out.R4[Int].get == HEIGHT
               val lastCoins = SELF.value <= oneEpochReduction
               allOf(Coll(
                       correctCoinsConsumed, 

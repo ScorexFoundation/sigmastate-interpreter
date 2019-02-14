@@ -28,12 +28,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import IR._
   import WArray._
   import WECPoint._
+  import GroupElement._
   import WBigInteger._
-  import ProveDlogEvidence._
+  import BigInt._
   import Context._; import SigmaContract._
   import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;
   import SigmaDslBuilder._; import WOption._
-  import TrivialSigma._
   import Liftables._
   
   test("SType.dataSize") {
@@ -63,30 +63,30 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("constants") {
-    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
-    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
-    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
-    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
-
+//    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
+//    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
+//    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
+//    checkInEnv(env, "byte", "b1", _ => 1.toByte, _ => constCost[Byte], _ => sizeOf(1.toByte))
+//
     val arr1 = env("arr1").asInstanceOf[Array[Byte]]
-    val symArr1 = colBuilder.fromArray(liftConst(arr1))
+    val symArr1 = liftConst(Colls.fromArray(arr1))
     checkInEnv(env, "arr", "arr1",
       {_ => symArr1}, {_ => constCost[Coll[Byte]]}, { _ => typeSize[Byte] * symArr1.length.toLong } )
     checkInEnv(env, "arr2", "arr1.size",
-      {_ => colBuilder.fromArray(liftConst(arr1)).length },
+      {_ => liftConst(Colls.fromArray(arr1)).length },
       { _ =>
         val c = ByteArrayConstant(arr1)
         costOf(c) + costOf(utxo.SizeOf(c))
       })
 
-    val n1Sym = liftConst(n1)
-    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[WBigInteger] }, { _ => sizeOf(n1Sym) })
+    val n1Sym = liftConst(dslValue.BigInt(n1))
+    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[BigInt] }, { _ => sizeOf(n1Sym) })
 
-    val g1Sym = liftConst(g1.asInstanceOf[ECPoint])
-    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[WECPoint]}, { _ => typeSize[WECPoint] })
+    val g1Sym = liftConst(g1)
+    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[GroupElement]}, { _ => typeSize[GroupElement] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      { _ => RProveDlogEvidence(g1Sym).asRep[SigmaProp].propBytes }
+      { _ => dsl.proveDlog(g1Sym).asRep[SigmaProp].propBytes }
     )
   }
 
@@ -95,7 +95,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
       {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
-    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(big).subtract(liftConst(n1))})
+    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(dslValue.BigInt(big)).subtract(liftConst(dslValue.BigInt(n1)))})
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ =>
         val c1 = IntConstant(1);
@@ -161,16 +161,6 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-
-  test("substConstants") {
-    import org.ergoplatform.ErgoScriptPredef._
-    val minerRewardDelay = 720
-    val prop = rewardOutputScriptForCurrentMiner(minerRewardDelay)
-    val costed = cost(env, prop)
-    val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
-    emit("substConstants", calcF, costF, sizeF)
-  }
-
   test("Crowd Funding") {
     val prover = new ErgoLikeTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
@@ -179,11 +169,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     checkInEnv(env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(backer))).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
+        val projectPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(project))).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
         val projectBytes = projectPubKey.propBytes
-        val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
+        val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
+        val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectBytes)
@@ -235,7 +225,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val regScript = dsl.proveDlog(liftConst(dslValue.GroupElement(script))).asRep[SigmaProp]
       val selfBytes = ctx.SELF.propositionBytes
       val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(

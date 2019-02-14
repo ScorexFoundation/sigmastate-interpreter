@@ -8,10 +8,10 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.OpCodes
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.Cost
+
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
   override type A = FirstDiffieHellmanTupleProverMessage
@@ -46,11 +46,7 @@ object DiffieHellmanTupleProverInput {
 case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, b: CryptoConstants.EcPointType)
   extends FirstProverMessage[DiffieHellmanTupleProtocol] {
   override def bytes: Array[Byte] = {
-    val ba = a.getEncoded(true)
-
-    val bb = b.getEncoded(true)
-
-    Array(ba.length.toByte, bb.length.toByte) ++ ba ++ bb
+    GroupElementSerializer.toBytes(a) ++ GroupElementSerializer.toBytes(b)
   }
 }
 

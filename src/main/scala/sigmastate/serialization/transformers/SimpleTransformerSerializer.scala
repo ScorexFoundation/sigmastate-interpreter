@@ -7,7 +7,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 case class SimpleTransformerSerializer[I <: SType, O <: SType]
 (code: OpCode,

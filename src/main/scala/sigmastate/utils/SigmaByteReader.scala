@@ -5,7 +5,7 @@ import java.nio.ByteBuffer
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 class SigmaByteReader(b: ByteBuffer,
                       var constantStore: ConstantStore,

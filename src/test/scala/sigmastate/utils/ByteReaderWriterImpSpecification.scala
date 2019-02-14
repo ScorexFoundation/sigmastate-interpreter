@@ -4,9 +4,10 @@ import java.nio.ByteBuffer
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Assertion, Matchers, PropSpec}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import sigma.util.ByteArrayBuilder
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
+import sigmastate.utils.ByteArrayWriter.{encodeZigZagLong, encodeZigZagInt}
 import sigmastate.utils.ByteBufferReader.{decodeZigZagInt, decodeZigZagLong}
 import sigmastate.utils.Helpers.bytesFromInts
 

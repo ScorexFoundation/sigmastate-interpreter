@@ -5,8 +5,9 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
 import sigmastate.serialization.Serializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import special.sigma
+import special.sigma.AnyValue
 
 /**
   * Variables to be put into context
@@ -47,5 +48,5 @@ trait Context{
     withExtension(ext)
   }
 
-  def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context
+  def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }

@@ -1,13 +1,17 @@
 package sigmastate.lang
 
-import sigmastate.SType
-import sigmastate.lang.syntax.ParserException
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.Values.{SValue, SigmaTree, Value}
+import org.ergoplatform.ErgoLikeContext
+import scalan.RType
+import sigmastate.{SBoolean, SType}
+import sigmastate.Values.{TrueLeaf, Value, Constant, SValue}
+import sigmastate.eval.{Evaluation, IRContext}
+import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.syntax.ParserException
 
 /**
   * @param networkPrefix network prefix to decode an ergo address from string (PK op)

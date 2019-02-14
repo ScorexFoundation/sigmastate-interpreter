@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.OptionGetOrElse
 

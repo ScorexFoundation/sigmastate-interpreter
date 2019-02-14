@@ -10,10 +10,9 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ErgoTreeSerializer, Serializer, ValueSerializer}
+import sigmastate.serialization.{ErgoTreeSerializer, Serializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
 
 import scala.runtime.ScalaRunTime
 
@@ -29,7 +28,7 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
+  lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 

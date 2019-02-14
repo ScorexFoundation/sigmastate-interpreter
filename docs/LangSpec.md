@@ -120,12 +120,12 @@ class Numeric {
    /** Absolute value of this numeric value. 
     * @since 2.0
     */  
-  def abs: Numeric 
+  def toAbs: Numeric 
   
   /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
    * `this` is less than, equal to, or greater than `that`.
    */
-  def compare(that: SNumeric): Int 
+  def compareTo(that: SNumeric): Int 
 }
 
 class Short extends Numeric
@@ -445,6 +445,7 @@ class Coll[A] {
    *  @tparam B     the element type of the returned collection.
    *  @return       a new collection of type `Coll[B]` resulting from applying the given function
    *                `f` to each element of this collection and collecting the results.
+   */
   def map[B](f: A => B): Coll[B]
 
   /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
@@ -488,7 +489,7 @@ class Coll[A] {
    *           where `x,,1,,, ..., x,,n,,` are the elements of this collection.
    *           Returns `z` if this collection is empty.
    */
-  def fold[B](z: B)(op: (B, A) => B): B
+  def foldLeft[B](z: B)(op: (B, A) => B): B
 
   /** Produces the range of all indices of this collection [0 .. size-1] 
    *  @since 2.0
@@ -517,6 +518,14 @@ class Coll[A] {
     */
   def segmentLength(p: A => Boolean, from: Int): Int
 
+  /** Finds the first element of the $coll satisfying a predicate, if any.
+    *
+    *  @param p       the predicate used to test elements.
+    *  @return        an option value containing the first element in the $coll
+    *                 that satisfies `p`, or `None` if none exists.
+    */
+  def find(p: A => Boolean): Option[A]
+  
   /** Finds index of the first element satisfying some predicate after or at some start index.
     *
     *  @param   p     the predicate used to test elements.
@@ -579,6 +588,35 @@ class Coll[A] {
    */
   def mapReduce[K, V](m: A => (K,V), r: (V,V) => V): Coll[(K,V)]
 
+  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
+    *
+    *  @param key   the discriminator function.
+    *  @tparam K    the type of keys returned by the discriminator function.
+    *  @return      A map from keys to ${coll}s such that the following invariant holds:
+    *               {{{
+    *                 (xs groupBy key)(k) = xs filter (x => key(x) == k)
+    *               }}}
+    *               That is, every key `k` is bound to a $coll of those elements `x`
+    *               for which `key(x)` equals `k`.
+    */
+  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])]
+
+  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
+    * Additionally projecting each element to a new value.
+    *
+    *  @param key   the discriminator function.
+    *  @param proj  projection function to produce new value for each element of this $coll
+    *  @tparam K    the type of keys returned by the discriminator function.
+    *  @tparam V    the type of values returned by the projection function.
+    *  @return      A map from keys to ${coll}s such that the following invariant holds:
+    *               {{{
+    *                 (xs groupByProjecting (key, proj))(k) = xs filter (x => key(x) == k).map(proj)
+    *               }}}
+    *               That is, every key `k` is bound to projections of those elements `x`
+    *               for which `key(x)` equals `k`.
+    */
+  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])]
+
   /** Produces a new collection which contains all distinct elements of this collection and also all elements of
    *  a given collection that are not in this collection.
    *  This is order preserving operation considering only first occurrences of each distinct elements.
@@ -615,6 +653,15 @@ class Coll[A] {
    */
   def intersect(that: Coll[A]): Coll[A]
 
+  /** Folding through all elements of this $coll starting from m.zero and applying m.plus to accumulate
+    * resulting value.
+    *
+    * @param m monoid object to use for summation
+    * @return  result of the following operations (m.zero `m.plus` x1 `m.plus` x2 `m.plus` ... xN)
+    * @since 2.0
+    */
+  def sum(m: Monoid[A]): A
+  
   /** Selects an interval of elements.  The returned collection is made up
    *  of all elements `x` which satisfy the invariant:
    *  {{{
@@ -681,7 +728,7 @@ class Coll[A] {
    *         index `offset`, otherwise `false`.
    * @since 2.0
    */
-  def startsWith[B](that: GenSeq[B], offset: Int): Boolean
+  def startsWith(that: Coll[A], offset: Int): Boolean
 
   /** Tests whether this collection ends with the given collection.
     *  @param  that   the collection to test

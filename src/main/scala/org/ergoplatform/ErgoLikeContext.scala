@@ -1,17 +1,23 @@
 package org.ergoplatform
 
+import java.math.BigInteger
+
+import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoLikeContext.Height
 import scalan.RType
+import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{CostingAvlTree, CostingDataContext, Evaluation, CostingBox}
+import sigmastate.eval._
 import sigmastate.interpreter.{ContextExtension, Context}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.collection.Coll
+import special.collection.{Coll, CollType}
 import special.sigma
-import special.sigma.{AnyValue, TestValue, Box}
-
+import special.sigma.{AnyValue, TestValue, Box, WrapperType}
+import SType._
+import RType._
+import special.sigma.Extensions._
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -33,17 +39,27 @@ class ErgoLikeContext(val currentHeight: Height,
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, newSpendingTransaction, self, extension)
 
   import ErgoLikeContext._
+  import Evaluation._
 
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
-    implicit val IRForBox = IR
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+    implicit val IRForBox: Evaluation = IR
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
-    val outputs =
-      if (spendingTransaction == null) noOutputs
-      else spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
-    val vars = contextVars(extension.values)
-    val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
-    val avlTree = CostingAvlTree(IR, lastBlockUtxoRoot)
-    new CostingDataContext(IR, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree, minerPubkey, vars.toArray, isCost)
+    val outputs = if (spendingTransaction == null)
+        noOutputs
+      else
+        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
+    val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
+      val tVal = stypeToRType[SType](v.tpe)
+      val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
+      toAnyValue(dslData.asWrappedType)(tVal)
+    }
+    val vars = contextVars(varMap ++ extensions)
+    val avlTree = CostingAvlTree(lastBlockUtxoRoot)
+    new CostingDataContext(IR,
+      inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
+      minerPubkey,
+      vars.toArray,
+      isCost)
   }
 
 }
@@ -85,33 +101,18 @@ object ErgoLikeContext {
       proverExtension)
   }
 
-  val noInputs = Array[Box]()
-  val noOutputs = Array[Box]()
+  val noInputs: Array[Box] = Array[Box]()
+  val noOutputs: Array[Box] = Array[Box]()
 
-  def toTestData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = (value, tpe) match {
-    case (arr: Array[a], SCollectionType(elemType)) =>
-      implicit val elemRType = Evaluation.stypeToRType(elemType)
-      elemType match {
-        case SCollectionType(_) | STuple(_) =>
-          val testArr = arr.map(x => toTestData(x, elemType, isCost))
-          IR.sigmaDslBuilderValue.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
-        case _ =>
-          IR.sigmaDslBuilderValue.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
-      }
-    case (arr: Array[a], STuple(items)) =>
-      val res = arr.zip(items).map { case (x, t) => toTestData(x, t, isCost)}
-      IR.sigmaDslBuilderValue.Colls.fromArray(res)(RType.AnyType)
-    case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-    case (t: AvlTreeData, SAvlTree) => CostingAvlTree(IR, t)
-    case (x, _) => x
-  }
+  import special.sigma._
+  import sigmastate.SType._
 
-  def contextVars(m: Map[Byte, Any])(implicit IR: Evaluation): Coll[AnyValue] = {
+  def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
     val res = new Array[AnyValue](maxKey + 1)
     for ((id, v) <- m) {
       assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = new TestValue(v)
+      res(id) = v
     }
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }

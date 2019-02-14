@@ -4,7 +4,7 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.{TwoArgumentsOperation, SType, SBigInt}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import OpCodes._
 import sigmastate.utxo.CostTable._
 
