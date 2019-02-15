@@ -12,7 +12,7 @@ import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 import scala.collection.mutable.ArrayBuffer
 

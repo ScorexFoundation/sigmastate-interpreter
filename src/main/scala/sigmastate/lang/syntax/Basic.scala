@@ -2,12 +2,10 @@ package sigmastate.lang.syntax
 
 import fastparse.all._
 import fastparse.CharPredicates._
-import fastparse.all
-import fastparse.core.Parsed.Failure
 import scalan.Nullable
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.SigmaException
-import sigmastate.utils.Extensions.nullableToOption
+import sigma.util.Extensions.nullableToOption
 
 object Basic {
   val digits = "0123456789"

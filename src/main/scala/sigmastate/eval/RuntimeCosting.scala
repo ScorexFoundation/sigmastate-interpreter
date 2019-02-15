@@ -16,7 +16,7 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigmastate.utils.Extensions.nullableToOption
+import sigma.util.Extensions.nullableToOption
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._

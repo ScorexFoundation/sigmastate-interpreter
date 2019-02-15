@@ -6,13 +6,8 @@ import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
 
 import scalan.Nullable
-import sigmastate.SType
-import sigmastate.Values.{SValue, Value}
-import sigmastate.serialization.{TypeSerializer, ValueSerializer}
 
-import scala.collection.generic.CanBuildFrom
 import scala.language.higherKinds
-import scala.reflect.ClassTag
 
 object Extensions {
   implicit class BooleanOps(val b: Boolean) extends AnyVal {
