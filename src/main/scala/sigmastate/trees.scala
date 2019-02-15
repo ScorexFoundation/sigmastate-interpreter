@@ -15,7 +15,8 @@ import scala.collection.mutable.ArrayBuffer
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is used for AND operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.AndCode
 }
 object CAND {
   import TrivialProp._
@@ -39,7 +40,8 @@ object CAND {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is also used for OR operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.OrCode
 }
 object COR {
   import TrivialProp._
@@ -81,7 +83,7 @@ abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Pro
 }
 object TrivialProp {
   // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
-  // will lead to Boolean boxing, which we want to avoid to encourage
+  // will lead to Boolean boxing, which we want to avoid
   // So, instead of `case TrivialProp(b) => ... b ...` use more efficient
   // `case p: TrivialProp => ... p.condition ...
 

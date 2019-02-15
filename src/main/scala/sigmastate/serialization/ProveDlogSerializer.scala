@@ -9,9 +9,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 
 case class ProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaBoolean)
-  extends ValueSerializer[ProveDlog] {
-
-  override val opCode: OpCode = OpCodes.ProveDlogCode
+  extends SigmaSerializer[ProveDlog, ProveDlog] {
 
   override def serializeBody(obj: ProveDlog, w: SigmaByteWriter): Unit =
     w.putValue(obj.value)

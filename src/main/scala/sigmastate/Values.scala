@@ -14,10 +14,13 @@ import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, OpCodes, ConstantStore}
+import sigmastate.serialization._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigma.util.Extensions._
+import sigmastate.TrivialProp.{FalseProp, TrueProp}
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import special.sigma.Extensions._
@@ -26,6 +29,8 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.transformers.ProveDHTupleSerializer
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{Extensions, AnyValue, TestValue}
 
 
@@ -497,16 +502,65 @@ object Values {
     override def tpe = SBoolean
   }
 
-  /**
-    * Algebraic data type of sigma proposition expressions.
+  /** Algebraic data type of sigma proposition expressions.
     * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
   trait SigmaBoolean {
+    /** Unique id of the node class used in serialization of SigmaBoolean. */
+    val opCode: OpCode
   }
 
   object SigmaBoolean {
-    val PropBytes = "propBytes"
-    val IsProven = "isProven"
+    object serializer extends Serializer[SigmaBoolean, SigmaBoolean] {
+      val dhtSerializer = ProveDHTupleSerializer(mkProveDiffieHellmanTuple)
+      val dlogSerializer = ProveDlogSerializer(mkProveDlog)
+
+      override def serializeBody(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
+        w.put(data.opCode)
+        data match {
+          case dlog: ProveDlog   => dlogSerializer.serializeBody(dlog, w)
+          case dht: ProveDHTuple => dhtSerializer.serializeBody(dht, w)
+          case _: TrivialProp => // besides opCode no additional bytes
+          case and: CAND =>
+            w.putUShort(and.sigmaBooleans.length)
+            for (c <- and.sigmaBooleans)
+              serializer.serializeBody(c, w)
+          case or: COR =>
+            w.putUShort(or.sigmaBooleans.length)
+            for (c <- or.sigmaBooleans)
+              serializer.serializeBody(c, w)
+          case th: CTHRESHOLD =>
+            w.putUShort(th.k)
+            w.putUShort(th.sigmaBooleans.length)
+            for (c <- th.sigmaBooleans)
+              serializer.serializeBody(c, w)
+        }
+      }
+
+      override def parseBody(r: SigmaByteReader): SigmaBoolean = {
+        val opCode = r.getByte()
+        val res = opCode match {
+          case FalseProp.opCode => FalseProp
+          case TrueProp.opCode  => TrueProp
+          case ProveDlogCode => dlogSerializer.parseBody(r)
+          case ProveDiffieHellmanTupleCode => dhtSerializer.parseBody(r)
+          case AndCode =>
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parseBody(r))
+            CAND(children)
+          case OrCode =>
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parseBody(r))
+            COR(children)
+          case AtLeastCode =>
+            val k = r.getUShort()
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parseBody(r))
+            CTHRESHOLD(k, children)
+        }
+        res
+      }
+    }
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {

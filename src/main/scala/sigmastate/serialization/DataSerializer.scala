@@ -34,7 +34,7 @@ object DataSerializer {
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
     case SSigmaProp =>
       val p = v.asInstanceOf[SigmaBoolean]
-      w.putValue(p)
+      SigmaBoolean.serializer.serializeBody(p, w)
     case SBox =>
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
@@ -84,8 +84,7 @@ object DataSerializer {
     case SGroupElement =>
       GroupElementSerializer.parseBody(r)
     case SSigmaProp =>
-      val p = r.getValue().asInstanceOf[SigmaBoolean]
-      p
+      SigmaBoolean.serializer.parseBody(r)
     case SBox =>
       ErgoBox.serializer.parseBody(r)
     case SAvlTree =>
