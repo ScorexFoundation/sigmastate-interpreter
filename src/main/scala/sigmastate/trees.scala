@@ -2,8 +2,12 @@ package sigmastate
 
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
+import sigmastate.basics.DLogProtocol.{DLogProverInput, DLogSigmaProtocol}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer
@@ -107,6 +111,25 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
+}
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of discrete logarithm signature protocol. */
+case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDlogCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(SGroupElement, SSigmaProp)
+}
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v)*/
+case class CreateProveDHTuple(gv: Value[SGroupElement.type],
+    hv: Value[SGroupElement.type],
+    uv: Value[SGroupElement.type],
+    vv: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {

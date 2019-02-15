@@ -505,12 +505,24 @@ object Values {
   /** Algebraic data type of sigma proposition expressions.
     * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean {
+  trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
+    override def tpe = SBoolean
+
+    def fields: Seq[(String, SType)] = SigmaBoolean.fields
+    /** This is not used as operation, but rather as data value of SigmaProp type. */
+    def opType: SFunc = Value.notSupportedError(this, "opType")
+
     /** Unique id of the node class used in serialization of SigmaBoolean. */
     val opCode: OpCode
   }
 
   object SigmaBoolean {
+    val PropBytes = "propBytes"
+    val IsValid = "isValid"
+    val fields = Seq(
+      PropBytes -> SByteArray,
+      IsValid -> SBoolean
+    )
     object serializer extends Serializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(mkProveDiffieHellmanTuple)
       val dlogSerializer = ProveDlogSerializer(mkProveDlog)

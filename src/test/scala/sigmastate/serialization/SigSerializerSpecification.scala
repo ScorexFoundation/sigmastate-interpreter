@@ -4,9 +4,8 @@ import java.util
 
 import org.ergoplatform.ErgoLikeContext
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import sigmastate.Values.{TrueLeaf, Value}
+import org.scalatest.Assertion
+import sigmastate.Values.{Value, SigmaPropConstant, SigmaBoolean}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -66,7 +65,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
   }
 
   property("SigSerializer no proof round trip") {
-    roundTrip(NoProof, TrueLeaf)
+    roundTrip(NoProof, TrivialProp.TrueProp)
   }
 
   property("SigSerializer round trip") {
@@ -82,7 +81,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
         self = fakeSelf)
 
       // get sigma conjectures out of transformers
-      val prop = prover.reduceToCrypto(ctx, expr).get._1
+      val SigmaPropConstant(prop) = prover.reduceToCrypto(ctx, expr).get._1
 
       val proof = prover.prove(expr, ctx, challenge).get.proof
       val proofTree = SigSerializer.parseAndComputeChallenges(prop, proof)

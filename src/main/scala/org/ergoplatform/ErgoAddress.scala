@@ -6,7 +6,7 @@ import com.google.common.primitives.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
-import sigmastate.Values.{GetVarByteArray, ConstantNode, SigmaPropConstant, Value, IntConstant, ConcreteCollection}
+import sigmastate.Values.{GetVarByteArray, ConstantNode, SigmaPropConstant, Value, IntConstant, SigmaBoolean, ConcreteCollection}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer}
@@ -95,7 +95,7 @@ object P2PKAddress {
   val addressTypePrefix: Byte = 1: Byte
 
   def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): P2PKAddress = {
-    val bs = ValueSerializer.serialize(pubkey)
+    val bs = SigmaBoolean.serializer.toBytes(pubkey)
     new P2PKAddress(pubkey, bs)
   }
 }

@@ -25,8 +25,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeTestInterpreter
 
-    val h1 = prover1.dlogSecrets.head.publicImage
-    val h2 = prover2.dlogSecrets.head.publicImage
+    val h1 = SigmaPropConstant(prover1.dlogSecrets.head.publicImage)
+    val h2 = SigmaPropConstant(prover2.dlogSecrets.head.publicImage)
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 

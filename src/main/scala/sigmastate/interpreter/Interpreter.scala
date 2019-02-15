@@ -99,7 +99,12 @@ trait Interpreter extends ScorexLogging {
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
     val valueFun = IR.compile[SSigmaProp.type](IR.getDataEnv, calcF.asRep[IR.Context => SSigmaProp.WrappedType])
-    val res = valueFun(calcCtx)
+    val res = valueFun(calcCtx) match {
+      case SigmaPropConstant(sb) => sb
+      case FalseLeaf => TrivialProp.FalseProp
+      case TrueLeaf => TrivialProp.TrueProp
+      case res => error(s"Expected SigmaBoolean value but was $res")
+    }
     res -> estimatedCost
   }
 
@@ -138,7 +143,7 @@ trait Interpreter extends ScorexLogging {
                 util.Arrays.equals(newRoot.challenge, expectedChallenge)
             }
         }
-      case _: Value[_] => false
+//      case _: Value[_] => false
     }
     checkingResult -> cost
   }
@@ -191,7 +196,7 @@ trait Interpreter extends ScorexLogging {
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-  type ReductionResult = (Value[SSigmaProp.type], Long)
+  type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map()
