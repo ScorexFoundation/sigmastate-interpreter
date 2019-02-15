@@ -6,7 +6,7 @@ import sigmastate.Values.{SigmaBoolean, Value}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 case class ProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaBoolean)
   extends ValueSerializer[ProveDlog] {

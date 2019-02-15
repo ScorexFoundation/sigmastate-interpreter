@@ -18,10 +18,10 @@ trait ECPointWrapSpec extends WrapSpecBase {
 trait BigIntegerWrapSpec extends WrapSpecBase {
   def fromString(s: String) = new BigInteger(s)
   def fromArray(sig: Int, arr: Array[Byte]) = new BigInteger(sig, arr)
-  def ZERO = BigInteger.ZERO
-  def ONE = BigInteger.ONE
+//  def ZERO = BigInteger.ZERO
+//  def ONE = BigInteger.ONE
   def valueOf(l: Long) = BigInteger.valueOf(l)
-  def toString(l: BigInteger, radix: Int) = l.toString(radix)
+//  def toString(l: BigInteger, radix: Int) = l.toString(radix)
   def toByteArray(l: BigInteger): Array[Byte] = l.toByteArray()
   def add(l: BigInteger, r: BigInteger) = l.add(r)
   def subtract(l: BigInteger, r: BigInteger) = l.subtract(r)

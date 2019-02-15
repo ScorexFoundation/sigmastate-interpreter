@@ -1,7 +1,7 @@
 package sigmastate.lang
 
-import sigmastate.lang.Terms.{Ident, MethodCallLike}
-import sigmastate.Values.{ConcreteCollection, GroupElementConstant, LongConstant, SValue, SigmaBoolean, Value}
+import sigmastate.lang.Terms.{MethodCallLike, Ident}
+import sigmastate.Values.{LongConstant, SValue, Value, SigmaBoolean, GroupElementConstant, ConcreteCollection}
 import sigmastate._
 import java.math.BigInteger
 
@@ -9,6 +9,7 @@ import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.ProveDHTuple
+import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
@@ -30,19 +31,23 @@ trait LangTests {
   val arr1 = Array[Byte](1, 2)
   val arr2 = Array[Byte](10, 20)
   val dlog = CryptoConstants.dlogGroup
-  val g1 = dlog.generator
-  val g2 = dlog.multiplyGroupElements(g1, g1)
-  val g3 = dlog.multiplyGroupElements(g2, g2)
-  val g4 = dlog.multiplyGroupElements(g3, g3)
+  val ecp1 = dlog.generator
+  val ecp2 = dlog.multiplyGroupElements(ecp1, ecp1)
+  val ecp3 = dlog.multiplyGroupElements(ecp2, ecp2)
+  val ecp4 = dlog.multiplyGroupElements(ecp3, ecp3)
+  val g1 = CostingSigmaDslBuilder.GroupElement(ecp1.asInstanceOf[ECPoint])
+  val g2 = CostingSigmaDslBuilder.GroupElement(ecp2.asInstanceOf[ECPoint])
+  val g3 = CostingSigmaDslBuilder.GroupElement(ecp3.asInstanceOf[ECPoint])
+  val g4 = CostingSigmaDslBuilder.GroupElement(ecp4.asInstanceOf[ECPoint])
 
   protected val n1: BigInteger = BigInt(10).underlying()
   protected val n2: BigInteger = BigInt(20).underlying()
-  protected val bigIntArr1: Array[BigInteger] = Array(n1, n2)
+  protected val bigIntegerArr1: Array[BigInteger] = Array(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
-  protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(g1))
-  protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(g2))
+  protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(ecp1))
+  protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(ecp2))
   protected val dht1: SigmaBoolean = ProveDHTuple(
-      GroupElementConstant(g1), GroupElementConstant(g2), GroupElementConstant(g3), GroupElementConstant(g4))
+      GroupElementConstant(ecp1), GroupElementConstant(ecp2), GroupElementConstant(ecp3), GroupElementConstant(ecp4))
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
@@ -60,7 +65,7 @@ trait LangTests {
     "n1" -> n1,
     "n2" -> n2,
     "big" -> big,
-    "bigIntArr1" -> bigIntArr1
+    "bigIntArr1" -> bigIntegerArr1
   )
 
   /** Parses string to SType tree */

@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.{Values, SType}
 import sigmastate.lang.Terms._
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.utxo.SigmaPropBytes

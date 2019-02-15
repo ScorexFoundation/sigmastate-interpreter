@@ -1,12 +1,19 @@
-package special.sigma
+package sigmastate.eval
 
 import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{Matchers, FunSuite}
+import special.sigma.Extensions._
+import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestContext, TestSigmaDslBuilder, SigmaDslBuilder}
+
+import scala.language.implicitConversions
 
 class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
-  test("atLeast") {
+  override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
+
+  implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
+  ignore("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
     // border cases
     SigmaDsl.atLeast(0, props).isValid shouldBe true
@@ -26,11 +33,11 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.subtract(BigInteger.ONE).toByteArray)
-    ).compareTo(BigInteger.ONE) shouldBe 1
+    ).compareTo(SigmaDsl.BigInt(BigInteger.ONE)) shouldBe 1
 
     SigmaDsl.byteArrayToBigInt(
       Colls.fromArray(groupOrder.toByteArray)
-    ).compareTo(BigInteger.ONE) shouldBe 1
+    ).compareTo(SigmaDsl.BigInt(BigInteger.ONE)) shouldBe 1
 
     an [RuntimeException] should be thrownBy
       SigmaDsl.byteArrayToBigInt(Colls.fromArray(groupOrder.add(BigInteger.ONE).toByteArray))
@@ -57,20 +64,22 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   }
 
   test("box.creationInfo._1 is Int") {
-    val box = newAliceBox(1, 100, Map(3 -> (20 -> Array.emptyByteArray)))
+    val box = newAliceBox(1, 100, Map(3 -> toAnyValue((20 -> SigmaDsl.Colls.fromArray(Array.emptyByteArray)))))
     box.creationInfo._1 shouldBe a [Integer]
   }
 
 
-  case class Contract1(base64_pk1: String) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {
+  case class Contract1(base64_pk1: String) extends SigmaContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
+    override def canOpen(ctx: Context): Boolean = {
       val pk: SigmaProp = SigmaDsl.PubKey(base64_pk1)
       pk.isValid
     }
   }
 
-  case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {
+  case class Contract2(base64_pkA: String, base64_pkB: String, base64_pkC: String) extends SigmaContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
+    override def canOpen(ctx: Context): Boolean = {
       val pkA: SigmaProp = SigmaDsl.PubKey(base64_pkA)
       val pkB: SigmaProp = SigmaDsl.PubKey(base64_pkB)
       val pkC: SigmaProp = SigmaDsl.PubKey(base64_pkC)
@@ -78,8 +87,9 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     }
   }
 
-  case class FriendContract(friend: Box) extends DefaultContract {
-    def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
+  case class FriendContract(friend: Box) extends SigmaContract {
+    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
+    override def canOpen(ctx: Context): Boolean = {ctx.INPUTS.length == 2 && ctx.INPUTS(0).id == friend.id}
   }
 
 

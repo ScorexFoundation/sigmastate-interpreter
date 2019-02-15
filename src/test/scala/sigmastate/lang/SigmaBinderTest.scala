@@ -45,7 +45,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     // todo should be g1.exp(n1)
     //  ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
 //    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
-    bind(env, "g1 * g2") shouldBe MethodCallLike(g1, "*", IndexedSeq(g2))
+    bind(env, "g1 * g2") shouldBe MethodCallLike(ecp1, "*", IndexedSeq(ecp2))
   }
 
   property("predefined functions") {

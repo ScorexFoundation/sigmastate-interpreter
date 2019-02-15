@@ -1,18 +1,18 @@
 package sigmastate.utxo.examples
 
-import sigmastate.interpreter.Interpreter.ScriptNameProp
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
+import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ByteConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedBox, TrueLeaf, ValDef, ValUse}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
 
 class ReversibleTxExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
 
@@ -77,43 +77,31 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     val withdrawEnv = Map(
       ScriptNameProp -> "withdrawEnv",
-      "carolPubKey" -> carolPubKey // this pub key can reverse payments
+      "carol" -> carolPubKey // this pub key can reverse payments
     )
 
     val withdrawScript = compileWithCosting(withdrawEnv,
       """{
-        |  val bobPubKey   = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
+        |  val bob         = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
         |
-        |  (bobPubKey && HEIGHT > bobDeadline) ||
-        |  (carolPubKey && HEIGHT <= bobDeadline)       // carolPubKey hardwired via withdrawEnv
+        |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
         |}""".stripMargin).asBoolValue
 
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
     val depositScript = compileWithCosting(depositEnv,
       """{
-        |  alicePubKey && OUTPUTS.forall({(out:Box) =>
-        |    out.R5[Int].get >= HEIGHT + 30
-        |  }) && OUTPUTS.forall({(out:Box) =>
+        |  alice && OUTPUTS.forall({(out:Box) =>
+        |    out.R5[Int].get >= HEIGHT + 30 &&
         |    blake2b256(out.propositionBytes) == withdrawScriptHash
         |  })
         |}""".stripMargin
     ).asBoolValue
-
-    //    val depositScriptBad = compileWithCosting(depositEnv,
-    //      """{
-    //        |  alicePubKey && OUTPUTS.forall({(out:Box) =>
-    //        |    out.R5[Int].get >= HEIGHT + 30 &&
-    //        |    blake2b256(out.propositionBytes) == withdrawScriptHash
-    //        |  })
-    //        |}""".stripMargin
-    //    ).asBoolValue
-
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
     val depositAddress = Pay2SHAddress(depositScript)

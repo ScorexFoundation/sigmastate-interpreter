@@ -47,4 +47,13 @@ class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.Scri
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }
   }
+  def withDHSecrets(additionalSecrets: Seq[DiffieHellmanTupleProverInput]): ErgoLikeTestProvingInterpreter = {
+    val ce = contextExtenders
+    val s = secrets ++ additionalSecrets
+
+    new ErgoLikeTestProvingInterpreter(maxCost) {
+      override lazy val secrets = s
+      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
+    }
+  }
 }

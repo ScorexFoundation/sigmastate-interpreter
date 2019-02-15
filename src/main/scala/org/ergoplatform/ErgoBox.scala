@@ -107,6 +107,8 @@ object ErgoBox {
   trait RegisterId {
     val number: Byte
     def asIndex: Int = number.toInt
+
+    override def toString: Idn = "R" + number
   }
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
@@ -144,12 +146,14 @@ object ErgoBox {
 
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 
+  val allZerosModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
+
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
+            transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxIndex, creationHeight)
 

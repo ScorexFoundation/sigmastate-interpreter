@@ -92,8 +92,8 @@ trait CoinEmission extends SigmaContract {
       else fixedRate - (oneEpochReduction * epoch)
     val correctCoinsConsumed = coinsToIssue == (ctx.SELF.value - out.value)
     val sameScriptRule = ctx.SELF.propositionBytes == out.propositionBytes
-    val heightIncreased = ctx.HEIGHT > ctx.SELF.R4[Long].get
-    val heightCorrect = out.R4[Long].get == ctx.HEIGHT
+    val heightIncreased = ctx.HEIGHT > ctx.SELF.getReg[Long](4).get
+    val heightCorrect = out.getReg[Long](4).get == ctx.HEIGHT
     val lastCoins = ctx.SELF.value <= oneEpochReduction
     allOf(Collection(
       correctCoinsConsumed,
@@ -111,7 +111,7 @@ trait DemurrageCurrency extends SigmaContract {
 
   @clause def canOpen(ctx: Context) = verifyZK {
     val c2 =
-      ctx.HEIGHT >= ctx.SELF.R4[Int].get + demurragePeriod &&
+      ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod &&
       ctx.OUTPUTS.exists(out => {
         out.value >= ctx.SELF.value - demurrageCost && out.propositionBytes == ctx.SELF.propositionBytes
       })

@@ -204,32 +204,6 @@ object BigIntegerWrapSpec extends EntityObject("BigIntegerWrapSpec") {
       }
     }
 
-    object ZERO {
-      def unapply(d: Def[_]): Nullable[Rep[BigIntegerWrapSpec]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BigIntegerWrapSpecElem[_]] && method.getName == "ZERO" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[BigIntegerWrapSpec]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[BigIntegerWrapSpec]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object ONE {
-      def unapply(d: Def[_]): Nullable[Rep[BigIntegerWrapSpec]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BigIntegerWrapSpecElem[_]] && method.getName == "ONE" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[BigIntegerWrapSpec]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[BigIntegerWrapSpec]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object valueOf {
       def unapply(d: Def[_]): Nullable[(Rep[BigIntegerWrapSpec], Rep[Long])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[BigIntegerWrapSpecElem[_]] && method.getName == "valueOf" =>
@@ -238,20 +212,6 @@ object BigIntegerWrapSpec extends EntityObject("BigIntegerWrapSpec") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[BigIntegerWrapSpec], Rep[Long])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    // manual fix (method name)
-    object toStringMethod {
-      def unapply(d: Def[_]): Nullable[(Rep[BigIntegerWrapSpec], Rep[WBigInteger], Rep[Int])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[BigIntegerWrapSpecElem[_]] && method.getName == "toString" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[BigIntegerWrapSpec], Rep[WBigInteger], Rep[Int])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[BigIntegerWrapSpec], Rep[WBigInteger], Rep[Int])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

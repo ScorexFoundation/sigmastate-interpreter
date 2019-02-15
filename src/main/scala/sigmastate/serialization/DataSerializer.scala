@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 

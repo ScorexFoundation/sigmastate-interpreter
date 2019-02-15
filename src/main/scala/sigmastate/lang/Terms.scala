@@ -10,7 +10,8 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.interpreter.Context
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
+import sigmastate.utxo.{ExtractRegisterAs, Slice, SigmaPropIsProven}
+import special.sigma.{AnyValue, TestValue}
 
 object Terms {
 

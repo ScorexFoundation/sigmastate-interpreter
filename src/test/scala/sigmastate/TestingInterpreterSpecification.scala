@@ -372,7 +372,8 @@ case class TestingContext(height: Int,
                          ) extends Context {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+    assert(extensions.isEmpty, s"TestingContext doesn't support non-empty extensions: $extensions")
     val inputs = Array[Box]()
     val outputs = Array[Box]()
     val vars = Array[AnyValue]()
