@@ -3,7 +3,7 @@ package sigmastate.serialization
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SelectField
 import sigmastate.{STuple, SType}

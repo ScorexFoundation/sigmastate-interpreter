@@ -4,7 +4,7 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{LongConstant, IntArrayConstant, Value, SigmaPropValue, IntConstant}
+import sigmastate.Values.{LongConstant, SigmaPropConstant, IntArrayConstant, Value, SigmaPropValue, IntConstant}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
@@ -67,10 +67,10 @@ object ErgoScriptPredef {
     * Required script of the box, that collects mining rewards
     */
   def rewardOutputScript(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
-    AND(
-      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))),
-      minerPk
-    )
+    SigmaAnd(
+      GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))).toSigmaProp,
+      SigmaPropConstant(minerPk)
+    ).isProven
   }
 
   /**

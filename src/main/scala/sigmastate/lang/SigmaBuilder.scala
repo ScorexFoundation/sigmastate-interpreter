@@ -5,70 +5,57 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
+import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
 import sigmastate.basics.ProveDHTuple
+import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.{GroupElement, SigmaProp}
 
 trait SigmaBuilder {
 
   def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
-
   def mkNEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
   def mkGT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
-
   def mkGE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
-
   def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
-
   def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
   def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T]
-
   def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
-
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
 
   def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
-
   def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
-
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
-
   def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue
-
   def mkBinXor(left: BoolValue, right: BoolValue): BoolValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
-
   def mkMultiplyGroup(left: Value[SGroupElement.type],
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
-
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
   def mkTreeModifications(tree: Value[SAvlTree.type],
@@ -96,17 +83,12 @@ trait SigmaBuilder {
                        falseBranch: Value[T]): Value[T]
 
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
-
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
-
   def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
-
   def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
-
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
-
   def mkDecodePoint(input: Value[SByteArray]): GroupElementValue
 
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
@@ -140,19 +122,12 @@ trait SigmaBuilder {
                              default: Option[Value[IV]] = None): Value[IV]
 
   def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType]
-
   def mkSizeOf[IV <: SType](input: Value[SCollection[IV]]): Value[SInt.type]
-
   def mkExtractAmount(input: Value[SBox.type]): Value[SLong.type]
-
   def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray]
-
   def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
-
   def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray]
-
   def mkExtractId(input: Value[SBox.type]): Value[SByteArray]
-
   def mkExtractCreationInfo(input: Value[SBox.type]): Value[STuple]
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
@@ -160,7 +135,6 @@ trait SigmaBuilder {
                                        tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
-
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
                                         tpe: T,
                                         default: Option[Value[T]] = None): Value[T]
@@ -171,19 +145,15 @@ trait SigmaBuilder {
                                 hv: Value[SGroupElement.type],
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
-
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
 
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
-
   /** Logically inverse to mkBoolToSigmaProp */
   def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
-
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
-
   def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
@@ -192,27 +162,17 @@ trait SigmaBuilder {
   def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
 
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
-
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
-
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
-
   def mkValUse(valId: Int, tpe: SType): Value[SType]
-
   def mkZKProofBlock(body: Value[SSigmaProp.type]): Value[SBoolean.type]
-
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
-
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
-
   def mkIdent(name: String, tpe: SType): Value[SType]
-
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
-
   def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
-
   def mkMethodCallLike(obj: Value[SType],
                        name: String,
                        args: IndexedSeq[Value[SType]],
@@ -231,44 +191,29 @@ trait SigmaBuilder {
                   body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
-
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
-
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
-
   def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type]
 
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
-
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
-
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
-
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 
   def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type]
-
   def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
-
   def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
 
   def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
 
   def mkNegation[T <: SNumericType](input: Value[T]): Value[T]
-
   def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T]
-
   def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
-
   def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
-
   def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
-
   def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
@@ -283,14 +228,27 @@ trait SigmaBuilder {
     case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
     case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
     case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
+
     case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
-    case v: CryptoConstants.EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
-    case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
+    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](CostingSigmaDslBuilder.toBigInteger(n), SBigInt))
+
+    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
+    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](CostingSigmaDslBuilder.toECPoint(ge).asInstanceOf[EcPointType], SGroupElement))
+
+    case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
+    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))
+
     case v: SValue => Nullable(v)
+    case _ => Nullable.None
+  }
+
+  def unliftAny(v: SValue): Nullable[Any] = v match {
+    case Constant(v, t) => Nullable(v)
     case _ => Nullable.None
   }
 }
@@ -539,7 +497,6 @@ class StdSigmaBuilder extends SigmaBuilder {
     TaggedVariableNode(varId, tpe)
 
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] = SomeValue(x)
-
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] = NoneValue(elemType)
 
   override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
@@ -733,9 +690,7 @@ case object StdSigmaBuilder extends StdSigmaBuilder
 case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
-
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
-
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 
 object Constraints {

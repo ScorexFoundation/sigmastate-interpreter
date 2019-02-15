@@ -3,10 +3,11 @@ package sigmastate
 import java.math.BigInteger
 
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import scalan.RType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.SigmaTyper
@@ -17,8 +18,15 @@ import special.collection.Coll
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
+import scalan.meta.ScalanAst.STypeArgAnnotation
+import sigmastate.SBoolean.typeCode
+import sigmastate.SByte.typeCode
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
+//import sigmastate.SNumericType._
+import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
 
 /** Base type for all AST nodes of sigma lang. */
@@ -80,6 +88,10 @@ object SType {
   implicit val typeBox = SBox
 
   implicit def typeCollection[V <: SType](implicit tV: V): SCollection[V] = SCollection[V]
+
+  implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
+  implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
+  implicit val AvlTreeDataRType: RType[AvlTreeData] = RType.fromClassTag(classTag[AvlTreeData])
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
@@ -669,7 +681,11 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override val typeCode = STuple.TupleTypeCode
 
   override def dataSize(v: SType#WrappedType) = {
-    val arr = (v match { case col: Coll[_] => col.toArray case _ => v}).asInstanceOf[Array[Any]]
+    val arr = (v match {
+      case col: Coll[_] => col.toArray
+      case p: Tuple2[_,_] => p.toArray
+      case _ => v
+    }).asInstanceOf[Array[Any]]
     assert(arr.length == items.length)
     var sum: Long = 2 // header
     for (i <- arr.indices) {

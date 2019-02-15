@@ -369,12 +369,13 @@ case class TestingContext(height: Int,
                          ) extends Context {
   override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
 
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
+  override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
+    assert(extensions.isEmpty, s"TestingContext doesn't support non-empty extensions: $extensions")
     val inputs = Array[Box]()
     val outputs = Array[Box]()
     val vars = Array[AnyValue]()
     val noBytes = IR.sigmaDslBuilderValue.Colls.fromArray[Byte](Array[Byte]())
-    val emptyAvlTree = TestAvlTree(noBytes, AvlTreeFlags.ReadOnly.downCast(IR), 0, None)
+    val emptyAvlTree = TestAvlTree(noBytes, AvlTreeFlags.ReadOnly.downCast(), 0, None)
     new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
       lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,
       vars = vars, isCost = isCost)

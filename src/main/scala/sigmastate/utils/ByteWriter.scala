@@ -2,8 +2,9 @@ package sigmastate.utils
 
 import java.util._
 
-import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong}
-import sigmastate.utils.Extensions._
+import sigmastate.utils.ByteArrayWriter.{encodeZigZagLong, encodeZigZagInt}
+import sigma.util.Extensions._
+import sigma.util.ByteArrayBuilder
 
 trait ByteWriter {
   def put(x: Byte): this.type

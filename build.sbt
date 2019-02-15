@@ -72,12 +72,12 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
-val scripto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1" 
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.4"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.1"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
-val specialVersion = "master-4e1b2bdb-SNAPSHOT"
+val specialVersion = "master-19973f60-SNAPSHOT"
 val specialCommon  = "io.github.scalan" %% "common" % specialVersion
 val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
@@ -107,9 +107,9 @@ lazy val testSettings = Seq(
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
   test in assembly := {})
-  
+
 libraryDependencies ++= Seq(
-  scripto,
+  scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
@@ -137,7 +137,7 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-    //    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-optimizations-51cf49fb-SNAPSHOT.jar"
+//        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-eq-tests-cb1f5c15-SNAPSHOT.jar"
   )
 )
 
@@ -163,14 +163,14 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
     .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
       libraryDependencies ++= Seq(
-        specialCommon, meta, libraryapi, macroCompat, scripto, bouncycastleBcprov
+        specialCommon, meta, libraryapi, macroCompat, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
     .dependsOn(sigmaapi % allConfigDependency)
     .settings(libraryDefSettings,
       libraryDependencies ++= Seq(
-        libraryapi, libraryimpl, scripto, bouncycastleBcprov
+        libraryapi, libraryimpl, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
@@ -182,7 +182,7 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
         libraryapi, (libraryapi % Test).classifier("tests"),
         libraryimpl, (libraryimpl % Test).classifier("tests"),
         specialLibrary, (specialLibrary % Test).classifier("tests"),
-        scripto,
+        scrypto,
         bouncycastleBcprov
       ))
 
@@ -192,7 +192,7 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "fix-i372-sigmastate"
+  val ergoBranch = "v2.0"
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")

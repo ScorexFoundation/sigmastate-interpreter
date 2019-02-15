@@ -3,7 +3,7 @@ package sigmastate.utils
 import java.nio.ByteBuffer
 import java.util._
 
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 import sigmastate.utils.ByteBufferReader.decodeZigZagLong
 
 trait ByteReader {

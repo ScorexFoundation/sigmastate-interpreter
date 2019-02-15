@@ -2,6 +2,7 @@ package sigmastate.utils
 
 import org.scalatest.{PropSpec, Matchers}
 import org.scalatest.prop.PropertyChecks
+import sigma.util.ByteArrayBuilder
 
 class ByteArrayBuilderTests extends PropSpec with PropertyChecks with Matchers {
 

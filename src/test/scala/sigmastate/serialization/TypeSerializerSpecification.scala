@@ -4,7 +4,7 @@ import org.scalacheck.Arbitrary._
 import org.scalatest.Assertion
 import sigmastate._
 import sigmastate.lang.exceptions.TypeDeserializeCallDepthExceeded
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 

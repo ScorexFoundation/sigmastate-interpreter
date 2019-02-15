@@ -5,6 +5,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{Quadruple, _}
+import sigma.util.Extensions._
 
 case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: SType]
 (override val opCode: Byte,

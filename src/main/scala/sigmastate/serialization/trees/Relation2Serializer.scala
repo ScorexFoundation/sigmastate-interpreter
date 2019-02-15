@@ -6,7 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import sigma.util.Extensions._
 
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
