@@ -20,37 +20,55 @@ import sigmastate.basics.ProveDHTuple
 trait SigmaBuilder {
 
   def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+
   def mkNEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
   def mkGT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+
   def mkGE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+
   def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
+
   def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
   def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T]
+
   def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkDivide[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkModulo[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkMin[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkMax[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
+
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
 
   def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
+
   def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
 
   def mkBinOr(left: BoolValue, right: BoolValue): BoolValue
+
   def mkBinAnd(left: BoolValue, right: BoolValue): BoolValue
+
   def mkAtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]]): SigmaPropValue
+
   def mkBinXor(left: BoolValue, right: BoolValue): BoolValue
 
   def mkExponentiate(left: Value[SGroupElement.type],
                      right: Value[SBigInt.type]): Value[SGroupElement.type]
+
   def mkMultiplyGroup(left: Value[SGroupElement.type],
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
+
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
   def mkTreeModifications(tree: Value[SAvlTree.type],
@@ -58,8 +76,12 @@ trait SigmaBuilder {
                           proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
 
   def mkTreeRemovals(tree: Value[SAvlTree.type],
-                          operations: Value[SCollection[SByteArray]],
-                          proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
+                     operations: Value[SCollection[SByteArray]],
+                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
+
+  def mkTreeInserts(tree: Value[SAvlTree.type],
+                    operations: Value[SCollection[STuple]],
+                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
 
   def mkTreeLookup(tree: Value[SAvlTree.type],
                    key: Value[SByteArray],
@@ -74,12 +96,17 @@ trait SigmaBuilder {
                        falseBranch: Value[T]): Value[T]
 
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
+
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
+
   def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
+
   def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
 
   def mkCalcBlake2b256(input: Value[SByteArray]): Value[SByteArray]
+
   def mkCalcSha256(input: Value[SByteArray]): Value[SByteArray]
+
   def mkDecodePoint(input: Value[SByteArray]): GroupElementValue
 
   def mkAppend[IV <: SType](input: Value[SCollection[IV]],
@@ -102,30 +129,38 @@ trait SigmaBuilder {
   def mkForAll[IV <: SType](input: Value[SCollection[IV]],
                             condition: Value[SFunc]): Value[SBoolean.type]
 
-  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
+  def mkFuncValue(args: IndexedSeq[(Int, SType)], body: Value[SType]): Value[SFunc]
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                          zero: Value[OV],
-                          foldOp: Value[SFunc]): Value[OV]
+                                       zero: Value[OV],
+                                       foldOp: Value[SFunc]): Value[OV]
 
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
-                               index: Value[SInt.type],
-                               default: Option[Value[IV]] = None): Value[IV]
+                             index: Value[SInt.type],
+                             default: Option[Value[IV]] = None): Value[IV]
 
   def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType]
+
   def mkSizeOf[IV <: SType](input: Value[SCollection[IV]]): Value[SInt.type]
+
   def mkExtractAmount(input: Value[SBox.type]): Value[SLong.type]
+
   def mkExtractScriptBytes(input: Value[SBox.type]): Value[SByteArray]
+
   def mkExtractBytes(input: Value[SBox.type]): Value[SByteArray]
+
   def mkExtractBytesWithNoRef(input: Value[SBox.type]): Value[SByteArray]
+
   def mkExtractId(input: Value[SBox.type]): Value[SByteArray]
+
   def mkExtractCreationInfo(input: Value[SBox.type]): Value[STuple]
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
-                                      registerId: RegisterId,
-                                      tpe: SOption[IV]): Value[SType]
+                                       registerId: RegisterId,
+                                       tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
+
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
                                         tpe: T,
                                         default: Option[Value[T]] = None): Value[T]
@@ -136,15 +171,19 @@ trait SigmaBuilder {
                                 hv: Value[SGroupElement.type],
                                 uv: Value[SGroupElement.type],
                                 vv: Value[SGroupElement.type]): SigmaBoolean
+
   def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
 
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
+
   /** Logically inverse to mkBoolToSigmaProp */
   def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
 
   def mkSigmaPropBytes(value: Value[SSigmaProp.type]): Value[SByteArray]
+
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
+
   def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue
 
   def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
@@ -153,55 +192,83 @@ trait SigmaBuilder {
   def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
 
   def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]]
+
   def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]]
 
   def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType]
+
   def mkBlockValue(items: IndexedSeq[BlockItem], result: Value[SType]): Value[SType]
+
   def mkValUse(valId: Int, tpe: SType): Value[SType]
+
   def mkZKProofBlock(body: Value[SSigmaProp.type]): Value[SBoolean.type]
+
   def mkVal(name: String, givenType: SType, body: Value[SType]): Val
+
   def mkSelect(obj: Value[SType], field: String, resType: Option[SType] = None): Value[SType]
+
   def mkIdent(name: String, tpe: SType): Value[SType]
+
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
+
   def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
+
   def mkMethodCallLike(obj: Value[SType],
-                   name: String,
-                   args: IndexedSeq[Value[SType]],
-                   tpe: SType = NoType): Value[SType]
+                       name: String,
+                       args: IndexedSeq[Value[SType]],
+                       tpe: SType = NoType): Value[SType]
+
   def mkMethodCall(obj: Value[SType],
-                  method: SMethod,
-                  args: IndexedSeq[Value[SType]]): Value[SType]
-  def mkLambda(args: IndexedSeq[(String,SType)],
-               givenResType: SType,
-               body: Option[Value[SType]]): Value[SFunc]
-  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String,SType)],
+                   method: SMethod,
+                   args: IndexedSeq[Value[SType]]): Value[SType]
+
+  def mkLambda(args: IndexedSeq[(String, SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
 
+  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String, SType)],
+                  givenResType: SType,
+                  body: Option[Value[SType]]): Value[SFunc]
+
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
+
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
+
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
+
   def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type]
 
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
+
   def mkOptionGet[T <: SType](input: Value[SOption[T]]): Value[T]
+
   def mkOptionGetOrElse[T <: SType](input: Value[SOption[T]], default: Value[T]): Value[T]
+
   def mkOptionIsDefined[T <: SType](input: Value[SOption[T]]): Value[SBoolean.type]
 
   def mkModQ(input: Value[SBigInt.type]): Value[SBigInt.type]
+
   def mkPlusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
+
   def mkMinusModQ(left: Value[SBigInt.type], right: Value[SBigInt.type]): Value[SBigInt.type]
 
   def mkLogicalNot(input: Value[SBoolean.type]): Value[SBoolean.type]
 
   def mkNegation[T <: SNumericType](input: Value[T]): Value[T]
+
   def mkBitInversion[T <: SNumericType](input: Value[T]): Value[T]
+
   def mkBitOr[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkBitAnd[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkBitXor[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
+
   def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
+
   def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
+
   def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
 
   def liftAny(v: Any): Nullable[SValue] = v match {
@@ -218,7 +285,7 @@ trait SigmaBuilder {
     case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
     case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
     case v: CryptoConstants.EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
-    case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
+    case b: Boolean => Nullable(if (b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
@@ -231,16 +298,16 @@ trait SigmaBuilder {
 class StdSigmaBuilder extends SigmaBuilder {
 
   protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = cons(left, right)
-
-  protected def comparisonOp[T <: SType, R](left: Value[T],
                                           right: Value[T],
                                           cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
-  protected def arithOp[T <: SNumericType, R](left: Value[T],
+  protected def comparisonOp[T <: SType, R](left: Value[T],
                                             right: Value[T],
                                             cons: (Value[T], Value[T]) => R): R = cons(left, right)
+
+  protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                              right: Value[T],
+                                              cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
   override def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     equalityOp(left, right, EQ.apply[T])
@@ -291,6 +358,7 @@ class StdSigmaBuilder extends SigmaBuilder {
     AND(input)
 
   override def mkAnyOf(input: Seq[Value[SBoolean.type]]) = OR(input)
+
   override def mkAllOf(input: Seq[Value[SBoolean.type]]) = AND(input)
 
   override def mkBinOr(left: BoolValue, right: BoolValue) = BinOr(left, right)
@@ -320,6 +388,11 @@ class StdSigmaBuilder extends SigmaBuilder {
                                    operations: Value[SByteArray],
                                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
     TreeModifications(tree, operations, proof)
+
+  def mkTreeInserts(tree: Value[SAvlTree.type],
+                    operations: Value[SCollection[STuple]],
+                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
+    TreeInserts(tree, operations, proof)
 
   def mkTreeRemovals(tree: Value[SAvlTree.type],
                      operations: Value[SCollection[SByteArray]],
@@ -386,12 +459,12 @@ class StdSigmaBuilder extends SigmaBuilder {
                                      condition: Value[SFunc]): Value[SBoolean.type] =
     ForAll(input, condition)
 
-  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc] =
+  def mkFuncValue(args: IndexedSeq[(Int, SType)], body: Value[SType]): Value[SFunc] =
     FuncValue(args, body)
 
   override def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                                   zero: Value[OV],
-                                   foldOp: Value[SFunc]): Value[OV] =
+                                                zero: Value[OV],
+                                                foldOp: Value[SFunc]): Value[OV] =
     Fold(input, zero, foldOp)
 
   override def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
@@ -466,6 +539,7 @@ class StdSigmaBuilder extends SigmaBuilder {
     TaggedVariableNode(varId, tpe)
 
   override def mkSomeValue[T <: SType](x: Value[T]): Value[SOption[T]] = SomeValue(x)
+
   override def mkNoneValue[T <: SType](elemType: T): Value[SOption[T]] = NoneValue(elemType)
 
   override def mkBlock(bindings: Seq[Val], result: Value[SType]): Value[SType] =
@@ -497,9 +571,9 @@ class StdSigmaBuilder extends SigmaBuilder {
     ApplyTypes(input, tpeArgs)
 
   override def mkMethodCallLike(obj: Value[SType],
-                            name: String,
-                            args: IndexedSeq[Value[SType]],
-                            tpe: SType): Value[SType] =
+                                name: String,
+                                args: IndexedSeq[Value[SType]],
+                                tpe: SType): Value[SType] =
     MethodCallLike(obj, name, args, tpe)
 
   override def mkMethodCall(obj: Value[SType],
@@ -584,8 +658,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 trait TypeConstraintCheck {
 
   def check2[T <: SType](left: Value[T],
-                                 right: Value[T],
-                                 constraints: Seq[TypeConstraint2]): Unit =
+                         right: Value[T],
+                         constraints: Seq[TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
         throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
@@ -594,7 +668,7 @@ trait TypeConstraintCheck {
 
 trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
-  private def applyUpcast[T <: SType](left: Value[T], right: Value[T]):(Value[T], Value[T]) =
+  private def applyUpcast[T <: SType](left: Value[T], right: Value[T]): (Value[T], Value[T]) =
     (left.tpe, right.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
         val tmax = t1 max t2
@@ -606,16 +680,16 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
     }
 
   override protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = {
+                                                   right: Value[T],
+                                                   cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
     cons(l, r)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
-                                          right: Value[T],
-                                          cons: (Value[T], Value[T]) => R): R = {
+                                                     right: Value[T],
+                                                     cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2))
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
@@ -623,8 +697,8 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
-                                            right: Value[T],
-                                            cons: (Value[T], Value[T]) => R): R = {
+                                                       right: Value[T],
+                                                       cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     cons(l, r)
   }
@@ -633,22 +707,22 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
   override protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = {
+                                                   right: Value[T],
+                                                   cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
-                                          right: Value[T],
-                                          cons: (Value[T], Value[T]) => R): R = {
+                                                     right: Value[T],
+                                                     cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2, sameType2))
     cons(left, right)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
-                                            right: Value[T],
-                                            cons: (Value[T], Value[T]) => R): R = {
+                                                       right: Value[T],
+                                                       cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }
@@ -659,7 +733,9 @@ case object StdSigmaBuilder extends StdSigmaBuilder
 case object CheckingSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
 
 case object DefaultSigmaBuilder extends StdSigmaBuilder with CheckingSigmaBuilder
+
 case object TransformingSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
+
 case object DeserializationSigmaBuilder extends StdSigmaBuilder with TransformingSigmaBuilder
 
 object Constraints {

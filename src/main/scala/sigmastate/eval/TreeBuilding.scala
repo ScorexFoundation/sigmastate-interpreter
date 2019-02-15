@@ -321,6 +321,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkCalcBlake2b256(recurse(colSym))
       case SDBM.treeModifications(_, treeSym, opsCollSym, proofCollSym) =>
         mkTreeModifications(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
+      case SDBM.treeInserts(_, treeSym, opsCollSym, proofCollSym) =>
+        mkTreeInserts(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
       case SDBM.treeRemovals(_, treeSym, opsCollSym, proofCollSym) =>
         mkTreeRemovals(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
       case SDBM.treeLookup(_, treeSym, keySym, proofCollSym) =>

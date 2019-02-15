@@ -2381,7 +2381,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeRemovals", "groupGenerator", "exponentiate", "canOpen", "asFunction"
+        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeInserts", "treeRemovals", "groupGenerator", "exponentiate", "canOpen", "asFunction"
         ))
     }
 
@@ -2671,6 +2671,19 @@ object SigmaContract extends EntityObject("SigmaContract") {
       }
     }
 
+    object treeInserts {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeInserts" =>
+          val res = (receiver, args(0), args(1), args(2))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object treeRemovals {
       def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeRemovals" =>
@@ -2929,6 +2942,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[WOption[Coll[Byte]]]))
     }
 
+    override def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
+      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(tree, operations, proof),
+        true, false, element[WOption[Coll[Byte]]]))
+    }
+
     override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
       asRep[WOption[Coll[Byte]]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -3157,6 +3177,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[WOption[Coll[Byte]]]))
     }
 
+    def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
+      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
+        thisClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(tree, operations, proof),
+        true, true, element[WOption[Coll[Byte]]]))
+    }
+
     def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
       asRep[WOption[Coll[Byte]]](mkMethodCall(source,
         thisClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -3209,7 +3236,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeRemovals", "groupGenerator", "exponentiate", "substConstants", "decodePoint"
+        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeInserts", "treeRemovals", "groupGenerator", "exponentiate", "substConstants", "decodePoint"
         ))
     }
 
@@ -3559,6 +3586,19 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object treeInserts {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "treeInserts" =>
+          val res = (receiver, args(0), args(1), args(2))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

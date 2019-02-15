@@ -600,7 +600,7 @@ case class TreeInserts(tree: Value[SAvlTree.type],
                        operations: Value[SCollection[STuple]], //key -> value
                        proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
   override def tpe = SOption[SAvlTree.type]
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
+  override val opCode: OpCode = OpCodes.TreeInsertsCode
 }
 
 case class TreeUpdates(tree: Value[SAvlTree.type],

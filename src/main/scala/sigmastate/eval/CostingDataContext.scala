@@ -4,8 +4,8 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.ErgoBox
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation, Remove}
-import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Operation, Remove}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, SValue}
@@ -166,6 +166,24 @@ class CostingSigmaDslBuilder(val IR: Evaluation) extends TestSigmaDslBuilder { d
     bv.digest match {
       case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
       case _ => None
+    }
+  }
+
+  override def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!tree.treeFlags.insertAllowed) {
+      None
+    } else {
+      val proofBytes = proof.toArray
+      val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+      val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
+      println("operations: " + operations)
+      val ops = operations.map(t => t)
+      println(ops)
+      operations.foreach{case (key, value) => bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))}
+      bv.digest match {
+        case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
+        case _ => None
+      }
     }
   }
 

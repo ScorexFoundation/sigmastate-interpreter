@@ -217,6 +217,15 @@ object SigmaPredef {
       }
     )
 
+    val TreeInsertsFunc = PredefinedFunc("treeInserts",
+      Lambda(Vector("tree" -> SAvlTree, "ops" -> SCollection(STuple(IndexedSeq(SByteArray, SByteArray))), "proof" -> SByteArray),
+        SOption[SByteArray], None),
+      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SCollection[STuple]]@unchecked,
+      proof: Value[SByteArray]@unchecked)) =>
+        mkTreeInserts(tree, operations, proof)
+      }
+    )
+
     val TreeRemovalsFunc = PredefinedFunc("treeRemovals",
       Lambda(Vector("tree" -> SAvlTree, "ops" -> SCollection[SByteArray], "proof" -> SByteArray), SOption[SByteArray], None),
       { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SCollection[SByteArray]]@unchecked,
@@ -270,6 +279,7 @@ object SigmaPredef {
       IsMemberFunc,
       TreeLookupFunc,
       TreeModificationsFunc,
+      TreeInsertsFunc,
       TreeRemovalsFunc,
       XorOfFunc,
       SubstConstantsFunc,
