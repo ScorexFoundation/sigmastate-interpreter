@@ -110,7 +110,6 @@ object Terms {
     override val opCode: OpCode = OpCodes.Undefined
     override lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
-        require(funcType.tpeParams.length == tpeArgs.length, s"Invalid number of type parameters in $node")
         val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
         SigmaTyper.applySubst(input.tpe, subst)
       case _ => input.tpe
