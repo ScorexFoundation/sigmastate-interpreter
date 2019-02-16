@@ -254,23 +254,25 @@ val script = compile(env, """ \Hi{\{}
   \Hi{val r4 = SELF.R4[Int].get // block at which the period started}
   \Hi{val min = SELF.R5[Long].get // min Balance needed in this period}
   \Hi{val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations}
-
   \Hi{val start = if (depth < r4) depth else r4 // set start to lower of two}
-
   \Hi{val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed}  
 
+  \Hi{val toKeep:Long = SELF.value - SELF.value * percent / 100}
+  \Hi{val thisMin = if (toKeep > minSpend) toKeep else 0L}
+  
   \Hi{val newStart:Int = if (notExpired) start else HEIGHT}
-
-  \Hi{val toKeep = SELF.value - SELF.value * percent / 100}
-  \Hi{val newMin = if (notExpired) min else if (toKeep > minSpend) toKeep else 0L}
-
-  \Hi{val isValid = \{(out:Box) => if (newMin == 0) true else \{}
-    \Hi{out.propositionBytes == SELF.propositionBytes &&}
-    \Hi{out.value >= newMin && out.R4[Int].get >= newStart &&}
-    \Hi{out.R5[Long].get == newMin\}} 
+  \Hi{val newMin:Long = if (notExpired) min else thisMin}
+  
+  \Hi{val isValidOut = \{(out:Box) =>}
+  	\Hi{out.propositionBytes == SELF.propositionBytes &&}
+  	\Hi{out.value >= newMin && out.R4[Int].get >= newStart &&}
+  	\Hi{out.R5[Long].get == newMin}
   \Hi{\}}
-  	
-  \Hi{(alice && bob) || ((alice || bob) && OUTPUTS.exists(isValid)) \}} """)
+  
+  \Hi{(alice && bob) || (}
+    \Hi{min >= thisMin && // topup should keep min > thisMin}
+    \Hi{(alice || bob) && (newMin == 0 || OUTPUTS.exists(isValidOut))}
+  \Hi{) \}} """)
 \end{alltt}
  
 Finally compute the deposit address of the wallet as \texttt{val address = Pay2SHAddress(script)}. Any funds deposited to this address can only be spent using the script given above. Spending from this address is done in periods of 24 hours or more (but never less) such that in any one period, the maximum spendable is fixed at the beginning. We do this requiring the spending transaction to have an output paying back to the address with value greater than the minumum (stored in \texttt{R5}). The start of the current period is stored in \texttt{R4}. Both registers are copied to the new output within the same period and get new values for the next period if the current period has expired.
