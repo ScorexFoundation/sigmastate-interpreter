@@ -332,8 +332,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |}""".stripMargin).asBoolValue
 
     val propTree = SigmaAnd(
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get).asSigmaProp,
-      ProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get).asSigmaProp)
+      CreateProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
+      CreateProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey2).get))
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey3, 0)

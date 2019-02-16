@@ -17,6 +17,11 @@ trait Serializer[TFamily, T <: TFamily] {
     serializeBody(obj, w)
     w.toBytes
   }
+
+  final def fromBytes(bytes: Array[Byte]): TFamily = {
+    val r = Serializer.startReader(bytes)
+    parseBody(r)
+  }
 }
 
 object Serializer {

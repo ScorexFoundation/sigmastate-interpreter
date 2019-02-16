@@ -240,8 +240,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     props.map { case csp: CostingSigmaProp => csp.sigmaTree }
   }
 
-  private def toGroupElementConst(ge: GroupElement): GroupElementConstant =
-    GroupElementConstant(toECPoint(ge).asInstanceOf[EcPointType])
+  @inline private def toEcPointType(ge: GroupElement): EcPointType =
+    toECPoint(ge).asInstanceOf[EcPointType]
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
@@ -279,9 +279,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     CostingSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
 
   override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
-    val dht = ProveDHTuple(
-      toGroupElementConst(g), toGroupElementConst(h),
-      toGroupElementConst(u), toGroupElementConst(v))
+    val dht = ProveDHTuple(toEcPointType(g), toEcPointType(h), toEcPointType(u), toEcPointType(v))
     CostingSigmaProp(dht)
   }
 

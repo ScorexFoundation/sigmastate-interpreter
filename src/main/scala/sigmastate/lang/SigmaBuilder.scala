@@ -132,11 +132,12 @@ trait SigmaBuilder {
 
   def mkTuple(items: Seq[Value[SType]]): Value[SType]
 
-  def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
-                                hv: Value[SGroupElement.type],
-                                uv: Value[SGroupElement.type],
-                                vv: Value[SGroupElement.type]): SigmaBoolean
-  def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
+  def mkCreateProveDHTuple(gv: Value[SGroupElement.type],
+                           hv: Value[SGroupElement.type],
+                           uv: Value[SGroupElement.type],
+                           vv: Value[SGroupElement.type]): SigmaPropValue
+
+  def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
 
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
@@ -447,14 +448,14 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkTuple(items: Seq[Value[SType]]): Value[SType] =
     Tuple(items.toIndexedSeq)
 
-  override def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
-                                         hv: Value[SGroupElement.type],
-                                         uv: Value[SGroupElement.type],
-                                         vv: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDHTuple(gv, hv, uv, vv)
+  override def mkCreateProveDHTuple(gv: Value[SGroupElement.type],
+                                    hv: Value[SGroupElement.type],
+                                    uv: Value[SGroupElement.type],
+                                    vv: Value[SGroupElement.type]): SigmaPropValue =
+    CreateProveDHTuple(gv, hv, uv, vv)
 
-  override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDlog(value)
+  override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
+    CreateProveDlog(value)
 
   override def mkBoolToSigmaProp(value: BoolValue) = BoolToSigmaProp(value)
 

@@ -12,7 +12,8 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -75,10 +76,14 @@ trait ValueGenerators extends TypeGenerators {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
-  val groupElementConstGen: Gen[GroupElementConstant] = for {
+
+  val groupElementGen: Gen[EcPointType] = for {
     _ <- Gen.const(1)
-    el = CryptoConstants.dlogGroup.createRandomElement()
-  } yield mkConstant[SGroupElement.type](el, SGroupElement)
+  } yield CryptoConstants.dlogGroup.createRandomElement()
+
+  val groupElementConstGen: Gen[GroupElementConstant] = for {
+    p <- groupElementGen
+  } yield mkConstant[SGroupElement.type](p, SGroupElement)
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary
@@ -86,14 +91,13 @@ trait ValueGenerators extends TypeGenerators {
   } yield mkTaggedVariable(id, t)
 
 
-  val proveDlogGen: Gen[ProveDlog] =
-    arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
+  val proveDlogGen: Gen[ProveDlog] = for { v <- groupElementGen } yield ProveDlog(v)
   val proveDHTGen: Gen[ProveDHTuple] = for {
-    gv: Value[SGroupElement.type] <- groupElementConstGen
-    hv: Value[SGroupElement.type] <- groupElementConstGen
-    uv: Value[SGroupElement.type] <- groupElementConstGen
-    vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
+    gv <- groupElementGen
+    hv <- groupElementGen
+    uv <- groupElementGen
+    vv <- groupElementGen
+  } yield ProveDHTuple(gv, hv, uv, vv)
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
   val sigmaPropGen: Gen[SigmaPropValue] =

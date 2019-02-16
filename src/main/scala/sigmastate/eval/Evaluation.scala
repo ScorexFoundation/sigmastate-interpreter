@@ -319,10 +319,10 @@ trait Evaluation extends RuntimeCosting { IR =>
             val res = CostingSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
           case SDBM.proveDlog(_, In(g: EcPointType)) =>
-            val res = CostingSigmaProp(DLogProtocol.ProveDlog(GroupElementConstant(g)))
+            val res = CostingSigmaProp(DLogProtocol.ProveDlog(g))
             out(res)
           case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = CostingSigmaProp(ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)))
+            val res = CostingSigmaProp(ProveDHTuple(g, h, u, v))
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>

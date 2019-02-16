@@ -524,8 +524,8 @@ object Values {
       IsValid -> SBoolean
     )
     object serializer extends Serializer[SigmaBoolean, SigmaBoolean] {
-      val dhtSerializer = ProveDHTupleSerializer(mkProveDiffieHellmanTuple)
-      val dlogSerializer = ProveDlogSerializer(mkProveDlog)
+      val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
+      val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
       override def serializeBody(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)

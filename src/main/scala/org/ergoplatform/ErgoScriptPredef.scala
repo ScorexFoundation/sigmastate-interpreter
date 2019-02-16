@@ -58,7 +58,7 @@ object ErgoScriptPredef {
     assert(genericMinerProp == expectedGenericMinerProp, s"reward output script changed, check and update constant position for substitution below")
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
-    val minerPubkeySigmaProp = ProveDlog(DecodePoint(minerPkBytesVal))
+    val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))
     val newVals = Values.ConcreteCollection(Vector[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
     SubstConstants(genericMinerPropBytes, positions, newVals)
   }

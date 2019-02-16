@@ -2,24 +2,27 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value, FalseLeaf}
+import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, BlockValue, ConstantNode, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.serialization.OpCodes._
 import org.ergoplatform._
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ConstantStore, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, ConstantStore}
 import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 import ErgoLikeContext._
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaBuilder
 
@@ -292,8 +295,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkBoolToSigmaProp(cond.asBoolValue)
       case Def(SDBM.proveDlog(_, In(g))) =>
         g match {
-          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(mkProveDlog(gc))
-          case _ => mkProveDlog(g.asGroupElement)
+          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(ProveDlog(gc.value))
+          case _ => mkCreateProveDlog(g.asGroupElement)
         }
       case Def(SDBM.proveDHTuple(_, In(g), In(h), In(u), In(v))) =>
         (g, h, u, v) match {
@@ -301,9 +304,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           hc: Constant[SGroupElement.type]@unchecked,
           uc: Constant[SGroupElement.type]@unchecked,
           vc: Constant[SGroupElement.type]@unchecked) =>
-            SigmaPropConstant(mkProveDiffieHellmanTuple(gc, hc, uc, vc))
+            SigmaPropConstant(ProveDHTuple(gc.value, hc.value, uc.value, vc.value))
           case _ =>
-            mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
+            mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
         }
 
       case SDBM.sigmaProp(_, In(cond)) =>

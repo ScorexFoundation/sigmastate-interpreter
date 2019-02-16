@@ -9,7 +9,7 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
+import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
@@ -122,6 +122,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ModQArithOpSerializer(PlusModQCode, mkPlusModQ),
     ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
     SubstConstantsSerializer,
+    CreateProveDlogSerializer(mkCreateProveDlog),
+    CreateProveDHTupleSerializer(mkCreateProveDHTuple)
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {

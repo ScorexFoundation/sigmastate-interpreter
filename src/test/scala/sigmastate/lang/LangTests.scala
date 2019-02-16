@@ -44,10 +44,9 @@ trait LangTests {
   protected val n2: BigInteger = BigInt(20).underlying()
   protected val bigIntegerArr1: Array[BigInteger] = Array(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
-  protected val p1: SigmaBoolean = ProveDlog(GroupElementConstant(ecp1))
-  protected val p2: SigmaBoolean = ProveDlog(GroupElementConstant(ecp2))
-  protected val dht1: SigmaBoolean = ProveDHTuple(
-      GroupElementConstant(ecp1), GroupElementConstant(ecp2), GroupElementConstant(ecp3), GroupElementConstant(ecp4))
+  protected val p1: SigmaBoolean = ProveDlog(ecp1)
+  protected val p2: SigmaBoolean = ProveDlog(ecp2)
+  protected val dht1: SigmaBoolean = ProveDHTuple(ecp1, ecp2, ecp3, ecp4)
 
   val env = Map(
     "x" -> 10, "y" -> 11, "c1" -> true, "c2" -> false,
