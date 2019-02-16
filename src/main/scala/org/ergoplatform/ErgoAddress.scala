@@ -199,7 +199,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
       addressType match {
         case P2PKAddress.addressTypePrefix =>
-          val pd = ValueSerializer.deserialize(bs).asInstanceOf[ProveDlog]
+          val pd = SigmaBoolean.serializer.fromBytes(bs).asInstanceOf[ProveDlog]
           new P2PKAddress(pd, bs)
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(bs)
