@@ -665,6 +665,13 @@ object Values {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
     def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
+    def showToString: String = sb match {
+      case ProveDlog(v) =>
+        s"ProveDlog(${showECPoint(v)})"
+      case ProveDHTuple(gv, hv, uv, vv) =>
+        s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
+      case _ => sb.toString
+    }
   }
 
   implicit class BoolValueOps(val b: BoolValue) extends AnyVal {

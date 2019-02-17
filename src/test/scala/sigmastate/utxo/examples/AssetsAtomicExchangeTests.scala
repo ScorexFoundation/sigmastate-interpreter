@@ -9,7 +9,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, ValDef, ValUse}
-import sigmastate.eval.{CostingSigmaProp, Evaluation}
+import sigmastate.eval.{CSigmaProp, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
 import special.sigma.Extensions._
@@ -97,14 +97,14 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     // ASSERT
     val input0 = buyerTokens.tx.inputs(0)
     val res = input0.runDsl()
-    res shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
     val buyerProof = contract.tokenBuyer.prove(input0).get
     contract.verifier.verify(input0, buyerProof) shouldBe true
 
     val input1 = buyerTokens.tx.inputs(1)
     val res1 = input1.runDsl()
-    res1 shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res1 shouldBe CSigmaProp(TrivialProp.TrueProp)
     val sellerProof = contract.tokenSeller.prove(input1).get
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }
@@ -147,7 +147,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     val input0 = spendingTx.inputs(0)
     val buyerExt = Map(Byte.MaxValue -> toAnyValue(0.toShort))
     val res = input0.runDsl(buyerExt)
-    res shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
     val buyerProof = contract.tokenBuyer.prove(input0, buyerExt).get
     contract.verifier.verify(input0, buyerProof) shouldBe true
@@ -155,7 +155,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     val input1 = spendingTx.inputs(1)
     val sellerExt = Map(Byte.MaxValue -> toAnyValue(1.toShort))
     val res1 = input1.runDsl(sellerExt)
-    res1 shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res1 shouldBe CSigmaProp(TrivialProp.TrueProp)
     val sellerProof = contract.tokenSeller.prove(input1, sellerExt).get
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }

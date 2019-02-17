@@ -8,7 +8,7 @@ import sigmastate.{AvlTreeData, SType}
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.Values.{ErgoTree, SValue, EvaluatedValue, Constant}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.{CostingSigmaProp, IRContext, CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval.{CSigmaProp, IRContext, CostingSigmaDslBuilder, Evaluation}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.{ProverResult, ContextExtension, CostedProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
@@ -30,7 +30,7 @@ trait ContractSyntax { contract: SigmaContract =>
 
   def proposition(name: String, dslSpec: Proposition, scriptEnv: ScriptEnv, scriptCode: String) = {
     val env = scriptEnv.mapValues(v => v match {
-      case sp: CostingSigmaProp => sp.sigmaTree
+      case sp: CSigmaProp => sp.sigmaTree
       case coll: Coll[SType#WrappedType]@unchecked =>
         val elemTpe = Evaluation.rtypeToSType(coll.tItem)
         spec.IR.builder.mkCollectionConstant[SType](coll.toArray, elemTpe)
@@ -165,7 +165,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
   case class TestProvingParty(name: String) extends ProvingParty {
     private val prover = new ErgoLikeTestProvingInterpreter
 
-    val pubKey: SigmaProp = CostingSigmaProp(prover.dlogSecrets.head.publicImage)
+    val pubKey: SigmaProp = CSigmaProp(prover.dlogSecrets.head.publicImage)
 
     import SType.AnyOps
     def prove(inBox: InputBox, extensions: Map[Byte, AnyValue] = Map()): Try[CostedProverResult] = {

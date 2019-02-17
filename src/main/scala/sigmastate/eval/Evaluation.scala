@@ -316,13 +316,13 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(th)
 
           case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
-            val res = CostingSigmaProp(sigmastate.TrivialProp(isValid))
+            val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
           case SDBM.proveDlog(_, In(g: EcPointType)) =>
-            val res = CostingSigmaProp(DLogProtocol.ProveDlog(g))
+            val res = CSigmaProp(DLogProtocol.ProveDlog(g))
             out(res)
           case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = CostingSigmaProp(ProveDHTuple(g, h, u, v))
+            val res = CSigmaProp(ProveDHTuple(g, h, u, v))
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
@@ -585,7 +585,7 @@ object Evaluation {
         dsl.BigInt(n)
       case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
       case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
-      case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
+      case (t: AvlTreeData, SAvlTree) => CAvlTree(t)
       case (x, _) => x
     }
   }

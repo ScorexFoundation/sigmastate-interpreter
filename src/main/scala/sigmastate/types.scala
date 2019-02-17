@@ -491,14 +491,14 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def typeId = typeCode
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v match {
-    case ProveDlog(GroupElementConstant(g)) =>
+    case ProveDlog(g) =>
       SGroupElement.dataSize(g.asWrappedType) + 1
-    case ProveDHTuple(
-          GroupElementConstant(gv), GroupElementConstant(hv),
-          GroupElementConstant(uv), GroupElementConstant(vv)) =>
+    case ProveDHTuple(gv, hv, uv, vv) =>
       SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
-    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum
-    case _ => ???
+    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case COR(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case CTHRESHOLD(k, inputs) => 4 + inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case _ => sys.error(s"Cannot get SigmaProp.dataSize($v)")
   }
   override def isConstantSize = false
   def ancestors = Nil

@@ -6,10 +6,11 @@ import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
+import sigmastate.TrivialProp.{TrueProp, FalseProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
@@ -35,10 +36,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     e shouldBe exp
 
     val res = verifier.reduceToCrypto(ctx, exp).get._1
-    res shouldBe TrueLeaf
+    res shouldBe TrueProp
 
     val res2 = verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes))).get._1
-    res2 shouldBe FalseLeaf
+    res2 shouldBe FalseProp
   }
 
   property("DH tuple") {
@@ -341,8 +342,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
     val s1 = ErgoBox(20, TrueLeaf, 0, Seq(),
-      Map(regPubkey1 -> pubkey1.value.asInstanceOf[GroupElementConstant],
-        regPubkey2 -> pubkey2.value.asInstanceOf[GroupElementConstant]))
+      Map(regPubkey1 -> GroupElementConstant(pubkey1.value),
+        regPubkey2 -> GroupElementConstant(pubkey2.value)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -358,7 +359,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     //make sure that wrong case couldn't be proved
     val s2 = ErgoBox(20, TrueLeaf, 0, Seq(),
-      Map(regPubkey1 -> pubkey1.value.asInstanceOf[GroupElementConstant]))
+      Map(regPubkey1 -> GroupElementConstant(pubkey1.value)))
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -642,10 +643,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     import sigmastate.interpreter.CryptoConstants.dlogGroup
     compileWithCosting(Map("gA" -> dlogGroup.generator),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
-    ).asInstanceOf[BlockValue].result shouldBe a [ProveDHTuple]
+    ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]
   }
 
   property("non-const ProveDlog") {
-    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [ProveDlog]
+    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [CreateProveDlog]
   }
 }

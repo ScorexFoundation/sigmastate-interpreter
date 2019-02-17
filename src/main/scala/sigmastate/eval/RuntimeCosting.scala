@@ -267,6 +267,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
     case GroupElementConst(p) => p.showToString
+    case SigmaPropConst(sp) => sp.toString
     case ac: WArrayConst[_,_] =>
       val trimmed = ac.constValue.take(ac.constValue.length min 10)
       s"WArray(len=${ac.constValue.length}; ${trimmed.mkString(",")},...)"
@@ -903,6 +904,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
+  @inline def SigmaDsl = sigmaDslBuilderValue
   @inline def Colls = sigmaDslBuilderValue.Colls
 
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
@@ -933,17 +935,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case c @ Constant(v, tpe) => v match {
         case p: DLogProtocol.ProveDlog =>
-          val ge = asRep[Costed[GroupElement]](eval(p.value))
-          val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
-          RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
+          assert(tpe == SSigmaProp)
+          val ge = SigmaDsl.GroupElement(p.value)
+          val resV = liftConst(SigmaDsl.proveDlog(ge))
+          RCCostedPrim(resV, costOfProveDlog, CryptoConstants.groupSize.toLong)
         case p: ProveDHTuple =>
-          val gvC = asRep[Costed[GroupElement]](eval(p.gv))
-          val hvC = asRep[Costed[GroupElement]](eval(p.hv))
-          val uvC = asRep[Costed[GroupElement]](eval(p.uv))
-          val vvC = asRep[Costed[GroupElement]](eval(p.vv))
-          val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
-          RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
+          val gv = SigmaDsl.GroupElement(p.gv)
+          val hv = SigmaDsl.GroupElement(p.hv)
+          val uv = SigmaDsl.GroupElement(p.uv)
+          val vv = SigmaDsl.GroupElement(p.vv)
+          val resV = liftConst(SigmaDsl.proveDHTuple(gv, hv, uv, vv))
+          RCCostedPrim(resV, costOfDHTuple, CryptoConstants.groupSize.toLong * 4)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
@@ -975,7 +977,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val boxV = liftConst(box.toTestBox(false)(IR))
           RCCostedBox(boxV, costOf(c))
         case treeData: AvlTreeData =>
-          val tree: special.sigma.AvlTree = CostingAvlTree(treeData)
+          val tree: special.sigma.AvlTree = CAvlTree(treeData)
           val treeV = liftConst(tree)
           RCCostedAvlTree(treeV, costOf(c))
         case _ =>
@@ -993,10 +995,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case op @ GetVar(id, optTpe) =>
         val res = ctx.getVar(id)(stypeToElem(optTpe.elemType))
         res
-
-//      case op @ TaggedVariableNode(id, tpe) =>
-//        val resV = ctx.getVar(id)(stypeToElem(tpe))
-//        withDefaultSize(resV, costOf(op))
 
       case Terms.Block(binds, res) =>
         var curEnv = env
@@ -1020,6 +1018,21 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
+
+      case CreateProveDlog(In(_v)) =>
+        val vC = asRep[Costed[GroupElement]](_v)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
+        val cost = vC.cost + costOfDHTuple
+        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
+
+      case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
+        val gvC = asRep[Costed[GroupElement]](_gv)
+        val hvC = asRep[Costed[GroupElement]](_hv)
+        val uvC = asRep[Costed[GroupElement]](_uv)
+        val vvC = asRep[Costed[GroupElement]](_vv)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
+        val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
+        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)

@@ -54,7 +54,7 @@ class ErgoLikeContext(val currentHeight: Height,
       toAnyValue(dslData.asWrappedType)(tVal)
     }
     val vars = contextVars(varMap ++ extensions)
-    val avlTree = CostingAvlTree(lastBlockUtxoRoot)
+    val avlTree = CAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(IR,
       inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
       minerPubkey,
