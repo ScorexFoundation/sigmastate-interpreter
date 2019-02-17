@@ -75,7 +75,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |    }
         |  }
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
@@ -101,7 +101,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |  OUTPUTS(0).R7[SigmaProp].get == alice // Alice does not care for Bob's draw case
         |  // Bob needs to ensure that OUTPUTS(1).R7 contains his public key
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin).asBoolValue.toSigmaProp
 
     /////////////////////////////////////////////////////////
     //// Alice starts creating a Half-Game

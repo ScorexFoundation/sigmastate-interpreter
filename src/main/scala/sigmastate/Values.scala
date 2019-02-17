@@ -271,6 +271,11 @@ object Values {
     }
   }
 
+  val FalseSigmaProp = SigmaPropConstant(TrivialProp.FalseProp)
+  val TrueSigmaProp = SigmaPropConstant(TrivialProp.TrueProp)
+
+  implicit def boolToSigmaProp(b: BoolValue): SigmaPropValue = BoolToSigmaProp(b)
+
   object SigmaPropConstant {
     def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
     def unapply(v: SValue): Option[SigmaBoolean] = v match {
@@ -505,10 +510,9 @@ object Values {
   /** Algebraic data type of sigma proposition expressions.
     * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
-    override def tpe = SBoolean
+  trait SigmaBoolean /*extends NotReadyValue[SBoolean.type]*/ {
+    def tpe = SBoolean
 
-    def fields: Seq[(String, SType)] = SigmaBoolean.fields
     /** This is not used as operation, but rather as data value of SigmaProp type. */
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
@@ -519,10 +523,6 @@ object Values {
   object SigmaBoolean {
     val PropBytes = "propBytes"
     val IsValid = "isValid"
-    val fields = Seq(
-      PropBytes -> SByteArray,
-      IsValid -> SBoolean
-    )
     object serializer extends Serializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
@@ -662,6 +662,7 @@ object Values {
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
     def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
@@ -804,8 +805,8 @@ object Values {
   case class ErgoTree private(
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: SValue,
-    proposition: SValue
+    root: SigmaPropValue,
+    proposition: SigmaPropValue
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
@@ -826,7 +827,7 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
 
-    @inline def isConstantSegregation(header: Byte): Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+    @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
@@ -838,19 +839,29 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SValue) = {
-      if ((header & ConstantSegregationFlag) != 0) {
-        val prop = substConstants(root, constants)
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue) = {
+      if (isConstantSegregation(header)) {
+        val prop = substConstants(root, constants).asSigmaProp
         new ErgoTree(header, constants, root, prop)
       } else
         new ErgoTree(header, constants, root, root)
     }
 
-    implicit def fromProposition(prop: SValue): ErgoTree = {
+    val EmptyConstants = IndexedSeq.empty[Constant[SType]]
+
+    def withoutSegregation(root: SigmaPropValue) = {
+      ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
+    }
+
+    implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       // get ErgoTree with segregated constants
       // todo rewrite with everywherebu?
       val nonSigmaBooleanProp = prop match { case sb: SigmaBoolean => SigmaPropConstant(sb) case _ => prop }
       DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(nonSigmaBooleanProp))
+    }
+
+    implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
+      withoutSegregation(pk.toSigmaProp)
     }
   }
 

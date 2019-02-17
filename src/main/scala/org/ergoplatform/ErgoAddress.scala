@@ -6,7 +6,7 @@ import com.google.common.primitives.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
-import sigmastate.Values.{GetVarByteArray, ConstantNode, SigmaPropConstant, Value, IntConstant, SigmaBoolean, ConcreteCollection}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer}
@@ -39,7 +39,7 @@ import scala.util.Try
   * For an address type, we form content bytes as follows:
   *
   * P2PK - serialized (compressed) public key
-  * P2sH - 192 bit of the script
+  * P2SH - first 192 bits of the Blake2b256 hash of serialized script bytes
   * P2S  - serialized script
   *
   * Address examples for testnet:
@@ -68,7 +68,7 @@ sealed trait ErgoAddress {
 
   val contentBytes: Array[Byte]
 
-  val script: Value[SBoolean.type]
+  val script: ErgoTree
 }
 
 class P2PKAddress(val pubkey: ProveDlog,
@@ -79,7 +79,11 @@ class P2PKAddress(val pubkey: ProveDlog,
 
   override val contentBytes: Array[Byte] = pubkeyBytes
 
-  override val script: ProveDlog = pubkey
+  override val script: ErgoTree = {
+    // NOTE: we don't segregate constants because the whole tree is single constant
+    // and we want different addreses of this type to have different `script` values
+    ErgoTree(ErgoTree.DefaultHeader, IndexedSeq.empty, SigmaPropConstant(pubkey))
+  }
 
   override def equals(obj: Any): Boolean = obj match {
     case p2pk: P2PKAddress => util.Arrays.equals(pubkeyBytes, p2pk.pubkeyBytes)
@@ -104,15 +108,21 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
   override val addressTypePrefix: Byte = Pay2SHAddress.addressTypePrefix
 
   override val contentBytes: Array[Byte] = scriptHash
+  import Pay2SHAddress._
 
-  //similar script checked in "P2SH - 160 bits" test in sigma repository, but here we use 192 bits
-  //see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
-  override val script: Value[SBoolean.type] = {
-    val scriptId = 1: Byte
-    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(24)),
-      scriptHash)
-    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    AND(hashEquals, scriptIsCorrect)
+  /** The proposition which checks that `contextVar(1)` has original script,
+    * which evaluates to true and also whose hash equals to this `scriptHash`.
+    * Assumes the context variable accessed as getVar[Coll[Byte]](1)` to contain serialized original script bytes.
+    * @see ErgoLikeInterpreterSpecification."P2SH - 160 bits" test
+    *      similar script checked in "P2SH - 160 bits" test in sigma repository, but here we use 192 bits
+    */
+  override val script = {
+    val hashEquals = EQ(
+      Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(24)),
+      scriptHash
+    )
+    val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
+    SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect)
   }
 
   override def equals(obj: Any): Boolean = obj match {
@@ -126,17 +136,17 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
 }
 
 object Pay2SHAddress {
+  val scriptId = 1: Byte
+  val addressTypePrefix: Byte = 2: Byte
 
-  def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
-    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
+  def apply(script: ErgoTree)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script)
     val sbh = ErgoAddressEncoder.hash192(sb)
     new Pay2SHAddress(sbh)
   }
-
-  val addressTypePrefix: Byte = 2: Byte
 }
 
-class Pay2SAddress(override val script: Value[SBoolean.type],
+class Pay2SAddress(override val script: ErgoTree,
                    val scriptBytes: Array[Byte])
                   (implicit val encoder: ErgoAddressEncoder) extends ErgoAddress {
   override val addressTypePrefix: Byte = Pay2SAddress.addressTypePrefix
@@ -154,12 +164,12 @@ class Pay2SAddress(override val script: Value[SBoolean.type],
 }
 
 object Pay2SAddress {
-  def apply(script: Value[SBoolean.type])(implicit encoder: ErgoAddressEncoder): Pay2SAddress = {
-    val sb = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script)
+  val addressTypePrefix: Byte = 3: Byte
+
+  def apply(script: ErgoTree)(implicit encoder: ErgoAddressEncoder): Pay2SAddress = {
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script)
     new Pay2SAddress(script, sb)
   }
-
-  val addressTypePrefix: Byte = 3: Byte
 }
 
 
@@ -195,29 +205,33 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
         throw new Exception(s"Checksum check fails for $addrStr")
       }
 
-      val bs = withoutChecksum.tail
+      val contentBytes = withoutChecksum.tail
 
       addressType match {
         case P2PKAddress.addressTypePrefix =>
-          val pd = SigmaBoolean.serializer.fromBytes(bs).asInstanceOf[ProveDlog]
-          new P2PKAddress(pd, bs)
+          val pd = SigmaBoolean.serializer.fromBytes(contentBytes).asInstanceOf[ProveDlog]
+          new P2PKAddress(pd, contentBytes)
         case Pay2SHAddress.addressTypePrefix =>
-          new Pay2SHAddress(bs)
+          new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
-          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserialize(bs).asInstanceOf[Value[SBoolean.type]], bs)
-        case _ => throw new Exception("Unsupported address type: " + addressType)
+          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes), contentBytes)
+        case _ =>
+          throw new Exception("Unsupported address type: " + addressType)
       }
     }
   }
 
-  def fromProposition(proposition: Value[SType]): Try[ErgoAddress] = Try {
-    proposition match {
-      case SigmaPropConstant(d @ ProveDlog(_)) => P2PKAddress(d)
+  def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
+    proposition.root match {
+      case SigmaPropConstant(d: ProveDlog) => P2PKAddress(d)
       //TODO move this pattern to PredefScripts
-      case a @ AND(ConcreteCollection(Vector(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _), _), _)) =>
-        Pay2SHAddress(a)
-      case b: Value[SBoolean.type]@unchecked if b.tpe == SBoolean => Pay2SAddress(b)
-      case other => throw new RuntimeException(s"Invalid proposition type: ${other.tpe}")
+      case SigmaAnd(Seq(
+             BoolToSigmaProp(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _)),
+             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) =>
+        Pay2SHAddress(proposition)
+      case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
+      case other =>
+        throw new RuntimeException(s"Cannot create ErgoAddress form proposition: ${proposition}")
     }
   }
 }

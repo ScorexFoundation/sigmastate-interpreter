@@ -76,10 +76,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
 
     val oraclePrivKey = oracle.dlogSecrets.head
     val oraclePubImage = oraclePrivKey.publicImage
-    val oraclePubKey = oraclePubImage.isProven
+    val oraclePubKey = oraclePubImage
 
-    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage.isProven
-    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
+    val alicePubKey = aliceTemplate.dlogSecrets.head.publicImage
+    val bobPubKey = bob.dlogSecrets.head.publicImage
 
     val group = CryptoConstants.dlogGroup
 
@@ -126,11 +126,11 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       OR(AND(GE(Height, IntConstant(sinceHeight)), LT(Height, IntConstant(timeoutHeight)), script),
         AND(GE(Height, IntConstant(timeoutHeight)), fallback))
 
-    val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey),
-      AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey.isProven),
+      AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey.isProven))
 
     val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)),
-      EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(oraclePubKey.isProven.bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
           Exponentiate(oraclePubImage.value,
@@ -156,7 +156,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val sinceHeight = 40
     val timeout = 60
 
-    val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey)(oracleProp)
+    val propAlice = withinTimeframe(sinceHeight, timeout, alicePubKey.isProven)(oracleProp).toSigmaProp
 
     val sAlice = ErgoBox(10, propAlice, 0, Seq(), Map(), boxIndex = 3)
 
@@ -164,7 +164,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
       EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
-    val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey)(propAlong)
+    val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
    val ctx = ErgoLikeContext(
@@ -211,10 +211,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     val oraclePrivKey = oracle.dlogSecrets.head
-    val oraclePubKey = oraclePrivKey.publicImage.isProven
+    val oraclePubKey = oraclePrivKey.publicImage
 
-    val alicePubKey = alice.dlogSecrets.head.publicImage.isProven
-    val bobPubKey = bob.dlogSecrets.head.publicImage.isProven
+    val alicePubKey = alice.dlogSecrets.head.publicImage
+    val bobPubKey = bob.dlogSecrets.head.publicImage
 
     val temperature: Long = 18
 
@@ -225,13 +225,13 @@ class OracleExamplesSpecification extends SigmaTestingCommons {
       additionalRegisters = Map(reg1 -> LongConstant(temperature))
     )
 
-    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey),
-      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey))
+    val contractLogic = OR(AND(GT(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), alicePubKey.isProven),
+      AND(LE(ExtractRegisterAs[SLong.type](ByIndex(Inputs, 0), reg1).get, LongConstant(15)), bobPubKey.isProven))
 
     val prop = AND(EQ(SizeOf(Inputs), IntConstant(3)),
-      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.bytes)),
+      EQ(ExtractScriptBytes(ByIndex(Inputs, 0)), ByteArrayConstant(oraclePubKey.isProven.bytes)),
       contractLogic
-    )
+    ).toSigmaProp
 
     val sOracle = oracleBox
     val sAlice = ErgoBox(10, prop, 0, Seq(), Map())

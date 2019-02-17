@@ -12,7 +12,7 @@ import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
 import sigmastate.eval.{IRContext, CostingDataContext, Evaluation, CostingBox}
 import special.sigma
-import org.ergoplatform.{Height, ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, Height, ErgoBox, ErgoScriptPredef}
 import scorex.util.encode.Base58
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.ValueSerializer
@@ -114,10 +114,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
+      "box1" -> ErgoBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compileWithCosting(env, code).asBoolValue
+    val prop = compileWithCosting(env, code).asBoolValue.toSigmaProp
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -261,7 +261,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop = OR(
       AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
       AND(GT(Height, IntConstant(100)), dk1)
-    )
+    ).toSigmaProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
@@ -273,7 +273,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = TrueLeaf
+    val prop1 = ErgoScriptPredef.TrueProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -281,18 +281,18 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop2 = OR(TrueLeaf, FalseLeaf)
+    val prop2 = OR(TrueLeaf, FalseLeaf).toSigmaProp
     verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop3 = AND(TrueLeaf, TrueLeaf)
+    val prop3 = AND(TrueLeaf, TrueLeaf).toSigmaProp
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop4 = GT(Height, IntConstant(90))
+    val prop4 = GT(Height, IntConstant(90)).toSigmaProp
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = FalseLeaf
+    val prop1 = ErgoScriptPredef.FalseProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -300,13 +300,13 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop2 = OR(FalseLeaf, FalseLeaf)
+    val prop2 = OR(FalseLeaf, FalseLeaf).toSigmaProp
     verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop3 = AND(FalseLeaf, TrueLeaf)
+    val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop4 = GT(Height, LongConstant(100))
+    val prop4 = GT(Height, LongConstant(100)).toSigmaProp
     verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
@@ -314,7 +314,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
@@ -322,11 +322,11 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
     verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
 
     verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
+    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes)).toSigmaProp
 
     verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }

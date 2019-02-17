@@ -3,6 +3,7 @@ package sigmastate.serialization.generators
 import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.ErgoScriptPredef.{TrueProp, FalseProp}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -222,7 +223,7 @@ trait ValueGenerators extends TypeGenerators {
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- unsignedShortGen
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
@@ -235,7 +236,7 @@ trait ValueGenerators extends TypeGenerators {
   def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)

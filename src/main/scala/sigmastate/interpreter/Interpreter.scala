@@ -111,11 +111,11 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp)
+    val propTree = applyDeserializeContext(context, exp.proposition)
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
@@ -167,7 +167,7 @@ trait Interpreter extends ScorexLogging {
     case _ => ???
   })
 
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -175,7 +175,7 @@ trait Interpreter extends ScorexLogging {
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -185,7 +185,7 @@ trait Interpreter extends ScorexLogging {
 
 
   //todo: do we need the method below?
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {

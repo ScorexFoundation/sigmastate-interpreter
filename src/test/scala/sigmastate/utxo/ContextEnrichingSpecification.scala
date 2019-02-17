@@ -21,7 +21,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
     val prop = SigmaAnd(
       pubkey,
       EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage))).toSigmaProp
@@ -49,7 +49,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get ++ getVar[Coll[Byte]](2).get) == blake
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
 
     val prop = SigmaAnd(
       pubkey,
@@ -90,9 +90,9 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """{
         |  (getVar[Coll[Byte]](k1).get | getVar[Coll[Byte]](k2).get) == r
         |}
-      """.stripMargin)
+      """.stripMargin).asBoolValue.toSigmaProp
 
-    val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r))
+    val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r)).toSigmaProp
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -121,9 +121,9 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """{
         |  blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
-      """.stripMargin)
+      """.stripMargin).asBoolValue.toSigmaProp
 
-    val prop = EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage)))
+    val prop = EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage))).toSigmaProp
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -148,10 +148,10 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       """{
         |  blake2b256(getVar[Coll[Byte]](2).get ++ getVar[Coll[Byte]](1).get) == blake
         |}
-      """.stripMargin)
+      """.stripMargin).asBoolValue.toSigmaProp
 
     val prop = EQ(CalcBlake2b256(Append(GetVarByteArray(2).get, GetVarByteArray(1).get)),
-      ByteArrayConstant(Blake2b256(preimage2 ++ preimage1)))
+      ByteArrayConstant(Blake2b256(preimage2 ++ preimage1))).toSigmaProp
     compiledScript shouldBe prop
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)

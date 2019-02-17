@@ -153,7 +153,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
       val value = testSuite.compileWithCosting(scriptSpec.env, scriptSpec.code)
-      val tree: ErgoTree = value
+      val tree: ErgoTree = value.asSigmaProp
       tree
     }
   }
@@ -180,7 +180,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       val ctx = inBox.toErgoContext
 //      val newExtension = ContextExtension(ctx.extension.values ++ bindings)
       val env = propSpec.scriptSpec.env + (ScriptNameProp -> (propSpec.name + "_prove"))
-      val prop = propSpec.ergoTree.proposition.asBoolValue
+      val prop = propSpec.ergoTree
       val p = bindings.foldLeft(prover) { (p, b) => p.withContextExtender(b._1, b._2) }
       val proof = p.prove(env, prop, ctx, testSuite.fakeMessage)
       proof
@@ -197,7 +197,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       val propSpec = boxToSpend.propSpec
       val ctx = inBox.toErgoContext
       val env = propSpec.scriptSpec.env + (ScriptNameProp -> (propSpec.name + "_verify"))
-      val prop = propSpec.ergoTree.proposition.asBoolValue
+      val prop = propSpec.ergoTree
       verifier.verify(env, prop, ctx, proverResult, testSuite.fakeMessage).get._1
     }
   }

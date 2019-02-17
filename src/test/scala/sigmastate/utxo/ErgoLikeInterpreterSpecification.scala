@@ -56,8 +56,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u))
 
     val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
-    val compiledProp1 = compileWithCosting(env, "s.isProven").asBoolValue
-    val compiledProp2 = compileWithCosting(env, "proveDHTuple(g, h, u, v).isProven").asBoolValue
+    val compiledProp1 = compileWithCosting(env, "s").asSigmaProp
+    val compiledProp2 = compileWithCosting(env, "proveDHTuple(g, h, u, v)").asSigmaProp
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 
@@ -70,11 +70,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
-    val pr = prover.prove(prop.isProven, ctx, fakeMessage).get
-    verifier.verify(prop.isProven, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+    verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    fakeProver.prove(prop.isProven, ctx, fakeMessage).isSuccess shouldBe false
-    prover.prove(wrongProp.isProven, ctx, fakeMessage).isSuccess shouldBe false
+    fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
   property("DH tuple - simulation") {
@@ -87,7 +87,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhB = proverB.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
-    val compiledProp = compileWithCosting(env, """pubkeyA || pubdhB""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubdhB""").asSigmaProp
 
     val prop = SigmaOr(pubkeyA, pubdhB)
     compiledProp shouldBe prop
@@ -114,7 +114,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhA = proverA.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
-    val compiledProp = compileWithCosting(env, """pubkeyA && pubdhA""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubdhA""").asSigmaProp
 
     val prop = SigmaAnd(pubkeyA, pubdhA)
     compiledProp shouldBe prop
@@ -167,7 +167,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           |  val outSumBytes = outBytes.fold(Coll[Byte](), {(arr1: Coll[Byte], arr2: Coll[Byte]) => arr1 ++ arr2})
           |  val timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
-           }""".stripMargin).asBoolValue
+           }""".stripMargin).asSigmaProp
 
       val prop = BinOr(
         BinAnd(LE(Height, LongConstant(timeout)),
@@ -178,7 +178,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           ),
             ByteArrayConstant(properHash))),
         BinAnd(GT(Height, LongConstant(timeout)), sender.isProven)
-      )
+      ).toSigmaProp
       compiledProp shouldBe prop
       compiledProp
     }
@@ -214,10 +214,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       """{
         |  val outValues = OUTPUTS.map({ (box: Box) => box.value })
         |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asSigmaProp
 
     val propExp = SigmaAnd(
-      List(
+      Seq(
         SigmaPropConstant(pubkey),
         BoolToSigmaProp(
           GT(
@@ -254,7 +254,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val compiledProp = compileWithCosting(env, """pubkey && OUTPUTS(0).value > 10""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkey && OUTPUTS(0).value > 10""").asSigmaProp
 
     val prop = SigmaAnd(pubkey, BoolToSigmaProp(GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10))))
     compiledProp shouldBe prop
@@ -277,10 +277,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     verifier.verify(compiledProp, ctx, pr, fakeMessage)
 
 
-    val fProp1 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(11)))
+    val fProp1 = SigmaAnd(pubkey, GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(11)))
     prover.prove(fProp1, ctx, fakeMessage).isSuccess shouldBe false
 
-    val fProp2 = AND(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), LongConstant(11)))
+    val fProp2 = SigmaAnd(pubkey, GT(ExtractAmount(ByIndex(Outputs, 1)), LongConstant(11)))
     prover.prove(fProp2, ctx, fakeMessage).isSuccess shouldBe false
   }
 
@@ -296,11 +296,11 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
     val hashEquals = EQ(CalcBlake2b256(GetVarByteArray(scriptId).get), scriptHash)
-    val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp).isProven
-    val prop = AND(hashEquals, scriptIsCorrect)
+    val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
+    val prop = SigmaAnd(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = SigmaPropConstant(new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage).isProven
-    val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map())
+    val recipientProposition = SigmaPropConstant(new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage)
+    val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -330,7 +330,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  val pubkey1 = SELF.R4[GroupElement].get
         |  val pubkey2 = SELF.R5[GroupElement].get
         |  proveDlog(pubkey1) && proveDlog(pubkey2)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
     val propTree = SigmaAnd(
       CreateProveDlog(ExtractRegisterAs[SGroupElement.type](Self, regPubkey1).get),
@@ -341,7 +341,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s1 = ErgoBox(20, TrueLeaf, 0, Seq(),
+    val s1 = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value),
         regPubkey2 -> GroupElementConstant(pubkey2.value)))
 
@@ -358,7 +358,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
 
     //make sure that wrong case couldn't be proved
-    val s2 = ErgoBox(20, TrueLeaf, 0, Seq(),
+    val s2 = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value)))
     val wrongCtx = ErgoLikeContext(
       currentHeight = 50,
@@ -381,19 +381,20 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val prover0 = new ErgoLikeTestProvingInterpreter()
 
-    val customScript = prover0.dlogSecrets.head.publicImage.isProven
+    val customScript = prover0.dlogSecrets.head.publicImage.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(customScript)
     val scriptHash = Blake2b256(scriptBytes).take(bytesCount)
 
     val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(scriptBytes))
 
-    val hashEquals = EQ(Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(bytesCount)),
+    val hashEquals = EQ(
+      Slice(CalcBlake2b256(GetVarByteArray(scriptId).get), IntConstant(0), IntConstant(bytesCount)),
       scriptHash)
-    val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(hashEquals, scriptIsCorrect)
+    val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
+    val prop = SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage.isProven
-    val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map())
+    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
+    val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map())
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -433,16 +434,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  val okInputs = INPUTS.size == 2
         |  val okIds = INPUTS(0).id == brother.id
         |  okInputs && okIds
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val propExpected = BinAnd(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother))))
+      EQ(ExtractId(ByIndex(Inputs, 0)), ExtractId(BoxConstant(brother)))).toSigmaProp
     prop shouldBe propExpected
 
     // try a version of the script that matches the white paper
     val altEnv = Map("friend" -> brother)
-    val altProp = compileWithCosting(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""")
+    val altProp = compileWithCosting(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""").asBoolValue.toSigmaProp
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
@@ -474,7 +475,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  val okInputs = INPUTS.size == 3
         |  val okIds = INPUTS(0).id == brother.id
         |  okInputs && okIds
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     prover.prove(emptyEnv + (ScriptNameProp -> "prove_prop2"), prop2, ctx, fakeMessage).isFailure shouldBe true
     verifier
@@ -507,7 +508,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |
         | def isFriend(inputBox: Box) = inputBox.id == friend.id
         | INPUTS.exists (isFriend)
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val propExpected = Exists(Inputs,
       FuncValue(
@@ -568,7 +569,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isProven
+    val pubkey = prover.dlogSecrets.head.publicImage
 
     val preimageHello = "hello world".getBytes("UTF-8")
     val preimageWrong = "wrong".getBytes("UTF-8")
@@ -584,7 +585,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
         |  else
         |    INPUTS(1).R4[Coll[Byte]].get
         |  helloHash == blake2b256(preimage)
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val propExpected = EQ(ByteArrayConstant(helloHash),
       CalcBlake2b256(
@@ -622,17 +623,17 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val sigmaProp = SigmaPropConstant(prover.dlogSecrets.head.publicImage)
     // put SigmaProp into the register
     val regValue = ByteArrayConstant(ValueSerializer.serialize(sigmaProp))
-    val box = ErgoBox(20, TrueLeaf, 0, Seq(), Map(R4 -> regValue))
+    val box = ErgoBox(20, TrueProp, 0, Seq(), Map(R4 -> regValue))
 
     // expect SBoolean in the register
-    val prop = DeserializeRegister(R4, SBoolean)
+    val prop = DeserializeRegister(R4, SBoolean).toSigmaProp
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(box),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, TrueLeaf, 0))),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, TrueProp, 0))),
       self = box)
 
     an[RuntimeException] should be thrownBy

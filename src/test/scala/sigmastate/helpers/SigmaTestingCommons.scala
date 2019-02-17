@@ -1,13 +1,14 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoLikeContext, ErgoAddressEncoder, ErgoBox}
+import org.ergoplatform.{ErgoLikeContext, ErgoAddressEncoder, ErgoBox, ErgoScriptPredef}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Matchers}
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, TrueLeaf, Value, ErgoTree, GroupElementConstant}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
@@ -17,7 +18,7 @@ import sigmastate.{SGroupElement, SBoolean, SType}
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 import scalan.{TestUtils, TestContexts, Nullable, RType}
-import sigma.types.{View, IsPrimView, PrimViewType}
+import sigma.types.{PrimViewType, IsPrimView, View}
 import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
@@ -26,7 +27,7 @@ trait SigmaTestingCommons extends PropSpec
   with Matchers with TestUtils with TestContexts {
 
 
-  val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
+  val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
@@ -50,13 +51,13 @@ trait SigmaTestingCommons extends PropSpec
 
 
   def createBox(value: Int,
-                proposition: Value[SBoolean.type],
+                proposition: ErgoTree,
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
     = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
   def createBox(value: Int,
-                proposition: Value[SBoolean.type],
+                proposition: ErgoTree,
                 creationHeight: Int)
     = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
@@ -93,7 +94,7 @@ trait SigmaTestingCommons extends PropSpec
         case IsPrimView(v) => v
         case _ => in
       }
-      val context = ErgoLikeContext.dummy(createBox(0, TrueLeaf))
+      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = valueFun(calcCtx)

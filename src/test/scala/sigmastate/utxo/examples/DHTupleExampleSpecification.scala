@@ -51,7 +51,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
         |  proveDHTuple(g, g_x, g_y, g_xy) || // for bob
         |  proveDHTuple(g, g_y, g_x, g_xy)    // for alice
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
     val inBox = ErgoBox(10, script, 50)
 

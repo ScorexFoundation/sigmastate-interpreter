@@ -4,12 +4,13 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoAddressEncoder.{MainnetNetworkPrefix, TestnetNetworkPrefix}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Assertion, Matchers, PropSpec, TryValues}
-import sigmastate.Values
+import org.scalatest.{PropSpec, Assertion, Matchers, TryValues}
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.DLogProverInput
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
+import org.ergoplatform.ErgoScriptPredef._
 
 class ErgoAddressSpecification extends PropSpec
   with ValueGenerators
@@ -32,31 +33,31 @@ class ErgoAddressSpecification extends PropSpec
 
   property("SHA roundtrip") {
     forAll(proveDlogGen) { pk =>
-      addressRoundtrip(Pay2SHAddress(pk))
+      addressRoundtrip(Pay2SHAddress(pk.toSigmaProp))
     }
   }
 
   property("SA roundtrip") {
     forAll(proveDlogGen) { pk =>
-      addressRoundtrip(Pay2SAddress(pk))
+      addressRoundtrip(Pay2SAddress(pk.toSigmaProp))
     }
   }
 
   property("P2SH proper bytes to track") {
     forAll(proveDlogGen) { s =>
-      val p2sh = Pay2SHAddress(s)
+      val p2sh = Pay2SHAddress(s.toSigmaProp)
 
       //search we're doing to find a box potentially corresponding to some address
-      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
+      DefaultSerializer.serializeErgoTree(p2sh.script).containsSlice(p2sh.contentBytes) shouldBe true
     }
   }
 
   property("P2S proper bytes to track") {
     forAll(proveDlogGen) { s =>
-      val p2s = Pay2SAddress(s)
+      val p2s = Pay2SAddress(s.toSigmaProp)
 
       //search we're doing to find a box potentially corresponding to some address
-      ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
+      DefaultSerializer.serializeErgoTree(p2s.script).containsSlice(p2s.contentBytes) shouldBe true
     }
   }
 
@@ -65,11 +66,11 @@ class ErgoAddressSpecification extends PropSpec
     val pk: DLogProtocol.ProveDlog = DLogProverInput(BigInteger.ONE).publicImage
     val sh: Array[Byte] = ErgoAddressEncoder.hash192(ValueSerializer.serialize(pk))
 
-    val p2s: Pay2SAddress = Pay2SAddress(Values.TrueLeaf)
+    val p2s: Pay2SAddress = Pay2SAddress(TrueProp)
     val p2sh: Pay2SHAddress = new Pay2SHAddress(sh)
     val p2pk: P2PKAddress = P2PKAddress(pk)
 
-    ergoAddressEncoder.fromProposition(p2s.script).success.value.isInstanceOf[Pay2SAddress] shouldBe true
+    ergoAddressEncoder.fromProposition(p2s.script).success.value shouldBe p2s
     ergoAddressEncoder.fromProposition(p2sh.script).success.value.isInstanceOf[Pay2SHAddress] shouldBe true
     ergoAddressEncoder.fromProposition(p2pk.script).success.value.isInstanceOf[P2PKAddress] shouldBe true
   }

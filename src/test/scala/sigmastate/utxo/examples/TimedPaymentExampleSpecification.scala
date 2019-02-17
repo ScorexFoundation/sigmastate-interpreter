@@ -31,8 +31,8 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     )
 
     val script = compileWithCosting(env,
-      """{alice && HEIGHT <= getVar[Int](1).get}""".stripMargin
-    ).asBoolValue
+      """{ alice && HEIGHT <= getVar[Int](1).get }""".stripMargin
+    ).asSigmaProp
 
     val address = Pay2SHAddress(script)
     // The above is a "timed address".
