@@ -47,7 +47,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ByteArrayConstant(opsBytes),
       ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest)).toSigmaProp
     val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue.toSigmaProp
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -96,7 +96,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ByteArrayConstant(proof)).get, ByteArrayConstant(value)).toSigmaProp
 
     val env = Map("key" -> key, "proof" -> proof, "value" -> value)
-    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue.toSigmaProp
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -142,7 +142,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
-      ByteArrayConstant(proof)))
+      ByteArrayConstant(proof))).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -253,7 +253,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val propTree = OptionIsDefined(TreeLookup(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ExtractRegisterAs[SByteArray](Self, reg2).get,
-      GetVarByteArray(proofId).get))
+      GetVarByteArray(proofId).get)).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
