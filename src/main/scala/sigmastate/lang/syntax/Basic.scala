@@ -5,7 +5,7 @@ import fastparse.CharPredicates._
 import scalan.Nullable
 import sigmastate.lang.SourceContext
 import sigmastate.lang.exceptions.SigmaException
-import sigma.util.Extensions.nullableToOption
+import sigma.util.Extensions._
 
 object Basic {
   val digits = "0123456789"
@@ -40,7 +40,7 @@ object Basic {
   val Upper: Parser[Unit] = P( CharPred(isUpper) )
 
   def error(msg: String, srcCtx: Option[SourceContext]) = throw new ParserException(msg, srcCtx)
-  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx)
+  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx.toOption)
 }
 
 class ParserException(message: String, source: Option[SourceContext])

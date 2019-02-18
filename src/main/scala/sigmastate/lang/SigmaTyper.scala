@@ -84,7 +84,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           val tRes = if (iField != -1) {
             s.methods(iField).stype
           } else
-            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext)
+            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
           mkSelect(newObj, n, Some(tRes))
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t", sel.sourceContext)
@@ -198,7 +198,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             else
               error(s"Invalid argument type for $m, expected $tColl but was ${r.tpe}", r.sourceContext)
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs", mc.sourceContext.toOption)
         }
         case SGroupElement => (m, newArgs) match {
           case ("*", Seq(r)) =>
@@ -207,7 +207,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             else
               error(s"Invalid argument type for $m, expected $SGroupElement but was ${r.tpe}", r.sourceContext)
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }
         case _: SNumericType => (m, newArgs) match {
           case("+" | "*" | "^" | ">>" | "<<" | ">>>", Seq(r)) => r.tpe match {
@@ -220,10 +220,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               case ">>>" => bimap(env, ">>>", newObj.asNumValue, r.asNumValue)(mkBitShiftRightZeroed)(tT, tT)
             }
             case _ =>
-              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)
+              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext.toOption)
           }
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }
 
         case SSigmaProp => (m, newArgs) match {
@@ -240,7 +240,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}", r.sourceContext)
           }
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }
         case SBoolean => (m, newArgs) match {
           case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
@@ -258,17 +258,17 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)
           }
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }
         case _: SString.type => (m, newArgs) match {
           case ("+", Seq(r)) => (newObj, r) match {
             case (cl : Constant[SString.type]@unchecked, cr : Constant[SString.type]@unchecked) =>
               mkStringConcat(cl, cr)
             case _ =>
-              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)
+              throw new InvalidBinaryOperationParameters(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext.toOption)
           }
           case _ =>
-            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext)
+            throw new NonApplicableMethod(s"Unknown symbol $m, which is used as ($newObj) $m ($newArgs)", mc.sourceContext.toOption)
         }
         case t =>
           error(s"Invalid operation $mc on type $t", mc.sourceContext)
@@ -441,7 +441,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         node
       } catch {
         case e: Throwable =>
-          throw new InvalidBinaryOperationParameters(s"operation: $op: $e", l.sourceContext)
+          throw new InvalidBinaryOperationParameters(s"operation: $op: $e", l.sourceContext.toOption)
       }
     }
     (l1.tpe, r1.tpe) match {
@@ -452,7 +452,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         if (substOpt.isDefined)
           safeMkNode(l1, r1)
         else
-          throw new InvalidBinaryOperationParameters(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })", l.sourceContext)
+          throw new InvalidBinaryOperationParameters(s"Invalid binary operation $op: expected argument types ($tArg, $tArg); actual: (${l1.tpe }, ${r1.tpe })", l.sourceContext.toOption)
     }
 
   }
@@ -466,7 +466,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       newNode(l1, r1)
     } catch {
       case e: Throwable =>
-        throw new InvalidBinaryOperationParameters(s"operation $op: $e", l.sourceContext)
+        throw new InvalidBinaryOperationParameters(s"operation $op: $e", l.sourceContext.toOption)
     }
   }
 
@@ -475,12 +475,12 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                        (tArg: SType): SValue = {
     val i1 = assignType(env, i).asValue[T]
     if (!i1.tpe.isNumType && i1.tpe != tArg)
-      throw new InvalidUnaryOperationParameters(s"Invalid unary op $op: expected argument type $tArg, actual: ${i1.tpe}", i.sourceContext)
+      throw new InvalidUnaryOperationParameters(s"Invalid unary op $op: expected argument type $tArg, actual: ${i1.tpe}", i.sourceContext.toOption)
     try {
       newNode(i1)
     } catch {
       case e: Throwable =>
-        throw new InvalidUnaryOperationParameters(s"operation $op error: $e", i.sourceContext)
+        throw new InvalidUnaryOperationParameters(s"operation $op error: $e", i.sourceContext.toOption)
     }
   }
 
@@ -592,5 +592,5 @@ object SigmaTyper {
     }
   }
 
-  def error(msg: String, srcCtx: Option[SourceContext]) = throw new TyperException(msg, srcCtx)
+  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new TyperException(msg, srcCtx.toOption)
 }

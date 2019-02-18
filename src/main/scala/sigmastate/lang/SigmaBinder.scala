@@ -79,7 +79,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
       case Seq(l: SValue, r: SValue) =>
         Some(mkMin(l.asNumValue, r.asNumValue))
       case _ =>
-        throw new InvalidArguments(s"Invalid arguments for min: $args", i.sourceContext)
+        throw new InvalidArguments(s"Invalid arguments for min: $args", i.sourceContext.toOption)
     }
 
     // Rule: max(x, y) -->
@@ -87,7 +87,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
       case Seq(l: SValue, r: SValue) =>
         Some(mkMax(l.asNumValue, r.asNumValue))
       case _ =>
-        throw new InvalidArguments(s"Invalid arguments for max: $args", i.sourceContext)
+        throw new InvalidArguments(s"Invalid arguments for max: $args", i.sourceContext.toOption)
     }
 
     // Rule: lambda (...) = ... --> lambda (...): T = ...
@@ -126,5 +126,5 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 }
 
 object SigmaBinder {
-  def error(msg: String, srcCtx: Option[SourceContext]) = throw new BinderException(msg, srcCtx)
+  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new BinderException(msg, srcCtx.toOption)
 }

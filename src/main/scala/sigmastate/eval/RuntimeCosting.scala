@@ -16,7 +16,7 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigma.util.Extensions.nullableToOption
+import sigma.util.Extensions._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
@@ -1006,7 +1006,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case Terms.Block(binds, res) =>
         var curEnv = env
         for (v @ Val(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext)
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1016,7 +1016,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case BlockValue(binds, res) =>
         var curEnv = env
         for (vd @ ValDef(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext)
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1233,7 +1233,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
 
       case opt: OptionValue[_] =>
-        error(s"Option constructors are not supported: $opt", opt.sourceContext)
+        error(s"Option constructors are not supported: $opt", opt.sourceContext.toOption)
 
       case CalcBlake2b256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
@@ -1321,7 +1321,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         if (inputC.values.length.isConst) {
           val inputCount = inputC.values.length.asValue
           if (inputCount > AtLeast.MaxChildrenCount)
-            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext)
+            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
         }
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Coll[SigmaProp]](inputC.values))
@@ -1350,7 +1350,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             v = xC.value.min(yC.value)
           case MaxCode =>
             v = xC.value.max(yC.value)
-          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}", op.sourceContext)
+          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}", op.sourceContext.toOption)
         }
         val c = xC.cost + yC.cost + costOf(op)
         RCCostedPrim(v, c, s)
@@ -1532,7 +1532,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         withDefaultSize(res, costOf(node))
 
       case _ =>
-        error(s"Don't know how to evalNode($node)", node.sourceContext)
+        error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)

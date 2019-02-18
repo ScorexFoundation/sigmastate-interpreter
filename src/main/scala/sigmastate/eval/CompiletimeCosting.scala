@@ -16,7 +16,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
-import sigma.util.Extensions.nullableToOption
+import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
@@ -38,7 +38,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         if (obj.tpe.isCollectionLike)
           eval(mkSizeOf(obj.asValue[SCollection[SType]]))
         else
-          error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext)
+          error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
@@ -51,7 +51,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       // box.R$i[valType] =>
       case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel", sel.sourceContext))
+          error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
         eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
 
       // col.getOrElse(i, default) =>
@@ -80,7 +80,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
           case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
           case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
-          case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext)
+          case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
       case Select(obj: SigmaBoolean, field, _) =>
