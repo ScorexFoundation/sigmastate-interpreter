@@ -2,9 +2,10 @@ package sigmastate.lang.syntax
 
 import fastparse.all._
 import fastparse.CharPredicates._
-import fastparse.all
-import fastparse.core.Parsed.Failure
-import sigmastate.lang.exceptions.{SigmaException, SourceContext}
+import scalan.Nullable
+import sigmastate.lang.SourceContext
+import sigmastate.lang.exceptions.SigmaException
+import sigma.util.Extensions._
 
 object Basic {
   val digits = "0123456789"
@@ -38,12 +39,12 @@ object Basic {
   val Lower: Parser[Unit] = P( CharPred(c => isLower(c) || c == '$' | c == '_') )
   val Upper: Parser[Unit] = P( CharPred(isUpper) )
 
-  def error(msg: String, parseError: Option[Failure[_,_]] = None) =
-    throw new ParserException(msg, parseError)
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new ParserException(msg, srcCtx)
+  def error(msg: String, srcCtx: Nullable[SourceContext]) = throw new ParserException(msg, srcCtx.toOption)
 }
 
-class ParserException(message: String, val parseError: Option[Failure[_,_]])
-  extends SigmaException(message, parseError.map(e => SourceContext(e.index)))
+class ParserException(message: String, source: Option[SourceContext])
+  extends SigmaException(message, source)
 
 /**
   * Most keywords don't just require the correct characters to match,

@@ -26,27 +26,22 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   private def compWOCosting(x: String): Value[SType] = compile(env, x)
   private def compWOCosting(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
 
-  private def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
-    try {
-      val res = compiler.compile(env, x)
-      assert(false, s"Error expected")
-    } catch {
-      case e: TestFailedException =>
-        throw e
-      case pe: ParserException if pe.parseError.isDefined =>
-        val p = pe
-        val i = pe.parseError.get.index
-        val l = pe.parseError.get.lastParser
-        i shouldBe index
-        l.toString shouldBe expected.toString
-    }
-  }
-
   private def testMissingCosting(script: String, expected: SValue): Unit = {
     compWOCosting(script) shouldBe expected
     // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
+
+  private def costerFail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val exception = the[CosterException] thrownBy comp(env, x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
+  }
+
+  private def costerFail(x: String, expectedLine: Int, expectedCol: Int): Unit =
+    costerFail(env, x, expectedLine, expectedCol)
 
   property("array indexed access") {
     comp(env, "Coll(1)(0)") shouldBe
@@ -86,15 +81,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("{ def f(i: Int) = { i + 1 }; f(2) }") shouldBe Apply(
       FuncValue(Vector((1,SInt)),Plus(ValUse(1,SInt), IntConstant(1))),
       Vector(IntConstant(2)))
-  }
-
-  property("negative tests") {
-    fail(env, "(10", 3, "\")\"")
-    fail(env, "10)", 2, "End")
-    fail(env, "X)", 1, "End")
-    fail(env, "(X", 2, "\")\"")
-    fail(env, "{ X", 3, "\"}\"")
-    fail(env, "{ val X", 7, "\"=\"")
   }
 
   property("allOf") {
@@ -215,6 +201,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("BitShiftRightZeroed") {
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
+  }
+
+  property("failed option constructors (not supported)") {
+    costerFail("None", 1, 1)
+    costerFail("Some(10)", 1, 1)
   }
 
 }
