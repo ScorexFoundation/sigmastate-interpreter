@@ -23,6 +23,7 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms
 import scalan.staged.Slicing
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.TestGroupElement
 import special.sigma.Extensions._
@@ -131,14 +132,28 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
-  def costOf(opName: String, opType: SFunc): Rep[Int] = {
+  def costOf(opName: String, opType: SFunc, doEval: Boolean): Rep[Int] = {
     val costOp = CostOf(opName, opType)
-    val res = if (substFromCostTable) toRep(costOp.eval)
-              else (costOp: Rep[Int])
+    val res = if (doEval) toRep(costOp.eval)
+    else (costOp: Rep[Int])
     res
   }
-  def costOfProveDlog = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
-  def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
+
+  def costOf(opName: String, opType: SFunc): Rep[Int] = {
+    costOf(opName, opType, substFromCostTable)
+  }
+
+  def costOfProveDlog: Rep[Int] = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
+  def costOfDHTuple: Rep[Int] = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
+
+  def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
+    case dlog: ProveDlog => CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)).eval
+    case dlog: ProveDHTuple => CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)).eval * 2
+    case CAND(children) => children.map(costOfSigmaTree(_)).sum
+    case COR(children)  => children.map(costOfSigmaTree(_)).sum
+    case CTHRESHOLD(k, children)  => children.map(costOfSigmaTree(_)).sum
+    case _ => CostTable.MinimalCost
+  }
 
   case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
     def selfType: Elem[T] = eT.value
@@ -934,18 +949,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
-        case p: DLogProtocol.ProveDlog =>
+        case st: SigmaBoolean =>
           assert(tpe == SSigmaProp)
-          val ge = SigmaDsl.GroupElement(p.value)
-          val resV = liftConst(SigmaDsl.proveDlog(ge))
-          RCCostedPrim(resV, costOfProveDlog, CryptoConstants.groupSize.toLong)
-        case p: ProveDHTuple =>
-          val gv = SigmaDsl.GroupElement(p.gv)
-          val hv = SigmaDsl.GroupElement(p.hv)
-          val uv = SigmaDsl.GroupElement(p.uv)
-          val vv = SigmaDsl.GroupElement(p.vv)
-          val resV = liftConst(SigmaDsl.proveDHTuple(gv, hv, uv, vv))
-          RCCostedPrim(resV, costOfDHTuple, CryptoConstants.groupSize.toLong * 4)
+          val p = SigmaDsl.SigmaProp(st)
+          val resV = liftConst(p)
+          RCCostedPrim(resV, costOfSigmaTree(st), SSigmaProp.dataSize(st.asWrappedType))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
