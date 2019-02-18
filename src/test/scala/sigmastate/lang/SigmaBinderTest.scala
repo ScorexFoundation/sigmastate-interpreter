@@ -22,7 +22,22 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     val ast = SigmaParser(x, builder).get.value
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
       new PredefinedFuncRegistry(builder))
-    binder.bind(ast)
+    val res = binder.bind(ast)
+    res.sourceContext.isDefined shouldBe true
+    assertSrcCtxForAllNodes(res)
+    res
+  }
+
+  private def fail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val builder = TransformingSigmaBuilder
+    val ast = SigmaParser(x, builder).get.value
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
+      new PredefinedFuncRegistry(builder))
+    val exception = the[BinderException] thrownBy binder.bind(ast)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
   }
 
   property("simple expressions") {
@@ -52,8 +67,12 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
-    an[InvalidArguments] should be thrownBy bind(env, "min(1, 2, 3)")
-    an[InvalidArguments] should be thrownBy bind(env, "max(1)")
+    bind(env, "max(1, 2L)") shouldBe Max(Upcast(IntConstant(1), SLong), LongConstant(2))
+  }
+
+  property("min/max fail (invalid arguments)") {
+    fail(env, "min(1, 2, 3)", 1, 1)
+    fail(env, "max(1)", 1, 1)
   }
 
   property("val constructs") {
@@ -91,7 +110,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple constructor") {
-    bind(env, "()") shouldBe UnitConstant
+    bind(env, "()") shouldBe UnitConstant()
     bind(env, "(1)") shouldBe IntConstant(1)
     bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     bind(env, "(1, x - 1)") shouldBe Tuple(IntConstant(1), Minus(10, 1))
@@ -178,4 +197,28 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
+  property("val fails (already defined in env)") {
+    val script= "{ val x = 10; x > 2 }"
+    (the[BinderException] thrownBy bind(env, script)).source shouldBe
+      Some(SourceContext(1, 7, script))
+  }
+
+  property("val fails (already defined in env) multiline") {
+    val script= """{
+                  |val x = 10
+                  |x > 2
+                  |
+                  |}""".stripMargin
+    val e = the[BinderException] thrownBy bind(env, script)
+    e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
+  }
+
+  property("fail Coll construction (type mismatch)") {
+    fail(env, "Coll[Long](1L, 2)", 1, 16)
+  }
+
+  property("fail Some (invalid arguments)") {
+    fail(env, "Some(1, 2)", 1, 1)
+    fail(env, "Some()", 1, 1)
+  }
 }
