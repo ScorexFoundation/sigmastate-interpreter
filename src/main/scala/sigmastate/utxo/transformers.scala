@@ -204,7 +204,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
 /** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context.
   * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
   * @param id identifier of the context variable
-  * @tparam T result type of the deserialized script.
+  * @tparam V result type of the deserialized script.
   * @throws InterpreterException if the actual script type doesn't conform to T
   * @return result of the script execution in the current context
   * @since 2.0
