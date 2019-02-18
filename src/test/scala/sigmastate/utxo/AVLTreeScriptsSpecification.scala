@@ -231,7 +231,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       ExtractRegisterAs[SAvlTree.type](Self, reg2).get)*/
     val tuples = insertPairs.map(kv => Tuple(IndexedSeq(ByteArrayConstant(kv._1), ByteArrayConstant(kv._2))))
     val env = Map(
-      "ops" -> ConcreteCollection.apply[STuple](tuples)(STuple(IndexedSeq(SByteArray, SByteArray))),
+      "ops" -> Constant(tuples.asWrappedType, SCollection(STuple(SByteArray, SByteArray))),
       "proof" -> proof,
       "endDigest" -> endDigest)
     val prop = compileWithCosting(env,
