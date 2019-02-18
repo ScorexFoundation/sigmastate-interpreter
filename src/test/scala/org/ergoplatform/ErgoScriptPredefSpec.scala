@@ -143,7 +143,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     // should not be able to collect before minerRewardDelay
     val prove = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage) shouldBe 'failure
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage)
+      .fold(t => throw t, x => x) should matchPattern { case (false,_) => }
 
     // should be able to collect after minerRewardDelay
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
@@ -222,7 +223,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         spendingTransaction,
         self = inputBoxes.head)
 
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
 
@@ -232,7 +233,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val inputs0 = IndexedSeq(
         ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
       )
-      check(inputs0) shouldBe 'success
+      check(inputs0).get shouldBe ()
 
       // transaction with the only input with insufficient token should fail
       val inputs1 = IndexedSeq(
@@ -299,8 +300,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
     spendingTransaction
   }
 

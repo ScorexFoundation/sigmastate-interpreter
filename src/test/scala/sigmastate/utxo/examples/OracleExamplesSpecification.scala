@@ -4,9 +4,6 @@ import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.RegisterId
-import org.ergoplatform._
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import org.ergoplatform.ErgoBox.{RegisterId, R1, MandatoryRegisterId}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}

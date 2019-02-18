@@ -12,7 +12,8 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
   override val opCode: OpCode = BlockValueCode
 
   override def serialize(obj: BlockValue, w: SigmaByteWriter): Unit = {
-    w.putValues(obj.items)
+    w.putUInt(obj.items.length)
+    obj.items.foreach(w.putValue)
     w.putValue(obj.result)
   }
 

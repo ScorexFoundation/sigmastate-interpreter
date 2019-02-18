@@ -29,7 +29,7 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
+  lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 

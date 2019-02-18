@@ -8,7 +8,7 @@ import sigmastate._
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 import Values._
-
+import scalan.util.CollectionUtil._
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -125,9 +125,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     import TrivialProp._
     val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp)
-    val (reducedProp, cost) = reduceToCrypto(ctx, env, propTree).get
+    val tried = reduceToCrypto(ctx, env, propTree)
+    val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
-    def errorReducedToFalse = Interpreter.error("Script reduced to false")
+    def errorReducedToFalse = error("Script reduced to false")
 
     val proofTree = reducedProp match {
       case BooleanConstant(boolResult) =>
@@ -138,16 +139,17 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
           case TrueProp => NoProof
           case FalseProp => errorReducedToFalse
           case _ =>
-            val ct = convertToUnproven(sigmaBoolean)
-            prove(ct, message)
+            val unprovenTree = convertToUnproven(sigmaBoolean)
+            prove(unprovenTree, message)
         }
       case _ =>
+        error(s"Unexpected result of reduceToCrypto($ctx, $env, $propTree)")
         // TODO this case should be removed, because above cases should cover all possible variants
-        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
-          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
-          .get
-        val ct = convertToUnproven(sigmaBoolean)
-        prove(ct, message)
+//        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
+//          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
+//          .get
+//        val ct = convertToUnproven(sigmaBoolean)
+//        prove(ct, message)
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
@@ -158,7 +160,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * Prover Step 1: This step will mark as "real" every node for which the prover can produce a real proof.
     * This step may mark as "real" more nodes than necessary if the prover has more than the minimal
     * necessary number of witnesses (for example, more than one child of an OR).
-    * This will be corrected in the next step. In a bottom-up traversal of the tree, do the following for each node:
+    * This will be corrected in the next step.
+    * In a bottom-up traversal of the tree, do the following for each node:
     */
   val markReal: Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
@@ -171,8 +174,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       or.copy(simulated = simulated)
     case t: CThresholdUnproven =>
       // If the node is TRESHOLD(k), mark it "real" if at least k of its children are marked real; else mark it "simulated"
-      val c = t.children.foldLeft(0) {(count, child) => count + {if(child.asInstanceOf[UnprovenTree].simulated) 0 else 1}}
-      t.copy(simulated = c<t.k)
+      val c = t.children.foldLeft(0) { (count, child) =>
+        count + (if (child.asInstanceOf[UnprovenTree].simulated) 0 else 1)
+      }
+      t.copy(simulated = c < t.k)
     case su: UnprovenSchnorr =>
       // If the node is a leaf, mark it "real'' if the witness for it is available; else mark it "simulated"
       val secretKnown = secrets.exists {
@@ -188,7 +193,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       }
       dhu.copy(simulated = !secretKnown)
     case t =>
-      error(s"Don't know how to markSimulated($t)")
+      error(s"Don't know how to markReal($t)")
   })
 
   /**
@@ -374,7 +379,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case upt: UnprovenTree => upt.challengeOpt
     case sn: UncheckedSchnorr => Some(sn.challenge)
     case dh: UncheckedDiffieHellmanTuple => Some(dh.challenge)
-    case _ => ???
+    case _ => error(s"Cannot extractChallenge($pt)")
   }
 
   /**
@@ -438,7 +443,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     // If the node is a leaf marked "real", compute its response according to the second prover step
     // of the Sigma-protocol given the commitment, challenge, and witness
     case su: UnprovenSchnorr if su.real =>
-      assert(su.challengeOpt.isDefined)
+      assert(su.challengeOpt.isDefined, s"Real UnprovenTree $su should have challenge defined")
       val privKey = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
@@ -467,17 +472,19 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
 
   //converts SigmaTree => UnprovenTree
-  val convertToUnproven: SigmaBoolean => UnprovenTree = attr {
-    case CAND(sigmaTrees) =>
-      CAndUnproven(CAND(sigmaTrees), None, simulated = false, sigmaTrees.map(convertToUnproven))
-    case COR(children) =>
-      COrUnproven(COR(children), None, simulated = false, children.map(convertToUnproven))
-    case CTHRESHOLD(k, children) =>
-      CThresholdUnproven(CTHRESHOLD(k, children), None, simulated = false, k, children.map(convertToUnproven), None)
+  def convertToUnproven(sigmaTree: SigmaBoolean): UnprovenTree = sigmaTree match {
+    case and @ CAND(sigmaTrees) =>
+      CAndUnproven(and, None, simulated = false, sigmaTrees.map(convertToUnproven))
+    case or @ COR(children) =>
+      COrUnproven(or, None, simulated = false, children.map(convertToUnproven))
+    case threshold @ CTHRESHOLD(k, children) =>
+      CThresholdUnproven(threshold, None, simulated = false, k, children.map(convertToUnproven), None)
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
     case dh: ProveDHTuple =>
       UnprovenDiffieHellmanTuple(dh, None, None, None, simulated = false)
+    case _ =>
+      error(s"Cannot convertToUnproven($sigmaTree)")
   }
 
   //converts ProofTree => UncheckedSigmaTree

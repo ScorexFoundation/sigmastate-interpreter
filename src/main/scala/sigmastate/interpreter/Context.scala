@@ -7,6 +7,7 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 import special.sigma
+import special.sigma.AnyValue
 
 /**
   * Variables to be put into context
@@ -47,5 +48,5 @@ trait Context{
     withExtension(ext)
   }
 
-  def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context
+  def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }

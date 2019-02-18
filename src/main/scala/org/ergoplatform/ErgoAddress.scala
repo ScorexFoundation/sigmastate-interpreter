@@ -4,11 +4,11 @@ import java.util
 
 import com.google.common.primitives.Ints
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base58
 import sigmastate.Values.{ConcreteCollection, ConstantNode, GetVarByteArray, IntConstant, Value}
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.utxo.{DeserializeContext, Slice}
 
