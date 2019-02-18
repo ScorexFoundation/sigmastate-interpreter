@@ -125,7 +125,17 @@ class Numeric {
   /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
    * `this` is less than, equal to, or greater than `that`.
    */
-  def compareTo(that: SNumeric): Int 
+  def compareTo(that: Numeric): Int 
+  
+  /** Returns least of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def min(that: Numeric): Numeric
+  
+  /** Returns max of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def max(that: Numeric): Numeric
 }
 
 class Short extends Numeric
