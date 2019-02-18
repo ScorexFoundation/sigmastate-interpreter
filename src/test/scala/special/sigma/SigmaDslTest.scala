@@ -7,7 +7,7 @@ import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
 import sigma.types.CBoolean
 import sigmastate.helpers.SigmaTestingCommons
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 import special.collection.Coll
 import special.collections.CollGens
 
