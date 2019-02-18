@@ -23,7 +23,7 @@ import sigmastate.lang.Terms.ValueOps
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   implicit override lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting {
-//      override val useAlphaEquality = false
+      this.useAlphaEquality = true
     }
   import IR._
   import WArray._
@@ -179,11 +179,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx: Rep[Context] =>
         val backerPubKey = RProveDlogEvidence(liftConst(backer)).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
         val projectPubKey = RProveDlogEvidence(liftConst(project)).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val projectBytes = projectPubKey.propBytes
         val c1 = RTrivialSigma(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = RTrivialSigma(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
-            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
+            out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectBytes)
           }))
         )).asRep[SigmaProp] && projectPubKey
         (c1 || c2)
@@ -225,11 +226,12 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
       val regScript = RProveDlogEvidence(liftConst(script)).asRep[SigmaProp]
+      val selfBytes = ctx.SELF.propositionBytes
+      val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(
         ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod,
         ctx.OUTPUTS.exists(fun { out =>
-          val selfBytes = ctx.SELF.propositionBytes
-          (out.value >= ctx.SELF.value - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
+          (out.value >= selfValue - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
         })
       ))
       regScript.isValid lazy_|| Thunk{c2}

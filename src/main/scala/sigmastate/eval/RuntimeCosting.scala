@@ -74,7 +74,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
 
-  //this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+  this.keepOriginalFunc = false  // original lambda contains invocations of evalNode and we don't want that
+//  this.useAlphaEquality = false
+//  unfoldWithOriginalFunc = unfoldWithOrig
 
   def createSliceAnalyzer = new SliceAnalyzer
 
@@ -147,6 +149,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   trait CostedStruct extends Costed[Struct] { }
   case class CostedStructCtor(costedFields: Rep[Struct], structCost: Rep[Int]) extends CostedStruct {
+    override def transform(t: Transformer) = CostedStructCtor(t(costedFields), t(structCost))
+
     implicit val eVal: Elem[Struct] = {
       val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
       structElement(fields)
@@ -347,18 +351,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case _ => Nullable.None
     }
   }
-  object IsNumericToInt {
-    def unapply(d: Def[_]): Nullable[Rep[A] forSome {type A}] = d match {
-      case ApplyUnOp(_: NumericToInt[_], x) => Nullable(x.asInstanceOf[Rep[A] forSome {type A}])
-      case _ => Nullable.None
-    }
-  }
-  object IsNumericToLong {
-    def unapply(d: Def[_]): Nullable[Rep[A] forSome {type A}] = d match {
-      case ApplyUnOp(_: NumericToLong[_], x) => Nullable(x.asInstanceOf[Rep[A] forSome {type A}])
-      case _ => Nullable.None
-    }
-  }
 
   implicit class ElemOpsForCosting(e: Elem[_]) {
     def isConstantSize: Boolean = elemToSType(e).isConstantSize
@@ -379,11 +371,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val SPCM = WSpecialPredefCompanionMethods
 
     d match {
-      case CM.length(CBM.replicate(_, len, _)) => len
-      case CM.length(CBM.fromArray(_, arr)) => arr.length
-      case CM.length(CBM.fromItems(_, items, _)) => items.length
-      case IsNumericToLong(Def(IsNumericToInt(x))) if x.elem == LongElement => x
-
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
         val r = asRep[SigmaProp](RTrivialSigma(asRep[Boolean](root)))
@@ -482,6 +469,27 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 //      case CostedFoldExtractors.IsGetDataSize(opt: RWOption[a], th: CostedThunk[b]@unchecked, f) =>
 //        implicit val eA = opt.elem.eItem
 //        opt.fold(Thunk { forceThunkByMirror(th).dataSize }, fun { x: Rep[a] => asRep[a => Costed[b]](f)(x).dataSize })
+
+      // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
+      case CostedM.value(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
+        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        val th = asRep[Thunk[Costed[Any]]](_th)
+        val f = asRep[Any => Costed[Any]](_f)
+        opt.fold(Thunk(forceThunkByMirror(th).value), fun { x: Rep[Any] => f(x).value })
+
+      // Rule: opt.fold(default, f).cost ==> opt.fold(default.cost, x => f(x).cost)
+      case CostedM.cost(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
+        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        val th = asRep[Thunk[Costed[Any]]](_th)
+        val f = asRep[Any => Costed[Any]](_f)
+        opt.fold(Thunk(forceThunkByMirror(th).cost), fun { x: Rep[Any] => f(x).cost })
+
+      // Rule: opt.fold(default, f).dataSize ==> opt.fold(default.dataSize, x => f(x).dataSize)
+      case CostedM.dataSize(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
+        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        val th = asRep[Thunk[Costed[Any]]](_th)
+        val f = asRep[Any => Costed[Any]](_f)
+        opt.fold(Thunk(forceThunkByMirror(th).dataSize), fun { x: Rep[Any] => f(x).dataSize })
 
       case CostedFoldExtractors.IsGet(opt: RWOption[a], _, _f) =>
         implicit val eA = opt.elem.eItem
@@ -867,18 +875,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
-        case p: DLogProtocol.ProveDlog =>
-          val ge = asRep[Costed[WECPoint]](eval(p.value))
-          val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
-          RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
-        case p @ ProveDHTuple(gv, hv, uv, vv) =>
-          val gvC = asRep[Costed[WECPoint]](eval(gv))
-          val hvC = asRep[Costed[WECPoint]](eval(hv))
-          val uvC = asRep[Costed[WECPoint]](eval(uv))
-          val vvC = asRep[Costed[WECPoint]](eval(vv))
-          val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
-          val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
-          RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
+        case p: DLogProtocol.ProveDlog => eval(p)
+        case p: ProveDHTuple => eval(p)
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
@@ -917,6 +915,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))
       }
+
+      case _ @ DLogProtocol.ProveDlog(v) =>
+        val ge = asRep[Costed[WECPoint]](eval(v))
+        val resV: Rep[SigmaProp] = RProveDlogEvidence(ge.value)
+        RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
+
+      case _ @ ProveDHTuple(gv, hv, uv, vv) =>
+        val gvC = asRep[Costed[WECPoint]](eval(gv))
+        val hvC = asRep[Costed[WECPoint]](eval(hv))
+        val uvC = asRep[Costed[WECPoint]](eval(uv))
+        val vvC = asRep[Costed[WECPoint]](eval(vv))
+        val resV: Rep[SigmaProp] = RProveDHTEvidence(gvC.value, hvC.value, uvC.value, vvC.value)
+        val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
+        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 
       case Height  => ctx.HEIGHT
       case Inputs  => ctx.INPUTS

@@ -29,9 +29,9 @@ class ErgoTreeSerializer {
 
   def deserializeErgoTree(r: SigmaByteReader): ErgoTree  = {
     val (h, cs) = deserializeHeader(r)
+    val previousConstantStore = r.constantStore
     r.constantStore = new ConstantStore(cs)
     // reader with constant store attached is required (to get tpe for a constant placeholder)
-    val previousConstantStore = r.constantStore
     val root = ValueSerializer.deserialize(r)
     r.constantStore = previousConstantStore
     ErgoTree(h, cs, root)

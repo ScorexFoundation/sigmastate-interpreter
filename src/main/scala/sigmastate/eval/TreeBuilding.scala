@@ -107,16 +107,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
   object IsInternalDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
-      case _: SigmaDslBuilder | _: ColBuilder => Some(d)
+      case _: SigmaDslBuilder | _: ColBuilder | _: WSpecialPredefCompanion => Some(d)
       case _ => None
     }
   }
 
-  object IsExtractableConstant {
+  object IsNonConstantDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
       // in case of GroupElement constant (ProveDlog) different constants have different meaning,
       // thus it is ok for them to create ValDef
-      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
+//      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
       // to increase effect of constant segregation we need to treat the constants specially
       // and don't create ValDef even if the constant is used more than one time,
       // because two equal constants don't always have the same meaning.
@@ -139,7 +139,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         ValUse(id, tpe) // recursion base
       case Def(Lambda(lam, _, x, y)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
-      val env1 = env + (x -> (varId, elemToSType(x.elem)))
+        val env1 = env + (x -> (varId, elemToSType(x.elem)))
         val block = processAstGraph(mainG, env1, lam, varId + 1, constantsProcessing)
         val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
@@ -296,9 +296,20 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(TrivialSigmaCtor(In(cond))) =>
         mkBoolToSigmaProp(cond.asBoolValue)
       case Def(ProveDlogEvidenceCtor(In(g))) =>
-        SigmaPropConstant(mkProveDlog(g.asGroupElement))
+        g match {
+          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(mkProveDlog(gc))
+          case _ => mkProveDlog(g.asGroupElement)
+        }
       case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
-        SigmaPropConstant(mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement))
+        (g, h, u, v) match {
+          case (gc: Constant[SGroupElement.type]@unchecked,
+          hc: Constant[SGroupElement.type]@unchecked,
+          uc: Constant[SGroupElement.type]@unchecked,
+          vc: Constant[SGroupElement.type]@unchecked) =>
+            SigmaPropConstant(mkProveDiffieHellmanTuple(gc, hc, uc, vc))
+          case _ =>
+            mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
+        }
 
       case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)
@@ -351,7 +362,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       if (mainG.hasManyUsagesGlobal(s)
         && IsContextProperty.unapply(d).isEmpty
         && IsInternalDef.unapply(d).isEmpty
-        && IsExtractableConstant.unapply(d).nonEmpty)
+        && IsNonConstantDef.unapply(d).nonEmpty)
       {
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1

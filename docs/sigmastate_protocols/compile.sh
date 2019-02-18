@@ -10,11 +10,11 @@ if [[ "$?" != 0 ]]; then
     exit 1;
 fi
 
-pdflatex sigma
-bibtex sigma
-pdflatex sigma
-pdflatex sigma
-rm sigma.aux
-rm sigma.out
-rm sigma.toc
-rm sigma.log
+pdflatex sigmastate_protocols
+bibtex sigmastate_protocols
+pdflatex sigmastate_protocols
+pdflatex sigmastate_protocols
+rm sigmastate_protocols.aux
+rm sigmastate_protocols.out
+rm sigmastate_protocols.toc
+rm sigmastate_protocols.log

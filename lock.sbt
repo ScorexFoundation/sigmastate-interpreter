@@ -17,16 +17,16 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.typesafe.akka" % "akka-actor_2.12" % "2.4.20",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "commons-io" % "commons-io" % "2.5",
-  "io.github.scalan" % "common_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "core_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "library-api_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "library-impl_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "library_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "macros_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "meta_2.12" % "master-c19564fd-SNAPSHOT",
-  "io.github.scalan" % "sigma-api_2.12" % "master-51cf49fb-SNAPSHOT",
-  "io.github.scalan" % "sigma-impl_2.12" % "master-51cf49fb-SNAPSHOT",
-  "io.github.scalan" % "sigma-library_2.12" % "master-51cf49fb-SNAPSHOT",
+  "io.github.scalan" % "common_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "core_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "library-api_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "library-impl_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "library_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "macros_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "meta_2.12" % "master-6eca3f22-SNAPSHOT",
+  "io.github.scalan" % "sigma-api_2.12" % "master-354d6254-SNAPSHOT",
+  "io.github.scalan" % "sigma-impl_2.12" % "master-354d6254-SNAPSHOT",
+  "io.github.scalan" % "sigma-library_2.12" % "master-354d6254-SNAPSHOT",
   "javax.activation" % "activation" % "1.1",
   "jline" % "jline" % "2.14.3",
   "org.apache.ant" % "ant" % "1.9.6",
@@ -47,4 +47,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH cc725954a43a88c45eeca8995c76852ceccf11ea
+// LIBRARY_DEPENDENCIES_HASH 5e333cb35b2a537d1b2240adc607317b51f46f97
