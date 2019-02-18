@@ -12,8 +12,9 @@ import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, Sigma
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
-import special.collection.{Coll, CCostedBuilder, CollType}
+import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
+import special.sigma.Extensions._
 
 import scala.util.{Success, Failure}
 import scalan.RType

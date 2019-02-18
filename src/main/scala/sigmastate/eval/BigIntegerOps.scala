@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import scala.math.{LowPriorityOrderingImplicits,Integral, Ordering}
 import special.sigma._
-import scorex.util.Extensions._
+import sigma.util.Extensions._
 
 object OrderingOps extends LowPriorityOrderingImplicits {
   def apply[T](implicit ord: Ordering[T]) = ord

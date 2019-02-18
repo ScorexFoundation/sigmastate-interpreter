@@ -203,19 +203,6 @@ object Extensions {
     }
   }
 
-  implicit class ByteArrayBuilderOps(val b: ByteArrayBuilder) extends AnyVal {
-    def appendOption[T](opt: Option[T])(putValue: T => Unit): ByteArrayBuilder = {
-      opt match {
-        case Some(v) =>
-          b.append(1.toByte)
-          putValue(v)
-          b
-        case None =>
-          b.append(0.toByte)
-      }
-    }
-  }
-
   implicit class ByteBufferOps(val buf: ByteBuffer) extends AnyVal {
     def toBytes: Array[Byte] = {
       val res = new Array[Byte](buf.position())

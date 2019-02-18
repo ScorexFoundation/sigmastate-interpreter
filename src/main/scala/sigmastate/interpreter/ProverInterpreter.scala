@@ -6,7 +6,7 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
+import sigma.util.Extensions._
 import Values._
 import scalan.util.CollectionUtil._
 import scala.util.Try

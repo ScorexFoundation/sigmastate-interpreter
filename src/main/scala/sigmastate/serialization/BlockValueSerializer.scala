@@ -13,7 +13,7 @@ case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => V
 
   override def serialize(obj: BlockValue, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.items.length)
-    obj.items.foreach(w.putValue)
+    obj.items.foreach(w.putValue(_))
     w.putValue(obj.result)
   }
 
