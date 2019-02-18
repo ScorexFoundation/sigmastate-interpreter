@@ -1015,8 +1015,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case BlockValue(binds, res) =>
         var curEnv = env
-        for (ValDef(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+        for (vd @ ValDef(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1233,7 +1233,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
 
       case opt: OptionValue[_] =>
-        error(s"Option constructors are not supported: $opt")
+        error(s"Option constructors are not supported: $opt", opt.sourceContext)
 
       case CalcBlake2b256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
@@ -1321,7 +1321,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         if (inputC.values.length.isConst) {
           val inputCount = inputC.values.length.asValue
           if (inputCount > AtLeast.MaxChildrenCount)
-            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount")
+            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext)
         }
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Coll[SigmaProp]](inputC.values))
@@ -1350,7 +1350,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             v = xC.value.min(yC.value)
           case MaxCode =>
             v = xC.value.max(yC.value)
-          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}")
+          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}", op.sourceContext)
         }
         val c = xC.cost + yC.cost + costOf(op)
         RCCostedPrim(v, c, s)
@@ -1532,7 +1532,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         withDefaultSize(res, costOf(node))
 
       case _ =>
-        error(s"Don't know how to evalNode($node)")
+        error(s"Don't know how to evalNode($node)", node.sourceContext)
     }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)

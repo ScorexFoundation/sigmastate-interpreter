@@ -32,6 +32,17 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     an [CosterException] should be thrownBy comp(env, script)
   }
 
+  private def costerFail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val exception = the[CosterException] thrownBy comp(env, x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
+  }
+
+  private def costerFail(x: String, expectedLine: Int, expectedCol: Int): Unit =
+    costerFail(env, x, expectedLine, expectedCol)
+
   property("array indexed access") {
     comp(env, "Coll(1)(0)") shouldBe
       ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
@@ -190,6 +201,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("BitShiftRightZeroed") {
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
+  }
+
+  property("failed option constructors (not supported)") {
+    costerFail("None", 1, 1)
+    costerFail("Some(10)", 1, 1)
   }
 
 }
