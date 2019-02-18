@@ -5,9 +5,11 @@ import org.ergoplatform.dsl.TestContractSpec
 
 class CrowdFundingTests extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  lazy val backer = spec.ProvingParty("Alice")
+  lazy val project = spec.ProvingParty("Bob")
 
   property("Evaluation - Crowdfunding Example") {
-    val contract = new CrowdFunding(100, 1000)(spec)
+    val contract = CrowdFunding[spec.type](100, 1000, backer, project)(spec)
     import contract.spec._
 
     val holderBox = block(0).newTransaction()

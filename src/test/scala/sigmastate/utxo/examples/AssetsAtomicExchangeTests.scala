@@ -12,6 +12,7 @@ import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, By
 import sigmastate.eval.{CSigmaProp, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
+import special.collection.Coll
 import special.sigma.Extensions._
 
 /** An example of an atomic ergo <=> asset exchange.
@@ -38,13 +39,13 @@ import special.sigma.Extensions._
   */
 class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
+  lazy val buyer = spec.ProvingParty("Alice")
+  lazy val seller = spec.ProvingParty("Bob")
 
   property("atomic exchange spec") {
-    val contract = new AssetsAtomicExchange(70, spec.Coll(Blake2b256("token1")))(spec) {
+    val contract = new AssetsAtomicExchange[spec.type](70, tokenId, buyer, seller)(spec) {
       import spec._
-      val tokenBuyer = ProvingParty("Alice")
-      val tokenSeller = ProvingParty("Bob")
-      val verifier = VerifyingParty("Miner")
 
       def extractToken(box: Value[SBox.type]) = ByIndex(
         ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
@@ -110,12 +111,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   }
 
   property("partial filling") {
-    val contract = new AssetsPartialFilling(70, spec.Coll(Blake2b256("token1")))(spec) {
-      import spec._
-      val tokenBuyer = ProvingParty("Alice")
-      val tokenSeller = ProvingParty("Bob")
-      val verifier = VerifyingParty("Miner")
-    }
+    val contract = AssetsPartialFilling[spec.type](70, tokenId, buyer, seller)(spec)
     import contract.spec._
 
     // ARRANGE

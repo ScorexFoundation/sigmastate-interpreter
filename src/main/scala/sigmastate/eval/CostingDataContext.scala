@@ -8,10 +8,10 @@ import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
 import scorex.crypto.authds.{ADKey, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
+import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, ErgoTree, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
+import sigmastate.serialization.{ValueSerializer, Serializer, OperationSerializer}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
@@ -43,7 +43,10 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
   }
 
   override def propBytes: Coll[Byte] = {
-    val bytes = DefaultSerializer.serializeWithSegregation(SigmaPropConstant(sigmaTree))
+    // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
+    // the same serialization method is used in both cases
+    val ergoTree = ErgoTree.fromSigmaBoolean(sigmaTree)
+    val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
     Builder.DefaultCollBuilder.fromArray(bytes)
   }
 

@@ -26,6 +26,10 @@ trait ContractSyntax { contract: SigmaContract =>
   val spec: ContractSpec
   val syntax = new DslSyntaxExtensions(builder)
 
+  /** The default verifier which represents miner's role in verification of transactions.
+    * It can be overriden in derived classes. */
+  lazy val verifier: spec.VerifyingParty = spec.VerifyingParty("Miner")
+
   def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
   def proposition(name: String, dslSpec: Proposition, scriptEnv: ScriptEnv, scriptCode: String) = {
@@ -57,6 +61,7 @@ trait ContractSpec {
   implicit def Coll[T](items: Array[T])(implicit cT: RType[T]) = dsl.Colls.fromArray(items)
 
   val IR: IRContext
+
 
   import SType.AnyOps
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {

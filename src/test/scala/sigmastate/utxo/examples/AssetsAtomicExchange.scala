@@ -6,19 +6,23 @@ import org.ergoplatform.ErgoBox.R4
 import special.collection.Coll
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
 
-abstract class AssetsAtomicExchange[Spec <: ContractSpec]
-    (val deadline: Int, val tokenId: Coll[Byte])
+/** Contract specification for assets atomic exchange transactions.
+  * @param deadline    block header after which the transfer can be cancelled.
+  * @param tokenId     id of the token to exchange
+  * @param tokenBuyer  The party, who wants to buy some amount of token with id == `tokenId`.
+  * @param tokenSeller The party, who wants to sell some amount of token with id == `tokenId`.
+  * */
+case class AssetsAtomicExchange[Spec <: ContractSpec]
+    (val deadline: Int, val tokenId: Coll[Byte],
+     val tokenBuyer: Spec#ProvingParty,
+     val tokenSeller: Spec#ProvingParty)
     (implicit val spec: Spec)
     extends SigmaContractSyntax with StdContracts
 {
-  /** The party, who wants to buy some amount of token with id == `tokenId`. */
-  val tokenBuyer: spec.ProvingParty
-  /** The party, who wants to sell some amount of token with id == `tokenId`. */
-  val tokenSeller: spec.ProvingParty
-  val verifier: spec.VerifyingParty
+  import syntax._
   def pkA = tokenBuyer.pubKey
   def pkB = tokenSeller.pubKey
-  import syntax._
+
   lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "tokenId" -> tokenId)
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>

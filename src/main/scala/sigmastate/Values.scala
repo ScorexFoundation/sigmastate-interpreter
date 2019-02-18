@@ -277,7 +277,7 @@ object Values {
   implicit def boolToSigmaProp(b: BoolValue): SigmaPropValue = BoolToSigmaProp(b)
 
   object SigmaPropConstant {
-    def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type] = Constant[SSigmaProp.type](value, SSigmaProp)
     def unapply(v: SValue): Option[SigmaBoolean] = v match {
       case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
       case _ => None
@@ -854,10 +854,13 @@ object Values {
     }
 
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
-      // get ErgoTree with segregated constants
-      // todo rewrite with everywherebu?
-      val nonSigmaBooleanProp = prop match { case sb: SigmaBoolean => SigmaPropConstant(sb) case _ => prop }
-      DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(nonSigmaBooleanProp))
+      prop match {
+        case SigmaPropConstant(_) => withoutSegregation(prop)
+        case _ =>
+          // get ErgoTree with segregated constants
+          // todo rewrite with everywherebu?
+          DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(prop))
+      }
     }
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
