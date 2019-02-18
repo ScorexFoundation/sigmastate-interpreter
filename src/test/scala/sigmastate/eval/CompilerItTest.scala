@@ -240,14 +240,14 @@ class CompilerItTest extends BaseCtxTests
     import Box._
     import Values._
     val prover = new ErgoLikeTestProvingInterpreter()
-    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
-    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val backerPK  = prover.dlogSecrets(0).publicImage
+    val projectPK = prover.dlogSecrets(1).publicImage
 
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     Case(env, "crowdFunding_Case", crowdFundingScript, ergoCtx,
       { ctx: Rep[Context] =>
-        val backerPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(backer))).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(project))).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = liftConst(dslValue.SigmaProp(backerPK))
+        val projectPubKey = liftConst(dslValue.SigmaProp(projectPK))
         val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),

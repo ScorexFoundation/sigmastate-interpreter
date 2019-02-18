@@ -518,12 +518,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           ExtractId(BoxConstant(friend))
         )
       )
-    )
+    ).toSigmaProp
 
     prop shouldBe propExpected
 
     // same script written differently
-    val altProp = compileWithCosting(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })")
+    val altProp = compileWithCosting(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })").asBoolValue.toSigmaProp
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
@@ -591,7 +591,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       CalcBlake2b256(
         If(GT(ExtractAmount(ByIndex(Inputs, 0)), LongConstant(10)),
           ExtractRegisterAs[SByteArray](ByIndex(Inputs, 2), reg1).get,
-          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), reg1).get)))
+          ExtractRegisterAs[SByteArray](ByIndex(Inputs, 1), reg1).get))).toSigmaProp
     prop shouldBe propExpected
 
     val input0 = ErgoBox(10, pubkey, 0, Seq(), Map())

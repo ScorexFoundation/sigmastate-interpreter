@@ -71,7 +71,7 @@ class ErgoAddressSpecification extends PropSpec
     val p2pk: P2PKAddress = P2PKAddress(pk)
 
     ergoAddressEncoder.fromProposition(p2s.script).success.value shouldBe p2s
-    ergoAddressEncoder.fromProposition(p2sh.script).success.value.isInstanceOf[Pay2SHAddress] shouldBe true
+    ergoAddressEncoder.fromProposition(p2sh.script).success.value shouldBe p2sh
     ergoAddressEncoder.fromProposition(p2pk.script).success.value.isInstanceOf[P2PKAddress] shouldBe true
   }
 

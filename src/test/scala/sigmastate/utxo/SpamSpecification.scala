@@ -248,9 +248,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val key1 = genKey("key1")
     val value1 = genValue("value1")
 
-    val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants, EQ(TreeLookup(
+      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key1),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value1)).toSigmaProp
+      ByteArrayConstant(proof)).get, ByteArrayConstant(value1)).toSigmaProp)
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
