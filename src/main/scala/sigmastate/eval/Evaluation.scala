@@ -387,7 +387,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
       catch {
         case e: Throwable =>
-          !!!(s"Error in evaluate($te)", e)
+          !!!(s"Error in Evaluation.compile.evaluate($te)", e)
       }
     }
 

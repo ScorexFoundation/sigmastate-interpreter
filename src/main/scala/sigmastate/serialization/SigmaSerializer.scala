@@ -29,7 +29,7 @@ object Serializer {
   type Consumed = Int
 
   val MaxInputSize: Int = 1024 * 1024 * 1
-  val MaxTreeDepth: Int = 100
+  val MaxTreeDepth: Int = 110
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
