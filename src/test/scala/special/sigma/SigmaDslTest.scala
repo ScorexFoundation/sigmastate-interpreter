@@ -2,13 +2,13 @@ package special.sigma
 
 import java.math.BigInteger
 
+import com.google.common.primitives.Longs
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.types.CBoolean
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
-import special.collection.Coll
+import special.collection.{Builder, Coll}
 import special.collections.CollGens
 
 trait SigmaTypeGens {
@@ -111,6 +111,13 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
-
-
+  ignore("byteArrayToLong equivalence") {
+    // TODO enable after SigmaDslBuilder.byteArrayToLong is implemented (+ uncomment in RuntimeCosting)
+    val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
+      Longs.fromByteArray(x.toArray)
+    }
+    forAll { x: Array[Byte] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
 }

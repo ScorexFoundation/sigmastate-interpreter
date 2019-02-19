@@ -90,6 +90,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, mkExtractId),
     SimpleTransformerSerializer[SBox.type, STuple](ExtractCreationInfoCode, mkExtractCreationInfo),
     SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, mkLongToByteArray),
+    SimpleTransformerSerializer[SByteArray, SLong.type](ByteArrayToLongCode, mkByteArrayToLong),
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, mkByteArrayToBigInt),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, mkCalcBlake2b256),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, mkCalcSha256),
