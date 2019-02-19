@@ -2,29 +2,12 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import sigma.util.ByteArrayBuilder
+import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
+import scorex.util.serialization._
 
-trait Serializer[TFamily, T <: TFamily] {
-
-  def parseBody(r: SigmaByteReader): TFamily
-  def serializeBody(obj: T, w: SigmaByteWriter): Unit
-  def error(msg: String) = throw new SerializerException(msg, None)
-
-  final def toBytes(obj: T): Array[Byte] = {
-    val w = Serializer.startWriter()
-    serializeBody(obj, w)
-    w.toBytes
-  }
-
-  final def fromBytes(bytes: Array[Byte]): TFamily = {
-    val r = Serializer.startReader(bytes)
-    parseBody(r)
-  }
-}
-
-object Serializer {
+object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
@@ -39,7 +22,7 @@ object Serializer {
   def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(buf, new ConstantStore(), resolvePlaceholdersToConstants = false)
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
         .mark()
     r
   }
@@ -48,7 +31,7 @@ object Serializer {
                   constantStore: ConstantStore,
                   resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    val r = new SigmaByteReader(buf, constantStore, resolvePlaceholdersToConstants)
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf), constantStore, resolvePlaceholdersToConstants)
       .mark()
     r
   }
@@ -60,19 +43,36 @@ object Serializer {
     * res */
   def startWriter(): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = None)
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = None)
     w
   }
 
   def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = Some(constantExtractionStore))
+    val wi = new VLQByteBufferWriter(b)
+    val w = new SigmaByteWriter(wi, constantExtractionStore = Some(constantExtractionStore))
     w
   }
 }
 
-trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T] {
-  val companion: SigmaSerializerCompanion[TFamily]
+trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, SigmaByteReader, SigmaByteWriter] {
+
+  def serializeWithGenericWriter(obj: T, w: Writer): Unit = {
+    serialize(obj, new SigmaByteWriter(w, None))
+  }
+
+  def parseWithGenericReader(r: Reader): TFamily = {
+    parse(new SigmaByteReader(r,  new ConstantStore(), resolvePlaceholdersToConstants = false))
+  }
+
+  def error(msg: String) = throw new SerializerException(msg, None)
+
+  final def toBytes(obj: T): Array[Byte] = {
+    val w = SigmaSerializer.startWriter()
+    serialize(obj, w)
+    w.toBytes
+  }
 }
 
 trait SigmaSerializerCompanion[TFamily] {

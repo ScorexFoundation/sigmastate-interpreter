@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
@@ -31,14 +31,14 @@ object DataSerializer {
       w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
-      GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
+      GroupElementSerializer.serialize(v.asInstanceOf[EcPointType], w)
     case SSigmaProp =>
       val p = v.asInstanceOf[SigmaBoolean]
       SigmaBoolean.serializer.serializeBody(p, w)
     case SBox =>
-      ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
+      ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
-      AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
+      AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTreeData], w)
     case tColl: SCollectionType[a] =>
       val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
@@ -82,13 +82,13 @@ object DataSerializer {
       val valueBytes = r.getBytes(size)
       new BigInteger(valueBytes)
     case SGroupElement =>
-      GroupElementSerializer.parseBody(r)
+      GroupElementSerializer.parse(r)
     case SSigmaProp =>
       SigmaBoolean.serializer.parseBody(r)
     case SBox =>
-      ErgoBox.serializer.parseBody(r)
+      ErgoBox.sigmaSerializer.parse(r)
     case SAvlTree =>
-      AvlTreeData.serializer.parseBody(r)
+      AvlTreeData.serializer.parse(r)
     case tColl: SCollectionType[a] =>
       val len = r.getUShort()
       if (tColl.elemType == SByte)

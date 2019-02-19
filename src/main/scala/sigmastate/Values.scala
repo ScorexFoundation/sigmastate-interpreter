@@ -1,15 +1,16 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, strategy}
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import scalan.Nullable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -32,6 +33,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{Extensions, AnyValue, TestValue}
+import sigmastate.lang.SourceContext
 
 
 object Values {
@@ -68,6 +70,29 @@ object Values {
     def opName: String = this.getClass.getSimpleName
 
     def opId: OperationId = OperationId(opName, opType)
+
+    /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
+    * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
+    * to create nodes,
+    * Adding additional (implicit source: SourceContext) parameter to every builder method would pollute its API
+    * and also doesn't make sence during deserialization, where Builder is also used.
+    * We can assume some indirect mechanism to pass current source context into every mkXXX method of Builder.
+    * We can pass it using `scala.util.DynamicVariable` by wrapping each mkXXX call into `withValue { }` calls.
+    * The same will happen in Typer.
+    * We can take sourceContext from untyped nodes and use it while creating typed nodes.
+    * And we can make sourceContext of every Value writeOnce value, i.e. it will be Nullable.Null by default,
+    * but can be set afterwards, but only once.
+    * This property will not participate in equality and other operations, so will be invisible for existing code.
+    * But Builder can use it to set sourceContext if it is present.
+    */
+    private[sigmastate] var _sourceContext: Nullable[SourceContext] = Nullable.None
+    def sourceContext: Nullable[SourceContext] = _sourceContext
+    def sourceContext_=(srcCtx: Nullable[SourceContext]): Unit =
+      if (_sourceContext.isEmpty) {
+        _sourceContext = srcCtx
+      } else {
+        sys.error("_sourceContext can be set only once")
+      }
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -102,7 +127,7 @@ object Values {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
-        case ct @ SCollection(tItem) =>
+        case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
         case ft @ SFunc(tD, tR, _) =>
           ft.getGenericType
@@ -177,7 +202,7 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  case object UnitConstant extends EvaluatedValue[SUnit.type] {
+  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
     override def tpe = SUnit
     val value = ()

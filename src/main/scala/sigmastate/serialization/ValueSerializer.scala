@@ -16,7 +16,7 @@ import sigmastate.utxo.CostTable._
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
-  override val companion = ValueSerializer
+  val companion = ValueSerializer
 
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
@@ -145,7 +145,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
         case Some(constantStore) =>
           val ph = constantStore.put(c)(DeserializationSigmaBuilder)
           w.put(ph.opCode)
-          constantPlaceholderSerializer.serializeBody(ph, w)
+          constantPlaceholderSerializer.serialize(ph, w)
         case None =>
           constantSerializer.serialize(c, w)
       }
@@ -153,16 +153,16 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = v.opCode
       w.put(opCode)
       // help compiler recognize the type
-      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
+      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
     val bytesRemaining = r.remaining
-    if (bytesRemaining > Serializer.MaxInputSize)
-      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ Serializer.MaxInputSize}")
+    if (bytesRemaining > SigmaSerializer.MaxInputSize)
+      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ SigmaSerializer.MaxInputSize}")
     val depth = r.level
-    if (depth > Serializer.MaxTreeDepth)
-      throw new ValueDeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${Serializer.MaxTreeDepth}")
+    if (depth > SigmaSerializer.MaxTreeDepth)
+      throw new ValueDeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${SigmaSerializer.MaxTreeDepth}")
     r.level = depth + 1
     val firstByte = r.peekByte().toUByte
     val v = if (firstByte <= LastConstantCode) {
@@ -171,19 +171,19 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
     else {
       val opCode = r.getByte()
-      getSerializer(opCode).parseBody(r)
+      getSerializer(opCode).parse(r)
     }
     r.level = depth - 1
     v
   }
 
   def serialize(v: Value[SType]): Array[Byte] = {
-    val w = Serializer.startWriter()
+    val w = SigmaSerializer.startWriter()
     serialize(v, w)
     w.toBytes
   }
 
-  def deserialize(bytes: Array[Byte], pos: Serializer.Position = 0): Value[SType] =
-    deserialize(Serializer.startReader(bytes, pos))
+  def deserialize(bytes: Array[Byte], pos: SigmaSerializer.Position = 0): Value[SType] =
+    deserialize(SigmaSerializer.startReader(bytes, pos))
 
 }

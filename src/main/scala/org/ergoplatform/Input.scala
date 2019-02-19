@@ -5,7 +5,7 @@ import java.util
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.ProverResult
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 
@@ -19,14 +19,14 @@ class UnsignedInput(val boxId: BoxId) {
 }
 
 object UnsignedInput {
-  object serializer extends Serializer[UnsignedInput, UnsignedInput] {
+  object serializer extends SigmaSerializer[UnsignedInput, UnsignedInput] {
 
     @inline
-    override def serializeBody(obj: UnsignedInput, w: SigmaByteWriter): Unit =
+    override def serialize(obj: UnsignedInput, w: SigmaByteWriter): Unit =
       w.putBytes(obj.boxId)
 
     @inline
-    override def parseBody(r: SigmaByteReader): UnsignedInput =
+    override def parse(r: SigmaByteReader): UnsignedInput =
       new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
   }
 }
@@ -36,16 +36,16 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
 }
 
 object Input {
-  object serializer extends Serializer[Input, Input] {
+  object serializer extends SigmaSerializer[Input, Input] {
 
-    override def serializeBody(obj: Input, w: SigmaByteWriter): Unit = {
+    override def serialize(obj: Input, w: SigmaByteWriter): Unit = {
       w.putBytes(obj.boxId)
-      ProverResult.serializer.serializeBody(obj.spendingProof, w)
+      ProverResult.serializer.serialize(obj.spendingProof, w)
     }
 
-    override def parseBody(r: SigmaByteReader): Input = {
+    override def parse(r: SigmaByteReader): Input = {
       val boxId = r.getBytes(BoxId.size)
-      val spendingProof = ProverResult.serializer.parseBody(r)
+      val spendingProof = ProverResult.serializer.parse(r)
       Input(ADKey @@ boxId, spendingProof)
     }
   }

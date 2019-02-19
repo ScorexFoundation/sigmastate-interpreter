@@ -20,7 +20,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -259,7 +259,17 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
-            val dataRes = invokeUnlifted(obj.elem, mc, dataEnv)
+            val dataRes = obj.elem match {
+              case _: CollElem[_, _] => mc match {
+                case CollMethods.flatMap(xs, f) =>
+                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.selfType, mc.isAdapterCall)
+                  invokeUnlifted(obj.elem, newMC, dataEnv)
+                case _ =>
+                  invokeUnlifted(obj.elem, mc, dataEnv)
+              }
+              case _ =>
+                invokeUnlifted(obj.elem, mc, dataEnv)
+            }
             val res = dataRes match {
               case Constant(v, _) => v
               case v => v

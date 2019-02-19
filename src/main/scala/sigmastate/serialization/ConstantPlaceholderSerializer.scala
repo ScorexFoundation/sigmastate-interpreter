@@ -10,11 +10,11 @@ case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
 
   override val opCode: OpCode = ConstantPlaceholderIndexCode
 
-  override def serializeBody(obj: ConstantPlaceholder[SType], w: SigmaByteWriter): Unit = {
+  override def serialize(obj: ConstantPlaceholder[SType], w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
     val constant = r.constantStore.get(id)
     if (r.resolvePlaceholdersToConstants)

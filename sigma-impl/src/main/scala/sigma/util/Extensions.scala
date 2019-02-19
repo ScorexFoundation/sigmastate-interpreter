@@ -5,6 +5,10 @@ import java.nio.ByteBuffer
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
 
+import scalan.Nullable
+
+import scala.language.higherKinds
+
 object Extensions {
   implicit class BooleanOps(val b: Boolean) extends AnyVal {
     /** Convert true to 1 and false to 0
@@ -199,19 +203,6 @@ object Extensions {
     }
   }
 
-  implicit class ByteArrayBuilderOps(val b: ByteArrayBuilder) extends AnyVal {
-    def appendOption[T](opt: Option[T])(putValue: T => Unit): ByteArrayBuilder = {
-      opt match {
-        case Some(v) =>
-          b.append(1.toByte)
-          putValue(v)
-          b
-        case None =>
-          b.append(0.toByte)
-      }
-    }
-  }
-
   implicit class ByteBufferOps(val buf: ByteBuffer) extends AnyVal {
     def toBytes: Array[Byte] = {
       val res = new Array[Byte](buf.position())
@@ -232,4 +223,10 @@ object Extensions {
     }
   }
 
+  implicit class NullableOps[T](val nul: Nullable[T]) {
+    def toOption: Option[T] = nul match {
+      case Nullable(v) => Some(v)
+      case _ => None
+    }
+  }
 }

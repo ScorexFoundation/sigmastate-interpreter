@@ -9,11 +9,11 @@ case class ValUseSerializer(cons: (Int, SType) => Value[SType]) extends ValueSer
 
   override val opCode: OpCode = ValUseCode
 
-  override def serializeBody(obj: ValUse[SType], w: SigmaByteWriter): Unit = {
+  override def serialize(obj: ValUse[SType], w: SigmaByteWriter): Unit = {
     w.putUInt(obj.valId)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
     val tpe = r.valDefTypeStore(id)
     cons(id, tpe)

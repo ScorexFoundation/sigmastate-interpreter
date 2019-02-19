@@ -6,6 +6,7 @@ import sigmastate._
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
+import org.scalatest.Matchers
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.ProveDHTuple
@@ -13,7 +14,7 @@ import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 
-trait LangTests {
+trait LangTests extends Matchers {
 
   def BoolIdent(name: String): Value[SBoolean.type] = Ident(name).asValue[SBoolean.type]
   def IntIdent(name: String): Value[SLong.type] = Ident(name).asValue[SLong.type]
@@ -69,4 +70,13 @@ trait LangTests {
 
   /** Parses string to SType tree */
   def ty(s: String): SType = SigmaParser.parseType(s)
+
+  def assertSrcCtxForAllNodes(tree: SValue): Unit = {
+    import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
+    rewrite(everywherebu(rule[SValue] {
+      case node =>
+        withClue(s"Missing sourceContext for $node") { node.sourceContext.isDefined shouldBe true }
+        node
+    }))(tree)
+  }
 }

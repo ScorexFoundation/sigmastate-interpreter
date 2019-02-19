@@ -3,13 +3,12 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, IndexedSeq[Value[SType]]) => Value[SType])
   extends ValueSerializer[MethodCall] {
 
-  override def serializeBody(mc: MethodCall, w: SigmaByteWriter): Unit = {
+  override def serialize(mc: MethodCall, w: SigmaByteWriter): Unit = {
     w.put(mc.method.objType.typeId)
     w.put(mc.method.methodId)
     w.putValue(mc.obj)
@@ -19,7 +18,7 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
     }
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val typeId = r.getByte()
     val methodId = r.getByte()
     val obj = r.getValue()
