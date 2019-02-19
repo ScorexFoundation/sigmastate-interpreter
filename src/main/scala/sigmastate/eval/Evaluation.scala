@@ -20,7 +20,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._

@@ -13,7 +13,7 @@ import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.{Apply, ApplyTypes, Block, Ident, Lambda, Select, Val, ValueOps}
 import sigmastate.lang.exceptions.SpecializerException
 import sigmastate.utxo._
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 class SigmaSpecializer(val builder: SigmaBuilder) {
   import SigmaSpecializer._

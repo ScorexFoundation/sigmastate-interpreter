@@ -4,12 +4,12 @@ import org.scalacheck.Arbitrary._
 import org.scalatest.Assertion
 import sigmastate._
 import sigmastate.lang.exceptions.TypeDeserializeCallDepthExceeded
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 
   private def roundtrip[T <: SType](tpe: T, expected: Array[Byte]): Assertion = {
-    val w = Serializer.startWriter()
+    val w = SigmaSerializer.startWriter()
         .putType(tpe)
     val bytes = w.toBytes
     bytes shouldBe expected
@@ -17,14 +17,14 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   private def roundtrip[T <: SType](tpe: T): Assertion = {
-    val w = Serializer.startWriter()
+    val w = SigmaSerializer.startWriter()
       .putType(tpe)
     val bytes = w.toBytes
-    val r = Serializer.startReader(bytes, 0)
+    val r = SigmaSerializer.startReader(bytes, 0)
     val res = r.getType()
     res shouldBe tpe
     val randomPrefix = arrayGen[Byte].sample.get
-    val r2 = Serializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
+    val r2 = SigmaSerializer.startReader(randomPrefix ++ bytes, randomPrefix.length)
     val res2 = r2.getType()
     res2 shouldBe tpe
   }
@@ -95,9 +95,9 @@ class TypeSerializerSpecification extends SerializationSpecification {
   }
 
   property("tuple of tuples crazy deep") {
-    val bytes = List.tabulate(Serializer.MaxTreeDepth + 1)(_ => Array[Byte](TupleTypeCode, 2))
+    val bytes = List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => Array[Byte](TupleTypeCode, 2))
       .toArray.flatten
-    an[TypeDeserializeCallDepthExceeded] should be thrownBy Serializer.startReader(bytes, 0).getType()
+    an[TypeDeserializeCallDepthExceeded] should be thrownBy SigmaSerializer.startReader(bytes, 0).getType()
   }
 
   property("STypeIdent serialization roundtrip") {

@@ -6,7 +6,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
@@ -19,7 +19,7 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
 
   private val constCodePrefix: Byte = 0
 
-  override def serializeBody(obj: ProveDHTuple, w: SigmaByteWriter): Unit = obj match {
+  override def serialize(obj: ProveDHTuple, w: SigmaByteWriter): Unit = obj match {
     case ProveDHTuple(
     gv @ Constant(_, SGroupElement),
     hv @ Constant(_, SGroupElement),
@@ -38,7 +38,7 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
       w.putValue(obj.vv)
   }
 
-  override def parseBody(r: SigmaByteReader): SigmaBoolean = {
+  override def parse(r: SigmaByteReader): SigmaBoolean = {
     if (r.peekByte() == constCodePrefix) {
       val _ = r.getByte() // skip prefix code
       r.getType() match {

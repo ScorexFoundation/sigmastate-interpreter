@@ -5,20 +5,20 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{Quadruple, _}
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: SType]
 (override val opCode: Byte,
  cons: (Value[S1], Value[S2], Value[S3]) => Value[S4])
   extends ValueSerializer[Quadruple[S1, S2, S3, S4]] {
 
-  override def serializeBody(obj: Quadruple[S1, S2, S3, S4], w: SigmaByteWriter): Unit = {
+  override def serialize(obj: Quadruple[S1, S2, S3, S4], w: SigmaByteWriter): Unit = {
     w.putValue(obj.first)
     w.putValue(obj.second)
     w.putValue(obj.third)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[S4] = {
+  override def parse(r: SigmaByteReader): Value[S4] = {
     val arg1 = r.getValue().asValue[S1]
     val arg2 = r.getValue().asValue[S2]
     val arg3 = r.getValue().asValue[S3]

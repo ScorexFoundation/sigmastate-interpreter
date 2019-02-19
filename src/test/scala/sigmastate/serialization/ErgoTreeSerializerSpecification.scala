@@ -41,9 +41,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val ergoTree = extractConstants(tree)
     val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
     val (_, deserializedConstants, treeBytes) = ErgoTreeSerializer.DefaultSerializer
-      .deserializeHeaderWithTreeBytes(Serializer.startReader(bytes))
+      .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
     deserializedConstants shouldEqual ergoTree.constants
-    val r = Serializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
+    val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
       resolvePlaceholdersToConstants = true)
     val deserializedTree = ValueSerializer.deserialize(r)
     deserializedTree shouldEqual tree
@@ -61,7 +61,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val tree = Plus(10, 20)
     val bytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(tree)
     val (_, deserializedConstants, _) = ErgoTreeSerializer.DefaultSerializer.
-      deserializeHeaderWithTreeBytes(Serializer.startReader(bytes))
+      deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
     deserializedConstants.length shouldBe 2
     val deserializedTree = ErgoTreeSerializer.DefaultSerializer.deserialize(bytes)
     deserializedTree shouldEqual tree
@@ -73,9 +73,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val bytes1 = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(tree1)
     val bytes2 = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(tree2)
     val (_, _, treeBytes1) = ErgoTreeSerializer.DefaultSerializer
-      .deserializeHeaderWithTreeBytes(Serializer.startReader(bytes1))
+      .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes1))
     val (_, _, treeBytes2) = ErgoTreeSerializer.DefaultSerializer
-      .deserializeHeaderWithTreeBytes(Serializer.startReader(bytes2))
+      .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes2))
     treeBytes1 shouldEqual treeBytes2
   }
 
@@ -103,7 +103,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
       val ergoTree = extractConstants(processedTree)
       val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
       val (_, deserializedConstants, treeBytes) = ErgoTreeSerializer.DefaultSerializer
-        .deserializeHeaderWithTreeBytes(Serializer.startReader(bytes))
+        .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
       val c = new ConstantStore(deserializedConstants)
       val deserializedTree = ErgoTreeSerializer.DefaultSerializer.deserializeWithConstantInjection(c, treeBytes)
       deserializedTree shouldEqual processedTree

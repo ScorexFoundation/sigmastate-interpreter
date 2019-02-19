@@ -10,13 +10,13 @@ object SubstConstantsSerializer extends ValueSerializer[SubstConstants[SType]] {
 
   override val opCode: Byte = OpCodes.SubstConstantsCode
 
-  def serializeBody(obj: SubstConstants[SType], w: SigmaByteWriter): Unit = {
+  def serialize(obj: SubstConstants[SType], w: SigmaByteWriter): Unit = {
     w.putValue(obj.scriptBytes)
     w.putValue(obj.positions)
     w.putValue(obj.newValues)
   }
 
-  def parseBody(r: SigmaByteReader): Value[SType] = {
+  def parse(r: SigmaByteReader): Value[SType] = {
     val scriptBytes = r.getValue().asValue[SByteArray]
     val positions = r.getValue().asValue[SIntArray]
     val newVals = r.getValue().asValue[SCollection[SType]]

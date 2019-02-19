@@ -11,12 +11,12 @@ case class ApplySerializer(cons: (Value[SType], IndexedSeq[Value[SType]]) => Val
 
   override val opCode: OpCode = FuncApplyCode
 
-  override def serializeBody(obj: Apply, w: SigmaByteWriter): Unit = {
+  override def serialize(obj: Apply, w: SigmaByteWriter): Unit = {
     w.putValue(obj.func)
     w.putValues(obj.args)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val func = r.getValue()
     val args = r.getValues()
     cons(func, args)

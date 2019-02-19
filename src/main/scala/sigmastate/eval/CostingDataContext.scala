@@ -11,7 +11,7 @@ import sigmastate.{TrivialProp, _}
 import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
+import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
@@ -228,7 +228,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     val treeData = tree.asInstanceOf[CostingAvlTree].treeData
     val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
     val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
     ops.foreach(o => bv.performOneOperation(o))
     bv.digest match {
       case Some(v) => Some(Colls.fromArray(v))

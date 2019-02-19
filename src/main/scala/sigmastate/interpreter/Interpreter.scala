@@ -15,7 +15,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
+import sigmastate.serialization.{OpCodes, OperationSerializer, SigmaSerializer, ValueSerializer}
 import sigma.util.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
