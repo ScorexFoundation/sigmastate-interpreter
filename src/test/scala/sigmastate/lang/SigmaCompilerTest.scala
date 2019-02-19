@@ -553,4 +553,15 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     costerFail("Some(10)", 1, 1)
   }
 
+  property("byteArrayToLong") {
+    testMissingCosting("byteArrayToLong(longToByteArray(1L))",
+      ByteArrayToLong(LongToByteArray(LongConstant(1)))
+    )
+  }
+
+  property("xorOf") {
+    testMissingCosting("xorOf(Coll[Boolean](true, false))",
+      XorOf(Seq(TrueLeaf, FalseLeaf))
+    )
+  }
 }

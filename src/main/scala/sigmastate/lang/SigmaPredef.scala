@@ -217,7 +217,7 @@ object SigmaPredef {
 
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      undefined
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",

@@ -46,6 +46,7 @@ trait SigmaBuilder {
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+  def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue
 
   def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
   def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
@@ -311,6 +312,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input).withSrcCtx(currentSrcCtx.value)
+
+  override def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue =
+    XorOf(input).withSrcCtx(currentSrcCtx.value)
 
   override def mkAnyOf(input: Seq[Value[SBoolean.type]]) =
     OR(input).withSrcCtx(currentSrcCtx.value)

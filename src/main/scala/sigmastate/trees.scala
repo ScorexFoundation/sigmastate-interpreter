@@ -179,6 +179,21 @@ object OR {
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }
 
+/** Similar to allOf, but performing logical XOR operation instead of `&&`
+  */
+case class XorOf(input: Value[SCollection[SBoolean.type]])
+  extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
+  override val opCode: OpCode = XorOfCode
+  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+}
+
+object XorOf {
+  def apply(children: Seq[Value[SBoolean.type]]): XorOf =
+    XorOf(ConcreteCollection(children.toIndexedSeq))
+
+  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): XorOf = apply(head +: tail)
+}
+
 /**
   * AND logical conjunction
   */

@@ -76,6 +76,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ConcreteCollectionSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
+    LogicalTransformerSerializer(XorOfCode, mkXorOf),
     TaggedVariableSerializer(mkTaggedVariable),
     GetVarSerializer(mkGetVar),
     MapCollectionSerializer(mkMapCollection),
