@@ -126,7 +126,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                   val expectedArgs = concrFunTpe.asFunc.tDom.tail
                   if (expectedArgs.length != newArgTypes.length
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
-                    error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes")
+                    error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
                   val methodConcrType = method.withSType(concrFunTpe)
                   methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
@@ -225,10 +225,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                     val newMethod = method.withSType(concrFunTpe)
                     val concrFunArgsTypes = concrFunTpe.asFunc.tDom.tail
                     if (newArgsTypes != concrFunArgsTypes)
-                      error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes")
+                      error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes", mc.sourceContext)
                     newMethod
                   case None =>
-                    error(s"Invalid argument type of method call $mc : expected ${sfunc.tDom}; actual: $actualTypes")
+                    error(s"Invalid argument type of method call $mc : expected ${sfunc.tDom}; actual: $actualTypes", mc.sourceContext)
                 }
               case _ => method
             }
