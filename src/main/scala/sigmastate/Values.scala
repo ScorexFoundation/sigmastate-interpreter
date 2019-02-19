@@ -676,7 +676,11 @@ object Values {
   }
 
   implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = BoolToSigmaProp(b)
+    def toSigmaProp: SigmaPropValue = b match {
+      case b if b.tpe == SBoolean => BoolToSigmaProp(b)
+      case p if p.tpe == SSigmaProp => p.asSigmaProp
+      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $b")
+    }
   }
 
   sealed trait BlockItem extends NotReadyValue[SType] {
