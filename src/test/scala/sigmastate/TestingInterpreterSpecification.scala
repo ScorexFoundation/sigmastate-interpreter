@@ -279,16 +279,16 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val proof = NoProof
     val env = TestingContext(99)
 
-    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(prop1, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
     val prop2 = OR(TrueLeaf, FalseLeaf).toSigmaProp
-    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(prop2, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
     val prop3 = AND(TrueLeaf, TrueLeaf).toSigmaProp
-    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
     val prop4 = GT(Height, IntConstant(90)).toSigmaProp
-    verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {

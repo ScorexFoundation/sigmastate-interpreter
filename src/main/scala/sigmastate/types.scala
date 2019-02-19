@@ -479,7 +479,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3)
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = 32
+  override def dataSize(v: SType#WrappedType): Long = CryptoConstants.groupSize.toLong
   override def isConstantSize = true
   def ancestors = Nil
 }
@@ -498,6 +498,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
     case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
     case COR(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
     case CTHRESHOLD(k, inputs) => 4 + inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case t: TrivialProp => 1
     case _ => sys.error(s"Cannot get SigmaProp.dataSize($v)")
   }
   override def isConstantSize = false

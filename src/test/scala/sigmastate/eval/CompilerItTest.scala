@@ -93,13 +93,13 @@ class CompilerItTest extends BaseCtxTests
   }
 
   def sigmaPropConstCase = {
-    val resSym = dsl.proveDlog(liftConst(g1))
-    val res = DLogProtocol.ProveDlog(ecp1) // NOTE! this value cannot be produced by test script
+    val res = dslValue.SigmaProp(p1)
+    val resSym = liftConst(res)
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
       cost = null,
-      size = {_ => CryptoConstants.groupSize.toLong },
-      tree = SigmaPropConstant(p1), Result(res, 10053, 32))
+      size = {_ => CryptoConstants.groupSize.toLong + 1 },
+      tree = SigmaPropConstant(p1), Result(p1, 10052, 33))
   }
   test("sigmaPropConstCase") {
     sigmaPropConstCase.doReduce()
@@ -107,14 +107,16 @@ class CompilerItTest extends BaseCtxTests
 
   def andSigmaPropConstsCase = {
     import SigmaDslBuilder._
-    val p1Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g1))
-    val p2Sym: Rep[SigmaProp] = dsl.proveDlog(liftConst(g2))
+    val p1Dsl = dslValue.SigmaProp(p1)
+    val p2Dsl = dslValue.SigmaProp(p2)
+    val p1Sym: Rep[SigmaProp] = liftConst(p1Dsl)
+    val p2Sym: Rep[SigmaProp] = liftConst(p2Dsl)
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
       cost = null,
       size = null,
       tree = SigmaAnd(Seq(SigmaPropConstant(p1), SigmaPropConstant(p2))),
-      Result(CAND(Seq(p1, p2)), 20126, 66))
+      Result(CAND(Seq(p1, p2)), 20124, 67))
   }
 
   test("andSigmaPropConstsCase") {
@@ -275,7 +277,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40686, 1L)
+      Result({ TrivialProp.FalseProp }, 40682, 1L)
     )
   }
   test("crowdFunding_Case") {

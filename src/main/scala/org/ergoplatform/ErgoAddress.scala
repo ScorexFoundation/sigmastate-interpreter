@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import java.nio.ByteBuffer
 import java.util
 
 import com.google.common.primitives.Ints
@@ -9,7 +10,8 @@ import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer}
+import sigmastate.serialization._
+import sigmastate.utils.ByteBufferReader
 import sigmastate.utxo.{DeserializeContext, Slice}
 
 import scala.util.Try
@@ -99,7 +101,7 @@ object P2PKAddress {
   val addressTypePrefix: Byte = 1: Byte
 
   def apply(pubkey: ProveDlog)(implicit encoder: ErgoAddressEncoder): P2PKAddress = {
-    val bs = SigmaBoolean.serializer.toBytes(pubkey)
+    val bs = GroupElementSerializer.toBytes(pubkey.h)
     new P2PKAddress(pubkey, bs)
   }
 }
@@ -122,7 +124,7 @@ class Pay2SHAddress(val scriptHash: Array[Byte])(implicit val encoder: ErgoAddre
       scriptHash
     )
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
-    SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect)
+    ErgoTree.withoutSegregation(SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect))
   }
 
   override def equals(obj: Any): Boolean = obj match {
@@ -209,8 +211,9 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
       addressType match {
         case P2PKAddress.addressTypePrefix =>
-          val pd = SigmaBoolean.serializer.fromBytes(contentBytes).asInstanceOf[ProveDlog]
-          new P2PKAddress(pd, contentBytes)
+          val r = Serializer.startReader(contentBytes)
+          val p = GroupElementSerializer.parseBody(r)
+          new P2PKAddress(ProveDlog(p), contentBytes)
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
@@ -226,9 +229,11 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
       case SigmaPropConstant(d: ProveDlog) => P2PKAddress(d)
       //TODO move this pattern to PredefScripts
       case SigmaAnd(Seq(
-             BoolToSigmaProp(EQ(Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)), _)),
-             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) =>
-        Pay2SHAddress(proposition)
+             BoolToSigmaProp(
+               EQ(
+                 Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
+                 ByteArrayConstant(scriptHash))),
+             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => new Pay2SHAddress(scriptHash)
       case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case other =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: ${proposition}")
