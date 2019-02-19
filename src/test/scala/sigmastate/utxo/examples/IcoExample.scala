@@ -1,7 +1,11 @@
 package sigmastate.utxo.examples
 
+import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import sigmastate.AvlTreeData
+import scorex.crypto.authds.avltree.batch.BatchAVLProver
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant}
+import sigmastate.{AvlTreeData, AvlTreeFlags}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
@@ -29,13 +33,13 @@ class IcoExample extends SigmaTestingCommons {
         |     (pk, value)
         |  }
         |
-        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty })
+        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty})
         |
         |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map(toAddFn)
         |
-        |  val modifiedTree = treeInserts(SELF.R4[AvlTree].get, toAdd, proof).get
+        |  val modifiedTree = treeInserts(SELF.R5[AvlTree].get, toAdd, proof).get
         |
-        |  val addedCorrectly = modifiedTree == fundingOut.R4[AvlTree].get
+        |  val addedCorrectly = modifiedTree == fundingOut.R5[AvlTree].get
         |
         |  addedCorrectly
         |
@@ -44,9 +48,18 @@ class IcoExample extends SigmaTestingCommons {
 
     val projectProver = new ErgoLikeTestProvingInterpreter
 
-    val projectBoxBefore = ErgoBox(10, fundingScript, 0)
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val flags = AvlTreeFlags.AllOperationsAllowed
+    val initTreeData = new AvlTreeData(digest, flags, 32, None)
 
-    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxBefore))
+    val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.fill(32)(0:Byte)), R5 -> AvlTreeConstant(initTreeData)))
+
+    val projectBoxAfter = ErgoBox(10, fundingScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.fill(32)(0:Byte)), R5 -> AvlTreeConstant(initTreeData)))
+
+    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter))
 
     val fundingContext = ErgoLikeContext(
       currentHeight = 1000,
@@ -56,9 +69,8 @@ class IcoExample extends SigmaTestingCommons {
       spendingTransaction = fundingTx,
       self = projectBoxBefore)
 
-    println(projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage))
-
-
+    projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
 
   }
+
 }
