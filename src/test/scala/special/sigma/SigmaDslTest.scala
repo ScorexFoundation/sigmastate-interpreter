@@ -39,8 +39,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 
   property("Boolean methods equivalence") {
     lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))(x => x.toByte)
-    forAll { (x: Boolean) =>
-//TODO  toByte(x)
+    forAll { x: Boolean =>
+      x.toByte
     }
   }
 
