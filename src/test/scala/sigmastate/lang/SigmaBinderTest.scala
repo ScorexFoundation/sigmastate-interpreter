@@ -197,15 +197,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
-  property("SCollection.indices") {
-    bind(env, "Coll(1).indices") shouldBe MethodCallLike(ConcreteCollection(IntConstant(1)), "indices", IndexedSeq())
-    bind(env, "INPUTS.indices") shouldBe MethodCallLike(Inputs, "indices", IndexedSeq())
-  }
-
-  property("SNumeric.toBytes") {
-    bind(env, "4.toBytes") shouldBe MethodCallLike(IntConstant(4), "toBytes", IndexedSeq())
-  }
-
   property("val fails (already defined in env)") {
     val script= "{ val x = 10; x > 2 }"
     (the[BinderException] thrownBy bind(env, script)).source shouldBe
