@@ -1,6 +1,8 @@
 package sigmastate.utxo.examples
 
-import sigmastate.helpers.SigmaTestingCommons
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import sigmastate.AvlTreeData
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -22,14 +24,14 @@ class IcoExample extends SigmaTestingCommons {
         |  val fundingOut = OUTPUTS(0)
         |
         |  val toAddFn = { (b: Box) =>
-        |     val pk = b.R4[SByteArray].get
-        |     val value = b.value
+        |     val pk = b.R4[Coll[Byte]].get
+        |     val value = longToByteArray(b.value)
         |     (pk, value)
         |  }
         |
-        |  val funders = INPUTS.filter{(b: Box) => b.R5[Int].isEmpty}
+        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty })
         |
-        |  val toAdd = funders.map(toAddFn)
+        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map(toAddFn)
         |
         |  val modifiedTree = treeInserts(SELF.R4[AvlTree].get, toAdd, proof).get
         |
@@ -40,6 +42,23 @@ class IcoExample extends SigmaTestingCommons {
         |}""".stripMargin
     ).asBoolValue
 
-    println(fundingScript)
+    val projectProver = new ErgoLikeTestProvingInterpreter
+
+    val projectBoxBefore = ErgoBox(10, fundingScript, 0)
+
+    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxBefore))
+
+    val fundingContext = ErgoLikeContext(
+      currentHeight = 1000,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(projectBoxBefore),
+      spendingTransaction = fundingTx,
+      self = projectBoxBefore)
+
+    println(projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage))
+
+
+
   }
 }
