@@ -434,4 +434,157 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     assertProof(code, expectedPropTree, outputBoxValues)
   }
+
+  ignore("flatMap") {
+    assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
+      EQ(
+        ByIndex(
+          MethodCall(Outputs,
+            SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)),
+            Vector(FuncValue(1, SBox,
+              ExtractScriptBytes(ValUse(1, SBox))
+            ))
+          ).asCollection[SByte.type],
+          IntConstant(0)
+        ),
+        ByteConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("indexOf") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
+      EQ(
+        MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+          SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+          Vector(LongConstant(1), IntConstant(0))
+        ),
+        IntConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  ignore("indices") {
+    assertProof("OUTPUTS.indices == Coll(0)",
+      EQ(MethodCall(Outputs, SCollection.IndicesMethod, Vector()), ConcreteCollection(IntConstant(0))),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("segmentLength") {
+    assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          )
+        ),
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("indexWhere") {
+    assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          )
+        ),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("lastIndexWhere") {
+    assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
+      EQ(
+        MethodCall(Outputs,
+          SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(1)
+          )
+        ),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("zip") {
+    assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
+      EQ(
+        SizeOf(MethodCall(Outputs,
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          Vector(
+            ConcreteCollection(IntConstant(1), IntConstant(2))
+          )
+        ).asCollection[STuple]),
+        IntConstant(2)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("partition") {
+    assertProof("OUTPUTS.partition({ (box: Box) => box.value < 2L})._1.size == 1",
+      EQ(
+        SizeOf(
+          SelectField(
+            MethodCall(Outputs,
+              SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+              Vector(
+                FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
+              )
+            ).asValue[STuple],
+            1
+          ).asCollection[SType]
+        ),
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("patch") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).patch(0, Coll(3L), 1)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1))
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updated") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updated(0, 3L)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(IntConstant(0), LongConstant(3))
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updateMany") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SLong)),
+            Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3)))
+          ).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
 }

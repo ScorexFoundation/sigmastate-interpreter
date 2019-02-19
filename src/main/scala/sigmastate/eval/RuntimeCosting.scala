@@ -1531,6 +1531,52 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
+        val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
+        val (argsVals, argsCosts) = args.map {
+          case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
+            val funC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, sfunc)).func
+            val (calcF, costF) = splitCostedFunc2(funC, okRemoveIsValid = true)
+            val cost = xsC.values.zip(xsC.costs.zip(xsC.sizes)).map(costF).sum(intPlusMonoid)
+            (calcF, cost)
+          case a =>
+            val aC = eval(a)
+            (aC.value, aC.cost)
+        }.unzip
+        // todo add costOf(node)
+        val cost = argsCosts.foldLeft(xsC.cost)({ case (s, e) => s + e }) // + costOf(node)
+        val xsV = xsC.value
+        val value = (method.name, argsVals) match {
+          case (SCollection.IndexOfMethod.name, Seq(e, from)) => xsV.indexOf(e, asRep[Int](from))
+          case (SCollection.IndicesMethod.name, _) => xsV.indices
+          case (SCollection.FlatMapMethod.name, Seq(f)) => xsV.flatMap(asRep[Any => Coll[Any]](f))
+          case (SCollection.SegmentLengthMethod.name, Seq(f, from)) =>
+            xsV.segmentLength(asRep[Any => Boolean](f), asRep[Int](from))
+          case (SCollection.IndexWhereMethod.name, Seq(f, from)) =>
+            xsV.indexWhere(asRep[Any => Boolean](f), asRep[Int](from))
+          case (SCollection.LastIndexWhereMethod.name, Seq(f, end)) =>
+            xsV.lastIndexWhere(asRep[Any => Boolean](f), asRep[Int](end))
+          case (SCollection.ZipMethod.name, Seq(col2)) => xsV.zip(asRep[Coll[Any]](col2))
+          case (SCollection.PartitionMethod.name, Seq(f)) => xsV.partition(asRep[Any => Boolean](f))
+          case (SCollection.PatchMethod.name, Seq(from, col, repl)) =>
+            xsV.patch(asRep[Int](from), asRep[Coll[Any]](col), asRep[Int](repl))
+          case (SCollection.UpdatedMethod.name, Seq(index, elem)) =>
+            xsV.updated(asRep[Int](index), asRep[Any](elem))
+          case (SCollection.UpdateManyMethod.name, Seq(indexCol, elemCol)) =>
+            xsV.updateMany(asRep[Coll[Int]](indexCol), asRep[Coll[Any]](elemCol))
+          case _ => error(s"method $method is not supported")
+        }
+        withDefaultSize(value, cost)
+
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isOption =>
+        val optC = asRep[CostedOption[Any]](eval(obj))
+        val argsC = args.map(eval)
+        (method.name, argsC) match {
+          case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
+          case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
+          case _ => error(s"method $method is not supported")
+        }
+
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }

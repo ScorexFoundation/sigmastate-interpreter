@@ -577,4 +577,49 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "true >>> false", 1, 1)
   }
 
+  property("Collection.BitShiftLeft") {
+    typecheck(env, "Coll(1,2) << 2") shouldBe SCollection(SInt)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << 2L")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << (2L, 3)")
+  }
+
+  property("Collection.BitShiftRight") {
+    typecheck(env, "Coll(1,2) >> 2") shouldBe SCollection(SInt)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> 2L")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> (2L, 3)")
+  }
+
+  property("Collection.BitShiftRightZeroed") {
+    typecheck(env, "Coll(true, false) >>> 2") shouldBe SCollection(SBoolean)
+    an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >>> 2")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> true")
+    an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> (2L, 3)")
+  }
+
+  property("SCollection.indices") {
+    typecheck(env, "Coll(1).indices") shouldBe SCollection(SInt)
+    typecheck(env, "INPUTS.indices") shouldBe SCollection(SInt)
+  }
+
+  property("SCollection.flatMap") {
+    typecheck(env, "OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe SCollection(SBoolean)
+  }
+
+  property("SBox.tokens") {
+    typecheck(env, "SELF.tokens") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+  }
+
+  property("SOption.toColl") {
+    typecheck(env, "getVar[Int](1).toColl") shouldBe SCollection(SInt)
+  }
+
+  property("SAvlTree.digest") {
+    typecheck(env, "getVar[AvlTree](1).get.digest") shouldBe SCollection(SByte)
+  }
+
+  property("SGroupElement.exp") {
+    typecheck(env, "g1.exp(1.toBigInt)") shouldBe SGroupElement
+  }
 }

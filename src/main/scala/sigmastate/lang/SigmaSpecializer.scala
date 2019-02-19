@@ -131,11 +131,6 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
     case Apply(Select(col, FoldMethod.name, _), Seq(zero, l @ Lambda(_, _, _, _))) =>
       Some(mkFold(col.asValue[SCollection[SType]], zero, l))
 
-    case Apply(Select(col, GetOrElseMethod.name, _), Seq(index, defaultValue)) =>
-      val index1 = eval(env, index).asValue[SInt.type]
-      val defaultValue1 = eval(env, defaultValue).asValue[SType]
-      Some(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
-
     case Apply(col, Seq(index)) if col.tpe.isCollection =>
       Some(ByIndex(col.asCollection[SType], index.asValue[SInt.type]))
 
