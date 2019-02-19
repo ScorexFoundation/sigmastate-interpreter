@@ -543,7 +543,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 2L))
   }
 
-  property("patch") {
+  ignore("patch") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).patch(0, Coll(3L), 1)(0) == 3L",
       EQ(
         ByIndex(
@@ -558,7 +558,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 2L))
   }
 
-  property("updated") {
+  ignore("updated") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).updated(0, 3L)(0) == 3L",
       EQ(
         ByIndex(
@@ -573,7 +573,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 2L))
   }
 
-  property("updateMany") {
+  ignore("updateMany") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L",
       EQ(
         ByIndex(

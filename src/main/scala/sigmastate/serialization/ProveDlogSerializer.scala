@@ -10,12 +10,12 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 
 case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
-  extends Serializer[ProveDlog, ProveDlog] {
+  extends SigmaSerializer[ProveDlog, ProveDlog] {
 
-  override def serializeBody(obj: ProveDlog, w: SigmaByteWriter): Unit =
+  override def serialize(obj: ProveDlog, w: SigmaByteWriter): Unit =
     DataSerializer.serialize[SGroupElement.type](obj.value, SGroupElement, w)
 
-  override def parseBody(r: SigmaByteReader) = {
+  override def parse(r: SigmaByteReader) = {
     val res = DataSerializer.deserialize(SGroupElement, r)
     cons(res)
   }
@@ -25,11 +25,11 @@ case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPro
     extends ValueSerializer[CreateProveDlog] {
   override val opCode: OpCode = OpCodes.ProveDlogCode
 
-  override def serializeBody(obj: CreateProveDlog, w: SigmaByteWriter): Unit = {
+  override def serialize(obj: CreateProveDlog, w: SigmaByteWriter): Unit = {
     w.putValue(obj.value)
   }
 
-  override def parseBody(r: SigmaByteReader) = {
+  override def parse(r: SigmaByteReader) = {
     val v = r.getValue().asValue[SGroupElement.type]
     cons(v)
   }

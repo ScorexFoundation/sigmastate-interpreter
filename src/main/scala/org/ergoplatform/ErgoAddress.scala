@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import java.nio.ByteBuffer
 import java.util
 
 import com.google.common.primitives.Ints
@@ -11,9 +10,8 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.serialization._
-import sigmastate.utils.ByteBufferReader
 import sigmastate.utxo.{DeserializeContext, Slice}
-
+import scorex.util.serialization._
 import scala.util.Try
 
 /**
@@ -211,8 +209,8 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
       addressType match {
         case P2PKAddress.addressTypePrefix =>
-          val r = Serializer.startReader(contentBytes)
-          val p = GroupElementSerializer.parseBody(r)
+          val r = SigmaSerializer.startReader(contentBytes)
+          val p = GroupElementSerializer.parse(r)
           new P2PKAddress(ProveDlog(p), contentBytes)
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(contentBytes)

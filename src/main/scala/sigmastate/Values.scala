@@ -1,17 +1,18 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Arrays, Objects}
+import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scalan.Nullable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
+import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
@@ -548,51 +549,51 @@ object Values {
   object SigmaBoolean {
     val PropBytes = "propBytes"
     val IsValid = "isValid"
-    object serializer extends Serializer[SigmaBoolean, SigmaBoolean] {
+    object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
 
-      override def serializeBody(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
+      override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
         w.put(data.opCode)
         data match {
-          case dlog: ProveDlog   => dlogSerializer.serializeBody(dlog, w)
-          case dht: ProveDHTuple => dhtSerializer.serializeBody(dht, w)
+          case dlog: ProveDlog   => dlogSerializer.serialize(dlog, w)
+          case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
           case _: TrivialProp => // besides opCode no additional bytes
           case and: CAND =>
             w.putUShort(and.sigmaBooleans.length)
             for (c <- and.sigmaBooleans)
-              serializer.serializeBody(c, w)
+              serializer.serialize(c, w)
           case or: COR =>
             w.putUShort(or.sigmaBooleans.length)
             for (c <- or.sigmaBooleans)
-              serializer.serializeBody(c, w)
+              serializer.serialize(c, w)
           case th: CTHRESHOLD =>
             w.putUShort(th.k)
             w.putUShort(th.sigmaBooleans.length)
             for (c <- th.sigmaBooleans)
-              serializer.serializeBody(c, w)
+              serializer.serialize(c, w)
         }
       }
 
-      override def parseBody(r: SigmaByteReader): SigmaBoolean = {
+      override def parse(r: SigmaByteReader): SigmaBoolean = {
         val opCode = r.getByte()
         val res = opCode match {
           case FalseProp.opCode => FalseProp
           case TrueProp.opCode  => TrueProp
-          case ProveDlogCode => dlogSerializer.parseBody(r)
-          case ProveDiffieHellmanTupleCode => dhtSerializer.parseBody(r)
+          case ProveDlogCode => dlogSerializer.parse(r)
+          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parseBody(r))
+            val children = (0 until n).map(_ => serializer.parse(r))
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parseBody(r))
+            val children = (0 until n).map(_ => serializer.parse(r))
             COR(children)
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parseBody(r))
+            val children = (0 until n).map(_ => serializer.parse(r))
             CTHRESHOLD(k, children)
         }
         res
