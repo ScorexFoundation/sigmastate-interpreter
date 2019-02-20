@@ -1,23 +1,27 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoLikeContext, ErgoAddressEncoder, ErgoBox}
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
+import org.scalacheck.Arbitrary.arbByte
+import org.scalacheck.Gen
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Assertion, Matchers, PropSpec}
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
-import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
+import sigmastate.Values.{Constant, EvaluatedValue, GroupElementConstant, SValue, TrueLeaf, Value}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.{SGroupElement, SBoolean, SType}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.{SBoolean, SGroupElement, SType}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalan.{TestUtils, TestContexts, Nullable, RType}
-import sigma.types.{View, IsPrimView, PrimViewType}
+import scalan.{Nullable, RType, TestContexts, TestUtils}
+import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
+import sigma.types.{IsPrimView, PrimViewType, View}
+import sigmastate.serialization.SigmaSerializer
 import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
@@ -128,4 +132,27 @@ trait SigmaTestingCommons extends PropSpec
   final def rootCause(t: Throwable): Throwable =
     if (t.getCause == null) t
     else rootCause(t.getCause)
+
+  protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+    // using default sigma reader/writer
+    val bytes = serializer.toBytes(v)
+    bytes.nonEmpty shouldBe true
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+
+    // using ergo's(scorex) reader/writer
+    val w = new VLQByteStringWriter()
+    serializer.serializeWithGenericWriter(v, w)
+    val byteStr = w.result()
+    byteStr.nonEmpty shouldBe true
+    serializer.parseWithGenericReader(new VLQByteStringReader(byteStr)) shouldEqual v
+  }
+
+  protected def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+    val randomBytesCount = Gen.chooseNum(1, 20).sample.get
+    val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
+    val bytes = serializer.toBytes(v)
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+  }
+
 }

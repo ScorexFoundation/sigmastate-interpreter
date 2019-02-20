@@ -1,41 +1,17 @@
 package sigmastate.utxo
 
 import org.ergoplatform.{ErgoBoxCandidate, ErgoLikeTransaction, _}
-import org.scalacheck.Arbitrary._
-import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scorex.util.serialization._
+import org.scalatest.{Matchers, PropSpec}
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
 
 class SerializationRoundTripSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with ValueGenerators {
-
-  private def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
-    // using default sigma reader/writer
-    val bytes = serializer.toBytes(v)
-    bytes.nonEmpty shouldBe true
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
-
-    // using ergo's(scorex) reader/writer
-    val w = new VLQByteStringWriter()
-    serializer.serializeWithGenericWriter(v, w)
-    val byteStr = w.result()
-    byteStr.nonEmpty shouldBe true
-    serializer.parseWithGenericReader(new VLQByteStringReader(byteStr)) shouldEqual v
-  }
-
-  private def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
-    val randomBytesCount = Gen.chooseNum(1, 20).sample.get
-    val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
-    val bytes = serializer.toBytes(v)
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
-    serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
-  }
+  with ValueGenerators
+  with SigmaTestingCommons {
 
   property("ErgoBoxCandidate: Serializer round trip") {
     forAll { t: ErgoBoxCandidate => roundTripTest(t)(ErgoBoxCandidate.serializer) }
@@ -45,11 +21,6 @@ class SerializationRoundTripSpec extends PropSpec
   property("ErgoBox: Serializer round trip") {
     forAll { t: ErgoBox => roundTripTest(t)(ErgoBox.sigmaSerializer) }
     forAll { t: ErgoBox => roundTripTestWithPos(t)(ErgoBox.sigmaSerializer) }
-  }
-
-  property("ErgoLikeTransaction: Serializer round trip") {
-    forAll { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
-    forAll { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
   }
 
   property("ContextExtension: Serializer round trip") {

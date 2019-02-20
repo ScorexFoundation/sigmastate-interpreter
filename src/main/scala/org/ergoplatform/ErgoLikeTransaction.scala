@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.nio.ByteBuffer
+
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -110,10 +112,10 @@ object ErgoLikeTransaction {
         for (input <- ftx.inputs) {
           Input.serializer.serialize(input, w)
         }
-        val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(_._1)).distinct
+        val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1))).distinct
         w.putUInt(digests.length)
         digests.foreach { digest =>
-          w.putBytes(digest)
+          w.putBytes(digest.array)
         }
         w.putUShort(ftx.outputCandidates.length)
         for (out <- ftx.outputCandidates) {
