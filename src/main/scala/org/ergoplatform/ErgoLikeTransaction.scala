@@ -14,7 +14,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scala.collection.mutable
 
 
-
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
@@ -99,25 +98,12 @@ object ErgoLikeTransaction {
 
     object sigmaSerializer extends SigmaSerializer[FlattenedTransaction, FlattenedTransaction] {
 
-      def bytesToSign(inputs: IndexedSeq[ADKey],
-                      outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
-        //todo: set initial capacity
+      def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
+        val emptyProofInputs = tx.inputs.map(i => new Input(i.boxId, ProverResult.empty))
         val w = SigmaSerializer.startWriter()
-
-        w.putUShort(inputs.length)
-        inputs.foreach { i =>
-          w.putBytes(i)
-        }
-        w.putUShort(outputCandidates.length)
-        outputCandidates.foreach { c =>
-          ErgoBoxCandidate.serializer.serialize(c, w)
-        }
-
+        serialize(FlattenedTransaction(emptyProofInputs.toArray, tx.outputCandidates.toArray), w)
         w.toBytes
       }
-
-      def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] =
-        bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
       override def serialize(ftx: FlattenedTransaction, w: SigmaByteWriter): Unit = {
         w.putUShort(ftx.inputs.length)
@@ -155,6 +141,7 @@ object ErgoLikeTransaction {
         FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
       }
     }
+
   }
 
   object serializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
@@ -165,4 +152,5 @@ object ErgoLikeTransaction {
     override def parse(r: SigmaByteReader): ErgoLikeTransaction =
       ErgoLikeTransaction(FlattenedTransaction.sigmaSerializer.parse(r))
   }
+
 }
