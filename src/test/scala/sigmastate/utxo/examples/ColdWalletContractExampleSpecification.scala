@@ -42,29 +42,28 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
 
     val script = compile(env,
       """{
-        |  val r4 = SELF.R4[Int].get // height at which period started
-        |  val min = SELF.R5[Long].get // min Balance needed in this period
-        |  val depth = HEIGHT - SELF.creationInfo._1
-        |  val start = if (depth < r4) depth else r4
+        |  val min = SELF.R5[Long].get // min balance needed in this period
+        |  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
+        |  val start = min(depth, SELF.R4[Int].get) // height at which period started
         |  val notExpired = HEIGHT - start <= blocksIn24h
         |
-        |  val toKeep:Long = SELF.value - SELF.value * percent / 100
-        |  val thisMin = if (toKeep > minSpend) toKeep else 0L
+        |  val ours:Long = SELF.value - SELF.value * percent / 100
+        |  val keep = if (ours > minSpend) ours else 0L
         |
         |  val newStart:Int = if (notExpired) start else HEIGHT
-        |  val newMin:Long = if (notExpired) min else thisMin
+        |  val newMin:Long = if (notExpired) min else keep
         |
-        |  val isValidOut = {(out:Box) =>
+        |  val isValidOut = OUTPUTS.exists({(out:Box) =>
         |    out.propositionBytes == SELF.propositionBytes &&
         |    out.value >= newMin &&
         |    out.R4[Int].get >= newStart &&
         |    out.R5[Long].get == newMin
-        |  }
+        |  })
         |
         |  (alice && bob) || (
-        |    min >= thisMin && // topup should keep min > thisMin else UTXO becomes unspendable by Alice or Bob
+        |    min >= keep && // topup should keep min > keep else UTXO becomes unspendable by (Alice OR Bob)
         |    (alice || bob) &&
-        |    (newMin == 0 || OUTPUTS.exists(isValidOut))
+        |    (newMin == 0 || isValidOut)
         |  )
         |}""".stripMargin).asBoolValue
 

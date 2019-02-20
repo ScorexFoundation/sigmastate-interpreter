@@ -73,7 +73,9 @@
 
 \begin{document}
 
-\title{Protocols in \langname: From Games to Mixers}
+\title{Smart Contracts in \langname}
+
+%\title{Protocols in \langname: From Games to Mixers}
 
 \author{authors}
 
@@ -83,16 +85,30 @@
 
 \begin{abstract}
 %This article describes \langname via examples. 
-We use \langname to create  several protocols such as an XOR game (a simplified version of {\em rock-paper-scissors}), {\em reversible addresses} that have anti-theft features, and {\em \mixname}, a mixing protocol to enhance anonymity. 
+We use \langname to create smart contracts for several protocols such as an XOR game, a rock-paper-scissors game, {\em reversible addresses} that have anti-theft features, and {\em \mixname}, a mixing protocol to enhance anonymity. 
 
 %We create several protocols using \langname, such as games and mixing protocols. 
 \end{abstract}
 
-\section{Overview of $\Sigma$-protocols}
-\label{intro:sigma}
+
+\section{Introduction}
+
+The Ergo platform\footnote{\url{https://ergoplatform.org/}} is a smart contract platform (i.e., a `programmable blockchain'). It has Bitcoin's UTXO model and Ethereum-like functionality that it provides via a language called \langname. Note that certain smart contracts \langname  (such as \mixname in Section~\ref{mix}) dcannot be easily ported to Ethereum due to its account-based model (as opposed to UTXOs). Ergo is written primarily in Scala and the syntax of \langname is very similar to Scala's. Under the hood, \langname code is compiled to low-level language called ErgoTree, which is what an Ergo node understands. In this article, we give a high-level overview of Ergo and describe \langname using examples.
+
+Similar to Bitcoin, Ergo uses scripts to `protect' funds stored in UTXOs, which are called {\em boxes} in Ergo. A script contains the spending condition for a box and the spender must provide a `proof' of satisfying that condition. A transaction can spend (destroy) and create multiple boxes. While in Bitcoin, the proofs are generally signatures under a public key, in Ergo, these proofs are Non-Interactive Zero-Knowledge (NIZK) proofs, which we describe below.
+% created by applying the Fiat-Shamir transform~\cite{fiatshamir} to interactive protocols called a $\Sigma$-protocols. 
+
+
+\section{Cryptographic Primitives}
+ 
 A key feature of \langname is the use of \emph{$\Sigma$-protocols} (pronounced ``sigma-protocols'') as underlying primitives. A transaction's output is protected by a statement. In order to spend the output, the statement needs to be proven true by attaching a proof. The combination of the statement and the proof forms a $\Sigma$-protocol. We refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10} for details of $\Sigma$-protocols. %Here we give a brief overview. 
 
-The classic example of a $\Sigma$-protocol is the following 3-step identification scheme due to~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
+\subsection{$\Sigma$-Protocols}
+\label{intro:sigma}
+
+The classic example of a $\Sigma$-protocol is the Schnorr identification scheme~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
+
+%The classic example of a $\Sigma$-protocol is the following 3-step identification scheme due to~\cite{Sch91}. Let $G$ be a cyclic multiplicative group of prime order $q$ and $g$ a generator of $G$. Assume that computing discrete logarithms in $G$ is hard. Alice has a secret $x \in \mathbb{Z}_q$, which she wants to prove knowledge of to some Bob who knows $u = g^x$.
 \begin{enumerate}
 	\item \textbf{Commit:} Alice selects a random $r$, computes $t = g^r$ and sends $t$ to Bob.
 	\item \textbf{Challenge:} Bob selects a random $c\in\mathbb{Z}_q$ and sends $c$ to Alice.
@@ -103,10 +119,11 @@ The above protocol is a proof of knowledge because Bob can extract $x$ if he can
 
 Any protocol that has the above 3-move structure (Alice $\stackrel{t}{\rightarrow}$ Bob, Bob $\stackrel{c}{\rightarrow}$ Alice, Alice $\stackrel{z}{\rightarrow}$ Bob), along with zero-knowledge and soundness property is called a $\Sigma$-protocol. 
 
-For any $\Sigma$-protocol with messages $(t, c, z)$, we can apply the Fiat-Shamir transform to convert it into a non-interactive one by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $c$ depends deterministically on $t$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. 
+\subsection{$\Sigma$-Proofs}
+For any $\Sigma$-protocol with messages $(t, c, z)$, we can apply the Fiat-Shamir transform~\cite{fiatshamir} to convert it into a non-interactive one by replacing the role of Bob in Step 2 by any hash function $H$ and computing $c$ = $H(t)$. The resulting protocol with messages $(t, H(t), z)$ can be performed by Alice alone. Intuitively, since $c$ depends deterministically on $t$, Bob cannot ``rewind'' Alice and get two different responses for the same $r$. Additionally, Alice cannot know $c$ in advance before deciding $t$ if $H$ behaves like a random oracle. We call such a non-interactive proof a {\em $\Sigma$-proof}~\cite{Cra96} .
 
-Conceptually, $\Sigma$-proofs \cite{Cra96} are generalizations~\cite{CL06} of digital signatures.
-In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is a special case of the above identification protocol with $c = H(t \Vert m)$, where $m$ is the message. The signature proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. 
+Conceptually, $\Sigma$-proofs are generalizations of digital signatures~\cite{CL06}.
+In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is a special case of the above identification protocol with $c = H(t \Vert m)$, where $m$ is the message. The signature proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-proofs exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-proofs can be combined into more sophisticated ones using the techniques of \cite{CDS94}. 
 
 \section{Overview of \langname}
 Although \langname uses $\Sigma$-protocols, it does so transparently. Developers are not required to understand the cryptography behind such protocols in order to use them. Here we describe \langname ``under the hood'' -- how it works and what primitives it uses.
@@ -185,8 +202,8 @@ Alice can still send non-timed payments by making $i$ very large. Since the cont
 
 \subsection{Preventing Theft using Reversible Addresses}
 
-In this section, we use \langname to design useful primitives called {\em reversible addresses}, which have anti-theft features in the following sense:
-any funds sent to a reversible address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. The idea was originally proposed in a Bitcoin forum~\cite{raddress} as a hardfork. In \langname, however, such addresses are easy to create.
+We create a useful primitives called {\em reversible addresses}, which have anti-theft features in the following sense:
+any funds sent to a reversible address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. The idea was proposed for Bitcoin~\cite{raddress} (using the moniker {\em R-addresses}) and requires a hardfork. In \langname, however, this can be done natively.
 
 To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. The irreversibility of fund transfers, usually considered a feature, has now become a bug.
 
@@ -212,9 +229,9 @@ This is done by storing the hot-wallet funds in a special type of address denote
 	\end{enumerate}  
 \end{enumerate}
 
-Thus, all funds sent from such addresses have a temporary lock of 100 blocks. Note that the number 100 can be replaced by any desired value but it must be decided at the time of address generation. All hot-wallet funds must be stored in and sent from the above safe address only. 
+Thus, all funds sent from such addresses have a temporary lock of \texttt{blocksIn24h} blocks. This can be replaced by any other desired value but it must be decided at the time of address generation. All hot-wallet funds must be stored in and sent from the above safe address only. 
 
-Let \texttt{bob} be the public key of a customer who is withdrawing. The sender (\texttt{alice}) must ensure that register \texttt{R4} of the created UTXO contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the UTXO after around 100 blocks (with the exact number depending on \texttt{bobDeadline}). 
+Let \texttt{bob} be the public key of a customer who is withdrawing. The sender (\texttt{alice}) must ensure that register \texttt{R4} of the created UTXO contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the UTXO after \texttt{blocksIn24h} blocks (with the exact number depending on \texttt{bobDeadline}). 
 
 If an unauthorized transaction is detected from \texttt{alice}, an ``abort procedure'' is triggered via \texttt{carol}: all funds sent from \texttt{alice} currently in the locked state are suspect and need to diverted elsewhere. Additionally, UTXOs currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
@@ -222,10 +239,10 @@ Note that such reversible addresses are designed for storing large amount of fun
 
 Concretely, such an address is created as follows. First hardcode \texttt{carol} inside \texttt{withdrawEnv}. Then create a script and compile it to get its binary version called \texttt{withdrawScript}:
 \begin{alltt}
-	val withdrawScript = compile(withdrawEnv, """ \Hi{\{}
-	\Hi{val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing}
-	\Hi{val bobDeadline = SELF.R5[Int].get       // max locking height}
-	\Hi{(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) \}} """)
+val withdrawScript = compile(withdrawEnv, """ \Hi{\{}
+  \Hi{val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing}
+  \Hi{val bobDeadline = SELF.R5[Int].get       // max locking height}
+  \Hi{(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) \}} """)
 \end{alltt}
 
 Compute \texttt{hash = Blake2b256(withdrawScript)}. Hardcode \texttt{alice}, \texttt{blocksIn24h} and \texttt{hash} inside \texttt{depositEnv} to create a compiled script called \texttt{depositScript}:
@@ -233,8 +250,8 @@ Compute \texttt{hash = Blake2b256(withdrawScript)}. Hardcode \texttt{alice}, \te
 \begin{alltt}
 	val depositScript = compile(depositEnv, """ \Hi{\{}
   \Hi{alice && OUTPUTS.forall( \{(out:Box) =>}
-     \Hi{out.R5[Int].get >= HEIGHT + blocksIn24h && }
-     \Hi{blake2b256(out.propositionBytes) == hash\} ) \}} """)
+    \Hi{out.R5[Int].get >= HEIGHT + blocksIn24h && }
+    \Hi{blake2b256(out.propositionBytes) == hash\} ) \}} """)
 \end{alltt}
 
 Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
@@ -251,31 +268,26 @@ Assume an address is protected by 2 private keys, corresponding to the public ke
 Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the variables \texttt{percent} and \texttt{minSpend} respectively. Set all these parameters in environment \texttt{env} along with the public keys \texttt{alice} and \texttt{bob} to get a compiled script:
 \begin{alltt}
 val script = compile(env, """ \Hi{\{}
-  \Hi{val r4 = SELF.R4[Int].get // block at which the period started}
-  \Hi{val min = SELF.R5[Long].get // min Balance needed in this period}
   \Hi{val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations}
-  \Hi{val start = if (depth < r4) depth else r4 // set start to lower of two}
+  \Hi{val start = min(depth, SELF.R4[Int].get) // block at which the period started}
   \Hi{val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed}  
+  \Hi{val min = SELF.R5[Long].get // min Balance needed in this period}
 
-  \Hi{val toKeep:Long = SELF.value - SELF.value * percent / 100}
-  \Hi{val thisMin = if (toKeep > minSpend) toKeep else 0L}
+  \Hi{val ours:Long = SELF.value - SELF.value * percent / 100}
+  \Hi{val keep = if (ours > minSpend) ours else 0L // topup should keep min >= keep}  
+  \Hi{val nStart:Int = if (notExpired) start else HEIGHT}
+  \Hi{val nMin:Long = if (notExpired) min else keep}
   
-  \Hi{val newStart:Int = if (notExpired) start else HEIGHT}
-  \Hi{val newMin:Long = if (notExpired) min else thisMin}
-  
-  \Hi{val isValidOut = \{(out:Box) =>}
-  	\Hi{out.propositionBytes == SELF.propositionBytes &&}
-  	\Hi{out.value >= newMin && out.R4[Int].get >= newStart &&}
-  	\Hi{out.R5[Long].get == newMin}
-  \Hi{\}}
-  
-  \Hi{(alice && bob) || (}
-    \Hi{min >= thisMin && // topup should keep min > thisMin}
-    \Hi{(alice || bob) && (newMin == 0 || OUTPUTS.exists(isValidOut))}
-  \Hi{) \}} """)
+  \Hi{val valid = OUTPUTS.exists(\{(out:Box) =>}
+    \Hi{out.propositionBytes == SELF.propositionBytes &&}
+    \Hi{out.value >= nMin && out.R4[Int].get >= nStart && out.R5[Long].get == nMin\})}
+    
+  \Hi{(alice && bob) || (min >= keep && (alice || bob) && (nMin == 0 || valid))\}} """)
+
 \end{alltt}
  
-Finally compute the deposit address of the wallet as \texttt{val address = Pay2SHAddress(script)}. Any funds deposited to this address can only be spent using the script given above. Spending from this address is done in periods of 24 hours or more (but never less) such that in any one period, the maximum spendable is fixed at the beginning. We do this requiring the spending transaction to have an output paying back to the address with value greater than the minumum (stored in \texttt{R5}). The start of the current period is stored in \texttt{R4}. Both registers are copied to the new output within the same period and get new values for the next period if the current period has expired.
+Finally compute the deposit address of the wallet as \texttt{val address = Pay2SHAddress(script)}. %Any funds deposited to this address can only be spent using the script given above. 
+Spending from this address is done in periods of 24 hours or more (but never less) such that in any one period, the maximum spendable is a fixed fraction of the amount at the beginning of the period. We do this requiring the spending transaction to have an output paying back to the address with value greater than the minumum (stored in \texttt{R5}). The start of the current period is stored in \texttt{R4}. Both registers are copied to the new output within the same period and get new values for if the current period has expired.
 
 
 %\subsection{Advanced Cold-Wallet Contracts}
@@ -386,10 +398,12 @@ The code is derived from the XOR game by adding \texttt{drawPubKey}. A hash of t
 The above code ensures that \texttt{R7} of the first output contains Alice's public key (for the draw scenario). Bob should ensure that \texttt{R7} of the second output contains his public key. Additionally, he must ensure that \texttt{R5} of both outputs contains his public key.
 
 \subsection{A Mixing Protocol}
+\label{mix}
 
-We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
+We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. Because of the DDH-hard requirement, we must ensure that the underlying group does not support an efficient bilinear pairing (which makes the DDH easy). The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
+%Since \mixname depends on the hardness of the DDH problem, it cannot be used on groups that support an efficient bilinear pairing (where this problem is easy).
 %The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
-\mixname essentially mixes two coins and so provides ``50\% anonymity'' in one round. A coin can be successively mixed to increase the anonymity to any desired level (say 99.99999\%). 
+\mixname essentially mixes two coins and so provides ``50\% anonymity'' in one round. A coin is successively mixed to increase the anonymity to any desired level (say 99.99999\%). 
 
 \mixname has a pool, called the {\em Half-Mix} pool (H-pool), which contains coins ready for mixing. 
 To mix an arbitrary coin (which could itself be the output of a previous mix), any one of the two actions can be performed:
@@ -432,12 +446,6 @@ Without loss of generality, Alice will pool and Bob will mix. In practice, each 
 	\end{enumerate}
 	\item \textbf{Spend:} Both Alice and Bob later spent their respective boxes using their secrets. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
-
-\textbf{Security:} We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
-For this to work, each output must be of a fixed value and the fee should be zero. We discuss below how to handle non-zero fee. 
-
-\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
-
 \textbf{\langname Code:} First define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{g\_x} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
 
 \begin{alltt}
@@ -451,15 +459,21 @@ Compute a hash of the above compiled script: \texttt{val scriptHash = Blake2b256
 Alice's Half-Mix box is protected by the following \langname code:
 
 \begin{alltt}
-\Hi{val c = OUTPUTS(0).R4[GroupElement].get}
-\Hi{val d = OUTPUTS(0).R5[GroupElement].get}
-
-\Hi{OUTPUTS(0).value == SELF.value && OUTPUTS(1).value == SELF.value &&}
-\Hi{blake2b256(OUTPUTS(0).propositionBytes) == scriptHash &&}
-\Hi{blake2b256(OUTPUTS(1).propositionBytes) == scriptHash &&}
-\Hi{OUTPUTS(1).R4[GroupElement].get == d && OUTPUTS(1).R5[GroupElement].get == c &&}
-\Hi{OUTPUTS.size == 2 && \{proveDHTuple(g, g_x, c, d) || proveDHTuple(g, g_x, d, c)\}}
+	\Hi{val c = OUTPUTS(0).R4[GroupElement].get}
+	\Hi{val d = OUTPUTS(0).R5[GroupElement].get}
+	
+	\Hi{OUTPUTS(0).value == SELF.value && OUTPUTS(1).value == SELF.value &&}
+	\Hi{blake2b256(OUTPUTS(0).propositionBytes) == scriptHash &&}
+	\Hi{blake2b256(OUTPUTS(1).propositionBytes) == scriptHash &&}
+	\Hi{OUTPUTS(1).R4[GroupElement].get == d && OUTPUTS(1).R5[GroupElement].get == c &&}
+	\Hi{OUTPUTS.size == 2 && (proveDHTuple(g, g_x, c, d) || proveDHTuple(g, g_x, d, c))}
 \end{alltt}
+
+
+\textbf{Security:} We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
+For this to work, each output must be of a fixed value and the fee should be zero. We discuss below how to handle non-zero fee. 
+
+\textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
 
 \textbf{Handling Fee:} TBD
 %\snote{To do: describe fee handling.}
