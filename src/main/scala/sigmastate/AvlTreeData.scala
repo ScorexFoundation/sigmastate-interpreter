@@ -4,10 +4,9 @@ import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
-import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{SigmaDslBuilder, TreeFlags}
 

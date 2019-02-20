@@ -259,7 +259,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       None
     } else {
       val proofBytes = proof.toArray
-      val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+      val treeData = tree.asInstanceOf[CAvlTree].treeData
       val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
       println("operations: " + operations)
       val ops = operations.map(t => t)
@@ -278,7 +278,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     } else {
       val keysToRemove = operations.toArray.map(_.toArray)
       val proofBytes = proof.toArray
-      val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+      val treeData = tree.asInstanceOf[CAvlTree].treeData
       val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
       keysToRemove.foreach(key => bv.performOneOperation(Remove(ADKey @@ key)))
       bv.digest match {
