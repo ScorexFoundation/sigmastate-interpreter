@@ -112,6 +112,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         ByteArrayConstant(opsBytes1),
         ByteArrayConstant(proof1)).get,
       ExtractRegisterAs[SAvlTree.type](Self, reg2).get).toSigmaProp
+
     val env = Map(
       "ops0" -> opsBytes0,
       "proof0" -> proof0,
@@ -119,7 +120,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       "proof1" -> proof1,
       "endDigest" -> endDigest)
     val propCompiled = compileWithCosting(env,
-      """treeModifications(treeModifications(SELF.R4[AvlTree].get, ops0, proof0).get, ops1, proof1).get == SELF.R5[AvlTree].get""").asBoolValue
+      """treeModifications(treeModifications(SELF.R4[AvlTree].get, ops0, proof0).get, ops1, proof1).get == SELF.R5[AvlTree].get""")
+      .asBoolValue.toSigmaProp
+    println(propCompiled)
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)

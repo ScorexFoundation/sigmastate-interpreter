@@ -43,7 +43,7 @@ class IcoExample extends SigmaTestingCommons {
         |  modifiedTree == expectedTree
         |
         |}""".stripMargin
-    ).asBoolValue
+    ).asBoolValue.toSigmaProp
 
     println(fundingScript)
 
