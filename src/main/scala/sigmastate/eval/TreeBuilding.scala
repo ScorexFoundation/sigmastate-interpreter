@@ -24,7 +24,7 @@ import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.lang.SigmaBuilder
+import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 
 trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._
@@ -237,13 +237,14 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym)
         val colTpe = elemToSType(colSym.elem).asCollection
-        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
+        val (method, typeSubst) = (SCollection.methods.find(_.name == m.getName), args) match {
           case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
-            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
-          case (Some(mth), _) => mth
+            val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
+            (mth, typeSubst)
+          case (Some(mth), _) => (mth, SigmaTyper.emptySubst)
           case (None, _) => error(s"unknown method Coll.${m.getName}")
-        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
-        builder.mkMethodCall(col, method, args.toIndexedSeq)
+        }
+        builder.mkMethodCall(col, method, args.toIndexedSeq, typeSubst + (SCollection.tIV -> colTpe.elemType))
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))

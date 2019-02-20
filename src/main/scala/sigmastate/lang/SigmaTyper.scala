@@ -77,8 +77,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
           s.method(n) match {
             case Some(method) if method.irBuilder.isDefined && !method.stype.isFunc =>
-              method.irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq()))
-                .getOrElse(mkMethodCall(newObj, method, IndexedSeq()))
+              method.irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq(), emptySubst))
+                .getOrElse(mkMethodCall(newObj, method, IndexedSeq(), emptySubst))
             case _ =>
               mkSelect(newObj, n, Some(tRes))
           }
@@ -117,9 +117,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                   if (expectedArgs.length != newArgTypes.length
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                     error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
-                  val methodConcrType = method.withSType(concrFunTpe)
-                  methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
-                    .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
+                  method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
+                    .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
                 case _ =>
                   val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
                   mkApply(newSelect, newArgs)
@@ -205,25 +204,25 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             else
               error(s"Invalid argument type for $m, expected $tColl but was ${r.tpe}", r.sourceContext)
           case (SCollection(method), _) =>
-            val methodConcrType = method.stype match {
+            val typeSubst = method.stype match {
               case sfunc @ SFunc(_, _, _) =>
                 val newArgsTypes = newArgs.map(_.tpe)
                 val actualTypes = newObj.tpe +: newArgsTypes
                 unifyTypeLists(sfunc.tDom, actualTypes) match {
                   case Some(subst) =>
                     val concrFunTpe = applySubst(sfunc, subst)
-                    val newMethod = method.withSType(concrFunTpe)
+                    val newMethod = method.copy(stype = concrFunTpe)
                     val concrFunArgsTypes = concrFunTpe.asFunc.tDom.tail
                     if (newArgsTypes != concrFunArgsTypes)
                       error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes", mc.sourceContext)
-                    newMethod
+                    subst
                   case None =>
                     error(s"Invalid argument type of method call $mc : expected ${sfunc.tDom}; actual: $actualTypes", mc.sourceContext)
                 }
-              case _ => method
+              case _ => emptySubst
             }
-            methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
-              .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
+            method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
+              .getOrElse(mkMethodCall(newObj, method, newArgs, typeSubst))
 
           case _ =>
             throw new NonApplicableMethod(s"Unknown symbol $m, which is used as operation with arguments $newObj and $newArgs", mc.sourceContext.toOption)

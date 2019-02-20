@@ -5,12 +5,12 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, UnitConstant, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, UnitConstant, ValUse, Value}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -19,6 +19,7 @@ import scalan.Nullable
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.lang.SigmaTyper.STypeSubst
 import special.sigma.{GroupElement, SigmaProp}
 
 import scala.util.DynamicVariable
@@ -176,8 +177,9 @@ trait SigmaBuilder {
                    args: IndexedSeq[Value[SType]],
                    tpe: SType = NoType): Value[SType]
   def mkMethodCall(obj: Value[SType],
-                  method: SMethod,
-                  args: IndexedSeq[Value[SType]]): Value[SType]
+                   method: SMethod,
+                   args: IndexedSeq[Value[SType]],
+                   typeSubst: STypeSubst): Value[SType]
   def mkLambda(args: IndexedSeq[(String,SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
@@ -544,8 +546,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMethodCall(obj: Value[SType],
                             method: SMethod,
-                            args: IndexedSeq[Value[SType]]): Value[SType] =
-    MethodCall(obj, method, args).withSrcCtx(currentSrcCtx.value)
+                            args: IndexedSeq[Value[SType]],
+                            typeSubst: STypeSubst = Map()): Value[SType] =
+    MethodCall(obj, method, args, typeSubst).withSrcCtx(currentSrcCtx.value)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,

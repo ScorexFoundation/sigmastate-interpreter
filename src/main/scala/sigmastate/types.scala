@@ -26,8 +26,9 @@ import sigmastate.SByte.typeCode
 import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
-import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
+import special.sigma.{AvlTree, Box, SigmaProp, wrapperType}
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
@@ -240,18 +241,14 @@ case class SMethod(objType: STypeCompanion,
                    name: String,
                    stype: SType,
                    methodId: Byte,
-                   irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]]) {
-
-  def withSType(newSType: SType): SMethod = copy(stype = newSType)
-
-  def withConcreteTypes(subst: Map[STypeIdent, SType]): SMethod =
-    withSType(stype.withSubstTypes(subst))
+                   irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]]) {
 }
 
 object SMethod {
 
-  val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]] = Some {
-    case (builder, obj, method, args) => builder.mkMethodCall(obj, method, args.toIndexedSeq)
+  val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]] = Some {
+    case (builder, obj, method, args, tparamSubst) =>
+      builder.mkMethodCall(obj, method, args.toIndexedSeq, tparamSubst)
   }
 
   def apply(objType: STypeCompanion, name: String, stype: SType, methodId: Byte): SMethod =
@@ -693,7 +690,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val tV = STypeIdent("V")
   val SizeMethod = SMethod(this, "size", SInt, 1)
   val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))), 2, Some {
-    case (builder, obj, method, Seq(index, defaultValue)) =>
+    case (builder, obj, _, Seq(index, defaultValue), _) =>
       val index1 = index.asValue[SInt.type]
       val defaultValue1 = defaultValue.asValue[SType]
       builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
