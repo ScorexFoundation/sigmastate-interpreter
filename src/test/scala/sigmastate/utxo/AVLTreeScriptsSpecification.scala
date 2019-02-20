@@ -119,7 +119,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       "proof1" -> proof1,
       "endDigest" -> endDigest)
     val propCompiled = compileWithCosting(env,
-      """treeModifications(treeModifications(SELF.R4[AvlTree].get, ops0, proof0).get, ops1, proof1).get == SELF.R5[AvlTree].get""").asBoolValue
+      """treeModifications(treeModifications(SELF.R4[AvlTree].get, ops0, proof0).get, ops1, proof1).get == SELF.R5[AvlTree].get""").asBoolValue.toSigmaProp
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)

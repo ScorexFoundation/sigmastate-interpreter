@@ -12,11 +12,7 @@ import special.sigma.{SigmaDslBuilder, TreeFlags}
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {
-  def downCast(): TreeFlags = new TreeFlags {
-    override def removeAllowed: Boolean = removeAllowed
-    override def updateAllowed: Boolean = updateAllowed
-    override def insertAllowed: Boolean = insertAllowed
-  }
+//  def downCast(): TreeFlags = AvlTreeFlags(insertAllowed, updateAllowed, removeAllowed)
 }
 
 object AvlTreeFlags {
