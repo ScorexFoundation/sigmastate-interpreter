@@ -25,7 +25,6 @@ class IcoExample extends SigmaTestingCommons {
 
     val fundingScript = compileWithCosting(fundingEnv,
       """{
-        |  val fundingOut = OUTPUTS(0)
         |
         |  val toAddFn = { (b: Box) =>
         |     val pk = b.R4[Coll[Byte]].get
@@ -39,12 +38,14 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val modifiedTree = treeInserts(SELF.R5[AvlTree].get, toAdd, proof).get
         |
-        |  val addedCorrectly = modifiedTree == fundingOut.R5[AvlTree].get
+        |  val expectedTree = OUTPUTS(0).R5[AvlTree].get
         |
-        |  addedCorrectly
+        |  modifiedTree == expectedTree
         |
         |}""".stripMargin
     ).asBoolValue
+
+    println(fundingScript)
 
     val projectProver = new ErgoLikeTestProvingInterpreter
 
