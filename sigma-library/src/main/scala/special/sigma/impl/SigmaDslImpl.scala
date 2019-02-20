@@ -4318,25 +4318,25 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[WOption[Coll[Byte]]]))
     }
 
-    override def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+    override def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("treeModifications", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, false, element[WOption[Coll[Byte]]]))
+        true, false, element[WOption[AvlTree]]))
     }
 
-    override def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+    override def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, false, element[WOption[Coll[Byte]]]))
+        true, false, element[WOption[AvlTree]]))
     }
 
-    override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+    override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, false, element[WOption[Coll[Byte]]]))
+        true, false, element[WOption[AvlTree]]))
     }
 
     override def groupGenerator: Rep[GroupElement] = {
@@ -4560,25 +4560,25 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[WOption[Coll[Byte]]]))
     }
 
-    def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
+    def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
         thisClass.getMethod("treeModifications", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, true, element[WOption[Coll[Byte]]]))
+        true, true, element[WOption[AvlTree]]))
     }
 
-    def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
+    def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
         thisClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, true, element[WOption[Coll[Byte]]]))
+        true, true, element[WOption[AvlTree]]))
     }
 
-    def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
+    def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
         thisClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
         List(tree, operations, proof),
-        true, true, element[WOption[Coll[Byte]]]))
+        true, true, element[WOption[AvlTree]]))
     }
 
     def groupGenerator: Rep[GroupElement] = {

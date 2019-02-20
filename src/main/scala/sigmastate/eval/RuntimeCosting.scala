@@ -1095,9 +1095,9 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
         val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Coll[Byte]]](
+        value.fold[CostedOption[AvlTree]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
+          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
 
       case TreeInserts(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
@@ -1105,18 +1105,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val value = sigmaDslBuilder.treeInserts(tree.value, c, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
         val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Coll[Byte]]](
+        value.fold[CostedOption[AvlTree]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
+          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
 
       case TreeRemovals(In(_tree), InCollCollByte(operations), InCollByte(proof)) =>
         val tree = asRep[CostedAvlTree](_tree)
         val value = sigmaDslBuilder.treeRemovals(tree.value, operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
         val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Coll[Byte]]](
+        value.fold[CostedOption[AvlTree]](
           Thunk(RCostedNone(cost)),
-          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
+          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
