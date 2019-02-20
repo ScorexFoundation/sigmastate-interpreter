@@ -4,7 +4,7 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{LongConstant, SigmaPropConstant, IntArrayConstant, Value, SigmaPropValue, IntConstant}
+import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
@@ -14,22 +14,6 @@ import special.sigma.{SigmaDslBuilder, Context, SigmaContract}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utxo._
-import special.collection.Coll
-
-/** Each method defines the corresponding predef script using ErgoDsl.
-  * This can be used to stepping through the code using IDE's debugger.
-  * It can also be used in unit tests */
-class ErgoDslPredef(ctx: Context, val builder: SigmaDslBuilder) extends SigmaContract {
-  import ctx._; import builder._
-
-  def rewardOutputScript(minerPubkey: ECPoint, delta: Int): Boolean = {
-    val createdAtHeight = SELF.creationInfo._1
-    HEIGHT >= createdAtHeight + delta /*&&
-        proveDlog(decodePoint(placeholder[Coll[Byte]](0)))*/
-  }
-  override def canOpen(ctx: Context): Boolean = ???
-}
-
 
 object ErgoScriptPredef {
 
@@ -42,6 +26,9 @@ object ErgoScriptPredef {
     IR.buildTree(calcF)
   }
 
+  val FalseProp = ErgoTree.withoutSegregation(FalseSigmaProp)
+  val TrueProp  = ErgoTree.withoutSegregation(TrueSigmaProp)
+
   /**
     * Byte array value of the serialized reward output script proposition with pk being substituted
     * with given pk
@@ -53,12 +40,9 @@ object ErgoScriptPredef {
     val genericPk = ProveDlog(CryptoConstants.dlogGroup.generator)
     val genericMinerProp = rewardOutputScript(delta, genericPk)
     val genericMinerPropBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(genericMinerProp)
-    val expectedGenericMinerProp = rewardOutputScript(delta, genericPk)
-
-    assert(genericMinerProp == expectedGenericMinerProp, s"reward output script changed, check and update constant position for substitution below")
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
-    val minerPubkeySigmaProp = ProveDlog(DecodePoint(minerPkBytesVal))
+    val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))
     val newVals = Values.ConcreteCollection(Vector[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
     SubstConstants(genericMinerPropBytes, positions, newVals)
   }
@@ -66,30 +50,30 @@ object ErgoScriptPredef {
   /**
     * Required script of the box, that collects mining rewards
     */
-  def rewardOutputScript(delta: Int, minerPk: ProveDlog): Value[SBoolean.type] = {
+  def rewardOutputScript(delta: Int, minerPk: ProveDlog): SigmaPropValue = {
     SigmaAnd(
       GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))).toSigmaProp,
       SigmaPropConstant(minerPk)
-    ).isProven
+    )
   }
 
   /**
     * Proposition that allows to send coins to a box which is protected by the following proposition:
     * prove dlog of miner's public key and height is at least `delta` blocks bigger then the current one.
     */
-  def feeProposition(delta: Int = 720): Value[SBoolean.type] = {
+  def feeProposition(delta: Int = 720): SigmaPropValue = {
     val out = ByIndex(Outputs, IntConstant(0))
     AND(
       EQ(Height, boxCreationHeight(out)),
       EQ(ExtractScriptBytes(out), expectedMinerOutScriptBytesVal(delta, MinerPubkey)),
       EQ(SizeOf(Outputs), 1)
-    )
+    ).toSigmaProp
   }
 
   /**
     * A contract that only allows to collect emission reward by a box with miner proposition.
     */
-  def emissionBoxProp(s: MonetarySettings): Value[SBoolean.type] = {
+  def emissionBoxProp(s: MonetarySettings): SigmaPropValue = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))
 
@@ -115,7 +99,7 @@ object ErgoScriptPredef {
       heightIncreased,
       correctMinerOutput,
       OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
-    )
+    ).toSigmaProp
   }
 
   /**
@@ -133,7 +117,7 @@ object ErgoScriptPredef {
     * may add or remove members, or change it to something more complicated like
     * `tokenThresholdScript`.
     */
-  def foundationScript(s: MonetarySettings): Value[SBoolean.type] = {
+  def foundationScript(s: MonetarySettings): SigmaPropValue = {
     // new output of the foundation
     val newFoundationBox = ByIndex(Outputs, IntConstant(0))
     // calculate number of coins, that are not issued yet and should be kept in `newFoundationBox`
@@ -171,9 +155,9 @@ object ErgoScriptPredef {
     // check, that `newFoundationBox` have the same protecting script
     val sameScriptRule = EQ(ExtractScriptBytes(Self), ExtractScriptBytes(newFoundationBox))
     // check, that additional rules defined by foundation members are satisfied
-    val customProposition = DeserializeRegister(ErgoBox.R4, SBoolean)
+    val customProposition = DeserializeRegister(ErgoBox.R4, SSigmaProp)
     // combine 3 conditions above with AND conjunction
-    AND(amountCorrect, sameScriptRule, customProposition)
+    SigmaAnd(amountCorrect.toSigmaProp, sameScriptRule.toSigmaProp, customProposition)
   }
 
   /**
@@ -190,8 +174,10 @@ object ErgoScriptPredef {
     * (v2) INPUTS.flatMap(box => box.tokens).filter(t => t._1 == tokenId).sum >= thresholdAmount
     * (v3) INPUTS.map(box => box.tokens.find(t => t._1 == tokenId).map(t => t._2).getOrElse(0)).sum >= thresholdAmount
     */
-  def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long, networkPrefix: NetworkPrefix)(implicit IR: IRContext): Value[SBoolean.type] = {
-    val env = emptyEnv + ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
+  def tokenThresholdScript(tokenId: Array[Byte], thresholdAmount: Long, networkPrefix: NetworkPrefix)
+                          (implicit IR: IRContext): SigmaPropValue = {
+    val env = emptyEnv +
+      ("tokenId" -> tokenId, "thresholdAmount" -> thresholdAmount)
     val res = compileWithCosting(env,
       """{
         |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
@@ -204,10 +190,10 @@ object ErgoScriptPredef {
         |    })
         |  })
         |  val total = sumValues(tokenAmounts)
-        |  total >= thresholdAmount
+        |  sigmaProp(total >= thresholdAmount)
         |}
       """.stripMargin, networkPrefix)
-    res.asBoolValue
+    res.asSigmaProp
   }
 
 }

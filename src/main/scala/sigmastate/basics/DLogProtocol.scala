@@ -20,19 +20,17 @@ object DLogProtocol {
   }
 
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
-  case class ProveDlog(value: Value[SGroupElement.type])
+  case class ProveDlog(value: EcPointType)
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
     //todo: fix, we should consider that class parameter could be not evaluated
-    lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
+    lazy val h: EcPointType = value
     lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
   }
 
   object ProveDlog {
     val Code: PropositionCode = 102: Byte
-
-    def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
   }
 
   case class DLogProverInput(w: BigInteger)
@@ -58,7 +56,7 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: CryptoConstants.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
       GroupElementSerializer.toBytes(ecData)
     }

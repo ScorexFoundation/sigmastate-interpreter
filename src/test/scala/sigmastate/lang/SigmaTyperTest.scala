@@ -1,18 +1,20 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{Height, Inputs}
+import org.ergoplatform.{Height, P2PKAddress, Inputs, ErgoAddressEncoder}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.{InvalidBinaryOperationParameters, MethodNotFound, NonApplicableMethod, TyperException}
+import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{Append, ExtractCreationInfo}
+import sigmastate.utxo.{ExtractCreationInfo, Append}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
 
@@ -105,7 +107,15 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "max(1L, 2)") shouldBe SLong
     typecheck(env, """fromBase58("111")""") shouldBe SByteArray
     typecheck(env, """fromBase64("111")""") shouldBe SByteArray
-    typecheck(env, """PK("tJPvN6qfap6VvrtSzGE1n4dduaxSMnjE3F34RkQBD2YcEYMWvCtCwH")""") shouldBe SSigmaProp
+
+    typecheck(env, {
+      implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+      val pk = ProveDlog(CryptoConstants.dlogGroup.generator)
+      val addr = P2PKAddress(pk)
+      val str = addr.toString
+      s"""PK("${str}")"""
+    }) shouldBe SSigmaProp
+
     typecheck(env, "sigmaProp(HEIGHT > 1000)") shouldBe SSigmaProp
     typecheck(env, "ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe SBoolean
   }

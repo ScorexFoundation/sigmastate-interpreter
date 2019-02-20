@@ -118,13 +118,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] =
+  def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
     prove(emptyEnv, exp, context, message)
 
-  def prove(env: ScriptEnv, exp: Value[SBoolean.type], context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
     val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
-    val propTree = applyDeserializeContext(ctx, exp)
+    val propTree = applyDeserializeContext(ctx, exp.proposition)
     val tried = reduceToCrypto(ctx, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 

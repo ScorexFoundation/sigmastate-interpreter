@@ -6,6 +6,7 @@ import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.ErgoLikeTestInterpreter
+import org.ergoplatform.ErgoScriptPredef._
 
 class FailingToProveSpec extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -30,11 +31,11 @@ class FailingToProveSpec extends SigmaTestingCommons {
          |
          |  withdrawCondition1 || withdrawCondition2
          | }
-       """.stripMargin).asBoolValue
+       """.stripMargin).asBoolValue.toSigmaProp
 
     val selfBox = ErgoBox(200L, compiledScript, 0)
-    val o1 = ErgoBox(101L, SBoolean.mkConstant(true), 5001)
-    val o2 = ErgoBox(99L, SBoolean.mkConstant(true), 5001)
+    val o1 = ErgoBox(101L, TrueProp, 5001)
+    val o2 = ErgoBox(99L, TrueProp, 5001)
     val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,
@@ -63,12 +64,12 @@ class FailingToProveSpec extends SigmaTestingCommons {
          |
          |  withdrawCondition1 || withdrawCondition2
          | }
-       """.stripMargin).asBoolValue
+       """.stripMargin).asBoolValue.toSigmaProp
 
     val selfBox = ErgoBox(200L, compiledScript, 0)
-    val o1 = ErgoBox(102L, SBoolean.mkConstant(true), 5001)
-    val o2 = ErgoBox(98L, SBoolean.mkConstant(true), 5001)
-    val o3 = ErgoBox(100L, SBoolean.mkConstant(true), 5001)
+    val o1 = ErgoBox(102L, TrueProp, 5001)
+    val o2 = ErgoBox(98L, TrueProp, 5001)
+    val o3 = ErgoBox(100L, TrueProp, 5001)
     val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,

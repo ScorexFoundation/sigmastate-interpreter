@@ -7,7 +7,7 @@ class PDHTSerializerSpecification extends SerializationSpecification {
 
   property("ProveDiffieHellmanTupleSerializer: Serializer round trip") {
     forAll { i: ProveDHTuple =>
-      roundTripTest(i)
+      roundTripTest(i.toSigmaProp)
     }
     // In IntelliJ IDEA this test is executed last, at this point all statistics has been collected
     // We output it here in the console

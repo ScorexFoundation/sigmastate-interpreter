@@ -136,12 +136,14 @@ trait SigmaBuilder {
 
   def mkTuple(items: Seq[Value[SType]]): Value[SType]
 
-  def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
-                                hv: Value[SGroupElement.type],
-                                uv: Value[SGroupElement.type],
-                                vv: Value[SGroupElement.type]): SigmaBoolean
-  def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean
-/** Logically inverse to mkSigmaPropIsProven */
+  def mkCreateProveDHTuple(gv: Value[SGroupElement.type],
+                           hv: Value[SGroupElement.type],
+                           uv: Value[SGroupElement.type],
+                           vv: Value[SGroupElement.type]): SigmaPropValue
+
+  def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
+
+  /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
   def mkSigmaPropIsProven(value: Value[SSigmaProp.type]): BoolValue
@@ -458,14 +460,14 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkTuple(items: Seq[Value[SType]]): Value[SType] =
     Tuple(items.toIndexedSeq).withSrcCtx(currentSrcCtx.value)
 
-  override def mkProveDiffieHellmanTuple(gv: Value[SGroupElement.type],
-                                         hv: Value[SGroupElement.type],
-                                         uv: Value[SGroupElement.type],
-                                         vv: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDHTuple(gv, hv, uv, vv).withSrcCtx(currentSrcCtx.value).asInstanceOf[ProveDHTuple]
+  override def mkCreateProveDHTuple(gv: Value[SGroupElement.type],
+                                    hv: Value[SGroupElement.type],
+                                    uv: Value[SGroupElement.type],
+                                    vv: Value[SGroupElement.type]): SigmaPropValue =
+    CreateProveDHTuple(gv, hv, uv, vv)
 
-  override def mkProveDlog(value: Value[SGroupElement.type]): SigmaBoolean =
-    ProveDlog(value).withSrcCtx(currentSrcCtx.value).asInstanceOf[ProveDlog]
+  override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
+    CreateProveDlog(value)
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)

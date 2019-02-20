@@ -35,9 +35,7 @@ object DiffieHellmanTupleProverInput {
     val w = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val u = dlogGroup.exponentiate(g, w)
     val v = dlogGroup.exponentiate(h, w)
-    val ci = ProveDHTuple(
-      GroupElementConstant(g), GroupElementConstant(h),
-      GroupElementConstant(u), GroupElementConstant(v))
+    val ci = ProveDHTuple(g, h, u, v)
     DiffieHellmanTupleProverInput(w, ci)
   }
 }
@@ -58,19 +56,14 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
 
 /** Construct a new SigmaProp value representing public key of Diffie Hellman signature protocol.
   * Common input: (g,h,u,v)*/
-case class ProveDHTuple(gv: Value[SGroupElement.type],
-                                   hv: Value[SGroupElement.type],
-                                   uv: Value[SGroupElement.type],
-                                   vv: Value[SGroupElement.type])
+case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
     with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
-
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
-  //todo: fix code below , we should consider that class parameters could be not evaluated
-  lazy val g = gv.asInstanceOf[GroupElementConstant].value
-  lazy val h = hv.asInstanceOf[GroupElementConstant].value
-  lazy val u = uv.asInstanceOf[GroupElementConstant].value
-  lazy val v = vv.asInstanceOf[GroupElementConstant].value
+  lazy val g = gv
+  lazy val h = hv
+  lazy val u = uv
+  lazy val v = vv
 }
 
 object ProveDHTuple {

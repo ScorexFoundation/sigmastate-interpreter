@@ -6,9 +6,10 @@ import com.google.common.primitives.Shorts
 import gf2t.GF2_192_Poly
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.SigmaBoolean
-import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
+import sigmastate.Values.{SigmaBoolean, SigmaPropConstant}
+import sigmastate.basics.{FirstProverMessage, ProveDHTuple, FirstDiffieHellmanTupleProverMessage}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.existentials
 
@@ -138,7 +139,7 @@ object FiatShamirTree {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
       case l: ProofTreeLeaf =>
-        val propBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(l.proposition)
+        val propBytes = DefaultSerializer.serializeWithSegregation(SigmaPropConstant(l.proposition))
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++

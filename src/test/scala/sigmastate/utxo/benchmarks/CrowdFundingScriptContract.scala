@@ -2,7 +2,7 @@ package sigmastate.utxo.benchmarks
 
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.helpers.ErgoLikeTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter._
@@ -17,7 +17,7 @@ class CrowdFundingScriptContract(
                                   override val projectProver: ErgoLikeTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
-  val compiledProposition: Value[SBoolean.type] = {
+  val compiledProposition: SigmaPropValue = {
     val env = Map(
       "timeout" -> timeout,
       "minToRaise" -> minToRaise,
@@ -36,7 +36,7 @@ class CrowdFundingScriptContract(
        | ))
        | c1 || c2
        | }
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
     compiledScript
   }
 

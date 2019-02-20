@@ -1,7 +1,7 @@
 package sigmastate.utxo.benchmarks
 
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -10,7 +10,7 @@ import scalan.util.BenchmarkUtil._
 class CrowdfundingBenchmark extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   def createTestContext(contract: CrowdFundingContract): ErgoLikeContext = {
-    val outputToSpend = ErgoBox(10, TrueLeaf, 0)
+    val outputToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0)
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
     val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey, 0)
     val tx1Output2 = ErgoBox(1, contract.projectPubKey, 0)

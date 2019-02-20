@@ -50,7 +50,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
         |      out.R5[Long].get == newMin
         |    }
         |  }
-        |  (alice && bob) || ((alice || bob) && OUTPUTS.exists(isValid))}""".stripMargin).asBoolValue
+        |  (alice && bob) || ((alice || bob) && OUTPUTS.exists(isValid))}""".stripMargin).asSigmaProp
 
     val address = Pay2SHAddress(script)
 
