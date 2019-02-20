@@ -4,16 +4,27 @@ import fastparse.core.Logger
 import fastparse.core
 import sigmastate._
 import Values._
+import scalan.Nullable
 import sigmastate.lang.Terms._
 import sigmastate.SCollection.SByteArray
 import sigmastate.lang.syntax.Basic._
 import sigmastate.lang.syntax.{Core, Exprs}
 
 import scala.collection.mutable
+import scala.util.DynamicVariable
 
 object SigmaParser extends Exprs with Types with Core {
   import fastparse.noApi._
   import WhitespaceApi._
+  import builder._
+
+  val currentInput = new DynamicVariable[String]("")
+
+  override def atSrcPos[A](parserIndex: Int)(thunk: => A): A =
+    builder.currentSrcCtx.withValue(Nullable(srcCtx(parserIndex))) { thunk }
+
+  override def srcCtx(parserIndex: Int): SourceContext =
+    SourceContext.fromParserIndex(parserIndex, currentInput.value)
 
   val TmplBody = {
     val Prelude = P( (Annot ~ OneNLMax).rep )
@@ -25,9 +36,12 @@ object SigmaParser extends Exprs with Types with Core {
 //    P( (Id | `this`).! ~ LambdaDef ).map { case (name, lam) => builder.mkVal(name, NoType, lam) }
 //  }
 
-  val ValVarDef = P( BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
-    case (Ident(n,_), t, body) => builder.mkVal(n, t.getOrElse(NoType), body)
-    case (pat,_,_) => error(s"Only single name patterns supported but was $pat")
+  val ValVarDef = P( Index ~ BindPattern/*.rep(1, ",".~/)*/ ~ (`:` ~/ Type).? ~ (`=` ~/ FreeCtx.Expr) ).map {
+    case (index, Ident(n,_), t, body) =>
+      atSrcPos(index) {
+        mkVal(n, t.getOrElse(NoType), body)
+      }
+    case (index, pat,_,_) => error(s"Only single name patterns supported but was $pat", Some(srcCtx(index)))
   }
 
   val BlockDef = P( Dcl )
@@ -44,50 +58,54 @@ object SigmaParser extends Exprs with Types with Core {
   val logged = mutable.Buffer.empty[String]
   implicit val logger = Logger(m => this.synchronized { logged.append(m) })
 
-  def mkUnaryOp(opName: String, arg: Value[SType]) = opName match {
-    case "-" if arg.isInstanceOf[Constant[_]] && arg.tpe.isNumType =>
-      arg match {
-        case IntConstant(value) =>
-          builder.mkConstant[SInt.type](-value, SInt)
-        case LongConstant(value) =>
-          builder.mkConstant[SLong.type](-value, SLong)
-        case _ => error(s"cannot prefix $arg with op $opName")
+  def mkUnaryOp(opName: String, arg: Value[SType]) =
+    builder.currentSrcCtx.withValue(arg.sourceContext) {
+      opName match {
+        case "-" if arg.isInstanceOf[Constant[_]] && arg.tpe.isNumType =>
+          arg match {
+            case IntConstant(value) =>
+              mkConstant[SInt.type](-value, SInt)
+            case LongConstant(value) =>
+              mkConstant[SLong.type](-value, SLong)
+            case _ => error(s"cannot prefix $arg with op $opName", arg.sourceContext)
+          }
+        case "!" => mkLogicalNot(arg.asBoolValue)
+        case "-" => mkNegation(arg.asNumValue)
+        case "~" => mkBitInversion(arg.asNumValue)
+        case _ => error(s"Unknown prefix operation $opName for $arg", arg.sourceContext)
       }
-    case "!" => builder.mkLogicalNot(arg.asBoolValue)
-    case "-" => builder.mkNegation(arg.asNumValue)
-    case "~" => builder.mkBitInversion(arg.asNumValue)
-    case _ => error(s"Unknown prefix operation $opName for $arg")
-  }
+    }
 
   val parseAsMethods = Set("*", "++", "||", "&&", "+", "^", "<<", ">>", ">>>")
 
-  def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] = opName match {
-    case "==" => EQ(l, r)
-    case "!=" => NEQ(l, r)
-    case ">=" => GE(l, r)
-    case ">"  => GT(l, r)
-    case "<=" => LE(l, r)
-    case "<"  => LT(l, r)
-    case "-"  => builder.mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "|"  => builder.mkBitOr(l.asNumValue, r.asNumValue)
-    case "&"  => builder.mkBitAnd(l.asNumValue, r.asNumValue)
-    case _ if parseAsMethods.contains(opName) =>
-      MethodCallLike(l, opName, IndexedSeq(r))
-    case "/"  => builder.mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
-    case "%"  => builder.mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
-    case _ => error(s"Unknown binary operation $opName")
-  }
-
-  def apply(str: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] = {
-    builder = sigmaBuilder
-    (StatCtx.Expr ~ End).parse(str)
-  }
+  def mkBinaryOp(l: Value[SType], opName: String, r: Value[SType]): Value[SType] =
+    builder.currentSrcCtx.withValue(l.sourceContext) {
+      opName match {
+        case "==" => mkEQ(l, r)
+        case "!=" => mkNEQ(l, r)
+        case ">=" => mkGE(l, r)
+        case ">" => mkGT(l, r)
+        case "<=" => mkLE(l, r)
+        case "<" => mkLT(l, r)
+        case "-" => mkMinus(l.asValue[SLong.type], r.asValue[SLong.type])
+        case "|" => mkBitOr(l.asNumValue, r.asNumValue)
+        case "&" => mkBitAnd(l.asNumValue, r.asNumValue)
+        case _ if parseAsMethods.contains(opName) => mkMethodCallLike(l, opName, IndexedSeq(r))
+        case "/" => mkDivide(l.asValue[SLong.type], r.asValue[SLong.type])
+        case "%" => mkModulo(l.asValue[SLong.type], r.asValue[SLong.type])
+        case _ => error(s"Unknown binary operation $opName", l.sourceContext)
+      }
+    }
 
   def parsedType(str: String): core.Parsed[SType, Char, String] = (Type ~ End).parse(str)
 
-  def parseType(x: String): SType = {
-    val res = parsedType(x).get.value
+  def parseType(str: String): SType = {
+    val res = parsedType(str).get.value
     res
   }
 
+  def apply(script: String, sigmaBuilder: SigmaBuilder): core.Parsed[Value[_ <: SType], Char, String] =
+    currentInput.withValue(script) {
+      (StatCtx.Expr ~ End).parse(script)
+    }
 }

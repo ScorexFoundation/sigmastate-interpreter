@@ -3,25 +3,25 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
 case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer[ValDef] {
 
-  override def serializeBody(obj: ValDef, w: SigmaByteWriter): Unit = {
+  override def serialize(obj: ValDef, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)
     if (opCode == FunDefCode) {
       require(!obj.isValDef, s"expected FunDef, got $obj")
       require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
       w.put(obj.tpeArgs.length.toByteExact)
-      obj.tpeArgs.foreach(w.putType)
+      obj.tpeArgs.foreach(w.putType(_))
     }
     w.putValue(obj.rhs)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
     val tpeArgs: Seq[STypeIdent] = opCode match {
       case FunDefCode =>

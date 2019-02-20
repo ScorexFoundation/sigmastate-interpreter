@@ -83,7 +83,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val prop = BinOr(
       AND(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect),
       BinAnd(heightIncreased, lastCoins)
-    )
+    ).toSigmaProp
 
     val env = Map("fixedRatePeriod" -> s.fixedRatePeriod,
       "epochLength" -> s.epochLength,
@@ -101,7 +101,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightCorrect = out.R4[Int].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
         |    allOf(Coll(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect)) || (heightIncreased && lastCoins)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asBoolValue.toSigmaProp
 
     prop1 shouldEqual prop
 
@@ -121,7 +121,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     )
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
-    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.proposition, 0,
+    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.ergoTree, 0,
       initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id)
     initialBox shouldBe fromState
 

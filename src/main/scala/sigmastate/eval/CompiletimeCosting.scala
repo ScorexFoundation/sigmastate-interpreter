@@ -16,6 +16,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 import sigmastate.lang.SigmaSpecializer.error
 import sigmastate.lang.{Terms, TransformingSigmaBuilder}
+import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
@@ -37,7 +38,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         if (obj.tpe.isCollectionLike)
           eval(mkSizeOf(obj.asValue[SCollection[SType]]))
         else
-          error(s"The type of $obj is expected to be Collection to select 'size' property")
+          error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
@@ -50,14 +51,8 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       // box.R$i[valType] =>
       case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
+          error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
         eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
-
-      // col.getOrElse(i, default) =>
-      case Terms.Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
-        val index1 = index.asValue[SInt.type]
-        val defaultValue1 = defaultValue.asValue[SType]
-        eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
       // opt.get =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.Get, _) =>
@@ -79,14 +74,14 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
           case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
           case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
-          case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
+          case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
-      case Select(obj: SigmaBoolean, field, _) =>
-        field match {
-          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
-        }
+//      case Select(obj: SigmaBoolean, field, _) =>
+//        field match {
+//          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
+//          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
+//        }
 
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
         val index = fn.substring(1).toByte

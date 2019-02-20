@@ -136,7 +136,7 @@ class EvaluationTest extends BaseCtxTests
     val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script1)
     val positions = IntArrayConstant(Array[Int](2))
     // in ergo we have only byte array of a serialized group element
-    val newVals = ConcreteCollection(Vector[SigmaPropValue](SigmaPropConstant(ProveDlog(DecodePoint(pk2.pkBytes)))), SSigmaProp)
+    val newVals = ConcreteCollection(Vector[SigmaPropValue](CreateProveDlog(DecodePoint(pk2.pkBytes))), SSigmaProp)
 
     val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script2)
     val ctx = newErgoContext(height = 1, boxToSpend)

@@ -11,10 +11,10 @@ import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, SValue}
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, SigmaBoolean, GroupElementConstant}
+import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, ErgoTree, SigmaBoolean, GroupElementConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{Serializer, OperationSerializer}
+import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
@@ -39,7 +39,7 @@ case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupEl
   override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
 }
 
-case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
+case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
   override def isValid: Boolean = sigmaTree match {
     case p: TrivialProp => p.condition
@@ -47,28 +47,33 @@ case class CostingSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with Wrap
   }
 
   override def propBytes: Coll[Byte] = {
-    val bytes = DefaultSerializer.serializeWithSegregation(SigmaPropConstant(sigmaTree))
+    // in order to have comparisons like  `box.propositionBytes == pk.propBytes` we need to make sure
+    // the same serialization method is used in both cases
+    val ergoTree = ErgoTree.fromSigmaBoolean(sigmaTree)
+    val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
     Builder.DefaultCollBuilder.fromArray(bytes)
   }
 
   override def &&(other: SigmaProp): SigmaProp = other match {
-    case other: CostingSigmaProp =>
-      CostingSigmaProp(CAND.normalized(Seq(sigmaTree, other.sigmaTree)))
+    case other: CSigmaProp =>
+      CSigmaProp(CAND.normalized(Seq(sigmaTree, other.sigmaTree)))
   }
 
   override def &&(other: Boolean): SigmaProp =
-    CostingSigmaProp(CAND.normalized(Seq(sigmaTree, TrivialProp(other))))
+    CSigmaProp(CAND.normalized(Seq(sigmaTree, TrivialProp(other))))
 
   override def ||(other: SigmaProp): SigmaProp = other match {
-    case other: CostingSigmaProp =>
-      CostingSigmaProp(COR.normalized(Seq(sigmaTree, other.sigmaTree)))
+    case other: CSigmaProp =>
+      CSigmaProp(COR.normalized(Seq(sigmaTree, other.sigmaTree)))
   }
 
   override def ||(other: Boolean): SigmaProp =
-    CostingSigmaProp(COR.normalized(Seq(sigmaTree, TrivialProp(other))))
+    CSigmaProp(COR.normalized(Seq(sigmaTree, TrivialProp(other))))
+
+  override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
 
-case class CostingAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
+case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
   val builder = new CostingSigmaDslBuilder()
 
   override def wrappedValue: AvlTreeData = treeData
@@ -200,7 +205,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case col: CollType[a] => dsl.Colls.emptyColl(col.tItem)
       case tup: TupleType => tup.items.map(t => defaultValue(t))
       case SType.AvlTreeDataRType => AvlTreeData.dummy
-      case AvlTreeRType => CostingAvlTree(AvlTreeData.dummy)
+      case AvlTreeRType => CAvlTree(AvlTreeData.dummy)
 
       case SType.SigmaBooleanRType => TrivialProp.FalseProp
       case SigmaPropRType => sigmaProp(false)
@@ -216,15 +221,15 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def GroupElement(p: ECPoint): GroupElement = new CGroupElement(p)
 
-  def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CostingSigmaProp(sigmaTree)
+  def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
-  def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CostingSigmaProp].sigmaTree
+  def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
   override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
     val keyBytes = key.toArray
     val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+    val treeData = tree.asInstanceOf[CAvlTree].treeData
     val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
     bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
       case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
@@ -238,10 +243,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
     val operationsBytes = operations.toArray
     val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CostingAvlTree].treeData
+    val treeData = tree.asInstanceOf[CAvlTree].treeData
     val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
     val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(Serializer.startReader(operationsBytes, 0))
+    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
     ops.foreach(o => bv.performOneOperation(o))
     bv.digest match {
       case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
@@ -284,32 +289,32 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
-    props.map { case csp: CostingSigmaProp => csp.sigmaTree }
+    props.map { case csp: CSigmaProp => csp.sigmaTree }
   }
 
-  private def toGroupElementConst(ge: GroupElement): GroupElementConstant =
-    GroupElementConstant(toECPoint(ge).asInstanceOf[EcPointType])
+  @inline private def toEcPointType(ge: GroupElement): EcPointType =
+    toECPoint(ge).asInstanceOf[EcPointType]
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = AtLeast.reduce(bound, sigmaTrees)
-    CostingSigmaProp(tree)
+    CSigmaProp(tree)
   }
 
   override def allZK(props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = CAND.normalized(sigmaTrees)
-    CostingSigmaProp(tree)
+    CSigmaProp(tree)
   }
 
   override def anyZK(props: Coll[SigmaProp]): SigmaProp = {
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = COR.normalized(sigmaTrees)
-    CostingSigmaProp(tree)
+    CSigmaProp(tree)
   }
 
   override def sigmaProp(b: Boolean): SigmaProp = {
-    CostingSigmaProp(TrivialProp(b))
+    CSigmaProp(TrivialProp(b))
   }
 
   override def blake2b256(bytes: Coll[Byte]): Coll[Byte] = {
@@ -323,13 +328,11 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   override def proveDlog(ge: GroupElement): SigmaProp =
-    CostingSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
+    CSigmaProp(ProveDlog(toECPoint(ge).asInstanceOf[EcPointType]))
 
   override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = {
-    val dht = ProveDHTuple(
-      toGroupElementConst(g), toGroupElementConst(h),
-      toGroupElementConst(u), toGroupElementConst(v))
-    CostingSigmaProp(dht)
+    val dht = ProveDHTuple(toEcPointType(g), toEcPointType(h), toEcPointType(u), toEcPointType(v))
+    CSigmaProp(dht)
   }
 
   override def groupGenerator: GroupElement = {

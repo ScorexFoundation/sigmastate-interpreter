@@ -13,13 +13,13 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * Special case is infinity point, which is encoded by 33 zeroes.
   * Thus elliptic curve point is always encoded with 33 bytes.
   */
-object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
+object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] {
 
   private val curve = CryptoConstants.dlogGroup
   private val encodingSize = 1 + CryptoConstants.groupSize
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
-  override def serializeBody(point: EcPointType, w: SigmaByteWriter): Unit = {
+  override def serialize(point: EcPointType, w: SigmaByteWriter): Unit = {
     val bytes = if (point.isInfinity) {
       identityPointEncoding
     } else {
@@ -34,7 +34,7 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
     w.putBytes(bytes)
   }
 
-  override def parseBody(r: SigmaByteReader): EcPointType = {
+  override def parse(r: SigmaByteReader): EcPointType = {
     val encoded = r.getBytes(encodingSize)
     if (encoded.head != 0) {
       curve.curve.decodePoint(encoded).asInstanceOf[EcPointType]

@@ -86,7 +86,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[GroupElement]}, { _ => typeSize[GroupElement] })
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
-      { _ => dsl.proveDlog(g1Sym).asRep[SigmaProp].propBytes }
+      { _ => liftConst(dslValue.SigmaProp(p1)).propBytes }
     )
   }
 
@@ -163,14 +163,14 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("Crowd Funding") {
     val prover = new ErgoLikeTestProvingInterpreter()
-    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
-    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val backerPK  = prover.dlogSecrets(0).publicImage
+    val projectPK = prover.dlogSecrets(1).publicImage
 
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     checkInEnv(env, "CrowdFunding", crowdFundingScript,
       { ctx: Rep[Context] =>
-        val backerPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(backer))).asRep[SigmaProp] //ctx.getVar[SigmaProp](backerPubKeyId).get
-        val projectPubKey = dsl.proveDlog(liftConst(dslValue.GroupElement(project))).asRep[SigmaProp] //ctx.getVar[SigmaProp](projectPubKeyId).get
+        val backerPubKey = liftConst(dslValue.SigmaProp(backerPK))
+        val projectPubKey = liftConst(dslValue.SigmaProp(projectPK))
         val projectBytes = projectPubKey.propBytes
         val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
         val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
@@ -186,8 +186,8 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("Crowd Funding: measure") {
     val prover = new ErgoLikeTestProvingInterpreter()
-    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
-    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val backerPK  @ DLogProtocol.ProveDlog(backer: ECPoint) = prover.dlogSecrets(0).publicImage
+    val projectPK @ DLogProtocol.ProveDlog(project: ECPoint) = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     val parsed = compiler.parse(crowdFundingScript)
     val env2 = env ++ Seq("timeout" -> (timeout + 1))
@@ -221,11 +221,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("Demurrage") {
     val prover = new ErgoLikeTestProvingInterpreter()
-    val regScriptPK  @ DLogProtocol.ProveDlog(GroupElementConstant(script: ECPoint)) = prover.dlogSecrets(0).publicImage
+    val regScriptPK = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,
     { ctx: Rep[Context] =>
-      val regScript = dsl.proveDlog(liftConst(dslValue.GroupElement(script))).asRep[SigmaProp]
+      val regScript = liftConst(dslValue.SigmaProp(regScriptPK))
       val selfBytes = ctx.SELF.propositionBytes
       val selfValue = ctx.SELF.value
       val c2 = dsl.allOf(colBuilder.fromItems(

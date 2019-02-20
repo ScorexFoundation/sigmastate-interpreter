@@ -51,7 +51,7 @@ class SpamSpecification extends SigmaTestingCommons {
       .withContextExtender(id, ByteArrayConstant(ba))
       .withContextExtender(id2, ByteArrayConstant(ba))
 
-    val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get))
+    val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
@@ -88,7 +88,7 @@ class SpamSpecification extends SigmaTestingCommons {
       CalcBlake2b256(script)
     }
 
-    val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte))))
+    val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte)))).toSigmaProp
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
@@ -118,7 +118,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val publicImages = secret.publicImage +: simulated
-    val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven))
+    val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven)).toSigmaProp
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
@@ -137,10 +137,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val outCnt = 5
     val prover = new ErgoLikeTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
-    val propToCompare = OR((1 to orCnt).map(_ => EQ(LongConstant(6), LongConstant(5))))
+    val propToCompare = OR((1 to orCnt).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
 
     val spamProp = OR((1 until orCnt).map(_ => EQ(LongConstant(6), LongConstant(5))) :+
-      EQ(LongConstant(6), LongConstant(6)))
+      EQ(LongConstant(6), LongConstant(6))).toSigmaProp
 
     val spamScript =
       Exists(Outputs,
@@ -150,7 +150,7 @@ class SpamSpecification extends SigmaTestingCommons {
             EQ(ExtractScriptBytes(ValUse(1, SBox)), ByteArrayConstant(propToCompare.bytes))
           )
         )
-      )
+      ).toSigmaProp
 
     val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp, 0))) :+ ErgoBox(11, propToCompare, 0)
     val tx = ErgoLikeTransaction(IndexedSeq(), txOutputs)
@@ -184,10 +184,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
         Exists(Outputs,
-          FuncValue(Vector((2, SBox)), EQ(ExtractScriptBytes(ValUse(1, SBox)), ExtractScriptBytes(ValUse(2, SBox)))))))
+          FuncValue(Vector((2, SBox)), EQ(ExtractScriptBytes(ValUse(1, SBox)), ExtractScriptBytes(ValUse(2, SBox))))))).toSigmaProp
 
-    val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5))))
-    val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6))))
+    val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
+    val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6)))).toSigmaProp
 
     val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript, 0))) :+ ErgoBox(11, outputScript, 0)
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript, 0))
@@ -248,16 +248,17 @@ class SpamSpecification extends SigmaTestingCommons {
     val key1 = genKey("key1")
     val value1 = genValue("value1")
 
-    val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants, EQ(TreeLookup(
+      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key1),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value1))
+      ByteArrayConstant(proof)).get, ByteArrayConstant(value1)).toSigmaProp)
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

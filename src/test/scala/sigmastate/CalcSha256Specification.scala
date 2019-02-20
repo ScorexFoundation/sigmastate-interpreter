@@ -33,10 +33,10 @@ class CalcSha256Specification extends SigmaTestingCommons {
     val int = new ErgoLikeTestProvingInterpreter()
     val ctx = ErgoLikeContext.dummy(fakeSelf)
     forAll(objects) { (in, result) =>
-      val calcSha256 = CalcSha256(stringToByteConstant(in))
       val expectedResult = decodeString(result)
+      val calcSha256 = EQ(CalcSha256(stringToByteConstant(in)), expectedResult)
       val res = int.reduceToCrypto(ctx, calcSha256).get._1
-      res shouldBe expectedResult
+      res shouldBe TrivialProp.TrueProp
     }
   }
 

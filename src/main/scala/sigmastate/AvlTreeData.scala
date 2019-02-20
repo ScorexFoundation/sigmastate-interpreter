@@ -4,6 +4,7 @@ import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.Serializer
@@ -79,9 +80,9 @@ object AvlTreeData {
   val dummy =
     new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), AvlTreeFlags.AllOperationsAllowed, keyLength = 32)
 
-  object serializer extends Serializer[AvlTreeData, AvlTreeData] {
+  object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 
-    override def serializeBody(data: AvlTreeData, w: SigmaByteWriter): Unit = {
+    override def serialize(data: AvlTreeData, w: SigmaByteWriter): Unit = {
       val tf = AvlTreeFlags.serializeFlags(data.treeFlags)
       w.putBytes(data.digest)
         .putUByte(tf)
@@ -89,7 +90,7 @@ object AvlTreeData {
         .putOption(data.valueLengthOpt)(_.putUInt(_))
     }
 
-    override def parseBody(r: SigmaByteReader): AvlTreeData = {
+    override def parse(r: SigmaByteReader): AvlTreeData = {
       val startingDigest = r.getBytes(DigestSize)
       val tf = AvlTreeFlags(r.getByte())
       val keyLength = r.getUInt().toInt

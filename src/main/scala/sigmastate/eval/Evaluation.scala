@@ -20,7 +20,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import sigma.util.Extensions._
+import scorex.util.Extensions._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -259,7 +259,17 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
-            val dataRes = invokeUnlifted(obj.elem, mc, dataEnv)
+            val dataRes = obj.elem match {
+              case _: CollElem[_, _] => mc match {
+                case CollMethods.flatMap(xs, f) =>
+                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.selfType, mc.isAdapterCall)
+                  invokeUnlifted(obj.elem, newMC, dataEnv)
+                case _ =>
+                  invokeUnlifted(obj.elem, mc, dataEnv)
+              }
+              case _ =>
+                invokeUnlifted(obj.elem, mc, dataEnv)
+            }
             val res = dataRes match {
               case Constant(v, _) => v
               case v => v
@@ -316,13 +326,13 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(th)
 
           case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
-            val res = CostingSigmaProp(sigmastate.TrivialProp(isValid))
+            val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
           case SDBM.proveDlog(_, In(g: EcPointType)) =>
-            val res = CostingSigmaProp(DLogProtocol.ProveDlog(GroupElementConstant(g)))
+            val res = CSigmaProp(DLogProtocol.ProveDlog(g))
             out(res)
           case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
-            val res = CostingSigmaProp(ProveDHTuple(GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)))
+            val res = CSigmaProp(ProveDHTuple(g, h, u, v))
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
@@ -387,7 +397,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
       catch {
         case e: Throwable =>
-          !!!(s"Error in evaluate($te)", e)
+          !!!(s"Error in Evaluation.compile.evaluate($te)", e)
       }
     }
 
@@ -585,7 +595,7 @@ object Evaluation {
         dsl.BigInt(n)
       case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
       case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
-      case (t: AvlTreeData, SAvlTree) => CostingAvlTree(t)
+      case (t: AvlTreeData, SAvlTree) => CAvlTree(t)
       case (x, _) => x
     }
   }

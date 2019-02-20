@@ -14,7 +14,7 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.VerificationResult
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
+import sigmastate.serialization.{OpCodes, OperationSerializer, SigmaSerializer, ValueSerializer}
 import sigma.util.Extensions._
 import sigmastate.utils.Helpers
 import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
@@ -97,23 +97,24 @@ trait Interpreter extends ScorexLogging {
     }
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
-    val res = valueFun(calcCtx)
-    val resValue = res match {
+    val valueFun = IR.compile[SSigmaProp.type](IR.getDataEnv, calcF.asRep[IR.Context => SSigmaProp.WrappedType])
+    val res = valueFun(calcCtx) match {
       case SigmaPropConstant(sb) => sb
-      case _ => res
+      case FalseLeaf => TrivialProp.FalseProp
+      case TrueLeaf => TrivialProp.TrueProp
+      case res => error(s"Expected SigmaBoolean value but was $res")
     }
-    resValue -> estimatedCost
+    res -> estimatedCost
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp)
+    val propTree = applyDeserializeContext(context, exp.proposition)
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
@@ -141,7 +142,7 @@ trait Interpreter extends ScorexLogging {
                 util.Arrays.equals(newRoot.challenge, expectedChallenge)
             }
         }
-      case _: Value[_] => false
+//      case _: Value[_] => false
     }
     checkingResult -> cost
   }
@@ -165,7 +166,7 @@ trait Interpreter extends ScorexLogging {
     case _ => ???
   })
 
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -173,7 +174,7 @@ trait Interpreter extends ScorexLogging {
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -183,7 +184,7 @@ trait Interpreter extends ScorexLogging {
 
 
   //todo: do we need the method below?
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -194,7 +195,7 @@ trait Interpreter extends ScorexLogging {
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-  type ReductionResult = (Value[SBoolean.type], Long)
+  type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
   val emptyEnv: ScriptEnv = Map()

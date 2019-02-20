@@ -4,15 +4,19 @@ import org.ergoplatform.{Height, Outputs, ErgoBox, Self}
 import org.ergoplatform.ErgoBox.R4
 import sigmastate.helpers.SigmaTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.dsl.TestContractSpec
+import org.ergoplatform.dsl.{ErgoContractSpec, ContractSpec, TestContractSpec}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, ValDef, ValUse}
-import sigmastate.eval.{CostingSigmaProp, Evaluation}
+import sigmastate.eval.{CSigmaProp, Evaluation}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
+import special.collection.Coll
 import special.sigma.Extensions._
+
+
+
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob
@@ -38,13 +42,16 @@ import special.sigma.Extensions._
   */
 class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
+  lazy val buyer = spec.ProvingParty("Alice")
+  lazy val seller = spec.ProvingParty("Bob")
 
+  property("ergo test") {
+
+  }
   property("atomic exchange spec") {
-    val contract = new AssetsAtomicExchange(70, spec.Coll(Blake2b256("token1")))(spec) {
+    val contract = new AssetsAtomicExchange[spec.type](70, tokenId, buyer, seller)(spec) {
       import spec._
-      val tokenBuyer = ProvingParty("Alice")
-      val tokenSeller = ProvingParty("Bob")
-      val verifier = VerifyingParty("Miner")
 
       def extractToken(box: Value[SBox.type]) = ByIndex(
         ExtractRegisterAs(box, ErgoBox.TokensRegId)(ErgoBox.STokensRegType).get, 0)
@@ -73,7 +80,6 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
       ).asBoolValue
       buyerProp.ergoTree.proposition shouldBe expectedBuyerTree
     }
-
     import contract.spec._
 
     // ARRANGE
@@ -97,25 +103,20 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     // ASSERT
     val input0 = buyerTokens.tx.inputs(0)
     val res = input0.runDsl()
-    res shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
     val buyerProof = contract.tokenBuyer.prove(input0).get
     contract.verifier.verify(input0, buyerProof) shouldBe true
 
     val input1 = buyerTokens.tx.inputs(1)
     val res1 = input1.runDsl()
-    res1 shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res1 shouldBe CSigmaProp(TrivialProp.TrueProp)
     val sellerProof = contract.tokenSeller.prove(input1).get
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }
 
   property("partial filling") {
-    val contract = new AssetsPartialFilling(70, spec.Coll(Blake2b256("token1")))(spec) {
-      import spec._
-      val tokenBuyer = ProvingParty("Alice")
-      val tokenSeller = ProvingParty("Bob")
-      val verifier = VerifyingParty("Miner")
-    }
+    val contract = AssetsPartialFilling[spec.type](70, tokenId, buyer, seller)(spec)
     import contract.spec._
 
     // ARRANGE
@@ -147,7 +148,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     val input0 = spendingTx.inputs(0)
     val buyerExt = Map(Byte.MaxValue -> toAnyValue(0.toShort))
     val res = input0.runDsl(buyerExt)
-    res shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
     val buyerProof = contract.tokenBuyer.prove(input0, buyerExt).get
     contract.verifier.verify(input0, buyerProof) shouldBe true
@@ -155,7 +156,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     val input1 = spendingTx.inputs(1)
     val sellerExt = Map(Byte.MaxValue -> toAnyValue(1.toShort))
     val res1 = input1.runDsl(sellerExt)
-    res1 shouldBe CostingSigmaProp(TrivialProp.TrueProp)
+    res1 shouldBe CSigmaProp(TrivialProp.TrueProp)
     val sellerProof = contract.tokenSeller.prove(input1, sellerExt).get
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }

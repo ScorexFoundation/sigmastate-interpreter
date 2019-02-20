@@ -16,13 +16,15 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
+import sigma.util.Extensions._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms
+import sigmastate.lang.{SourceContext, Terms}
 import scalan.staged.Slicing
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.TestGroupElement
 import special.sigma.Extensions._
@@ -131,14 +133,28 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
-  def costOf(opName: String, opType: SFunc): Rep[Int] = {
+  def costOf(opName: String, opType: SFunc, doEval: Boolean): Rep[Int] = {
     val costOp = CostOf(opName, opType)
-    val res = if (substFromCostTable) toRep(costOp.eval)
-              else (costOp: Rep[Int])
+    val res = if (doEval) toRep(costOp.eval)
+    else (costOp: Rep[Int])
     res
   }
-  def costOfProveDlog = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
-  def costOfDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
+
+  def costOf(opName: String, opType: SFunc): Rep[Int] = {
+    costOf(opName, opType, substFromCostTable)
+  }
+
+  def costOfProveDlog: Rep[Int] = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
+  def costOfDHTuple: Rep[Int] = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
+
+  def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
+    case dlog: ProveDlog => CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)).eval
+    case dlog: ProveDHTuple => CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)).eval * 2
+    case CAND(children) => children.map(costOfSigmaTree(_)).sum
+    case COR(children)  => children.map(costOfSigmaTree(_)).sum
+    case CTHRESHOLD(k, children)  => children.map(costOfSigmaTree(_)).sum
+    case _ => CostTable.MinimalCost
+  }
 
   case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
     def selfType: Elem[T] = eT.value
@@ -267,6 +283,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   override protected def formatDef(d: Def[_])(implicit config: GraphVizConfig): String = d match {
     case CostOf(name, opType) => s"CostOf($name:$opType)"
     case GroupElementConst(p) => p.showToString
+    case SigmaPropConst(sp) => sp.toString
     case ac: WArrayConst[_,_] =>
       val trimmed = ac.constValue.take(ac.constValue.length min 10)
       s"WArray(len=${ac.constValue.length}; ${trimmed.mkString(",")},...)"
@@ -903,6 +920,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
   }
 
+  @inline def SigmaDsl = sigmaDslBuilderValue
   @inline def Colls = sigmaDslBuilderValue.Colls
 
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
@@ -936,8 +954,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
-        case p: DLogProtocol.ProveDlog => eval(p)
-        case p: ProveDHTuple => eval(p)
+        case st: SigmaBoolean =>
+          assert(tpe == SSigmaProp)
+          val p = SigmaDsl.SigmaProp(st)
+          val resV = liftConst(p)
+          RCCostedPrim(resV, costOfSigmaTree(st), SSigmaProp.dataSize(st.asWrappedType))
         case bi: BigInteger =>
           assert(tpe == SBigInt)
           val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
@@ -969,27 +990,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           val boxV = liftConst(box.toTestBox(false)(IR))
           RCCostedBox(boxV, costOf(c))
         case treeData: AvlTreeData =>
-          val tree: special.sigma.AvlTree = CostingAvlTree(treeData)
+          val tree: special.sigma.AvlTree = CAvlTree(treeData)
           val treeV = liftConst(tree)
           RCCostedAvlTree(treeV, costOf(c))
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))
       }
-
-      case _ @ DLogProtocol.ProveDlog(v) =>
-        val ge = asRep[Costed[GroupElement]](eval(v))
-        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(ge.value)
-        RCCostedPrim(resV, ge.cost + costOfProveDlog, CryptoConstants.groupSize.toLong)
-
-      case _ @ ProveDHTuple(gv, hv, uv, vv) =>
-        val gvC = asRep[Costed[GroupElement]](eval(gv))
-        val hvC = asRep[Costed[GroupElement]](eval(hv))
-        val uvC = asRep[Costed[GroupElement]](eval(uv))
-        val vvC = asRep[Costed[GroupElement]](eval(vv))
-        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-        val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
-        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 
       case Height  => ctx.HEIGHT
       case Inputs  => ctx.INPUTS
@@ -1002,14 +1009,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = ctx.getVar(id)(stypeToElem(optTpe.elemType))
         res
 
-//      case op @ TaggedVariableNode(id, tpe) =>
-//        val resV = ctx.getVar(id)(stypeToElem(tpe))
-//        withDefaultSize(resV, costOf(op))
-
       case Terms.Block(binds, res) =>
         var curEnv = env
-        for (Val(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+        for (v @ Val(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", v.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1018,8 +1021,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case BlockValue(binds, res) =>
         var curEnv = env
-        for (ValDef(n, _, b) <- binds) {
-          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}")
+        for (vd @ ValDef(n, _, b) <- binds) {
+          if (curEnv.contains(n)) error(s"Variable $n already defined ($n = ${curEnv(n)}", vd.sourceContext.toOption)
           val bC = evalNode(ctx, curEnv, b)
           curEnv = curEnv + (n -> bC)
         }
@@ -1028,6 +1031,21 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case ValUse(valId, _) =>
         env.getOrElse(valId, !!!(s"ValUse $valId not found in environment $env"))
+
+      case CreateProveDlog(In(_v)) =>
+        val vC = asRep[Costed[GroupElement]](_v)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
+        val cost = vC.cost + costOfDHTuple
+        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
+
+      case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
+        val gvC = asRep[Costed[GroupElement]](_gv)
+        val hvC = asRep[Costed[GroupElement]](_hv)
+        val uvC = asRep[Costed[GroupElement]](_uv)
+        val vvC = asRep[Costed[GroupElement]](_vv)
+        val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
+        val cost = gvC.cost + hvC.cost + uvC.cost + vvC.cost + costOfDHTuple
+        RCCostedPrim(resV, cost, CryptoConstants.groupSize.toLong * 4)
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
@@ -1255,7 +1273,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
 
       case opt: OptionValue[_] =>
-        error(s"Option constructors are not supported: $opt")
+        error(s"Option constructors are not supported: $opt", opt.sourceContext.toOption)
 
       case CalcBlake2b256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
@@ -1343,7 +1361,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         if (inputC.values.length.isConst) {
           val inputCount = inputC.values.length.asValue
           if (inputCount > AtLeast.MaxChildrenCount)
-            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount")
+            error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
         }
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, asRep[Coll[SigmaProp]](inputC.values))
@@ -1372,7 +1390,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
             v = xC.value.min(yC.value)
           case MaxCode =>
             v = xC.value.max(yC.value)
-          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}")
+          case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}", op.sourceContext.toOption)
         }
         val c = xC.cost + yC.cost + costOf(op)
         RCCostedPrim(v, c, s)
@@ -1553,8 +1571,54 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
+        val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
+        val (argsVals, argsCosts) = args.map {
+          case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
+            val funC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, sfunc)).func
+            val (calcF, costF) = splitCostedFunc2(funC, okRemoveIsValid = true)
+            val cost = xsC.values.zip(xsC.costs.zip(xsC.sizes)).map(costF).sum(intPlusMonoid)
+            (calcF, cost)
+          case a =>
+            val aC = eval(a)
+            (aC.value, aC.cost)
+        }.unzip
+        // todo add costOf(node)
+        val cost = argsCosts.foldLeft(xsC.cost)({ case (s, e) => s + e }) // + costOf(node)
+        val xsV = xsC.value
+        val value = (method.name, argsVals) match {
+          case (SCollection.IndexOfMethod.name, Seq(e, from)) => xsV.indexOf(e, asRep[Int](from))
+          case (SCollection.IndicesMethod.name, _) => xsV.indices
+          case (SCollection.FlatMapMethod.name, Seq(f)) => xsV.flatMap(asRep[Any => Coll[Any]](f))
+          case (SCollection.SegmentLengthMethod.name, Seq(f, from)) =>
+            xsV.segmentLength(asRep[Any => Boolean](f), asRep[Int](from))
+          case (SCollection.IndexWhereMethod.name, Seq(f, from)) =>
+            xsV.indexWhere(asRep[Any => Boolean](f), asRep[Int](from))
+          case (SCollection.LastIndexWhereMethod.name, Seq(f, end)) =>
+            xsV.lastIndexWhere(asRep[Any => Boolean](f), asRep[Int](end))
+          case (SCollection.ZipMethod.name, Seq(col2)) => xsV.zip(asRep[Coll[Any]](col2))
+          case (SCollection.PartitionMethod.name, Seq(f)) => xsV.partition(asRep[Any => Boolean](f))
+          case (SCollection.PatchMethod.name, Seq(from, col, repl)) =>
+            xsV.patch(asRep[Int](from), asRep[Coll[Any]](col), asRep[Int](repl))
+          case (SCollection.UpdatedMethod.name, Seq(index, elem)) =>
+            xsV.updated(asRep[Int](index), asRep[Any](elem))
+          case (SCollection.UpdateManyMethod.name, Seq(indexCol, elemCol)) =>
+            xsV.updateMany(asRep[Coll[Int]](indexCol), asRep[Coll[Any]](elemCol))
+          case _ => error(s"method $method is not supported")
+        }
+        withDefaultSize(value, cost)
+
+      case Terms.MethodCall(obj, method, args) if obj.tpe.isOption =>
+        val optC = asRep[CostedOption[Any]](eval(obj))
+        val argsC = args.map(eval)
+        (method.name, argsC) match {
+          case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
+          case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
+          case _ => error(s"method $method is not supported")
+        }
+
       case _ =>
-        error(s"Don't know how to evalNode($node)")
+        error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)
@@ -1577,4 +1641,5 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def error(msg: String) = throw new CosterException(msg, None)
+  def error(msg: String, srcCtx: Option[SourceContext]) = throw new CosterException(msg, srcCtx)
 }

@@ -86,7 +86,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
         |
         |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
@@ -101,7 +101,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |    blake2b256(out.propositionBytes) == withdrawScriptHash
         |  })
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
     val depositAddress = Pay2SHAddress(depositScript)

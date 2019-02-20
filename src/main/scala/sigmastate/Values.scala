@@ -7,17 +7,23 @@ import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import scalan.Nullable
 import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
+import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
+import sigmastate.serialization._
 import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigma.util.Extensions._
+import sigmastate.TrivialProp.{FalseProp, TrueProp}
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import special.sigma.Extensions._
@@ -26,7 +32,10 @@ import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.transformers.ProveDHTupleSerializer
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{Extensions, AnyValue, TestValue}
+import sigmastate.lang.SourceContext
 
 
 object Values {
@@ -63,6 +72,29 @@ object Values {
     def opName: String = this.getClass.getSimpleName
 
     def opId: OperationId = OperationId(opName, opType)
+
+    /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
+    * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
+    * to create nodes,
+    * Adding additional (implicit source: SourceContext) parameter to every builder method would pollute its API
+    * and also doesn't make sence during deserialization, where Builder is also used.
+    * We can assume some indirect mechanism to pass current source context into every mkXXX method of Builder.
+    * We can pass it using `scala.util.DynamicVariable` by wrapping each mkXXX call into `withValue { }` calls.
+    * The same will happen in Typer.
+    * We can take sourceContext from untyped nodes and use it while creating typed nodes.
+    * And we can make sourceContext of every Value writeOnce value, i.e. it will be Nullable.Null by default,
+    * but can be set afterwards, but only once.
+    * This property will not participate in equality and other operations, so will be invisible for existing code.
+    * But Builder can use it to set sourceContext if it is present.
+    */
+    private[sigmastate] var _sourceContext: Nullable[SourceContext] = Nullable.None
+    def sourceContext: Nullable[SourceContext] = _sourceContext
+    def sourceContext_=(srcCtx: Nullable[SourceContext]): Unit =
+      if (_sourceContext.isEmpty) {
+        _sourceContext = srcCtx
+      } else {
+        sys.error("_sourceContext can be set only once")
+      }
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -97,7 +129,7 @@ object Values {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
-        case ct @ SCollection(tItem) =>
+        case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
         case ft @ SFunc(tD, tR, _) =>
           ft.getGenericType
@@ -172,7 +204,7 @@ object Values {
       TaggedVariableNode(varId, tpe)
   }
 
-  case object UnitConstant extends EvaluatedValue[SUnit.type] {
+  case class UnitConstant() extends EvaluatedValue[SUnit.type] {
     override val opCode = UnitConstantCode
     override def tpe = SUnit
     val value = ()
@@ -266,8 +298,13 @@ object Values {
     }
   }
 
+  val FalseSigmaProp = SigmaPropConstant(TrivialProp.FalseProp)
+  val TrueSigmaProp = SigmaPropConstant(TrivialProp.TrueProp)
+
+  implicit def boolToSigmaProp(b: BoolValue): SigmaPropValue = BoolToSigmaProp(b)
+
   object SigmaPropConstant {
-    def apply(value: SigmaBoolean): Constant[SSigmaProp.type]  = Constant[SSigmaProp.type](value, SSigmaProp)
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type] = Constant[SSigmaProp.type](value, SSigmaProp)
     def unapply(v: SValue): Option[SigmaBoolean] = v match {
       case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
       case _ => None
@@ -495,24 +532,72 @@ object Values {
     override def tpe = SBoolean
   }
 
-  /**
-    * For sigma statements
+  /** Algebraic data type of sigma proposition expressions.
+    * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean extends NotReadyValue[SBoolean.type] {
-    override def tpe = SBoolean
+  trait SigmaBoolean /*extends NotReadyValue[SBoolean.type]*/ {
+    def tpe = SBoolean
 
-    def fields: Seq[(String, SType)] = SigmaBoolean.fields
     /** This is not used as operation, but rather as data value of SigmaProp type. */
     def opType: SFunc = Value.notSupportedError(this, "opType")
+
+    /** Unique id of the node class used in serialization of SigmaBoolean. */
+    val opCode: OpCode
   }
 
   object SigmaBoolean {
     val PropBytes = "propBytes"
-    val IsProven = "isProven"
-    val fields = Seq(
-      PropBytes -> SByteArray,
-      IsProven -> SBoolean
-    )
+    val IsValid = "isValid"
+    object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
+      val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
+      val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
+
+      override def serialize(data: SigmaBoolean, w: SigmaByteWriter): Unit = {
+        w.put(data.opCode)
+        data match {
+          case dlog: ProveDlog   => dlogSerializer.serialize(dlog, w)
+          case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
+          case _: TrivialProp => // besides opCode no additional bytes
+          case and: CAND =>
+            w.putUShort(and.sigmaBooleans.length)
+            for (c <- and.sigmaBooleans)
+              serializer.serialize(c, w)
+          case or: COR =>
+            w.putUShort(or.sigmaBooleans.length)
+            for (c <- or.sigmaBooleans)
+              serializer.serialize(c, w)
+          case th: CTHRESHOLD =>
+            w.putUShort(th.k)
+            w.putUShort(th.sigmaBooleans.length)
+            for (c <- th.sigmaBooleans)
+              serializer.serialize(c, w)
+        }
+      }
+
+      override def parse(r: SigmaByteReader): SigmaBoolean = {
+        val opCode = r.getByte()
+        val res = opCode match {
+          case FalseProp.opCode => FalseProp
+          case TrueProp.opCode  => TrueProp
+          case ProveDlogCode => dlogSerializer.parse(r)
+          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
+          case AndCode =>
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parse(r))
+            CAND(children)
+          case OrCode =>
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parse(r))
+            COR(children)
+          case AtLeastCode =>
+            val k = r.getUShort()
+            val n = r.getUShort()
+            val children = (0 until n).map(_ => serializer.parse(r))
+            CTHRESHOLD(k, children)
+        }
+        res
+      }
+    }
   }
 
   trait NotReadyValueBox extends NotReadyValue[SBox.type] {
@@ -602,13 +687,25 @@ object Values {
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
+    def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
     def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
+    def showToString: String = sb match {
+      case ProveDlog(v) =>
+        s"ProveDlog(${showECPoint(v)})"
+      case ProveDHTuple(gv, hv, uv, vv) =>
+        s"ProveDHTuple(${showECPoint(gv)}, ${showECPoint(hv)}, ${showECPoint(uv)}, ${showECPoint(vv)})"
+      case _ => sb.toString
+    }
   }
 
   implicit class BoolValueOps(val b: BoolValue) extends AnyVal {
-    def toSigmaProp: SigmaPropValue = BoolToSigmaProp(b)
+    def toSigmaProp: SigmaPropValue = b match {
+      case b if b.tpe == SBoolean => BoolToSigmaProp(b)
+      case p if p.tpe == SSigmaProp => p.asSigmaProp
+      case _ => sys.error(s"Expected SBoolean or SSigmaProp typed value, but was: $b")
+    }
   }
 
   sealed trait BlockItem extends NotReadyValue[SType] {
@@ -737,8 +834,8 @@ object Values {
   case class ErgoTree private(
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: SValue,
-    proposition: SValue
+    root: SigmaPropValue,
+    proposition: SigmaPropValue
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
@@ -759,7 +856,7 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
 
-    @inline def isConstantSegregation(header: Byte): Boolean = (header & ErgoTree.ConstantSegregationFlag) != 0
+    @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
@@ -771,19 +868,32 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SValue) = {
-      if ((header & ConstantSegregationFlag) != 0) {
-        val prop = substConstants(root, constants)
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue) = {
+      if (isConstantSegregation(header)) {
+        val prop = substConstants(root, constants).asSigmaProp
         new ErgoTree(header, constants, root, prop)
       } else
         new ErgoTree(header, constants, root, root)
     }
 
-    implicit def fromProposition(prop: SValue): ErgoTree = {
-      // get ErgoTree with segregated constants
-      // todo rewrite with everywherebu?
-      val nonSigmaBooleanProp = prop match { case sb: SigmaBoolean => SigmaPropConstant(sb) case _ => prop }
-      DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(nonSigmaBooleanProp))
+    val EmptyConstants = IndexedSeq.empty[Constant[SType]]
+
+    def withoutSegregation(root: SigmaPropValue) = {
+      ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
+    }
+
+    implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
+      prop match {
+        case SigmaPropConstant(_) => withoutSegregation(prop)
+        case _ =>
+          // get ErgoTree with segregated constants
+          // todo rewrite with everywherebu?
+          DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(prop))
+      }
+    }
+
+    implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
+      withoutSegregation(pk.toSigmaProp)
     }
   }
 

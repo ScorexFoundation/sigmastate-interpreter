@@ -9,7 +9,7 @@ import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, Context}
+import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
@@ -30,7 +30,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map())
-                 ) extends Context {
+                 ) extends ErgoContext {
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, newExtension)
@@ -54,7 +54,7 @@ class ErgoLikeContext(val currentHeight: Height,
       toAnyValue(dslData.asWrappedType)(tVal)
     }
     val vars = contextVars(varMap ++ extensions)
-    val avlTree = CostingAvlTree(lastBlockUtxoRoot)
+    val avlTree = CAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(IR,
       inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
       minerPubkey,
@@ -163,3 +163,4 @@ case object Self extends NotReadyValueBox {
   override val opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
 }
+

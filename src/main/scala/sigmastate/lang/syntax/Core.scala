@@ -107,8 +107,10 @@ trait Core extends syntax.Literals {
 //    val ClassQualifier = P( "[" ~ Id ~ "]" )
 //    val ThisSuper = P( `this` | `super` ~ ClassQualifier.? )
 //    val ThisPath: P0 = P( ThisSuper ~ ("." ~ PostDotCheck ~/ Id).rep )
-    val IdPath = P( Id.! ~ ("." ~ PostDotCheck ~/ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
-      case (h, t) => t.foldLeft[SValue](Ident(h))(builder.mkSelect(_, _))
+    val IdPath = P( Index ~ Id.! ~ ("." ~ PostDotCheck ~/ Index ~ (`this`.! | Id.!)).rep /*~ ("." ~ ThisPath).?*/ ).map {
+      case (hi, hs, t) => t.foldLeft[SValue](atSrcPos(hi){builder.mkIdent(hs, NoType)}){
+        case (obj, (i, s)) => atSrcPos(i) { builder.mkSelect(obj, s) }
+      }
     }
     P( /*ThisPath |*/ IdPath )
   }

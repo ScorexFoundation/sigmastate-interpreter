@@ -5,7 +5,7 @@ import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import scala.util.Success
 import sigmastate.{SInt, AvlTreeData, SLong, SType}
 import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
@@ -69,7 +69,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     3.toByte -> toAnyValue(bigIntegerArr1)
   )).toArray
 
-  val boxToSpend = ErgoBox(10, TrueLeaf, 0,
+  val boxToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0,
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)

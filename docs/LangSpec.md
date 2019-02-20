@@ -125,7 +125,17 @@ class Numeric {
   /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
    * `this` is less than, equal to, or greater than `that`.
    */
-  def compareTo(that: SNumeric): Int 
+  def compareTo(that: Numeric): Int 
+  
+  /** Returns least of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def min(that: Numeric): Numeric
+  
+  /** Returns max of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def max(that: Numeric): Numeric
 }
 
 class Short extends Numeric
@@ -500,6 +510,9 @@ class Coll[A] {
     * Builds a new collection by applying a function to all elements of this collection
     * and using the elements of the resulting collections.
     *
+    * Function `f` is constrained to be of the form `x => x.someProperty`, otherwise
+    * it is illegal.
+    * 
     * @param f the function to apply to each element.
     * @tparam B the element type of the returned collection.
     * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
