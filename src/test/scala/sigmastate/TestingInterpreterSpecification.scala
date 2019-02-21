@@ -5,15 +5,12 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.utxo.{CostTable, ErgoLikeTestInterpreter}
+import sigmastate.utxo.ErgoLikeTestInterpreter
 import sigmastate.lang.Terms._
-import sigmastate.eval.{IRContext, CostingDataContext, Evaluation}
-import special.sigma
 import org.ergoplatform._
 import scorex.util.encode.Base58
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
-import special.sigma.{AnyValue, Box, TestAvlTree}
 import TrivialProp._
 
 import scala.util.Random

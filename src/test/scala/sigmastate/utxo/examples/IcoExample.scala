@@ -1,6 +1,7 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
+import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -10,13 +11,16 @@ import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
-class IcoExample extends SigmaTestingCommons {
+class IcoExample extends SigmaTestingCommons { suite =>
+  implicit lazy val IR = new TestingIRContext()
+  lazy val spec = TestContractSpec(suite)
+  lazy val backer = spec.ProvingParty("Alice")
+  lazy val project = spec.ProvingParty("Bob")
+
   /**
     * Simplest ICO example
     */
   property("simple ico example") {
-
-    implicit val IR: TestingIRContext = new TestingIRContext
 
     val fundingEnv = Map(
       ScriptNameProp -> "fundingScriptEnv",
