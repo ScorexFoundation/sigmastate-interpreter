@@ -132,7 +132,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
     SubstConstantsSerializer,
     CreateProveDlogSerializer(mkCreateProveDlog),
-    CreateProveDHTupleSerializer(mkCreateProveDHTuple)
+    CreateProveDHTupleSerializer(mkCreateProveDHTuple),
+    LogicalNotSerializer(mkLogicalNot),
+    OneArgumentOperationSerializer(NegationCode, mkNegation[SNumericType]),
+    OneArgumentOperationSerializer(BitInversionCode, mkBitInversion[SNumericType]),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {

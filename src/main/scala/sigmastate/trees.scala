@@ -406,6 +406,11 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   override def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
+sealed trait OneArgumentOperation[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
+  val input: Value[IV]
+  override def opType = SFunc(input.tpe, tpe)
+}
+
 // TwoArgumentsOperation
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
@@ -439,16 +444,14 @@ object ArithOp {
   }
 }
 
-case class Negation[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override val opCode: OpCode = OpCodes.NegationCode
   override def tpe: T = input.tpe
-  override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
-case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+case class BitInversion[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override val opCode: OpCode = OpCodes.BitInversionCode
   override def tpe: T = input.tpe
-  override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
 case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
