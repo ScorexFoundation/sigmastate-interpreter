@@ -70,17 +70,24 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       val newObj = assignType(env, obj)
       newObj.tpe match {
         case s: SProduct =>
-          val iField = s.methodIndex(n)
-          val tRes = if (iField != -1) {
-            s.methods(iField).stype
-          } else
-            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
           s.method(n) match {
-            case Some(method) if method.irBuilder.isDefined && !method.stype.isFunc =>
-              method.irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq(), emptySubst))
+            case Some(method @ SMethod(SOption, _, stype, _, irBuilder)) if !stype.isFunc =>
+              val optTypeSubst = Map(SOption.tT -> newObj.tpe.asOption.elemType)
+              val typeSubst = if (applySubst(stype, optTypeSubst) == stype) emptySubst else optTypeSubst
+              if (irBuilder.isDefined)
+                irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq(), typeSubst))
+                  .getOrElse(mkMethodCall(newObj, method, IndexedSeq(), typeSubst))
+              else
+                mkSelect(newObj, n, Some(applySubst(stype, typeSubst)))
+
+            case Some(method @ SMethod(_, _, stype, _, irBuilder)) if irBuilder.isDefined && !stype.isFunc =>
+              irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq(), emptySubst))
                 .getOrElse(mkMethodCall(newObj, method, IndexedSeq(), emptySubst))
-            case _ =>
-              mkSelect(newObj, n, Some(tRes))
+
+            case Some(method) =>
+              mkSelect(newObj, n, Some(method.stype))
+            case None =>
+              throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
           }
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t", sel.sourceContext)

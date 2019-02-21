@@ -52,7 +52,6 @@ trait SigmaTestingCommons extends PropSpec
 
   def compile(env: ScriptEnv, code: String): Value[SType] = {
     val tree = compiler.compile(env, code)
-    checkSerializationRoundTrip(tree)
     tree
   }
 

@@ -111,7 +111,7 @@ object SType {
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
     SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext,
-    SAvlTree, SBox, SOption, SCollection
+    SAvlTree, SBox, SOption, SCollection, SBigInt, SOption
   ).map { t => (t.typeId, t) }.toMap
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {
@@ -574,12 +574,7 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   }
   override def isConstantSize = elemType.isConstantSize
   def ancestors = Nil
-  override lazy val methods: Seq[SMethod] = {
-    val subst = Map(SOption.tT -> elemType)
-    SOption.methods.map { method =>
-      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
-    }
-  }
+  override def methods: Seq[SMethod] = SOption.methods
   override def toString = s"Option[$elemType]"
 }
 

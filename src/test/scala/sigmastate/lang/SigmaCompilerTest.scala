@@ -24,10 +24,18 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   private def comp(env: ScriptEnv, x: String): Value[SType] = compileWithCosting(env, x)
   private def comp(x: String): Value[SType] = compileWithCosting(env, x)
   private def compWOCosting(x: String): Value[SType] = compile(env, x)
-  private def compWOCosting(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
 
   private def testMissingCosting(script: String, expected: SValue): Unit = {
-    compWOCosting(script) shouldBe expected
+    val tree = compWOCosting(script)
+    tree shouldBe expected
+    checkSerializationRoundTrip(tree)
+    // when implemented in coster this should be changed to a positive expectation
+    an [CosterException] should be thrownBy comp(env, script)
+  }
+
+  private def testMissingCostingWOSerialization(script: String, expected: SValue): Unit = {
+    val tree = compWOCosting(script)
+    tree shouldBe expected
     // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
@@ -313,7 +321,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SOption.flatMap") {
-    testMissingCosting("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
+    testMissingCostingWOSerialization("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
       mkMethodCall(GetVarInt(1),
         SOption.FlatMapMethod,
         IndexedSeq(Terms.Lambda(
@@ -421,7 +429,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.prefixLength") {
-    testMissingCosting("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
+    testMissingCostingWOSerialization("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
       mkMethodCall(Outputs,
         SCollection.PrefixLengthMethod,
         Vector(
@@ -454,7 +462,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.find") {
-    testMissingCosting("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
+    testMissingCostingWOSerialization("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
       mkMethodCall(Outputs,
         SCollection.FindMethod,
         Vector(
@@ -519,7 +527,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SCollection.mapReduce") {
-    testMissingCosting(
+    testMissingCostingWOSerialization(
       "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),

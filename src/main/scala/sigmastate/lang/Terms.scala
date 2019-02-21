@@ -141,7 +141,7 @@ object Terms {
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
     override val tpe: SType = method.stype match {
       case f: SFunc => f.tRange.withSubstTypes(typeSubst)
-      case t => t
+      case t => t.withSubstTypes(typeSubst)
     }
   }
   object MethodCall {
