@@ -1,6 +1,7 @@
 package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox, ErgoLikeContext, ErgoScriptPredef}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -11,6 +12,9 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Assertion, Matchers, PropSpec}
 import scalan.{Nullable, RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
+import scorex.util._
+import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, TrueLeaf, Value}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
 import sigma.types.{IsPrimView, PrimViewType, View}
 import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
@@ -25,6 +29,10 @@ import spire.util.Opt
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scalan.{Nullable, RType, TestContexts, TestUtils}
+import sigma.types.{IsPrimView, PrimViewType, View}
+import sigmastate.serialization.ErgoTreeSerializer
+import spire.util.Opt
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks

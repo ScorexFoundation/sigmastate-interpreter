@@ -1569,7 +1569,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
-      case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
+      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
         val (argsVals, argsCosts) = args.map {
           case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
@@ -1606,7 +1606,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
-      case Terms.MethodCall(obj, method, args) if obj.tpe.isOption =>
+      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isOption =>
         val optC = asRep[CostedOption[Any]](eval(obj))
         val argsC = args.map(eval)
         (method.name, argsC) match {
