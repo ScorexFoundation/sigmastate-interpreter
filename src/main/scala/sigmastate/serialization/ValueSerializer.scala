@@ -50,6 +50,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     QuadrupleSerializer(TreeModificationsCode, mkTreeModifications),
     Relation2Serializer(BinOrCode, mkBinOr),
     Relation2Serializer(BinAndCode, mkBinAnd),
+    Relation2Serializer(BinXorCode, mkBinXor),
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, mkIf),
     TwoArgumentsSerializer(XorCode, mkXor),
     TwoArgumentsSerializer(ExponentiateCode, mkExponentiate),
