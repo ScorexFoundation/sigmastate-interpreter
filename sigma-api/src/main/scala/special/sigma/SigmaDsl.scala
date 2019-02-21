@@ -491,6 +491,7 @@ trait SigmaDslBuilder {
 
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
   def longToByteArray(l: Long): Coll[Byte]
+  def byteArrayToLong(bytes: Coll[Byte]): Long
 
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp

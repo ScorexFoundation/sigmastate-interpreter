@@ -98,6 +98,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
+  @NeverInline
+  def byteArrayToLong(bytes: Coll[Byte]): Long = Longs.fromByteArray(bytes.toArray)
 
   @NeverInline
   def proveDlog(g: GroupElement): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])
