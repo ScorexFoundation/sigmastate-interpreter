@@ -337,6 +337,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
       case SDBM.longToByteArray(_, longSym) =>
         mkLongToByteArray(recurse(longSym))
+      case SDBM.byteArrayToLong(_, colSym) =>
+        mkByteArrayToLong(recurse(colSym))
       case SDBM.decodePoint(_, colSym) =>
         mkDecodePoint(recurse(colSym))
 

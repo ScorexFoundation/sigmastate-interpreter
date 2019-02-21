@@ -314,6 +314,13 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    override def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        thisClass.getMethod("byteArrayToLong", classOf[Sym]),
+        List(bytes),
+        true, false, element[Long]))
+    }
+
     override def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         thisClass.getMethod("proveDlog", classOf[Sym]),
@@ -735,6 +742,19 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Long])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object byteArrayToLong {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "byteArrayToLong" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

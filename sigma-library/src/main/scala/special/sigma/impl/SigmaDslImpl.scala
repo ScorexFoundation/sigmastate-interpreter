@@ -4264,6 +4264,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[Coll[Byte]]))
     }
 
+    override def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("byteArrayToLong", classOf[Sym]),
+        List(bytes),
+        true, false, element[Long]))
+    }
+
     override def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("proveDlog", classOf[Sym]),
@@ -4492,6 +4499,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[Coll[Byte]]))
     }
 
+    def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = {
+      asRep[Long](mkMethodCall(source,
+        thisClass.getMethod("byteArrayToLong", classOf[Sym]),
+        List(bytes),
+        true, true, element[Long]))
+    }
+
     def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(source,
         thisClass.getMethod("proveDlog", classOf[Sym]),
@@ -4579,7 +4593,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger"
+        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger"
         ))
     }
 
@@ -4864,6 +4878,19 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Long])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object byteArrayToLong {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "byteArrayToLong" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

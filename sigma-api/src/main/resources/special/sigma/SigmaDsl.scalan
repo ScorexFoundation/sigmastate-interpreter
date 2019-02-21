@@ -195,6 +195,7 @@ package special.sigma {
       def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
       def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt];
       def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]];
+      def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long];
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp];
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp];
       def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];

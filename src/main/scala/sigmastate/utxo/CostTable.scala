@@ -208,6 +208,7 @@ object CostTable {
     ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
+    ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
 
     ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
 

@@ -73,6 +73,7 @@ package special.sigma {
       @NeverInline def PubKey(base64String: Rep[String]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = delayInvoke;
       @NeverInline def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = delayInvoke;
+      @NeverInline def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = delayInvoke;
       @NeverInline def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = delayInvoke;

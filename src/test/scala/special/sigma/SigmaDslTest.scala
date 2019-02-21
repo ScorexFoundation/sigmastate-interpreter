@@ -111,13 +111,14 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
-  ignore("byteArrayToLong equivalence") {
-    // TODO enable after SigmaDslBuilder.byteArrayToLong is implemented (+ uncomment in RuntimeCosting)
+  property("byteArrayToLong equivalence") {
     val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
       Longs.fromByteArray(x.toArray)
     }
     forAll { x: Array[Byte] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      whenever(x.size >= 8) {
+        eq(Builder.DefaultCollBuilder.fromArray(x))
+      }
     }
   }
 
