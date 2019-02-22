@@ -33,6 +33,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
 }
 
 object ProverResult {
+  val empty: ProverResult = ProverResult(Array[Byte](), ContextExtension.empty)
 
   def apply(proof: Array[Byte], extension: ContextExtension): ProverResult =
     new ProverResult(proof, extension)

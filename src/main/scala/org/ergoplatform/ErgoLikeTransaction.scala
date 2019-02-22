@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.nio.ByteBuffer
+
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -12,7 +14,6 @@ import scala.util.Try
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
-
 
 
 trait ErgoBoxReader {
@@ -99,35 +100,22 @@ object ErgoLikeTransaction {
 
     object sigmaSerializer extends SigmaSerializer[FlattenedTransaction, FlattenedTransaction] {
 
-      def bytesToSign(inputs: IndexedSeq[ADKey],
-                      outputCandidates: IndexedSeq[ErgoBoxCandidate]): Array[Byte] = {
-        //todo: set initial capacity
+      def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
+        val emptyProofInputs = tx.inputs.map(i => new Input(i.boxId, ProverResult.empty))
         val w = SigmaSerializer.startWriter()
-
-        w.putUShort(inputs.length)
-        inputs.foreach { i =>
-          w.putBytes(i)
-        }
-        w.putUShort(outputCandidates.length)
-        outputCandidates.foreach { c =>
-          ErgoBoxCandidate.serializer.serialize(c, w)
-        }
-
+        serialize(FlattenedTransaction(emptyProofInputs.toArray, tx.outputCandidates.toArray), w)
         w.toBytes
       }
-
-      def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] =
-        bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
       override def serialize(ftx: FlattenedTransaction, w: SigmaByteWriter): Unit = {
         w.putUShort(ftx.inputs.length)
         for (input <- ftx.inputs) {
           Input.serializer.serialize(input, w)
         }
-        val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(_._1)).distinct
+        val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1))).distinct
         w.putUInt(digests.length)
         digests.foreach { digest =>
-          w.putBytes(digest)
+          w.putBytes(digest.array)
         }
         w.putUShort(ftx.outputCandidates.length)
         for (out <- ftx.outputCandidates) {
@@ -155,6 +143,7 @@ object ErgoLikeTransaction {
         FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
       }
     }
+
   }
 
   object serializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
@@ -165,4 +154,5 @@ object ErgoLikeTransaction {
     override def parse(r: SigmaByteReader): ErgoLikeTransaction =
       ErgoLikeTransaction(FlattenedTransaction.sigmaSerializer.parse(r))
   }
+
 }

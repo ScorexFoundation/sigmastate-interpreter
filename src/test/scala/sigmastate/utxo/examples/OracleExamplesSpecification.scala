@@ -275,7 +275,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     lazy val prop = proposition("buyer", { ctx: Context =>
       import ctx._
-      val okInputs = INPUTS.size == 3
+      val okInputs = INPUTS.length == 3
       val okInput0 = INPUTS(0).propositionBytes == pkOracle.propBytes
       val inReg = INPUTS(0).R4[Long].get
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
