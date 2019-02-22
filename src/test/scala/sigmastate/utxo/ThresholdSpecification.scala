@@ -54,7 +54,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
 
     val prop2 = AtLeast(IntConstant(3),
@@ -69,7 +69,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       prover.prove(compiledProp2, ctx, fakeMessage).isFailure shouldBe true
     }
 
-    val prop2And = AND(pubkeyA, pubkeyB, pubkeyC)
+    val prop2And = CAND(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
@@ -77,7 +77,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
     val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
     compiledProp3 shouldBe prop3
 
@@ -88,14 +88,14 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
     proverD.prove(compiledProp3, ctx, fakeMessage).isFailure shouldBe true
 
-    val prop3Or = OR(pubkeyA, pubkeyB, pubkeyC)
+    val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
     val compiledProp4 = compileWithCosting(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
     val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp4 shouldBe prop4
 
@@ -270,7 +270,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
     val compiledProp = compileWithCosting(env,
-      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asBoolValue
+      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asSigmaProp
     val prop = AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI))
 
     compiledProp shouldBe prop
@@ -341,12 +341,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
 
     def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      val proof = prover.prove(proposition.isProven, ctx, fakeMessage).get
-      verifier.verify(proposition.isProven, ctx, proof, fakeMessage).get._1 shouldBe true
+      val proof = prover.prove(proposition, ctx, fakeMessage).get
+      verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
     def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      prover.prove(proposition.isProven, ctx, fakeMessage).isFailure shouldBe true
+      prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 
 

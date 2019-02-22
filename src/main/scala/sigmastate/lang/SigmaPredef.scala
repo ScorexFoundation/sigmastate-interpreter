@@ -178,20 +178,14 @@ object SigmaPredef {
     val ProveDHTupleFunc = PredefinedFunc("proveDHTuple",
       Lambda(Vector("g" -> SGroupElement, "h" -> SGroupElement, "u" -> SGroupElement, "v" -> SGroupElement), SSigmaProp, None),
       { case (_, Seq(g, h, u, v)) =>
-        mkConstant[SSigmaProp.type](
-          mkProveDiffieHellmanTuple(
-            g.asGroupElement,
-            h.asGroupElement,
-            u.asGroupElement,
-            v.asGroupElement),
-          SSigmaProp)
+          mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
       }
     )
 
     val ProveDlogFunc = PredefinedFunc("proveDlog",
       Lambda(Vector("value" -> SGroupElement), SSigmaProp, None),
       { case (_, Seq(arg: Value[SGroupElement.type]@unchecked)) =>
-        SigmaPropConstant(mkProveDlog(arg))
+        mkCreateProveDlog(arg)
       }
     )
 

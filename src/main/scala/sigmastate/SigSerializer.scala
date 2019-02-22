@@ -1,14 +1,14 @@
 package sigmastate
 
 import org.bouncycastle.util.BigIntegers
-import sigmastate.basics.DLogProtocol.{ProveDlog, SecondDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
 import Helpers.xor
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{ProveDHTuple, SecondDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{SecondDiffieHellmanTupleProverMessage, ProveDHTuple}
 
 
 object SigSerializer {
@@ -63,7 +63,7 @@ object SigSerializer {
   }
 
 
-  def parseAndComputeChallenges(exp: Value[SBoolean.type], bytes: Array[Byte]): UncheckedTree = {
+  def parseAndComputeChallenges(exp: SigmaBoolean, bytes: Array[Byte]): UncheckedTree = {
 
     /**
       * Verifier Step 2: In a top-down traversal of the tree, obtain the challenges for the children of every
@@ -77,7 +77,7 @@ object SigSerializer {
       *                     else it needs to be read from the proof
       * @return
       */
-    def traverseNode(exp: Value[SBoolean.type],
+    def traverseNode(exp: SigmaBoolean,
                      bytes: Array[Byte],
                      pos: Int,
                      challengeOpt: Option[Challenge] = None): (UncheckedSigmaTree, Int) = {

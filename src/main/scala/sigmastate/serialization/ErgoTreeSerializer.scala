@@ -6,7 +6,7 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Append
 import sigmastate.{SGroupElement, SType}
-
+import sigmastate.lang.Terms.ValueOps
 import scala.collection.mutable
 
 class ErgoTreeSerializer {
@@ -32,7 +32,7 @@ class ErgoTreeSerializer {
     r.constantStore = new ConstantStore(cs)
     // reader with constant store attached is required (to get tpe for a constant placeholder)
     val previousConstantStore = r.constantStore
-    val root = ValueSerializer.deserialize(r)
+    val root = ValueSerializer.deserialize(r).asSigmaProp
     r.constantStore = previousConstantStore
     ErgoTree(h, cs, root)
   }

@@ -110,7 +110,7 @@ object SType {
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
     SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext,
-    SAvlTree, SBox
+    SAvlTree, SBox, SOption, SCollection
   ).map { t => (t.typeId, t) }.toMap
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {
@@ -519,7 +519,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     ExpMethod
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = 32
+  override def dataSize(v: SType#WrappedType): Long = CryptoConstants.groupSize.toLong
   override def isConstantSize = true
   def ancestors = Nil
 }
@@ -531,14 +531,15 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def typeId = typeCode
   override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v match {
-    case ProveDlog(GroupElementConstant(g)) =>
+    case ProveDlog(g) =>
       SGroupElement.dataSize(g.asWrappedType) + 1
-    case ProveDHTuple(
-          GroupElementConstant(gv), GroupElementConstant(hv),
-          GroupElementConstant(uv), GroupElementConstant(vv)) =>
+    case ProveDHTuple(gv, hv, uv, vv) =>
       SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
-    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum
-    case _ => ???
+    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case COR(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case CTHRESHOLD(k, inputs) => 4 + inputs.map(i => dataSize(i.asWrappedType)).sum + 1
+    case t: TrivialProp => 1
+    case _ => sys.error(s"Cannot get SigmaProp.dataSize($v)")
   }
   override def isConstantSize = false
   def ancestors = Nil

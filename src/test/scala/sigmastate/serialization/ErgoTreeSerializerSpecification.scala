@@ -80,7 +80,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   }
 
   property("(de)serialize round trip (without constants)") {
-    val prop = EQ(ExtractAmount(Self), LongConstant(0))
+    val prop = EQ(ExtractAmount(Self), LongConstant(0)).toSigmaProp
     val tree = ErgoTree(DefaultHeader, IndexedSeq(), prop, prop)
     val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(tree)
     val deserializedProp = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes).proposition

@@ -57,7 +57,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
         |  proveDlog(f) ||            // either f is g^y
         |  proveDHTuple(g, e, g_x, f) // or f is u^y = g^xy
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
@@ -89,7 +89,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
         |    proveDHTuple(g, g_x, d, c)
         |  }
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
 
     /////////////////////////////////////////////////////////

@@ -115,7 +115,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     val dk1 = proveDlogGen.sample.get
     val encodedP2PK = P2PKAddress(dk1).toString
     val code = s"""PK("$encodedP2PK")"""
-    comp(code) shouldEqual SigmaPropConstant(dk1)
+    val res = comp(code)
+    res shouldEqual SigmaPropConstant(dk1)
   }
 
   property("fromBaseX") {

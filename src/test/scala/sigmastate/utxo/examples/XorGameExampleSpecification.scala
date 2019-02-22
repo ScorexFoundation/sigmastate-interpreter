@@ -69,7 +69,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    }
         |  }
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
@@ -95,7 +95,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    blake2b256(out.propositionBytes) == fullGameScriptHash
         |  }
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
 
     /////////////////////////////////////////////////////////
     //// Alice starts creating a Half-Game

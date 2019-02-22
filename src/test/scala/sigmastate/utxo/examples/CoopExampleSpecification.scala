@@ -1,11 +1,11 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import org.scalatest.Assertion
 import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, Value}
+import sigmastate.Values.{ByteArrayConstant, Value, SigmaPropValue}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.ErgoLikeTestInterpreter
@@ -30,7 +30,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       self = self)
   }
 
-  def successProofTest(exp: Value[SBoolean.type],
+  def successProofTest(exp: SigmaPropValue,
                        ctx: ErgoLikeContext,
                        prover: ErgoLikeTestProvingInterpreter,
                        verifier: ErgoLikeTestInterpreter): Assertion = {
@@ -39,7 +39,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     verifier.verify(exp, ctx, proofResult.success.value, fakeMessage) should be a 'success
   }
 
-  def failingProofTest(exp: Value[SBoolean.type],
+  def failingProofTest(exp: SigmaPropValue,
                        ctx: ErgoLikeContext,
                        prover: ErgoLikeTestProvingInterpreter): Assertion = {
     prover.prove(exp, ctx, fakeMessage) should be a 'failure
@@ -125,7 +125,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | spendingSuccess || withdrawCondition
          |}
-       """.stripMargin).asBoolValue
+       """.stripMargin).asSigmaProp
 
     {
       val self = ErgoBox(totalValue, spendingProp1, 0)
@@ -162,7 +162,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | spendingSuccess || withdrawCondition
          |}
-       """.stripMargin).asBoolValue
+       """.stripMargin).asSigmaProp
 
     /**
       * Withdraw successfully
@@ -215,7 +215,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          |  spendingSuccess || withdrawCondition
          | }
-       """.stripMargin).asBoolValue
+       """.stripMargin).asSigmaProp
 
     /**
       * Will spend correctly if all the conditions are satisfied
@@ -256,7 +256,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          |  spendingSuccess || withdrawCondition
          | }
-       """.stripMargin).asBoolValue
+       """.stripMargin).asSigmaProp
 
     {
       val self = ErgoBox(totalValue, spendingProp4, 0)
@@ -269,7 +269,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       successProofTest(spendingProp4, ctx, coopA, verifier)
     }
 
-    val spendingProp5 = compileWithCosting(spendingEnv, "businessKey").asBoolValue
+    val spendingProp5 = compileWithCosting(spendingEnv, "businessKey").asSigmaProp
 
     {
       val self = ErgoBox(totalValue, spendingProp5, 0)
@@ -305,7 +305,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
          |
          | (votingSuccess && properSpending) || withdrawCondition
          | }
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
 
 
     /**
@@ -317,7 +317,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       val output2 = ErgoBox(constructionValue, spendingProp3, 0)
       val output3 = ErgoBox(totalValue - toolValue - constructionValue, spendingProp5, 0)
       //hack for avoiding None.get exception.
-      val dummy = ErgoBox(0L, SBoolean.mkConstant(true), 0)
+      val dummy = ErgoBox(0L, ErgoScriptPredef.TrueProp, 0)
       val tx = mkTxFromOutputs(output1, output2, output3, dummy)
       val ctx = mkCtx(2000, tx, self)
 
@@ -365,7 +365,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
     val inputProp = compileWithCosting(inputEnv,
       s"""(OUTPUTS(0).value == $totalValue && blake2b256(OUTPUTS(0).propositionBytes) == thresholdProp) ||
          | (HEIGHT > 1000 && pubkeyA)
-       """.stripMargin).asBoolValue
+       """.stripMargin).asSigmaProp
 
     /**
       * height not higher, total value is equal

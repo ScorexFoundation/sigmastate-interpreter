@@ -6,19 +6,20 @@ import org.ergoplatform.ErgoBox.R4
 import special.collection.Coll
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
 
-abstract class AssetsPartialFilling[Spec <: ContractSpec]
-    (val deadline: Int, val token1: Coll[Byte])
-    (implicit val spec: Spec)
-    extends SigmaContractSyntax with StdContracts
+/**
+  * @param tokenBuyer The party, who wants to buy some amount of token with id == `tokenId`.
+  * @param tokenSeller The party, who wants to sell some amount of token with id == `tokenId`. */
+case class AssetsPartialFilling[Spec <: ContractSpec]
+    (deadline: Int, token1: Coll[Byte],
+      tokenBuyer: Spec#ProvingParty,
+      tokenSeller: Spec#ProvingParty)
+    (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
 {
-  /** The party, who wants to buy some amount of token with id == `tokenId`. */
-  val tokenBuyer: spec.ProvingParty
-  /** The party, who wants to sell some amount of token with id == `tokenId`. */
-  val tokenSeller: spec.ProvingParty
-  val verifier: spec.VerifyingParty
+  import syntax._
+
   def pkA = tokenBuyer.pubKey
   def pkB = tokenSeller.pubKey
-  import syntax._
+  
   lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "token1" -> token1)
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>

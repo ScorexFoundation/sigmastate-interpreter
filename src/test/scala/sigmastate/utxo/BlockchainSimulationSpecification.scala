@@ -46,7 +46,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         box,
         ContextExtension.empty)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
-      val proverResult = miner.prove(env, box.proposition, context, tx.messageToSign).get
+      val proverResult = miner.prove(env, box.ergoTree, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -214,7 +214,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey

@@ -49,7 +49,7 @@ class Rule110Specification extends SigmaTestingCommons {
         |  }
         |  (OUTPUTS(0).R4[Coll[Byte]].get == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
     val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
@@ -203,7 +203,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val leftmostConditions = AND(EQ(SizeOf(Inputs), 1), EQ(in0X, in0Y), EQ(scriptHash, leftmostHash))
 
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions))
+    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions)).toSigmaProp
 
     // test normal case
     val nIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
@@ -387,7 +387,7 @@ class Rule110Specification extends SigmaTestingCommons {
       row1,
       row2,
       rule110
-    ))
+    )).toSigmaProp
 
 
     val hash = Blake2b256
@@ -445,7 +445,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           left,
           ContextExtension.empty)
-        val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
+        val proverResultLeft = prover.prove(left.ergoTree, contextLeft, ut.messageToSign).get
 
         val contextCenter = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
@@ -454,7 +454,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           center,
           ContextExtension.empty)
-        val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
+        val proverResultCenter = prover.prove(center.ergoTree, contextCenter, ut.messageToSign).get
 
         val contextRight = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
@@ -463,7 +463,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           right,
           ContextExtension.empty)
-        val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
+        val proverResultRight = prover.prove(right.ergoTree, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))
       }
     }
