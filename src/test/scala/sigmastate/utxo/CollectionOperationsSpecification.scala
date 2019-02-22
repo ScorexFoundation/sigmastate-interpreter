@@ -351,15 +351,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map({ (box: Box) => box.value })
         |.fold(true, { (acc: Boolean, val: Long) => acc && (val < 0) }) == false""".stripMargin
-    val expectedPropTree = EQ(
+    val expectedPropTree = LogicalNot(
       Fold(
         MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
         TrueLeaf,
         FuncValue(Vector((1, STuple(SBoolean, SLong))),
           BinAnd(
             SelectField(ValUse(1, STuple(SBoolean, SLong)), 1).asBoolValue,
-            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0))))),
-      FalseLeaf)
+            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0)))))
+    )
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 

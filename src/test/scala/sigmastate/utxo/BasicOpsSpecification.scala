@@ -416,7 +416,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // no value
     test("Def2", env, ext,
       "{ SELF.R8[Int].isDefined == false }",
-      EQ(ExtractRegisterAs[SInt.type](Self, R8).isDefined, FalseLeaf).toSigmaProp,
+      LogicalNot(ExtractRegisterAs[SInt.type](Self, R8).isDefined).toSigmaProp,
       true
     )
 
@@ -428,7 +428,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // there should be no variable with this id
     test("Def4", env, ext,
       "{ getVar[Int](99).isDefined == false }",
-      EQ(GetVarInt(99).isDefined, FalseLeaf).toSigmaProp,
+      LogicalNot(GetVarInt(99).isDefined).toSigmaProp,
       true
     )
   }

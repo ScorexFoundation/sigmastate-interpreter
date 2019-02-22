@@ -1382,6 +1382,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           withDefaultSize(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
         }
 
+      case LogicalNot(input) =>
+        val inputC = evalNode(ctx, env, input)
+        withDefaultSize(ApplyUnOp(Not, inputC.value), inputC.cost + costOf(node))
+
 //      case ModQ(input) =>
 //        val inputC = asRep[Costed[WBigInteger]](eval(input))
 //        val v = inputC.value.modQ

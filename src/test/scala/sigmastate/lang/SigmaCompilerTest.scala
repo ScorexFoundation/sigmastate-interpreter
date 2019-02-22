@@ -173,7 +173,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("logicalNot") {
-    testMissingCosting("!true", LogicalNot(TrueLeaf))
+    comp("!true") shouldBe LogicalNot(TrueLeaf)
   }
 
   property("Negation") {
@@ -564,8 +564,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("xorOf") {
-    testMissingCosting("xorOf(Coll[Boolean](true, false))",
-      XorOf(Seq(TrueLeaf, FalseLeaf))
-    )
+    comp("xorOf(Coll[Boolean](true, false))") shouldBe XorOf(Seq(TrueLeaf, FalseLeaf))
   }
 }

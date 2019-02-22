@@ -14,11 +14,6 @@ trait Boolean extends PrimView[scala.Boolean] {
     */
   def toByte: Byte
 
-  /** Logical negation
-    * @since 2.0
-    */
-  def not: Boolean
-
   /** Logical XOR
     * @since 2.0
     */

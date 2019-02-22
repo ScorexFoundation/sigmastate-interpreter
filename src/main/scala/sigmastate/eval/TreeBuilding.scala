@@ -90,7 +90,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
   object IsLogicalUnOp {
     def unapply(op: UnOp[_,_]): Option[BoolValue => Value[SBoolean.type]] = op match {
-      case Not => Some({ v: BoolValue => builder.mkEQ(v, FalseLeaf) })
+      case Not => Some({ v: BoolValue => builder.mkLogicalNot(v) })
       case _ => None
     }
   }

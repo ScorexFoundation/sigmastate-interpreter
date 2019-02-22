@@ -6,7 +6,6 @@ import special.collection.{Coll, Builder}
 
 case class CBoolean(value: scala.Boolean) extends Boolean {
   override def toByte: Byte = CByte(if (value) 1 else 0)
-  override def not: Boolean = CBoolean(!value)
   override def xor(y: Boolean): Boolean = CBoolean(value ^ y.value)
 }
 

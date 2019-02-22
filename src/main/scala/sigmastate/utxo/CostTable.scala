@@ -125,6 +125,7 @@ object CostTable {
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
     ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("LogicalNot", "(Boolean) => Boolean", logicCost),
 
     ("GT", "(T,T) => Boolean", comparisonCost),
     ("GE", "(T,T) => Boolean", comparisonCost),
