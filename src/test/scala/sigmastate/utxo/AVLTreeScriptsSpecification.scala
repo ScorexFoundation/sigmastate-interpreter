@@ -16,7 +16,7 @@ import sigmastate.serialization.OperationSerializer
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+  private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
   def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)

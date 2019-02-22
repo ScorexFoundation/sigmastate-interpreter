@@ -43,7 +43,7 @@ object AvlTreeFlags {
   * in an instance of the datatype.
   *
   * Please note that standard hash function from CryptoConstants is used, and height is stored along with root hash of
-  * the tree, thus startingDigest size is always CryptoConstants.hashLength + 1 bytes.
+  * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
   *
   * @param digest authenticated tree digest: root hash along with tree height
   * @param treeFlags - allowed modifications. See AvlTreeFlags description for details
