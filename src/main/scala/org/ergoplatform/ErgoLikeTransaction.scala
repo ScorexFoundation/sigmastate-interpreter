@@ -16,6 +16,19 @@ trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
+/**
+  * Base trait of a real transaction to be used in Ergo network.
+  * May be in unsigned (`UnsignedErgoLikeTransaction`) or in signed (`ErgoLikeTransaction`) version.
+  *
+  * Consists of:
+  * @param inputs           - inputs, that will be spent by this transaction.
+  * @param dataInputs       - inputs, that are not going to be spent by transaction, but will be
+  *                         reachable from inputs scripts. `dataInputs` scripts will not be executed,
+  *                         thus their scripts costs are not included in transaction cost and
+  *                         they do not contain spending proofs.
+  * @param outputCandidates - box candidates to be created by this transaction.
+  *                         Differ from ordinary ones in that they do not include transaction id and index
+  */
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   val dataInputs: IndexedSeq[UnsignedInput]
   val inputs: IndexedSeq[IT]
@@ -35,6 +48,9 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 }
 
 
+/**
+  * Unsigned version of `ErgoLikeTransactionTemplate`
+  */
 class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput],
                                   override val dataInputs: IndexedSeq[UnsignedInput],
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
@@ -58,13 +74,7 @@ object UnsignedErgoLikeTransaction {
 }
 
 /**
-  * Fully signed transaction
-  *
-  * @param inputs           - signed inputs, that will be spent by this transaction
-  * @param dataInputs       - unsigned inputs, that are not going to be spent by transaction, but will be
-  *                         reachable from inputs scripts.
-  * @param outputCandidates - box candidates to be created by this transaction.
-  *                         Differ from ordinary ones in that they do not include transaction id and index
+  * Signed version of `ErgoLikeTransactionTemplate`
   */
 class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
                           override val dataInputs: IndexedSeq[UnsignedInput],
