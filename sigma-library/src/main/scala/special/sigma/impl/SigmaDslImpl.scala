@@ -3449,7 +3449,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
-        "builder", "OUTPUTS", "INPUTS", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preheader", "MinerPubKey", "getVar", "getConstant", "cost", "dataSize"
+        "builder", "OUTPUTS", "INPUTS", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "cost", "dataSize"
         ))
     }
 

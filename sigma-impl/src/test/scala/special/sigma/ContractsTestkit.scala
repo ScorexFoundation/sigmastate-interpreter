@@ -66,11 +66,11 @@ trait ContractsTestkit {
 
   implicit class TestContextOps(ctx: TestContext) {
     def withInputs(inputs: Box*) =
-      new TestContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
+      new TestContext(inputs.toArray, ctx._outputs, ctx._height, ctx._selfBox, emptyAvlTree, dummyPubkey, ctx._vars)
     def withOutputs(outputs: Box*) =
-      new TestContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
+      new TestContext(ctx._inputs, outputs.toArray, ctx._height, ctx._selfBox, emptyAvlTree, dummyPubkey, ctx._vars)
     def withVariables(vars: Map[Int, AnyValue]) =
-      new TestContext(ctx.inputs, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey,
+      new TestContext(ctx._inputs, ctx._outputs, ctx._height, ctx._selfBox, emptyAvlTree, dummyPubkey,
         contextVars(vars.map { case (k, v) => (k.toByte, v) }).toArray)
   }
 

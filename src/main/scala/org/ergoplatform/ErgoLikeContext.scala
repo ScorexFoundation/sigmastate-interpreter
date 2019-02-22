@@ -14,10 +14,11 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
 import special.sigma
-import special.sigma.{AnyValue, TestValue, Box, WrapperType}
+import special.sigma.{WrapperType, Header, Box, AnyValue, TestValue, PreHeader}
 import SType._
 import RType._
 import special.sigma.Extensions._
+
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -26,6 +27,9 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
 class ErgoLikeContext(val currentHeight: Height,
                       val lastBlockUtxoRoot: AvlTreeData,
                       val minerPubkey: Array[Byte],
+                      val headers: Coll[Header],
+                      val preHeader: PreHeader,
+                      val dataInputs: IndexedSeq[ErgoBox],
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
@@ -43,6 +47,7 @@ class ErgoLikeContext(val currentHeight: Height,
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
+    val dataInputs = this.dataInputs.toArray.map(_.toTestBox(isCost))
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
     val outputs = if (spendingTransaction == null)
         noOutputs
@@ -56,7 +61,7 @@ class ErgoLikeContext(val currentHeight: Height,
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(IR,
-      inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
+      dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
       minerPubkey,
       vars.toArray,
       isCost)
@@ -68,6 +73,10 @@ object ErgoLikeContext {
   type Height = Int
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
+  
+  val noBoxes = IndexedSeq.empty[ErgoBox]
+  val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val dummyPreHeader: PreHeader = null
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -76,7 +85,11 @@ object ErgoLikeContext {
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
             extension: ContextExtension = ContextExtension(Map())) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, extension)
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
+      noHeaders,
+      dummyPreHeader,
+      noBoxes,
+      boxesToSpend, spendingTransaction, self, extension)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

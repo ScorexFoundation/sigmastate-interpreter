@@ -3,15 +3,12 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Point
 import org.ergoplatform.ErgoBox
-import scorex.crypto.authds.avltree.batch.{Insert, Lookup, Operation, Remove}
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch.{Lookup, Remove, Operation, Insert}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
-import sigmastate._
-import sigmastate.Values.{AvlTreeConstant, Constant, ConstantNode, SValue}
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, ErgoTree, SigmaBoolean, GroupElementConstant}
+import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
@@ -19,7 +16,6 @@ import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Col
 import special.sigma._
 import special.sigma.Extensions._
 
-import scala.util.{Failure, Success}
 import scala.util.{Success, Failure}
 import scalan.RType
 import scorex.crypto.hash.{Sha256, Blake2b256}
@@ -186,6 +182,34 @@ object CostingBox {
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }
 
+}
+
+case class CPreHeader(
+  version: Byte,
+  parentId: Coll[Byte],
+  timestamp: Long,
+  nBits: Long,
+  height: Int,
+  minerPk: GroupElement,
+  votes: Coll[Byte],
+) extends PreHeader {}
+
+case class CHeader(
+  version: Byte,
+  parentId: Coll[Byte],
+  ADProofsRoot: Coll[Byte],
+  stateRoot: AvlTree,
+  transactionsRoot: Coll[Byte],
+  timestamp: Long,
+  nBits: Long,
+  height: Int,
+  extensionRoot: Coll[Byte],
+  minerPk: GroupElement,
+  powOnetimePk: GroupElement,
+  powNonce: Coll[Byte],
+  powDistance: BigInt,
+  votes: Coll[Byte],
+) extends Header {
 }
 
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
@@ -357,6 +381,9 @@ object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
 class CostingDataContext(
     val IR: Evaluation,
+    _dataInputs: Array[Box],
+    override val headers: Coll[Header],
+    override val preHeader: PreHeader,
     inputs: Array[Box],
     outputs: Array[Box],
     height: Int,
@@ -368,6 +395,8 @@ class CostingDataContext(
     extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, minerPubKey, vars)
 {
   override val builder = new CostingSigmaDslBuilder()
+
+  override def dataInputs: Coll[Box] = builder.Colls.fromArray(_dataInputs)
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]) =
     if (isCost) {

@@ -17,7 +17,7 @@ class CCostedContext(val ctx: Context) extends CostedContext {
   }
   def SELF: CostedBox = new CCostedBox(ctx.SELF, dsl.CostModel.AccessBox)
   def LastBlockUtxoRootHash: CostedAvlTree = new CCostedAvlTree(ctx.LastBlockUtxoRootHash, dsl.CostModel.AccessAvlTree)
-  def MinerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.MinerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
+  def MinerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.minerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
   def getVar[T](id: Byte)(implicit cT: RType[T]): CostedOption[T] = {
     val opt = ctx.getVar(id)(cT)
     dsl.costOption(opt, dsl.CostModel.GetVar)

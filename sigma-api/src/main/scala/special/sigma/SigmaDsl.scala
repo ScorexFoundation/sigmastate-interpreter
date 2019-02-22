@@ -350,40 +350,84 @@ trait AvlTree {
   def digest: Coll[Byte]
 }
 
-/** Represents data of the block headers available in scripts.
+/** Only header fields that can be predicted by a miner.
   * @since 2.0
   */
-trait Header {
+@scalan.Liftable
+trait PreHeader { // Testnet2
+  /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
 
-  /** Bytes representation of ModifierId of the previous block in the blockchain */
+  /** Id of parent block */
+  def parentId: Coll[Byte] // ModifierId
+
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
+  def timestamp: Long
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is unsigned Int*/
+  def nBits: Long  // actually it is unsigned Int
+
+  /** Block height */
+  def height: Int
+
+  /** Miner public key. Should be used to collect block rewards. */
+  def minerPk: GroupElement
+
+  def votes: Coll[Byte]
+}
+
+/** Represents data of the block header available in Sigma propositions.
+  * @since 2.0
+  */
+@scalan.Liftable
+trait Header {
+  /** Block version, to be increased on every soft and hardfork. */
+  def version: Byte
+
+  /** Bytes representation of ModifierId of the parent block */
   def parentId: Coll[Byte] //
 
+  /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
-  def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
+
+  /** AvlTree) of a state after block application */
+  def stateRoot: AvlTree
+
+  /** Root hash (for a Merkle tree) of transactions in a block. */
   def transactionsRoot: Coll[Byte]  // Digest32
+
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
   def timestamp: Long
-  def nBits: Long  // actually it is unsigned Int
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is unsigned Int*/
+  def nBits: Long
+
+  /** Block height */
   def height: Int
+
+  /** Root hash of extension section */
   def extensionRoot: Coll[Byte] // Digest32
-  def minerPk: GroupElement    // pk
-  def powOnetimePk: GroupElement  // w
-  def powNonce: Coll[Byte]        // n
-  def powDistance: BigInt        // d
-}
 
-/** Only header fields that can be predicted by a miner
-  * @since 2.0
-  */
-trait Preheader { // Testnet2
-  def version: Byte
-  def parentId: Coll[Byte] // ModifierId
-  def timestamp: Long
-  def nBits: Long  // actually it is unsigned Int
-  def height: Int
+  /** Miner public key. Should be used to collect block rewards.
+    * Part of Autolykos solution. */
   def minerPk: GroupElement
+
+  /** One-time public key. Prevents revealing of miners secret. */
+  def powOnetimePk: GroupElement
+
+  /** nonce */
+  def powNonce: Coll[Byte]
+
+  /** Distance between pseudo-random number, corresponding to nonce `powNonce` and a secret,
+    * corresponding to `minerPk`. The lower `powDistance` is, the harder it was to find this solution. */
+  def powDistance: BigInt
+
+  def votes: Coll[Byte] //3 bytes
 }
 
+/** Represents data available in Sigma language using `CONTEXT` global variable*/
 @scalan.Liftable
 trait Context {
   def builder: SigmaDslBuilder
@@ -394,13 +438,16 @@ trait Context {
   /** A collection of inputs of the current transaction, the transaction where selfBox is one of the inputs. */
   def INPUTS: Coll[Box]
 
+  /** A collection of inputs of the current transaction that will not be spent. */
+  def dataInputs: Coll[Box]
+
   /** Height (block number) of the block which is currently being validated. */
   def HEIGHT: Int
 
   /** Box whose proposition is being currently executing */
   def SELF: Box
 
-  /** Zero based index in `inputs` of `selfBox`. */
+  /** Zero based index in `inputs` of `selfBox`. -1 if self box is not in the INPUTS collection. */
   def selfBoxIndex: Int
 
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
@@ -414,13 +461,13 @@ trait Context {
   /**
     * @since 2.0
     */
-  def preheader: Preheader
+  def preHeader: PreHeader
 
-  def MinerPubKey: Coll[Byte]
+  def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
-  def getConstant[T](id: Byte)(implicit cT: RType[T]): T
-  def cost: Int
-  def dataSize: Long
+
+  private[sigma] def cost: Int
+  private[sigma] def dataSize: Long
 }
 
 @scalan.Liftable
