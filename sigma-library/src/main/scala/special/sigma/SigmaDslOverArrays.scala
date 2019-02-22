@@ -67,6 +67,7 @@ package special.sigma {
       @NeverInline def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = delayInvoke;
       @NeverInline def allZK(props: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def anyZK(props: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = delayInvoke;
+      @NeverInline override def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = delayInvoke;
       @NeverInline def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;

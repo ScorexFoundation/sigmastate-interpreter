@@ -4222,6 +4222,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[SigmaProp]))
     }
 
+    override def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("xorOf", classOf[Sym]),
+        List(conditions),
+        true, false, element[Boolean]))
+    }
+
     override def PubKey(base64String: Rep[String]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("PubKey", classOf[Sym]),
@@ -4457,6 +4464,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[SigmaProp]))
     }
 
+    def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        thisClass.getMethod("xorOf", classOf[Sym]),
+        List(conditions),
+        true, true, element[Boolean]))
+    }
+
     def PubKey(base64String: Rep[String]): Rep[SigmaProp] = {
       asRep[SigmaProp](mkMethodCall(source,
         thisClass.getMethod("PubKey", classOf[Sym]),
@@ -4593,7 +4607,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger"
+        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger"
         ))
     }
 
@@ -4800,6 +4814,19 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object xorOf {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "xorOf" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

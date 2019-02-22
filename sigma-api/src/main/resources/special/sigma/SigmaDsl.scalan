@@ -189,6 +189,7 @@ package special.sigma {
       def allZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
       def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
       def anyZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
+      def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
       def PubKey(base64String: Rep[String]): Rep[SigmaProp];
       def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp];
       def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
