@@ -111,7 +111,7 @@ object SType {
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
     SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext,
-    SAvlTree, SBox, SOption, SCollection, SBigInt, SOption
+    SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
 
   implicit class STypeOps(val tpe: SType) extends AnyVal {

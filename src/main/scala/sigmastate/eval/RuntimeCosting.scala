@@ -1421,7 +1421,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
       case XorOf(input) => input match {
         case ConcreteCollection(items, tpe) =>
-          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
+          val itemsC = items.map(item => eval(item))
           val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
           val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
@@ -1557,9 +1557,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case ByteArrayToLong(In(arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](arr)
         val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
-        val size = arrC.dataSize
         val cost = arrC.cost + costOf(node)
-        RCCostedPrim(value, cost, size)
+        withDefaultSize(value, cost)
 
       case Xor(InCollByte(l), InCollByte(r)) =>
         val values = colBuilder.xor(l.value, r.value)
