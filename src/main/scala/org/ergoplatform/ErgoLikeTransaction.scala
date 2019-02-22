@@ -16,7 +16,6 @@ trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
-
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   val dataInputs: IndexedSeq[UnsignedInput]
   val inputs: IndexedSeq[IT]
@@ -61,8 +60,11 @@ object UnsignedErgoLikeTransaction {
 /**
   * Fully signed transaction
   *
-  * todo fields description
-  *
+  * @param inputs           - signed inputs, that will be spent by this transaction
+  * @param dataInputs       - unsigned inputs, that are not going to be spent by transaction, but will be
+  *                         reachable from inputs scripts.
+  * @param outputCandidates - box candidates to be created by this transaction.
+  *                         Differ from ordinary ones in that they do not include transaction id and index
   */
 class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
                           override val dataInputs: IndexedSeq[UnsignedInput],
