@@ -1415,19 +1415,19 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           withDefaultSize(res, cost)
       }
 
-//      case XorOf(input) => input match {
-//        case ConcreteCollection(items, tpe) =>
-//          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
-//          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
-//          val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
-//          val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
-//          withDefaultSize(res, cost)
-//        case _ =>
-//          val inputC = asRep[CostedColl[Boolean]](eval(input))
-//          val res = sigmaDslBuilder.xorOf(inputC.value)
-//          val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
-//          withDefaultSize(res, cost)
-//      }
+      case XorOf(input) => input match {
+        case ConcreteCollection(items, tpe) =>
+          val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
+          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
+          val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
+          val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+          withDefaultSize(res, cost)
+        case _ =>
+          val inputC = asRep[CostedColl[Boolean]](eval(input))
+          val res = sigmaDslBuilder.xorOf(inputC.value)
+          val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
+          withDefaultSize(res, cost)
+      }
 
       case BinOr(l, r) =>
         val lC = evalNode(ctx, env, l)

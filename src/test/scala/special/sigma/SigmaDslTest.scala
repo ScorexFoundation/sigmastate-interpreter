@@ -123,7 +123,6 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   }
 
   property("xorOf equivalence") {
-    // TODO enable after SigmaDslBuilder.xorOf is implemented (+ uncomment in RuntimeCosting)
     val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => xorOf(x) }")) { x =>
       x.toArray.distinct.length == 2
     }

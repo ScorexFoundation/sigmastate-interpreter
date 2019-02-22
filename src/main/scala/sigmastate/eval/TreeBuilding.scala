@@ -288,6 +288,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkOR(recurse(items))
       case Def(SDBM.atLeast(_, bound, items)) =>
         mkAtLeast(recurse(bound), recurse(items))
+      case Def(SDBM.xorOf(_,  items)) =>
+        mkXorOf(recurse(items))
 
       case SigmaM.and_bool_&&(In(prop), In(cond)) =>
         SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
