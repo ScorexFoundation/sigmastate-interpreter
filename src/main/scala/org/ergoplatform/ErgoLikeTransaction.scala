@@ -1,19 +1,15 @@
 package org.ergoplatform
 
-import java.nio.ByteBuffer
-
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
-
-import scala.util.Try
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
+import scala.util.Try
 
 
 trait ErgoBoxReader {
@@ -22,6 +18,7 @@ trait ErgoBoxReader {
 
 
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
+  val dataInputs: IndexedSeq[UnsignedInput]
   val inputs: IndexedSeq[IT]
   val outputCandidates: IndexedSeq[ErgoBoxCandidate]
 
@@ -40,6 +37,7 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
 
 
 class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput],
+                                  override val dataInputs: IndexedSeq[UnsignedInput],
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[UnsignedInput] {
 
@@ -48,22 +46,26 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
   def toSigned(proofs: IndexedSeq[ProverResult]): ErgoLikeTransaction = {
     require(proofs.size == inputs.size)
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
-    new ErgoLikeTransaction(ins, outputCandidates)
+    new ErgoLikeTransaction(ins, dataInputs, outputCandidates)
   }
 }
 
 object UnsignedErgoLikeTransaction {
+  def apply(inputs: IndexedSeq[UnsignedInput], dataInputs: IndexedSeq[UnsignedInput], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
+    new UnsignedErgoLikeTransaction(inputs, dataInputs, outputCandidates)
+
   def apply(inputs: IndexedSeq[UnsignedInput], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
-    new UnsignedErgoLikeTransaction(inputs, outputCandidates)
+    new UnsignedErgoLikeTransaction(inputs, IndexedSeq(), outputCandidates)
 }
 
 /**
   * Fully signed transaction
   *
-  * @param inputs
-  * @param outputCandidates
+  * todo fields description
+  *
   */
 class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
+                          override val dataInputs: IndexedSeq[UnsignedInput],
                           override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[Input] {
 
@@ -86,24 +88,28 @@ object ErgoLikeTransaction {
   val TransactionIdBytesSize: Short = 32
 
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
-    new ErgoLikeTransaction(inputs, outputCandidates)
+    new ErgoLikeTransaction(inputs, IndexedSeq(), outputCandidates)
+
+  def apply(inputs: IndexedSeq[Input], dataInputs: IndexedSeq[UnsignedInput], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
+    new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
 
   def apply(ftx: FlattenedTransaction): ErgoLikeTransaction =
-    new ErgoLikeTransaction(ftx.inputs, ftx.outputCandidates)
+    new ErgoLikeTransaction(ftx.inputs, ftx.dataInputs, ftx.outputCandidates)
 
   case class FlattenedTransaction(inputs: Array[Input],
+                                  dataInputs: Array[UnsignedInput],
                                   outputCandidates: Array[ErgoBoxCandidate])
 
   object FlattenedTransaction {
     def apply(tx: ErgoLikeTransaction): FlattenedTransaction =
-      FlattenedTransaction(tx.inputs.toArray, tx.outputCandidates.toArray)
+      FlattenedTransaction(tx.inputs.toArray, tx.dataInputs.toArray, tx.outputCandidates.toArray)
 
     object sigmaSerializer extends SigmaSerializer[FlattenedTransaction, FlattenedTransaction] {
 
       def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
         val emptyProofInputs = tx.inputs.map(i => new Input(i.boxId, ProverResult.empty))
         val w = SigmaSerializer.startWriter()
-        serialize(FlattenedTransaction(emptyProofInputs.toArray, tx.outputCandidates.toArray), w)
+        serialize(FlattenedTransaction(emptyProofInputs.toArray, tx.dataInputs.toArray, tx.outputCandidates.toArray), w)
         w.toBytes
       }
 
@@ -111,6 +117,10 @@ object ErgoLikeTransaction {
         w.putUShort(ftx.inputs.length)
         for (input <- ftx.inputs) {
           Input.serializer.serialize(input, w)
+        }
+        w.putUShort(ftx.dataInputs.length)
+        for (input <- ftx.dataInputs) {
+          w.putBytes(input.boxId)
         }
         val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1))).distinct
         w.putUInt(digests.length)
@@ -129,6 +139,12 @@ object ErgoLikeTransaction {
         for (_ <- 0 until inputsCount) {
           inputsBuilder += Input.serializer.parse(r)
         }
+        val dataInputsCount = r.getUShort()
+        val dataInputsBuilder = mutable.ArrayBuilder.make[UnsignedInput]()
+        for (_ <- 0 until dataInputsCount) {
+          dataInputsBuilder += new UnsignedInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
+        }
+
         val digestsCount = r.getUInt().toInt
         val digestsBuilder = mutable.ArrayBuilder.make[Digest32]()
         for (_ <- 0 until digestsCount) {
@@ -140,7 +156,7 @@ object ErgoLikeTransaction {
         for (_ <- 0 until outsCount) {
           outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(digests), r)
         }
-        FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
+        FlattenedTransaction(inputsBuilder.result(), dataInputsBuilder.result(), outputCandidatesBuilder.result())
       }
     }
 
