@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import com.google.common.primitives.Longs
+import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -44,9 +45,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop = EQ(TreeModifications(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(opsBytes),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest))
+      ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest)).toSigmaProp
     val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue.toSigmaProp
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -54,7 +55,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -92,10 +93,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value))
+      ByteArrayConstant(proof)).get, ByteArrayConstant(value)).toSigmaProp
 
     val env = Map("key" -> key, "proof" -> proof, "value" -> value)
-    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue
+    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue.toSigmaProp
     prop shouldBe propCompiled
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -103,7 +104,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -137,11 +138,11 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val treeData = new AvlTreeData(digest, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue
+    val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue.toSigmaProp
 
     val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ByteArrayConstant(key),
-      ByteArrayConstant(proof)))
+      ByteArrayConstant(proof))).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -149,7 +150,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -173,12 +174,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val proofId = 0: Byte
     val elementId = 1: Byte
 
-    val prop: Value[SBoolean.type] = AND(
+    val prop = AND(
       GE(GetVarLong(elementId).get, LongConstant(120)),
       OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
         CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
         GetVarByteArray(proofId).get))
-    )
+    ).toSigmaProp
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compileWithCosting(env,
       """{
@@ -187,12 +188,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  val element = getVar[Long](elementId).get
         |  val elementKey = blake2b256(longToByteArray(element))
         |  element >= 120 && isMember(tree, elementKey, proof)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asBoolValue.toSigmaProp
 
     // TODO propCompiled shouldBe prop
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -247,12 +248,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
         |  val key = SELF.R5[Coll[Byte]].get
         |  val proof = getVar[Coll[Byte]](proofId).get
         |  isMember(tree, key, proof)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asBoolValue.toSigmaProp
 
     val propTree = OptionIsDefined(TreeLookup(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
       ExtractRegisterAs[SByteArray](Self, reg2).get,
-      GetVarByteArray(proofId).get))
+      GetVarByteArray(proofId).get)).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -260,7 +261,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -9,8 +9,8 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer, Relation3Serializer}
-import scorex.util.Extensions._
+import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
+import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 
@@ -61,8 +61,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
     TwoArgumentsSerializer(MinCode, mkMin[SNumericType]),
     TwoArgumentsSerializer(MaxCode, mkMax[SNumericType]),
-    ProveDHTupleSerializer(mkProveDiffieHellmanTuple),
-    ProveDlogSerializer(mkProveDlog),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     SigmaPropIsProvenSerializer,
@@ -75,8 +73,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     CaseObjectSerialization(LastBlockUtxoRootHashCode, LastBlockUtxoRootHash),
     CaseObjectSerialization(SelfCode, Self),
     CaseObjectSerialization(GroupGeneratorCode, GroupGenerator),
-    CaseObjectSerialization(TrivialPropFalseCode, TrivialProp.FalseProp),
-    CaseObjectSerialization(TrivialPropTrueCode, TrivialProp.TrueProp),
     ConcreteCollectionSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
@@ -126,6 +122,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ModQArithOpSerializer(PlusModQCode, mkPlusModQ),
     ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
     SubstConstantsSerializer,
+    CreateProveDlogSerializer(mkCreateProveDlog),
+    CreateProveDHTupleSerializer(mkCreateProveDHTuple)
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {

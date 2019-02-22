@@ -3,19 +3,15 @@ package sigmastate.utxo.examples
 import special.sigma.{Context, Box}
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, StdContracts}
 
-class CrowdFunding[Spec <: ContractSpec]
-    (val deadline: Int, val minToRaise: Long)
-    (implicit val spec: Spec)
-    extends SigmaContractSyntax with StdContracts
+/** @param backer    The party, who wants to fund some amount of Ergs to the project.
+  * @param project   The party, who wants to collect at least `minToRaise` Ergs before `deadline`.
+  * */
+case class CrowdFunding[Spec <: ContractSpec]
+    (deadline: Int, minToRaise: Long,
+     backer: Spec#ProvingParty,
+     project: Spec#ProvingParty)
+    (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
 {
-  import spec._
-  /** The party, who wants to fund some amount of Ergs to the project. */
-  val backer = ProvingParty("Backer")
-
-  /** The party, who wants to collect at least `minToRaise` Ergs before `deadline`. */
-  val project = ProvingParty("Project")
-
-  val verifier = VerifyingParty("Miner")
   def pkBacker = backer.pubKey
   def pkProject = project.pubKey
   import syntax._

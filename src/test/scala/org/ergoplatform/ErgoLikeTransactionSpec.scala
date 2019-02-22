@@ -22,7 +22,7 @@ class ErgoLikeTransactionSpec extends PropSpec
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
         val outputs = (0 until 10).map { i =>
-          new ErgoBoxCandidate(out.value, out.proposition, i, out.additionalTokens, out.additionalRegisters)
+          new ErgoBoxCandidate(out.value, out.ergoTree, i, out.additionalTokens, out.additionalRegisters)
         }
         val tx = ErgoLikeTransaction(txIn.inputs, txIn.outputCandidates ++ outputs)
         roundTripTestWithPos(tx)(ErgoLikeTransaction.serializer)

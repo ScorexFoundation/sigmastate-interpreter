@@ -85,8 +85,8 @@ class ErgoTreeBuildingTest extends BaseCtxTests
 
   test("Crowd Funding") {
     val prover = new ErgoLikeTestProvingInterpreter()
-    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
-    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val backerPK  = prover.dlogSecrets(0).publicImage
+    val projectPK = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     build(env, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(
