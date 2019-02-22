@@ -174,6 +174,12 @@ object CostTable {
     ("%", "(Int, Int) => Int", multiply),
     ("%", "(Long, Long) => Long", multiply),
 
+    ("Negation", "(Byte) => Byte", MinimalCost),
+    ("Negation", "(Short) => Short", MinimalCost),
+    ("Negation", "(Int) => Int", MinimalCost),
+    ("Negation", "(Long) => Long", MinimalCost),
+    ("Negation", "(BigInt) => BigInt", MinimalCost),
+
     ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 

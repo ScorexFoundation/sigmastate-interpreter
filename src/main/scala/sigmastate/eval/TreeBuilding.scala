@@ -89,8 +89,15 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   }
 
   object IsLogicalUnOp {
-    def unapply(op: UnOp[_,_]): Option[BoolValue => Value[SBoolean.type]] = op match {
+    def unapply(op: UnOp[_,_]): Option[BoolValue => BoolValue] = op match {
       case Not => Some({ v: BoolValue => builder.mkLogicalNot(v) })
+      case _ => None
+    }
+  }
+
+  object IsNumericUnOp {
+    def unapply(op: UnOp[_,_]): Option[SValue => SValue] = op match {
+      case NumericNegate(_) => Some({ v: SValue => builder.mkNegation(v.asNumValue) })
       case _ => None
     }
   }
@@ -203,6 +210,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
       case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
+      case Def(ApplyUnOp(IsNumericUnOp(mkNode), xSym)) =>
         mkNode(recurse(xSym))
 
       case CollM.apply(colSym, In(index)) =>

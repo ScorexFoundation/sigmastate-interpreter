@@ -1448,6 +1448,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val c = lC.cost + rC.cost + costOf(node)
         withDefaultSize(v, c)
 
+//      case BinXor(l, r) =>
+//        val lC = evalNode(ctx, env, l)
+//        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
+//        val v = sigmaDslBuilder.binXor(lC.value, rC.value)
+//        val c = lC.cost + rC.cost + costOf(node)
+//        withDefaultSize(v, c)
+
+      case neg: Negation[t] =>
+        val tpe = neg.input.tpe
+        val et = stypeToElem(tpe)
+        val op = NumericNegate(elemToNumeric(et))(et)
+        val inputC = evalNode(ctx, env, neg.input)
+        inputC match { case x: RCosted[a] =>
+            withDefaultSize(ApplyUnOp(op, x.value), x.cost + costOf(neg))
+        }
+
       case SigmaAnd(items) =>
         val itemsC = items.map(eval)
         val res = sigmaDslBuilder.allZK(colBuilder.fromItems(itemsC.map(_.value.asRep[SigmaProp]): _*))

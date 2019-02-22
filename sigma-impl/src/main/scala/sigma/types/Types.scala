@@ -13,8 +13,6 @@ case class CByte(value: scala.Byte) extends Byte {
   override def toInt: Int = CInt(value.toInt)
 
   override def +(y: Byte): Byte = CByte(value.addExact(y.value))
-
-  override def negate : Byte = CByte((-value).toByte)
 }
 
 case class CInt(value: scala.Int) extends Int {
@@ -43,7 +41,5 @@ case class CInt(value: scala.Int) extends Int {
     * `this` is less than, equal to, or greater than `that`.
     */
   override def compareTo(that: Int): Int = CInt(if (value < that.value) -1 else if (value == that.value) 0 else 1)
-
-  override def negate : Int = CInt(-value)
 }
 

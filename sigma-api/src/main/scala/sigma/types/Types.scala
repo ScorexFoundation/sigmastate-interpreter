@@ -25,10 +25,6 @@ trait Byte extends PrimView[scala.Byte] {
   def toInt: Int
 //  def toLong: Long
   def + (y: Byte): Byte
-  /** Negation
-    * @since 2.0
-    */
-  def negate : Byte
 }
 
 trait Int extends PrimView[scala.Int] {
@@ -57,11 +53,6 @@ trait Int extends PrimView[scala.Int] {
     * `this` is less than, equal to, or greater than `that`.
     */
   def compareTo(that: Int): Int
-
-  /** Negation
-    * @since 2.0
-    */
-  def negate : Int
 }
 
 

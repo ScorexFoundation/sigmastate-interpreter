@@ -444,7 +444,7 @@ object ArithOp {
   }
 }
 
-case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
+case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override val opCode: OpCode = OpCodes.NegationCode
   override def tpe: T = input.tpe
 }
