@@ -122,7 +122,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
-  ignore("xorOf equivalence") {
+  property("xorOf equivalence") {
     // TODO enable after SigmaDslBuilder.xorOf is implemented (+ uncomment in RuntimeCosting)
     val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => xorOf(x) }")) { x =>
       x.toArray.distinct.length == 2
@@ -130,5 +130,30 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     forAll { x: Array[Boolean] =>
       eq(Builder.DefaultCollBuilder.fromArray(x))
     }
+  }
+
+  property("LogicalNot equivalence") {
+    val eq = checkEq(func[Boolean, Boolean]("{ (x: Boolean) => !x }")) { x => !x }
+    forAll { x: Boolean => eq(x) }
+  }
+
+  property("Negation equivalence") {
+    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { x => (-x).toByte }
+    forAll { x: Byte => negByte(x) }
+    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { x => (-x).toShort }
+    forAll { x: Short => negShort(x) }
+    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { x => -x }
+    forAll { x: Int => negInt(x) }
+    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { x => -x }
+    forAll { x: Long => negLong(x) }
+    val negBigInteger = checkEq(func[BigInteger, BigInteger]("{ (x: BigInt) => -x }")) { x => x.negate() }
+    forAll { x: scala.BigInt => negBigInteger(x.bigInteger) }
+  }
+
+  property("BinXor(logical XOR) equivalence") {
+    val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
+      x => x._1 ^ x._2
+    }
+    forAll { x: (Boolean, Boolean) => eq(x) }
   }
 }

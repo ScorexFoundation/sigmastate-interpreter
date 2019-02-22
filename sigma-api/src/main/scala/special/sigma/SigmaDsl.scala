@@ -482,6 +482,8 @@ trait SigmaDslBuilder {
   def anyOf(conditions: Coll[Boolean]): Boolean
   def anyZK(conditions: Coll[SigmaProp]): SigmaProp
 
+  def xorOf(conditions: Coll[Boolean]): Boolean
+
   def PubKey(base64String: String): SigmaProp
 
   def sigmaProp(b: Boolean): SigmaProp
