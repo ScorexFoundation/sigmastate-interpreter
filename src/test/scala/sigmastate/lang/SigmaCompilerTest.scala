@@ -104,7 +104,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("ZKProof") {
-    testMissingCosting("ZKProof { sigmaProp(HEIGHT > 1000) }",
+    testMissingCostingWOSerialization("ZKProof { sigmaProp(HEIGHT > 1000) }",
       ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000)))))
   }
 
@@ -560,9 +560,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("byteArrayToLong") {
-    testMissingCosting("byteArrayToLong(longToByteArray(1L))",
-      ByteArrayToLong(LongToByteArray(LongConstant(1)))
-    )
+    comp("byteArrayToLong(longToByteArray(1L))") shouldBe ByteArrayToLong(LongToByteArray(LongConstant(1)))
   }
 
   property("xorOf") {
