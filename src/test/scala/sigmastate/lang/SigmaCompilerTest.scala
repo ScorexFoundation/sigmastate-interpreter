@@ -177,7 +177,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("Negation") {
-    testMissingCosting("-HEIGHT", Negation(Height))
+    comp("-HEIGHT") shouldBe Negation(Height)
   }
 
   property("BitInversion") {
