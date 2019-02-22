@@ -5,7 +5,7 @@ import java.math.BigInteger
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.CryptoConstants
 
-class GroupLawsSpec extends SigmaTestingCommons {
+class GroupLawsSpecification extends SigmaTestingCommons {
   private val group = CryptoConstants.dlogGroup
 
   property("multiplication law is complete") {
