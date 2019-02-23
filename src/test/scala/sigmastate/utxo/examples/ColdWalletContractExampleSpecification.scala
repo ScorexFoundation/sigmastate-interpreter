@@ -39,30 +39,31 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       "minSpend" -> IntConstant(minSpend)
     )
 
+    // assume that person topping up address creates the box correctly... i.e., sets the correct value of start (in R4)
     val script = compileWithCosting(env,
       """{
-        |  val min = SELF.R5[Long].get // min balance needed in this period
+        |  val lastMinBal = SELF.R5[Long].get // min balance needed in this period
         |  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
-        |  val start = min(depth, SELF.R4[Int].get) // height at which period started
-        |  val notExpired = HEIGHT - start <= blocksIn24h
+        |  val lastStart = min(depth, SELF.R4[Int].get) // height at which period started
+        |  val notExpired = HEIGHT - lastStart <= blocksIn24h
         |
-        |  val ours:Long = SELF.value - SELF.value * percent / 100
-        |  val keep = if (ours > minSpend) ours else 0L
+        |  val toKeep = max(SELF.value - max(SELF.value * percent / 100, minSpend), 0L)
         |
-        |  val newStart:Int = if (notExpired) start else HEIGHT
-        |  val newMin:Long = if (notExpired) min else keep
+        |  val newStart:Int = if (notExpired) lastStart else HEIGHT
+        |  val newMinBal:Long = if (notExpired) lastMinBal else toKeep
         |
-        |  val isValidOut = OUTPUTS.exists({(out:Box) =>
+        |  // to avoid the case of spending multiple boxes and creating only one output, we ensure INPUTS.size == 1
+        |  val isValidOut = INPUTS.size == 1 && OUTPUTS.exists({(out:Box) =>
         |    out.propositionBytes == SELF.propositionBytes &&
-        |    out.value >= newMin &&
+        |    out.value >= newMinBal &&
         |    out.R4[Int].get >= newStart &&
-        |    out.R5[Long].get == newMin
+        |    out.R5[Long].get == newMinBal
         |  })
         |
         |  (alice && bob) || (
-        |    min >= keep && // topup should keep min > keep else UTXO becomes unspendable by (Alice OR Bob)
+        |    lastMinBal >= toKeep && // topup should keep lastMinBal > toKeep else UTXO becomes unspendable by (Alice OR Bob)
         |    (alice || bob) &&
-        |    (newMin == 0 || isValidOut)
+        |    (newMinBal == 0 || isValidOut)
         |  )
         |}""".stripMargin).asBoolValue
 
@@ -70,9 +71,9 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
 
     // someone creates a transaction that outputs a box depositing money into the wallet.
     // In the example, we don't create the transaction; we just create a box below
-    val depositAmount = 10000L
-    val depositHeight = 100
-    val min = depositAmount - depositAmount * percent/100
+    val depositAmount = 100000L // 100k
+    val depositHeight = 50
+    val min = depositAmount - depositAmount * percent/100 // should be 99000 (99k)
 
     val depositOutput = ErgoBox(depositAmount, address.script, depositHeight, Nil,
       Map(
@@ -84,12 +85,12 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val carol = new ErgoLikeTestProvingInterpreter // paying to carol, some arbitrary user
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
-    val firstWithdrawHeight = depositHeight + 1 //
+    val firstWithdrawHeight = depositHeight + 1 // quickly withdraw (before expiry)
 
     val spendEnv = Map(ScriptNameProp -> "spendEnv")
 
     // Both Alice ane Bob withdraw
-    val withdrawAmountFull = depositAmount
+    val withdrawAmountFull = depositAmount // full amount is withdrawn
 
     val withdrawOutputAliceAndBob = ErgoBox(withdrawAmountFull, carolPubKey, firstWithdrawHeight)
 
@@ -110,14 +111,14 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
 
     verifier.verify(spendEnv, script, withdrawContextAliceandBob, proofAliceAndBobWithdraw, fakeMessage).get._1 shouldBe true
 
-    // One of Alice or Bob withdraws
-    val firstWithdrawAmount = depositAmount * percent / 100 // less than or eqaul to percent
-    val firstChangeAmount = depositAmount - firstWithdrawAmount
+    // One of Alice or Bob withdraws (1% max)
+    val firstWithdrawAmount = depositAmount * percent / 100     // less than or eqaul to percent (1000)
+    val firstChangeAmount = depositAmount - firstWithdrawAmount // 99000
 
     val firstChangeOutput = ErgoBox(firstChangeAmount, address.script, firstWithdrawHeight, Nil,
       Map(
-        R4 -> IntConstant(depositHeight), // newStart (= old start)
-        R5 -> LongConstant(min) // newMin (= old min)
+        R4 -> IntConstant(depositHeight), // newStart (= old start) = 50
+        R5 -> LongConstant(min) // newMin (= old min) = 99000
       )
     )
     val firstWithdrawOutput = ErgoBox(firstWithdrawAmount, carolPubKey, firstWithdrawHeight)
@@ -126,7 +127,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val firstWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput, firstWithdrawOutput))
 
     val firstWithdrawContext = ErgoLikeContext(
-      currentHeight = firstWithdrawHeight,
+      currentHeight = firstWithdrawHeight, // 51
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
@@ -151,7 +152,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     )
     val withdrawOutputInvalid = ErgoBox(withdrawAmountInvalid, carolPubKey, firstWithdrawHeight)
 
-    //normally this transaction would be invalid, but we're not checking it in this test
+    // normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTxInvalid = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(changeOutputInvalid, withdrawOutputInvalid))
 
     val withdrawContextInvalid = ErgoLikeContext(
@@ -170,10 +171,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       bob.prove(spendEnv, script, withdrawContextInvalid, fakeMessage).get
     )
 
-    // second withdraw
+    // second withdraw (valid case)
     val secondWithdrawHeight = depositHeight + blocksIn24h + 1
 
-    val secondWithdrawAmount = firstChangeAmount * percent / 100 // less than or eqaul to percent
+    val secondWithdrawAmount = firstChangeAmount * percent / 100 // less than or equal to percent
     val secondChangeAmount = firstChangeAmount - secondWithdrawAmount
     val secondMin = firstChangeAmount - firstChangeAmount * percent/100
 
@@ -200,7 +201,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     val proofAliceSecondWithdraw = alice.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
     verifier.verify(env, script, secondWithdrawContext, proofAliceSecondWithdraw, fakeMessage).get._1 shouldBe true
 
-    val proofBobSecondWithdraw = alice.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
+    val proofBobSecondWithdraw = bob.prove(spendEnv, script, secondWithdrawContext, fakeMessage).get.proof
     verifier.verify(env, script, secondWithdrawContext, proofBobSecondWithdraw, fakeMessage).get._1 shouldBe true
 
   }

@@ -178,7 +178,9 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 \section{\langname Examples}
 
 We give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository~\cite{langrepo}. 
-Although \langname syntax looks similar to Scala, it is not Scala. To avoid confusion, \langname code is highlighted like \Hi{\texttt{this}}.
+Although \langname syntax looks similar to Scala, it is not Scala. To avoid confusion, \langname code is highlighted like \Hi{\texttt{this}}. 
+%The examples use the protocol concepts defined in Appendix~\ref{ergo:internals}. 
+%To do: add appendix explaining box structure, how a tx is formed, etc. For now refer to yellow paper
 
 \subsection{Short-lived Unconfirmed Transactions: Paying for Coffee}
 
@@ -478,6 +480,12 @@ For this to work, each output must be of a fixed value and the fee should be zer
 \textbf{Handling Fee:} TBD
 %\snote{To do: describe fee handling.}
 
+%\appendix
+
+%\section{Ergo Internals}
+%\label{ergo:internals}
+
+One of the fundamental structures of the protocol are {\em Boxes}, which are somewhat like Bitcoin's UTXOs. Another important concept is a {\em Box candiate}, which is 
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
