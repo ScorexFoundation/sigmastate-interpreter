@@ -1,6 +1,7 @@
 package special.sigma
 
 import special.wrappers.WrappersTests
+
 import scala.language.reflectiveCalls
 import scalan.SigmaLibrary
 import special.sigma.Extensions._

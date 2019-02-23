@@ -1,18 +1,15 @@
 package sigmastate
 
 import java.util
-import java.util.{Arrays, Objects}
-
+import java.util.{Objects, Arrays}
 import scorex.crypto.authds.ADDigest
-import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{SigmaDslBuilder, TreeFlags}
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {
-//  def downCast(): TreeFlags = AvlTreeFlags(insertAllowed, updateAllowed, removeAllowed)
+  def serializeToByte: Byte = AvlTreeFlags.serializeFlags(this)
 }
 
 object AvlTreeFlags {

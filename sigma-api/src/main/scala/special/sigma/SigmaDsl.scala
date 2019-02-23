@@ -327,27 +327,87 @@ trait Box {
   override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"
 }
 
-@scalan.Liftable
-trait TreeFlags {
-  def insertAllowed: Boolean
-  def updateAllowed: Boolean
-  def removeAllowed: Boolean
-}
-
+/** Type of data which efficiently authenticates potentially huge dataset having key-value dictionary interface.
+  * Only root hash of dynamic AVL+ tree, tree height, key length, optional value length, and access flags are stored
+  * in an instance of the datatype.
+  *
+  * Please note that standard hash function from `scorex.crypto.hash` is used, and height is stored along with root hash of
+  * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
+  */
 @scalan.Liftable
 trait AvlTree {
-  def startingDigest: Coll[Byte]
-  def treeFlags: TreeFlags
-  def keyLength: Int
-  def valueLengthOpt: Option[Int]
-  def cost: Int
-  def dataSize: Long
-
-  def updateDigest(newDigest: Coll[Byte]): AvlTree
   /** Returns digest of the state represent by this tree.
+    * Authenticated tree digest: root hash along with tree height
     * @since 2.0
     */
   def digest: Coll[Byte]
+
+  /** Flags of enabled operations packed in single byte.
+    * isInsertAllowed == (enabledOperations & 0x01) != 0
+    * isUpdateAllowed == (enabledOperations & 0x02) != 0
+    * isRemoveAllowed == (enabledOperations & 0x04) != 0
+    */
+  def enabledOperations: Byte
+
+  /** All the elements under the tree have the same length of the keys */
+  def keyLength: Int
+  
+  /** If non-empty, all the values under the tree are of the same length. */
+  def valueLengthOpt: Option[Int]
+
+  def cost: Int
+  def dataSize: Long
+
+  /** Checks if Insert operation is allowed for this tree instance. */
+  def isInsertAllowed: Boolean
+
+  /** Checks if Update operation is allowed for this tree instance. */
+  def isUpdateAllowed: Boolean
+
+  /** Checks if Remove operation is allowed for this tree instance. */
+  def isRemoveAllowed: Boolean
+
+  /** Replace digest of this tree producing a new tree.
+    * Since AvlTree is immutable, this tree instance remains unchanged.
+    * @param newDigest   a new digest
+    * @return a copy of this AvlTree instance where `this.digest` replaced by `newDigest`
+    */
+  def updateDigest(newDigest: Coll[Byte]): AvlTree
+
+  /** Enable/disable operations of this tree producing a new tree.
+    * Since AvlTree is immutable, `this` tree instance remains unchanged.
+    * @param newOperations  a new flags which specify available operations on a new tree.
+    * @return               a copy of this AvlTree instance where `this.enabledOperations`
+    *                       replaced by `newOperations`
+    */
+  def updateOperations(newOperations: Byte): AvlTree
+
+  def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
+
+  /** @param key    a key of an element of this authenticated dictionary.
+    * @param proof
+    */
+  def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+
+  /** @param operations   collection of key-value pairs to insert in this authenticated dictionary.
+    * @param proof
+    */
+  def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** @param operations   collection of key-value pairs to update in this authenticated dictionary.
+    * @param proof
+    */
+  def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** @param operations   serialized collection of Operation instances to perform with this authenticated dictionary.
+    * @param proof
+    */
+  def modify(operationsBytes: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
+
+  /** @param operations   collection of keys to remove from this authenticated dictionary.
+    * @param proof
+    */
+  def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
 
 /** Only header fields that can be predicted by a miner.
@@ -466,6 +526,8 @@ trait Context {
   def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
 
+  def executeVar[T](id: Byte)(implicit cT: RType[T]): T
+
   private[sigma] def cost: Int
   private[sigma] def dataSize: Long
 }
@@ -504,7 +566,7 @@ trait SigmaContract {
 
   def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = this.builder.treeModifications(tree, operations, proof)
+//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = this.builder.treeModifications(tree, operations, proof)
 
   def groupGenerator: GroupElement = this.builder.groupGenerator
 
@@ -555,7 +617,6 @@ trait SigmaDslBuilder {
   def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
   def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
   def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
-
 
   def groupGenerator: GroupElement
 

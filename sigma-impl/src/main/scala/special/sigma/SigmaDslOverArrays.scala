@@ -12,22 +12,6 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
 
-case class TestAvlTree(
-    startingDigest: Coll[Byte],
-    treeFlags: TreeFlags,
-    keyLength: Int,
-    valueLengthOpt: Option[Int] = None) extends AvlTree {
-  def builder = new TestSigmaDslBuilder
-  @NeverInline
-  def dataSize = startingDigest.length + 4 + valueLengthOpt.fold(0L)(_ => 4)
-  @NeverInline
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-  @NeverInline
-  def digest: Coll[Byte] = ???
-  @NeverInline
-  def updateDigest(newDigest: Coll[Byte]): AvlTree = this.copy(startingDigest = newDigest)
-}
-
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder
@@ -107,7 +91,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???
 
   @NeverInline
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = treeLookup(tree, key, proof).isDefined
+  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = ???
 
   @NeverInline
   def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???

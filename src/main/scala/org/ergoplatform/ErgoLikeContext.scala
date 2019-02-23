@@ -60,7 +60,7 @@ class ErgoLikeContext(val currentHeight: Height,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
-    new CostingDataContext(IR,
+    new CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
       minerPubkey,
       vars.toArray,

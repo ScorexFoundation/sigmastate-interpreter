@@ -2,22 +2,17 @@ package sigmastate.interpreter
 
 import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.VerificationResult
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, SigmaSerializer, ValueSerializer}
-import sigma.util.Extensions._
-import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}

@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
-import scorex.crypto.authds.avltree.batch.{Lookup, Remove, Operation, Insert}
+import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
@@ -18,21 +18,23 @@ import special.sigma.Extensions._
 
 import scala.util.{Success, Failure}
 import scalan.RType
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scorex.crypto.hash.{Sha256, Digest32, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+
+import scala.reflect.ClassTag
 
 trait WrapperOf[T] {
   def wrappedValue: T
 }
 
 case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
-  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+  override val dsl = CostingSigmaDslBuilder
 }
 
 case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
-  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+  override val dsl = CostingSigmaDslBuilder
 }
 
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
@@ -70,20 +72,26 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
 }
 
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
-  val builder = new CostingSigmaDslBuilder()
+  val builder = CostingSigmaDslBuilder
+  val Colls = builder.Colls
 
   override def wrappedValue: AvlTreeData = treeData
 
-  def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.digest)
+  def startingDigest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
   def keyLength: Int = treeData.keyLength
 
-  def treeFlags = new TreeFlags {
-    override def removeAllowed: Boolean = treeData.treeFlags.removeAllowed
+  def enabledOperations = treeData.treeFlags.serializeToByte
 
-    override def updateAllowed: Boolean = treeData.treeFlags.updateAllowed
+  override def isInsertAllowed: Boolean = treeData.treeFlags.insertAllowed
 
-    override def insertAllowed: Boolean = treeData.treeFlags.insertAllowed
+  override def isUpdateAllowed: Boolean = treeData.treeFlags.updateAllowed
+
+  override def isRemoveAllowed: Boolean = treeData.treeFlags.removeAllowed
+
+  override def updateOperations(newOperations: Byte): AvlTree = {
+    val td = treeData.copy(treeFlags = AvlTreeFlags(newOperations))
+    this.copy(treeData = td)
   }
 
   def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
@@ -92,11 +100,99 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
 
-  override def digest: Coll[Byte] = builder.Colls.fromArray(treeData.digest)
+  override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
   def updateDigest(newDigest: Coll[Byte]): AvlTree = {
     val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
     this.copy(treeData = td)
+  }
+
+  private def createVerifier(proof: Coll[Byte]): BatchAVLVerifier[Digest32, Blake2b256.type] = {
+    val adProof = SerializedAdProof @@ proof.toArray
+    val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
+      treeData.digest, adProof,
+      treeData.keyLength, treeData.valueLengthOpt)
+    bv
+  }
+
+  override def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
+    val keyBytes = key.toArray
+    val bv = createVerifier(proof)
+    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+      case Failure(_) => false
+      case Success(r) => r match {
+        case Some(_) => true
+        case _ => false
+      }
+    }
+  }
+
+  override def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
+    val keyBytes = key.toArray
+    val bv = createVerifier(proof)
+    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
+      case Success(r) => r match {
+        case Some(v) => Some(Colls.fromArray(v))
+        case _ => None
+      }
+    }
+  }
+
+  override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isInsertAllowed) {
+      None
+    } else {
+      val bv = createVerifier(proof)
+      operations.forall { case (key, value) =>
+        bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+      }
+      bv.digest match {
+        case Some(d) => Some(updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isUpdateAllowed) {
+      None
+    } else {
+      val bv = createVerifier(proof)
+      operations.forall { case (key, value) =>
+        bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+      }
+      bv.digest match {
+        case Some(d) => Some(updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def modify(operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
+    val operationsBytes = operations.toArray
+    val bv = createVerifier(proof)
+    val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
+    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes))
+    ops.foreach(o => bv.performOneOperation(o))
+    bv.digest match {
+      case Some(v) => Some(updateDigest(Colls.fromArray(v)))
+      case _ => None
+    }
+  }
+
+  override def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isRemoveAllowed) {
+      None
+    } else {
+      val keysToRemove = operations.toArray.map(_.toArray)
+      val bv = createVerifier(proof)
+      keysToRemove.foreach(key => bv.performOneOperation(Remove(ADKey @@ key)))
+      bv.digest match {
+        case Some(v) => Some(updateDigest(Colls.fromArray(v)))
+        case _ => None
+      }
+    }
   }
 }
 
@@ -250,66 +346,24 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
   def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
-  override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
-    val keyBytes = key.toArray
-    val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CAvlTree].treeData
-    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
-      case Success(r) => r match {
-        case Some(v) => Some(Colls.fromArray(v))
-        case _ => None
-      }
-    }
+  override def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = {
+    tree.contains(key, proof)
   }
 
-  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
-    val operationsBytes = operations.toArray
-    val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CAvlTree].treeData
-    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-    val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
-    ops.foreach(o => bv.performOneOperation(o))
-    bv.digest match {
-      case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
-      case _ => None
-    }
+  override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
+    tree.get(key, proof)
   }
 
   override def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
-    if (!tree.treeFlags.insertAllowed) {
-      None
-    } else {
-      val proofBytes = proof.toArray
-      val treeData = tree.asInstanceOf[CAvlTree].treeData
-      val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-      println("operations: " + operations)
-      val ops = operations.map(t => t)
-      println(ops)
-      operations.forall{case (key, value) => bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess}
-      bv.digest match {
-        case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
-        case _ => None
-      }
-    }
+    tree.insert(operations, proof)
+  }
+
+  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
+    tree.modify(operations, proof)
   }
 
   override def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
-    if (!tree.treeFlags.removeAllowed) {
-      None
-    } else {
-      val keysToRemove = operations.toArray.map(_.toArray)
-      val proofBytes = proof.toArray
-      val treeData = tree.asInstanceOf[CAvlTree].treeData
-      val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-      keysToRemove.foreach(key => bv.performOneOperation(Remove(ADKey @@ key)))
-      bv.digest match {
-        case Some(v) => Some(tree.updateDigest(Colls.fromArray(v)))
-        case _ => None
-      }
-    }
+    tree.remove(operations, proof)
   }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
@@ -379,8 +433,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
-class CostingDataContext(
-    val IR: Evaluation,
+case class CostingDataContext(
     _dataInputs: Array[Box],
     override val headers: Coll[Header],
     override val preHeader: PreHeader,
@@ -389,18 +442,42 @@ class CostingDataContext(
     height: Int,
     selfBox: Box,
     lastBlockUtxoRootHash: AvlTree,
-    minerPubKey: Array[Byte],
+    _minerPubKey: Array[Byte],
     vars: Array[AnyValue],
     var isCost: Boolean)
-    extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, minerPubKey, vars)
+    extends Context
 {
-  override val builder = new CostingSigmaDslBuilder()
+  @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+  @inline def HEIGHT: Int = height
+  @inline def SELF: Box   = selfBox
+  @inline def dataInputs: Coll[Box] = builder.Colls.fromArray(_dataInputs)
+  @inline def INPUTS = builder.Colls.fromArray(inputs)
+  @inline def OUTPUTS = builder.Colls.fromArray(outputs)
+  @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+  @inline def minerPubKey = builder.Colls.fromArray(_minerPubKey)
 
-  override def dataInputs: Coll[Box] = builder.Colls.fromArray(_dataInputs)
+  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
 
-  override def getVar[T](id: Byte)(implicit tT: RType[T]) =
+  def dataSize = {
+    val inputsSize = INPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
+    val outputsSize = OUTPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
+    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + LastBlockUtxoRootHash.dataSize
+  }
+
+  def findSelfBoxIndex: Int = {
+    var i = 0
+    while (i < inputs.length) {
+      if (inputs(i) eq selfBox) return i
+      i += 1
+    }
+    -1
+  }
+
+  override val selfBoxIndex: Int = findSelfBoxIndex
+
+  override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
     if (isCost) {
-//      implicit val tag: ClassTag[T] = cT.classTag
+      //      implicit val tag: ClassTag[T] = cT.classTag
       val optV =
         if (id < 0 || id >= vars.length) None
         else {
@@ -419,6 +496,21 @@ class CostingDataContext(
         val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
         Some(Constant[SType](default, tpe).asInstanceOf[T])
       }
-    } else
-      super.getVar(id)(tT)
+    } else {
+      implicit val tag: ClassTag[T] = tT.classTag
+      if (id < 0 || id >= vars.length) return None
+      val value = vars(id)
+      if (value != null ) {
+        // once the value is not null it should be of the right type
+        value match {
+          case value: TestValue[_] if value.value != null && value.tA == tT =>
+            Some(value.value.asInstanceOf[T])
+          case _ =>
+            throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
+        }
+      } else None
+    }
+  }
+
+  override def executeVar[T](id: Byte)(implicit cT: RType[T]): T = ???
 }

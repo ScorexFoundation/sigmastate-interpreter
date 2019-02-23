@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.scalatest.{Matchers, FunSuite}
 import special.sigma.Extensions._
-import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestContext, TestSigmaDslBuilder, SigmaDslBuilder}
+import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestSigmaDslBuilder, SigmaDslBuilder}
 
 import scala.language.implicitConversions
 
@@ -60,7 +60,7 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   test("examples from wpaper")  {
     val selfId = collection[Byte](0, 1)
     val self = new TestBox(selfId, 10, noBytes, noBytes, noBytes, noRegisters)
-    val ctx = new TestContext(noInputs, noOutputs, _height = 200, self, emptyAvlTree, dummyPubkey, Array())
+    val ctx = testContext(noInputs, noOutputs, height = 200, self, emptyAvlTree, dummyPubkey, Array())
   }
 
   test("box.creationInfo._1 is Int") {

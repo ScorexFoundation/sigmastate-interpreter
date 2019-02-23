@@ -1,7 +1,7 @@
 package special.sigma
 
 import special.SpecialPredef
-import special.collection.{Coll, _}
+import special.collection.{Coll, CCostedPrim, _}
 
 import scala.reflect.ClassTag
 import scalan.RType
@@ -61,8 +61,8 @@ class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
 
 class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
   def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.startingDigest, dsl.CostModel.PubKeySize.toInt, 1)
-  override def treeFlags: Costed[TreeFlags] = ???
+  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.digest, dsl.CostModel.PubKeySize.toInt, 1)
+  def enabledOperations: Costed[Byte] = new CCostedPrim(tree.enabledOperations, dsl.CostModel.SelectField, 1)
   def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
   def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
 
