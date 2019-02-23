@@ -3,6 +3,7 @@ package special.sigma
 import java.math.BigInteger
 
 import com.google.common.primitives.Longs
+import org.ergoplatform.dsl.{SigmaContractSyntax, StdContracts, TestContractSpec}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import org.scalacheck.{Arbitrary, Gen}
@@ -31,7 +32,16 @@ trait SigmaTypeGens extends ValueGenerators {
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with SigmaTestingCommons with CollGens with SigmaTypeGens {
+class SigmaDslTest extends PropSpec
+  with PropertyChecks
+  with Matchers
+  with SigmaTestingCommons
+  with SigmaTypeGens
+  with SigmaContractSyntax
+  with StdContracts { suite =>
+
+  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
@@ -80,7 +90,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
-    forAll(valGen) { x: Int =>
+    forAll { x: Int =>
       whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
         toByte(x)
       }
@@ -108,7 +118,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     import sigma.types._
     val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
     lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
-    forAll(valGen) { in: scala.Int =>
+    forAll { in: scala.Int =>
       whenever(scala.Byte.MinValue <= in && in <= scala.Byte.MaxValue) {
         val x = CInt(in)
         toByte(x)
@@ -116,12 +126,20 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
+  ignore("longToByteArray equivalence") {
+    // TODO fix Array[Byte] != CollOverArray in result type comparison
+    val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
+      longToByteArray(x)
+    }
+    forAll { x: Long => eq(x) }
+  }
+
   property("byteArrayToLong equivalence") {
     val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
-      Longs.fromByteArray(x.toArray)
+      byteArrayToLong(x)
     }
     forAll { x: Array[Byte] =>
-      whenever(x.size >= 8) {
+      whenever(x.length >= 8) {
         eq(Builder.DefaultCollBuilder.fromArray(x))
       }
     }
@@ -129,7 +147,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 
   property("xorOf equivalence") {
     val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => xorOf(x) }")) { x =>
-      x.toArray.distinct.length == 2
+      xorOf(x)
     }
     forAll { x: Array[Boolean] =>
       eq(Builder.DefaultCollBuilder.fromArray(x))
@@ -137,11 +155,13 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   }
 
   property("LogicalNot equivalence") {
+    // TODO make a prefix method
     val eq = checkEq(func[Boolean, Boolean]("{ (x: Boolean) => !x }")) { x => !x }
     forAll { x: Boolean => eq(x) }
   }
 
   property("Negation equivalence") {
+    // TODO make a prefix method
     val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { x => (-x).toByte }
     forAll { x: Byte => negByte(x) }
     val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { x => (-x).toShort }
