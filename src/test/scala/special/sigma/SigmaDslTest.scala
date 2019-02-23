@@ -8,10 +8,12 @@ import org.scalatest.{Matchers, PropSpec}
 import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
+import sigmastate.eval.CBigInt
+import sigmastate.serialization.generators.ValueGenerators
 import special.collection.{Builder, Coll}
 import special.collections.CollGens
 
-trait SigmaTypeGens {
+trait SigmaTypeGens extends ValueGenerators {
   import Gen._; import Arbitrary._
   import sigma.types._
   val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
@@ -22,6 +24,9 @@ trait SigmaTypeGens {
 
   val genInt = Arbitrary.arbInt.arbitrary.map(CInt(_): Int)
   implicit val arbInt = Arbitrary(genInt)
+
+  val genBigInt = arbBigInteger.arbitrary.map(CBigInt(_): BigInt)
+  implicit val arbBigInt = Arbitrary(genBigInt)
 }
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -145,8 +150,14 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     forAll { x: Int => negInt(x) }
     val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { x => -x }
     forAll { x: Long => negLong(x) }
-    val negBigInteger = checkEq(func[BigInteger, BigInteger]("{ (x: BigInt) => -x }")) { x => x.negate() }
-    forAll { x: scala.BigInt => negBigInteger(x.bigInteger) }
+    // TODO add scala.BigInt test
+  }
+
+  ignore("special.sigma.BigInt Negation equivalence") {
+    // TODO fix return type (java.math.BigInteger)
+    // TODO make negate() into a prefix method
+    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { x => x.negate() }
+    forAll { x: BigInt => negBigInteger(x) }
   }
 
   ignore("BinXor(logical XOR) equivalence") {

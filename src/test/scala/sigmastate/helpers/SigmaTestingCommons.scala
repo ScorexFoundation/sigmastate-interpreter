@@ -88,11 +88,10 @@ trait SigmaTestingCommons extends PropSpec
     val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
     val tpeB = Evaluation.rtypeToSType(tB)
-    val getVarType = if (tpeA == SBigInt) "BigInt" else tA.name
     val code =
       s"""{
          |  val func = $func
-         |  val res = func(getVar[$getVarType](1).get)
+         |  val res = func(getVar[${tA.name}](1).get)
          |  res
          |}
       """.stripMargin
