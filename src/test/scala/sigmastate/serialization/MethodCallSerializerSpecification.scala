@@ -4,7 +4,7 @@ import org.ergoplatform.Outputs
 import sigmastate.Values.{FuncValue, ValUse}
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utxo.ExtractScriptBytes
-import sigmastate.{SBox, SByte, SCollection}
+import sigmastate._
 
 class MethodCallSerializerSpecification extends SerializationSpecification {
 
@@ -17,4 +17,12 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
     roundTripTest(expr)
   }
 
+  property("MethodCall deserialization round trip (non-generic method)") {
+    val expr = MethodCall(Outputs,
+      SMethod(SCollection, "size", SInt, 1),
+      Vector(),
+      Map()
+    )
+    roundTripTest(expr)
+  }
 }

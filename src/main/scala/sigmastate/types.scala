@@ -232,7 +232,16 @@ trait SProduct extends SType {
   * e.g. Array[T], Option[T], etc.)*/
 trait SGenericType {
   def typeParams: Seq[STypeParam]
-  def tparamSubst: Map[String, SType]
+  def tparamSubst: Map[STypeIdent, SType]
+
+  lazy val substitutedTypeParams: Seq[STypeParam] =
+    typeParams.map { tp =>
+      tparamSubst.getOrElse(tp.ident, tp.ident) match {
+        case v: STypeIdent => STypeParam(v)
+        case _ => tp
+      }
+    }
+
 }
 
 /** Method info including name, arg type and result type.
@@ -565,7 +574,8 @@ case object SUnit extends SPrimType {
 
 /** Type description of optional values. Instances of `Option`
   *  are either constructed by `Some` or by `None` constructors. */
-case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
+case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with SGenericType {
+  import SOption._
   override type WrappedType = Option[ElemType#WrappedType]
   override val typeCode: TypeCode = SOption.OptionTypeCode
   override def dataSize(v: SType#WrappedType) = {
@@ -576,6 +586,8 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   def ancestors = Nil
   override def methods: Seq[SMethod] = SOption.methods
   override def toString = s"Option[$elemType]"
+  val typeParams: Seq[STypeParam] = Seq(STypeParam(tT))
+  def tparamSubst: Map[STypeIdent, SType] = Map(tT -> elemType)
 }
 
 object SOption extends STypeCompanion {
@@ -662,8 +674,8 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
         arr.map(x => elemType.dataSize(x)).sum
     res
   }
-  def typeParams = SCollectionType.typeParams
-  def tparamSubst = Map(tIV.name -> elemType)
+  def typeParams: Seq[STypeParam] = SCollectionType.typeParams
+  def tparamSubst: Map[STypeIdent, SType] = Map(tIV -> elemType)
   override def methods = SCollection.methods
   override def toString = s"Coll[$elemType]"
 }
@@ -921,10 +933,12 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   }
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
-  val typeParams: Seq[STypeParam] = (tDom.zipWithIndex.map { case (t, i) => STypeParam(tD.name + (i + 1)) }) :+ STypeParam(tR.name)
-  val tparamSubst = typeParams.zip(tDom).map { case (p, t) => p.ident.name -> t }.toMap + (tR.name -> tRange)
+  val typeParams: Seq[STypeParam] = tpeParams
+  val tparamSubst: Map[STypeIdent, SType] = Map() // defined in MethodCall.typeSubst
 
   def getGenericType: SFunc = {
+    val typeParams: Seq[STypeParam] = tDom.zipWithIndex
+      .map { case (t, i) => STypeParam(tD.name + (i + 1)) } :+ STypeParam(tR.name)
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
