@@ -39,33 +39,10 @@ case class AvlTreeContract[Spec <: ContractSpec]
 
   lazy val proverSig = proposition("proverSig", { _ => pkProver }, env, "pkProver")
 }
-object AvlTreeHelpers {
 
-  /** Create authenticated dictionary with given allowed operations and key-value entries. */
-  def createAvlTree(flags: AvlTreeFlags, entries: (ADKey, ADValue)*): (AvlTree, BatchAVLProver[Digest32, Blake2b256.type]) = {
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    val ok = entries.forall { case (key, value) =>
-      avlProver.performOneOperation(Insert(key, value)).isSuccess
-    }
-    val proof = avlProver.generateProof()
-    val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, flags, 32, None)
-    (CAvlTree(treeData), avlProver)
-  }
-
-  def serializeOperations(avlProver: BatchAVLProver[Digest32, Blake2b256.type], operations: Seq[Operation]): Coll[Byte] = {
-    val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
-    val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
-    CostingSigmaDslBuilder.Colls.fromArray(opsBytes)
-  }
-
-  implicit class ArrayOps[T: RType](arr: Array[T]) {
-    def toColl: Coll[T] = CostingSigmaDslBuilder.Colls.fromArray(arr)
-  }
-}
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
-  import AvlTreeHelpers._
+  import org.ergoplatform.dsl.AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val prover = spec.ProvingParty("Alice")
   private implicit lazy val IR: IRContext = spec.IR

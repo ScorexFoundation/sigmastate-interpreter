@@ -2,19 +2,12 @@ package sigmastate.utxo.examples
 
 import sigmastate.helpers.SigmaTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.dsl.ErgoContractSpec
-import sigmastate.SCollection.SByteArray
 import special.collection.Coll
 import scorex.crypto.hash.Blake2b256
-import sigmastate.utxo._
-import org.ergoplatform.{Height, Outputs, ErgoBox, Self}
-import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ValDef, ValUse}
-import sigmastate._
-import sigmastate.lang.Terms.ValueOps
 
 class AssetsAtomicExchangeErgoTests extends SigmaTestingCommons { suite =>
-  lazy val spec = ErgoContractSpec(suite)(new TestingIRContext)
+  lazy val spec = new ErgoContractSpec()(new TestingIRContext)
   private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
   lazy val buyer = spec.ProvingParty("Alice")
   lazy val seller = spec.ProvingParty("Bob")

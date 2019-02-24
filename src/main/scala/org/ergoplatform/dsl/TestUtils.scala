@@ -1,23 +1,17 @@
 package org.ergoplatform.dsl
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
-import scalan.{Nullable, RType}
-import scorex.crypto.hash.Digest32
-import sigmastate.{AvlTreeData, SType}
+import scalan.RType
+import sigmastate.SType
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
-import sigmastate.Values.{ErgoTree, SValue, EvaluatedValue, Constant}
-import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.{CSigmaProp, IRContext, CostingSigmaDslBuilder, Evaluation}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ProverResult, ContextExtension, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.Values.{ErgoTree, Constant}
+import sigmastate.eval.{IRContext, CSigmaProp, CostingSigmaDslBuilder, Evaluation}
+import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.collection.Coll
-import special.sigma.{Extensions, SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder, TestValue}
+import special.sigma.{SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder}
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.Try
 

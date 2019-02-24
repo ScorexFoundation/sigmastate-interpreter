@@ -1,14 +1,12 @@
 package org.ergoplatform.dsl
 
 import special.collection.Coll
-import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.CostedProverResult
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.eval.IRContext
+import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 
-case class ErgoContractSpec(testSuite: SigmaTestingCommons)
-                           (implicit val IR: IRContext) extends ContractSpec {
+class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {
 
   case class ErgoOutBox(tx: Transaction, boxIndex: Int, value: Long, propSpec: PropositionSpec)
     extends OutBox {

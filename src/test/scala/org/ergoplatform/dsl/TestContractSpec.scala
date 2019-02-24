@@ -1,23 +1,25 @@
 package org.ergoplatform.dsl
 
-import scala.util.Try
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import special.sigma.{AnyValue, TestValue, SigmaProp}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoLikeTestInterpreter
-import scorex.crypto.hash.Digest32
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import sigmastate.lang.Terms.ValueOps
+
 import scala.collection.mutable
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.interpreter.{ProverResult, CostedProverResult}
 
 import scala.collection.mutable.ArrayBuffer
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import scalan.Nullable
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
-import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
+import scorex.crypto.hash.Digest32
+
+import scala.util.Try
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import sigmastate.{AvlTreeData, SType}
+import sigmastate.Values.{ErgoTree, EvaluatedValue}
+import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.lang.Terms.ValueOps
+import special.sigma.{AnyValue, TestValue, SigmaProp}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
