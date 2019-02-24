@@ -171,9 +171,11 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofBobSpend = bob.prove(withdrawEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+    val spendEnv = Map(ScriptNameProp -> "spendEnv")
 
-    verifier.verify(withdrawEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
+    val proofBobSpend = bob.prove(spendEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+
+    verifier.verify(spendEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
 
     // Possibility 2: Abort scenario
     // carol spends before bobDeadline
@@ -196,9 +198,9 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofCarolSpend = carol.prove(withdrawEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
+    val proofCarolSpend = carol.prove(spendEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
 
-    verifier.verify(withdrawEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
+    verifier.verify(spendEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
 
   }
 }
