@@ -330,48 +330,29 @@ These box registers provide additional capabilities to \langname. Consider, for 
         tokenData._1 == token1,
         tokenData._2 >= 60L,
         OUTPUTS(0).propositionBytes == pkA.propBytes,
-        OUTPUTS(0).value >= 1L
+        OUTPUTS(0).R4[Col[Byte]].get == SELF.id
     ))
   }
 \end{verbatim}
 
 
 This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
+Moreover, the last condition (\texttt{OUTPUTS(0).R4[Col[Byte]].get == SELF.id}) ensures that if Alice has multiple such boxes outstanding at a given time, each will produce a separate output that identifies the corresponding input. This condition prevents the following attack: if Alice has two such boxes outstanding but the last condition is not present, then they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each input box will be individually satisfied, but Alice will get less only half of what owed to her. 
 
 Bob, similarly, could create an output box with value 0
-\lnote{for some reason the example in the code we want value 1 --- why? It's not explained. Similarly, why do we need \texttt{OUTPUTS(0).value >= 1L} in the script above? } and 60 tokens of type \texttt{token1} and protect it by the following script:
+\lnote{for some reason the example in the code we want value 1 --- why? It's not explained.  } and 60 tokens of type \texttt{token1} and protect it by the following script:
 \begin{verbatim}
         (HEIGHT > deadline && pkB) || 
         allOf( Col(
                 OUTPUTS(1).value >= 100,
-                OUTPUTS(1).propositionBytes == pkB.propBytes
+                OUTPUTS(1).propositionBytes == pkB.propBytes,
+                OUTPUTS(1).R4[Col[Byte]].get == SELF.id
          ))
 \end{verbatim}
 
 \lnote{Is the \texttt{L} after constants 60, 1, and 100 necessary? Won't conversion happen automatically? Some constants in other scripts above that probably need to be long, like 100 for height, don't have it. We should be consistent and clarify this for the reader. Also, make sure that scripts here match testing code.}
 
 A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
-
-We caution that for security, Alice cannot have two such boxes outstanding at any given time, because they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each box will be individually satisfied, but Alice will get less only half of what owed to her. Same for Bob.
-
-\lnote{this seems like a pretty big security vulnerability and we should highlight it and show how to fix it. Restricting the number of inputs and outputs to just 2 is not enough. For example, suppose Alice has another box C in the UTXO with value 100 Ergo and 60 token1, and the following script:}
-\begin{verbatim}
-  (HEIGHT > deadline && pkA) || {
-    val tokenData = OUTPUTS(0).R2[Col[(Col[Byte], Long)]].get(0)
-    allOf(Col(
-        tokenData._1 == token1,
-        tokenData._2 >= 60L,
-        OUTPUTS(0).propositionBytes == pkA.propBytes,
-        OUTPUTS(0).value >= 100L
-    ))
-  } 
-  || ...
-\end{verbatim}
-\lnote{Basically, this script allows Alice to simply reclaim what she has in B; it may also also her to do other things, which is why  ``\texttt{|| ...}'' is there in the script. I don't know the purpose of such a script, but it seems plausible. Now, an adversary can create a transaction with two inputs: Alice's box above (which requires to give her 60 token1 in the output) and box C; and two outputs: output with value 100 Ergo + 60 token1 to Alice, and output with value 100 Ergo to the adversary). Alice just lost 100 Ergo.}
-
-
-\lnote{Another question: why do this instead of hash-based example?}
-
 \subsection{Self-Replicating Code}
 \label{sec:self-replicating}
 Access to box registers allow us to create self-replicating boxes, because a script can check that an output box contains the same script as \texttt{SELF}. As shown in \cite{CKM18}, this powerful tool allows for Turing-completeness as computation evolves from box to box, even if each individual script is not Turing-complete. We will demonstrate two examples of complex behavior via self-replication.
