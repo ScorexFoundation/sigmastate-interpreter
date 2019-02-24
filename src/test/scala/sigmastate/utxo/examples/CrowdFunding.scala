@@ -15,7 +15,7 @@ case class CrowdFunding[Spec <: ContractSpec]
   def pkBacker = backer.pubKey
   def pkProject = project.pubKey
   import syntax._
-  lazy val env = Env("pkBacker" -> pkBacker, "pkProject" -> pkProject, "deadline" -> deadline, "minToRaise" -> minToRaise)
+  lazy val contractEnv = Env("pkBacker" -> pkBacker, "pkProject" -> pkProject, "deadline" -> deadline, "minToRaise" -> minToRaise)
 
   lazy val holderProp = proposition("holder", { ctx: Context =>
     import ctx._
@@ -30,7 +30,6 @@ case class CrowdFunding[Spec <: ContractSpec]
 
     fundraisingFailure || fundraisingSuccess
   },
-  env,
   """
    |{
    |  val fundraisingFailure = HEIGHT >= deadline && pkBacker
@@ -46,8 +45,8 @@ case class CrowdFunding[Spec <: ContractSpec]
    |}
   """.stripMargin)
 
-  lazy val backerSignature  = proposition("backerSignature", _ => pkBacker, env, "pkBacker")
-  lazy val projectSignature = proposition("projectSignature", _ => pkProject, env, "pkProject")
+  lazy val backerSignature  = proposition("backerSignature", _ => pkBacker, "pkBacker")
+  lazy val projectSignature = proposition("projectSignature", _ => pkProject, "pkProject")
 
   lazy val oldProp = proposition("old", { ctx: Context =>
     import ctx._
@@ -59,7 +58,6 @@ case class CrowdFunding[Spec <: ContractSpec]
       })
     c1 || c2
   },
-  env,
   """
    |{
    |  val c1 = HEIGHT >= deadline && pkBacker

@@ -271,7 +271,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     def pkB = bob.pubKey
     def inRegId = reg1.asIndex
 
-    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "pkOracle" -> pkOracle, "inRegId" -> inRegId)
+    lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "pkOracle" -> pkOracle, "inRegId" -> inRegId)
 
     lazy val prop = proposition("buyer", { ctx: Context =>
       import ctx._
@@ -281,7 +281,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
       okInputs && okInput0 && okContractLogic
     },
-    env,
     """{
      |      val okInputs = INPUTS.size == 3
      |      val okInput0 = INPUTS(0).propositionBytes == pkOracle.propBytes
@@ -291,8 +290,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
      |}
     """.stripMargin)
 
-    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, env, "pkOracle")
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, env, "pkA")
+    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, "pkOracle")
+    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
   }
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)

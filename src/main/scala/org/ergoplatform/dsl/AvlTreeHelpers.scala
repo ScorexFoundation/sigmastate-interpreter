@@ -11,6 +11,7 @@ import special.sigma.AvlTree
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Operation, Insert}
 
 object AvlTreeHelpers {
+  val Colls = CostingSigmaDslBuilder.Colls
 
   /** Create authenticated dictionary with given allowed operations and key-value entries. */
   def createAvlTree(flags: AvlTreeFlags, entries: (ADKey, ADValue)*): (AvlTree, BatchAVLProver[Digest32, Blake2b256.type]) = {
@@ -27,10 +28,20 @@ object AvlTreeHelpers {
   def serializeOperations(avlProver: BatchAVLProver[Digest32, Blake2b256.type], operations: Seq[Operation]): Coll[Byte] = {
     val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
     val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
-    CostingSigmaDslBuilder.Colls.fromArray(opsBytes)
+    Colls.fromArray(opsBytes)
   }
 
   implicit class ArrayOps[T: RType](arr: Array[T]) {
-    def toColl: Coll[T] = CostingSigmaDslBuilder.Colls.fromArray(arr)
+    def toColl: Coll[T] = Colls.fromArray(arr)
+  }
+
+  implicit class ADKeyArrayOps(arr: Array[ADKey]) {
+    def toColl: Coll[Coll[Byte]] = Colls.fromArray(arr.map(x => Colls.fromArray(x)))
+  }
+  implicit class ADKeyValueArrayOps(arr: Array[(ADKey, ADValue)]) {
+    def toColl: Coll[(Coll[Byte], Coll[Byte])] = {
+      val kvs = arr.map { case (k, v) => (Colls.fromArray(k), Colls.fromArray(v)) }
+      Colls.fromArray(kvs)
+    }
   }
 }

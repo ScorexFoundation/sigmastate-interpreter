@@ -1025,8 +1025,10 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   def ancestors = Nil
 
   val DigestMethod = SMethod(this, "digest", SCollection(SByte), 1, MethodCallIrBuilder)
+  val ModifyMethod = SMethod(this, "modify", SFunc(IndexedSeq(SAvlTree, SCollection(SByte), SCollection(SByte)), SOption(SAvlTree) ), 2, MethodCallIrBuilder)
   override val methods: Seq[SMethod] = Seq(
-    DigestMethod
+    DigestMethod,
+    ModifyMethod
   )
 }
 

@@ -19,6 +19,7 @@ trait ContractSyntax { contract: SigmaContract =>
   override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder
   val spec: ContractSpec
   val syntax = new DslSyntaxExtensions(builder)
+  def contractEnv: ScriptEnv
 
   /** The default verifier which represents miner's role in verification of transactions.
     * It can be overriden in derived classes. */
@@ -26,8 +27,8 @@ trait ContractSyntax { contract: SigmaContract =>
 
   def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
-  def proposition(name: String, dslSpec: Proposition, scriptEnv: ScriptEnv, scriptCode: String) = {
-    val env = scriptEnv.mapValues(v => v match {
+  def proposition(name: String, dslSpec: Proposition, scriptCode: String) = {
+    val env = contractEnv.mapValues(v => v match {
       case sp: CSigmaProp => sp.sigmaTree
       case coll: Coll[SType#WrappedType]@unchecked =>
         val elemTpe = Evaluation.rtypeToSType(coll.tItem)

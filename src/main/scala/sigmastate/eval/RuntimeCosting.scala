@@ -799,6 +799,17 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     case ae: WArrayElem[t,_] =>
       implicit val lt = liftableFromElem[t](ae.eItem)
       liftableArray(lt)
+    case ce: CollElem[t,_] =>
+      implicit val lt = liftableFromElem[t](ce.eItem)
+      liftableColl(lt)
+    case pe: PairElem[a,b] =>
+      implicit val la = liftableFromElem[a](pe.eFst)
+      implicit val lb = liftableFromElem[b](pe.eSnd)
+      PairIsLiftable(la, lb)
+    case pe: FuncElem[a,b] =>
+      implicit val la = liftableFromElem[a](pe.eDom)
+      implicit val lb = liftableFromElem[b](pe.eRange)
+      FuncIsLiftable(la, lb)
   }).asInstanceOf[Liftable[_,WT]]
 
   import NumericOps._
