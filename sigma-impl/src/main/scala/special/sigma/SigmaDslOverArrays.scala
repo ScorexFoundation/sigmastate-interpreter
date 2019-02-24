@@ -135,5 +135,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
   @NeverInline
   def toECPoint(ge: GroupElement): ECPoint = ge.value
+
+  def AvlTree(flags: Byte, entries: Coll[(Coll[Byte], Coll[Byte])]): AvlTree = ???
 }
 

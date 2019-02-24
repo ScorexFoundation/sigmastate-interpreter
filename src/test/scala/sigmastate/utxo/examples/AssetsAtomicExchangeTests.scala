@@ -46,9 +46,6 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
   lazy val buyer = spec.ProvingParty("Alice")
   lazy val seller = spec.ProvingParty("Bob")
 
-  property("ergo test") {
-
-  }
   property("atomic exchange spec") {
     val contract = new AssetsAtomicExchange[spec.type](70, tokenId, buyer, seller)(spec) {
       import spec._

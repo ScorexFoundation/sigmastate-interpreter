@@ -346,6 +346,17 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
   def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
+  override def AvlTree(flags: Byte, entries: Coll[(Coll[Byte], Coll[Byte])]): AvlTree = {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val ok = entries.forall { case (key, value) =>
+      avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+    }
+    val proof = avlProver.generateProof()
+    val digest = avlProver.digest
+    val treeData = new AvlTreeData(digest, AvlTreeFlags(flags), 32, None)
+    CAvlTree(treeData)
+  }
+
   override def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = {
     tree.contains(key, proof)
   }

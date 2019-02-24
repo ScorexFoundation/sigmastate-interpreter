@@ -629,5 +629,9 @@ trait SigmaDslBuilder {
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
   def toBigInteger(n: BigInt): BigInteger
+
+  /** Create authenticated dictionary with given allowed operations and key-value entries. */
+  def AvlTree(flags: Byte, entries: Coll[(Coll[Byte], Coll[Byte])]): AvlTree
+
 }
 

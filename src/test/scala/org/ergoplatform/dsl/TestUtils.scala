@@ -58,10 +58,11 @@ trait SigmaContractSyntax extends SigmaContract with ContractSyntax {
 
 trait ContractSpec {
   val dsl: SigmaDslBuilder = CostingSigmaDslBuilder
-  implicit def Coll[T](items: Array[T])(implicit cT: RType[T]) = dsl.Colls.fromArray(items)
+  val Colls = dsl.Colls
+
+  implicit def Coll[T](items: Array[T])(implicit cT: RType[T]) = Colls.fromArray(items)
 
   val IR: IRContext
-
 
   import SType.AnyOps
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
@@ -161,6 +162,10 @@ trait ContractSpec {
 
   val MinErgValue = 1
   def error(msg: String) = sys.error(msg)
+
+  implicit class ArrayOps[T: RType](arr: Array[T]) {
+    def toColl: Coll[T] = dsl.Colls.fromArray(arr)
+  }
 }
 
 

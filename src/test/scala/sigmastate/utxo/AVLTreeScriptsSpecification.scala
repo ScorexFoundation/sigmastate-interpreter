@@ -3,27 +3,81 @@ package sigmastate.utxo
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
+import org.ergoplatform.dsl.{TestContractSpec, ContractSpec, StdContracts, SigmaContractSyntax}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval.{IRContext, CostingSigmaDslBuilder}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
+import special.sigma.{Context, Box}
 
-class AVLTreeScriptsSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
+  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  private implicit lazy val IR: IRContext = spec.IR
+
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
   def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
-
   def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
+  case class CrowdFunding[Spec <: ContractSpec]
+  (deadline: Int, minToRaise: Long,
+      prover: Spec#ProvingParty)
+      (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
+  {
+    def pkBacker = backer.pubKey
+    def pkProject = project.pubKey
+    import syntax._
+    lazy val env = Env("pkBacker" -> pkBacker, "pkProject" -> pkProject, "deadline" -> deadline, "minToRaise" -> minToRaise)
+
+    lazy val holderProp = proposition("holder", { ctx: Context =>
+      import ctx._
+      val fundraisingFailure = HEIGHT >= deadline && pkBacker
+      val enoughRaised = {(outBox: Box) =>
+        outBox.value >= minToRaise &&
+            outBox.propositionBytes == pkProject.propBytes
+      }
+      val fundraisingSuccess = HEIGHT < deadline &&
+          pkProject &&
+          OUTPUTS.exists(enoughRaised)
+
+      fundraisingFailure || fundraisingSuccess
+    },
+    env,
+    """
+     |{
+     |  val fundraisingFailure = HEIGHT >= deadline && pkBacker
+     |    val enoughRaised = {(outBox: Box) =>
+     |      outBox.value >= minToRaise &&
+     |          outBox.propositionBytes == pkProject.propBytes
+     |    }
+     |    val fundraisingSuccess = HEIGHT < deadline &&
+     |        pkProject &&
+     |        OUTPUTS.exists(enoughRaised)
+     |
+     |    fundraisingFailure || fundraisingSuccess
+     |}
+    """.stripMargin)
+  }
+
+  property("avl tree - simple modification (ErgoDsl)") {
+    import spec._
+
+    val inKey = genKey("init key").toColl
+    val inValue = genKey("init value").toColl
+    val tree = dsl.AvlTree(AvlTreeFlags.AllOperationsAllowed, Colls.fromItems((inKey -> inValue)))
+    val tree
+  }
+
   property("avl tree - simple modification") {
+
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage

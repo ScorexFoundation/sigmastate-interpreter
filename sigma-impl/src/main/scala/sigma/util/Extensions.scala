@@ -2,10 +2,10 @@ package sigma.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
+
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
-
-import scalan.Nullable
+import scalan.{Nullable, RType}
 
 import scala.language.higherKinds
 
