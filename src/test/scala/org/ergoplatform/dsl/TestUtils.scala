@@ -163,9 +163,6 @@ trait ContractSpec {
   val MinErgValue = 1
   def error(msg: String) = sys.error(msg)
 
-  implicit class ArrayOps[T: RType](arr: Array[T]) {
-    def toColl: Coll[T] = dsl.Colls.fromArray(arr)
-  }
 }
 
 

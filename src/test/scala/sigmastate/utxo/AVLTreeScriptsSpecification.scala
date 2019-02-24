@@ -3,22 +3,71 @@ package sigmastate.utxo
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.dsl.{TestContractSpec, ContractSpec, StdContracts, SigmaContractSyntax}
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
+import scalan.RType
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{IRContext, CostingSigmaDslBuilder}
+import sigmastate.eval.{IRContext, CAvlTree, CostingSigmaDslBuilder, CSigmaProp}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
-import special.sigma.{Context, Box}
+import special.collection.Coll
+import special.sigma.{Context, Box, AvlTree}
+
+case class AvlTreeContract[Spec <: ContractSpec]
+    (ops: Coll[Byte], proof: Coll[Byte], prover: Spec#ProvingParty)
+    (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
+{
+  def pkProver = prover.pubKey
+  import syntax._
+  lazy val env = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
+
+  lazy val treeProp = proposition("treeProp", { ctx: Context =>
+    import ctx._
+    sigmaProp(treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)
+  },
+  env,
+  """{
+   |  sigmaProp(treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)
+   |}
+  """.stripMargin)
+
+  lazy val proverSig = proposition("proverSig", { _ => pkProver }, env, "pkProver")
+}
+object AvlTreeHelpers {
+
+  /** Create authenticated dictionary with given allowed operations and key-value entries. */
+  def createAvlTree(flags: AvlTreeFlags, entries: (ADKey, ADValue)*): (AvlTree, BatchAVLProver[Digest32, Blake2b256.type]) = {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val ok = entries.forall { case (key, value) =>
+      avlProver.performOneOperation(Insert(key, value)).isSuccess
+    }
+    val proof = avlProver.generateProof()
+    val digest = avlProver.digest
+    val treeData = new AvlTreeData(digest, flags, 32, None)
+    (CAvlTree(treeData), avlProver)
+  }
+
+  def serializeOperations(avlProver: BatchAVLProver[Digest32, Blake2b256.type], operations: Seq[Operation]): Coll[Byte] = {
+    val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
+    val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
+    CostingSigmaDslBuilder.Colls.fromArray(opsBytes)
+  }
+
+  implicit class ArrayOps[T: RType](arr: Array[T]) {
+    def toColl: Coll[T] = CostingSigmaDslBuilder.Colls.fromArray(arr)
+  }
+}
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
+  import AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  lazy val prover = spec.ProvingParty("Alice")
   private implicit lazy val IR: IRContext = spec.IR
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
@@ -27,53 +76,40 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
   def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
   def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
-  case class CrowdFunding[Spec <: ContractSpec]
-  (deadline: Int, minToRaise: Long,
-      prover: Spec#ProvingParty)
-      (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
-  {
-    def pkBacker = backer.pubKey
-    def pkProject = project.pubKey
-    import syntax._
-    lazy val env = Env("pkBacker" -> pkBacker, "pkProject" -> pkProject, "deadline" -> deadline, "minToRaise" -> minToRaise)
-
-    lazy val holderProp = proposition("holder", { ctx: Context =>
-      import ctx._
-      val fundraisingFailure = HEIGHT >= deadline && pkBacker
-      val enoughRaised = {(outBox: Box) =>
-        outBox.value >= minToRaise &&
-            outBox.propositionBytes == pkProject.propBytes
-      }
-      val fundraisingSuccess = HEIGHT < deadline &&
-          pkProject &&
-          OUTPUTS.exists(enoughRaised)
-
-      fundraisingFailure || fundraisingSuccess
-    },
-    env,
-    """
-     |{
-     |  val fundraisingFailure = HEIGHT >= deadline && pkBacker
-     |    val enoughRaised = {(outBox: Box) =>
-     |      outBox.value >= minToRaise &&
-     |          outBox.propositionBytes == pkProject.propBytes
-     |    }
-     |    val fundraisingSuccess = HEIGHT < deadline &&
-     |        pkProject &&
-     |        OUTPUTS.exists(enoughRaised)
-     |
-     |    fundraisingFailure || fundraisingSuccess
-     |}
-    """.stripMargin)
-  }
 
   property("avl tree - simple modification (ErgoDsl)") {
-    import spec._
+    val inKey = genKey("init key")
+    val inValue = genValue("init value")
 
-    val inKey = genKey("init key").toColl
-    val inValue = genKey("init value").toColl
-    val tree = dsl.AvlTree(AvlTreeFlags.AllOperationsAllowed, Colls.fromItems((inKey -> inValue)))
-    val tree
+    val (tree, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, (inKey -> inValue))
+
+    val operations: Seq[Operation] =
+      (0 to 10).map(i => Insert(genKey(i.toString), genValue(i.toString))) :+
+         Update(inKey, genValue("updated value"))
+
+    operations.foreach(o => avlProver.performOneOperation(o))
+    val opsBytes = serializeOperations(avlProver, operations)
+    val proof = avlProver.generateProof().toColl
+    val endDigest = avlProver.digest.toColl
+    val endTree = tree.updateDigest(endDigest)
+
+    val contract = AvlTreeContract[spec.type](opsBytes, proof, prover)(spec)
+    import contract.spec._
+
+    val mockTx = block(0).newTransaction()
+    val s = mockTx
+      .outBox(20, contract.treeProp)
+      .withRegs(reg1 -> tree, reg2 -> endTree)
+
+    val spendingTx = block(50).newTransaction().spending(s)
+    val newBox1 = spendingTx.outBox(10, contract.proverSig)
+
+    val in1 = spendingTx.inputs(0)
+    val res = in1.runDsl()
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
+
+//    val pr = prover.prove(in1).get
+//    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree - simple modification") {
@@ -90,11 +126,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val flags = AvlTreeFlags.AllOperationsAllowed
     val treeData = new AvlTreeData(digest, flags, 32, None)
 
-    val operations: Seq[Operation] = (0 to 10).map(i => Insert(genKey(i.toString), genValue(i.toString))) :+
+    val operations: Seq[Operation] =
+      (0 to 10).map(i => Insert(genKey(i.toString), genValue(i.toString))) :+
       Update(inKey, genValue("updated value"))
+    operations.foreach(o => avlProver.performOneOperation(o))
     val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
     val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
-    operations.foreach(o => avlProver.performOneOperation(o))
     val proof = avlProver.generateProof()
     val endDigest = avlProver.digest
     val endTreeData = treeData.copy(digest = endDigest)

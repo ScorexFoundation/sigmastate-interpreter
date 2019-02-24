@@ -20,7 +20,7 @@ import scalan.Nullable
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.{GroupElement, SigmaProp}
+import special.sigma.{SigmaProp, GroupElement, AvlTree}
 
 import scala.util.DynamicVariable
 
@@ -245,7 +245,9 @@ trait SigmaBuilder {
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](CostingSigmaDslBuilder.toAvlTreeData(avl), SAvlTree))
 
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
     case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))

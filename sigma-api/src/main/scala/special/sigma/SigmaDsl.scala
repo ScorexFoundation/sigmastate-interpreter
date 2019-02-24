@@ -562,11 +562,15 @@ trait SigmaContract {
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
 
   def proveDlog(g: GroupElement): SigmaProp = this.builder.proveDlog(g)
-  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
+    this.builder.proveDHTuple(g, h, u, v)
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
-//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = this.builder.treeModifications(tree, operations, proof)
+  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean =
+    this.builder.isMember(tree, key, proof)
+  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] =
+    this.builder.treeLookup(tree, key, proof)
+  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] =
+    this.builder.treeModifications(tree, operations, proof)
 
   def groupGenerator: GroupElement = this.builder.groupGenerator
 
@@ -629,9 +633,6 @@ trait SigmaDslBuilder {
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
   def toBigInteger(n: BigInt): BigInteger
-
-  /** Create authenticated dictionary with given allowed operations and key-value entries. */
-  def AvlTree(flags: Byte, entries: Coll[(Coll[Byte], Coll[Byte])]): AvlTree
 
 }
 
