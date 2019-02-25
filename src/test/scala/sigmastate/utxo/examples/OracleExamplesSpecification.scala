@@ -3,23 +3,19 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{R4, RegisterId}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import org.ergoplatform.ErgoBox.RegisterId
+import org.ergoplatform._
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.CryptoConstants
-import org.ergoplatform._
-import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
-import sigmastate.TrivialProp.TrueProp
-import sigmastate.eval.CSigmaProp
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.utxo._
-import special.collection.Coll
 import special.sigma.Context
 
 
@@ -171,17 +167,17 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
-   val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
       ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
-      self = null)
+      self = null,
+      extension = ContextExtension(Map(22.toByte -> BoxConstant(oracleBox), 23.toByte -> ByteArrayConstant(proof)))
+    )
 
     val alice = aliceTemplate
-      .withContextExtender(22: Byte, BoxConstant(oracleBox))
-      .withContextExtender(23: Byte, ByteArrayConstant(proof))
     val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), propAlice, ctx, fakeMessage).fold(t => throw t, x => x)
 
     val prB = bob.prove(emptyEnv + (ScriptNameProp -> "bob_prove"), propBob, ctx, fakeMessage).fold(t => throw t, x => x)

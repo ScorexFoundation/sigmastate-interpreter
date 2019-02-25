@@ -9,6 +9,7 @@ import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoo
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -188,16 +189,18 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     // normally this transaction would be invalid, but we're not checking it in this test
     val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
 
-    val aliceProver = alice.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
-    val bobProver = bob.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
-
+    val contextExtension = ContextExtension(Map(
+      0.toByte -> ByteArrayConstant(s),
+      1.toByte -> ByteConstant(a)
+    ))
     val winContext0 = ErgoLikeContext(
       currentHeight = gameOverHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput0
+      self = fullGameOutput0,
+      extension = contextExtension
     )
 
     val winContext1 = ErgoLikeContext(
@@ -206,7 +209,8 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput1
+      self = fullGameOutput1,
+      extension = contextExtension
     )
 
     a - b match {
@@ -222,10 +226,11 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
           minerPubkey = ErgoLikeContext.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput0),
           spendingTransaction = gameOverTx,
-          self = fullGameOutput0
+          self = fullGameOutput0,
+          extension = contextExtension
         )
 
-        val proofAliceDraw = aliceProver.prove(fullGameEnv, fullGameScript, drawContextAlice, fakeMessage).get
+        val proofAliceDraw = alice.prove(fullGameEnv, fullGameScript, drawContextAlice, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, drawContextAlice, proofAliceDraw, fakeMessage).get._1 shouldBe true
 
         val drawContextBob = ErgoLikeContext(
@@ -234,10 +239,11 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
           minerPubkey = ErgoLikeContext.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput1),
           spendingTransaction = gameOverTx,
-          self = fullGameOutput1
+          self = fullGameOutput1,
+          extension = contextExtension
         )
 
-        val proofBobDraw = bobProver.prove(fullGameEnv, fullGameScript, drawContextBob, fakeMessage).get
+        val proofBobDraw = bob.prove(fullGameEnv, fullGameScript, drawContextBob, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, drawContextBob, proofBobDraw, fakeMessage).get._1 shouldBe true
 
       case 1 | -2 => // alice wins
@@ -246,20 +252,20 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         // Possibility 1.2: Alice wins
         /////////////////////////////////////////////////////////
 
-        val proofAliceWin0 = aliceProver.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
+        val proofAliceWin0 = alice.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, winContext0, proofAliceWin0, fakeMessage).get._1 shouldBe true
 
-        val proofAliceWin1 = aliceProver.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
+        val proofAliceWin1 = alice.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, winContext1, proofAliceWin1, fakeMessage).get._1 shouldBe true
       case _ => // bob wins
         println("Bob won")
         /////////////////////////////////////////////////////////
         // Possibility 1.3: Bob wins
         /////////////////////////////////////////////////////////
-        val proofBobWin0 = bobProver.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
+        val proofBobWin0 = bob.prove(fullGameEnv, fullGameScript, winContext0, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, winContext0, proofBobWin0, fakeMessage).get._1 shouldBe true
 
-        val proofBobWin1 = bobProver.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
+        val proofBobWin1 = bob.prove(fullGameEnv, fullGameScript, winContext1, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, winContext1, proofBobWin1, fakeMessage).get._1 shouldBe true
     }
 
@@ -283,7 +289,8 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput0 // what is the use of self?
+      self = fullGameOutput0, // what is the use of self?
+      extension = contextExtension
     )
     val defaultWinContext1 = ErgoLikeContext(
       currentHeight = defaultWinHeight,
@@ -291,16 +298,15 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput1 // what is the use of self?
+      self = fullGameOutput1, // what is the use of self?
+      extension = contextExtension
     )
 
-    val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
-    val aDummy:Byte = 0
     // below we need to specify a and s (even though they are not needed)
-    val proofDefaultWin0 = bobProver.prove(fullGameEnv, fullGameScript, defaultWinContext0, fakeMessage).get
+    val proofDefaultWin0 = bob.prove(fullGameEnv, fullGameScript, defaultWinContext0, fakeMessage).get
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext0, proofDefaultWin0, fakeMessage).get._1 shouldBe true
 
-    val proofDefaultWin1 = bobProver.prove(fullGameEnv, fullGameScript, defaultWinContext1, fakeMessage).get
+    val proofDefaultWin1 = bob.prove(fullGameEnv, fullGameScript, defaultWinContext1, fakeMessage).get
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext1, proofDefaultWin1, fakeMessage).get._1 shouldBe true
   }
 

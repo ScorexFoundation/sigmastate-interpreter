@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, GetVarByteArray, TrueLeaf, Value}
+import sigmastate.Values.{BooleanConstant, BoxConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
@@ -215,7 +215,6 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
     val nProver = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
     val nCtx = ErgoLikeContext(
       currentHeight = 1,
@@ -223,7 +222,8 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
-      self = nIn0)
+      self = nIn0,
+      extension = ContextExtension(Map(scriptId -> ByteArrayConstant(normalCaseBytes))))
 
     val nProof = nProver.prove(prop, nCtx, fakeMessage).get
     verifier.verify(prop, nCtx, nProof, fakeMessage).get._1 shouldBe true
@@ -237,7 +237,6 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
     val rProver = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
     val rCtx = ErgoLikeContext(
       currentHeight = 1,
@@ -245,7 +244,8 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
-      self = rIn0)
+      self = rIn0,
+      extension = ContextExtension(Map(scriptId -> ByteArrayConstant(rightmostBytes))))
 
     val rProof = rProver.prove(prop, rCtx, fakeMessage).get
     verifier.verify(prop, rCtx, rProof, fakeMessage).get._1 shouldBe true
@@ -259,7 +259,6 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
     val lnProver = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
     val lnCtx = ErgoLikeContext(
       currentHeight = 1,
@@ -267,7 +266,8 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
-      self = lnIn0)
+      self = lnIn0,
+      extension = ContextExtension(Map(scriptId -> ByteArrayConstant(nLeftmostBytes))))
 
     val lnProof = lnProver.prove(prop, lnCtx, fakeMessage).get
     verifier.verify(prop, lnCtx, lnProof, fakeMessage).get._1 shouldBe true
@@ -280,7 +280,6 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
     val lProver = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
     val lCtx = ErgoLikeContext(
       currentHeight = 1,
@@ -288,7 +287,8 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
-      self = lIn0)
+      self = lIn0,
+      extension = ContextExtension(Map(scriptId -> ByteArrayConstant(leftmostBytes))))
 
     val lProof = lProver.prove(prop, lCtx, fakeMessage).get
     verifier.verify(prop, lCtx, lProof, fakeMessage).get._1 shouldBe true

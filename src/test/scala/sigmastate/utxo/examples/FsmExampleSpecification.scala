@@ -8,6 +8,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -80,14 +81,14 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val transitionProofId = 3: Byte
 
     val isMember = OptionIsDefined(TreeLookup(OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
-        Append(
-          ConcreteCollection[SByte.type](
-            OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
-            OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
-                                          currentStateRegister),ByteConstant(-1))),
-          CalcBlake2b256(GetVarByteArray(scriptVarId).get)
-        ),
-        GetVarByteArray(transitionProofId).get))
+      Append(
+        ConcreteCollection[SByte.type](
+          OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
+          OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
+            currentStateRegister), ByteConstant(-1))),
+        CalcBlake2b256(GetVarByteArray(scriptVarId).get)
+      ),
+      GetVarByteArray(transitionProofId).get))
 
     val scriptPreservation = EQ(ExtractScriptBytes(ByIndex(Outputs, IntConstant.Zero)), ExtractScriptBytes(Self))
 
@@ -134,18 +135,21 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
     val transition12Proof = avlProver.generateProof()
 
+    val ctxExtension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script1)),
+      transitionProofId -> ByteArrayConstant(transition12Proof)
+    ))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox2)),
-      self = fsmBox1)
+      self = fsmBox1,
+      extension = ctxExtension)
 
-    val spendingProof = prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
-      .prove(fsmScript, ctx, fakeMessage).get
+
+    val spendingProof = prover.prove(fsmScript, ctx, fakeMessage).get
 
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
 
@@ -154,18 +158,20 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition21 ++ script2Hash)))
     val transition21Proof = avlProver.generateProof()
 
+    val ctx2Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script2)),
+      transitionProofId -> ByteArrayConstant(transition21Proof)
+    ))
     val ctx2 = ErgoLikeContext(
       currentHeight = 51,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox1)),
-      self = fsmBox2)
+      self = fsmBox2,
+      extension = ctx2Extension)
 
-    val spendingProof2 = prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script2)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition21Proof))
-      .prove(fsmScript, ctx2, fakeMessage).get
+    val spendingProof2 = prover.prove(fsmScript, ctx2, fakeMessage).get
 
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx2, spendingProof2, fakeMessage).get._1 shouldBe true
 
@@ -182,45 +188,56 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition13 ++ script1Hash)))
     val transition13Proof = avlProver.generateProof()
 
+    val ctx3Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script1)),
+      transitionProofId -> ByteArrayConstant(transition13Proof)
+    ))
     val ctx3 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
-      self = fsmBox1)
+      self = fsmBox1,
+      extension = ctx3Extension)
 
     //honest prover fails
-    prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition13Proof))
-      .prove(fsmScript, ctx3, fakeMessage)
-      .isSuccess shouldBe false
+    prover.prove(fsmScript, ctx3, fakeMessage).isSuccess shouldBe false
 
     //prover tries to transit to state3 from state2 by presenting proof for state1 -> state2
     //honest prover fails
-    prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
-      .prove(fsmScript, ctx3, fakeMessage)
-      .isSuccess shouldBe false
+    val ctx12Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script1)),
+      transitionProofId -> ByteArrayConstant(transition12Proof)
+    ))
+    val ctx12 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fsmBox1),
+      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
+      self = fsmBox1,
+      extension = ctx12Extension)
+    prover.prove(fsmScript, ctx12, fakeMessage).isSuccess shouldBe false
 
     //successful transition from state2 to state3
     avlProver.performOneOperation(Lookup(ADKey @@ (transition23 ++ script3Hash)))
     val transition23Proof = avlProver.generateProof()
 
+    val ctx23Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script3)),
+      transitionProofId -> ByteArrayConstant(transition23Proof)
+    ))
     val ctx23 = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
-      self = fsmBox2)
+      self = fsmBox2,
+      extension = ctx23Extension)
 
-    val spendingProof23 = prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script3)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition23Proof))
-      .prove(fsmScript, ctx23, fakeMessage).get
+    val spendingProof23 = prover.prove(fsmScript, ctx23, fakeMessage).get
 
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx23, spendingProof23, fakeMessage).get._1 shouldBe true
 
@@ -231,35 +248,38 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()
 
+    val ctx30Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script4)),
+      transitionProofId -> ByteArrayConstant(transition30Proof)
+    ))
     val ctx30 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
-      self = fsmBox3)
+      self = fsmBox3,
+      extension = ctx30Extension)
 
-    val spendingProof30 = prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script4)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition30Proof))
-      .prove(fsmScript, ctx30, fakeMessage).get
+    val spendingProof30 = prover.prove(fsmScript, ctx30, fakeMessage).get
 
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
 
     //it is impossible to leave FSM at state2
+    val ctx20Extension = ContextExtension(Map(
+      scriptVarId -> ByteArrayConstant(ValueSerializer.serialize(script4)),
+      transitionProofId -> ByteArrayConstant(transition30Proof)
+    ))
     val ctx20 = ErgoLikeContext(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
-      self = fsmBox2)
+      self = fsmBox2,
+      extension = ctx20Extension)
 
     //honest prover fails
-    prover
-      .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script4)))
-      .withContextExtender(transitionProofId, ByteArrayConstant(transition30Proof))
-      .prove(fsmScript, ctx20, fakeMessage)
-      .isSuccess shouldBe false
+    prover.prove(fsmScript, ctx20, fakeMessage).isSuccess shouldBe false
   }
 }

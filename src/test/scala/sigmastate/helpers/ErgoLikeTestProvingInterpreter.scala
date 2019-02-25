@@ -23,11 +23,7 @@ class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.Scri
   lazy val dhSecrets: Seq[DiffieHellmanTupleProverInput] =
     secrets.filter(_.isInstanceOf[DiffieHellmanTupleProverInput]).asInstanceOf[Seq[DiffieHellmanTupleProverInput]]
 
-  override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>
-    val ba = Random.randomBytes(75)
-    i.toByte -> ByteArrayConstant(ba)
-  }.toMap
-
+  //todo remove
   def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoLikeTestProvingInterpreter = {
     val s = secrets
     val ce = contextExtenders

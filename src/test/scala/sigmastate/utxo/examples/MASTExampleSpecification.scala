@@ -1,12 +1,13 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.ValueSerializer
@@ -44,7 +45,8 @@ class MASTExampleSpecification extends SigmaTestingCommons {
 
 
     val input1 = ErgoBox(20, prop, 0)
-    val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
+    val contextExtension = ContextExtension(Map(scriptId -> ByteArrayConstant(script1Bytes)))
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id, contextExtension)),
       IndexedSeq(ErgoBox(1, ErgoScriptPredef.TrueProp, 0)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -52,11 +54,11 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input1),
       tx,
-      self = input1)
+      self = input1,
+      contextExtension)
 
 
     val prover = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(scriptId, ByteArrayConstant(script1Bytes))
 
     val proveEnv = emptyEnv + (ScriptNameProp -> "simple_branching_prove")
     val proof = prover.prove(proveEnv, prop, ctx, fakeMessage).get
@@ -95,22 +97,24 @@ class MASTExampleSpecification extends SigmaTestingCommons {
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    avlProver.performOneOperation(Lookup(knownSecretTreeKey))
+    val knownSecretPathProof = avlProver.generateProof()
+    val usedBranch = scriptBranchesBytes.head
+    val contextExtension = ContextExtension(Map(
+      secretId -> knownSecret,
+      scriptId -> ByteArrayConstant(usedBranch),
+      proofId -> ByteArrayConstant(knownSecretPathProof)
+    ))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
-      self = selfBox)
+      self = selfBox,
+      extension = contextExtension)
 
-    avlProver.performOneOperation(Lookup(knownSecretTreeKey))
-    val knownSecretPathProof = avlProver.generateProof()
-    val usedBranch = scriptBranchesBytes.head
     val prover = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(secretId, knownSecret)
-      .withContextExtender(scriptId, ByteArrayConstant(usedBranch))
-      .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))
-
     val proveEnv = emptyEnv + (ScriptNameProp -> "MAST_prove")
     val proof = prover.prove(proveEnv, prop, ctx, fakeMessage).get
 

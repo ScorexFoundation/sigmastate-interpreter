@@ -5,11 +5,12 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OperationSerializer
@@ -194,30 +195,44 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+
+    avlProver.performOneOperation(Lookup(treeElements.head._1))
+    val bigLeafProof = avlProver.generateProof()
+    val prover = new ErgoLikeTestProvingInterpreter()
+
+    val correctExtension = ContextExtension(Map(
+      proofId -> ByteArrayConstant(bigLeafProof),
+      elementId -> LongConstant(elements.head)
+    ))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
-      self = selfBox)
+      self = selfBox,
+      extension = correctExtension)
 
-    avlProver.performOneOperation(Lookup(treeElements.head._1))
-    val bigLeafProof = avlProver.generateProof()
-    val prover = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(bigLeafProof))
-      .withContextExtender(elementId, LongConstant(elements.head))
     val proof = prover.prove(prop, ctx, fakeMessage).get
-
     (new ErgoLikeTestInterpreter).verify(prop, ctx, proof, fakeMessage).get._1 shouldBe true
 
-    avlProver.performOneOperation(Lookup(treeElements.last._1))
+
     val smallLeafTreeProof = avlProver.generateProof()
-    val smallProver = new ErgoLikeTestProvingInterpreter()
-      .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
-      .withContextExtender(elementId, LongConstant(elements.head))
-    smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
+    val incorrectExtension = ContextExtension(Map(
+      proofId -> ByteArrayConstant(smallLeafTreeProof),
+      elementId -> LongConstant(elements.head)
+    ))
+    val ctx2 = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(selfBox),
+      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      self = selfBox,
+      extension = incorrectExtension)
+    prover.prove(prop, ctx2, fakeMessage).isSuccess shouldBe false
     // TODO check that verifier return false for incorrect proofs?
+    //    (new ErgoLikeTestInterpreter).verify(prop, ctx2, proof, fakeMessage).get._1 shouldBe false
   }
 
   property("avl tree - prover provides proof") {
@@ -237,7 +252,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
 
     val proofId = 31: Byte
 
-    val prover = new ErgoLikeTestProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val prover = new ErgoLikeTestProvingInterpreter()
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -268,7 +283,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
-      spendingTransaction, self = s)
+      spendingTransaction,
+      self = s,
+      extension = ContextExtension(Map(proofId -> ByteArrayConstant(proof))))
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)

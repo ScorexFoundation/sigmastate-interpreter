@@ -5,6 +5,7 @@ import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
@@ -64,12 +65,11 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      ContextExtension(Map(1.toByte -> IntConstant(confDeadline)))
     )
 
-    val proofWithdraw = alice.withContextExtender(
-      1, IntConstant(confDeadline)
-    ).prove(env, script, withdrawContext, fakeMessage).get
+    val proofWithdraw = alice.prove(env, script, withdrawContext, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -81,17 +81,12 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
-      self = depositOutput
+      self = depositOutput,
+      ContextExtension(Map(1.toByte -> IntConstant(confDeadline - 20)))
     )
-    an [InterpreterException] should be thrownBy (alice.withContextExtender(
-      1, IntConstant(confDeadline - 20)
-    ).prove(env, script, withdrawContext, fakeMessage).get.proof)
 
-    an [InterpreterException] should be thrownBy (alice.withContextExtender(
-      1, IntConstant(confDeadline)
-    ).prove(env, script, withdrawContextBad, fakeMessage).get.proof)
+    an[InterpreterException] should be thrownBy (alice.prove(env, script, withdrawContextBad, fakeMessage).get.proof)
 
-    // below gives error. Need to check if it is designed behavior or a bug
-    // verifier.verify(env, script, withdrawContextBad, proofWithdraw, fakeMessage).get._1 shouldBe false
+    verifier.verify(env, script, withdrawContextBad, proofWithdraw, fakeMessage).get._1 shouldBe false
   }
 }

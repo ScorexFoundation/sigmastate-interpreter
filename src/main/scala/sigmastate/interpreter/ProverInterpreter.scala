@@ -75,8 +75,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
 
+  //todo remove
   def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map()
 
+  //todo remove
   val knownExtensions = ContextExtension(contextExtenders)
 
   /**
@@ -129,7 +131,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
+    val newExtension = ContextExtension(knownExtensions.values ++ context.extension.values)
+    val ctx = context.withExtension(newExtension).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp.proposition)
     val tried = reduceToCrypto(ctx, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
@@ -159,7 +162,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, knownExtensions, cost)
+    CostedProverResult(proof, ctx.extension, cost)
   }
 
   /**

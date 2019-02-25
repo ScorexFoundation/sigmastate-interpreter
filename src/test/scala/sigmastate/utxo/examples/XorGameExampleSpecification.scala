@@ -9,6 +9,7 @@ import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPro
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -215,11 +216,12 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         println("Alice won")
         alice
       }
-    }.withContextExtender(
-      0, ByteArrayConstant(s)
-    ).withContextExtender(
-      1, ByteConstant(a)
-    )
+    }
+    val contextExtension = ContextExtension(Map(
+      0.toByte -> ByteArrayConstant(s),
+      1.toByte -> ByteConstant(a)
+    ))
+
 
     val gameOverHeight = fullGameCreationHeight + 10
 
@@ -236,7 +238,8 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = gameOverTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      extension = contextExtension
     )
 
     val proofGameOver = winner.prove(fullGameEnv, fullGameScript, gameOverContext, fakeMessage).get
@@ -263,17 +266,12 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = defaultWinTx,
-      self = fullGameOutput // what is the use of self?
+      self = fullGameOutput, // what is the use of self?
+      extension = contextExtension
     )
 
-    val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
-    val aDummy:Byte = 0
     // below we need to specify a and s (even though they are not needed)
-    val proofDefaultWin = bob.withContextExtender(
-      0, ByteArrayConstant(sDummy)
-    ).withContextExtender(
-      1, ByteConstant(aDummy)
-    ).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get
+    val proofDefaultWin = bob.prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get
 
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
 
