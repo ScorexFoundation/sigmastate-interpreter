@@ -75,7 +75,7 @@ class CrowdFundingKernelContract(
 
     val a = dlog.multiplyGroupElements(
       dlog.exponentiate(g, sn.secondMessage.z.underlying()),
-      dlog.getInverse(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
+      dlog.inverseOf(dlog.exponentiate(h, new BigInteger(1, sn.challenge))))
 
     val rootCommitment = FirstDLogProverMessage(a)
 

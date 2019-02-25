@@ -179,8 +179,8 @@ object DiffieHellmanTupleInteractiveProver {
     val uToE = dlogGroup.exponentiate(u, e)
     val vToE = dlogGroup.exponentiate(v, e)
 
-    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.getInverse(uToE))
-    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.getInverse(vToE))
+    val a = dlogGroup.multiplyGroupElements(gToZ, dlogGroup.inverseOf(uToE))
+    val b = dlogGroup.multiplyGroupElements(hToZ, dlogGroup.inverseOf(vToE))
     a -> b
   }
 }

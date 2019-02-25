@@ -17,7 +17,7 @@ class GroupLawsSpec extends SigmaTestingCommons {
     group.multiplyGroupElements(ge, identity) shouldBe ge
     group.multiplyGroupElements(identity, identity) shouldBe identity
 
-    val inverse = group.getInverse(ge)
+    val inverse = group.inverseOf(ge)
     group.multiplyGroupElements(ge, inverse) shouldBe identity
   }
 

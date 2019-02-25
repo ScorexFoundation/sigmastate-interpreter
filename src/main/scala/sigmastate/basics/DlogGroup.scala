@@ -73,7 +73,7 @@ trait DlogGroup[ElemType <: ECPoint] {
     * @return the inverse element of the given GroupElement
     * @throws IllegalArgumentException
     **/
-  def getInverse(groupElement: ElemType): ElemType
+  def inverseOf(groupElement: ElemType): ElemType
 
   /**
     * Raises the base GroupElement to the exponent. The result is another GroupElement.

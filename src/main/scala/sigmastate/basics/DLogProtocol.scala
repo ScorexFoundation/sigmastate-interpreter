@@ -156,7 +156,7 @@ object DLogProtocol {
 
       dlogGroup.multiplyGroupElements(
         dlogGroup.exponentiate(g, secondMessage.z.underlying()),
-        dlogGroup.getInverse(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
+        dlogGroup.inverseOf(dlogGroup.exponentiate(h, new BigInteger(1, challenge))))
     }
   }
 

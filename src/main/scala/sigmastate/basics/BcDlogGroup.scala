@@ -166,6 +166,12 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   override lazy val identity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
 
 
+  /**
+    * Create point from its affine coordinates
+    * @param x - X coordinate
+    * @param y - Y coordinate
+    * @return
+    */
   def createPoint(x: BigInteger, y: BigInteger): ElemType = curve.createPoint(x, y).asInstanceOf[ElemType]
 
 
@@ -176,7 +182,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     * @return the inverse element of the given GroupElement
     * @throws IllegalArgumentException
     **/
-  override def getInverse(groupElement: ElemType): ElemType =
+  override def inverseOf(groupElement: ElemType): ElemType =
     groupElement.negate().asInstanceOf[ElemType]
 
   /**
