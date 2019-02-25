@@ -413,54 +413,9 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
   }
 }
 
-object SecP384R1 extends BcDlogGroup[SecP384R1Point](CustomNamedCurves.getByName("secp384r1")) with App {
-  val elems = 5000
-  val base = generator
-  val exps = (1 to elems).map { _ =>
-    val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
-    // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
-  }.toArray
+object SecP384R1 extends BcDlogGroup[SecP384R1Point](CustomNamedCurves.getByName("secp384r1"))
 
-  println(exps.map(e => exponentiateWithPreComputedValues(base, e) == exponentiate(base, e)).forall(_ == true))
-
-  var t0 = System.currentTimeMillis()
-  exps.foreach(exp => exponentiate(base, exp))
-  println(System.currentTimeMillis() - t0)
-
-
-  t0 = System.currentTimeMillis()
-  exps.foreach(exp => exponentiateWithPreComputedValues(base, exp))
-  println(System.currentTimeMillis() - t0)
-}
-
-object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName("secp521r1")) with App {
-  val elems = 1000
-  val bases = (1 to elems).map(_ => createRandomGenerator()).toArray
-  val exps = (1 to elems).map { _ =>
-    val one = BigInteger.ONE
-    val qMinusOne = x9params.getN.subtract(one)
-    // choose a random number x in Zq*
-    BigIntegers.createRandomInRange(one, qMinusOne, secureRandom)
-  }.toArray
-
-  var t0 = System.currentTimeMillis()
-  val naive = computeNaive(bases, exps)
-  println(System.currentTimeMillis() - t0)
-
-  t0 = System.currentTimeMillis()
-  val ll = computeLL(bases, exps)
-  println(System.currentTimeMillis() - t0)
-
-  println(naive.normalize().getAffineXCoord)
-  println(naive.normalize().getAffineYCoord)
-
-  println(ll.normalize().getAffineXCoord)
-  println(ll.normalize().getAffineYCoord)
-
-  println(naive == ll)
-}
+object SecP521R1 extends BcDlogGroup[SecP521R1Point](CustomNamedCurves.getByName("secp521r1"))
 
 object Curve25519 extends BcDlogGroup[Curve25519Point](CustomNamedCurves.getByName("curve25519"))
 
