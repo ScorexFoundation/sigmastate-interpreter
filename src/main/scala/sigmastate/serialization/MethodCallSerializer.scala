@@ -18,12 +18,10 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
       w.putValues(mc.args)
     }
     mc.method.stype match {
-      case genType: SGenericType =>
+      case genType: SGenericType if mc.typeSubst.nonEmpty =>
         w.putUByte(mc.typeSubst.size)
-        mc.typeSubst.foreach { case (ti, tpe) =>
-          val tpIndex = genType.substitutedTypeParams.indexOf(STypeParam(ti))
-          w.putUByte(tpIndex)
-            .putType(tpe)
+        genType.substitutedTypeParams.foreach { tp =>
+          w.putType(mc.typeSubst(tp.ident))
         }
       case _ => w.putUByte(0)
     }
@@ -40,8 +38,7 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
         val typeSubstSize = r.getUByte()
         val xs = new Array[(STypeIdent, SType)](typeSubstSize)
         for (i <- 0 until typeSubstSize) {
-          val tpIndex = r.getUByte()
-          val ti = genType.substitutedTypeParams.apply(tpIndex).ident
+          val ti = genType.substitutedTypeParams(i).ident
           xs(i) = (ti, r.getType())
         }
         xs.toMap

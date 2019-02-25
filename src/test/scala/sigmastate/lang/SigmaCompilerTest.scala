@@ -511,7 +511,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.ZipMethod,
         Vector(ConcreteCollection(IntConstant(1), IntConstant(1))),
-        Map(SCollection.tIV -> SInt))
+        Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt))
   }
 
   property("SCollection.partition") {

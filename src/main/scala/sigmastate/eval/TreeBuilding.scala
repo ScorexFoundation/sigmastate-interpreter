@@ -2,16 +2,16 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, BlockValue, ConstantNode, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, EvaluatedCollection, FalseLeaf, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.serialization.OpCodes._
 import org.ergoplatform._
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ValueSerializer, ConstantStore}
+import sigmastate.serialization.{ConstantStore, ValueSerializer}
 import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 import ErgoLikeContext._
 
@@ -249,6 +249,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val (method, typeSubst) = (SCollection.methods.find(_.name == m.getName), args) match {
           case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
+            (mth, typeSubst)
+          case (Some(mth @ SCollection.ZipMethod), Seq(coll: EvaluatedCollection[_, _])) =>
+            val typeSubst = Map(SCollection.tOV -> coll.elementType)
             (mth, typeSubst)
           case (Some(mth), _) => (mth, SigmaTyper.emptySubst)
           case (None, _) => error(s"unknown method Coll.${m.getName}")

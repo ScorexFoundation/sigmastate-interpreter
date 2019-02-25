@@ -522,7 +522,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           Vector(
             ConcreteCollection(IntConstant(1), IntConstant(2))
           ),
-          Map(tIV -> SBox)).asCollection[STuple]),
+          Map(tIV -> SBox, tOV -> SInt)).asCollection[STuple]),
         IntConstant(2)),
       IndexedSeq(1L, 2L))
   }
