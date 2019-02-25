@@ -3,7 +3,7 @@ package sigmastate
 import org.bouncycastle.util.BigIntegers
 import sigmastate.basics.DLogProtocol.{SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.{Value, SigmaBoolean}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
 import Helpers.xor
@@ -21,7 +21,7 @@ object SigSerializer {
     def traverseNode(node: UncheckedSigmaTree,
                      acc: Array[Byte],
                      writeChallenge: Boolean = true): Array[Byte] = {
-      val parentChal = (if (writeChallenge) node.challenge else Array.emptyByteArray)
+      val parentChal = if (writeChallenge) node.challenge else Array.emptyByteArray
       node match {
         case dl: UncheckedSchnorr =>
           acc ++
