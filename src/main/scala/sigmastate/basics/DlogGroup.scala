@@ -17,22 +17,6 @@ import org.bouncycastle.math.ec.ECPoint
   * In cryptography, we are interested in groups for which the discrete logarithm problem
   * (Dlog for short) is assumed to be hard. The most known groups of that kind are some Elliptic curve groups.
   *
-  * Another issue pertaining elliptic curves is the need to find a suitable mapping that will convert an arbitrary
-  * message (that is some binary string) to an element of the group and vice-versa.
-  *
-  * Only a subset of the messages can be effectively mapped to a group element in such a way that there is a one-to-one
-  * injection that converts the string to a group element and vice-versa.
-  *
-  * On the other hand, any group element can be mapped to some string.
-  *
-  * In this case, the operation is not invertible. This functionality is implemented by the functions:
-  *  - {@code encodeByteArrayToGroupElement(binaryString: Array[Byte]): ElemType}
-  *  - {@code decodeGroupElementToByteArray(element: ElemType) : Array[Byte]}
-  *  - {@code mapAnyGroupElementToByteArray(element: ElemType): Array[Byte]}
-  *
-  *  The first two work as a pair and decodeGroupElementToByteArray is the inverse of encodeByteArrayToGroupElement,
-  *  whereas the last one works alone and does not have an inverse.
-  *
   *  @tparam ElemType is concrete type
   */
 trait DlogGroup[ElemType <: ECPoint] {
