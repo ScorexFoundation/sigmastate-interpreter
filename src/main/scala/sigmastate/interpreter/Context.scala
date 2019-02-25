@@ -10,7 +10,9 @@ import special.sigma
 import special.sigma.AnyValue
 
 /**
-  * Variables to be put into context
+  * User-defined variables to be put into context
+  *
+  * @param values - key-value pairs
   */
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
   def add(bindings: (Byte, EvaluatedValue[_ <: SType])*): ContextExtension =

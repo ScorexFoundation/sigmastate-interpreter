@@ -8,8 +8,20 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
+/**
+  * Inputs, that are used to enrich script context, but won't be spent by the transaction
+  *
+  * @param boxId - id of a box to add into context (should be in UTXO)
+  */
 case class DataInput(boxId: BoxId)
 
+
+/**
+  * Inputs of formed, but unsigned transaction
+  *
+  * @param boxId     - id of a box to spent
+  * @param extension - user-defined variables to be put into context
+  */
 class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
 
   def this(boxId: BoxId) = this(boxId, ContextExtension.empty)
@@ -22,9 +34,19 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
     case _ => false
   }
 
+  /**
+    * Input, that should be signed by prover and verified by verifier.
+    * Contains all the input data except of signature itself.
+    */
   def inputToSign: Input = Input(boxId: BoxId, ProverResult(Array[Byte](), extension))
 }
 
+/**
+  * Fully signed transaction input
+  *
+  * @param boxId         - id of a box to spent
+  * @param spendingProof - proof of spending correctness
+  */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId, spendingProof.extension) {
 }

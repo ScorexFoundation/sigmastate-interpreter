@@ -97,25 +97,29 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
 object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
 
   override def serialize(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit = {
+    // serialize transaction inputs
     w.putUShort(tx.inputs.length)
     for (input <- tx.inputs) {
       Input.serializer.serialize(input, w)
     }
+    // serialize transaction data inputs
     w.putUShort(tx.dataInputs.length)
     for (input <- tx.dataInputs) {
       w.putBytes(input.boxId)
     }
-    val digests = tx.outputCandidates
+    // serialize distinct ids of tokens in transaction outputs
+    val distinctTokenIds = tx.outputCandidates
       .flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1)))
       .distinct
       .toArray
-    w.putUInt(digests.length)
-    digests.foreach { digest =>
-      w.putBytes(digest.array)
+    w.putUInt(distinctTokenIds.length)
+    distinctTokenIds.foreach { tokenId =>
+      w.putBytes(tokenId.array)
     }
+    // serialize outputs
     w.putUShort(tx.outputCandidates.length)
     for (out <- tx.outputCandidates) {
-      ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(digests), w)
+      ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(distinctTokenIds), w)
     }
   }
 
@@ -152,6 +156,10 @@ object ErgoLikeTransaction {
 
   val TransactionIdBytesSize: Short = 32
 
+  /**
+    * Bytes that should be signed by provers.
+    * Contains all the transaction bytes except of signatures itself
+    */
   def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
     val emptyProofInputs = tx.inputs.map(_.inputToSign)
     val w = SigmaSerializer.startWriter()
