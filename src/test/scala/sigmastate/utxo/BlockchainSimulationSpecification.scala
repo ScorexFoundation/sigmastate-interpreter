@@ -1,23 +1,20 @@
 package sigmastate.utxo
 
-import java.io.{FileWriter, File}
+import java.io.{File, FileWriter}
 
 import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
-import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.helpers.{SigmaTestingCommons}
-import sigmastate.interpreter.ContextExtension
 import sigmastate.eval.IRContext
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{GE, AvlTreeData}
+import sigmastate.{AvlTreeData, GE}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -26,7 +23,9 @@ import scala.util.Try
 
 
 class BlockchainSimulationSpecification extends SigmaTestingCommons {
+
   import BlockchainSimulationSpecification._
+
   implicit lazy val IR = new TestingIRContext
 
   def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): Block = {
@@ -47,6 +46,8 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         ContextExtension.empty)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
       val proverResult = miner.prove(env, box.ergoTree, context, tx.messageToSign).get
+        .copy(extension = ContextExtension.empty)
+      // TODO prover should not add unpredictable values to context extension
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -106,7 +107,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         val updStateTry = s.applyBlock(b)
         val t = System.currentTimeMillis()
 
-        updStateTry.isSuccess shouldBe true
+        updStateTry shouldBe 'success
         updStateTry.get -> (timeAcc + (t - t0))
       }
 
@@ -188,6 +189,7 @@ object BlockchainSimulationSpecification {
 
   case class ValidationState(state: BlockchainState, boxesReader: InMemoryErgoBoxReader)(implicit IR: IRContext) {
     val validator = new ErgoTransactionValidator
+
     def applyBlock(block: Block, maxCost: Int = MaxBlockCost): Try[ValidationState] = Try {
       val height = state.currentHeight + 1
 
