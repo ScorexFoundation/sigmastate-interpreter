@@ -137,7 +137,7 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-//        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-tree-flags-e934f5cf-SNAPSHOT.jar"
+        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-tree-operations-24add07d-SNAPSHOT.jar"
   )
 )
 

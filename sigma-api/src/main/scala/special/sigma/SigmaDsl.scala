@@ -399,11 +399,6 @@ trait AvlTree {
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
-  /** @param operations   serialized collection of Operation instances to perform with this authenticated dictionary.
-    * @param proof
-    */
-  def modify(operationsBytes: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-
   /** @param operations   collection of keys to remove from this authenticated dictionary.
     * @param proof
     */

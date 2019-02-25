@@ -34,7 +34,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
   val inKey = genKey("init key")
   val inValue = genValue("init value")
 
-  property("avl tree - simple modification (ErgoDsl)") {
+  ignore("avl tree - simple modification (ErgoDsl)") {
     case class AvlTreeContract[Spec <: ContractSpec]
         (ops: Coll[Byte], proof: Coll[Byte], prover: Spec#ProvingParty)
         (implicit val spec: Spec) extends SigmaContractSyntax
@@ -44,7 +44,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
-        sigmaProp(SELF.R4[AvlTree].get.modify(ops, proof).get == SELF.R5[AvlTree].get)
+//        sigmaProp(SELF.R4[AvlTree].get.modify(ops, proof).get == SELF.R5[AvlTree].get)
+        ???
       },
       """{
        |  sigmaProp(treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)
@@ -85,7 +86,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
 //    contract.verifier.verify(in1, pr) shouldBe true
   }
 
-  property("avl tree - composite modifications") {
+  ignore("avl tree - composite modifications") {
     case class AvlTreeContract[Spec <: ContractSpec]
         (ops0: Coll[Byte], proof0: Coll[Byte], ops1: Coll[Byte], proof1: Coll[Byte],
          prover: Spec#ProvingParty)
@@ -96,10 +97,11 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       lazy val contractEnv = Env("pkProver" -> pkProver, "ops0" -> ops0, "proof0" -> proof0, "ops1" -> ops1, "proof1" -> proof1)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
-        val tree0 = SELF.R4[AvlTree].get
-        val endTree = SELF.R5[AvlTree].get
-        val tree1 = tree0.modify(ops0, proof0).get
-        sigmaProp(tree1.modify(ops1, proof1).get == endTree)
+//        val tree0 = SELF.R4[AvlTree].get
+//        val endTree = SELF.R5[AvlTree].get
+//        val tree1 = tree0.modify(ops0, proof0).get
+//        sigmaProp(tree1.modify(ops1, proof1).get == endTree)
+        ???
       },
       """{
        |  val tree0 = SELF.R4[AvlTree].get

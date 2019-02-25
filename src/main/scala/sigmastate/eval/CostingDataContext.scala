@@ -169,18 +169,6 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     }
   }
 
-  override def modify(operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
-    val operationsBytes = operations.toArray
-    val bv = createVerifier(proof)
-    val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes))
-    ops.foreach(o => bv.performOneOperation(o))
-    bv.digest match {
-      case Some(v) => Some(updateDigest(Colls.fromArray(v)))
-      case _ => None
-    }
-  }
-
   override def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
     if (!isRemoveAllowed) {
       None
