@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -11,6 +11,7 @@ import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
+
   private def proverGen: Gen[ErgoLikeTestProvingInterpreter] = for {
     _ <- Gen.const(1)
   } yield new ErgoLikeTestProvingInterpreter()
@@ -612,4 +613,50 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       }
     }
   }
+
+  property("nested thresholds") {
+    val prover = new ErgoLikeTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
+
+    val secret1 = prover.dlogSecrets.head
+    val secret2 = prover.dlogSecrets(1)
+    val secret3 = prover.dlogSecrets(2)
+    val secret4 = prover.dlogSecrets(3)
+
+    val pdlog1 = secret1.publicImage
+    val pdlog2 = secret2.publicImage
+    val pdlog3 = secret3.publicImage
+    val pdlog4 = secret4.publicImage
+
+    val otherProver = new ErgoLikeTestProvingInterpreter
+
+    val unknownSecret1 = otherProver.dlogSecrets.head
+    val unknownSecret2 = otherProver.dlogSecrets(1)
+    val unknownSecret3 = otherProver.dlogSecrets(2)
+
+    val unknownPdlog1 = unknownSecret1.publicImage
+    val unknownPdlog2 = unknownSecret2.publicImage
+    val unknownPdlog3 = unknownSecret3.publicImage
+
+    val c1 = CTHRESHOLD(2, Seq(pdlog1, pdlog2, unknownPdlog1))
+    val c2 = CTHRESHOLD(2, Seq(pdlog3, pdlog4, unknownPdlog2))
+    val c3 = CTHRESHOLD(2, Seq(unknownPdlog1, unknownPdlog2, unknownPdlog3))
+
+    val prop = CTHRESHOLD(2, Seq(c1, c2, c3))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fakeSelf),
+      spendingTransaction = null,
+      self = fakeSelf)
+
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+
+    otherProver.prove(prop, ctx, fakeMessage).isFailure shouldBe true
+
+    verifier.verify(prop, ctx, pr, fakeMessage).isSuccess shouldBe true
+  }
+
 }
