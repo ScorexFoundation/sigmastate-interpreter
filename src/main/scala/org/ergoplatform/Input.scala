@@ -12,22 +12,10 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 class UnsignedInput(val boxId: BoxId) {
   require(boxId.size == BoxId.size, s"incorrect boxId size, expected: $BoxId.size, got: ${boxId.size}")
 
+  // todo check whether it is correct to compare inputs (Input use the same equals) by boxId only?
   override def equals(obj: Any): Boolean = obj match {
     case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
     case _ => false
-  }
-}
-
-object UnsignedInput {
-  object serializer extends SigmaSerializer[UnsignedInput, UnsignedInput] {
-
-    @inline
-    override def serialize(obj: UnsignedInput, w: SigmaByteWriter): Unit =
-      w.putBytes(obj.boxId)
-
-    @inline
-    override def parse(r: SigmaByteReader): UnsignedInput =
-      new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
   }
 }
 
