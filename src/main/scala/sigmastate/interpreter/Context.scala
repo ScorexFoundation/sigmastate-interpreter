@@ -5,7 +5,6 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 import special.sigma
 import special.sigma.AnyValue
 
