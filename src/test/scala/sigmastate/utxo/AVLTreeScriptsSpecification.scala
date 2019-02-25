@@ -44,7 +44,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
 
       lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
-        sigmaProp(treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)
+        sigmaProp(SELF.R4[AvlTree].get.modify(ops, proof).get == SELF.R5[AvlTree].get)
       },
       """{
        |  sigmaProp(treeModifications(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)

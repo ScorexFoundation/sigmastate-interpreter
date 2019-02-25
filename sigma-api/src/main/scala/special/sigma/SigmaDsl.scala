@@ -563,12 +563,12 @@ trait SigmaContract {
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
     this.builder.proveDHTuple(g, h, u, v)
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean =
-    this.builder.isMember(tree, key, proof)
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] =
-    this.builder.treeLookup(tree, key, proof)
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] =
-    this.builder.treeModifications(tree, operations, proof)
+//  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean =
+//    this.builder.isMember(tree, key, proof)
+//  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] =
+//    this.builder.treeLookup(tree, key, proof)
+//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] =
+//    this.builder.treeModifications(tree, operations, proof)
 
   def groupGenerator: GroupElement = this.builder.groupGenerator
 
@@ -614,11 +614,11 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-  def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
-  def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+//  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
+//  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
+//  def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+//  def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 
   def groupGenerator: GroupElement
 
