@@ -10,14 +10,17 @@ trait CostedSigmaObject[Val] extends Costed[Val] {
 }
 
 trait CostedContext extends CostedSigmaObject[Context] {
+  def dataInputs: CostedColl[Box]
   def OUTPUTS: CostedColl[Box]
   def INPUTS: CostedColl[Box]
   def HEIGHT: Costed[Int]
   def SELF: CostedBox
-  def LastBlockUtxoRootHash: CostedAvlTree
-  def MinerPubKey: CostedColl[Byte]
+  def selfBoxIndex: Costed[Int]
+  def LastBlockUtxoRootHash: Costed[AvlTree]
+  def headers: CostedColl[Header]
+  def preHeader: Costed[PreHeader]
+  def minerPubKey: CostedColl[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): CostedOption[T]
-  def getConstant[T](id: Byte)(implicit cT: RType[T]): Costed[T]
 }
 
 trait CostedBox extends CostedSigmaObject[Box] {
@@ -31,9 +34,3 @@ trait CostedBox extends CostedSigmaObject[Box] {
   def creationInfo: Costed[(Int, Coll[Byte])]
 }
 
-trait CostedAvlTree extends CostedSigmaObject[AvlTree] {
-  def startingDigest: CostedColl[Byte]
-  def keyLength: Costed[Int]
-  def enabledOperations: Costed[Byte]
-  def valueLengthOpt: CostedOption[Int]
-}

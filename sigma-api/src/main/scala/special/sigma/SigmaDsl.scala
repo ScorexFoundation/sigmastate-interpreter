@@ -526,8 +526,6 @@ trait Context {
   def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
 
-  def executeVar[T](id: Byte)(implicit cT: RType[T]): T
-
   private[sigma] def cost: Int
   private[sigma] def dataSize: Long
 }

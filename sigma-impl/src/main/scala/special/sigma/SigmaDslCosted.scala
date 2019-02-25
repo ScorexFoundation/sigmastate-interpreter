@@ -9,6 +9,7 @@ import scalan.{NeverInline, Reified}
 
 class CCostedContext(val ctx: Context) extends CostedContext {
   def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
+  def dataInputs: CostedColl[Box] = dsl.costBoxes(ctx.dataInputs)
   def OUTPUTS: CostedColl[Box] = dsl.costBoxes(ctx.OUTPUTS)
   def INPUTS: CostedColl[Box] = dsl.costBoxes(ctx.INPUTS)
   def HEIGHT: Costed[Int] = {
@@ -16,19 +17,30 @@ class CCostedContext(val ctx: Context) extends CostedContext {
     new CCostedPrim(ctx.HEIGHT, cost, 4L)
   }
   def SELF: CostedBox = new CCostedBox(ctx.SELF, dsl.CostModel.AccessBox)
-  def LastBlockUtxoRootHash: CostedAvlTree = new CCostedAvlTree(ctx.LastBlockUtxoRootHash, dsl.CostModel.AccessAvlTree)
-  def MinerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.minerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
+  def LastBlockUtxoRootHash: Costed[AvlTree] = {
+    val tree = ctx.LastBlockUtxoRootHash
+    new CCostedPrim(tree, dsl.CostModel.AccessAvlTree, tree.dataSize)
+  }
+  def minerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.minerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
   def getVar[T](id: Byte)(implicit cT: RType[T]): CostedOption[T] = {
     val opt = ctx.getVar(id)(cT)
     dsl.costOption(opt, dsl.CostModel.GetVar)
   }
 
-  @NeverInline
-  def getConstant[T](id: Byte)(implicit cT: RType[T]): Costed[T] = SpecialPredef.rewritableMethod
-
   def value = ctx
   def cost = ctx.cost
   def dataSize = ctx.dataSize
+
+  def selfBoxIndex: Costed[Int] = {
+    val cost = dsl.CostModel.SelectField
+    new CCostedPrim(ctx.selfBoxIndex, cost, 4L)
+  }
+
+  @NeverInline
+  def headers: CostedColl[Header] = SpecialPredef.rewritableMethod
+
+  @NeverInline
+  def preHeader: Costed[PreHeader] = SpecialPredef.rewritableMethod
 }
 
 class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
@@ -59,14 +71,14 @@ class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
   def dataSize: Long = box.dataSize
 }
 
-class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.digest, dsl.CostModel.PubKeySize.toInt, 1)
-  def enabledOperations: Costed[Byte] = new CCostedPrim(tree.enabledOperations, dsl.CostModel.SelectField, 1)
-  def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
-  def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
-
-  def value = tree
-  def dataSize = tree.dataSize
-}
+//class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
+//  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
+//  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.digest, dsl.CostModel.PubKeySize.toInt, 1)
+//  def enabledOperations: Costed[Byte] = new CCostedPrim(tree.enabledOperations, dsl.CostModel.SelectField, 1)
+//  def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
+//  def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
+//
+//  def value = tree
+//  def dataSize = tree.dataSize
+//}
 

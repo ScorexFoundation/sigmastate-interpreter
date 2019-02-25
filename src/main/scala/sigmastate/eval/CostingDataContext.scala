@@ -514,6 +514,4 @@ case class CostingDataContext(
       } else None
     }
   }
-
-  override def executeVar[T](id: Byte)(implicit cT: RType[T]): T = ???
 }
