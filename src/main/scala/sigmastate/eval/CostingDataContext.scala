@@ -139,6 +139,8 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     }
   }
 
+  override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = ???
+
   override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
     if (!isInsertAllowed) {
       None
@@ -337,25 +339,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
 
-//  override def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = {
-//    tree.contains(key, proof)
-//  }
-//
-//  override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
-//    tree.get(key, proof)
-//  }
-//
-//  override def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
-//    tree.insert(operations, proof)
-//  }
-//
-//  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = {
-//    tree.modify(operations, proof)
-//  }
-//
-//  override def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
-//    tree.remove(operations, proof)
-//  }
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = {
+    val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
+    CAvlTree(treeData)
+  }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     props.map { case csp: CSigmaProp => csp.sigmaTree }

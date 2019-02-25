@@ -21,6 +21,8 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
 import scorex.util.Extensions._
+import special.SpecialPredef
+import special.collection.Coll
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -38,6 +40,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WOption._
   import GroupElement._
   import Liftables._
+  import WSpecialPredef._
 
   val okPrintEvaluatedEntries: Boolean = false
 
@@ -51,6 +54,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   private val AM = WArrayMethods
   private val OM = WOptionMethods
   private val BIM = WBigIntegerMethods
+  private val SPCM = WSpecialPredefCompanionMethods
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
@@ -73,6 +77,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Upcast[_,_] =>
     case _: Apply[_,_] =>
+    case SPCM.some(_) =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
 
@@ -117,6 +122,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def getDataEnv: DataEnv = {
     val env = Map[Sym, AnyRef](
+      RWSpecialPredef -> SpecialPredef,
       sigmaDslBuilder -> sigmaDslBuilderValue,
       sigmaDslBuilder.Colls -> sigmaDslBuilderValue.Colls,
       costedBuilder -> costedBuilderValue,
@@ -199,49 +205,16 @@ trait Evaluation extends RuntimeCosting { IR =>
             case tup: Product =>
               out(tup.productElement(i - 1))
           }
+
           case wc: LiftedConst[_,_] => out(wc.constValue)
-          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid =>
+
+          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid |
+               _: WSpecialPredefCompanion =>
             out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
-//          case SigmaM.propBytes(prop) =>
-//            val sigmaBool = dataEnv(prop).asInstanceOf[SigmaBoolean]
-//            out(sigmaDslBuilderValue.Colls.fromArray(sigmaBool.bytes))
+
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
 
-//          case SigmaM.and_sigma_&&(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-//            out(CAND.normalized(Seq(l, r)))
-
-//          case SigmaM.or_sigma_||(In(l: SigmaBoolean), In(r: SigmaBoolean)) =>
-//            out(COR.normalized(Seq(l, r)))
-
-//          case SigmaM.and_bool_&&(In(l: SigmaBoolean), In(b: Boolean)) =>
-//            if (b) {
-//              out(l)
-//            } else
-//              out(TrivialProp.FalseProp)
-//
-//          case SigmaM.or_bool_||(In(l: SigmaBoolean), In(b: Boolean)) =>
-//            if (b)
-//              out(TrivialProp.TrueProp)
-//            else {
-//              out(l)
-//            }
-//          case SigmaM.lazyAnd(In(l: SigmaBoolean), In(y)) =>
-//            val th = y.asInstanceOf[() => SigmaBoolean]
-//            out(AND(l, th()).function(null, null))
-//          case SigmaM.lazyOr(In(l: SigmaBoolean), In(y)) =>
-//            val th = y.asInstanceOf[() => SigmaBoolean]
-//            out(OR(l, th()).function(null, null))
-
-//          case SDBM.anyZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-//            out(COR.normalized(items.toArray.toSeq))
-//          case SDBM.allZK(_, In(items: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-//            out(CAND.normalized(items.toArray.toSeq))
-//          case SDBM.atLeast(dsl, In(bound: Int), In(children: special.collection.Coll[SigmaBoolean]@unchecked)) =>
-//            out(AtLeast.reduce(bound, children.toArray.toSeq))
-//          case SDBM.sigmaProp(_, In(b: Boolean)) =>
-//            val res = sigmastate.TrivialProp(b)
-//            out(res)
           case SDBM.substConstants(_,
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
@@ -256,6 +229,9 @@ trait Evaluation extends RuntimeCosting { IR =>
           case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.CollBuilder), In(n: Int), xSym @ In(x)) =>
             out(b.replicate(n, x)(asType[Any](xSym.elem.sourceType)))
+
+          case SPCM.some(In(v)) => out(Some(v))
+          case SPCM.none(_) => out(None)
 
           // NOTE: This is a fallback rule which should be places AFTER all other MethodCall patterns
           case mc @ MethodCall(obj, m, args, _) =>
@@ -333,6 +309,11 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(res)
           case SDBM.proveDHTuple(_, In(g: EcPointType), In(h: EcPointType), In(u: EcPointType), In(v: EcPointType)) =>
             val res = CSigmaProp(ProveDHTuple(g, h, u, v))
+            out(res)
+          case SDBM.avlTree(_, In(flags: Byte),
+                           In(digest: SColl[Byte]@unchecked), In(keyLength: Int),
+                           In(valueLengthOpt: Option[Int]@unchecked)) =>
+            val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
             out(res)
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>

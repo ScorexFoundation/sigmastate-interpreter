@@ -27,193 +27,11 @@ import MonoidBuilder._
 import MonoidBuilderInst._
 import SigmaDslBuilder._
 import SigmaProp._
-import TestSigmaDslBuilder._
 import WBigInteger._
 import WECPoint._
 import WOption._
 import WSpecialPredef._
-import TestAvlTree._
-
-object TestAvlTree extends EntityObject("TestAvlTree") {
-  case class TestAvlTreeCtor
-      (override val startingDigest: Rep[Coll[Byte]], override val keyLength: Rep[Int], override val valueLengthOpt: Rep[WOption[Int]], override val maxNumOperations: Rep[WOption[Int]], override val maxDeletes: Rep[WOption[Int]])
-    extends TestAvlTree(startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes) with Def[TestAvlTree] {
-    lazy val selfType = element[TestAvlTree]
-    override def transform(t: Transformer) = TestAvlTreeCtor(t(startingDigest), t(keyLength), t(valueLengthOpt), t(maxNumOperations), t(maxDeletes))
-    private val thisClass = classOf[AvlTree]
-
-    override def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(self,
-        thisClass.getMethod("dataSize"),
-        List(),
-        true, false, element[Long]))
-    }
-
-    override def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(self,
-        thisClass.getMethod("cost"),
-        List(),
-        true, false, element[Int]))
-    }
-
-    override def digest: Rep[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(self,
-        thisClass.getMethod("digest"),
-        List(),
-        true, false, element[Coll[Byte]]))
-    }
-  }
-  // elem for concrete class
-  class TestAvlTreeElem(val iso: Iso[TestAvlTreeData, TestAvlTree])
-    extends AvlTreeElem[TestAvlTree]
-    with ConcreteElem[TestAvlTreeData, TestAvlTree] {
-    override lazy val parent: Option[Elem[_]] = Some(avlTreeElement)
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override def convertAvlTree(x: Rep[AvlTree]) = RTestAvlTree(x.startingDigest, x.keyLength, x.valueLengthOpt, x.maxNumOperations, x.maxDeletes)
-    override def getDefaultRep = RTestAvlTree(element[Coll[Byte]].defaultRepValue, 0, element[WOption[Int]].defaultRepValue, element[WOption[Int]].defaultRepValue, element[WOption[Int]].defaultRepValue)
-    override lazy val tag = {
-      weakTypeTag[TestAvlTree]
-    }
-  }
-
-  // state representation type
-  type TestAvlTreeData = (Coll[Byte], (Int, (WOption[Int], (WOption[Int], WOption[Int]))))
-
-  // 3) Iso for concrete class
-  class TestAvlTreeIso
-    extends EntityIso[TestAvlTreeData, TestAvlTree] with Def[TestAvlTreeIso] {
-    override def transform(t: Transformer) = new TestAvlTreeIso()
-    private lazy val _safeFrom = fun { p: Rep[TestAvlTree] => (p.startingDigest, p.keyLength, p.valueLengthOpt, p.maxNumOperations, p.maxDeletes) }
-    override def from(p: Rep[TestAvlTree]) =
-      tryConvert[TestAvlTree, (Coll[Byte], (Int, (WOption[Int], (WOption[Int], WOption[Int]))))](eTo, eFrom, p, _safeFrom)
-    override def to(p: Rep[(Coll[Byte], (Int, (WOption[Int], (WOption[Int], WOption[Int]))))]) = {
-      val Pair(startingDigest, Pair(keyLength, Pair(valueLengthOpt, Pair(maxNumOperations, maxDeletes)))) = p
-      RTestAvlTree(startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
-    }
-    lazy val eFrom = pairElement(element[Coll[Byte]], pairElement(element[Int], pairElement(element[WOption[Int]], pairElement(element[WOption[Int]], element[WOption[Int]]))))
-    lazy val eTo = new TestAvlTreeElem(self)
-    lazy val selfType = new TestAvlTreeIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class TestAvlTreeIsoElem() extends Elem[TestAvlTreeIso] {
-    def getDefaultRep = reifyObject(new TestAvlTreeIso())
-    lazy val tag = {
-      weakTypeTag[TestAvlTreeIso]
-    }
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-  }
-  // 4) constructor and deconstructor
-  class TestAvlTreeCompanionCtor extends CompanionDef[TestAvlTreeCompanionCtor] with TestAvlTreeCompanion {
-    def selfType = TestAvlTreeCompanionElem
-    override def toString = "TestAvlTreeCompanion"
-    @scalan.OverloadId("fromData")
-    def apply(p: Rep[TestAvlTreeData]): Rep[TestAvlTree] = {
-      isoTestAvlTree.to(p)
-    }
-
-    @scalan.OverloadId("fromFields")
-    def apply(startingDigest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]], maxNumOperations: Rep[WOption[Int]], maxDeletes: Rep[WOption[Int]]): Rep[TestAvlTree] =
-      mkTestAvlTree(startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
-
-    def unapply(p: Rep[AvlTree]) = unmkTestAvlTree(p)
-  }
-  lazy val TestAvlTreeRep: Rep[TestAvlTreeCompanionCtor] = new TestAvlTreeCompanionCtor
-  lazy val RTestAvlTree: TestAvlTreeCompanionCtor = proxyTestAvlTreeCompanion(TestAvlTreeRep)
-  implicit def proxyTestAvlTreeCompanion(p: Rep[TestAvlTreeCompanionCtor]): TestAvlTreeCompanionCtor = {
-    if (p.rhs.isInstanceOf[TestAvlTreeCompanionCtor])
-      p.rhs.asInstanceOf[TestAvlTreeCompanionCtor]
-    else
-      proxyOps[TestAvlTreeCompanionCtor](p)
-  }
-
-  implicit case object TestAvlTreeCompanionElem extends CompanionElem[TestAvlTreeCompanionCtor] {
-    lazy val tag = weakTypeTag[TestAvlTreeCompanionCtor]
-    protected def getDefaultRep = TestAvlTreeRep
-  }
-
-  implicit def proxyTestAvlTree(p: Rep[TestAvlTree]): TestAvlTree =
-    proxyOps[TestAvlTree](p)
-
-  implicit class ExtendedTestAvlTree(p: Rep[TestAvlTree]) {
-    def toData: Rep[TestAvlTreeData] = {
-      isoTestAvlTree.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoTestAvlTree: Iso[TestAvlTreeData, TestAvlTree] =
-    reifyObject(new TestAvlTreeIso())
-
-  def mkTestAvlTree
-    (startingDigest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]], maxNumOperations: Rep[WOption[Int]], maxDeletes: Rep[WOption[Int]]): Rep[TestAvlTree] = {
-    new TestAvlTreeCtor(startingDigest, keyLength, valueLengthOpt, maxNumOperations, maxDeletes)
-  }
-  def unmkTestAvlTree(p: Rep[AvlTree]) = p.elem.asInstanceOf[Elem[_]] match {
-    case _: TestAvlTreeElem @unchecked =>
-      Some((asRep[TestAvlTree](p).startingDigest, asRep[TestAvlTree](p).keyLength, asRep[TestAvlTree](p).valueLengthOpt, asRep[TestAvlTree](p).maxNumOperations, asRep[TestAvlTree](p).maxDeletes))
-    case _ =>
-      None
-  }
-
-    object TestAvlTreeMethods {
-    object builder {
-      def unapply(d: Def[_]): Nullable[Rep[TestAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[TestAvlTreeElem] && method.getName == "builder" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[TestAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[TestAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[TestAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[TestAvlTreeElem] && method.getName == "dataSize" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[TestAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[TestAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object cost {
-      def unapply(d: Def[_]): Nullable[Rep[TestAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[TestAvlTreeElem] && method.getName == "cost" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[TestAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[TestAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object digest {
-      def unapply(d: Def[_]): Nullable[Rep[TestAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[TestAvlTreeElem] && method.getName == "digest" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[TestAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[TestAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object TestAvlTreeCompanionMethods {
-  }
-} // of object TestAvlTree
-  registerEntityObject("TestAvlTree", TestAvlTree)
+import TestSigmaDslBuilder._
 
 object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
   case class TestSigmaDslBuilderCtor
@@ -326,41 +144,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         thisClass.getMethod("proveDHTuple", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         List(g, h, u, v),
         true, false, element[SigmaProp]))
-    }
-
-    override def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        thisClass.getMethod("isMember", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, false, element[Boolean]))
-    }
-
-    override def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
-        thisClass.getMethod("treeLookup", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, false, element[WOption[Coll[Byte]]]))
-    }
-
-    override def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        thisClass.getMethod("treeModifications", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
-    }
-
-    override def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        thisClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
-    }
-
-    override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        thisClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
     }
 
     override def groupGenerator: Rep[GroupElement] = {
@@ -780,45 +563,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
       }
     }
 
-    object isMember {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "isMember" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeLookup {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "treeLookup" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeModifications {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "treeModifications" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object groupGenerator {
       def unapply(d: Def[_]): Nullable[Rep[TestSigmaDslBuilder]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "groupGenerator" =>
@@ -905,6 +649,19 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object avlTree {
+      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "avlTree" =>
+          val res = (receiver, args(0), args(1), args(2), args(3))
+          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

@@ -57,14 +57,13 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   import CCostedBox._;
   import CostedBuilder._;
   import CostedOption._;
+  import CCostedOption._
   import CostedNone._
   import CostedSome._
   import SigmaDslBuilder._
   import MonoidBuilder._
   import MonoidBuilderInst._
   import AvlTree._
-  import CostedAvlTree._
-  import CCostedAvlTree._
   import Monoid._
   import IntPlusMonoid._
   import WSpecialPredef._
@@ -579,7 +578,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case CCostedPrimCtor(v, c, s) =>
         v.elem.asInstanceOf[Elem[_]] match {
           case be: BoxElem[_] => RCCostedBox(asRep[Box](v), c)
-          case be: AvlTreeElem[_] => RCCostedAvlTree(asRep[AvlTree](v), c)
           case pe: PairElem[a,b] =>
             val p = asRep[(a,b)](v)
             // TODO costing: this is approximation (we essentially double the cost and size)
@@ -776,7 +774,6 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
 
   /** For a given data type returns the corresponding specific descendant of CostedElem[T] */
   def elemToCostedElem[T](implicit e: Elem[T]): Elem[Costed[T]] = (e match {
-    case e: AvlTreeElem[_] => costedAvlTreeElement
     case e: BoxElem[_] => costedBoxElement
     case oe: WOptionElem[a,_] => costedOptionElement(oe.eItem)
     case ce: CollElem[a,_] => costedCollElement(ce.eItem)
@@ -1003,7 +1000,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         case treeData: AvlTreeData =>
           val tree: special.sigma.AvlTree = CAvlTree(treeData)
           val treeV = liftConst(tree)
-          RCCostedAvlTree(treeV, costOf(c))
+          RCCostedPrim(treeV, costOf(c), tree.dataSize)
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withDefaultSize(resV, costOf(c))
@@ -1014,7 +1011,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
       case Outputs => ctx.OUTPUTS
       case Self    => ctx.SELF
       case LastBlockUtxoRootHash => ctx.LastBlockUtxoRootHash
-      case MinerPubkey => ctx.MinerPubKey
+      case MinerPubkey => ctx.minerPubKey
 
       case op @ GetVar(id, optTpe) =>
         val res = ctx.getVar(id)(stypeToElem(optTpe.elemType))
@@ -1093,41 +1090,40 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         mkCostedColl(col, len, cost)
 
       case TreeLookup(In(_tree), InCollByte(key), InCollByte(proof)) =>
-        val tree = asRep[CostedAvlTree](_tree)
-        val value = sigmaDslBuilder.treeLookup(tree.value, key.value, proof.value)
+        val tree = asRep[Costed[AvlTree]](_tree)
+        val value = tree.value.get(key.value, proof.value)
         val size = tree.dataSize + key.dataSize + proof.dataSize
-        val cost = tree.cost + key.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[Coll[Byte]]](
-          Thunk(RCostedNone(cost)),
-          fun { x: Rep[Coll[Byte]] => RCostedSome(mkCostedColl(x, size.toInt, cost)) })
-
-      case TreeModifications(In(_tree), InCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[CostedAvlTree](_tree)
-        val value = sigmaDslBuilder.treeModifications(tree.value, operations.value, proof.value)
-        val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[AvlTree]](
-          Thunk(RCostedNone(cost)),
-          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
+        val cost = tree.cost + key.cost + proof.cost
+        RCCostedOption(value,
+          RWSpecialPredef.some(perKbCostOf(node, size)),
+          RWSpecialPredef.some(size), cost)
 
       case TreeInserts(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[CostedAvlTree](_tree)
-        val c = operations.value
-        val value = sigmaDslBuilder.treeInserts(tree.value, c, proof.value)
+        val tree = asRep[Costed[AvlTree]](_tree)
+        val value = tree.value.insert(operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[AvlTree]](
-          Thunk(RCostedNone(cost)),
-          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
+        val cost = tree.cost + operations.cost + proof.cost
+        RCCostedOption(value,
+          RWSpecialPredef.some(perKbCostOf(node, size)),
+          RWSpecialPredef.some(size), cost)
+
+      case TreeUpdates(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
+        val tree = asRep[Costed[AvlTree]](_tree)
+        val value = tree.value.update(operations.value, proof.value)
+        val size = tree.dataSize + operations.dataSize + proof.dataSize
+        val cost = tree.cost + operations.cost + proof.cost
+        RCCostedOption(value,
+          RWSpecialPredef.some(perKbCostOf(node, size)),
+          RWSpecialPredef.some(size), cost)
 
       case TreeRemovals(In(_tree), InCollCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[CostedAvlTree](_tree)
-        val value = sigmaDslBuilder.treeRemovals(tree.value, operations.value, proof.value)
+        val tree = asRep[Costed[AvlTree]](_tree)
+        val value = tree.value.remove(operations.value, proof.value)
         val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost + perKbCostOf(node, size)
-        value.fold[CostedOption[AvlTree]](
-          Thunk(RCostedNone(cost)),
-          fun { x: Rep[AvlTree] => RCostedSome(mkCosted(x, cost, size)) })
+        val cost = tree.cost + operations.cost + proof.cost
+        RCCostedOption(value,
+          RWSpecialPredef.some(perKbCostOf(node, size)),
+          RWSpecialPredef.some(size), cost)
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>

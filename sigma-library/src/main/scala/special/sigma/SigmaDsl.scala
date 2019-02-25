@@ -17,7 +17,7 @@ package special.sigma {
     import GroupElement._;
     import Header._;
     import MonoidBuilder._;
-    import Preheader._;
+    import PreHeader._;
     import SigmaContract._;
     import SigmaDslBuilder._;
     import SigmaProp._;
@@ -106,20 +106,38 @@ package special.sigma {
       def executeFromRegister[T](regId: Rep[Byte])(implicit cT: Elem[T]): Rep[T]
     };
     @Liftable trait AvlTree extends Def[AvlTree] {
-      def startingDigest: Rep[Coll[Byte]];
+      def digest: Rep[Coll[Byte]];
+      def enabledOperations: Rep[Byte];
       def keyLength: Rep[Int];
       def valueLengthOpt: Rep[WOption[Int]];
-      def maxNumOperations: Rep[WOption[Int]];
-      def maxDeletes: Rep[WOption[Int]];
       def cost: Rep[Int];
       def dataSize: Rep[Long];
-      def digest: Rep[Coll[Byte]]
+      def isInsertAllowed: Rep[Boolean];
+      def isUpdateAllowed: Rep[Boolean];
+      def isRemoveAllowed: Rep[Boolean];
+      def updateDigest(newDigest: Rep[Coll[Byte]]): Rep[AvlTree];
+      def updateOperations(newOperations: Rep[Byte]): Rep[AvlTree];
+      def contains(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];
+      def get(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
+      def getMany(keys: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[Coll[WOption[Coll[Byte]]]];
+      def insert(operations: Rep[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
+      def update(operations: Rep[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
+      def remove(operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]]
     };
-    trait Header extends Def[Header] {
+    @Liftable trait PreHeader extends Def[PreHeader] {
+      def version: Rep[Byte];
+      def parentId: Rep[Coll[Byte]];
+      def timestamp: Rep[Long];
+      def nBits: Rep[Long];
+      def height: Rep[Int];
+      def minerPk: Rep[GroupElement];
+      def votes: Rep[Coll[Byte]]
+    };
+    @Liftable trait Header extends Def[Header] {
       def version: Rep[Byte];
       def parentId: Rep[Coll[Byte]];
       def ADProofsRoot: Rep[Coll[Byte]];
-      def stateRoot: Rep[Coll[Byte]];
+      def stateRoot: Rep[AvlTree];
       def transactionsRoot: Rep[Coll[Byte]];
       def timestamp: Rep[Long];
       def nBits: Rep[Long];
@@ -128,29 +146,22 @@ package special.sigma {
       def minerPk: Rep[GroupElement];
       def powOnetimePk: Rep[GroupElement];
       def powNonce: Rep[Coll[Byte]];
-      def powDistance: Rep[BigInt]
-    };
-    trait Preheader extends Def[Preheader] {
-      def version: Rep[Byte];
-      def parentId: Rep[Coll[Byte]];
-      def timestamp: Rep[Long];
-      def nBits: Rep[Long];
-      def height: Rep[Int];
-      def minerPk: Rep[GroupElement]
+      def powDistance: Rep[BigInt];
+      def votes: Rep[Coll[Byte]]
     };
     @Liftable trait Context extends Def[Context] {
       def builder: Rep[SigmaDslBuilder];
       def OUTPUTS: Rep[Coll[Box]];
       def INPUTS: Rep[Coll[Box]];
+      def dataInputs: Rep[Coll[Box]];
       def HEIGHT: Rep[Int];
       def SELF: Rep[Box];
       def selfBoxIndex: Rep[Int];
       def LastBlockUtxoRootHash: Rep[AvlTree];
       def headers: Rep[Coll[Header]];
-      def preheader: Rep[Preheader];
-      def MinerPubKey: Rep[Coll[Byte]];
+      def preHeader: Rep[PreHeader];
+      def minerPubKey: Rep[Coll[Byte]];
       def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]];
-      def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[T];
       def cost: Rep[Int];
       def dataSize: Rep[Long]
     };
@@ -171,11 +182,7 @@ package special.sigma {
       def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = this.builder.longToByteArray(l);
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDlog(g);
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
-      def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = this.builder.isMember(tree, key, proof);
-      def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = this.builder.treeLookup(tree, key, proof);
-      def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = this.builder.treeModifications(tree, operations, proof);
       def groupGenerator: Rep[GroupElement] = this.builder.groupGenerator;
-      def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = this.builder.treeRemovals(tree, operations, proof);
       @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
       def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
     };
@@ -201,16 +208,12 @@ package special.sigma {
       def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]];
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp];
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp];
-      def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];
-      def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
-      def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
-      def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
-      def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
       def groupGenerator: Rep[GroupElement];
       @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]];
       def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement];
       def BigInt(n: Rep[WBigInteger]): Rep[BigInt];
-      def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger]
+      def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger];
+      def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;
@@ -219,8 +222,8 @@ package special.sigma {
     trait AnyValueCompanion;
     trait BoxCompanion;
     trait AvlTreeCompanion;
+    trait PreHeaderCompanion;
     trait HeaderCompanion;
-    trait PreheaderCompanion;
     trait ContextCompanion;
     trait SigmaContractCompanion;
     trait SigmaDslBuilderCompanion

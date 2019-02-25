@@ -16,12 +16,13 @@ import Box._
 import Coll._
 import Context._
 import Costed._
-import CostedAvlTree._
 import CostedBox._
 import CostedBuilder._
 import CostedColl._
 import CostedOption._
 import CostedSigmaObject._
+import Header._
+import PreHeader._
 import SigmaDslBuilder._
 import CostedContext._
 
@@ -157,6 +158,13 @@ object CostedContext extends EntityObject("CostedContext") {
     override def transform(t: Transformer) = CostedContextAdapter(t(source))
     private val thisClass = classOf[CostedContext]
 
+    def dataInputs: Rep[CostedColl[Box]] = {
+      asRep[CostedColl[Box]](mkMethodCall(source,
+        thisClass.getMethod("dataInputs"),
+        List(),
+        true, true, element[CostedColl[Box]]))
+    }
+
     def OUTPUTS: Rep[CostedColl[Box]] = {
       asRep[CostedColl[Box]](mkMethodCall(source,
         thisClass.getMethod("OUTPUTS"),
@@ -185,16 +193,37 @@ object CostedContext extends EntityObject("CostedContext") {
         true, true, element[CostedBox]))
     }
 
-    def LastBlockUtxoRootHash: Rep[CostedAvlTree] = {
-      asRep[CostedAvlTree](mkMethodCall(source,
-        thisClass.getMethod("LastBlockUtxoRootHash"),
+    def selfBoxIndex: Rep[Costed[Int]] = {
+      asRep[Costed[Int]](mkMethodCall(source,
+        thisClass.getMethod("selfBoxIndex"),
         List(),
-        true, true, element[CostedAvlTree]))
+        true, true, element[Costed[Int]]))
     }
 
-    def MinerPubKey: Rep[CostedColl[Byte]] = {
+    def LastBlockUtxoRootHash: Rep[Costed[AvlTree]] = {
+      asRep[Costed[AvlTree]](mkMethodCall(source,
+        thisClass.getMethod("LastBlockUtxoRootHash"),
+        List(),
+        true, true, element[Costed[AvlTree]]))
+    }
+
+    def headers: Rep[CostedColl[Header]] = {
+      asRep[CostedColl[Header]](mkMethodCall(source,
+        thisClass.getMethod("headers"),
+        List(),
+        true, true, element[CostedColl[Header]]))
+    }
+
+    def preHeader: Rep[Costed[PreHeader]] = {
+      asRep[Costed[PreHeader]](mkMethodCall(source,
+        thisClass.getMethod("preHeader"),
+        List(),
+        true, true, element[Costed[PreHeader]]))
+    }
+
+    def minerPubKey: Rep[CostedColl[Byte]] = {
       asRep[CostedColl[Byte]](mkMethodCall(source,
-        thisClass.getMethod("MinerPubKey"),
+        thisClass.getMethod("minerPubKey"),
         List(),
         true, true, element[CostedColl[Byte]]))
     }
@@ -204,13 +233,6 @@ object CostedContext extends EntityObject("CostedContext") {
         thisClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
         List(id, cT),
         true, true, element[CostedOption[T]]))
-    }
-
-    def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]] = {
-      asRep[Costed[T]](mkMethodCall(source,
-        thisClass.getMethod("getConstant", classOf[Sym], classOf[Elem[_]]),
-        List(id, cT),
-        true, true, element[Costed[T]]))
     }
 
     def dsl: Rep[SigmaDslBuilder] = {
@@ -291,6 +313,19 @@ object CostedContext extends EntityObject("CostedContext") {
   }
 
   object CostedContextMethods {
+    object dataInputs {
+      def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "dataInputs" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object OUTPUTS {
       def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "OUTPUTS" =>
@@ -343,6 +378,19 @@ object CostedContext extends EntityObject("CostedContext") {
       }
     }
 
+    object selfBoxIndex {
+      def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "selfBoxIndex" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object LastBlockUtxoRootHash {
       def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "LastBlockUtxoRootHash" =>
@@ -356,9 +404,35 @@ object CostedContext extends EntityObject("CostedContext") {
       }
     }
 
-    object MinerPubKey {
+    object headers {
       def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "MinerPubKey" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "headers" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object preHeader {
+      def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "preHeader" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object minerPubKey {
+      def unapply(d: Def[_]): Nullable[Rep[CostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "minerPubKey" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CostedContext]]]
         case _ => Nullable.None
@@ -372,19 +446,6 @@ object CostedContext extends EntityObject("CostedContext") {
     object getVar {
       def unapply(d: Def[_]): Nullable[(Rep[CostedContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "getVar" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CostedContext], Rep[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CostedContext], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getConstant {
-      def unapply(d: Def[_]): Nullable[(Rep[CostedContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CostedContextElem[_]] && method.getName == "getConstant" =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[CostedContext], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
@@ -653,173 +714,6 @@ object CostedBox extends EntityObject("CostedBox") {
   }
 } // of object CostedBox
   registerEntityObject("CostedBox", CostedBox)
-
-object CostedAvlTree extends EntityObject("CostedAvlTree") {
-  // entityAdapter for CostedAvlTree trait
-  case class CostedAvlTreeAdapter(source: Rep[CostedAvlTree])
-      extends CostedAvlTree with Def[CostedAvlTree] {
-    override lazy val eVal: Elem[AvlTree] = implicitly[Elem[AvlTree]]
-    val selfType: Elem[CostedAvlTree] = element[CostedAvlTree]
-    override def transform(t: Transformer) = CostedAvlTreeAdapter(t(source))
-    private val thisClass = classOf[CostedAvlTree]
-
-    def startingDigest: Rep[CostedColl[Byte]] = {
-      asRep[CostedColl[Byte]](mkMethodCall(source,
-        thisClass.getMethod("startingDigest"),
-        List(),
-        true, true, element[CostedColl[Byte]]))
-    }
-
-    def keyLength: Rep[Costed[Int]] = {
-      asRep[Costed[Int]](mkMethodCall(source,
-        thisClass.getMethod("keyLength"),
-        List(),
-        true, true, element[Costed[Int]]))
-    }
-
-    def valueLengthOpt: Rep[CostedOption[Int]] = {
-      asRep[CostedOption[Int]](mkMethodCall(source,
-        thisClass.getMethod("valueLengthOpt"),
-        List(),
-        true, true, element[CostedOption[Int]]))
-    }
-
-    def maxNumOperations: Rep[CostedOption[Int]] = {
-      asRep[CostedOption[Int]](mkMethodCall(source,
-        thisClass.getMethod("maxNumOperations"),
-        List(),
-        true, true, element[CostedOption[Int]]))
-    }
-
-    def maxDeletes: Rep[CostedOption[Int]] = {
-      asRep[CostedOption[Int]](mkMethodCall(source,
-        thisClass.getMethod("maxDeletes"),
-        List(),
-        true, true, element[CostedOption[Int]]))
-    }
-
-    def dsl: Rep[SigmaDslBuilder] = {
-      asRep[SigmaDslBuilder](mkMethodCall(source,
-        thisClass.getMethod("dsl"),
-        List(),
-        true, true, element[SigmaDslBuilder]))
-    }
-
-    def value: Rep[AvlTree] = {
-      asRep[AvlTree](mkMethodCall(source,
-        thisClass.getMethod("value"),
-        List(),
-        true, true, element[AvlTree]))
-    }
-
-    def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(source,
-        thisClass.getMethod("cost"),
-        List(),
-        true, true, element[Int]))
-    }
-
-    def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("dataSize"),
-        List(),
-        true, true, element[Long]))
-    }
-  }
-
-  // entityProxy: single proxy for each type family
-  implicit def proxyCostedAvlTree(p: Rep[CostedAvlTree]): CostedAvlTree = {
-    if (p.rhs.isInstanceOf[CostedAvlTree@unchecked]) p.rhs.asInstanceOf[CostedAvlTree]
-    else
-      CostedAvlTreeAdapter(p)
-  }
-
-  // familyElem
-  class CostedAvlTreeElem[To <: CostedAvlTree]
-    extends CostedSigmaObjectElem[AvlTree, To] {
-    override lazy val parent: Option[Elem[_]] = Some(costedSigmaObjectElement(avlTreeElement))
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override lazy val tag = {
-      weakTypeTag[CostedAvlTree].asInstanceOf[WeakTypeTag[To]]
-    }
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[CostedAvlTree] => convertCostedAvlTree(x) }
-      tryConvert(element[CostedAvlTree], this, x, conv)
-    }
-
-    def convertCostedAvlTree(x: Rep[CostedAvlTree]): Rep[To] = {
-      x.elem match {
-        case _: CostedAvlTreeElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have CostedAvlTreeElem[_], but got $e", x)
-      }
-    }
-    override def getDefaultRep: Rep[To] = ???
-  }
-
-  implicit lazy val costedAvlTreeElement: Elem[CostedAvlTree] =
-    new CostedAvlTreeElem[CostedAvlTree]
-
-  implicit case object CostedAvlTreeCompanionElem extends CompanionElem[CostedAvlTreeCompanionCtor] {
-    lazy val tag = weakTypeTag[CostedAvlTreeCompanionCtor]
-    protected def getDefaultRep = RCostedAvlTree
-  }
-
-  abstract class CostedAvlTreeCompanionCtor extends CompanionDef[CostedAvlTreeCompanionCtor] with CostedAvlTreeCompanion {
-    def selfType = CostedAvlTreeCompanionElem
-    override def toString = "CostedAvlTree"
-  }
-  implicit def proxyCostedAvlTreeCompanionCtor(p: Rep[CostedAvlTreeCompanionCtor]): CostedAvlTreeCompanionCtor =
-    proxyOps[CostedAvlTreeCompanionCtor](p)
-
-  lazy val RCostedAvlTree: Rep[CostedAvlTreeCompanionCtor] = new CostedAvlTreeCompanionCtor {
-    private val thisClass = classOf[CostedAvlTreeCompanion]
-  }
-
-  object CostedAvlTreeMethods {
-    object startingDigest {
-      def unapply(d: Def[_]): Nullable[Rep[CostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedAvlTreeElem[_]] && method.getName == "startingDigest" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object keyLength {
-      def unapply(d: Def[_]): Nullable[Rep[CostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedAvlTreeElem[_]] && method.getName == "keyLength" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object valueLengthOpt {
-      def unapply(d: Def[_]): Nullable[Rep[CostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CostedAvlTreeElem[_]] && method.getName == "valueLengthOpt" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CostedAvlTreeCompanionMethods {
-  }
-} // of object CostedAvlTree
-  registerEntityObject("CostedAvlTree", CostedAvlTree)
 
   registerModule(CostedObjectsModule)
 }

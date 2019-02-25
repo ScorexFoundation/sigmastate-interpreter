@@ -26,7 +26,7 @@ import CostedOption._
 import GroupElement._
 import Header._
 import MonoidBuilder._
-import Preheader._
+import PreHeader._
 import SigmaContract._
 import SigmaDslBuilder._
 import SigmaProp._
@@ -2387,11 +2387,18 @@ object AvlTree extends EntityObject("AvlTree") {
 
     private val AvlTreeClass = classOf[AvlTree]
 
-    override def startingDigest: Rep[Coll[Byte]] = {
+    override def digest: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
-        AvlTreeClass.getMethod("startingDigest"),
+        AvlTreeClass.getMethod("digest"),
         List(),
         true, false, element[Coll[Byte]]))
+    }
+
+    override def enabledOperations: Rep[Byte] = {
+      asRep[Byte](mkMethodCall(self,
+        AvlTreeClass.getMethod("enabledOperations"),
+        List(),
+        true, false, element[Byte]))
     }
 
     override def keyLength: Rep[Int] = {
@@ -2404,20 +2411,6 @@ object AvlTree extends EntityObject("AvlTree") {
     override def valueLengthOpt: Rep[WOption[Int]] = {
       asRep[WOption[Int]](mkMethodCall(self,
         AvlTreeClass.getMethod("valueLengthOpt"),
-        List(),
-        true, false, element[WOption[Int]]))
-    }
-
-    override def maxNumOperations: Rep[WOption[Int]] = {
-      asRep[WOption[Int]](mkMethodCall(self,
-        AvlTreeClass.getMethod("maxNumOperations"),
-        List(),
-        true, false, element[WOption[Int]]))
-    }
-
-    override def maxDeletes: Rep[WOption[Int]] = {
-      asRep[WOption[Int]](mkMethodCall(self,
-        AvlTreeClass.getMethod("maxDeletes"),
         List(),
         true, false, element[WOption[Int]]))
     }
@@ -2436,11 +2429,81 @@ object AvlTree extends EntityObject("AvlTree") {
         true, false, element[Long]))
     }
 
-    override def digest: Rep[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(self,
-        AvlTreeClass.getMethod("digest"),
+    override def isInsertAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        AvlTreeClass.getMethod("isInsertAllowed"),
         List(),
-        true, false, element[Coll[Byte]]))
+        true, false, element[Boolean]))
+    }
+
+    override def isUpdateAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        AvlTreeClass.getMethod("isUpdateAllowed"),
+        List(),
+        true, false, element[Boolean]))
+    }
+
+    override def isRemoveAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        AvlTreeClass.getMethod("isRemoveAllowed"),
+        List(),
+        true, false, element[Boolean]))
+    }
+
+    override def updateDigest(newDigest: Rep[Coll[Byte]]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(self,
+        AvlTreeClass.getMethod("updateDigest", classOf[Sym]),
+        List(newDigest),
+        true, false, element[AvlTree]))
+    }
+
+    override def updateOperations(newOperations: Rep[Byte]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(self,
+        AvlTreeClass.getMethod("updateOperations", classOf[Sym]),
+        List(newOperations),
+        true, false, element[AvlTree]))
+    }
+
+    override def contains(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(self,
+        AvlTreeClass.getMethod("contains", classOf[Sym], classOf[Sym]),
+        List(key, proof),
+        true, false, element[Boolean]))
+    }
+
+    override def get(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
+      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
+        AvlTreeClass.getMethod("get", classOf[Sym], classOf[Sym]),
+        List(key, proof),
+        true, false, element[WOption[Coll[Byte]]]))
+    }
+
+    override def getMany(keys: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[Coll[WOption[Coll[Byte]]]] = {
+      asRep[Coll[WOption[Coll[Byte]]]](mkMethodCall(self,
+        AvlTreeClass.getMethod("getMany", classOf[Sym], classOf[Sym]),
+        List(keys, proof),
+        true, false, element[Coll[WOption[Coll[Byte]]]]))
+    }
+
+    override def insert(operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
+        AvlTreeClass.getMethod("insert", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, false, element[WOption[AvlTree]]))
+    }
+
+    override def update(operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
+        AvlTreeClass.getMethod("update", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, false, element[WOption[AvlTree]]))
+    }
+
+    override def remove(operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(self,
+        AvlTreeClass.getMethod("remove", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, false, element[WOption[AvlTree]]))
     }
   }
 
@@ -2465,11 +2528,18 @@ object AvlTree extends EntityObject("AvlTree") {
     override def transform(t: Transformer) = AvlTreeAdapter(t(source))
     private val thisClass = classOf[AvlTree]
 
-    def startingDigest: Rep[Coll[Byte]] = {
+    def digest: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
-        thisClass.getMethod("startingDigest"),
+        thisClass.getMethod("digest"),
         List(),
         true, true, element[Coll[Byte]]))
+    }
+
+    def enabledOperations: Rep[Byte] = {
+      asRep[Byte](mkMethodCall(source,
+        thisClass.getMethod("enabledOperations"),
+        List(),
+        true, true, element[Byte]))
     }
 
     def keyLength: Rep[Int] = {
@@ -2482,20 +2552,6 @@ object AvlTree extends EntityObject("AvlTree") {
     def valueLengthOpt: Rep[WOption[Int]] = {
       asRep[WOption[Int]](mkMethodCall(source,
         thisClass.getMethod("valueLengthOpt"),
-        List(),
-        true, true, element[WOption[Int]]))
-    }
-
-    def maxNumOperations: Rep[WOption[Int]] = {
-      asRep[WOption[Int]](mkMethodCall(source,
-        thisClass.getMethod("maxNumOperations"),
-        List(),
-        true, true, element[WOption[Int]]))
-    }
-
-    def maxDeletes: Rep[WOption[Int]] = {
-      asRep[WOption[Int]](mkMethodCall(source,
-        thisClass.getMethod("maxDeletes"),
         List(),
         true, true, element[WOption[Int]]))
     }
@@ -2514,11 +2570,81 @@ object AvlTree extends EntityObject("AvlTree") {
         true, true, element[Long]))
     }
 
-    def digest: Rep[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(source,
-        thisClass.getMethod("digest"),
+    def isInsertAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        thisClass.getMethod("isInsertAllowed"),
         List(),
-        true, true, element[Coll[Byte]]))
+        true, true, element[Boolean]))
+    }
+
+    def isUpdateAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        thisClass.getMethod("isUpdateAllowed"),
+        List(),
+        true, true, element[Boolean]))
+    }
+
+    def isRemoveAllowed: Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        thisClass.getMethod("isRemoveAllowed"),
+        List(),
+        true, true, element[Boolean]))
+    }
+
+    def updateDigest(newDigest: Rep[Coll[Byte]]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(source,
+        thisClass.getMethod("updateDigest", classOf[Sym]),
+        List(newDigest),
+        true, true, element[AvlTree]))
+    }
+
+    def updateOperations(newOperations: Rep[Byte]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(source,
+        thisClass.getMethod("updateOperations", classOf[Sym]),
+        List(newOperations),
+        true, true, element[AvlTree]))
+    }
+
+    def contains(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = {
+      asRep[Boolean](mkMethodCall(source,
+        thisClass.getMethod("contains", classOf[Sym], classOf[Sym]),
+        List(key, proof),
+        true, true, element[Boolean]))
+    }
+
+    def get(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
+      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
+        thisClass.getMethod("get", classOf[Sym], classOf[Sym]),
+        List(key, proof),
+        true, true, element[WOption[Coll[Byte]]]))
+    }
+
+    def getMany(keys: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[Coll[WOption[Coll[Byte]]]] = {
+      asRep[Coll[WOption[Coll[Byte]]]](mkMethodCall(source,
+        thisClass.getMethod("getMany", classOf[Sym], classOf[Sym]),
+        List(keys, proof),
+        true, true, element[Coll[WOption[Coll[Byte]]]]))
+    }
+
+    def insert(operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
+        thisClass.getMethod("insert", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, true, element[WOption[AvlTree]]))
+    }
+
+    def update(operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
+        thisClass.getMethod("update", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, true, element[WOption[AvlTree]]))
+    }
+
+    def remove(operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
+      asRep[WOption[AvlTree]](mkMethodCall(source,
+        thisClass.getMethod("remove", classOf[Sym], classOf[Sym]),
+        List(operations, proof),
+        true, true, element[WOption[AvlTree]]))
     }
   }
 
@@ -2537,7 +2663,7 @@ object AvlTree extends EntityObject("AvlTree") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[AvlTree], classOf[SAvlTree], Set(
-          "startingDigest", "flags", "keyLength", "valueLengthOpt", "cost", "dataSize", "digest"
+        "digest", "enabledOperations", "keyLength", "valueLengthOpt", "cost", "dataSize", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
         ))
     }
 
@@ -2580,9 +2706,22 @@ object AvlTree extends EntityObject("AvlTree") {
   }
 
   object AvlTreeMethods {
-    object startingDigest {
+    object digest {
       def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "startingDigest" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "digest" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object enabledOperations {
+      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "enabledOperations" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
         case _ => Nullable.None
@@ -2619,32 +2758,6 @@ object AvlTree extends EntityObject("AvlTree") {
       }
     }
 
-    object maxNumOperations {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "maxNumOperations" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object maxDeletes {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "maxDeletes" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object cost {
       def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "cost" =>
@@ -2671,14 +2784,144 @@ object AvlTree extends EntityObject("AvlTree") {
       }
     }
 
-    object digest {
+    object isInsertAllowed {
       def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "digest" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "isInsertAllowed" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object isUpdateAllowed {
+      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "isUpdateAllowed" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object isRemoveAllowed {
+      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "isRemoveAllowed" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object updateDigest {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "updateDigest" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object updateOperations {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Byte])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "updateOperations" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Byte])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Byte])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object contains {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "contains" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object get {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "get" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object getMany {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "getMany" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object insert {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "insert" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object update {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "update" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object remove {
+      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "remove" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
@@ -2690,7 +2933,429 @@ object AvlTree extends EntityObject("AvlTree") {
 } // of object AvlTree
   registerEntityObject("AvlTree", AvlTree)
 
+object PreHeader extends EntityObject("PreHeader") {
+  // entityConst: single const for each entity
+  import Liftables._
+  import scala.reflect.{ClassTag, classTag}
+  type SPreHeader = special.sigma.PreHeader
+  case class PreHeaderConst(
+        constValue: SPreHeader
+      ) extends PreHeader with LiftedConst[SPreHeader, PreHeader]
+        with Def[PreHeader] with PreHeaderConstMethods {
+    val liftable: Liftable[SPreHeader, PreHeader] = LiftablePreHeader
+    val selfType: Elem[PreHeader] = liftable.eW
+  }
+
+  trait PreHeaderConstMethods extends PreHeader  { thisConst: Def[_] =>
+
+    private val PreHeaderClass = classOf[PreHeader]
+
+    override def version: Rep[Byte] = {
+      asRep[Byte](mkMethodCall(self,
+        PreHeaderClass.getMethod("version"),
+        List(),
+        true, false, element[Byte]))
+    }
+
+    override def parentId: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        PreHeaderClass.getMethod("parentId"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def timestamp: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        PreHeaderClass.getMethod("timestamp"),
+        List(),
+        true, false, element[Long]))
+    }
+
+    override def nBits: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        PreHeaderClass.getMethod("nBits"),
+        List(),
+        true, false, element[Long]))
+    }
+
+    override def height: Rep[Int] = {
+      asRep[Int](mkMethodCall(self,
+        PreHeaderClass.getMethod("height"),
+        List(),
+        true, false, element[Int]))
+    }
+
+    override def minerPk: Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
+        PreHeaderClass.getMethod("minerPk"),
+        List(),
+        true, false, element[GroupElement]))
+    }
+
+    override def votes: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        PreHeaderClass.getMethod("votes"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+  }
+
+  implicit object LiftablePreHeader
+    extends Liftable[SPreHeader, PreHeader] {
+    lazy val eW: Elem[PreHeader] = preHeaderElement
+    lazy val sourceType: RType[SPreHeader] = {
+      RType[SPreHeader]
+    }
+    def lift(x: SPreHeader): Rep[PreHeader] = PreHeaderConst(x)
+    def unlift(w: Rep[PreHeader]): SPreHeader = w match {
+      case Def(PreHeaderConst(x: SPreHeader))
+            => x.asInstanceOf[SPreHeader]
+      case _ => unliftError(w)
+    }
+  }
+
+  // entityAdapter for PreHeader trait
+  case class PreHeaderAdapter(source: Rep[PreHeader])
+      extends PreHeader with Def[PreHeader] {
+    val selfType: Elem[PreHeader] = element[PreHeader]
+    override def transform(t: Transformer) = PreHeaderAdapter(t(source))
+    private val thisClass = classOf[PreHeader]
+
+    def version: Rep[Byte] = {
+      asRep[Byte](mkMethodCall(source,
+        thisClass.getMethod("version"),
+        List(),
+        true, true, element[Byte]))
+    }
+
+    def parentId: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        thisClass.getMethod("parentId"),
+        List(),
+        true, true, element[Coll[Byte]]))
+    }
+
+    def timestamp: Rep[Long] = {
+      asRep[Long](mkMethodCall(source,
+        thisClass.getMethod("timestamp"),
+        List(),
+        true, true, element[Long]))
+    }
+
+    def nBits: Rep[Long] = {
+      asRep[Long](mkMethodCall(source,
+        thisClass.getMethod("nBits"),
+        List(),
+        true, true, element[Long]))
+    }
+
+    def height: Rep[Int] = {
+      asRep[Int](mkMethodCall(source,
+        thisClass.getMethod("height"),
+        List(),
+        true, true, element[Int]))
+    }
+
+    def minerPk: Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(source,
+        thisClass.getMethod("minerPk"),
+        List(),
+        true, true, element[GroupElement]))
+    }
+
+    def votes: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        thisClass.getMethod("votes"),
+        List(),
+        true, true, element[Coll[Byte]]))
+    }
+  }
+
+  // entityProxy: single proxy for each type family
+  implicit def proxyPreHeader(p: Rep[PreHeader]): PreHeader = {
+    if (p.rhs.isInstanceOf[PreHeader@unchecked]) p.rhs.asInstanceOf[PreHeader]
+    else
+      PreHeaderAdapter(p)
+  }
+
+  // familyElem
+  class PreHeaderElem[To <: PreHeader]
+    extends EntityElem[To] {
+    override val liftable: Liftables.Liftable[_, To] = LiftablePreHeader.asLiftable[SPreHeader, To]
+
+    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+      super.collectMethods ++
+        Elem.declaredMethods(classOf[PreHeader], classOf[SPreHeader], Set(
+        "version", "parentId", "timestamp", "nBits", "height", "minerPk", "votes"
+        ))
+    }
+
+    lazy val parent: Option[Elem[_]] = None
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
+    override lazy val tag = {
+      weakTypeTag[PreHeader].asInstanceOf[WeakTypeTag[To]]
+    }
+    override def convert(x: Rep[Def[_]]) = {
+      val conv = fun {x: Rep[PreHeader] => convertPreHeader(x) }
+      tryConvert(element[PreHeader], this, x, conv)
+    }
+
+    def convertPreHeader(x: Rep[PreHeader]): Rep[To] = {
+      x.elem match {
+        case _: PreHeaderElem[_] => asRep[To](x)
+        case e => !!!(s"Expected $x to have PreHeaderElem[_], but got $e", x)
+      }
+    }
+    override def getDefaultRep: Rep[To] = ???
+  }
+
+  implicit lazy val preHeaderElement: Elem[PreHeader] =
+    new PreHeaderElem[PreHeader]
+
+  implicit case object PreHeaderCompanionElem extends CompanionElem[PreHeaderCompanionCtor] {
+    lazy val tag = weakTypeTag[PreHeaderCompanionCtor]
+    protected def getDefaultRep = RPreHeader
+  }
+
+  abstract class PreHeaderCompanionCtor extends CompanionDef[PreHeaderCompanionCtor] with PreHeaderCompanion {
+    def selfType = PreHeaderCompanionElem
+    override def toString = "PreHeader"
+  }
+  implicit def proxyPreHeaderCompanionCtor(p: Rep[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
+    proxyOps[PreHeaderCompanionCtor](p)
+
+  lazy val RPreHeader: Rep[PreHeaderCompanionCtor] = new PreHeaderCompanionCtor {
+    private val thisClass = classOf[PreHeaderCompanion]
+  }
+
+  object PreHeaderMethods {
+    object version {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "version" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object parentId {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "parentId" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object timestamp {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "timestamp" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object nBits {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "nBits" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object height {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "height" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object minerPk {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "minerPk" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object votes {
+      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreHeaderElem[_]] && method.getName == "votes" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+  }
+
+  object PreHeaderCompanionMethods {
+  }
+} // of object PreHeader
+  registerEntityObject("PreHeader", PreHeader)
+
 object Header extends EntityObject("Header") {
+  // entityConst: single const for each entity
+  import Liftables._
+  import scala.reflect.{ClassTag, classTag}
+  type SHeader = special.sigma.Header
+  case class HeaderConst(
+        constValue: SHeader
+      ) extends Header with LiftedConst[SHeader, Header]
+        with Def[Header] with HeaderConstMethods {
+    val liftable: Liftable[SHeader, Header] = LiftableHeader
+    val selfType: Elem[Header] = liftable.eW
+  }
+
+  trait HeaderConstMethods extends Header  { thisConst: Def[_] =>
+
+    private val HeaderClass = classOf[Header]
+
+    override def version: Rep[Byte] = {
+      asRep[Byte](mkMethodCall(self,
+        HeaderClass.getMethod("version"),
+        List(),
+        true, false, element[Byte]))
+    }
+
+    override def parentId: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("parentId"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def ADProofsRoot: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("ADProofsRoot"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def stateRoot: Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(self,
+        HeaderClass.getMethod("stateRoot"),
+        List(),
+        true, false, element[AvlTree]))
+    }
+
+    override def transactionsRoot: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("transactionsRoot"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def timestamp: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        HeaderClass.getMethod("timestamp"),
+        List(),
+        true, false, element[Long]))
+    }
+
+    override def nBits: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        HeaderClass.getMethod("nBits"),
+        List(),
+        true, false, element[Long]))
+    }
+
+    override def height: Rep[Int] = {
+      asRep[Int](mkMethodCall(self,
+        HeaderClass.getMethod("height"),
+        List(),
+        true, false, element[Int]))
+    }
+
+    override def extensionRoot: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("extensionRoot"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def minerPk: Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
+        HeaderClass.getMethod("minerPk"),
+        List(),
+        true, false, element[GroupElement]))
+    }
+
+    override def powOnetimePk: Rep[GroupElement] = {
+      asRep[GroupElement](mkMethodCall(self,
+        HeaderClass.getMethod("powOnetimePk"),
+        List(),
+        true, false, element[GroupElement]))
+    }
+
+    override def powNonce: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("powNonce"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
+    override def powDistance: Rep[BigInt] = {
+      asRep[BigInt](mkMethodCall(self,
+        HeaderClass.getMethod("powDistance"),
+        List(),
+        true, false, element[BigInt]))
+    }
+
+    override def votes: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("votes"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+  }
+
+  implicit object LiftableHeader
+    extends Liftable[SHeader, Header] {
+    lazy val eW: Elem[Header] = headerElement
+    lazy val sourceType: RType[SHeader] = {
+      RType[SHeader]
+    }
+    def lift(x: SHeader): Rep[Header] = HeaderConst(x)
+    def unlift(w: Rep[Header]): SHeader = w match {
+      case Def(HeaderConst(x: SHeader))
+            => x.asInstanceOf[SHeader]
+      case _ => unliftError(w)
+    }
+  }
+
   // entityAdapter for Header trait
   case class HeaderAdapter(source: Rep[Header])
       extends Header with Def[Header] {
@@ -2719,11 +3384,11 @@ object Header extends EntityObject("Header") {
         true, true, element[Coll[Byte]]))
     }
 
-    def stateRoot: Rep[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(source,
+    def stateRoot: Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(source,
         thisClass.getMethod("stateRoot"),
         List(),
-        true, true, element[Coll[Byte]]))
+        true, true, element[AvlTree]))
     }
 
     def transactionsRoot: Rep[Coll[Byte]] = {
@@ -2788,6 +3453,13 @@ object Header extends EntityObject("Header") {
         List(),
         true, true, element[BigInt]))
     }
+
+    def votes: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        thisClass.getMethod("votes"),
+        List(),
+        true, true, element[Coll[Byte]]))
+    }
   }
 
   // entityProxy: single proxy for each type family
@@ -2800,6 +3472,15 @@ object Header extends EntityObject("Header") {
   // familyElem
   class HeaderElem[To <: Header]
     extends EntityElem[To] {
+    override val liftable: Liftables.Liftable[_, To] = LiftableHeader.asLiftable[SHeader, To]
+
+    override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
+      super.collectMethods ++
+        Elem.declaredMethods(classOf[Header], classOf[SHeader], Set(
+        "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
+        ))
+    }
+
     lazy val parent: Option[Elem[_]] = None
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
@@ -3007,196 +3688,25 @@ object Header extends EntityObject("Header") {
         case _ => Nullable.None
       }
     }
+
+    object votes {
+      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[HeaderElem[_]] && method.getName == "votes" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
   }
 
   object HeaderCompanionMethods {
   }
 } // of object Header
   registerEntityObject("Header", Header)
-
-object Preheader extends EntityObject("Preheader") {
-  // entityAdapter for Preheader trait
-  case class PreheaderAdapter(source: Rep[Preheader])
-      extends Preheader with Def[Preheader] {
-    val selfType: Elem[Preheader] = element[Preheader]
-    override def transform(t: Transformer) = PreheaderAdapter(t(source))
-    private val thisClass = classOf[Preheader]
-
-    def version: Rep[Byte] = {
-      asRep[Byte](mkMethodCall(source,
-        thisClass.getMethod("version"),
-        List(),
-        true, true, element[Byte]))
-    }
-
-    def parentId: Rep[Coll[Byte]] = {
-      asRep[Coll[Byte]](mkMethodCall(source,
-        thisClass.getMethod("parentId"),
-        List(),
-        true, true, element[Coll[Byte]]))
-    }
-
-    def timestamp: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("timestamp"),
-        List(),
-        true, true, element[Long]))
-    }
-
-    def nBits: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("nBits"),
-        List(),
-        true, true, element[Long]))
-    }
-
-    def height: Rep[Int] = {
-      asRep[Int](mkMethodCall(source,
-        thisClass.getMethod("height"),
-        List(),
-        true, true, element[Int]))
-    }
-
-    def minerPk: Rep[GroupElement] = {
-      asRep[GroupElement](mkMethodCall(source,
-        thisClass.getMethod("minerPk"),
-        List(),
-        true, true, element[GroupElement]))
-    }
-  }
-
-  // entityProxy: single proxy for each type family
-  implicit def proxyPreheader(p: Rep[Preheader]): Preheader = {
-    if (p.rhs.isInstanceOf[Preheader@unchecked]) p.rhs.asInstanceOf[Preheader]
-    else
-      PreheaderAdapter(p)
-  }
-
-  // familyElem
-  class PreheaderElem[To <: Preheader]
-    extends EntityElem[To] {
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override lazy val tag = {
-      weakTypeTag[Preheader].asInstanceOf[WeakTypeTag[To]]
-    }
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[Preheader] => convertPreheader(x) }
-      tryConvert(element[Preheader], this, x, conv)
-    }
-
-    def convertPreheader(x: Rep[Preheader]): Rep[To] = {
-      x.elem match {
-        case _: PreheaderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have PreheaderElem[_], but got $e", x)
-      }
-    }
-    override def getDefaultRep: Rep[To] = ???
-  }
-
-  implicit lazy val preheaderElement: Elem[Preheader] =
-    new PreheaderElem[Preheader]
-
-  implicit case object PreheaderCompanionElem extends CompanionElem[PreheaderCompanionCtor] {
-    lazy val tag = weakTypeTag[PreheaderCompanionCtor]
-    protected def getDefaultRep = RPreheader
-  }
-
-  abstract class PreheaderCompanionCtor extends CompanionDef[PreheaderCompanionCtor] with PreheaderCompanion {
-    def selfType = PreheaderCompanionElem
-    override def toString = "Preheader"
-  }
-  implicit def proxyPreheaderCompanionCtor(p: Rep[PreheaderCompanionCtor]): PreheaderCompanionCtor =
-    proxyOps[PreheaderCompanionCtor](p)
-
-  lazy val RPreheader: Rep[PreheaderCompanionCtor] = new PreheaderCompanionCtor {
-    private val thisClass = classOf[PreheaderCompanion]
-  }
-
-  object PreheaderMethods {
-    object version {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "version" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object parentId {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "parentId" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object timestamp {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "timestamp" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object nBits {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "nBits" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object height {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "height" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object minerPk {
-      def unapply(d: Def[_]): Nullable[Rep[Preheader]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[PreheaderElem[_]] && method.getName == "minerPk" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Preheader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Preheader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object PreheaderCompanionMethods {
-  }
-} // of object Preheader
-  registerEntityObject("Preheader", Preheader)
 
 object Context extends EntityObject("Context") {
   // entityConst: single const for each entity
@@ -3236,6 +3746,13 @@ object Context extends EntityObject("Context") {
         true, false, element[Coll[Box]]))
     }
 
+    override def dataInputs: Rep[Coll[Box]] = {
+      asRep[Coll[Box]](mkMethodCall(self,
+        ContextClass.getMethod("dataInputs"),
+        List(),
+        true, false, element[Coll[Box]]))
+    }
+
     override def HEIGHT: Rep[Int] = {
       asRep[Int](mkMethodCall(self,
         ContextClass.getMethod("HEIGHT"),
@@ -3271,16 +3788,16 @@ object Context extends EntityObject("Context") {
         true, false, element[Coll[Header]]))
     }
 
-    override def preheader: Rep[Preheader] = {
-      asRep[Preheader](mkMethodCall(self,
-        ContextClass.getMethod("preheader"),
+    override def preHeader: Rep[PreHeader] = {
+      asRep[PreHeader](mkMethodCall(self,
+        ContextClass.getMethod("preHeader"),
         List(),
-        true, false, element[Preheader]))
+        true, false, element[PreHeader]))
     }
 
-    override def MinerPubKey: Rep[Coll[Byte]] = {
+    override def minerPubKey: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
-        ContextClass.getMethod("MinerPubKey"),
+        ContextClass.getMethod("minerPubKey"),
         List(),
         true, false, element[Coll[Byte]]))
     }
@@ -3290,13 +3807,6 @@ object Context extends EntityObject("Context") {
         ContextClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
         List(id, cT),
         true, false, element[WOption[T]]))
-    }
-
-    override def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[T] = {
-      asRep[T](mkMethodCall(self,
-        ContextClass.getMethod("getConstant", classOf[Sym], classOf[Elem[_]]),
-        List(id, cT),
-        true, false, element[T]))
     }
 
     override def cost: Rep[Int] = {
@@ -3356,6 +3866,13 @@ object Context extends EntityObject("Context") {
         true, true, element[Coll[Box]]))
     }
 
+    def dataInputs: Rep[Coll[Box]] = {
+      asRep[Coll[Box]](mkMethodCall(source,
+        thisClass.getMethod("dataInputs"),
+        List(),
+        true, true, element[Coll[Box]]))
+    }
+
     def HEIGHT: Rep[Int] = {
       asRep[Int](mkMethodCall(source,
         thisClass.getMethod("HEIGHT"),
@@ -3391,16 +3908,16 @@ object Context extends EntityObject("Context") {
         true, true, element[Coll[Header]]))
     }
 
-    def preheader: Rep[Preheader] = {
-      asRep[Preheader](mkMethodCall(source,
-        thisClass.getMethod("preheader"),
+    def preHeader: Rep[PreHeader] = {
+      asRep[PreHeader](mkMethodCall(source,
+        thisClass.getMethod("preHeader"),
         List(),
-        true, true, element[Preheader]))
+        true, true, element[PreHeader]))
     }
 
-    def MinerPubKey: Rep[Coll[Byte]] = {
+    def minerPubKey: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
-        thisClass.getMethod("MinerPubKey"),
+        thisClass.getMethod("minerPubKey"),
         List(),
         true, true, element[Coll[Byte]]))
     }
@@ -3410,13 +3927,6 @@ object Context extends EntityObject("Context") {
         thisClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
         List(id, cT),
         true, true, element[WOption[T]]))
-    }
-
-    def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[T] = {
-      asRep[T](mkMethodCall(source,
-        thisClass.getMethod("getConstant", classOf[Sym], classOf[Elem[_]]),
-        List(id, cT),
-        true, true, element[T]))
     }
 
     def cost: Rep[Int] = {
@@ -3449,7 +3959,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
-        "builder", "OUTPUTS", "INPUTS", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "cost", "dataSize"
+        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "cost", "dataSize"
         ))
     }
 
@@ -3531,6 +4041,19 @@ object Context extends EntityObject("Context") {
       }
     }
 
+    object dataInputs {
+      def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "dataInputs" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object HEIGHT {
       def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "HEIGHT" =>
@@ -3596,9 +4119,9 @@ object Context extends EntityObject("Context") {
       }
     }
 
-    object preheader {
+    object preHeader {
       def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "preheader" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "preHeader" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
@@ -3609,9 +4132,9 @@ object Context extends EntityObject("Context") {
       }
     }
 
-    object MinerPubKey {
+    object minerPubKey {
       def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "MinerPubKey" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "minerPubKey" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
@@ -3625,19 +4148,6 @@ object Context extends EntityObject("Context") {
     object getVar {
       def unapply(d: Def[_]): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "getVar" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getConstant {
-      def unapply(d: Def[_]): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "getConstant" =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
@@ -3777,7 +4287,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeInserts", "treeRemovals", "groupGenerator", "canOpen", "asFunction"
+        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "groupGenerator", "canOpen", "asFunction"
         ))
     }
 
@@ -4028,71 +4538,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
       }
     }
 
-    object isMember {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "isMember" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeLookup {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeLookup" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeModifications {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeModifications" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeInserts {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeInserts" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeRemovals {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "treeRemovals" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object groupGenerator {
       def unapply(d: Def[_]): Nullable[Rep[SigmaContract]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "groupGenerator" =>
@@ -4304,41 +4749,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[SigmaProp]))
     }
 
-    override def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("isMember", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, false, element[Boolean]))
-    }
-
-    override def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("treeLookup", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, false, element[WOption[Coll[Byte]]]))
-    }
-
-    override def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("treeModifications", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
-    }
-
-    override def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
-    }
-
-    override def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, false, element[WOption[AvlTree]]))
-    }
-
     override def groupGenerator: Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("groupGenerator"),
@@ -4373,6 +4783,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("toBigInteger", classOf[Sym]),
         List(n),
         true, false, element[WBigInteger]))
+    }
+
+    override def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(self,
+        SigmaDslBuilderClass.getMethod("avlTree", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(operationFlags, digest, keyLength, valueLengthOpt),
+        true, false, element[AvlTree]))
     }
   }
 
@@ -4546,41 +4963,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[SigmaProp]))
     }
 
-    def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        thisClass.getMethod("isMember", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, true, element[Boolean]))
-    }
-
-    def treeLookup(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]] = {
-      asRep[WOption[Coll[Byte]]](mkMethodCall(source,
-        thisClass.getMethod("treeLookup", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, key, proof),
-        true, true, element[WOption[Coll[Byte]]]))
-    }
-
-    def treeModifications(tree: Rep[AvlTree], operations: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(source,
-        thisClass.getMethod("treeModifications", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, true, element[WOption[AvlTree]]))
-    }
-
-    def treeInserts(tree: Rep[AvlTree], operations: Rep[Coll[(Coll[Byte], Coll[Byte])]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(source,
-        thisClass.getMethod("treeInserts", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, true, element[WOption[AvlTree]]))
-    }
-
-    def treeRemovals(tree: Rep[AvlTree], operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]] = {
-      asRep[WOption[AvlTree]](mkMethodCall(source,
-        thisClass.getMethod("treeRemovals", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(tree, operations, proof),
-        true, true, element[WOption[AvlTree]]))
-    }
-
     def groupGenerator: Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         thisClass.getMethod("groupGenerator"),
@@ -4616,6 +4998,13 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         List(n),
         true, true, element[WBigInteger]))
     }
+
+    def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(source,
+        thisClass.getMethod("avlTree", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(operationFlags, digest, keyLength, valueLengthOpt),
+        true, true, element[AvlTree]))
+    }
   }
 
   // entityProxy: single proxy for each type family
@@ -4633,7 +5022,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "isMember", "treeLookup", "treeModifications", "treeInserts", "treeRemovals", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger"
+        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger", "avlTree"
         ))
     }
 
@@ -4949,71 +5338,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       }
     }
 
-    object isMember {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "isMember" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeLookup {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "treeLookup" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeModifications {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "treeModifications" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeInserts {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "treeInserts" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object treeRemovals {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "treeRemovals" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
     object groupGenerator {
       def unapply(d: Def[_]): Nullable[Rep[SigmaDslBuilder]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "groupGenerator" =>
@@ -5074,6 +5398,19 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[BigInt])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object avlTree {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "avlTree" =>
+          val res = (receiver, args(0), args(1), args(2), args(3))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

@@ -615,7 +615,7 @@ case class TreeModifications(tree: Value[SAvlTree.type],
 
   override def tpe = SOption[SAvlTree.type]
 
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
+  override val opCode: OpCode = OpCodes.TreeUpdatesCode
 
   override lazy val first = tree
   override lazy val second = operations
@@ -646,14 +646,7 @@ case class TreeUpdates(tree: Value[SAvlTree.type],
                        operations: Value[SCollection[STuple]], //key -> value
                        proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
   override def tpe = SOption[SAvlTree.type]
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
-}
-
-case class TreeInsertOrUpdates(tree: Value[SAvlTree.type],
-                       operations: Value[SCollection[STuple]], //key -> value
-                       proof: Value[SByteArray]) extends TreeMods[SCollection[STuple]] {
-  override def tpe = SOption[SAvlTree.type]
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
+  override val opCode: OpCode = OpCodes.TreeUpdatesCode
 }
 
 case class TreeRemovals(tree: Value[SAvlTree.type],

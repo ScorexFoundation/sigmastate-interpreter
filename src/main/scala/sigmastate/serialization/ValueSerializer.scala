@@ -47,7 +47,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(EqCode, mkEQ[SType]),
     Relation2Serializer(NeqCode, mkNEQ[SType]),
     QuadrupleSerializer(TreeLookupCode, mkTreeLookup),
-    QuadrupleSerializer(TreeModificationsCode, mkTreeModifications),
+    QuadrupleSerializer(TreeUpdatesCode, mkTreeModifications),
     QuadrupleSerializer(TreeInsertsCode, mkTreeInserts),
     QuadrupleSerializer(TreeRemovalsCode, mkTreeRemovals),
     Relation2Serializer(BinOrCode, mkBinOr),

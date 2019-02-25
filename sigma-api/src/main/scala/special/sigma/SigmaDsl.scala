@@ -389,6 +389,11 @@ trait AvlTree {
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
+  /** @param keys    keys of elements of this authenticated dictionary.
+    * @param proof
+    */
+  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
+
   /** @param operations   collection of key-value pairs to insert in this authenticated dictionary.
     * @param proof
     */
@@ -609,12 +614,6 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-//  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
-//  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-//  def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
-//  def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
-
   def groupGenerator: GroupElement
 
   @Reified("T")
@@ -627,5 +626,7 @@ trait SigmaDslBuilder {
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
   def toBigInteger(n: BigInt): BigInteger
 
+  /** Construct a new authenticated dictionary with given parameters and tree root digest. */
+  def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 }
 

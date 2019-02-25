@@ -13,7 +13,6 @@ import Converter._
 import AnyValue._
 import AvlTree._
 import Box._
-import CCostedAvlTree._
 import CCostedBox._
 import CCostedColl._
 import CCostedContext._
@@ -23,11 +22,12 @@ import CollBuilder._
 import Context._
 import CostModel._
 import Costed._
-import CostedAvlTree._
 import CostedBox._
 import CostedColl._
 import CostedContext._
 import CostedOption._
+import Header._
+import PreHeader._
 import SigmaDslBuilder._
 import TestSigmaDslBuilder._
 
@@ -40,11 +40,18 @@ object CCostedContext extends EntityObject("CCostedContext") {
     override def transform(t: Transformer) = CCostedContextCtor(t(ctx))
     private val thisClass = classOf[CostedContext]
 
-    override def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]] = {
-      asRep[Costed[T]](mkMethodCall(self,
-        thisClass.getMethod("getConstant", classOf[Sym], classOf[Elem[_]]),
-        List(id, cT),
-        true, false, element[Costed[T]]))
+    override def headers: Rep[CostedColl[Header]] = {
+      asRep[CostedColl[Header]](mkMethodCall(self,
+        thisClass.getMethod("headers"),
+        List(),
+        true, false, element[CostedColl[Header]]))
+    }
+
+    override def preHeader: Rep[Costed[PreHeader]] = {
+      asRep[Costed[PreHeader]](mkMethodCall(self,
+        thisClass.getMethod("preHeader"),
+        List(),
+        true, false, element[Costed[PreHeader]]))
     }
   }
   // elem for concrete class
@@ -151,6 +158,19 @@ object CCostedContext extends EntityObject("CCostedContext") {
       }
     }
 
+    object dataInputs {
+      def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "dataInputs" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CCostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object OUTPUTS {
       def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "OUTPUTS" =>
@@ -216,9 +236,9 @@ object CCostedContext extends EntityObject("CCostedContext") {
       }
     }
 
-    object MinerPubKey {
+    object minerPubKey {
       def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "MinerPubKey" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "minerPubKey" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
         case _ => Nullable.None
@@ -232,19 +252,6 @@ object CCostedContext extends EntityObject("CCostedContext") {
     object getVar {
       def unapply(d: Def[_]): Nullable[(Rep[CCostedContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "getVar" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CCostedContext], Rep[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CCostedContext], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getConstant {
-      def unapply(d: Def[_]): Nullable[(Rep[CCostedContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "getConstant" =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[CCostedContext], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
@@ -284,6 +291,45 @@ object CCostedContext extends EntityObject("CCostedContext") {
     object dataSize {
       def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "dataSize" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CCostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object selfBoxIndex {
+      def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "selfBoxIndex" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CCostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object headers {
+      def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "headers" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CCostedContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object preHeader {
+      def unapply(d: Def[_]): Nullable[Rep[CCostedContext]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedContextElem] && method.getName == "preHeader" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CCostedContext]]]
         case _ => Nullable.None
@@ -559,219 +605,6 @@ object CCostedBox extends EntityObject("CCostedBox") {
   }
 } // of object CCostedBox
   registerEntityObject("CCostedBox", CCostedBox)
-
-object CCostedAvlTree extends EntityObject("CCostedAvlTree") {
-  case class CCostedAvlTreeCtor
-      (override val tree: Rep[AvlTree], override val cost: Rep[Int])
-    extends CCostedAvlTree(tree, cost) with Def[CCostedAvlTree] {
-    override lazy val eVal: Elem[AvlTree] = implicitly[Elem[AvlTree]]
-    lazy val selfType = element[CCostedAvlTree]
-    override def transform(t: Transformer) = CCostedAvlTreeCtor(t(tree), t(cost))
-  }
-  // elem for concrete class
-  class CCostedAvlTreeElem(val iso: Iso[CCostedAvlTreeData, CCostedAvlTree])
-    extends CostedAvlTreeElem[CCostedAvlTree]
-    with ConcreteElem[CCostedAvlTreeData, CCostedAvlTree] {
-    override lazy val parent: Option[Elem[_]] = Some(costedAvlTreeElement)
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override def convertCostedAvlTree(x: Rep[CostedAvlTree]) = // Converter is not generated by meta
-!!!("Cannot convert from CostedAvlTree to CCostedAvlTree: missing fields List(tree)")
-    override def getDefaultRep = RCCostedAvlTree(element[AvlTree].defaultRepValue, 0)
-    override lazy val tag = {
-      weakTypeTag[CCostedAvlTree]
-    }
-  }
-
-  // state representation type
-  type CCostedAvlTreeData = (AvlTree, Int)
-
-  // 3) Iso for concrete class
-  class CCostedAvlTreeIso
-    extends EntityIso[CCostedAvlTreeData, CCostedAvlTree] with Def[CCostedAvlTreeIso] {
-    override def transform(t: Transformer) = new CCostedAvlTreeIso()
-    private lazy val _safeFrom = fun { p: Rep[CCostedAvlTree] => (p.tree, p.cost) }
-    override def from(p: Rep[CCostedAvlTree]) =
-      tryConvert[CCostedAvlTree, (AvlTree, Int)](eTo, eFrom, p, _safeFrom)
-    override def to(p: Rep[(AvlTree, Int)]) = {
-      val Pair(tree, cost) = p
-      RCCostedAvlTree(tree, cost)
-    }
-    lazy val eFrom = pairElement(element[AvlTree], element[Int])
-    lazy val eTo = new CCostedAvlTreeElem(self)
-    lazy val selfType = new CCostedAvlTreeIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CCostedAvlTreeIsoElem() extends Elem[CCostedAvlTreeIso] {
-    def getDefaultRep = reifyObject(new CCostedAvlTreeIso())
-    lazy val tag = {
-      weakTypeTag[CCostedAvlTreeIso]
-    }
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-  }
-  // 4) constructor and deconstructor
-  class CCostedAvlTreeCompanionCtor extends CompanionDef[CCostedAvlTreeCompanionCtor] with CCostedAvlTreeCompanion {
-    def selfType = CCostedAvlTreeCompanionElem
-    override def toString = "CCostedAvlTreeCompanion"
-    @scalan.OverloadId("fromData")
-    def apply(p: Rep[CCostedAvlTreeData]): Rep[CCostedAvlTree] = {
-      isoCCostedAvlTree.to(p)
-    }
-
-    @scalan.OverloadId("fromFields")
-    def apply(tree: Rep[AvlTree], cost: Rep[Int]): Rep[CCostedAvlTree] =
-      mkCCostedAvlTree(tree, cost)
-
-    def unapply(p: Rep[CostedAvlTree]) = unmkCCostedAvlTree(p)
-  }
-  lazy val CCostedAvlTreeRep: Rep[CCostedAvlTreeCompanionCtor] = new CCostedAvlTreeCompanionCtor
-  lazy val RCCostedAvlTree: CCostedAvlTreeCompanionCtor = proxyCCostedAvlTreeCompanion(CCostedAvlTreeRep)
-  implicit def proxyCCostedAvlTreeCompanion(p: Rep[CCostedAvlTreeCompanionCtor]): CCostedAvlTreeCompanionCtor = {
-    if (p.rhs.isInstanceOf[CCostedAvlTreeCompanionCtor])
-      p.rhs.asInstanceOf[CCostedAvlTreeCompanionCtor]
-    else
-      proxyOps[CCostedAvlTreeCompanionCtor](p)
-  }
-
-  implicit case object CCostedAvlTreeCompanionElem extends CompanionElem[CCostedAvlTreeCompanionCtor] {
-    lazy val tag = weakTypeTag[CCostedAvlTreeCompanionCtor]
-    protected def getDefaultRep = CCostedAvlTreeRep
-  }
-
-  implicit def proxyCCostedAvlTree(p: Rep[CCostedAvlTree]): CCostedAvlTree =
-    proxyOps[CCostedAvlTree](p)
-
-  implicit class ExtendedCCostedAvlTree(p: Rep[CCostedAvlTree]) {
-    def toData: Rep[CCostedAvlTreeData] = {
-      isoCCostedAvlTree.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoCCostedAvlTree: Iso[CCostedAvlTreeData, CCostedAvlTree] =
-    reifyObject(new CCostedAvlTreeIso())
-
-  def mkCCostedAvlTree
-    (tree: Rep[AvlTree], cost: Rep[Int]): Rep[CCostedAvlTree] = {
-    new CCostedAvlTreeCtor(tree, cost)
-  }
-  def unmkCCostedAvlTree(p: Rep[CostedAvlTree]) = p.elem.asInstanceOf[Elem[_]] match {
-    case _: CCostedAvlTreeElem @unchecked =>
-      Some((asRep[CCostedAvlTree](p).tree, asRep[CCostedAvlTree](p).cost))
-    case _ =>
-      None
-  }
-
-    object CCostedAvlTreeMethods {
-    object dsl {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "dsl" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object startingDigest {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "startingDigest" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object keyLength {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "keyLength" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object valueLengthOpt {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "valueLengthOpt" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object maxNumOperations {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "maxNumOperations" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object maxDeletes {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "maxDeletes" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object value {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "value" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[CCostedAvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CCostedAvlTreeElem] && method.getName == "dataSize" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CCostedAvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CCostedAvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CCostedAvlTreeCompanionMethods {
-  }
-} // of object CCostedAvlTree
-  registerEntityObject("CCostedAvlTree", CCostedAvlTree)
 
   registerModule(SigmaDslCostedModule)
 }

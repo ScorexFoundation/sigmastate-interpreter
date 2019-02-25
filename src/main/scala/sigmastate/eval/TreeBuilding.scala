@@ -40,6 +40,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import WArray._
   import WOption._
   import WECPoint._
+  import AvlTree._
 
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
@@ -50,6 +51,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   private val AM = WArrayMethods
   private val OM = WOptionMethods
   private val BIM = BigIntMethods
+  private val AvlM = AvlTreeMethods
 
   /** Describes assignment of valIds for symbols which become ValDefs.
     * Each ValDef in current scope have entry in this map */
@@ -330,14 +332,18 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkCalcSha256(recurse(colSym))
       case SDBM.blake2b256(_, colSym) =>
         mkCalcBlake2b256(recurse(colSym))
-      case SDBM.treeModifications(_, treeSym, opsCollSym, proofCollSym) =>
-        mkTreeModifications(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case SDBM.treeInserts(_, treeSym, opsCollSym, proofCollSym) =>
+
+      case AvlM.update(treeSym, opsCollSym, proofCollSym) =>
+        mkTreeUpdates(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
+      case AvlM.insert(treeSym, opsCollSym, proofCollSym) =>
         mkTreeInserts(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case SDBM.treeRemovals(_, treeSym, opsCollSym, proofCollSym) =>
+      case AvlM.remove(treeSym, opsCollSym, proofCollSym) =>
         mkTreeRemovals(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case SDBM.treeLookup(_, treeSym, keySym, proofCollSym) =>
+      case AvlM.get(treeSym, keySym, proofCollSym) =>
         mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
+      case AvlM.contains(treeSym, keySym, proofCollSym) =>
+        mkIsMember(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
+
       case SDBM.longToByteArray(_, longSym) =>
         mkLongToByteArray(recurse(longSym))
       case SDBM.decodePoint(_, colSym) =>

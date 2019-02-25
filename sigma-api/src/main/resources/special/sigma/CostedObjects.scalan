@@ -8,12 +8,13 @@ package special.sigma {
     import Coll._;
     import Context._;
     import Costed._;
-    import CostedAvlTree._;
     import CostedBox._;
     import CostedBuilder._;
     import CostedColl._;
     import CostedOption._;
     import CostedSigmaObject._;
+    import Header._;
+    import PreHeader._;
     import SigmaDslBuilder._;
     trait CostedSigmaObject[Val] extends Costed[Val] {
       implicit def eVal: Elem[Val];
@@ -21,14 +22,17 @@ package special.sigma {
       def builder: Rep[CostedBuilder] = CostedSigmaObject.this.dsl.Costing
     };
     trait CostedContext extends CostedSigmaObject[Context] {
+      def dataInputs: Rep[CostedColl[Box]];
       def OUTPUTS: Rep[CostedColl[Box]];
       def INPUTS: Rep[CostedColl[Box]];
       def HEIGHT: Rep[Costed[Int]];
       def SELF: Rep[CostedBox];
-      def LastBlockUtxoRootHash: Rep[CostedAvlTree];
-      def MinerPubKey: Rep[CostedColl[Byte]];
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]];
-      def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]]
+      def selfBoxIndex: Rep[Costed[Int]];
+      def LastBlockUtxoRootHash: Rep[Costed[AvlTree]];
+      def headers: Rep[CostedColl[Header]];
+      def preHeader: Rep[Costed[PreHeader]];
+      def minerPubKey: Rep[CostedColl[Byte]];
+      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]]
     };
     trait CostedBox extends CostedSigmaObject[Box] {
       def id: Rep[CostedColl[Byte]];
@@ -40,16 +44,8 @@ package special.sigma {
       def getReg[T](id: Rep[Int])(implicit cT: Elem[T]): Rep[CostedOption[T]];
       def creationInfo: Rep[Costed[scala.Tuple2[Int, Coll[Byte]]]]
     };
-    trait CostedAvlTree extends CostedSigmaObject[AvlTree] {
-      def startingDigest: Rep[CostedColl[Byte]];
-      def keyLength: Rep[Costed[Int]];
-      def valueLengthOpt: Rep[CostedOption[Int]];
-      def maxNumOperations: Rep[CostedOption[Int]];
-      def maxDeletes: Rep[CostedOption[Int]]
-    };
     trait CostedSigmaObjectCompanion;
     trait CostedContextCompanion;
-    trait CostedBoxCompanion;
-    trait CostedAvlTreeCompanion
+    trait CostedBoxCompanion
   }
 }
