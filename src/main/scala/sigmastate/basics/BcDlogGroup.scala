@@ -170,12 +170,6 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
 
 
   /**
-    * Creates ECPoint.Fp with infinity values
-    */
-  lazy val getInfinity: ElemType = curve.getInfinity.asInstanceOf[ElemType]
-
-
-  /**
     * Calculates the inverse of the given GroupElement.
     *
     * @param groupElement to invert

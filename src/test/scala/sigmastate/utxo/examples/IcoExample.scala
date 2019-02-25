@@ -30,24 +30,68 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val fundingScript = compileWithCosting(fundingEnv,
       """{
         |
+        |  val inputIndexes = getVar[Coll[Int]](1)
+        |
         |  val toAddFn = { (b: Box) =>
         |     val pk = b.R4[Coll[Byte]].get
         |     val value = longToByteArray(b.value)
         |     (pk, value)
         |  }
         |
-        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty})
+        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = inputIndexes.map{ (i: Int) =>
+        |   val input = INPUTS(i)
+        |   toAddFn(input)
+        |  }
         |
-        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map(toAddFn)
+        |  val modifiedTree = treeInserts(SELF.R4[AvlTree].get, toAdd, proof).get
         |
-        |  val modifiedTree = treeInserts(SELF.R5[AvlTree].get, toAdd, proof).get
-        |
-        |  val expectedTree = OUTPUTS(0).R5[AvlTree].get
+        |  val expectedTree = OUTPUTS(0).R4[AvlTree].get
         |
         |  modifiedTree == expectedTree
         |
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
+
+
+    val fixingScript = compileWithCosting(fundingEnv,
+      """{
+        |}""".stripMargin
+    ).asBoolValue.toSigmaProp
+
+
+    val withdrawTokensScript = compileWithCosting(fundingEnv,
+      """{
+        |
+        |  val totalTokens = 1000000
+        |
+        |  val tokenPrice = SELF.value / totalTokens
+        |
+        |  val outputIndexes = getVar[Coll[Int]](1)
+        |
+        |  val selfOut = OUTPUTS(0)
+        |
+        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = outputIndexes.map{ (i: Int) =>
+        |   val input = INPUTS(i)
+        |   toAddFn(input)
+        |  }
+        |
+        |  val modifiedTree = treeRemovals(SELF.R4[AvlTree].get, toAdd, proof).get
+        |
+        |  val expectedTree = OUTPUTS(0).R4[AvlTree].get
+        |
+        |  modifiedTree == expectedTree
+        |
+        |}""".stripMargin
+    ).asBoolValue.toSigmaProp
+
+
+    val withdrawErgoScript = compileWithCosting(fundingEnv,
+      """{
+          |
+          |
+          |}""".stripMargin
+    ).asBoolValue.toSigmaProp
+
 
     println(fundingScript)
 
