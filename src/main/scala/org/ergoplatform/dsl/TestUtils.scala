@@ -4,6 +4,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 import scalan.RType
 import sigmastate.SType
+import sigmastate.SType.AnyOps
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.Values.{ErgoTree, Constant}
 import sigmastate.eval.{IRContext, CSigmaProp, CostingSigmaDslBuilder, Evaluation}
@@ -28,13 +29,13 @@ trait ContractSyntax { contract: SigmaContract =>
   def Coll[T](items: T*)(implicit cT: RType[T]) = builder.Colls.fromItems(items:_*)
 
   def proposition(name: String, dslSpec: Proposition, scriptCode: String) = {
-    val env = contractEnv.mapValues(v => v match {
-      case sp: CSigmaProp => sp.sigmaTree
-      case coll: Coll[SType#WrappedType]@unchecked =>
-        val elemTpe = Evaluation.rtypeToSType(coll.tItem)
-        spec.IR.builder.mkCollectionConstant[SType](coll.toArray, elemTpe)
-      case _ => v
-    })
+    val env = contractEnv.mapValues { v =>
+      val tV = Evaluation.rtypeOf(v).get
+      val treeType = Evaluation.toErgoTreeType(tV)
+      val data = Evaluation.fromDslData(v, treeType)(spec.IR)
+      val elemTpe = Evaluation.rtypeToSType(treeType)
+      spec.IR.builder.mkConstant[SType](data.asWrappedType, elemTpe)
+    }
     spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode))
   }
 

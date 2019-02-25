@@ -19,8 +19,6 @@ import sigmastate.serialization.OperationSerializer
 import special.collection.Coll
 import special.sigma.{Context, Box, AvlTree}
 
-
-
 class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
   import org.ergoplatform.dsl.AvlTreeHelpers._
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)

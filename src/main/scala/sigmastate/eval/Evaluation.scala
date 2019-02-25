@@ -470,10 +470,12 @@ object Evaluation {
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case SigmaPropRType => SSigmaProp
+    case SigmaBooleanRType => SSigmaProp
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
 //    case st: StructType =>
 ////      assert(st.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
 //      STuple(st.fieldTypes.map(rtypeToSType(_)).toIndexedSeq)
+    case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))
     case pt: PairType[_,_] => STuple(rtypeToSType(pt.tFst), rtypeToSType(pt.tSnd))
@@ -540,7 +542,7 @@ object Evaluation {
     case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
     case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
     case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
-    case p: PairType[_,_] => pairRType(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd))
+    case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
     case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
     case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
     case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
@@ -549,7 +551,7 @@ object Evaluation {
       sys.error(s"Don't know how to toErgoTreeType($dslType)")
   }
 
-  /** Generic converter from types used in ErgoDsl to types used in ErgoTree values. */
+  /** Generic converter from types used in SigmaDsl to types used in ErgoTree values. */
   def fromDslData[T](value: Any, tRes: RType[T])(implicit IR: Evaluation): T = {
     val dsl = IR.sigmaDslBuilderValue
     val res = (value, tRes) match {
@@ -557,9 +559,21 @@ object Evaluation {
       case (coll: Coll[a], tarr: ArrayType[a1]) =>
         val tItem = tarr.tA
         coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
+      case (tup: Tuple2[a,b], tTup: TupleType) =>
+        val x = fromDslData(tup._1, tTup.items(0))
+        val y = fromDslData(tup._2, tTup.items(1))
+        Array[Any](x, y)
       case _ => value
     }
     res.asInstanceOf[T]
+  }
+
+  /** Convert SigmaDsl representation of tuple to ErgoTree representation. */
+  def fromDslTuple(value: Any, tupleTpe: STuple): Array[Any] = value match {
+    case t: Tuple2[_,_] => Array[Any](t._1, t._2)
+    case a: Array[Any] => a
+    case _ =>
+      sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }
 
   /** Generic converter from types used in ErgoTree values to types used in ErgoDsl. */
@@ -578,6 +592,9 @@ object Evaluation {
             val valB = toDslData(arr(1), tpeB, isCost)
             (valA, valB)
         }
+      case (arr: Array[a], STuple(items)) =>
+        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
+        dsl.Colls.fromArray(res)(RType.AnyType)
       case (arr: Array[a], SCollectionType(elemType)) =>
         implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
         elemRType.asInstanceOf[RType[_]] match {
@@ -587,9 +604,6 @@ object Evaluation {
           case _ =>
             dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
         }
-      case (arr: Array[a], STuple(items)) =>
-        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
-        dsl.Colls.fromArray(res)(RType.AnyType)
       case (b: ErgoBox, SBox) => b.toTestBox(isCost)
       case (n: BigInteger, SBigInt) =>
         dsl.BigInt(n)

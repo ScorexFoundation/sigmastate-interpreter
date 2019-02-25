@@ -220,7 +220,7 @@ object Terms {
       */
     def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
       rewrite(everywherebu(rule[SValue] {
-        case node if node.sourceContext.isEmpty =>
+        case node if node != null && node.sourceContext.isEmpty =>
           node.withSrcCtx(srcCtx)
       }))(v).asValue[T]
     }
