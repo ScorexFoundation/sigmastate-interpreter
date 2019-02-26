@@ -1007,7 +1007,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val GetRegMethod = SMethod(this, "getReg",
     SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
-  lazy val methods = Vector(
+  lazy val methods: Vector[SMethod] = Vector(
     SMethod(this, Value, SLong, 1), // see ExtractAmount
     SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
     SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
