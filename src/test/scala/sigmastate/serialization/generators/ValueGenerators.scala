@@ -156,10 +156,6 @@ trait ValueGenerators extends TypeGenerators {
     contextExt <- contextExtensionGen
   } yield new UnsignedInput(boxId, contextExt)
 
-  val dataInputGen: Gen[DataInput] = for {
-    boxId <- boxIdGen
-  } yield DataInput(boxId)
-
   val inputGen: Gen[Input] = for {
     boxId <- boxIdGen
     proof <- serializedProverResultGen
@@ -263,11 +259,10 @@ trait ValueGenerators extends TypeGenerators {
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputs <- Gen.listOf(inputGen)
-    dataInputs <- Gen.listOf(dataInputGen)
     tokens <- tokensGen
     outputsCount <- Gen.chooseNum(50, 200)
     outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
-  } yield ErgoLikeTransaction(inputs.toIndexedSeq, dataInputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+  } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 
   // distinct list of elements from a given generator
   // with a maximum number of elements to discard

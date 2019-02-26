@@ -199,7 +199,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
       self = selfBox)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
