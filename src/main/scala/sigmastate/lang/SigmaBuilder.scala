@@ -17,10 +17,11 @@ import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
+import sigmastate.SOption.SIntOption
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.{SigmaProp, GroupElement, AvlTree}
+import special.sigma.{AvlTree, SigmaProp, GroupElement}
 
 import scala.util.DynamicVariable
 
@@ -62,29 +63,9 @@ trait SigmaBuilder {
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
-  def mkTreeModifications(tree: Value[SAvlTree.type],
-                          operations: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
-  def mkTreeRemovals(tree: Value[SAvlTree.type],
-                     operations: Value[SCollection[SByteArray]],
-                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
-  def mkTreeInserts(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
-  def mkTreeUpdates(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
   def mkTreeLookup(tree: Value[SAvlTree.type],
-                   key: Value[SByteArray],
-                   proof: Value[SByteArray]): Value[SOption[SByteArray]]
-
-  def mkIsMember(tree: Value[SAvlTree.type],
-                 key: Value[SByteArray],
-                 proof: Value[SByteArray]): Value[SBoolean.type]
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]]
 
   def mkIf[T <: SType](condition: Value[SBoolean.type],
                        trueBranch: Value[T],
@@ -155,6 +136,11 @@ trait SigmaBuilder {
                            vv: Value[SGroupElement.type]): SigmaPropValue
 
   def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
+
+  def mkCreateAvlTree(operationFlags: ByteValue,
+                      digest: Value[SByteArray],
+                      keyLength: IntValue,
+                      valueLengthOpt: Value[SIntOption]): AvlTreeValue
 
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
@@ -356,34 +342,9 @@ class StdSigmaBuilder extends SigmaBuilder {
     Xor(left, right).withSrcCtx(currentSrcCtx.value)
 
   override def mkTreeLookup(tree: Value[SAvlTree.type],
-                            key: Value[SByteArray],
-                            proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]] =
     TreeLookup(tree, key, proof).withSrcCtx(currentSrcCtx.value)
-
-  override def mkTreeModifications(tree: Value[SAvlTree.type],
-                                   operations: Value[SByteArray],
-                                   proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeModifications(tree, operations, proof).withSrcCtx(currentSrcCtx.value)
-
-  def mkTreeInserts(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeInserts(tree, operations, proof)
-
-  def mkTreeUpdates(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeUpdates(tree, operations, proof)
-
-  def mkTreeRemovals(tree: Value[SAvlTree.type],
-                     operations: Value[SCollection[SByteArray]],
-                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeRemovals(tree, operations, proof)
-
-  override def mkIsMember(tree: Value[SAvlTree.type],
-                          key: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SBoolean.type] =
-    OptionIsDefined(TreeLookup(tree, key, proof)).withSrcCtx(currentSrcCtx.value)
 
   override def mkIf[T <: SType](condition: Value[SBoolean.type],
                                 trueBranch: Value[T],
@@ -501,6 +462,13 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
     CreateProveDlog(value)
+
+  override def mkCreateAvlTree(operationFlags: ByteValue,
+      digest: Value[SByteArray],
+      keyLength: IntValue,
+      valueLengthOpt: Value[SIntOption]): AvlTreeValue = {
+    CreateAvlTree(operationFlags, digest, keyLength, valueLengthOpt)
+  }
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)

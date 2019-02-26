@@ -382,29 +382,54 @@ trait AvlTree {
     */
   def updateOperations(newOperations: Byte): AvlTree
 
+  /** Checks if an entry with key `key` exists in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return `true` if a leaf with the key `key` exists
+    * Return `false` if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof
+    */
   def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
 
-  /** @param key    a key of an element of this authenticated dictionary.
+  /** Perform a lookup of key `key` in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(bytes) of leaf with key `key` if it exists
+    * Return None if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
     * @param proof
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
-  /** @param keys    keys of elements of this authenticated dictionary.
+  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
+    * @param keys    keys of elements of this authenticated dictionary.
     * @param proof
     */
   def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
 
-  /** @param operations   collection of key-value pairs to insert in this authenticated dictionary.
+  /** Perform insertions of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
     * @param proof
     */
   def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
-  /** @param operations   collection of key-value pairs to update in this authenticated dictionary.
+  /** Perform updates of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
     * @param proof
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
-  /** @param operations   collection of keys to remove from this authenticated dictionary.
+  /** Perform removal of entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of keys to remove from this authenticated dictionary.
     * @param proof
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]

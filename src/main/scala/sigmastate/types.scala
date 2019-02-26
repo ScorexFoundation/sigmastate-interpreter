@@ -15,7 +15,7 @@ import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
-
+import sigmastate.eval.RuntimeCosting
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.{ClassTag, classTag}
@@ -116,6 +116,7 @@ object SType {
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isOption: Boolean = tpe.isInstanceOf[SOption[_]]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
+    def isAvlTree: Boolean = tpe.isInstanceOf[SAvlTree.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
     def canBeTypedAs(expected: SType): Boolean = (tpe, expected) match {
@@ -186,8 +187,10 @@ object SType {
 
 /** Basic interface for all type companions */
 trait STypeCompanion {
+
   /** Type identifier to use in method serialization */
   def typeId: Byte
+
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
@@ -234,11 +237,13 @@ trait SGenericType {
 
 /** Method info including name, arg type and result type.
   * When stype is SFunc, then tDom - arg type and tRange - result type. */
-case class SMethod(objType: STypeCompanion,
-                   name: String,
-                   stype: SType,
-                   methodId: Byte,
-                   irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]]) {
+case class SMethod(
+    objType: STypeCompanion,
+    name: String,
+    stype: SType,
+    methodId: Byte,
+    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]],
+    costRule: Option[PartialFunction[(RuntimeCosting, SMethod.RCosted[_], SMethod, Seq[SMethod.RCosted[_]]), RuntimeCosting#Rep[_]]] = None) {
 
   def withSType(newSType: SType): SMethod = copy(stype = newSType)
 
@@ -247,13 +252,13 @@ case class SMethod(objType: STypeCompanion,
 }
 
 object SMethod {
-
+  type RCosted[A] = RuntimeCosting#RCosted[A]
   val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]] = Some {
     case (builder, obj, method, args) => builder.mkMethodCall(obj, method, args.toIndexedSeq)
   }
 
   def apply(objType: STypeCompanion, name: String, stype: SType, methodId: Byte): SMethod =
-    SMethod(objType, name, stype, methodId, None)
+    SMethod(objType, name, stype, methodId, None, None)
 }
 
 /** Special type to represent untyped values.

@@ -333,16 +333,16 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case SDBM.blake2b256(_, colSym) =>
         mkCalcBlake2b256(recurse(colSym))
 
-      case AvlM.update(treeSym, opsCollSym, proofCollSym) =>
-        mkTreeUpdates(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case AvlM.insert(treeSym, opsCollSym, proofCollSym) =>
-        mkTreeInserts(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case AvlM.remove(treeSym, opsCollSym, proofCollSym) =>
-        mkTreeRemovals(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-      case AvlM.get(treeSym, keySym, proofCollSym) =>
-        mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
-      case AvlM.contains(treeSym, keySym, proofCollSym) =>
-        mkIsMember(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
+//      case AvlM.update(treeSym, opsCollSym, proofCollSym) =>
+//        mkTreeUpdates(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
+//      case AvlM.insert(treeSym, opsCollSym, proofCollSym) =>
+//        mkTreeInserts(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
+//      case AvlM.remove(treeSym, opsCollSym, proofCollSym) =>
+//        mkTreeRemovals(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
+//      case AvlM.get(treeSym, keySym, proofCollSym) =>
+//        mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
+//      case AvlM.contains(treeSym, keySym, proofCollSym) =>
+//        mkIsMember(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
 
       case SDBM.longToByteArray(_, longSym) =>
         mkLongToByteArray(recurse(longSym))

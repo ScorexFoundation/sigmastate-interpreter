@@ -29,7 +29,7 @@ import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.TestGroupElement
 import special.sigma.Extensions._
 
-trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Evaluation =>
+trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
   import WArray._;
   import GroupElement._;
@@ -140,6 +140,15 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   }
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = {
+    costOf(opName, opType, substFromCostTable)
+  }
+
+  def costOf(method: SMethod): Rep[Int] = {
+    val opName = method.objType.getClass.getSimpleName + "." + method.name
+    val opType = method.stype match {
+      case f: SFunc => f
+      case resTpe => sys.error(s"Cannot compute costOf($method)")
+    }
     costOf(opName, opType, substFromCostTable)
   }
 
@@ -891,6 +900,16 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     val sizes = colBuilder.replicate(len, typeSize(col.elem.eItem))
     RCCostedColl(col, costs, sizes, cost)
   }
+  def mkCostedColl[T](col: Rep[Coll[T]], cost: Rep[Int]): Rep[CostedColl[T]] = {
+    mkCostedColl(col, col.length, cost)
+  }
+
+  def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
+
+  def methodCallCost(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]) = {
+     selectFieldCost
+  }
+
 
   def mkCosted[T](v: Rep[T], cost: Rep[Int], size: Rep[Long]): Rep[Costed[T]] = {
     val res = v.elem match {
@@ -902,6 +921,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
     }
     asRep[Costed[T]](res)
   }
+
+  @inline final def asCosted[T](x: Rep[_]): Rep[Costed[T]] = x.asInstanceOf[Rep[Costed[T]]]
 
   type CostingEnv = Map[Any, RCosted[_]]
 
@@ -931,11 +952,11 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
   @inline def SigmaDsl = sigmaDslBuilderValue
   @inline def Colls = sigmaDslBuilderValue.Colls
 
+  def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
+
   protected def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
-
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
-    def withDefaultSize[T](v: Rep[T], cost: Rep[Int]): RCosted[T] = RCCostedPrim(v, cost, sizeOf(v))
     object In { def unapply(v: SValue): Nullable[RCosted[Any]] = Nullable(asRep[Costed[Any]](evalNode(ctx, env, v))) }
     class InColl[T] { def unapply(v: SValue): Nullable[Rep[CostedColl[T]]] = Nullable(asRep[CostedColl[T]](evalNode(ctx, env, v))) }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]; val InCollInt = new InColl[Int]
@@ -1089,41 +1110,41 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val len = typeSize[Long].toInt
         mkCostedColl(col, len, cost)
 
-      case TreeLookup(In(_tree), InCollByte(key), InCollByte(proof)) =>
-        val tree = asRep[Costed[AvlTree]](_tree)
-        val value = tree.value.get(key.value, proof.value)
-        val size = tree.dataSize + key.dataSize + proof.dataSize
-        val cost = tree.cost + key.cost + proof.cost
-        RCCostedOption(value,
-          RWSpecialPredef.some(perKbCostOf(node, size)),
-          RWSpecialPredef.some(size), cost)
-
-      case TreeInserts(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[Costed[AvlTree]](_tree)
-        val value = tree.value.insert(operations.value, proof.value)
-        val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost
-        RCCostedOption(value,
-          RWSpecialPredef.some(perKbCostOf(node, size)),
-          RWSpecialPredef.some(size), cost)
-
-      case TreeUpdates(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[Costed[AvlTree]](_tree)
-        val value = tree.value.update(operations.value, proof.value)
-        val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost
-        RCCostedOption(value,
-          RWSpecialPredef.some(perKbCostOf(node, size)),
-          RWSpecialPredef.some(size), cost)
-
-      case TreeRemovals(In(_tree), InCollCollByte(operations), InCollByte(proof)) =>
-        val tree = asRep[Costed[AvlTree]](_tree)
-        val value = tree.value.remove(operations.value, proof.value)
-        val size = tree.dataSize + operations.dataSize + proof.dataSize
-        val cost = tree.cost + operations.cost + proof.cost
-        RCCostedOption(value,
-          RWSpecialPredef.some(perKbCostOf(node, size)),
-          RWSpecialPredef.some(size), cost)
+//      case TreeLookup(In(_tree), InCollByte(key), InCollByte(proof)) =>
+//        val tree = asRep[Costed[AvlTree]](_tree)
+//        val value = tree.value.get(key.value, proof.value)
+//        val size = tree.dataSize + key.dataSize + proof.dataSize
+//        val cost = tree.cost + key.cost + proof.cost
+//        RCCostedOption(value,
+//          RWSpecialPredef.some(perKbCostOf(node, size)),
+//          RWSpecialPredef.some(size), cost)
+//
+//      case TreeInserts(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
+//        val tree = asRep[Costed[AvlTree]](_tree)
+//        val value = tree.value.insert(operations.value, proof.value)
+//        val size = tree.dataSize + operations.dataSize + proof.dataSize
+//        val cost = tree.cost + operations.cost + proof.cost
+//        RCCostedOption(value,
+//          RWSpecialPredef.some(perKbCostOf(node, size)),
+//          RWSpecialPredef.some(size), cost)
+//
+//      case TreeUpdates(In(_tree), InPairCollByte(operations), InCollByte(proof)) =>
+//        val tree = asRep[Costed[AvlTree]](_tree)
+//        val value = tree.value.update(operations.value, proof.value)
+//        val size = tree.dataSize + operations.dataSize + proof.dataSize
+//        val cost = tree.cost + operations.cost + proof.cost
+//        RCCostedOption(value,
+//          RWSpecialPredef.some(perKbCostOf(node, size)),
+//          RWSpecialPredef.some(size), cost)
+//
+//      case TreeRemovals(In(_tree), InCollCollByte(operations), InCollByte(proof)) =>
+//        val tree = asRep[Costed[AvlTree]](_tree)
+//        val value = tree.value.remove(operations.value, proof.value)
+//        val size = tree.dataSize + operations.dataSize + proof.dataSize
+//        val cost = tree.cost + operations.cost + proof.cost
+//        RCCostedOption(value,
+//          RWSpecialPredef.some(perKbCostOf(node, size)),
+//          RWSpecialPredef.some(size), cost)
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
@@ -1578,6 +1599,8 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
+      case Terms.MethodCall(obj, method, args) if method.costRule.isDefined =>
+
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
         val (argsVals, argsCosts) = args.map {
@@ -1622,6 +1645,32 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
           case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
           case _ => error(s"method $method is not supported")
+        }
+
+      case Terms.MethodCall(obj, m, args) if obj.tpe.isAvlTree =>
+        import SAvlTree._
+        val treeC = asRep[Costed[AvlTree]](eval(obj))
+        val argsC = args.map(eval)
+        val argsCost = argsC.foldLeft(treeC.cost)({ case (s, e) => s + e.cost })
+        val opCost = methodCallCost(treeC, m, argsC)
+        val cost = argsCost + opCost
+        (m, argsC) match {
+          case (`digestMethod`, _) =>
+            mkCostedColl(treeC.value.digest, cost)
+          case (`enabledOperationsMethod`, _) =>
+            withDefaultSize(treeC.value.enabledOperations, cost + selectFieldCost)
+          case (`keyLengthMethod`, _) =>
+            withDefaultSize(treeC.value.keyLength, cost + selectFieldCost)
+          case (`valueLengthOptMethod`, _) =>
+            withDefaultSize(treeC.value.valueLengthOpt, cost + selectFieldCost)
+          case (`isInsertAllowedMethod`, _) =>
+            withDefaultSize(treeC.value.isInsertAllowed, cost + selectFieldCost)
+          case (`isUpdateAllowedMethod`, _) =>
+            withDefaultSize(treeC.value.isUpdateAllowed, cost + selectFieldCost)
+          case (`isRemoveAllowedMethod`, _) =>
+            withDefaultSize(treeC.value.isRemoveAllowed, cost + selectFieldCost)
+
+          case _ => error(s"method $m is not supported on $obj")
         }
 
       case _ =>
