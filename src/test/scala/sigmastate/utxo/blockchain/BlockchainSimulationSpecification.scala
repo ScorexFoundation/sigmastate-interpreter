@@ -2,16 +2,14 @@ package sigmastate.utxo.blockchain
 
 import java.io.{File, FileWriter}
 
-import org.ergoplatform._
 import org.scalacheck.Gen
-import sigmastate.Values.LongConstant
+import sigmastate.Values.{BooleanConstant, ErgoTree, GetVarBoolean, TrueLeaf}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
-import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
+import scala.util.Random
 
 
 class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommons {
@@ -37,8 +35,20 @@ class BlockchainSimulationSpecification extends BlockchainSimulationTestingCommo
   property("apply many blocks") {
     val state = ValidationState.initialState()
     val miner = new ErgoLikeTestProvingInterpreter()
-    val randomDeepness = Gen.chooseNum(10, 20).sample.getOrElse(15)
     checkState(state, miner, 0, randomDeepness)
+  }
+
+  property("apply many blocks with enriched context") {
+    val state = ValidationState.initialState()
+    val miner = new ErgoLikeTestProvingInterpreter()
+    val varId = 1.toByte
+    val prop = GetVarBoolean(varId).get.toSigmaProp
+    // unable to spend boxes without correct context extension
+    an[RuntimeException] should be thrownBy checkState(state, miner, 0, randomDeepness, Some(prop))
+
+    // spend boxes with context extension
+    val contextExtension = ContextExtension(Map(varId -> TrueLeaf))
+    checkState(state, miner, 0, randomDeepness, Some(prop), contextExtension)
   }
 
   ignore(s"benchmarking applying many blocks (!!! ignored)") {

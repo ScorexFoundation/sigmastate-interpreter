@@ -5,72 +5,76 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, GE}
-import sigmastate.Values.LongConstant
+import sigmastate.{AvlTreeData, GE, Values}
+import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval.IRContext
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
 
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Random, Try}
 import scorex.util._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState, heightReg}
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
 
 import scala.annotation.tailrec
 
 trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
-  private val windowSize = 10
-
   @tailrec
   protected final def checkState(state: ValidationState,
-                 miner: ErgoLikeTestProvingInterpreter,
-                 currentLevel: Int,
-                 limit: Int): Unit = currentLevel match {
+                                 miner: ErgoLikeTestProvingInterpreter,
+                                 currentLevel: Int,
+                                 limit: Int,
+                                 propOpt: Option[ErgoTree] = None,
+                                 extension: ContextExtension = ContextExtension.empty): Unit = currentLevel match {
     case i if i >= limit => ()
     case _ =>
-      val block = generateBlock(state, miner, currentLevel)
+      val block = generateBlock(state, miner, currentLevel, propOpt, extension)
       val updStateTry = state.applyBlock(block)
       updStateTry.isSuccess shouldBe true
-      checkState(updStateTry.get, miner, currentLevel + 1, limit)
+      checkState(updStateTry.get, miner, currentLevel + 1, limit, propOpt, extension)
   }
 
-  protected def generateBlock(state: ValidationState, miner: ErgoLikeTestProvingInterpreter, height: Int): FullBlock = {
-    val minerPubKey = miner.dlogSecrets.head.publicImage
-    val boxesToSpend = state.boxesReader.byHeightRegValue(height)
+  protected def generateBlock(state: ValidationState,
+                              prover: ErgoLikeTestProvingInterpreter,
+                              height: Int,
+                              propOpt: Option[ErgoTree] = None,
+                              extension: ContextExtension = ContextExtension.empty): FullBlock = {
+    val prop: ErgoTree = propOpt.getOrElse(prover.dlogSecrets.head.publicImage.toSigmaProp)
+    val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
+
+    val boxesToSpend = state.boxesReader.randomBoxes(50 + height)
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, minerPubKey, height, Seq(), Map(heightReg -> LongConstant(height + windowSize)))
+        new ErgoBoxCandidate(10, prop, height, Seq(), Map())
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
         state.state.lastBlockUtxoRoot,
-        ErgoLikeContext.dummyPubkey,
+        minerPubkey,
         IndexedSeq(box),
         tx,
         box,
-        ContextExtension.empty)
+        extension)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
-      val proverResult = miner.prove(env, box.ergoTree, context, tx.messageToSign).get
-      proverResult.extension shouldBe ContextExtension.empty
+      val proverResult = prover.prove(env, box.ergoTree, context, tx.messageToSign).get
+      proverResult.extension shouldBe extension
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
 
-    FullBlock(txs, minerPubKey.pkBytes)
+    FullBlock(txs, minerPubkey)
   }
+
+  protected def randomDeepness: Int = 10 + Random.nextInt(10)
 
 }
 
 object BlockchainSimulationTestingCommons {
 
-  val heightReg = ErgoBox.nonMandatoryRegisters.head
-
-
-
-  val MaxBlockCost = 700000
+  private val MaxBlockCost = 700000
 
   case class FullBlock(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 
@@ -85,8 +89,9 @@ object BlockchainSimulationTestingCommons {
 
     def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
-    def byHeightRegValue(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(heightReg).getOrElse(LongConstant(i + 1)) == LongConstant(i))
+    def randomBoxes(howMany: Int): Iterable[ErgoBox] = {
+      scala.util.Random.shuffle(boxes.values).take(howMany)
+    }
 
     def byTwoInts(r1Id: ErgoBox.RegisterId, int1: Int,
                   r2Id: ErgoBox.RegisterId, int2: Int): Option[ErgoBox] =
@@ -142,7 +147,7 @@ object BlockchainSimulationTestingCommons {
     val initBlock = FullBlock(
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey
@@ -162,4 +167,5 @@ object BlockchainSimulationTestingCommons {
       ValidationState(bs, boxReader).applyBlock(block).get
     }
   }
+
 }
