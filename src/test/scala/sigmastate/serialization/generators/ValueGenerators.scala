@@ -258,7 +258,7 @@ trait ValueGenerators extends TypeGenerators {
   } yield tokens
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
-    inputs <- Gen.listOf(inputGen)
+    inputs <- Gen.nonEmptyListOf(inputGen)
     tokens <- tokensGen
     outputsCount <- Gen.chooseNum(50, 200)
     outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))

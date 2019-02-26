@@ -4,6 +4,7 @@ import java.util
 
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
+import scorex.util.encode.Base16
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -41,6 +42,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
   */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId, spendingProof.extension) {
+  override def toString: String = s"Input(${Base16.encode(boxId)},$spendingProof)"
 }
 
 object Input {

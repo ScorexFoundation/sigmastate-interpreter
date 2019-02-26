@@ -7,6 +7,7 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
+import scorex.util.encode.Base16
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
@@ -31,6 +32,8 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
       util.Arrays.equals(proof, obj.proof) && extension == obj.extension
     case _ => false
   }
+
+  override def toString: Idn = s"ProverResult(${Base16.encode(proof)},$extension)"
 }
 
 object ProverResult {
