@@ -170,11 +170,9 @@ class SigmaDslTest extends PropSpec
     forAll { x: Int => negInt(x) }
     val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { x => -x }
     forAll { x: Long => negLong(x) }
-    // TODO add scala.BigInt test
   }
 
-  ignore("special.sigma.BigInt Negation equivalence") {
-    // TODO fix return type (java.math.BigInteger)
+  property("special.sigma.BigInt Negation equivalence") {
     // TODO make negate() into a prefix method
     val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { x => x.negate() }
     forAll { x: BigInt => negBigInteger(x) }

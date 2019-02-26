@@ -12,6 +12,7 @@ package sigma {
   case class WrapperType[Wrapper](cWrapper: ClassTag[Wrapper]) extends RType[Wrapper] {
     override def classTag: ClassTag[Wrapper] = cWrapper
     override def toString: String = cWrapper.toString
+    override def name: String = cWrapper.runtimeClass.getSimpleName
   }
 
 }

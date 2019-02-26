@@ -1,5 +1,7 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
@@ -18,7 +20,8 @@ import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
-import sigmastate.{SGroupElement, SType, SBigInt}
+import sigmastate.{SGroupElement, SType}
+import special.sigma._
 import spire.util.Opt
 
 import scala.annotation.tailrec
@@ -120,6 +123,8 @@ trait SigmaTestingCommons extends PropSpec
                 case Opt(pv) => pv
                 case _ => x // cannot wrap, so just return as is
               }
+            case wt: WrapperType[_] if wt.classTag == reflect.classTag[BigInt] =>
+              IR.sigmaDslBuilderValue.BigInt(x.asInstanceOf[BigInteger])
             case _ => x // don't need to wrap
           }
         case _ => res
