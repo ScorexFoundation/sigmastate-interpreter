@@ -710,17 +710,6 @@ The pseudocode below details the verifier's steps.
 \end{enumerate}
 
 
-\section{Old Intro Text -- not sure what's needed}
-
-Much like digital signatures prove that the signer knows the secret key, $\Sigma$-protocols can be used to prove knowledge of a discrete logarithm. 
-
-
-The idea behind the language is that a subset of zero-knowledge protocols known as $\Sigma$-protocols (sigma protocols) could be combined via $\sqcap$ and $\sqcup$ connectives forming complex statements like ``prove me a knowledge of discrete logarithm of (publicly known) $x_1$ or knowledge of Pedersen commitment $x_2$ preimage''. We make an observation that sigma protocol statements and their conjectures are naturally correspond to propositional logic, and we can add arbitrary boolean predicates to statements provable via a $\Sigma$-protocol, if both prover and verifier are able to evaluate the predicates in exactly the same way. This is the case if predicates are evaluated deterministically in the same way by both the prover and the verifier, and inputs for the predicates are the same on both sides.
-We assume prover and verifier can be different parties, e.g. prover is a creator of transactions (wallet application) and verifier is a miner validating incoming transactions.
-We use predicates over state of blockchain system during script validation~(which happens when a transaction tries to spend an output protected by the script). To avoid inefficient processing and impossibility for a light client to validate a transaction, this state is very lean but nevertheless it is richer than in Bitcoin. Like in Bitcoin, we use current height of the blockchain, but also a spending transaction with outputs it creates and inputs it tries to spend. Unlike Bitcoin, we allow outputs to contain more fields than amount and protecting script, in a form of additional registers an output can have. In addition to $\land$ and $\lor$ connectives for boolean propositions we also introduce $\sqcap$ and $\sqcup$ connectives for sigma protocol statements. The language also have different operations over statically typed arguments. We reject out during compilation time expressions with type errors, like $2 + 2 > true$, thanks to a type system used.
-
-In blockchain systems, there is a strict need to tackle the problem of denial-of-service attack carrying by crafting scripts which are too costly to validate. For example, if it is needed for more time to validate a script than average delay between blocks on commodity hardware, network could be obviously attacked, with nodes stuck in processing, and also increased number of forks as result. 
-
 \section{Old Language Design Section}
 
 We assume that a {\em prover} and a {\em verifier} have a shared {\em context}. As we are designing a language for cryptocurrencies, the context is about current state of the blockchain (such as height $h$ of a best block in the blockchain, a spending transaction with outputs it spends and newly created outputs, etc). Please note that the language can be repurposed for other areas where shared context is possible, but this is out of scope of the paper.
@@ -873,14 +862,6 @@ If the tree is well-formed according to the typing rules, and also has complexit
 \end{itemize} 
 
 If the transformations are finishing with abortion, the result is considered as $false$ (we recall that the interpreter is giving a single boolean result finally, whether an output could be spent or not). Otherwise, if the tree could not be transformed anymore the interpreter is looking into it. If the tree is about just a single node which contains boolean constant value~($true$ or $false$), the value is the result of the interpretation. If the tree contains statements not provable via $\Sigma$-protocols, the interpreter finishes with $false$. Otherwise, if the tree contains only statements provable via $\Sigma$-protocols, the interpreter is continuing to work, and here execution is different for the prover and the verifier. The prover is generating a proof for the statement by using its secrets, as described in Section~\ref{sec:proving}, and the verifier checks the statement against the proof~(provided in a spending transaction), as described in Section~\ref{sec:verifying}. The verifier outputs $true$ if the proof is valid for the statement, $false$ otherwise. We are skipping for now the question how Fiat-Shamir transformation works in our setting, and how a message, which is used in a non-interactive protocol is formed; details are given further in Appendix~\ref{apx:tx-format}. 
-
-
-
-\section{Old Context Section}
-
-Shared context of a blockchain system could be expressed in different ways, based on desired expressiveness, efficiency, planned use cases and so on. In this paper we focus on context for Ergo blockchain. The main priority for this blockchain is maximum efficiency of transaction validation process, safety, and friendliness to light clients. Considering this, we require that context should contain only spending transaction along with outputs it spends, and limited number of last block headers. Thus even a client which does not have all the headers of the blockchain~(for example, the client could be working in a light-SPV mode, where the client is holding only sublinear part of the headers-chain) is able to validate a transaction, by being shown it~(as well as outputs the transaction spends along with Merkle proofs for them).
-
-\knote{brief context description, link to an appendix with details}
 
 
 
