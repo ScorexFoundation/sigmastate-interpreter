@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 
@@ -15,10 +15,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   property("basic threshold compilation/execution") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val skA = proverA.dlogSecrets.head
@@ -112,7 +112,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("threshold reduce to crypto") {
     import TrivialProp._
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -235,15 +235,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("3-out-of-6 threshold") {
     // This example is from the white paper
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
-    val proverE = new ErgoLikeTestProvingInterpreter
-    val proverF = new ErgoLikeTestProvingInterpreter
-    val proverG = new ErgoLikeTestProvingInterpreter
-    val proverH = new ErgoLikeTestProvingInterpreter
-    val proverI = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
+    val proverE = new ContextEnrichingTestProvingInterpreter
+    val proverF = new ContextEnrichingTestProvingInterpreter
+    val proverG = new ContextEnrichingTestProvingInterpreter
+    val proverH = new ContextEnrichingTestProvingInterpreter
+    val proverI = new ContextEnrichingTestProvingInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -325,7 +325,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     // the integer indicates how many subpropositions the prover can prove
-    var provers = Seq[(Int, ErgoLikeTestProvingInterpreter)]((0, new ErgoLikeTestProvingInterpreter))
+    var provers = Seq[(Int, ContextEnrichingTestProvingInterpreter)]((0, new ContextEnrichingTestProvingInterpreter))
     // create 32 different provers
     for (i <- secrets.indices) {
       provers = provers ++ provers.map(p => (p._1 + 1, p._2.withSecrets(secrets(i))))
@@ -340,12 +340,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeTestInterpreter
 
-    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+    def canProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
       val proof = prover.prove(proposition, ctx, fakeMessage).get
       verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+    def cannotProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
       prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 
@@ -403,7 +403,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   property("fail compilation when input limit exceeded") {
-    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
     val skA = proverA.dlogSecrets.head
     val pubkeyA = skA.publicImage
     val keyName = "pubkeyA"

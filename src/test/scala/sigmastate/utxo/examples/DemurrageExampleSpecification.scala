@@ -1,15 +1,14 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, TaggedBox, SigmaPropConstant}
+import sigmastate.Values.{LongConstant, SigmaPropConstant, TaggedBox}
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -42,9 +41,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter()
 
     //backer's prover with his private key
-    val userProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
+    val userProver = new ContextEnrichingTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
-    val minerProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
+    val minerProver = new ContextEnrichingTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
     val regScript = userProver.dlogSecrets.head.publicImage
 

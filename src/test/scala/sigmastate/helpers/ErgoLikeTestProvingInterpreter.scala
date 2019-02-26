@@ -1,15 +1,13 @@
 package sigmastate.helpers
 
-import scorex.utils.Random
-import sigmastate.SType
-import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.basics.{DiffieHellmanTupleProverInput, SigmaProtocolPrivateInput}
 import sigmastate.eval.IRContext
-import sigmastate.utxo.{CostTable, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.ProverInterpreter
+import sigmastate.utxo.CostTable
 
 class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext)
-  extends ErgoLikeTestInterpreter(maxCost) with ContextEnrichingProverInterpreter {
+  extends ErgoLikeTestInterpreter(maxCost) with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     (1 to 4).map(_ => DLogProverInput.random()) ++
@@ -22,37 +20,4 @@ class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.Scri
   lazy val dhSecrets: Seq[DiffieHellmanTupleProverInput] =
     secrets.filter(_.isInstanceOf[DiffieHellmanTupleProverInput]).asInstanceOf[Seq[DiffieHellmanTupleProverInput]]
 
-  override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>
-    val ba = Random.randomBytes(75)
-    i.toByte -> ByteArrayConstant(ba)
-  }.toMap
-
-  def withContextExtender(tag: Byte, value: EvaluatedValue[_ <: SType]): ErgoLikeTestProvingInterpreter = {
-    val s = secrets
-    val ce = contextExtenders
-
-    new ErgoLikeTestProvingInterpreter(maxCost) {
-      override lazy val secrets = s
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce + (tag -> value)
-    }
-  }
-
-  def withSecrets(additionalSecrets: Seq[DLogProverInput]): ErgoLikeTestProvingInterpreter = {
-    val ce = contextExtenders
-    val s = secrets ++ additionalSecrets
-
-    new ErgoLikeTestProvingInterpreter(maxCost) {
-      override lazy val secrets = s
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
-    }
-  }
-  def withDHSecrets(additionalSecrets: Seq[DiffieHellmanTupleProverInput]): ErgoLikeTestProvingInterpreter = {
-    val ce = contextExtenders
-    val s = secrets ++ additionalSecrets
-
-    new ErgoLikeTestProvingInterpreter(maxCost) {
-      override lazy val secrets = s
-      override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
-    }
-  }
 }

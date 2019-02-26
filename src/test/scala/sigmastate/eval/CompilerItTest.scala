@@ -7,7 +7,7 @@ import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{BigIntArrayConstant, BigIntConstant, ByteArrayConstant, FalseLeaf, GroupElementConstant, IntConstant, LongConstant, SigmaBoolean, SigmaPropConstant, TrueLeaf, ValUse}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.{ContextExtension, CryptoConstants}
 import sigmastate.lang.DefaultSigmaBuilder.mkTaggedVariable
 import sigmastate.lang.LangTests
@@ -241,7 +241,7 @@ class CompilerItTest extends BaseCtxTests
     import SigmaDslBuilder._
     import Box._
     import Values._
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val backerPK  = prover.dlogSecrets(0).publicImage
     val projectPK = prover.dlogSecrets(1).publicImage
 

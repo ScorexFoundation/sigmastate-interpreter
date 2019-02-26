@@ -1,20 +1,19 @@
 package org.ergoplatform.dsl
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId}
 import scalan.{Nullable, RType}
 import scorex.crypto.hash.Digest32
 import sigmastate.{AvlTreeData, SType}
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
-import sigmastate.Values.{ErgoTree, SValue, EvaluatedValue, Constant}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
+import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, SValue}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.eval.{CSigmaProp, IRContext, CostingSigmaDslBuilder, Evaluation}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ProverResult, ContextExtension, CostedProverResult}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.eval.{CSigmaProp, CostingSigmaDslBuilder, Evaluation, IRContext}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResult}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import special.collection.Coll
-import special.sigma.{Extensions, SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder, TestValue}
+import special.sigma.{AnyValue, Context, DslSyntaxExtensions, Extensions, SigmaContract, SigmaDslBuilder, SigmaProp, TestValue}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

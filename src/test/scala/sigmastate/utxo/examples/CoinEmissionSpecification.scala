@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.util.ScorexLogging
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
@@ -61,7 +61,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
 
   property("emission specification") {
     val register = reg1
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
 
     val rewardOut = ByIndex(Outputs, IntConstant(0))
 

@@ -5,18 +5,17 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, Value, ByteArrayConstant, SigmaPropValue, IntConstant}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -34,7 +33,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
   property("boxCreationHeight") {
     val verifier = new ErgoLikeTestInterpreter
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerProp = prover.dlogSecrets.head.publicImage
     val pk = minerProp.pkBytes
 
@@ -63,14 +62,14 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   property("collect coins from the founders' box") {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val prop = ErgoScriptPredef.foundationScript(settings)
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
       val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
       ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks)))
     } else {
-      val pk = (new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage
+      val pk = (new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage
       ByteArrayConstant(ValueSerializer.serialize(SigmaPropConstant(pk)))
     }
 
@@ -120,7 +119,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("collect coins from rewardOutputScript") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
     val verifier = new ErgoLikeTestInterpreter
@@ -154,7 +153,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("create transaction collecting the emission box") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.emissionBoxProp(settings)
     val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map())
@@ -200,7 +199,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -282,7 +281,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
                     minerProp: SigmaPropValue,
                     emissionBox: ErgoBox,
                     emissionAmount: Long,
-                    nextHeight: Int)(prover: ErgoLikeTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
+                    nextHeight: Int)(prover: ContextEnrichingTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
     val verifier = new ErgoLikeTestInterpreter
     val prop = emissionBox.ergoTree
     val inputBoxes = IndexedSeq(emissionBox)

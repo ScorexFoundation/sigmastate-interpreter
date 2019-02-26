@@ -10,12 +10,11 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.{ByteConstant, GroupElementConstant, IntConstant, SigmaPropConstant}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class MixExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext
@@ -26,7 +25,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val g = dlogGroup.generator
 
     // Alice is first player, who initiates the mix
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
 
     val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
@@ -114,7 +113,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // If Alice wants to abort the mix, she can take Bob's role and spend her Half-Mix output
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
 
     val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
@@ -171,7 +170,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // To Do: Extract below g_x from halfMixOutput
     val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
 
-    val proofFullMix = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofFullMix = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtBob)
     ).prove(halfMixEnv, halfMixScript, fullMixContext, fakeMessage).get.proof
 
@@ -182,7 +181,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     //////////////////////////////////////////////
 
     // some 3rd person that will be paid
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
@@ -225,7 +224,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // To Do: Extract below g_y, g_xy from fullMixOutputs registers
     val dhtAlice = DiffieHellmanTupleProverInput(x, ProveDHTuple(g, g_y, g_x, g_xy))
 
-    val proofAliceSpend = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofAliceSpend = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtAlice)
     ).prove(fullMixEnv, fullMixScript, aliceSpendContext, fakeMessage).get.proof
 

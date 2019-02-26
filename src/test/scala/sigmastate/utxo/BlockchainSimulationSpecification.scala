@@ -11,7 +11,7 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.eval.IRContext
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.{AvlTreeData, GE}
@@ -46,8 +46,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         ContextExtension.empty)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
       val proverResult = miner.prove(env, box.ergoTree, context, tx.messageToSign).get
-        .copy(extension = ContextExtension.empty)
-      // TODO prover should not add unpredictable values to context extension
+      proverResult.extension shouldBe ContextExtension.empty
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -98,7 +97,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
     def bench(numberOfBlocks: Int): Unit = {
 
       val state = ValidationState.initialState()
-      val miner = new ErgoLikeTestProvingInterpreter()
+      val miner = new ContextEnrichingTestProvingInterpreter()
 
       val (_, time) = (0 until numberOfBlocks).foldLeft(state -> 0L) { case ((s, timeAcc), h) =>
         val b = generateBlock(state, miner, h)

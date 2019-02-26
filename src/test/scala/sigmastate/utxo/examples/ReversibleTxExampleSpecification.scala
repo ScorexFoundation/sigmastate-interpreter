@@ -5,7 +5,7 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -66,13 +66,13 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     */
   property("Evaluation - Reversible Tx Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
+    val bob = new ContextEnrichingTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val carol = new ErgoLikeTestProvingInterpreter // private key of trusted party who can abort withdraws
+    val carol = new ContextEnrichingTestProvingInterpreter // private key of trusted party who can abort withdraws
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val withdrawEnv = Map(
@@ -151,7 +151,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     // Possibility 1: Normal scenario
     // Bob spends after bobDeadline. He sends to Dave
 
-    val dave = new ErgoLikeTestProvingInterpreter
+    val dave = new ContextEnrichingTestProvingInterpreter
     val davePubKey = dave.dlogSecrets.head.publicImage
 
     val bobSpendAmount = 10
