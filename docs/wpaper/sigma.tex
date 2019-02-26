@@ -221,7 +221,7 @@ Note that the script does not prevent the \texttt{friend} box from being spent o
 We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input collection using the \texttt{exists} operator, which applies a boolean function to each collection element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
 \begin{verbatim}
         {
-                val isFriend = { (inputBox: Box) => inputBox.id == friend.id }
+                def isFriend = { (inputBox: Box) => inputBox.id == friend.id }
                 INPUTS.exists (isFriend)
         }
 \end{verbatim}
@@ -323,7 +323,7 @@ These box registers provide additional capabilities to \langname. Consider, for 
         tokenData._1 == token1,
         tokenData._2 >= 60L,
         OUTPUTS(0).propositionBytes == pkA.propBytes,
-        OUTPUTS(0).value >= 1L
+        OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
     ))
   }
 \end{verbatim}
@@ -337,7 +337,8 @@ Bob, similarly, could create an output box with value 0
         (HEIGHT > deadline && pkB) || 
         allOf( Coll(
                 OUTPUTS(1).value >= 100,
-                OUTPUTS(1).propositionBytes == pkB.propBytes
+                OUTPUTS(1).propositionBytes == pkB.propBytes,
+                OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
          ))
 \end{verbatim}
 
@@ -386,16 +387,13 @@ a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} r
               val heightCorrect = out.R4[Int].get == HEIGHT
               val lastCoins = SELF.value <= oneEpochReduction
               allOf(Coll(
-                      correctCoinsConsumed, 
                       heightCorrect, 
                       heightIncreased, 
-                      sameScriptRule)) 
+                      sameScriptRule,
+                      correctCoinsConsumed)) 
               || (heightIncreased && lastCoins)
       }
 \end{verbatim}
-
-
-\lnote{Not including demurrage example because it required more explanation about checking from miners and consensus about what registers are for what}
 
 
 \paragraph{Example: arbitrary computation via a simple cellular automaton}
@@ -404,11 +402,12 @@ The example in the paragraph is not meant for practical implementation; rather, 
 \lnote{maybe give a the simple example from \url{https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/test/scala/sigmastate/utxo/examples/Rule110Specification.scala\#L40?}}
 
 
-
+\ignore{
 \subsection{Merkle Trees}
 Explain \texttt{isMember} and provide an example of usage. Explain that the context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. Give examples of usage, such as oracle, MAST, FSM. (For the oracle, explain that our language is rich enough to support signature verification within the script.)
 
 \lnote{All of this has to wait until there are working code examples in \langname (currently, the examples in \texttt{OracleExamplesSpecification} and \texttt{MASTExampleSpecification} and \texttt{FsmExampleSpecification} are all written as ASTs, not as compilable code.}
+}
 
 
 
@@ -531,21 +530,6 @@ $Constant$ tree nodes.
 \label{fig:genCFT}
 \end{center}
 \end{figure}
-
-\subsection{Storing Cost Function}
-\label{sec:store-cost-function}
-
-
-\subsection{Cost Interpreter}
-\label{sec:cost-interpreter}
-
-
-
-\subsection{Cost Model}
-\label{sec:cost-model}
-
-
-
 
 
 
@@ -903,76 +887,6 @@ Shared context of a blockchain system could be expressed in different ways, base
 
 \section{Old Examples Section}
 
-In this section we provide some examples of useful guarding scripts. We focus on examples which are impossible or much harder to express in Bitcoin Script.
-
-\subsection{Crowdfunding}
-\label{sec:crowdfunding}
-
-We provide simple solution to crowdfunding here. In the example, a crowdfunding project associated with public key $x_P$ is considered successful if it can collect unspent outputs with total value not less than $to\_raise$ before height $timeout$. A project backer creates an output protected by the following statement: 
-
-\begin{equation*}
-\begin{split}
-(height \ge timeout \land dlog(x_B)) \lor \\
-(height & < timeout \land dlog(x_P)\\
-& \land Exists(Outputs, 20,\\ 
-& \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge to\_raise \land \\ 
-& \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ToBytes(dlog(x_P))))
-\end{split}
-\end{equation*}
-
-Then the project can collect biggest outputs with total value not less than $to\_raise$ with a single transaction~(it is possible to collect up to ~22,000 outputs in Bitcoin, which is enough even for a big crowdfunding campaign). For remaining small outputs over $to\_raise$, it is possible to construct follow-up transactions. 
-
-Please note why such a guarding expression is not possible in Bitcoin: we use the condition on a spending transaction, namely, we require the transaction to have an output with value not less than required, and also with a particular statement protecting the output.
-
-\subsection{Money With Scheduled Maintenance Payments}
-
-\knote{description}
-
-\begin{equation*}
-\begin{split}
-user\_statement \lor \\ 
-(height & \ge (ExtractHeight(self) + period) \land \\
-    & Exists(Outputs, 20, \\
-    & \quad \quad \quad \quad ExtractAmount(TaggedBox(20)) \ge (ExtractAmount(self) - cost) \land \\ 
-    & \quad \quad \quad \quad ExtractScriptBytes(TaggedBox(20)) = ExtractScriptBytes(self)))
-\end{split}
-\end{equation*}
-
-We highlight impossibility of such a statement in the Bitcoin Script: similarly to the statement in the previous section~\ref{sec:crowdfunding}, we use a condition on a spending transaction. Another feature missed in the Bitcoin Script is that we also use an output to spend in the execution context. In particular, in the example above we require a spending transaction to have an output which has the same statement as an output it spends. 
-
-\subsection{Ring Signature}
-\label{sec:ring}
-
-Linear-sized ring signature is very straightforward in the language. Assume a ring consists of $m$ public keys $x_1, \dots, x_m$. If one wants an output to be spent by a ring signature associated with the ring, the output is to be protected by the following statement:
-
-$$dlog(x_1) \lor \dots \lor dlog(x_m)$$  
-
-Please note that proving of the statement is to be done in zero-knowledge, so it is not possible to know which key signed, the only fact to conclude is that some key from the ring signed output spending. 
-
-\subsection{Complex Signature Schemes}
-
-We can build more complex signature schemes than possible in Bitcoin. One particular example was provided in the previous Section~\ref{sec:ring}. Another example is a scheme where at least one out of (Alice, Bob), and at least one out of (Charles, Diana) are needed to sign, and it is not to be known who signed an output spending. The corresponding statement involving public keys $x_A, x_B, x_C, x_D$ of Alice, Bob, Charles and Diana respectively would be following:
-
-$$(dlog(x_A) \lor dlog(x_B)) \land (dlog(x_C) \lor dlog(x_D))$$
-
-\subsection{Simple Tumbler}
-\label{sec:tumbler}
-
-\knote{does the example makes sense? check other tumbler papers. also, update the scripts, now approach is more generic than using tx.outbytes}
-
-Privacy is a tough problem for cryptocurrency users. Bitcoin is a pseudonymous cryptocurrency, so no real identities attached to a transaction. However, it is possible to reconstruct transactional graph for all the transactions ever entered into the Bitcoin blockchain, and often restore real identities by using auxiliary databases. \knote{link} To improve privacy, tumblers are being used. A tumbler is a scheme which us getting some money transfers as inputs, produces output money transfers, and has a property of unlinkability: it is not possible to draw a link from an input to an output. Thus a tumbler user is hiding herself amongst a ring of users sending inputs to the scheme. Privacy then depends on a ring size. For maximum privacy, there exists a cryptocurrency ZCash with inbuilt tumbler based on zkSnarks\knote{links}, where a user is hiding among all the users in the system. However, ZCash requires trusted setup, and transaction validation is relatively slow~(10 ms). In other cryptocurrencies users are usually using external services varying in security and efficiency.
-
-Here we are describing simple tumbler service. It is very efficient and requires no trusted dealer. Its disadvantage is that from observing blockchain transactions it is possible to conclude that users are using a tumbler.
-
-Assume Alice with public key $x_A$ and Bob with public key $x_B$ want to relocate funds to keys $y_1$ and $y_2$ respectively, with a property than external observer looking into blockchain is not capable to know beyond the fact that money flows from $x_A$ to whether $y_1$ or $y_2$~(and the same for $x_B$).
-
-First, Alice and Bob communicate off-chain to construct collectively outputs of the final transaction~(payments to $y_1$ and $y_2$). Each of them then is calculating a hash value from outputs bytes $h$~(we assume that Blake2b-256 hash function is used). Then each of them is creating an output to spend~(possibly, in a dedicated transaction) with such a condition for Alice and Bob, respectively:
-
-$blake2b256(tx.outbytes) = h \lor dlog(x_A)$ 
-
-$blake2b256(tx.outbytes) = h \lor dlog(x_B)$
-
-Then it is possible to make a refund at any moment of time~(right condition in the $\lor$ conjectures), and before a refund any of the them can construct a transaction which is spending the outputs, and it is impossible to construct an alternative transaction, for which hash of the output bytes is $h$, but bytes are different~(if chosen hash function is collision-resistant).
 
 \subsection{Oracle Example}
 
