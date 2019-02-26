@@ -144,7 +144,7 @@ The simplest script allows the owner of a public key to spend an output box in a
         pk
 \end{verbatim}
 
-In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We postpone the discussion of how to invoke the compiler outside of Scala code.\lnote{we should add this discussion at some point}}
+In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We postpone the discussion of how to invoke the compiler outside of Scala code.}
 Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
@@ -188,9 +188,6 @@ For example, here is a script stating that the box can be spent by any 3 out of 
 \end{verbatim}
 The same result could be achieved by writing an \texttt{anyOf} of all possible 3-out-of-6 (twenty) combinations.
 
-
-\lnote{should probably do a diffie-hellman example, and maybe another one below with getting some of the DH values from a context. E.g., $g_1$ is just $g$, $g_2$ is $pk_A$, $h_1$ is a hash of a message in a context, and $h_2$ is from the context. }
-
 \subsection{Mixing $\Sigma$-statements with other statements}
 \langname allows combining statements that require proofs with other boolean statements. These statements can refer to the \emph{context}, which has predefined variables with information about the transaction in which the script is evaluated (i.e., the box is spent). For example,
 
@@ -204,9 +201,6 @@ This script allows Alice or Bob to spend the box before \texttt{HEIGHT} reaches 
 In general, script evaluation reduces the script to a $\Sigma$-statement by first evaluating all the Boolean predicates that are not $\Sigma$-statements. As we saw in the above example, the resulting $\Sigma$-statement will, in general, depend on the values of the Boolean predicates (such as whether \texttt{HEIGHT > 500}).
 
 We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{ProveDlog}. Type   \texttt{ProveDlog} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}). \lnote{the type system is undergoing changes, so this needs fixing}
-
-
-\lnote{Should we have an example with fees? According to Dima, fees are implemented as boxes with TrueLeaf as a proposition, last transaction in a block consumes all this just created boxes and in favor of miner.}
 
 
 \subsection{Accessing the Context and Box Contents}
@@ -274,7 +268,6 @@ says that spending can be done only using the signature of Alice, and only if th
 
 \paragraph{Example: atomic transactions and cross-chain trading}
 Suppose there are two separate blockchains, for two different asset types. Alice wants to receive some assets in her blockchain in exchange for giving some assets to Bob in his blockchain. \langname allows to accomplish in a simpler way than proposed for Bitcoin, for example, in \cite{Nol13}. 
-\lnote{is this the right text to go along with the reference to \cite{Nol13}?}
 
 Alice creates a random secret \texttt{x} of 256 bits (32 bytes), hashes it to obtain the value \texttt{hx}, and creates a transaction in Bob's blockchain with the output box protected by the following script:
 \begin{verbatim}
