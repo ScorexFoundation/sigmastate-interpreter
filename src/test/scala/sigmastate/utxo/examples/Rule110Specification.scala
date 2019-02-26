@@ -10,13 +10,13 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**
   * Wolfram's Rule110 implementations
   *
   */
 class Rule110Specification extends SigmaTestingCommons {
-  import BlockchainSimulationSpecification.{Block, ValidationState}
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -403,7 +403,7 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoBox(0L, prop, 0, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
-    val initBlock = BlockchainSimulationSpecification.Block(
+    val initBlock = FullBlock(
       IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins)),
       ErgoLikeContext.dummyPubkey
     )
@@ -468,7 +468,7 @@ class Rule110Specification extends SigmaTestingCommons {
       }
     }
 
-    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
+    val firstRowBlock = FullBlock(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
 
     val t0 = System.currentTimeMillis()
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get

@@ -7,7 +7,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingC
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.BlockchainSimulationSpecification.{Block, ValidationState}
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 import sigmastate.utxo._
 import sigmastate._
 
@@ -110,7 +110,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val minerProp = minerImage
 
     val initialBoxCandidate: ErgoBox = ErgoBox(coinsTotal / 4, prop, 0, Seq(), Map(register -> IntConstant(-1)))
-    val initBlock = BlockchainSimulationSpecification.Block(
+    val initBlock = FullBlock(
       IndexedSeq(
         ErgoLikeTransaction(
           IndexedSeq(),
@@ -169,7 +169,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
-      val block = Block(IndexedSeq(tx), minerPubkey)
+      val block = FullBlock(IndexedSeq(tx), minerPubkey)
       val newState = state.applyBlock(block).get
       if (tx.outputs.last.value > 1) {
         val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
