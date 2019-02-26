@@ -8,10 +8,10 @@ import sigmastate._
 import interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{ErgoLikeTestInterpreter, GetVar, SizeOf}
+import sigmastate.utxo.{ErgoLikeTestInterpreter, SizeOf}
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   /**
     * Atomic cross-chain trading example:
     * Alice(A) has coins in chain 1, Bob(B) has coins in chain 2, they want to exchange them atomically and with no
@@ -40,19 +40,19 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val env = Map(
       ScriptNameProp -> "atomic",
       "height1" -> height1, "height2" -> height2,
-      "deadlineA" -> deadlineA, "deadlineB" -> deadlineB,
+      "deadlineBob" -> deadlineB, "deadlineAlice" -> deadlineA,
       "pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "hx" -> hx)
     val prop1 = compileWithCosting(env,
       """{
         |  anyOf(Coll(
-        |    HEIGHT > height1 + deadlineA && pubkeyA,
+        |    HEIGHT > height1 + deadlineBob && pubkeyA,
         |    pubkeyB && blake2b256(getVar[Coll[Byte]](1).get) == hx
         |  ))
         |}""".stripMargin).asBoolValue
 
     //chain1 script
     val prop1Tree = SigmaOr(
-      SigmaAnd(GT(Height, IntConstant(height1 + deadlineA)).toSigmaProp, pubkeyA),
+      SigmaAnd(GT(Height, IntConstant(height1 + deadlineB)).toSigmaProp, pubkeyA),
       SigmaAnd(pubkeyB, EQ(CalcBlake2b256(GetVarByteArray(1).get), hx).toSigmaProp)
     )
     prop1 shouldBe prop1Tree
@@ -60,10 +60,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val script2 =
       """{
         |  anyOf(Coll(
-        |    HEIGHT > height2 + deadlineB && pubkeyB,
+        |    HEIGHT > height2 + deadlineAlice && pubkeyB,
         |    allOf(Coll(
         |        pubkeyA,
-        |        getVar[Coll[Byte]](1).get.size<33,
+        |        getVar[Coll[Byte]](1).get.size < 33,
         |        blake2b256(getVar[Coll[Byte]](1).get) == hx
         |    ))
         |  ))
@@ -76,7 +76,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       Vector(ValDef(1, GetVarByteArray(1).get)),
       SigmaOr(
         SigmaAnd(
-          GT(Height, IntConstant(height2 + deadlineB)).toSigmaProp,
+          GT(Height, IntConstant(height2 + deadlineA)).toSigmaProp,
           pubkeyB),
         SigmaAnd(
           AND(
