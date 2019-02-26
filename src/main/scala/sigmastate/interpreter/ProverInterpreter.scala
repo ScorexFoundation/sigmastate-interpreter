@@ -2,22 +2,20 @@ package sigmastate.interpreter
 
 import java.util
 
+import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import sigmastate.basics.DLogProtocol._
-import sigmastate._
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions._
-import Values._
-import scalan.util.CollectionUtil._
-import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import scalan.util.CollectionUtil._
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
-import gf2t.GF2_192
-import gf2t.GF2_192_Poly
 import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.SigmaSerializer
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+
+import scala.util.Try
 
 /**
   * Proof of correctness of tx spending
@@ -68,16 +66,12 @@ case class CostedProverResult(override val proof: Array[Byte],
   */
 trait ProverInterpreter extends Interpreter with AttributionCore {
 
-  import Interpreter._
   import CryptoConstants.secureRandomBytes
+  import Interpreter._
 
   override type ProofT = UncheckedTree
 
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
-
-  def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map()
-
-  val knownExtensions = ContextExtension(contextExtenders)
 
   /**
     * The comments in this section are taken from the algorithm for the
@@ -127,9 +121,8 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
     prove(emptyEnv, exp, context, message)
 
-  def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(env: ScriptEnv, exp: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp.proposition)
     val tried = reduceToCrypto(ctx, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
@@ -159,7 +152,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, knownExtensions, cost)
+    CostedProverResult(proof, ctx.extension, cost)
   }
 
   /**
