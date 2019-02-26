@@ -1,11 +1,10 @@
 package sigmastate.lang
 
-import fastparse.core.{ParseError, Parsed}
-import org.ergoplatform.ErgoAddressEncoder
-import org.scalatest.exceptions.TestFailedException
+import fastparse.core.Parsed
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
-import sigmastate.SCollection.SByteArray
+import org.scalatest.{PropSpec, Matchers}
+import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
@@ -551,9 +550,9 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parseType("Int") shouldBe SInt
     parseType("(Int, Long)") shouldBe STuple(SInt, SLong)
     parseType("Coll[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
-    parseType("Coll[(Coll[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
-    parseType("Coll[(Coll[Byte], Coll[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
-    parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
+    parseType("Coll[(Coll[Byte], Long)]") shouldBe ErgoBox.STokensRegType
+    parseType("Coll[(Coll[Byte], Coll[Long])]") shouldBe SCollection(STuple(SByteArray, SLongArray))
+    parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SByteArray, STuple(SLongArray, SLong)))
   }
 
   property("negative tests") {

@@ -279,7 +279,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("SAvlTree.digest") {
     testMissingCosting("getVar[AvlTree](1).get.digest",
-      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.DigestMethod, IndexedSeq())
+      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.digestMethod, IndexedSeq())
     )
   }
 

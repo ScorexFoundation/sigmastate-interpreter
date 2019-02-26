@@ -27,7 +27,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.utxo.ByIndex
 import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
-//import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
 
@@ -592,17 +591,27 @@ object SOption extends STypeCompanion {
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
   override def typeId = OptionTypeCode
 
-  implicit val optionTypeByte = SOption(SByte)
-  implicit val optionTypeByteArray = SOption(SByteArray)
-  implicit val optionTypeShort = SOption(SShort)
-  implicit val optionTypeInt = SOption(SInt)
-  implicit val optionTypeLong = SOption(SLong)
-  implicit val optionTypeBigInt = SOption(SBigInt)
-  implicit val optionTypeBoolean = SOption(SBoolean)
-  implicit val optionTypeAvlTree = SOption(SAvlTree)
-  implicit val optionTypeGroupElement = SOption(SGroupElement)
-  implicit val optionTypeSigmaProp = SOption(SSigmaProp)
-  implicit val optionTypeBox = SOption(SBox)
+  type SBooleanOption      = SOption[SBoolean.type]
+  type SByteOption         = SOption[SByte.type]
+  type SShortOption        = SOption[SShort.type]
+  type SIntOption          = SOption[SInt.type]
+  type SLongOption         = SOption[SLong.type]
+  type SBigIntOption       = SOption[SBigInt.type]
+  type SGroupElementOption = SOption[SGroupElement.type]
+  type SBoxOption          = SOption[SBox.type]
+  type SAvlTreeOption      = SOption[SAvlTree.type]
+
+  implicit val SByteOption = SOption(SByte)
+  implicit val SByteArrayOption = SOption(SByteArray)
+  implicit val SShortOption = SOption(SShort)
+  implicit val SIntOption = SOption(SInt)
+  implicit val SLongOption = SOption(SLong)
+  implicit val SBigIntOption = SOption(SBigInt)
+  implicit val SBooleanOption = SOption(SBoolean)
+  implicit val SAvlTreeOption = SOption(SAvlTree)
+  implicit val SGroupElementOption = SOption(SGroupElement)
+  implicit val SSigmaPropOption = SOption(SSigmaProp)
+  implicit val SBoxOption = SOption(SBox)
 
   implicit def optionTypeCollection[V <: SType](implicit tV: V): SOption[SCollection[V]] = SOption(SCollection[V])
 
@@ -832,6 +841,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val SBooleanArray      = SCollection(SBoolean)
   val SByteArray         = SCollection(SByte)
+  val SByteArray2        = SCollection(SCollection(SByte))
   val SShortArray        = SCollection(SShort)
   val SIntArray          = SCollection(SInt)
   val SLongArray         = SCollection(SLong)
@@ -1024,11 +1034,54 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   override def isConstantSize = false
   def ancestors = Nil
 
-  val DigestMethod = SMethod(this, "digest", SCollection(SByte), 1, MethodCallIrBuilder)
-  val ModifyMethod = SMethod(this, "modify", SFunc(IndexedSeq(SAvlTree, SCollection(SByte), SCollection(SByte)), SOption(SAvlTree) ), 2, MethodCallIrBuilder)
+  import SOption._
+  val TCollOptionCollByte = SCollection(SByteArrayOption)
+  val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
+
+  val digestMethod            = SMethod(this, "digest", SByteArray,            1, MethodCallIrBuilder)
+  val enabledOperationsMethod = SMethod(this, "enabledOperations", SByte,      2, MethodCallIrBuilder)
+  val keyLengthMethod         = SMethod(this, "keyLength", SInt,               3, MethodCallIrBuilder)
+  val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SIntOption,    4, MethodCallIrBuilder)
+  val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SBoolean,     5, MethodCallIrBuilder)
+  val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SBoolean,     6, MethodCallIrBuilder)
+  val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SBoolean,     7, MethodCallIrBuilder)
+  
+  val updateOperationsMethod  = SMethod(this, "updateOperations", 
+    SFunc(IndexedSeq(SAvlTree, SByte), SAvlTreeOption),                        8, MethodCallIrBuilder)
+    
+  val containsMethod          = SMethod(this, "contains",
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SAvlTreeOption),       9, MethodCallIrBuilder)
+
+  val getMethod               = SMethod(this, "get",
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10, MethodCallIrBuilder)
+
+  val getManyMethod           = SMethod(this, "getMany",
+    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11, MethodCallIrBuilder)
+
+  val insertMethod            = SMethod(this, "insert",
+    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     12, MethodCallIrBuilder)
+
+  val updateMethod            = SMethod(this, "update",
+    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     13, MethodCallIrBuilder)
+
+  val removeMethod            = SMethod(this, "remove",
+    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14, MethodCallIrBuilder)
+
   override val methods: Seq[SMethod] = Seq(
-    DigestMethod,
-    ModifyMethod
+    digestMethod,
+    enabledOperationsMethod,
+    keyLengthMethod,
+    valueLengthOptMethod,
+    isInsertAllowedMethod,
+    isUpdateAllowedMethod,
+    isRemoveAllowedMethod,
+    updateOperationsMethod,
+    containsMethod,
+    getMethod,
+    getManyMethod,
+    insertMethod,
+    updateMethod,
+    removeMethod
   )
 }
 

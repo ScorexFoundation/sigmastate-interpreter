@@ -165,7 +165,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         sigmaProp(SELF.R4[AvlTree].get.remove(ops, proof).get == SELF.R5[AvlTree].get)
       },
       """{
-       |  sigmaProp(treeRemovals(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get)
+       |  sigmaProp(SELF.R4[AvlTree].get.remove(ops, proof).get == SELF.R5[AvlTree].get)
        |}
       """.stripMargin)
 
@@ -198,8 +198,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val res = in1.runDsl()
     res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
-    //    val pr = prover.prove(in1).get
-    //    contract.verifier.verify(in1, pr) shouldBe true
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree - inserts") {

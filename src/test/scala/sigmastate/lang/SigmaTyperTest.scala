@@ -1,10 +1,10 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{Height, P2PKAddress, Inputs, ErgoAddressEncoder}
+import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
@@ -618,15 +618,15 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   }
 
   property("SBox.tokens") {
-    typecheck(env, "SELF.tokens") shouldBe SCollection(STuple(SCollection(SByte), SLong))
+    typecheck(env, "SELF.tokens") shouldBe ErgoBox.STokensRegType
   }
 
   property("SOption.toColl") {
-    typecheck(env, "getVar[Int](1).toColl") shouldBe SCollection(SInt)
+    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
   }
 
   property("SAvlTree.digest") {
-    typecheck(env, "getVar[AvlTree](1).get.digest") shouldBe SCollection(SByte)
+    typecheck(env, "getVar[AvlTree](1).get.digest") shouldBe SByteArray
   }
 
   property("SGroupElement.exp") {

@@ -2,17 +2,20 @@ package special.sigma
 
 import java.math.BigInteger
 
+import org.scalacheck.Gen.containerOfN
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
-import sigma.types.CBoolean
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.Lookup
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
+import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.AvlTreeFlags
 import special.collection.Coll
 import special.collections.CollGens
 
 trait SigmaTypeGens {
-  import Gen._; import Arbitrary._
   import sigma.types._
   val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
   implicit val arbBoolean = Arbitrary(genBoolean)
@@ -35,6 +38,12 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val b1 = f(x); val b2 = g(x)
     assert(b1.getClass == b2.getClass)
     assert(b1 == b2)
+  }
+
+  def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
+    val r1 = f(x, y); val r2 = g(x, y)
+    assert(r1.getClass == r2.getClass)
+    assert(r1 == r2)
   }
 
   property("Boolean methods equivalence") {
@@ -111,6 +120,25 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
+  val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
+  val bytesCollGen = bytesGen.map(builder.fromArray(_))
+  implicit val arbBytes = Arbitrary(bytesCollGen)
+  import org.ergoplatform.dsl.AvlTreeHelpers._
 
+  property("AvlTree.contains methods equivalence") {
+    val testContains = checkEq2(
+      func2[AvlTree, (Coll[Byte], Coll[Byte]), Boolean](
+      "{ (t: AvlTree, args: (Coll[Byte], Coll[Byte])) => t.contains(args._1, args._2) }")) {
+        (t, args) => t.contains(args._1, args._2)
+      }
 
+    val key = bytesCollGen.sample.get
+    val value = bytesCollGen.sample.get
+    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
+    avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
+    val digest = avlProver.digest.toColl
+    val proof = avlProver.generateProof().toColl
+    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    testContains(tree, (key, proof))
+  }
 }

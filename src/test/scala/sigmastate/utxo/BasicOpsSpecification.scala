@@ -263,7 +263,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val Colls = IR.sigmaDslBuilderValue.Colls
     val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
     val env1 = env + ("dataVar" -> dataVar)
-    val dataType = SCollection(STuple(SCollection(SByte), SLong))
+    val dataType = SCollection(STuple(SByteArray, SLong))
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
 //    test("TupColl3", env1, ext1,
 //      """{
