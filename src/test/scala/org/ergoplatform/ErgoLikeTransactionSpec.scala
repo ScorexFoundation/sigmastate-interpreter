@@ -1,11 +1,10 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoBox.TokenId
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.util.Random
-import sigmastate.Values
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.Values.ByteArrayConstant
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
@@ -86,7 +85,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         (itx6.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified input extension
-        val newExtension7 = ContextExtension(headInput.spendingProof.extension.values ++ Map(1.toByte -> Values.TrueLeaf))
+        val newExtension7 = ContextExtension(headInput.spendingProof.extension.values ++ Map(Byte.MinValue -> ByteArrayConstant(Random.randomBytes(32))))
         val newProof7 = new ProverResult(headInput.spendingProof.proof, newExtension7)
         val headInput7 = headInput.copy(spendingProof = newProof7)
         val itx7 = ErgoLikeTransaction(headInput7 +: tailInputs, txIn.outputCandidates)
