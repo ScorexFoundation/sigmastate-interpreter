@@ -1,5 +1,7 @@
 package sigmastate.lang.exceptions
 
+import sigmastate.lang.SourceContext
+
 final class InvalidTypePrefix(message: String, source: Option[SourceContext] = None)
   extends SerializerException(message, source)
 

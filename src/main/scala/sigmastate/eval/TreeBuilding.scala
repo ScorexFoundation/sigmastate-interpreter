@@ -2,17 +2,18 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value, FalseLeaf}
+import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, BlockValue, ConstantNode, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
 import sigmastate.serialization.OpCodes._
 import org.ergoplatform._
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.{Height, Outputs, Self, Inputs}
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ConstantStore, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, ConstantStore}
 import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
+import ErgoLikeContext._
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -20,6 +21,8 @@ import scala.reflect.{ClassTag, classTag}
 import scala.util.Try
 import SType._
 import org.bouncycastle.math.ec.ECPoint
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.SigmaBuilder
 
@@ -33,10 +36,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import SigmaDslBuilder._
   import CCostedBuilder._
   import MonoidBuilderInst._
-  import TrivialSigma._
-  import ProveDlogEvidence._
-  import ProveDHTEvidence._
-  import WBigInteger._
+  import BigInt._
   import WArray._
   import WOption._
   import WECPoint._
@@ -49,7 +49,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   private val SDBM = SigmaDslBuilderMethods
   private val AM = WArrayMethods
   private val OM = WOptionMethods
-  private val BIM = WBigIntegerMethods
+  private val BIM = BigIntMethods
 
   /** Describes assignment of valIds for symbols which become ValDefs.
     * Each ValDef in current scope have entry in this map */
@@ -171,12 +171,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
 
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
-        wc.constValue match {
-          case cb: CostingBox =>
-            mkConstant[tpe.type](cb.ebox.asInstanceOf[tpe.WrappedType], tpe)
-          case _ =>
-            mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
-        }
+        val t = Evaluation.stypeToRType(tpe)
+        val tRes = Evaluation.toErgoTreeType(t)
+        val v = Evaluation.fromDslData(wc.constValue, tRes)(IR)
+        mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
       case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
@@ -230,9 +228,22 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkAppend(col1, col2)
       case CollM.slice(colSym, In(from), In(until)) =>
         mkSlice(recurse(colSym), from.asIntValue, until.asIntValue)
-      case CollM.fold(colSym, zeroSym, pSym) =>
+      case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
+
+      case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
+        val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
+        val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
+        val col = recurse(colSym)
+        val colTpe = elemToSType(colSym.elem).asCollection
+        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
+          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
+            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
+          case (Some(mth), _) => mth
+          case (None, _) => error(s"unknown method Coll.${m.getName}")
+        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
+        builder.mkMethodCall(col, method, args.toIndexedSeq)
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
@@ -293,22 +304,22 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkSigmaPropIsProven(prop.asSigmaProp)
       case SigmaM.propBytes(In(prop)) =>
         mkSigmaPropBytes(prop.asSigmaProp)
-      case Def(TrivialSigmaCtor(In(cond))) =>
+      case Def(SDBM.sigmaProp(_, In(cond))) =>
         mkBoolToSigmaProp(cond.asBoolValue)
-      case Def(ProveDlogEvidenceCtor(In(g))) =>
+      case Def(SDBM.proveDlog(_, In(g))) =>
         g match {
-          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(mkProveDlog(gc))
-          case _ => mkProveDlog(g.asGroupElement)
+          case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(ProveDlog(gc.value))
+          case _ => mkCreateProveDlog(g.asGroupElement)
         }
-      case Def(ProveDHTEvidenceCtor(In(g), In(h), In(u), In(v))) =>
+      case Def(SDBM.proveDHTuple(_, In(g), In(h), In(u), In(v))) =>
         (g, h, u, v) match {
           case (gc: Constant[SGroupElement.type]@unchecked,
           hc: Constant[SGroupElement.type]@unchecked,
           uc: Constant[SGroupElement.type]@unchecked,
           vc: Constant[SGroupElement.type]@unchecked) =>
-            SigmaPropConstant(mkProveDiffieHellmanTuple(gc, hc, uc, vc))
+            SigmaPropConstant(ProveDHTuple(gc.value, hc.value, uc.value, vc.value))
           case _ =>
-            mkProveDiffieHellmanTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
+            mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
         }
 
       case SDBM.sigmaProp(_, In(cond)) =>
@@ -371,7 +382,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)
-        curEnv = curEnv + (s -> (curId, elemToSType(s.elem)))  // assign valId to s, so it can be use in ValUse
+        curEnv = curEnv + (s -> (curId, vd.tpe))  // assign valId to s, so it can be use in ValUse
         valdefs += vd
       }
     }

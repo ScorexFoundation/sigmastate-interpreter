@@ -12,7 +12,7 @@ class OperationSerializerSpecification extends SerializationSpecification {
     forAll(Gen.nonEmptyListOf(operationGen)) { ops =>
       val serializer = new OperationSerializer(keyLength, None)
       val bytes = serializer.serializeSeq(ops)
-      val parsed = serializer.parseSeq(Serializer.startReader(bytes, 0))
+      val parsed = serializer.parseSeq(SigmaSerializer.startReader(bytes, 0))
       val bytes2 = serializer.serializeSeq(parsed)
       bytes2 shouldEqual bytes
     }
@@ -21,7 +21,7 @@ class OperationSerializerSpecification extends SerializationSpecification {
   property("operation serialization") {
     def roundTrip(op: Operation, serializer: OperationSerializer) = {
       val randValueBytes = serializer.toBytes(op)
-      val randValueRecovered = serializer.parseBody(Serializer.startReader(randValueBytes, 0))
+      val randValueRecovered = serializer.parse(SigmaSerializer.startReader(randValueBytes, 0))
       serializer.toBytes(randValueRecovered) shouldEqual randValueBytes
     }
 

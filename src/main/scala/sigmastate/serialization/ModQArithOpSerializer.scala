@@ -8,12 +8,12 @@ import sigmastate.{ModQArithOp, SType}
 case class ModQArithOpSerializer(override val opCode: Byte, cons: (BigIntValue, BigIntValue) => BigIntValue)
   extends ValueSerializer[ModQArithOp] {
 
-  override def serializeBody(obj: ModQArithOp, w: SigmaByteWriter): Unit = {
+  override def serialize(obj: ModQArithOp, w: SigmaByteWriter): Unit = {
     w.putValue(obj.left)
       .putValue(obj.right)
   }
 
-  override def parseBody(r: SigmaByteReader): Value[SType] = {
+  override def parse(r: SigmaByteReader): Value[SType] = {
     val arg1 = r.getValue().asBigInt
     val arg2 = r.getValue().asBigInt
     cons(arg1, arg2)

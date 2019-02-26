@@ -8,10 +8,13 @@ import fastparse.{all, core}
 import java.lang.Long.parseLong
 import java.lang.Integer.parseInt
 
-import sigmastate.lang.{SigmaBuilder, StdSigmaBuilder}
+import sigmastate.lang.{SigmaBuilder, SourceContext, StdSigmaBuilder}
 
 trait Literals { l =>
-  var builder: SigmaBuilder = StdSigmaBuilder
+  val builder: SigmaBuilder = StdSigmaBuilder
+  import builder._
+  def atSrcPos[A](parserIndex: Int)(thunk: => A): A
+  def srcCtx(parserIndex: Int): SourceContext
   def Block: P[Value[SType]]
   def Pattern: P0
 
@@ -55,7 +58,10 @@ trait Literals { l =>
 
     val Int: Parser[Unit] = P( (HexNum | DecNum) ~ CharIn("Ll").? )
 
-    val Bool: Parser[BooleanConstant] = P( Key.W("true").map(_ => TrueLeaf) | Key.W("false").map(_ => FalseLeaf)  )
+    val Bool: Parser[BooleanConstant] =
+      P( (Index ~ (Key.W("true").! | Key.W("false").!)).map {
+        case (i, lit) => atSrcPos(i) { mkConstant[SBoolean.type](if (lit == "true") true else false, SBoolean) }
+      })
 
     // Comments cannot have cuts in them, because they appear before every
     // terminal node. That means that a comment before any terminal will
@@ -84,21 +90,25 @@ trait Literals { l =>
     class InterpCtx(interp: Option[P0]){
       //noinspection TypeAnnotation
       val Literal = P(
-        ("-".!.? ~ /*Float |*/ Int.!).map {
-            case (signOpt, lit) =>
+        ("-".!.? ~ Index ~ ( /*Float |*/ Int.!)).map {
+            case (signOpt, index, lit) =>
               val sign = if (signOpt.isDefined) -1 else 1
               val suffix = lit.charAt(lit.length - 1)
               val (digits, radix) = if (lit.startsWith("0x")) (lit.substring(2), 16) else (lit, 10)
-              if (suffix == 'L' || suffix == 'l')
-                builder.mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
-              else
-                builder.mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
+              atSrcPos(index) {
+                if (suffix == 'L' || suffix == 'l')
+                  mkConstant[SLong.type](sign * parseLong(digits.substring(0, digits.length - 1), radix), SLong)
+                else
+                  mkConstant[SInt.type](sign * parseInt(digits, radix), SInt)
+              }
           }
         | Bool
-        | (String | "'" ~/ (Char | Symbol) | Null).!.map { lit: String =>
+        | (Index ~ (String | "'" ~/ (Char | Symbol) | Null).!).map { case (index, lit) =>
           // strip single or triple quotes
           def strip(s: String): String = if (!s.startsWith("\"")) s else strip(s.stripPrefix("\"").stripSuffix("\""))
-          builder.mkConstant[SString.type](strip(lit), SString)
+          atSrcPos(index) {
+            mkConstant[SString.type](strip(lit), SString)
+          }
         })
 
       val Interp: Parser[Unit] = interp match{

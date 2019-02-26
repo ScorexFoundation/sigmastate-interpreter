@@ -1,6 +1,7 @@
 package sigmastate.lang
 
 import fastparse.core.{ParseError, Parsed}
+import org.ergoplatform.ErgoAddressEncoder
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
@@ -20,7 +21,10 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def parse(x: String): SValue = {
     SigmaParser(x, TransformingSigmaBuilder) match {
-      case Parsed.Success(v, _) => v
+      case Parsed.Success(v, _) =>
+        v.sourceContext.isDefined shouldBe true
+        assertSrcCtxForAllNodes(v)
+        v
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
         println(s"\nTRACE: ${traced.trace}")
@@ -32,17 +36,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     SigmaParser.parseType(x)
   }
 
-  def fail(x: String, index: Int): Unit = {
-    try {
-      val res = SigmaParser(x, TransformingSigmaBuilder).get.value
-      assert(false, s"Error expected")
-    } catch {
-      case e: TestFailedException =>
-        throw e
-      case pe: ParseError[_,_] =>
-        val l = pe.failure.index
-        l shouldBe index
-    }
+  def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val compiler = SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
+    val exception = the[ParserException] thrownBy compiler.parse(x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
   }
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
@@ -119,7 +119,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple operations") {
-    parse("()") shouldBe UnitConstant
+    parse("()") shouldBe UnitConstant()
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     parse("(1, X - 1)") shouldBe Tuple(IntConstant(1), mkMinus(IntIdent("X"), 1))
@@ -557,18 +557,18 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("negative tests") {
-    fail("(10", 3)
-    fail("10)", 2)
-    fail("X)", 1)
-    fail("(X", 2)
-    fail("{ X", 3)
-    fail("{ val X", 7)
-    fail("\"str", 4)
+    fail("(10", 1, 4)
+    fail("10)", 1, 3)
+    fail("X)", 1, 2)
+    fail("(X", 1, 3)
+    fail("{ X", 1, 4)
+    fail("{ val X", 1, 8)
+    fail("\"str", 1, 5)
   }
 
   property("not(yet) supported lambda syntax") {
     // passing a lambda without curly braces is not supported yet :)
-    fail("arr.exists ( (a: Int) => a >= 1 )", 15)
+    fail("arr.exists ( (a: Int) => a >= 1 )", 1, 16)
     // no argument type
     an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
     an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
@@ -621,7 +621,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("invalid ZKProof (non block parameter)") {
-    an[ParserException] should be thrownBy  parse("ZKProof HEIGHT > 1000 ")
+    fail("ZKProof 1 > 1", 1, 9)
   }
 
   property("sigmaProp") {
@@ -874,4 +874,35 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     )
   }
 
+  property("single name pattern fail") {
+    fail("{val (a,b) = (1,2)}", 1, 6)
+  }
+
+  property("unknown prefix in unary op") {
+    fail("+1", 1, 2)
+  }
+
+  property("empty lines before invalid op") {
+    fail(
+      """
+        |
+        |
+        |+1""".stripMargin, 4, 2)
+  }
+
+  property("unknown binary op") {
+    fail("1**1", 1, 1)
+  }
+
+  property("compound types not supported") {
+    fail("Coll[Int with Sortable](1)", 1, 6)
+  }
+
+  property("path types not supported") {
+    fail("Coll[Int.A](1)", 1, 10)
+  }
+
+  property("block contains non-Val binding before expression") {
+    fail("{1 ; 1 == 1}", 1, 2)
+  }
 }

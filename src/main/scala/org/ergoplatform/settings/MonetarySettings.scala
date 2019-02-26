@@ -2,7 +2,7 @@ package org.ergoplatform.settings
 
 import org.ergoplatform.ErgoScriptPredef
 import org.ergoplatform.mining.emission.EmissionRules
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.{SBoolean, Values}
 
 /**
@@ -17,9 +17,9 @@ case class MonetarySettings(fixedRatePeriod: Int = 30 * 2 * 24 * 365,
                             minerRewardDelay: Int = 720,
                             foundersInitialReward: Long = 75L * EmissionRules.CoinsInOneErgo / 10) {
 
-  val feeProposition: Values.Value[SBoolean.type] = ErgoScriptPredef.feeProposition(minerRewardDelay)
+  val feeProposition: SigmaPropValue = ErgoScriptPredef.feeProposition(minerRewardDelay)
   val feePropositionBytes: Array[Byte] = feeProposition.bytes
-  val emissionBoxProposition: Value[SBoolean.type] = ErgoScriptPredef.emissionBoxProp(this)
-  val foundersBoxProposition: Value[SBoolean.type] = ErgoScriptPredef.foundationScript(this)
+  val emissionBoxProposition: SigmaPropValue = ErgoScriptPredef.emissionBoxProp(this)
+  val foundersBoxProposition: SigmaPropValue = ErgoScriptPredef.foundationScript(this)
 
 }

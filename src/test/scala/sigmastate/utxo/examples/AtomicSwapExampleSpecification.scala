@@ -48,7 +48,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
         |    HEIGHT > height1 + deadlineBob && pubkeyA,
         |    pubkeyB && blake2b256(getVar[Coll[Byte]](1).get) == hx
         |  ))
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
     //chain1 script
     val prop1Tree = SigmaOr(
@@ -69,7 +69,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
         |  ))
         |}
       """.stripMargin
-    val prop2 = compileWithCosting(env, script2).asBoolValue
+    val prop2 = compileWithCosting(env, script2).asSigmaProp
 
     //chain2 script
     val prop2Tree = BlockValue(
@@ -151,7 +151,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val badProverA = proverA.withContextExtender(1, ByteArrayConstant(badX))
     val badHx = ByteArrayConstant(Blake2b256(badX))
     val badEnv = env + ("hx" -> badHx)
-    val badProp2 = compileWithCosting(badEnv, script2).asBoolValue
+    val badProp2 = compileWithCosting(badEnv, script2).asSigmaProp
 
     badProverA.prove(badEnv, badProp2, ctx1, fakeMessage).isSuccess shouldBe false
   }

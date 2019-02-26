@@ -52,7 +52,7 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
 
   property("ConcreteCollection: deserialize collection of a crazy size") {
     val bytes = Array[Byte](OpCodes.ConcreteCollectionCode) ++
-      Serializer.startWriter().putUInt(Int.MaxValue).toBytes
+      SigmaSerializer.startWriter().putUInt(Int.MaxValue).toBytes
     an[AssertionError] should be thrownBy ValueSerializer.deserialize(bytes)
   }
 }

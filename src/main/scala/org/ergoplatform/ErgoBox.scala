@@ -6,10 +6,11 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
+import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
@@ -55,7 +56,6 @@ class ErgoBox private(
 
   import ErgoBox._
 
-  lazy val bytes: Array[Byte] = ErgoBox.serializer.toBytes(this)
   lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   override def dataSize: Long = bytes.length
@@ -68,6 +68,8 @@ class ErgoBox private(
       case _ => super.get(identifier)
     }
   }
+
+  lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
     case x: ErgoBox => java.util.Arrays.equals(id, x.id)
@@ -107,6 +109,8 @@ object ErgoBox {
   trait RegisterId {
     val number: Byte
     def asIndex: Int = number.toInt
+
+    override def toString: Idn = "R" + number
   }
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
@@ -144,19 +148,21 @@ object ErgoBox {
 
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 
+  val allZerosModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
+
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
             additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-            transactionId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId,
+            transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxIndex, creationHeight)
 
-  object serializer extends Serializer[ErgoBox, ErgoBox] {
+  object sigmaSerializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 
-    override def serializeBody(obj: ErgoBox, w: SigmaByteWriter): Unit = {
-      ErgoBoxCandidate.serializer.serializeBody(obj, w)
+    override def serialize(obj: ErgoBox, w: SigmaByteWriter): Unit = {
+      ErgoBoxCandidate.serializer.serialize(obj, w)
       val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length
       assert(txIdBytesSize == ErgoLikeTransaction.TransactionIdBytesSize,
@@ -165,8 +171,8 @@ object ErgoBox {
       w.putUShort(obj.index)
     }
 
-    override def parseBody(r: SigmaByteReader): ErgoBox = {
-      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parseBody(r)
+    override def parse(r: SigmaByteReader): ErgoBox = {
+      val ergoBoxCandidate = ErgoBoxCandidate.serializer.parse(r)
       val transactionId = r.getBytes(ErgoLikeTransaction.TransactionIdBytesSize).toModifierId
       val index = r.getUShort()
       ergoBoxCandidate.toBox(transactionId, index.toShort)

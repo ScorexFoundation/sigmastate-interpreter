@@ -41,10 +41,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val prover = new ErgoLikeTestProvingInterpreter
 
-    val script1 = prover.dlogSecrets.head.publicImage.isProven
-    val script2 = prover.dhSecrets.head.publicImage.isProven
-    val script3 = AND(script1, script2)
-    val script4 = prover.dlogSecrets.tail.head.publicImage .isProven //a script to leave FSM
+    val script1 = prover.dlogSecrets.head.publicImage.toSigmaProp
+    val script2 = prover.dhSecrets.head.publicImage.toSigmaProp
+    val script3 = SigmaAnd(script1, script2)
+    val script4 = prover.dlogSecrets.tail.head.publicImage.toSigmaProp //a script to leave FSM
 
     val script1Hash = hash.Blake2b256(ValueSerializer.serialize(script1))
     val script2Hash = hash.Blake2b256(ValueSerializer.serialize(script2))
@@ -116,9 +116,9 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val finalScriptCorrect = TrueLeaf
 
 
-    val fsmScript = OR(
-      AND(isMember, DeserializeContext(scriptVarId, SBoolean), preservation), //going through FSM
-      AND(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SBoolean)) //leaving FSM
+    val fsmScript = SigmaOr(
+      SigmaAnd(isMember, DeserializeContext(scriptVarId, SSigmaProp), preservation), //going through FSM
+      SigmaAnd(finalStateCheck, finalScriptCorrect, DeserializeContext(scriptVarId, SSigmaProp)) //leaving FSM
     )
 
 
@@ -226,7 +226,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     //clearing FSM out of the box in the final state
 
-    val freeBox = ErgoBox(100, TrueLeaf, 0)
+    val freeBox = ErgoBox(100, ErgoScriptPredef.TrueProp, 0)
 
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()

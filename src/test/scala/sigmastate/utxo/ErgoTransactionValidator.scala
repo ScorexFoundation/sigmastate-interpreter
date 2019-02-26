@@ -40,7 +40,7 @@ class ErgoTransactionValidator(implicit IR: IRContext) {
           tx, box, proverExtension)
       val verificationResult = verifier.verify(
         emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),
-        box.proposition, context, proof, msg)
+        box.ergoTree, context, proof, msg)
       val scriptCost: Long = verificationResult match {
         case Success((res, cost)) =>
           if(!res) return Left[Throwable, Long](new Exception(s"Validation failed for input #$idx"))

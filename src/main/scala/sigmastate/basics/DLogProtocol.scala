@@ -3,16 +3,14 @@ package sigmastate.basics
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
-import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
 import Value.PropositionCode
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
-import sigmastate.interpreter.{Context, CryptoConstants}
-import sigmastate.serialization.OpCodes
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.serialization.{GroupElementSerializer, OpCodes}
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utxo.CostTable.Cost
 
 object DLogProtocol {
 
@@ -22,29 +20,17 @@ object DLogProtocol {
   }
 
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
-  case class ProveDlog(value: Value[SGroupElement.type])
+  case class ProveDlog(value: EcPointType)
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
 
     override val opCode: OpCode = OpCodes.ProveDlogCode
     //todo: fix, we should consider that class parameter could be not evaluated
-    lazy val h: EcPointType = value.asInstanceOf[GroupElementConstant].value
-    lazy val pkBytes: Array[Byte] = h.getEncoded(true)
+    lazy val h: EcPointType = value
+    lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
   }
 
   object ProveDlog {
-
-    import CryptoConstants.dlogGroup
-
-    def apply(h: CryptoConstants.EcPointType): ProveDlog = ProveDlog(GroupElementConstant(h))
-
     val Code: PropositionCode = 102: Byte
-
-    def fromBytes(bytes: Array[Byte]): ProveDlog = {
-      val (x, y) = EcPointFunctions.decodeBigIntPair(bytes).get
-      val xy = GroupAgnosticEcElement(x, y)
-      val h = dlogGroup.reconstructElement(bCheckMembership = true, xy).get //todo: .get
-      ProveDlog(h)
-    }
   }
 
   case class DLogProverInput(w: BigInteger)
@@ -70,11 +56,9 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: CryptoConstants.EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
     override def bytes: Array[Byte] = {
-      val bytes = ecData.getEncoded(true)
-
-      Array(bytes.length.toByte) ++ bytes
+      GroupElementSerializer.toBytes(ecData)
     }
   }
 

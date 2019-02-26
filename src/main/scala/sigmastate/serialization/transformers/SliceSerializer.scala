@@ -4,7 +4,7 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Slice
 import sigmastate.{SCollection, SInt, SType}
@@ -14,12 +14,12 @@ case class SliceSerializer(cons: (Value[SCollection[SType]], Value[SInt.type], V
 
   override val opCode: OpCode = OpCodes.SliceCode
 
-  override def serializeBody(obj: Slice[SType], w: SigmaByteWriter): Unit =
+  override def serialize(obj: Slice[SType], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)
       .putValue(obj.from)
       .putValue(obj.until)
 
-  override def parseBody(r: SigmaByteReader): Value[SCollection[SType]] = {
+  override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {
     val input = r.getValue().asCollection[SType]
     val from = r.getValue().asValue[SInt.type]
     val until = r.getValue().asValue[SInt.type]

@@ -40,12 +40,12 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val script1Hash = Blake2b256(script1Bytes)
     val script2Hash = Blake2b256(ValueSerializer.serialize(GT(SizeOf(Inputs).upcastTo(SLong), LongConstant(1))))
 
-    val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash)))
+    val prop = AND(scriptIsCorrect, If(EQ(SizeOf(Inputs), 1), EQ(scriptHash, script1Hash), EQ(scriptHash, script2Hash))).toSigmaProp
 
 
     val input1 = ErgoBox(20, prop, 0)
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
-      IndexedSeq(ErgoBox(1, TrueLeaf, 0)))
+      IndexedSeq(ErgoBox(1, ErgoScriptPredef.TrueProp, 0)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -91,10 +91,10 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       CalcBlake2b256(GetVarByteArray(scriptId).get),
       GetVarByteArray(proofId).get))
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(merklePathToScript, scriptIsCorrect)
+    val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 
     val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
-    val selfBox = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,

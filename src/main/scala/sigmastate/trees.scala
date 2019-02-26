@@ -1,9 +1,13 @@
 package sigmastate
 
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, DLogSigmaProtocol}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer
@@ -15,7 +19,8 @@ import scala.collection.mutable.ArrayBuffer
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is used for AND operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.AndCode
 }
 object CAND {
   import TrivialProp._
@@ -39,7 +44,8 @@ object CAND {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is also used for OR operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.OrCode
 }
 object COR {
   import TrivialProp._
@@ -75,12 +81,26 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 /** Represents boolean values (true/false) in SigmaBoolean tree.
   * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
   * See CAND.normalized, COR.normalized and AtLeast.reduce. */
-case class TrivialProp(condition: Boolean) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.TrivialProofCode
+abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Product1[Boolean] {
+  override def _1: Boolean = condition
+  override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
 }
 object TrivialProp {
-  val TrueProp = TrivialProp(true)
-  val FalseProp = TrivialProp(false)
+  // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
+  // will lead to Boolean boxing, which we want to avoid
+  // So, instead of `case TrivialProp(b) => ... b ...` use more efficient
+  // `case p: TrivialProp => ... p.condition ...
+
+  def apply(b: Boolean): TrivialProp = if (b) TrueProp else FalseProp
+
+  val FalseProp = new TrivialProp(false) {
+    override val opCode: OpCode = OpCodes.TrivialPropFalseCode
+    override def toString = "FalseProp"
+  }
+  val TrueProp = new TrivialProp(true) {
+    override val opCode: OpCode = OpCodes.TrivialPropTrueCode
+    override def toString = "TrueProp"
+  }
 }
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
@@ -91,6 +111,25 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
+}
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of discrete logarithm signature protocol. */
+case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDlogCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(SGroupElement, SSigmaProp)
+}
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v)*/
+case class CreateProveDHTuple(gv: Value[SGroupElement.type],
+    hv: Value[SGroupElement.type],
+    uv: Value[SGroupElement.type],
+    vv: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {

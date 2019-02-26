@@ -31,7 +31,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB""").asSigmaProp
 
     val prop = SigmaOr(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
@@ -64,7 +64,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""").asBoolValue
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
 
     val prop = SigmaOr(pubkeyA, pubkeyB, pubkeyC)
     compiledProp shouldBe prop
@@ -98,7 +98,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB || pubkeyC""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB || pubkeyC""").asSigmaProp
 
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
@@ -133,7 +133,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyA4 = proverA.dlogSecrets(3).publicImage
 
     val env = Map("pubkeyA1" -> pubkeyA1, "pubkeyA2" -> pubkeyA2, "pubkeyA3" -> pubkeyA3, "pubkeyA4" -> pubkeyA4)
-    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""").asBoolValue
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4))""").asSigmaProp
 
     val prop = SigmaOr(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4)
     compiledProp shouldBe prop
@@ -164,7 +164,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || pubkeyC && pubkeyD""").asSigmaProp
 
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
@@ -205,7 +205,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB || (pubkeyC || pubkeyD)""").asSigmaProp
 
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
@@ -242,7 +242,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA && pubkeyB""").asSigmaProp
 
     val prop = SigmaAnd(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
@@ -275,7 +275,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) || pubkeyC""").asBoolValue
+    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) || pubkeyC""").asSigmaProp
 
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
@@ -315,7 +315,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""").asBoolValue
+    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) && (pubkeyC || pubkeyD)""").asSigmaProp
 
     val prop = SigmaAnd(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
@@ -356,7 +356,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""").asBoolValue
+    val compiledProp = compileWithCosting(env, """(pubkeyA && pubkeyB) && (pubkeyC || pubkeyD)""").asSigmaProp
 
     val prop = SigmaAnd(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
@@ -400,7 +400,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyD = proverD.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC, "pubkeyD" -> pubkeyD)
-    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""").asBoolValue
+    val compiledProp = compileWithCosting(env, """(pubkeyA || pubkeyB) || (pubkeyC || pubkeyD)""").asSigmaProp
 
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
@@ -437,7 +437,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB)
-    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asBoolValue
+    val compiledProp = compileWithCosting(env, """anyOf(Coll(pubkeyA, pubkeyB, HEIGHT > 500))""").asSigmaProp
 
     // rewritten by http://github.com/aslesarenko/sigma/blob/2740b51c86bdf1917f688d4ccdb1a0eae9755e0c/sigma-library/src/main/scala/scalan/SigmaLibrary.scala#L91
     val prop = SigmaOr(GT(Height, IntConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
@@ -480,7 +480,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
     val compiledProp = compileWithCosting(env,
-      """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asBoolValue
+      """anyOf(Coll(pubkeyA || pubkeyB, pubkeyC && HEIGHT > 500))""").asSigmaProp
 
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
@@ -528,7 +528,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val pubkeyC = proverC.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
-    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""").asBoolValue
+    val compiledProp = compileWithCosting(env, """pubkeyA || pubkeyB ||  (pubkeyC && HEIGHT > 500)""").asSigmaProp
 
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
@@ -579,8 +579,8 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         .toSeq
         .filter(_.length == k)
 
-      val prop = OR(
-        kNumKeysCombinations.map(combs => AND(combs.map(_.publicImage.isProven)))
+      val prop = COR(
+        kNumKeysCombinations.map(combs => CAND(combs.map(_.publicImage)))
       )
 
       val ctx = ErgoLikeContext(

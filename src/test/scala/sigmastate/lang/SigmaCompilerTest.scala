@@ -1,19 +1,19 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, Height, P2PKAddress}
+import org.ergoplatform._
 import org.scalatest.exceptions.TestFailedException
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, ZKProofBlock}
+import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{ByIndex, GetVar}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
@@ -26,27 +26,22 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   private def compWOCosting(x: String): Value[SType] = compile(env, x)
   private def compWOCosting(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
 
-  private def fail(env: ScriptEnv, x: String, index: Int, expected: Any): Unit = {
-    try {
-      val res = compiler.compile(env, x)
-      assert(false, s"Error expected")
-    } catch {
-      case e: TestFailedException =>
-        throw e
-      case pe: ParserException if pe.parseError.isDefined =>
-        val p = pe
-        val i = pe.parseError.get.index
-        val l = pe.parseError.get.lastParser
-        i shouldBe index
-        l.toString shouldBe expected.toString
-    }
-  }
-
   private def testMissingCosting(script: String, expected: SValue): Unit = {
     compWOCosting(script) shouldBe expected
     // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
+
+  private def costerFail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val exception = the[CosterException] thrownBy comp(env, x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
+  }
+
+  private def costerFail(x: String, expectedLine: Int, expectedCol: Int): Unit =
+    costerFail(env, x, expectedLine, expectedCol)
 
   property("array indexed access") {
     comp(env, "Coll(1)(0)") shouldBe
@@ -88,15 +83,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       Vector(IntConstant(2)))
   }
 
-  property("negative tests") {
-    fail(env, "(10", 3, "\")\"")
-    fail(env, "10)", 2, "End")
-    fail(env, "X)", 1, "End")
-    fail(env, "(X", 2, "\")\"")
-    fail(env, "{ X", 3, "\"}\"")
-    fail(env, "{ val X", 7, "\"=\"")
-  }
-
   property("allOf") {
     comp("allOf(Coll[Boolean](true, false))") shouldBe AND(TrueLeaf, FalseLeaf)
   }
@@ -129,7 +115,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     val dk1 = proveDlogGen.sample.get
     val encodedP2PK = P2PKAddress(dk1).toString
     val code = s"""PK("$encodedP2PK")"""
-    comp(code) shouldEqual SigmaPropConstant(dk1)
+    val res = comp(code)
+    res shouldEqual SigmaPropConstant(dk1)
   }
 
   property("fromBaseX") {
@@ -215,6 +202,355 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("BitShiftRightZeroed") {
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
+  }
+
+  property("Collection.BitShiftLeft") {
+    testMissingCosting("Coll(1,2) << 2",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
+  property("Collection.BitShiftRight") {
+    testMissingCosting("Coll(1,2) >> 2",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftRightMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
+  property("Collection.BitShiftRightZeroed") {
+    testMissingCosting("Coll(true, false) >>> 2",
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.BitShiftRightZeroedMethod,
+        Vector(IntConstant(2))
+      )
+    )
+  }
+
+  property("Collection.indices") {
+    comp("Coll(true, false).indices") shouldBe
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.IndicesMethod,
+        Vector()
+      )
+  }
+
+  property("SCollection.flatMap") {
+    comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
+      mkMethodCall(Outputs,
+        SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
+        Vector(FuncValue(1,SBox,
+          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))))
+  }
+
+  property("SNumeric.toBytes") {
+    testMissingCosting("4.toBytes",
+      mkMethodCall(IntConstant(4), SNumericType.ToBytesMethod, IndexedSeq()))
+  }
+
+  property("SNumeric.toBits") {
+    testMissingCosting("4.toBits",
+      mkMethodCall(IntConstant(4), SNumericType.ToBitsMethod, IndexedSeq()))
+  }
+
+  property("SBigInt.multModQ") {
+    testMissingCosting("1.toBigInt.multModQ(2.toBigInt)",
+      mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2))))
+  }
+
+  property("SBox.tokens") {
+    testMissingCosting("SELF.tokens",
+      mkMethodCall(Self, SBox.TokensMethod, IndexedSeq()))
+  }
+
+  property("SOption.toColl") {
+    testMissingCosting("getVar[Int](1).toColl",
+      mkMethodCall(GetVarInt(1),
+        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq()))
+  }
+
+  property("SAvlTree.digest") {
+    testMissingCosting("getVar[AvlTree](1).get.digest",
+      mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.DigestMethod, IndexedSeq())
+    )
+  }
+
+  property("SGroupElement.exp") {
+    testMissingCosting("g1.exp(1.toBigInt)",
+      mkMethodCall(GroupElementConstant(ecp1), SGroupElement.ExpMethod, IndexedSeq(BigIntConstant(1)))
+    )
+  }
+
+  ignore("SOption.map") {
+    testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
+      mkMethodCall(GetVarInt(1),
+        SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SInt,
+          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1)))))
+      )
+    )
+  }
+
+  ignore("SOption.filter") {
+    testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
+      mkMethodCall(GetVarInt(1),
+        SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SBoolean,
+          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0)))))
+      )
+    )
+  }
+
+  property("SOption.flatMap") {
+    testMissingCosting("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
+      mkMethodCall(GetVarInt(1),
+        SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        IndexedSeq(Terms.Lambda(
+          Vector(("i", SInt)),
+          SOption(SInt),
+          Some(GetVarInt(2))))
+      )
+    )
+  }
+
+  property("SCollection.segmentLength") {
+    comp("OUTPUTS.segmentLength({ (out: Box) => out.value >= 1L }, 0)") shouldBe
+      mkMethodCall(Outputs,
+        SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          FuncValue(
+            Vector((1, SBox)),
+            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+          IntConstant(0)
+        )
+      )
+  }
+
+  property("SCollection.indexWhere") {
+    comp("OUTPUTS.indexWhere({ (out: Box) => out.value >= 1L }, 0)") shouldBe
+      mkMethodCall(Outputs,
+        SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          FuncValue(
+            Vector((1, SBox)),
+            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+          IntConstant(0)
+        )
+      )
+  }
+
+  property("SCollection.lastIndexWhere") {
+    comp("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L }, 1)") shouldBe
+      mkMethodCall(Outputs,
+        SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          FuncValue(
+            Vector((1, SBox)),
+            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+          IntConstant(1)
+        )
+      )
+  }
+
+  property("SCollection.patch") {
+    comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1))
+      )
+  }
+
+  property("SCollection.updated") {
+    comp("Coll(1, 2).updated(1, 1)") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(1))
+      )
+  }
+
+  property("SCollection.updateMany") {
+    comp("Coll(1, 2).updateMany(Coll(1), Coll(3))") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)), ConcreteCollection(IntConstant(3)))
+      )
+  }
+
+  property("SCollection.unionSets") {
+    testMissingCosting("Coll(1, 2).unionSets(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.diff") {
+    testMissingCosting("Coll(1, 2).diff(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.intersect") {
+    testMissingCosting("Coll(1, 2).intersect(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.prefixLength") {
+    testMissingCosting("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.PrefixLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("SCollection.indexOf") {
+    comp("Coll(1, 2).indexOf(1, 0)") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(0))
+      )
+  }
+
+  property("SCollection.lastIndexOf") {
+    testMissingCosting("Coll(1, 2).lastIndexOf(1, 0)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(1), IntConstant(0))
+      )
+    )
+  }
+
+  property("SCollection.find") {
+    testMissingCosting("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
+      mkMethodCall(Outputs,
+        SCollection.FindMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        Vector(
+          Terms.Lambda(
+            Vector(("out",SBox)),
+            SBoolean,
+            Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
+        )
+      )
+    )
+  }
+
+  property("Collection.distinct") {
+    testMissingCosting("Coll(true, false).distinct",
+      mkMethodCall(
+        ConcreteCollection(TrueLeaf, FalseLeaf),
+        SCollection.DistinctMethod,
+        Vector()
+      )
+    )
+  }
+
+  property("SCollection.startsWith") {
+    testMissingCosting("Coll(1, 2).startsWith(Coll(1), 1)",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)), IntConstant(1))
+      )
+    )
+  }
+
+  property("SCollection.endsWith") {
+    testMissingCosting("Coll(1, 2).endsWith(Coll(1))",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1)))
+      )
+    )
+  }
+
+  property("SCollection.zip") {
+    comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
+      )
+  }
+
+  property("SCollection.partition") {
+    comp("Coll(1, 2).partition({ (i: Int) => i > 0 })") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(FuncValue(
+          Vector((1, SInt)),
+          GT(ValUse(1, SInt), IntConstant(0))
+        ))
+      )
+  }
+
+  property("SCollection.mapReduce") {
+    testMissingCosting(
+      "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.MapReduceMethod.withConcreteTypes(Map(
+          SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
+        Vector(
+          Lambda(List(),
+            Vector(("i", SInt)),
+            STuple(SBoolean, SLong),
+            Some(Tuple(Vector(
+              GT(Ident("i", SInt).asIntValue, IntConstant(0)),
+              Upcast(Ident("i", SInt).asIntValue, SLong)
+            )))
+          ),
+          Lambda(List(),
+            Vector(("tl", STuple(SLong, SLong))),
+            SLong,
+            Some(Plus(
+              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 1).asInstanceOf[Value[SLong.type]],
+              SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 2).asInstanceOf[Value[SLong.type]])
+            )
+          )
+        )
+      )
+    )
+  }
+
+  property("failed option constructors (not supported)") {
+    costerFail("None", 1, 1)
+    costerFail("Some(10)", 1, 1)
   }
 
 }

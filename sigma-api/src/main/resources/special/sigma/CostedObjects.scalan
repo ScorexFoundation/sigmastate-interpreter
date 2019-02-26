@@ -1,0 +1,55 @@
+package special.sigma {
+  import scalan._
+
+  trait CostedObjects extends Base { self: CostedObjectsModule =>
+    import AnyValue._;
+    import AvlTree._;
+    import Box._;
+    import Coll._;
+    import Context._;
+    import Costed._;
+    import CostedAvlTree._;
+    import CostedBox._;
+    import CostedBuilder._;
+    import CostedColl._;
+    import CostedOption._;
+    import CostedSigmaObject._;
+    import SigmaDslBuilder._;
+    trait CostedSigmaObject[Val] extends Costed[Val] {
+      implicit def eVal: Elem[Val];
+      def dsl: Rep[SigmaDslBuilder];
+      def builder: Rep[CostedBuilder] = CostedSigmaObject.this.dsl.Costing
+    };
+    trait CostedContext extends CostedSigmaObject[Context] {
+      def OUTPUTS: Rep[CostedColl[Box]];
+      def INPUTS: Rep[CostedColl[Box]];
+      def HEIGHT: Rep[Costed[Int]];
+      def SELF: Rep[CostedBox];
+      def LastBlockUtxoRootHash: Rep[CostedAvlTree];
+      def MinerPubKey: Rep[CostedColl[Byte]];
+      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]];
+      def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]]
+    };
+    trait CostedBox extends CostedSigmaObject[Box] {
+      def id: Rep[CostedColl[Byte]];
+      def valueCosted: Rep[Costed[Long]];
+      def bytes: Rep[CostedColl[Byte]];
+      def bytesWithoutRef: Rep[CostedColl[Byte]];
+      def propositionBytes: Rep[CostedColl[Byte]];
+      def registers: Rep[CostedColl[AnyValue]];
+      def getReg[T](id: Rep[Int])(implicit cT: Elem[T]): Rep[CostedOption[T]];
+      def creationInfo: Rep[Costed[scala.Tuple2[Int, Coll[Byte]]]]
+    };
+    trait CostedAvlTree extends CostedSigmaObject[AvlTree] {
+      def startingDigest: Rep[CostedColl[Byte]];
+      def keyLength: Rep[Costed[Int]];
+      def valueLengthOpt: Rep[CostedOption[Int]];
+      def maxNumOperations: Rep[CostedOption[Int]];
+      def maxDeletes: Rep[CostedOption[Int]]
+    };
+    trait CostedSigmaObjectCompanion;
+    trait CostedContextCompanion;
+    trait CostedBoxCompanion;
+    trait CostedAvlTreeCompanion
+  }
+}
