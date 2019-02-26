@@ -1631,7 +1631,18 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         (method.name, argsC) match {
           case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
           case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
-          case _ => error(s"method $method is not supported")
+          case _ => error(s"method $method is not supported in object $obj")
+        }
+
+      case Terms.MethodCall(obj, method, args, typeSubst) if obj.tpe.isBox =>
+        val boxC = asRep[CostedBox](eval(obj))
+        val argsC = args.map(eval)
+        (method.name, argsC) match {
+          case (SBox.GetRegMethod.name, Seq(index)) =>
+            val tpe = typeSubst(SBox.tT)
+            implicit val elem = stypeToElem(tpe).asElem[Any]
+            boxC.getReg(asRep[Int](index.value))(elem)
+          case _ => error(s"method $method is not supported in object $obj")
         }
 
       case _ =>

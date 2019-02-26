@@ -118,6 +118,7 @@ object SType {
     def isCollectionLike: Boolean = tpe.isInstanceOf[SCollection[_]]
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isOption: Boolean = tpe.isInstanceOf[SOption[_]]
+    def isBox: Boolean = tpe.isInstanceOf[SBox.type]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
     def isTuple: Boolean = tpe.isInstanceOf[STuple]
@@ -990,7 +991,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   override def isConstantSize = false
   def ancestors = Nil
 
-  private val tT = STypeIdent("T")
+  val tT = STypeIdent("T")
   def registers(idOfs: Int): Seq[SMethod] = {
     (1 to 10).map { i =>
       SMethod(this, s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
@@ -1003,7 +1004,9 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
   val TokensMethod = SMethod(this, "tokens", SCollectionType(STuple(SCollectionType(SByte), SLong)), 8, MethodCallIrBuilder)
-  // should be lazy to solve resursive initialization
+  val GetRegMethod = SMethod(this, "getReg",
+    SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7, MethodCallIrBuilder)
+  // should be lazy to solve recursive initialization
   lazy val methods = Vector(
     SMethod(this, Value, SLong, 1), // see ExtractAmount
     SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
@@ -1011,7 +1014,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
     SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6), // see ExtractCreationInfo
-    SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7),
+    GetRegMethod,
     TokensMethod,
   ) ++ registers(8)
 }

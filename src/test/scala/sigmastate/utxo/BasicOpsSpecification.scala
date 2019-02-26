@@ -355,6 +355,21 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       rootCause(_).isInstanceOf[InvalidType])
   }
 
+  property("Box.getReg") {
+    test("Extract1", env, ext,
+      "{ SELF.getReg[Int](getVar[Int](intVar1).get + 4).get == 1}",
+      BoolToSigmaProp(
+        EQ(
+          MethodCall(Self, SBox.GetRegMethod,
+            IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SBox.tT -> SInt)
+          ).asInstanceOf[Value[SOption[SType]]].get,
+          IntConstant(1)
+        )
+      ),
+      true
+    )
+  }
+
   property("OptionGet success (SomeValue)") {
     test("Opt1", env, ext,
       "{ getVar[Int](intVar2).get == 2 }",

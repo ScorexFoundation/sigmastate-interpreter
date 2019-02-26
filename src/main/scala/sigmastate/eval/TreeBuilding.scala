@@ -264,7 +264,11 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkExtractScriptBytes(box.asBox)
       case BoxM.getReg(In(box), regId, _) =>
         val tpe = elemToSType(s.elem).asOption
-        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+        if (regId.isConst)
+          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+        else
+          builder.mkMethodCall(box, SBox.GetRegMethod, IndexedSeq(recurse(regId)),
+            Map(SBox.tT -> tpe.elemType))
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>

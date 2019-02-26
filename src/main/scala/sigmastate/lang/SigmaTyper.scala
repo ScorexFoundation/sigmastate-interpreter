@@ -106,6 +106,36 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       val res = mkGenLambda(tparams, args, newBody.fold(t)(_.tpe), newBody)
       res
 
+    case Apply(ApplyTypes(sel @ Select(obj, n, _), Seq(rangeTpe)), args) =>
+      val newObj = assignType(env, obj)
+      val newArgs = args.map(assignType(env, _))
+      obj.tpe match {
+        case p: SProduct =>
+          p.method(n) match {
+            case Some(method @ SMethod(_, _, genFunTpe @ SFunc(_, _, _), _, _)) =>
+              val subst = Map(genFunTpe.tpeParams.head.ident -> rangeTpe)
+              val concrFunTpe = applySubst(genFunTpe, subst)
+              val expectedArgs = concrFunTpe.asFunc.tDom.tail
+              val newArgTypes = newArgs.map(_.tpe)
+              if (expectedArgs.length != newArgTypes.length
+                || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
+                error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
+              if (method.irBuilder.isDefined) {
+                method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
+                  .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
+              } else {
+                val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
+                mkApply(newSelect, newArgs)
+              }
+            case Some(method) =>
+              error(s"Don't know how to handle method $method in obj $p", sel.sourceContext)
+            case None =>
+              throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${p.methods}", obj.sourceContext.toOption)
+          }
+        case _ =>
+          error(s"Cannot get field '$n' in in the object $obj of non-product type ${obj.tpe}", sel.sourceContext)
+      }
+
     case app @ Apply(sel @ Select(obj, n, _), args) =>
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
