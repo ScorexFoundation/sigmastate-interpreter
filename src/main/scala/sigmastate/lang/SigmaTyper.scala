@@ -223,9 +223,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                 val actualTypes = newObj.tpe +: newArgsTypes
                 unifyTypeLists(sfunc.tDom, actualTypes) match {
                   case Some(subst) =>
-                    val concrFunTpe = applySubst(sfunc, subst)
+                    val concrFunTpe = applySubst(sfunc, subst).asFunc
                     val newMethod = method.withSType(concrFunTpe)
-                    val concrFunArgsTypes = concrFunTpe.asFunc.tDom.tail
+                    val concrFunArgsTypes = concrFunTpe.tDom.tail
                     if (newArgsTypes != concrFunArgsTypes)
                       error(s"Invalid method $newMethod argument type: expected $concrFunArgsTypes; actual: $newArgsTypes", mc.sourceContext)
                     newMethod
