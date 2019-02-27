@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
