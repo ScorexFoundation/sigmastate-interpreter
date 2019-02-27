@@ -155,7 +155,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     )
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val fullMixTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullMixOutput0, fullMixOutput1))
+    val fullMixTx = createTransaction(IndexedSeq(fullMixOutput0, fullMixOutput1))
 
     val fullMixContext = ErgoLikeContext(
       currentHeight = fullMixCreationHeight,
@@ -188,7 +188,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val spendingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolOutput))
+    val spendingTx = createTransaction(IndexedSeq(carolOutput))
 
     //////////////////////////////////////////////
     //// Alice spending her output

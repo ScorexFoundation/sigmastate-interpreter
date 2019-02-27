@@ -404,7 +404,7 @@ class Rule110Specification extends SigmaTestingCommons {
     }
 
     val initBlock = FullBlock(
-      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins)),
+      IndexedSeq(createTransaction(coins)),
       ErgoLikeContext.dummyPubkey
     )
 

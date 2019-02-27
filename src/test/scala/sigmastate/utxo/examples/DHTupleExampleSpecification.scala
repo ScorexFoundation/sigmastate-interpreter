@@ -76,7 +76,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
       )
     )
 
-    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox))
+    val tx = createTransaction(IndexedSeq(outBox))
 
     val context = ErgoLikeContext(
       currentHeight = 70,

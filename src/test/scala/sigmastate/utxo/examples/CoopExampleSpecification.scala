@@ -14,7 +14,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   
   def mkTxFromOutputs(ergoBox: ErgoBox*): ErgoLikeTransaction = {
-    ErgoLikeTransaction(IndexedSeq(), ergoBox.toIndexedSeq)
+    createTransaction(ergoBox.toIndexedSeq)
   }
 
   def mkCtx(height: Int,

@@ -32,7 +32,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
-    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
+    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))
     val ergoCtx = ErgoLikeContext(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -73,7 +73,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
-  lazy val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+  lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContext(
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,

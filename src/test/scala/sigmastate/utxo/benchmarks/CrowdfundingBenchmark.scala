@@ -15,7 +15,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
     val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey, 0)
     val tx1Output2 = ErgoBox(1, contract.projectPubKey, 0)
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val tx = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
     val ctx = ErgoLikeContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,

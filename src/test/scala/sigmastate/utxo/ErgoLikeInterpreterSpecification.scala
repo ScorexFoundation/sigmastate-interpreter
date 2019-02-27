@@ -156,7 +156,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val properHash = Blake2b256(properBytes)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
@@ -233,7 +233,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -263,7 +263,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -306,7 +306,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(IndexedSeq(ErgoBox(1, recipientProposition, 0))),
       self = selfBox)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
@@ -339,7 +339,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val newBox1 = ErgoBox(10, pubkey3, 0)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s1 = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(),
       Map(regPubkey1 -> GroupElementConstant(pubkey1.value),
@@ -400,7 +400,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(IndexedSeq(ErgoBox(1, recipientProposition, 0))),
       self = selfBox)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
@@ -426,7 +426,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBox = ErgoBox(20, pubkey2, 0)
 
     val newBoxes = IndexedSeq(newBox)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val env = Map("brother" -> brother)
     val prop = compileWithCosting(env,
@@ -500,7 +500,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val newBox = ErgoBox(20, pubkey2, 0)
 
     val newBoxes = IndexedSeq(newBox)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val env = Map("friend" -> friend)
     val prop = compileWithCosting(env,
@@ -601,7 +601,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val output = ErgoBox(22, pubkey, 0, Seq(), Map())
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(output))
+    val spendingTransaction = createTransaction(IndexedSeq(output))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -633,7 +633,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(box),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(10, TrueProp, 0))),
+      createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
       self = box)
 
     an[RuntimeException] should be thrownBy

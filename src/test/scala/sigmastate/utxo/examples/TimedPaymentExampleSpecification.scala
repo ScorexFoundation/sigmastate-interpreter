@@ -56,7 +56,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     val timedWithdrawOutput = ErgoBox(withdrawAmount, bobPubKey, withdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
-    val withdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(timedWithdrawOutput))
+    val withdrawTx = createTransaction(IndexedSeq(timedWithdrawOutput))
 
     val withdrawContext = ErgoLikeContext(
       currentHeight = 109,

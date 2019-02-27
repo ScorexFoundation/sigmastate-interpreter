@@ -112,7 +112,7 @@ class EvaluationTest extends BaseCtxTests
 //    val boxToSpend = ErgoBox(10, TrueLeaf)
 //    val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
 //    val tx1Output2 = ErgoBox(1, projectPubKey)
-//    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+//    val tx1 = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
 //    val ergoCtx = ErgoLikeContext(
 //      currentHeight = timeout - 1,
 //      lastBlockUtxoRoot = AvlTreeData.dummy,

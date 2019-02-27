@@ -35,7 +35,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val selfBox = ErgoBox(200L, compiledScript, 0)
     val o1 = ErgoBox(101L, TrueProp, 5001)
     val o2 = ErgoBox(99L, TrueProp, 5001)
-    val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2))
+    val tx =  createTransaction(IndexedSeq(o1, o2))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -69,7 +69,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val o1 = ErgoBox(102L, TrueProp, 5001)
     val o2 = ErgoBox(98L, TrueProp, 5001)
     val o3 = ErgoBox(100L, TrueProp, 5001)
-    val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2, o3))
+    val tx =  createTransaction(IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,

@@ -10,6 +10,13 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /**
+  * Inputs, that are used to enrich script context, but won't be spent by the transaction
+  *
+  * @param boxId - id of a box to add into context (should be in UTXO)
+  */
+case class DataInput(boxId: BoxId)
+
+/**
   * Inputs of formed, but unsigned transaction
   *
   * @param boxId     - id of a box to spent

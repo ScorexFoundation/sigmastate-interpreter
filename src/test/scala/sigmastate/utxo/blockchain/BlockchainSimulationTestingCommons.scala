@@ -72,7 +72,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
 }
 
-object BlockchainSimulationTestingCommons {
+object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
   private val MaxBlockCost = 700000
 
@@ -148,7 +148,7 @@ object BlockchainSimulationTestingCommons {
       (0 until 10).map { i =>
         val txId = Blake2b256.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
         val boxes = (1 to 50).map(_ => ErgoBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
-        ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
+        createTransaction(boxes)
       },
       ErgoLikeContext.dummyPubkey
     )

@@ -131,7 +131,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val withdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(reversibleWithdrawOutput))
+    val withdrawTx = createTransaction(IndexedSeq(reversibleWithdrawOutput))
 
     val withdrawContext = ErgoLikeContext(
       currentHeight = withdrawHeight,
@@ -160,7 +160,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val bobSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(bobSpendOutput))
+    val bobSpendTx = createTransaction(IndexedSeq(bobSpendOutput))
 
     val bobSpendContext = ErgoLikeContext(
       currentHeight = bobSpendHeight,
@@ -185,7 +185,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val carolSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolSpendOutput))
+    val carolSpendTx = createTransaction(IndexedSeq(carolSpendOutput))
 
     val carolSpendContext = ErgoLikeContext(
       currentHeight = carolSpendHeight,
