@@ -99,6 +99,33 @@ class ErgoLikeTransactionSpec extends PropSpec
         (itx8.messageToSign sameElements initialMessage) shouldBe true
 
         /**
+          * Check inputs modifications
+          */
+        // transaction with decreased number of data inputs
+        if (di.nonEmpty) {
+          val dtx3 = new ErgoLikeTransaction(txIn.inputs, di.tail, txIn.outputCandidates)
+          (dtx3.messageToSign sameElements initialMessage) shouldBe false
+        }
+
+        // transaction with increased number of data inputs
+        val di4 = DataInput(txIn.outputs.head.id)
+        val dtx4 = new ErgoLikeTransaction(txIn.inputs, di4 +: di, txIn.outputCandidates)
+        (dtx4.messageToSign sameElements initialMessage) shouldBe false
+
+        // transaction with shuffled data inputs
+        if (di.size > 1) {
+          val dtx5 = new ErgoLikeTransaction(txIn.inputs, di.tail ++ Seq(di.head), txIn.outputCandidates)
+          (dtx5.messageToSign sameElements initialMessage) shouldBe false
+        }
+
+        // transaction with modified data input boxId
+        if (di.nonEmpty) {
+          val di6 = DataInput(txIn.outputs.head.id)
+          val dtx6 = new ErgoLikeTransaction(txIn.inputs, di6 +: di.tail, txIn.outputCandidates)
+          (dtx6.messageToSign sameElements initialMessage) shouldBe false
+        }
+
+        /**
           * Check outputs modifications
           */
         // transaction with decreased number of outputs
