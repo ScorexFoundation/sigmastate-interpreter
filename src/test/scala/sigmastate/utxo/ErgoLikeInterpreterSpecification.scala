@@ -306,7 +306,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(ErgoBox(1, recipientProposition, 0)),
       self = selfBox)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
@@ -400,7 +400,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      createTransaction(IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(ErgoBox(1, recipientProposition, 0)),
       self = selfBox)
 
     val proof = prover.prove(prop, ctx, fakeMessage).get
@@ -601,7 +601,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val output = ErgoBox(22, pubkey, 0, Seq(), Map())
 
-    val spendingTransaction = createTransaction(IndexedSeq(output))
+    val spendingTransaction = createTransaction(output)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

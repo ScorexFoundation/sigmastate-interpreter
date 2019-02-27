@@ -64,6 +64,12 @@ trait SigmaTestingCommons extends PropSpec
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
+  /**
+    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
+    * Normally, this transaction will be invalid as far as it will break rule that sum of
+    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
+    * in our test cases
+    */
   def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
     new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
   }

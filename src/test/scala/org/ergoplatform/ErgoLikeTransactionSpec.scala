@@ -99,7 +99,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         (itx8.messageToSign sameElements initialMessage) shouldBe true
 
         /**
-          * Check inputs modifications
+          * Check data inputs modifications
           */
         // transaction with decreased number of data inputs
         if (di.nonEmpty) {

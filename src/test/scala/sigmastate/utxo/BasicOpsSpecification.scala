@@ -73,7 +73,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, prop, creationHeight = 0, boxIndex = 0, additionalRegisters = Map(
       reg1 -> IntConstant(1),
       reg2 -> IntConstant(10)))
-    val tx = createTransaction(IndexedSeq(newBox1))
+    val tx = createTransaction(newBox1)
 
     val ctx = ErgoLikeContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),

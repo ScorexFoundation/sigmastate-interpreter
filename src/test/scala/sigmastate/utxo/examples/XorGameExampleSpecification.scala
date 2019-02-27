@@ -142,7 +142,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val abortHalfGameTx = createTransaction(IndexedSeq(abortHalfGameOutput))
+    val abortHalfGameTx = createTransaction(abortHalfGameOutput)
 
     val abortHalfGameContext = ErgoLikeContext(
       currentHeight = abortHalfGameHeight,
@@ -178,7 +178,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val fullGameTx = createTransaction(IndexedSeq(fullGameOutput))
+    val fullGameTx = createTransaction(fullGameOutput)
 
     val fullGameContext = ErgoLikeContext(
       currentHeight = fullGameCreationHeight,
@@ -228,7 +228,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val gameOverOutput = ErgoBox(playAmount*2, carolPubKey, gameOverHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val gameOverTx = createTransaction(IndexedSeq(gameOverOutput))
+    val gameOverTx = createTransaction(gameOverOutput)
 
     val gameOverContext = ErgoLikeContext(
       currentHeight = gameOverHeight,
@@ -255,7 +255,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val defaultWinTx = createTransaction(IndexedSeq(defaultWinOutput))
+    val defaultWinTx = createTransaction(defaultWinOutput)
 
     val defaultWinContext = ErgoLikeContext(
       currentHeight = defaultWinHeight,

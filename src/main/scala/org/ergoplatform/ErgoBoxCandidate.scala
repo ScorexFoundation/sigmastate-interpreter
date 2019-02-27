@@ -17,6 +17,20 @@ import sigmastate.utxo.CostTable.Cost
 import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime
 
+/**
+  * Contains the same fields as `org.ergoplatform.ErgoBox`, except if transaction id and index,
+  * that will be calculated after full transaction formation.
+  *
+  * @see org.ergoplatform.ErgoBox for more details
+  *
+  * @param value               - amount of money associated with the box
+  * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
+  * @param creationHeight      - height when a transaction containing the box was created.
+  *                            This height is declared by user and should not exceed height of the block,
+  *                            containing the transaction with this box.
+  * @param additionalTokens    - secondary tokens the box contains
+  * @param additionalRegisters - additional registers the box can carry over
+  */
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
@@ -64,7 +78,7 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
@@ -143,4 +157,5 @@ object ErgoBoxCandidate {
       parseBodyWithIndexedDigests(None, r)
     }
   }
+
 }
