@@ -6,13 +6,13 @@ import org.ergoplatform._
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
-import sigmastate.TrivialProp.{TrueProp, FalseProp}
+import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 
@@ -21,8 +21,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {
-    val prover1 = new ErgoLikeTestProvingInterpreter
-    val prover2 = new ErgoLikeTestProvingInterpreter
+    val prover1 = new ContextEnrichingTestProvingInterpreter
+    val prover2 = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -43,8 +43,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple") {
-    val prover = new ErgoLikeTestProvingInterpreter
-    val fakeProver = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
+    val fakeProver = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -78,8 +78,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple - simulation") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -105,8 +105,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DH tuple and DLOG") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -136,8 +136,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
   ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
     val height = 50
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -204,7 +204,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("map + sum") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -248,7 +248,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("byindex") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -287,7 +287,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   property("P2SH") {
     val scriptId = 21.toByte
 
-    val prover0 = new ErgoLikeTestProvingInterpreter()
+    val prover0 = new ContextEnrichingTestProvingInterpreter()
 
     val script = SigmaPropConstant(prover0.dlogSecrets.head.publicImage)
     val scriptBytes = ValueSerializer.serialize(script)
@@ -299,7 +299,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
     val prop = SigmaAnd(hashEquals, scriptIsCorrect)
 
-    val recipientProposition = SigmaPropConstant(new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage)
+    val recipientProposition = SigmaPropConstant(new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage)
     val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -315,7 +315,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Prove keys from registers") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
@@ -379,7 +379,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val bitsCount = 160
     val bytesCount = bitsCount / 8
 
-    val prover0 = new ErgoLikeTestProvingInterpreter()
+    val prover0 = new ContextEnrichingTestProvingInterpreter()
 
     val customScript = prover0.dlogSecrets.head.publicImage.toSigmaProp
     val scriptBytes = ValueSerializer.serialize(customScript)
@@ -393,7 +393,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val scriptIsCorrect = DeserializeContext(scriptId, SSigmaProp)
     val prop = SigmaAnd(hashEquals.toSigmaProp, scriptIsCorrect)
 
-    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
+    val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map())
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -414,7 +414,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * (and no more boxes could be provided as an input of a spending transaction).
     */
   property("Along with a brother (using Box constant in environment)") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
@@ -488,7 +488,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     * (and possibly others, too).
     */
   property("Along with a friend and maybe others (!!! Box constant in environment)") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey1 = prover.dlogSecrets.head.publicImage
@@ -566,7 +566,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("If") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -618,7 +618,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DeserializeRegister value type mismatch") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
 
     val sigmaProp = SigmaPropConstant(prover.dlogSecrets.head.publicImage)
     // put SigmaProp into the register

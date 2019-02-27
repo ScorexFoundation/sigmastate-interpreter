@@ -2,13 +2,13 @@ package sigmastate.utxo
 
 import java.lang.reflect.InvocationTargetException
 
-import org.ergoplatform.ErgoBox.{R6, R4, R8}
+import org.ergoplatform.ErgoBox.{R4, R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
@@ -52,7 +52,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
            ext: Seq[(Byte, EvaluatedValue[_ <: SType])],
            script: String, propExp: SValue,
       onlyPositive: Boolean = true) = {
-    val prover = new ErgoLikeTestProvingInterpreter() {
+    val prover = new ContextEnrichingTestProvingInterpreter() {
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = {
         val p1 = dlogSecrets(0).publicImage
         val p2 = dlogSecrets(1).publicImage

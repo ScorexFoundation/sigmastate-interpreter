@@ -1,17 +1,17 @@
 package sigmastate.utxo.benchmarks
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter
-import sigmastate.utxo.{ErgoLikeTestInterpreter, SigmaContract}
+import sigmastate.utxo.SigmaContract
 
 import scala.util.Try
 
 abstract class CrowdFundingContract(
                                      val timeout: Int,
                                      val minToRaise: Long,
-                                     val backerProver: ErgoLikeTestProvingInterpreter,
-                                     val projectProver: ErgoLikeTestProvingInterpreter
+                                     val backerProver: ContextEnrichingTestProvingInterpreter,
+                                     val projectProver: ContextEnrichingTestProvingInterpreter
 ) extends SigmaContract {
   //a blockchain node verifying a block containing a spending transaction
   val verifier = new ErgoLikeTestInterpreter()(backerProver.IR)

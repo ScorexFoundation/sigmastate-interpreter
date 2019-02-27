@@ -9,7 +9,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScri
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.ErgoTreeSerializer
@@ -59,8 +59,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   val minToRaise = 1000L
   val backerPubKeyId = 1.toByte
   val projectPubKeyId = 2.toByte
-  lazy val backerProver = new ErgoLikeTestProvingInterpreter
-  lazy val projectProver = new ErgoLikeTestProvingInterpreter
+  lazy val backerProver = new ContextEnrichingTestProvingInterpreter
+  lazy val projectProver = new ContextEnrichingTestProvingInterpreter
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
   lazy val ctxVars = contextVars(Map(

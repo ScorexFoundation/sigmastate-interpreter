@@ -10,7 +10,7 @@ import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 
 
 /**
@@ -47,7 +47,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val id = 11: Byte
     val id2 = 12: Byte
 
-    val prover = new ErgoLikeTestProvingInterpreter(CostTable.ScriptLimit * 10)
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10)
       .withContextExtender(id, ByteArrayConstant(ba))
       .withContextExtender(id2, ByteArrayConstant(ba))
 
@@ -82,7 +82,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 21: Byte
 
-    val prover = new ErgoLikeTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
     val bigSubScript = (1 to 100).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
@@ -107,12 +107,12 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("ring signature - maximum ok ring size") {
-    val prover = new ErgoLikeTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
+    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
     val verifier = new ErgoLikeTestInterpreter
     val secret = prover.dlogSecrets.head
 
     val simulated = (1 to 98).map { _ =>
-      new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
+      new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     }
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
@@ -135,7 +135,7 @@ class SpamSpecification extends SigmaTestingCommons {
       whenever(orCnt > 10 && outCnt > 200) {
     val orCnt = 10
     val outCnt = 5
-    val prover = new ErgoLikeTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
+    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
 
     val propToCompare = OR((1 to orCnt).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
 
@@ -179,7 +179,7 @@ class SpamSpecification extends SigmaTestingCommons {
           println(printEnvEntry(sym, value))
       }
     }
-    val prover = new ErgoLikeTestProvingInterpreter(maxCost = Long.MaxValue)
+    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
@@ -221,7 +221,7 @@ class SpamSpecification extends SigmaTestingCommons {
     def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
     def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
-    val prover = new ErgoLikeTestProvingInterpreter(Long.MaxValue)
+    val prover = new ContextEnrichingTestProvingInterpreter(Long.MaxValue)
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage

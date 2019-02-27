@@ -6,7 +6,7 @@ import com.google.common.base.Strings
 import org.bouncycastle.math.ec.ECPoint
 import sigmastate._
 import sigmastate.Values.{ConstantPlaceholder, _}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
 import sigmastate.utxo.CostTable.Cost
@@ -162,7 +162,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Crowd Funding") {
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val backerPK  = prover.dlogSecrets(0).publicImage
     val projectPK = prover.dlogSecrets(1).publicImage
 
@@ -185,7 +185,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Crowd Funding: measure") {
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val backerPK  @ DLogProtocol.ProveDlog(backer: ECPoint) = prover.dlogSecrets(0).publicImage
     val projectPK @ DLogProtocol.ProveDlog(project: ECPoint) = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
@@ -220,7 +220,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("Demurrage") {
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val regScriptPK = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
     checkInEnv(env, "Demurrage", demurrageScript,

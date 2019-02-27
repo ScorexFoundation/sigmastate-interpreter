@@ -13,7 +13,6 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import scorex.util.Extensions._
 
 import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime
@@ -74,17 +73,17 @@ object ErgoBoxCandidate {
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
-                                        digestsInTx: Option[Array[ofByte]],
+                                        tokensInTx: Option[Array[ofByte]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        if (digestsInTx.isDefined) {
-          val digestIndex = digestsInTx.get.indexOf(new ofByte(id))
-          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
-          w.putUInt(digestIndex)
+        if (tokensInTx.isDefined) {
+          val tokenIndex = tokensInTx.get.indexOf(new ofByte(id))
+          if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
+          w.putUInt(tokenIndex)
         } else {
           w.putBytes(id)
         }

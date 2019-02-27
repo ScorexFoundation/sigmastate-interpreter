@@ -3,7 +3,7 @@ package sigmastate.utxo.benchmarks
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
 import sigmastate.Values.{Value, SigmaPropValue}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -13,8 +13,8 @@ import scala.util.Try
 class CrowdFundingScriptContract(
                                   timeout: Int,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeTestProvingInterpreter,
-                                  override val projectProver: ErgoLikeTestProvingInterpreter
+                                  override val backerProver: ContextEnrichingTestProvingInterpreter,
+                                  override val projectProver: ContextEnrichingTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   val compiledProposition: SigmaPropValue = {

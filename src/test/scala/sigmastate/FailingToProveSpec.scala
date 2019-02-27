@@ -1,11 +1,10 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoLikeInterpreter}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.ErgoLikeTestInterpreter
 import org.ergoplatform.ErgoScriptPredef._
 
 class FailingToProveSpec extends SigmaTestingCommons {
@@ -17,7 +16,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     * Cause second condition has 3 outputs in body, while we are have only two in tx.
     */
   property("successfully evaluate proof 1") {
-    val interpreter = new ErgoLikeTestProvingInterpreter
+    val interpreter = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
@@ -49,7 +48,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
   }
 
   property("successfully evaluate proof 2") {
-    val interpreter = new ErgoLikeTestProvingInterpreter
+    val interpreter = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]

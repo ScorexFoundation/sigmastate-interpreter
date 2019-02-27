@@ -8,7 +8,7 @@ import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoolean, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -43,7 +43,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
   property("Evaluation - RpsGame Example") {
 
     // Alice is first player, who initiates the game
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
 
     val a:Byte = (scala.util.Random.nextInt.abs % 3).toByte
@@ -129,7 +129,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     // a variable indicating height at which the tx spending halfGameTx is created
     val fullGameCreationHeight = halfGameCreationHeight + 10
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = (scala.util.Random.nextInt.abs % 3).toByte
@@ -179,7 +179,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
 
     val gameOverHeight = fullGameCreationHeight + 10
     // assume paying to Carol
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     // note that playAmount below is not checked. It could be anything.

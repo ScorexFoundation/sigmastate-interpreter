@@ -1,16 +1,14 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ConcreteCollection, Constant, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
-import special.sigma.{TestContext => DContext}
 import scalan.util.BenchmarkUtil._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.ErgoTreeSerializer
 
 class EvaluationTest extends BaseCtxTests
@@ -37,7 +35,7 @@ class EvaluationTest extends BaseCtxTests
   }
 
   test("lazy logical ops") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val pk = prover.dlogSecrets.head.publicImage
     val self = ErgoBox(1, pk, 0, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)

@@ -1,26 +1,35 @@
 package org.ergoplatform
 
-import java.nio.ByteBuffer
-
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
-
-import scala.util.Try
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
+import scala.util.Try
 
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
 }
 
-
+/**
+  * Base trait of a real transaction to be used in Ergo network.
+  * May be in unsigned (`UnsignedErgoLikeTransaction`) or in signed (`ErgoLikeTransaction`) version.
+  *
+  * Consists of:
+  *
+  * @param inputs           - inputs, that will be spent by this transaction.
+  * TODO @param dataInputs       - inputs, that are not going to be spent by transaction, but will be
+  *                         reachable from inputs scripts. `dataInputs` scripts will not be executed,
+  *                         thus their scripts costs are not included in transaction cost and
+  *                         they do not contain spending proofs.
+  * @param outputCandidates - box candidates to be created by this transaction.
+  *                         Differ from ordinary ones in that they do not include transaction id and index
+  */
 trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   val inputs: IndexedSeq[IT]
   val outputCandidates: IndexedSeq[ErgoBoxCandidate]
@@ -32,13 +41,15 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   lazy val outputs: IndexedSeq[ErgoBox] =
     outputCandidates.indices.map(idx => outputCandidates(idx).toBox(id, idx.toShort))
 
-  lazy val messageToSign: Array[Byte] =
-    ErgoLikeTransaction.FlattenedTransaction.sigmaSerializer.bytesToSign(this)
+  lazy val messageToSign: Array[Byte] = ErgoLikeTransaction.bytesToSign(this)
 
   lazy val inputIds: IndexedSeq[ADKey] = inputs.map(_.boxId)
 }
 
 
+/**
+  * Unsigned version of `ErgoLikeTransactionTemplate`
+  */
 class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput],
                                   override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
   extends ErgoLikeTransactionTemplate[UnsignedInput] {
@@ -58,10 +69,7 @@ object UnsignedErgoLikeTransaction {
 }
 
 /**
-  * Fully signed transaction
-  *
-  * @param inputs
-  * @param outputCandidates
+  * Signed version of `ErgoLikeTransactionTemplate`
   */
 class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
                           override val outputCandidates: IndexedSeq[ErgoBoxCandidate])
@@ -80,79 +88,73 @@ class ErgoLikeTransaction(override val inputs: IndexedSeq[Input],
   override def hashCode(): Int = id.hashCode()
 }
 
+object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
+
+  override def serialize(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit = {
+    // serialize transaction inputs
+    w.putUShort(tx.inputs.length)
+    for (input <- tx.inputs) {
+      Input.serializer.serialize(input, w)
+    }
+    // serialize distinct ids of tokens in transaction outputs
+    val distinctTokenIds = tx.outputCandidates
+      .flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1)))
+      .distinct
+      .toArray
+    w.putUInt(distinctTokenIds.length)
+    distinctTokenIds.foreach { tokenId =>
+      w.putBytes(tokenId.array)
+    }
+    // serialize outputs
+    w.putUShort(tx.outputCandidates.length)
+    for (out <- tx.outputCandidates) {
+      ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(distinctTokenIds), w)
+    }
+  }
+
+  override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
+    val inputsCount = r.getUShort()
+    val inputsBuilder = mutable.ArrayBuilder.make[Input]()
+    for (_ <- 0 until inputsCount) {
+      inputsBuilder += Input.serializer.parse(r)
+    }
+
+    val tokensCount = r.getUInt().toInt
+    val tokensBuilder = mutable.ArrayBuilder.make[Digest32]()
+    for (_ <- 0 until tokensCount) {
+      tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
+    }
+    val tokens = tokensBuilder.result()
+    val outsCount = r.getUShort()
+    val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
+    for (_ <- 0 until outsCount) {
+      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(tokens), r)
+    }
+    ErgoLikeTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
+  }
+
+}
+
 
 object ErgoLikeTransaction {
 
   val TransactionIdBytesSize: Short = 32
 
+  /**
+    * Bytes that should be signed by provers.
+    * Contains all the transaction bytes except of signatures itself
+    */
+  def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
+    val emptyProofInputs = tx.inputs.map(_.inputToSign)
+    val w = SigmaSerializer.startWriter()
+    val txWithoutProofs = ErgoLikeTransaction(emptyProofInputs, tx.outputCandidates)
+    ErgoLikeTransactionSerializer.serialize(txWithoutProofs, w)
+    w.toBytes
+  }
+
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
     new ErgoLikeTransaction(inputs, outputCandidates)
 
-  def apply(ftx: FlattenedTransaction): ErgoLikeTransaction =
-    new ErgoLikeTransaction(ftx.inputs, ftx.outputCandidates)
-
-  case class FlattenedTransaction(inputs: Array[Input],
-                                  outputCandidates: Array[ErgoBoxCandidate])
-
-  object FlattenedTransaction {
-    def apply(tx: ErgoLikeTransaction): FlattenedTransaction =
-      FlattenedTransaction(tx.inputs.toArray, tx.outputCandidates.toArray)
-
-    object sigmaSerializer extends SigmaSerializer[FlattenedTransaction, FlattenedTransaction] {
-
-      def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
-        val emptyProofInputs = tx.inputs.map(i => new Input(i.boxId, ProverResult.empty))
-        val w = SigmaSerializer.startWriter()
-        serialize(FlattenedTransaction(emptyProofInputs.toArray, tx.outputCandidates.toArray), w)
-        w.toBytes
-      }
-
-      override def serialize(ftx: FlattenedTransaction, w: SigmaByteWriter): Unit = {
-        w.putUShort(ftx.inputs.length)
-        for (input <- ftx.inputs) {
-          Input.serializer.serialize(input, w)
-        }
-        val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1))).distinct
-        w.putUInt(digests.length)
-        digests.foreach { digest =>
-          w.putBytes(digest.array)
-        }
-        w.putUShort(ftx.outputCandidates.length)
-        for (out <- ftx.outputCandidates) {
-          ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(digests), w)
-        }
-      }
-
-      override def parse(r: SigmaByteReader): FlattenedTransaction = {
-        val inputsCount = r.getUShort()
-        val inputsBuilder = mutable.ArrayBuilder.make[Input]()
-        for (_ <- 0 until inputsCount) {
-          inputsBuilder += Input.serializer.parse(r)
-        }
-        val digestsCount = r.getUInt().toInt
-        val digestsBuilder = mutable.ArrayBuilder.make[Digest32]()
-        for (_ <- 0 until digestsCount) {
-          digestsBuilder += Digest32 @@ r.getBytes(TokenId.size)
-        }
-        val digests = digestsBuilder.result()
-        val outsCount = r.getUShort()
-        val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
-        for (_ <- 0 until outsCount) {
-          outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(digests), r)
-        }
-        FlattenedTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
-      }
-    }
-
-  }
-
-  object serializer extends SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] {
-
-    override def serialize(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit =
-      FlattenedTransaction.sigmaSerializer.serialize(FlattenedTransaction(tx), w)
-
-    override def parse(r: SigmaByteReader): ErgoLikeTransaction =
-      ErgoLikeTransaction(FlattenedTransaction.sigmaSerializer.parse(r))
-  }
+  val serializer: SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] = ErgoLikeTransactionSerializer
 
 }

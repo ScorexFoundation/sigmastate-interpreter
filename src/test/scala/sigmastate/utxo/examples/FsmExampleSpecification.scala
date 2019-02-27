@@ -7,7 +7,7 @@ import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -39,7 +39,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     */
   property("simple FSM example") {
 
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage.toSigmaProp
     val script2 = prover.dhSecrets.head.publicImage.toSigmaProp
