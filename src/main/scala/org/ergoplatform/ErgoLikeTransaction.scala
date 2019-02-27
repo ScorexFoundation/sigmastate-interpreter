@@ -119,16 +119,16 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
       inputsBuilder += Input.serializer.parse(r)
     }
 
-    val digestsCount = r.getUInt().toInt
-    val digestsBuilder = mutable.ArrayBuilder.make[Digest32]()
-    for (_ <- 0 until digestsCount) {
-      digestsBuilder += Digest32 @@ r.getBytes(TokenId.size)
+    val tokensCount = r.getUInt().toInt
+    val tokensBuilder = mutable.ArrayBuilder.make[Digest32]()
+    for (_ <- 0 until tokensCount) {
+      tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
     }
-    val digests = digestsBuilder.result()
+    val tokens = tokensBuilder.result()
     val outsCount = r.getUShort()
     val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
     for (_ <- 0 until outsCount) {
-      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(digests), r)
+      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(tokens), r)
     }
     ErgoLikeTransaction(inputsBuilder.result(), outputCandidatesBuilder.result())
   }
