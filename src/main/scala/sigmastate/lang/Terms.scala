@@ -9,9 +9,8 @@ import sigmastate._
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
-import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractRegisterAs, Slice, SigmaPropIsProven}
-import special.sigma.{AnyValue, TestValue}
+
+import scala.language.implicitConversions
 
 object Terms {
 
@@ -146,6 +145,9 @@ object Terms {
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
+  }
+  object STypeParam {
+    implicit def typeIdentToTypeParam(id: STypeIdent): STypeParam = STypeParam(id)
   }
 
   /** Frontend implementation of lambdas. Should be transformed to FuncValue. */

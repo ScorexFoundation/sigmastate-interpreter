@@ -56,11 +56,11 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
 
     // Rule: Coll[Int](...) -->
     case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
-      args.foreach{ e =>
-        if (e.tpe != tpe)
-          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",
-            e.sourceContext)
-      }
+//      args.foreach{ e =>
+//        if (e.tpe != tpe)
+//          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",
+//            e.sourceContext)
+//      }
       Some(mkConcreteCollection(args, tpe))
 
     // Rule: Coll(...) -->

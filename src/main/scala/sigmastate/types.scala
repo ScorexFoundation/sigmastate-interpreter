@@ -25,7 +25,7 @@ import sigmastate.SByte.typeCode
 import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.utxo.ByIndex
+import sigmastate.utxo.{ByIndex, ExtractCreationInfo}
 import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 
@@ -212,8 +212,12 @@ trait SProduct extends SType {
   def methodIndex(name: String): Int = methods.indexWhere(_.name == name)
   def hasMethod(name: String): Boolean = methodIndex(name) != -1
 
-  /** Returns all the methods of this product type. */
-  def methods: Seq[SMethod]
+  /** This method should be overriden in derived classes to add new methods in addition to inherited.
+    * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)` */
+  protected def getMethods(): Seq[SMethod] = Seq()
+
+  /** Returns all the methods of this type. */
+  lazy val methods: Seq[SMethod] = getMethods()
 
   /** Checks if `this` product has exactly the same methods as `that`. */
   def sameMethods(that: SProduct): Boolean = {
@@ -310,7 +314,11 @@ object SPrimType {
 trait SNumericType extends SProduct {
   import SNumericType._
   override def ancestors: Seq[SType] = Nil
-  def methods = SNumericType.methods
+  protected override def getMethods(): Seq[SMethod] = {
+    super.getMethods() ++ SNumericType.methods.map {
+      m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)))
+    }
+  }
   def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   def upcast(i: AnyVal): WrappedType
@@ -332,16 +340,15 @@ object SNumericType extends STypeCompanion {
   val ToLong = "toLong"
   val ToBigInt = "toBigInt"
 
-  val ToBytesMethod = SMethod(this, "toBytes", SByteArray, 6, MethodCallIrBuilder)
-  val ToBitsMethod = SMethod(this, "toBits", SBooleanArray, 7, MethodCallIrBuilder)
+  val tNum = STypeIdent("TNum")
   val methods = Vector(
-    SMethod(this, ToByte, SByte, 1),    // see Downcast
-    SMethod(this, ToShort, SShort, 2),  // see Downcast
-    SMethod(this, ToInt, SInt, 3),      // see Downcast
-    SMethod(this, ToLong, SLong, 4),    // see Downcast
-    SMethod(this, ToBigInt, SBigInt, 5), // see Downcast
-    ToBytesMethod,
-    ToBitsMethod,
+    SMethod(this, ToByte,   SFunc(tNum, SByte),   1),  // see Downcast
+    SMethod(this, ToShort,  SFunc(tNum, SShort),  2),  // see Downcast
+    SMethod(this, ToInt,    SFunc(tNum, SInt),    3),  // see Downcast
+    SMethod(this, ToLong,   SFunc(tNum, SLong),   4),  // see Downcast
+    SMethod(this, ToBigInt, SFunc(tNum, SBigInt), 5),  // see Downcast
+    SMethod(this, "toBytes", SFunc(tNum, SByteArray),    6, MethodCallIrBuilder),
+    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7, MethodCallIrBuilder),
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }
@@ -355,8 +362,8 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def typeId = typeCode
   override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
-  override val methods = Vector(
-    SMethod(this, ToByte, SByte, 1),
+  protected override def getMethods() = super.getMethods() ++ Seq(
+    SMethod(this, ToByte, SFunc(this, SByte), 1),
   )
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
@@ -489,7 +496,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 2)
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 3)
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(SBigInt, SBigInt), SBigInt), 4, MethodCallIrBuilder)
-  override val methods: Vector[SMethod] = Vector(
+  protected override def getMethods() = super.getMethods() ++ Seq(
     ModQMethod,
     PlusModQMethod,
     MinusModQMethod,
@@ -503,7 +510,6 @@ case object SString extends SProduct with STypeCompanion {
   override def ancestors: Seq[SType] = Nil
   override val typeCode: TypeCode = 102: Byte
   override def typeId = typeCode
-  override val methods: Seq[SMethod] = Nil
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v.asInstanceOf[String].length
   override def isConstantSize = false
@@ -515,7 +521,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
   val ExpMethod = SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, MethodCallIrBuilder)
-  override val methods: Seq[SMethod] = Seq(
+  protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     SMethod(this, "isIdentity", SBoolean, 1),
     SMethod(this, "nonce", SByteArray, 2),
     SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3),
@@ -548,7 +554,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   def ancestors = Nil
   val PropBytes = "propBytes"
   val IsProven = "isProven"
-  val methods = Seq(
+  protected override def getMethods() = super.getMethods() ++ Seq(
     SMethod(this, PropBytes, SByteArray, 1),
     SMethod(this, IsProven, SBoolean, 2)
   )
@@ -580,12 +586,13 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
   }
   override def isConstantSize = elemType.isConstantSize
   def ancestors = Nil
-  override lazy val methods: Seq[SMethod] = {
-    val subst = Map(SOption.tT -> elemType)
-    SOption.methods.map { method =>
-      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
-    }
-  }
+  protected override def getMethods() = super.getMethods() ++ SOption.methods
+//  override lazy val methods: Seq[SMethod] = {
+//    val subst = Map(SOption.tT -> elemType)
+//    SOption.methods.map { method =>
+//      method.copy(stype = SigmaTyper.applySubst(method.stype, subst))
+//    }
+//  }
   override def toString = s"Option[$elemType]"
 }
 
@@ -628,20 +635,22 @@ object SOption extends STypeCompanion {
 
   val tT = STypeIdent("T")
   val tR = STypeIdent("R")
-  val IsEmptyMethod   = SMethod(this, IsEmpty, SBoolean, 1)
-  val IsDefinedMethod = SMethod(this, IsDefined, SBoolean, 2)
-  val GetMethod       = SMethod(this, Get, tT, 3)
-  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(SOption(tT), tT), tT, Seq(STypeParam(tT))), 4)
-  val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(SOption(tT), tR, SFunc(tT, tR)), tR, Seq(STypeParam(tT), STypeParam(tR))), 5)
-  val ToCollMethod    = SMethod(this, "toColl", SCollection(tT), 6, MethodCallIrBuilder)
+  val ThisType = SOption(tT)
+  
+  val IsEmptyMethod   = SMethod(this, IsEmpty, SFunc(ThisType, SBoolean), 1)
+  val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2)
+  val GetMethod       = SMethod(this, Get, SFunc(ThisType, tT), 3)
+  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
+  val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
+  val ToCollMethod    = SMethod(this, "toColl", SFunc(IndexedSeq(ThisType), SCollection(tT), Seq(tT)), 6, MethodCallIrBuilder)
   val MapMethod       = SMethod(this, "map",
-    SFunc(IndexedSeq(SOption(tT), SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
+    SFunc(IndexedSeq(ThisType, SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
     7, MethodCallIrBuilder)
   val FilterMethod    = SMethod(this, "filter",
-    SFunc(IndexedSeq(SOption(tT), SFunc(tT, SBoolean)), SOption(tT), Seq(STypeParam(tT))),
+    SFunc(IndexedSeq(ThisType, SFunc(tT, SBoolean)), ThisType, Seq(STypeParam(tT))),
     8, MethodCallIrBuilder)
   val FlatMapMethod   = SMethod(this, "flatMap",
-    SFunc(IndexedSeq(SOption(tT), SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
+    SFunc(IndexedSeq(ThisType, SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
     9, MethodCallIrBuilder)
   val methods: Seq[SMethod] = Seq(
     IsEmptyMethod,
@@ -685,7 +694,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   }
   def typeParams = SCollectionType.typeParams
   def tparamSubst = Map(tIV.name -> elemType)
-  override def methods = SCollection.methods
+  protected override def getMethods() = super.getMethods() ++ SCollection.methods
   override def toString = s"Coll[$elemType]"
 }
 
@@ -704,8 +713,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val tOV = STypeIdent("OV")
   val tK = STypeIdent("K")
   val tV = STypeIdent("V")
+  val ThisType = SCollection(tIV)
+
   val SizeMethod = SMethod(this, "size", SInt, 1)
-  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(SCollection(tIV), SInt, tIV), tIV, Seq(STypeParam(tIV))), 2, Some {
+  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(ThisType, SInt, tIV), tIV, Seq(tIV)), 2, Some {
     case (builder, obj, method, Seq(index, defaultValue)) =>
       val index1 = index.asValue[SInt.type]
       val defaultValue1 = defaultValue.asValue[SType]
@@ -719,14 +730,14 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val SliceMethod = SMethod(this, "slice", SFunc(IndexedSeq(SCollection(tIV), SInt, SInt), SCollection(tIV), Seq(STypeParam(tIV))), 7)
   val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(SCollection(tIV), SFunc(tIV, SBoolean)), SCollection(tIV), Seq(STypeParam(tIV))), 8)
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV)), SCollection(tIV), Seq(STypeParam(tIV))), 9)
-  val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(STypeParam(tIV))), 10)
+  val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(SCollection(tIV), SInt), tIV, Seq(tIV)), 10)
   val BitShiftLeftMethod = SMethod(this, "<<",
     SFunc(IndexedSeq(SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))), 11)
   val BitShiftRightMethod = SMethod(this, ">>",
     SFunc(IndexedSeq(SCollection(tIV), SInt), SCollection(tIV), Seq(STypeParam(tIV))), 12)
   val BitShiftRightZeroedMethod = SMethod(this, ">>>",
     SFunc(IndexedSeq(SCollection(SBoolean), SInt), SCollection(SBoolean)), 13)
-  val IndicesMethod = SMethod(this, "indices", SCollection(SInt), 14, MethodCallIrBuilder)
+  val IndicesMethod = SMethod(this, "indices", SFunc(SCollection(tIV), SCollection(SInt)), 14, MethodCallIrBuilder)
   val FlatMapMethod = SMethod(this, "flatMap",
     SFunc(
       IndexedSeq(SCollection(tIV), SFunc(tIV, SCollection(tOV))),
@@ -774,10 +785,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     28, MethodCallIrBuilder)
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(SCollection(tIV), SCollection(tOV)),
-      SCollection(STuple(tIV, tOV)),
-      Seq(STypeParam(tIV), STypeParam(tOV))),
+      SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)),
     29, MethodCallIrBuilder)
-  val DistinctMethod = SMethod(this, "distinct", SCollection(tIV), 30, MethodCallIrBuilder)
+  val DistinctMethod = SMethod(this, "distinct",
+    SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30, MethodCallIrBuilder)
   val StartsWithMethod = SMethod(this, "startsWith",
     SFunc(IndexedSeq(SCollection(tIV), SCollection(tIV), SInt), SBoolean, Seq(STypeParam(tIV))),
     31, MethodCallIrBuilder)
@@ -877,7 +888,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
 
   override def elemType: SAny.type = SAny
 
-  override lazy val methods: Seq[SMethod] = {
+  protected override def getMethods() = {
     val tupleMethods = Array.tabulate(items.size) { i =>
       SMethod(STuple, componentNameByIndex(i), items(i), (i + 1).toByte)
     }
@@ -950,6 +961,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }
+  def withReceiverType(objType: SType) = this.copy(tDom = objType +: tDom)
 }
 
 object SFunc {
@@ -1001,7 +1013,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   private val tT = STypeIdent("T")
   def registers(idOfs: Int): Seq[SMethod] = {
     (1 to 10).map { i =>
-      SMethod(this, s"R$i", SFunc(IndexedSeq(), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
+      SMethod(this, s"R$i", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
     }
   }
   val PropositionBytes = "propositionBytes"
@@ -1010,15 +1022,15 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
-  val TokensMethod = SMethod(this, "tokens", SCollectionType(STuple(SCollectionType(SByte), SLong)), 8, MethodCallIrBuilder)
+  val TokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
-  lazy val methods = Vector(
-    SMethod(this, Value, SLong, 1), // see ExtractAmount
-    SMethod(this, PropositionBytes, SCollectionType(SByte), 2), // see ExtractScriptBytes
-    SMethod(this, Bytes, SCollectionType(SByte), 3), // see ExtractBytes
-    SMethod(this, BytesWithNoRef, SCollectionType(SByte), 4), // see ExtractBytesWithNoRef
-    SMethod(this, Id, SCollectionType(SByte), 5), // see ExtractId
-    SMethod(this, CreationInfo, STuple(SInt, SCollectionType(SByte)), 6), // see ExtractCreationInfo
+  protected override def getMethods() = super.getMethods() ++ Vector(
+    SMethod(this, Value, SFunc(SBox, SLong), 1), // see ExtractAmount
+    SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2), // see ExtractScriptBytes
+    SMethod(this, Bytes, SFunc(SBox, SByteArray), 3), // see ExtractBytes
+    SMethod(this, BytesWithNoRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
+    SMethod(this, Id, SFunc(SBox, SByteArray), 5), // see ExtractId
+    SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6), // see ExtractCreationInfo
     SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7),
     TokensMethod,
   ) ++ registers(8)
@@ -1043,13 +1055,13 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   val TCollOptionCollByte = SCollection(SByteArrayOption)
   val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
 
-  val digestMethod            = SMethod(this, "digest", SByteArray,            1, MethodCallIrBuilder)
-  val enabledOperationsMethod = SMethod(this, "enabledOperations", SByte,      2, MethodCallIrBuilder)
-  val keyLengthMethod         = SMethod(this, "keyLength", SInt,               3, MethodCallIrBuilder)
-  val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SIntOption,    4, MethodCallIrBuilder)
-  val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SBoolean,     5, MethodCallIrBuilder)
-  val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SBoolean,     6, MethodCallIrBuilder)
-  val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SBoolean,     7, MethodCallIrBuilder)
+  val digestMethod            = SMethod(this, "digest", SFunc(this, SByteArray),            1, MethodCallIrBuilder)
+  val enabledOperationsMethod = SMethod(this, "enabledOperations", SFunc(this, SByte),      2, MethodCallIrBuilder)
+  val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3, MethodCallIrBuilder)
+  val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4, MethodCallIrBuilder)
+  val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SFunc(this, SBoolean),     5, MethodCallIrBuilder)
+  val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SFunc(this, SBoolean),     6, MethodCallIrBuilder)
+  val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7, MethodCallIrBuilder)
   
   val updateOperationsMethod  = SMethod(this, "updateOperations", 
     SFunc(IndexedSeq(SAvlTree, SByte), SAvlTreeOption),                        8, MethodCallIrBuilder)
@@ -1072,7 +1084,7 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   val removeMethod            = SMethod(this, "remove",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14, MethodCallIrBuilder)
 
-  override val methods: Seq[SMethod] = Seq(
+  protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
     enabledOperationsMethod,
     keyLengthMethod,
@@ -1109,7 +1121,7 @@ case object SContext extends SProduct with SPredefType with STypeCompanion {
   def ancestors = Nil
 
   val DataInputsMethod = SMethod(this, "dataInputs", SCollection(SBox), 1, MethodCallIrBuilder)
-  val methods = Seq(
+  protected override def getMethods() = super.getMethods() ++ Seq(
     DataInputsMethod,
   )
 }

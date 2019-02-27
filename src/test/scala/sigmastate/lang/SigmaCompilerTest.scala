@@ -238,7 +238,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("Coll(true, false).indices") shouldBe
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
-        SCollection.IndicesMethod,
+        SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
   }
@@ -253,12 +253,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("SNumeric.toBytes") {
     testMissingCosting("4.toBytes",
-      mkMethodCall(IntConstant(4), SNumericType.ToBytesMethod, IndexedSeq()))
+      mkMethodCall(IntConstant(4), SInt.method("toBytes").get, IndexedSeq()))
   }
 
   property("SNumeric.toBits") {
     testMissingCosting("4.toBits",
-      mkMethodCall(IntConstant(4), SNumericType.ToBitsMethod, IndexedSeq()))
+      mkMethodCall(IntConstant(4), SInt.method("toBits").get, IndexedSeq()))
   }
 
   property("SBigInt.multModQ") {
@@ -472,7 +472,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(true, false).distinct",
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
-        SCollection.DistinctMethod,
+        SCollection.DistinctMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
     )

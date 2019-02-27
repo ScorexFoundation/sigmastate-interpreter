@@ -69,18 +69,31 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case sel @ Select(obj, n, None) =>
       val newObj = assignType(env, obj)
       newObj.tpe match {
-        case s: SProduct =>
-          val iField = s.methodIndex(n)
-          val tRes = if (iField != -1) {
-            s.methods(iField).stype
+        case tNewObj: SProduct =>
+          val iField = tNewObj.methodIndex(n)
+          val method = if (iField != -1) {
+            tNewObj.methods(iField)
           } else
-            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${s.methods}", obj.sourceContext.toOption)
-          s.method(n) match {
-            case Some(method) if method.irBuilder.isDefined && !method.stype.isFunc =>
-              method.irBuilder.flatMap(_.lift(builder, newObj, method, IndexedSeq()))
-                .getOrElse(mkMethodCall(newObj, method, IndexedSeq()))
-            case _ =>
-              mkSelect(newObj, n, Some(tRes))
+            throw new MethodNotFound(s"Cannot find method '$n' in in the object $obj of Product type with methods ${tNewObj.methods}", obj.sourceContext.toOption)
+          val tMeth = method.stype
+          val tRes = tMeth match {
+            case SFunc(args, _, _) =>
+              val tThis = args(0)  // first arg corresponds to method's receiver
+              val tMethSpec = unifyTypes(tThis, tNewObj) match {
+                case Some(subst) if subst.nonEmpty => applySubst(tMeth, subst).asFunc // specialize for concrete receiver type
+                case _ => tMeth.asFunc
+              }
+              if (tMethSpec.tDom.length == 1 && tMethSpec.tpeParams.isEmpty) tMethSpec.tRange
+              else tMethSpec.copy(tDom = tMethSpec.tDom.tail, tRange = tMethSpec.tRange)
+            case _ => tMeth
+          }
+          if (method.irBuilder.isDefined && !tRes.isFunc) {
+            // this is MethodCall of parameter-less property, so invoke builder and/or fallback to just MethodCall
+            val methodConcrType = method.withSType(SFunc(newObj.tpe, tRes))
+            methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq()))
+                .getOrElse(mkMethodCall(newObj, methodConcrType, IndexedSeq()))
+          } else {
+            mkSelect(newObj, n, Some(tRes))
           }
         case t =>
           error(s"Cannot get field '$n' in in the object $obj of non-product type $t", sel.sourceContext)
@@ -107,17 +120,16 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           // If it's a function then the application has type of that function's return type.
           val newObj = assignType(env, obj)
           val newArgTypes = newArgs.map(_.tpe)
-          val actualTypes = newObj.tpe +: newArgTypes
-          unifyTypeLists(argTypes, actualTypes) match {
+          unifyTypeLists(argTypes, newArgTypes) match {
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
               newObj.tpe.asInstanceOf[SProduct].method(n) match {
                 case Some(method) if method.irBuilder.isDefined =>
-                  val expectedArgs = concrFunTpe.asFunc.tDom.tail
+                  val expectedArgs = concrFunTpe.asFunc.tDom
                   if (expectedArgs.length != newArgTypes.length
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                     error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
-                  val methodConcrType = method.withSType(concrFunTpe)
+                  val methodConcrType = method.withSType(concrFunTpe.asFunc.withReceiverType(newObj.tpe))
                   methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs))
                 case _ =>
@@ -125,10 +137,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                   mkApply(newSelect, newArgs)
               }
             case None =>
-              error(s"Invalid argument type of application $app: expected $argTypes; actual: $actualTypes", sel.sourceContext)
+              error(s"Invalid argument type of application $app: expected $argTypes; actual: $newArgTypes", sel.sourceContext)
           }
         case _ =>
-          mkApply(newSel, args.map(assignType(env, _)))
+          mkApply(newSel, newArgs)
       }
 
     case app @ Apply(f, args) =>
@@ -514,7 +526,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
   def typecheck(bound: SValue): SValue = {
     val assigned = assignType(predefinedEnv, bound)
-    if (assigned.tpe == NoType) error(s"No type can be assigned to expression $assigned", bound.sourceContext)
+    if (assigned.tpe == NoType)
+      error(s"No type can be assigned to expression $assigned", bound.sourceContext)
 
     // traverse the tree bottom-up checking that all the nodes have a type
     var untyped: SValue = null
@@ -577,12 +590,10 @@ object SigmaTyper {
     case (STypeApply(name1, args1), STypeApply(name2, args2))
       if name1 == name2 && args1.length == args2.length =>
       unifyTypeLists(args1, args2)
-    case (SBoolean, SSigmaProp) =>
+    case (SBoolean, SSigmaProp) => // it is necessary for implicit conversion in Coll(bool, prop, bool)
       unifiedWithoutSubst
     case (SPrimType(e1), SPrimType(e2)) if e1 == e2 =>
       unifiedWithoutSubst
-    case (e1: SProduct, e2: SProduct) if e1.sameMethods(e2) =>
-      unifyTypeLists(e1.methods.map(_.stype), e2.methods.map(_.stype))
     case (SAny, _) =>
       unifiedWithoutSubst
     case _ => None
