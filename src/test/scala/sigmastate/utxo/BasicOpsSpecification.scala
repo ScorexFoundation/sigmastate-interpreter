@@ -355,6 +355,21 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       rootCause(_).isInstanceOf[InvalidType])
   }
 
+  property("Box.getReg") {
+    test("Extract1", env, ext,
+      "{ SELF.getReg[Int](getVar[Int](intVar1).get + 4).get == 1}",
+      BoolToSigmaProp(
+        EQ(
+          MethodCall(Self, SBox.GetRegMethod,
+            IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SBox.tT -> SInt)
+          ).asInstanceOf[Value[SOption[SType]]].get,
+          IntConstant(1)
+        )
+      ),
+      true
+    )
+  }
+
   property("OptionGet success (SomeValue)") {
     test("Opt1", env, ext,
       "{ getVar[Int](intVar2).get == 2 }",
@@ -416,7 +431,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // no value
     test("Def2", env, ext,
       "{ SELF.R8[Int].isDefined == false }",
-      EQ(ExtractRegisterAs[SInt.type](Self, R8).isDefined, FalseLeaf).toSigmaProp,
+      LogicalNot(ExtractRegisterAs[SInt.type](Self, R8).isDefined).toSigmaProp,
       true
     )
 
@@ -428,7 +443,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     // there should be no variable with this id
     test("Def4", env, ext,
       "{ getVar[Int](99).isDefined == false }",
-      EQ(GetVarInt(99).isDefined, FalseLeaf).toSigmaProp,
+      LogicalNot(GetVarInt(99).isDefined).toSigmaProp,
       true
     )
   }

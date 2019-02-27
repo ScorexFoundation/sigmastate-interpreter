@@ -52,7 +52,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
-    val compiledScript = compile(env,
+    val compiledScript = compileWithCosting(env,
       s"""
          | {
          |

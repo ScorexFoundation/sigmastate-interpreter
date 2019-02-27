@@ -158,7 +158,9 @@ object SigmaPredef {
 
     val ByteArrayToLongFunc = PredefinedFunc("byteArrayToLong",
       Lambda(Vector("input" -> SByteArray), SLong, None),
-      undefined
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkByteArrayToLong(arg)
+      }
     )
 
     val DecodePointFunc = PredefinedFunc("decodePoint",
@@ -192,7 +194,7 @@ object SigmaPredef {
     val IsMemberFunc = PredefinedFunc("isMember",
       Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
       { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
-          proof: Value[SByteArray]@unchecked)) =>
+      proof: Value[SByteArray]@unchecked)) =>
         mkIsMember(tree, key, proof)
       }
     )
@@ -200,7 +202,7 @@ object SigmaPredef {
     val TreeLookupFunc = PredefinedFunc("treeLookup",
       Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
       { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
-          proof: Value[SByteArray]@unchecked)) =>
+      proof: Value[SByteArray]@unchecked)) =>
         mkTreeLookup(tree, key, proof)
       }
     )
@@ -215,7 +217,7 @@ object SigmaPredef {
 
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      undefined
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",

@@ -50,6 +50,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     QuadrupleSerializer(TreeModificationsCode, mkTreeModifications),
     Relation2Serializer(BinOrCode, mkBinOr),
     Relation2Serializer(BinAndCode, mkBinAnd),
+    Relation2Serializer(BinXorCode, mkBinXor),
     QuadrupleSerializer[SBoolean.type, SLong.type, SLong.type, SLong.type](IfCode, mkIf),
     TwoArgumentsSerializer(XorCode, mkXor),
     TwoArgumentsSerializer(ExponentiateCode, mkExponentiate),
@@ -61,6 +62,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(PlusCode, mkPlus[SNumericType]),
     TwoArgumentsSerializer(MinCode, mkMin[SNumericType]),
     TwoArgumentsSerializer(MaxCode, mkMax[SNumericType]),
+    TwoArgumentsSerializer(BitOrCode, mkBitOr[SNumericType]),
+    TwoArgumentsSerializer(BitAndCode, mkBitAnd[SNumericType]),
+    TwoArgumentsSerializer(BitXorCode, mkBitXor[SNumericType]),
+    TwoArgumentsSerializer(BitShiftLeftCode, mkBitShiftLeft[SNumericType]),
+    TwoArgumentsSerializer(BitShiftRightCode, mkBitShiftRight[SNumericType]),
+    TwoArgumentsSerializer(BitShiftRightZeroedCode, mkBitShiftRightZeroed[SNumericType]),
     CaseObjectSerialization(TrueCode, TrueLeaf),
     CaseObjectSerialization(FalseCode, FalseLeaf),
     SigmaPropIsProvenSerializer,
@@ -76,6 +83,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ConcreteCollectionSerializer(mkConcreteCollection),
     LogicalTransformerSerializer(AndCode, mkAND),
     LogicalTransformerSerializer(OrCode, mkOR),
+    LogicalTransformerSerializer(XorOfCode, mkXorOf),
     TaggedVariableSerializer(mkTaggedVariable),
     GetVarSerializer(mkGetVar),
     MapCollectionSerializer(mkMapCollection),
@@ -90,6 +98,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SimpleTransformerSerializer[SBox.type, SByteArray](ExtractIdCode, mkExtractId),
     SimpleTransformerSerializer[SBox.type, STuple](ExtractCreationInfoCode, mkExtractCreationInfo),
     SimpleTransformerSerializer[SLong.type, SByteArray](LongToByteArrayCode, mkLongToByteArray),
+    SimpleTransformerSerializer[SByteArray, SLong.type](ByteArrayToLongCode, mkByteArrayToLong),
     SimpleTransformerSerializer[SByteArray, SBigInt.type](ByteArrayToBigIntCode, mkByteArrayToBigInt),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcBlake2b256Code, mkCalcBlake2b256),
     SimpleTransformerSerializer[SByteArray, SByteArray](CalcSha256Code, mkCalcSha256),
@@ -123,7 +132,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     ModQArithOpSerializer(MinusModQCode, mkMinusModQ),
     SubstConstantsSerializer,
     CreateProveDlogSerializer(mkCreateProveDlog),
-    CreateProveDHTupleSerializer(mkCreateProveDHTuple)
+    CreateProveDHTupleSerializer(mkCreateProveDHTuple),
+    LogicalNotSerializer(mkLogicalNot),
+    OneArgumentOperationSerializer(NegationCode, mkNegation[SNumericType]),
+    OneArgumentOperationSerializer(BitInversionCode, mkBitInversion[SNumericType]),
   ))
 
   private def serializable(v: Value[SType]): Value[SType] = v match {
