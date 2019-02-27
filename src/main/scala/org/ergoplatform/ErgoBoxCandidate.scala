@@ -13,7 +13,6 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import scorex.util.Extensions._
 
 import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime

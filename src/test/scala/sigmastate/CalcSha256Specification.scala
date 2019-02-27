@@ -1,8 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.ErgoLikeContext
-import org.scalatest.prop.{PropertyChecks, TableFor2, GeneratorDrivenPropertyChecks}
-import org.scalatest.Matchers
+import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}

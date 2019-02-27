@@ -5,7 +5,6 @@ import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 import special.sigma
 import special.sigma.AnyValue
 
@@ -26,7 +25,7 @@ object ContextExtension {
 
     override def serialize(obj: ContextExtension, w: SigmaByteWriter): Unit = {
       w.putUByte(obj.values.size)
-      obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
+      obj.values.foreach { case (id, v) => w.put(id).putValue(v) }
     }
 
     override def parse(r: SigmaByteReader): ContextExtension = {
@@ -37,16 +36,17 @@ object ContextExtension {
       ContextExtension(ext)
     }
   }
+
 }
 
 
-trait Context{
+trait Context {
   val extension: ContextExtension
 
   def withExtension(newExtension: ContextExtension): Context
 
   def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): Context = {
-    val ext = extension.add(bindings:_*)
+    val ext = extension.add(bindings: _*)
     withExtension(ext)
   }
 

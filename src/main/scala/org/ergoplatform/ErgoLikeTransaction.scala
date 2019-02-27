@@ -124,26 +124,30 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
   }
 
   override def parse(r: SigmaByteReader): ErgoLikeTransaction = {
+    // parse transaction inputs
     val inputsCount = r.getUShort()
     val inputsBuilder = mutable.ArrayBuilder.make[Input]()
     for (_ <- 0 until inputsCount) {
       inputsBuilder += Input.serializer.parse(r)
     }
+    // parse transaction data inputs
     val dataInputsCount = r.getUShort()
     val dataInputsBuilder = mutable.ArrayBuilder.make[DataInput]()
     for (_ <- 0 until dataInputsCount) {
       dataInputsBuilder += DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
-    val digestsCount = r.getUInt().toInt
-    val digestsBuilder = mutable.ArrayBuilder.make[Digest32]()
-    for (_ <- 0 until digestsCount) {
-      digestsBuilder += Digest32 @@ r.getBytes(TokenId.size)
+    // parse distinct ids of tokens in transaction outputs
+    val tokensCount = r.getUInt().toInt
+    val tokensBuilder = mutable.ArrayBuilder.make[Digest32]()
+    for (_ <- 0 until tokensCount) {
+      tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
     }
-    val digests = digestsBuilder.result()
+    // parse outputs
+    val tokens = tokensBuilder.result()
     val outsCount = r.getUShort()
     val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
     for (_ <- 0 until outsCount) {
-      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(digests), r)
+      outputCandidatesBuilder += ErgoBoxCandidate.serializer.parseBodyWithIndexedDigests(Some(tokens), r)
     }
     new ErgoLikeTransaction(inputsBuilder.result(), dataInputsBuilder.result(), outputCandidatesBuilder.result())
   }
