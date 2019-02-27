@@ -27,7 +27,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         val outputs = (0 until 10).map { i =>
           new ErgoBoxCandidate(out.value, out.ergoTree, i, out.additionalTokens, out.additionalRegisters)
         }
-        val tx = ErgoLikeTransaction(txIn.inputs, txIn.outputCandidates ++ outputs)
+        val tx = new ErgoLikeTransaction(txIn.inputs, txIn.dataInputs, txIn.outputCandidates ++ outputs)
         roundTripTestWithPos(tx)(ErgoLikeTransaction.serializer)
 
         // check that token id is written only once

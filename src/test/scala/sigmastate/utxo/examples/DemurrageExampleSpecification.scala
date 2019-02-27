@@ -174,8 +174,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(createBox(outValue + 1, prop, currentHeight2)))
+    val tx5 = createTransaction(createBox(outValue + 1, prop, currentHeight2))
 
     val ctx5 = ErgoLikeContext(
       currentHeight = currentHeight2,

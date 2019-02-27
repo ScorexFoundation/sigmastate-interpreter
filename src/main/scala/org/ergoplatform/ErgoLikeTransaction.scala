@@ -157,22 +157,23 @@ object ErgoLikeTransaction {
 
   /**
     * Bytes that should be signed by provers.
-    * Contains all the transaction bytes except of signatures itself
+    * Contains all the transaction bytes except of signatures
     */
   def bytesToSign[IT <: UnsignedInput](tx: ErgoLikeTransactionTemplate[IT]): Array[Byte] = {
     val emptyProofInputs = tx.inputs.map(_.inputToSign)
     val w = SigmaSerializer.startWriter()
-    val txWithoutProofs = ErgoLikeTransaction(emptyProofInputs, tx.dataInputs, tx.outputCandidates)
+    val txWithoutProofs = new ErgoLikeTransaction(emptyProofInputs, tx.dataInputs, tx.outputCandidates)
     ErgoLikeTransactionSerializer.serialize(txWithoutProofs, w)
     w.toBytes
   }
 
+  /**
+    * Creates ErgoLikeTransaction without data inputs
+    */
   def apply(inputs: IndexedSeq[Input], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
     new ErgoLikeTransaction(inputs, IndexedSeq(), outputCandidates)
 
-  def apply(inputs: IndexedSeq[Input], dataInputs: IndexedSeq[DataInput], outputCandidates: IndexedSeq[ErgoBoxCandidate]) =
-    new ErgoLikeTransaction(inputs, dataInputs, outputCandidates)
-
+  // TODO unify serialization approach in Ergo/sigma with BytesSerializable
   val serializer: SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] = ErgoLikeTransactionSerializer
 
 }
