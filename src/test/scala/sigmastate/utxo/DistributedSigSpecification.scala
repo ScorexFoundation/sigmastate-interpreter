@@ -28,6 +28,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
+
+
   }
 
   property("distributed THRESHOLD") {
