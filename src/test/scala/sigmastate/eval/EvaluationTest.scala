@@ -29,11 +29,11 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "one_gt_one", "1 > 1", ctx, false)
     reduce(emptyEnv, "or", "1 > 1 || 2 < 1", ctx, false)
     reduce(emptyEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", ctx, true)
-    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, true)
+    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size <= 1", ctx, true)
     reduce(emptyEnv, "and", "1 > 1 && 2 < 1", ctx, false)
     reduce(emptyEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, false)
     reduce(emptyEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, true)
-    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, false)
+    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size <= 1", ctx, false)
   }
 
   test("lazy logical ops") {
