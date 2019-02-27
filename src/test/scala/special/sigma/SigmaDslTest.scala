@@ -126,11 +126,11 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
   property("AvlTree.contains methods equivalence") {
-    val testContains = checkEq2(
-      func2[AvlTree, (Coll[Byte], Coll[Byte]), Boolean](
-      "{ (t: AvlTree, args: (Coll[Byte], Coll[Byte])) => t.contains(args._1, args._2) }")) {
-        (t, args) => t.contains(args._1, args._2)
-      }
+    val testContains = checkEq(
+      func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
+      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
+         { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }
+
 
     val key = bytesCollGen.sample.get
     val value = bytesCollGen.sample.get
@@ -139,6 +139,6 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
     val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    testContains(tree, (key, proof))
+    testContains((tree, (key, proof)))
   }
 }

@@ -239,6 +239,14 @@ trait SGenericType {
   def tparamSubst: Map[String, SType]
 }
 
+trait CosterFactory {
+  def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostRule
+}
+
+case class Coster(selector: RuntimeCosting => RuntimeCosting#CostRule) extends CosterFactory {
+   def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostRule = selector(IR).asInstanceOf[IR.CostRule]
+}
+
 /** Method info including name, arg type and result type.
   * When stype is SFunc, then tDom - arg type and tRange - result type. */
 case class SMethod(
@@ -247,12 +255,17 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]],
-    costRule: Option[PartialFunction[(RuntimeCosting, SMethod.RCosted[_], SMethod, Seq[SMethod.RCosted[_]]), RuntimeCosting#Rep[_]]] = None) {
+    costRule: Option[CosterFactory] = None) {
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
   def withConcreteTypes(subst: Map[STypeIdent, SType]): SMethod =
     withSType(stype.withSubstTypes(subst).asFunc)
+
+  def opId: OperationId = {
+    val opName = objType.getClass.getSimpleName + "." + name
+    OperationId(opName, stype)
+  }
 }
 
 object SMethod {
@@ -1070,7 +1083,9 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
     SFunc(IndexedSeq(SAvlTree, SByte), SAvlTreeOption),                        8, MethodCallIrBuilder)
     
   val containsMethod          = SMethod(this, "contains",
-    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SAvlTreeOption),       9, MethodCallIrBuilder)
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SAvlTreeOption),       9, MethodCallIrBuilder,
+    Some(Coster(_.AvlTreeCoster))
+    )
 
   val getMethod               = SMethod(this, "get",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10, MethodCallIrBuilder)

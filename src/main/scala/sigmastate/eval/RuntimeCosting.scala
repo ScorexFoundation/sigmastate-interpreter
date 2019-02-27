@@ -144,12 +144,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def costOf(method: SMethod): Rep[Int] = {
-    val opName = method.objType.getClass.getSimpleName + "." + method.name
-    val opType = method.stype match {
-      case f: SFunc => f
-      case resTpe => sys.error(s"Cannot compute costOf($method)")
-    }
-    costOf(opName, opType, substFromCostTable)
+    val opId = method.opId
+    costOf(opId.name, opId.opType, substFromCostTable)
+  }
+
+  def perKbCostOf(method: SMethod, dataSize: Rep[Long]): Rep[Int] = {
+    val opId = method.opId
+    perKbCostOf(opId.name, opId.opType, dataSize)
   }
 
   def costOfProveDlog: Rep[Int] = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
@@ -170,9 +171,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   def constantPlaceholder[T](index: Int)(implicit eT: LElem[T]): Rep[T] = ConstantPlaceholder[T](index)
 
-  def perKbCostOf(node: SValue, dataSize: Rep[Long]) = {
-    val opName = s"${node.getClass.getSimpleName}_per_kb"
-    (dataSize.div(1024L).toInt + 1) * costOf(opName, node.opType)
+  def perKbCostOf(opName: String, opType: SFunc, dataSize: Rep[Long]): Rep[Int] = {
+    val opNamePerKb = s"${opName}_per_kb"
+    (dataSize.div(1024L).toInt + 1) * costOf(opNamePerKb, opType)
+  }
+  
+  def perKbCostOf(node: SValue, dataSize: Rep[Long]): Rep[Int] = {
+    perKbCostOf(node.getClass.getSimpleName, node.opType, dataSize)
   }
 
   def perItemCostOf(node: SValue, arrLength: Rep[Int]) = {
@@ -424,6 +429,19 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
+  object IsCostedPair {
+    def unapply(d: Def[_]): Nullable[Rep[Costed[(A, B)]] forSome {type A; type B}] = d.selfType match {
+      case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedPairElem[_, _, _]] =>
+        ce.eVal match {
+          case pE: PairElem[a,b]  =>
+            val res = d.self.asInstanceOf[Rep[Costed[(A, B)]] forSome {type A; type B}]
+            Nullable(res)
+          case _ => Nullable.None
+        }
+      case _ => Nullable.None
+    }
+  }
+
   implicit class ElemOpsForCosting(e: Elem[_]) {
     def isConstantSize: Boolean = elemToSType(e).isConstantSize
   }
@@ -618,6 +636,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   override def rewriteNonInvokableMethodCall(mc: MethodCall): Rep[_] = mc match {
     case IsConstSizeCostedColl(col) =>
       mkCostedColl(col.value, col.value.length, col.cost)
+    case IsCostedPair(p) =>
+      val v = p.value
+      val c = p.cost
+      val s = p.dataSize
+      // TODO costing: this is approximation (we essentially double the cost and size)
+      RCCostedPair(RCCostedPrim(v._1, c, s), RCCostedPrim(v._2, c, s))
     case _ =>
       super.rewriteNonInvokableMethodCall(mc)
   }
@@ -1600,6 +1624,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         withDefaultSize(res, costOf(node))
 
       case Terms.MethodCall(obj, method, args) if method.costRule.isDefined =>
+        val objC = eval(obj)
+        val argsC = args.map(eval)
+        val accumulatedCost = argsC.foldLeft(objC.cost)({ case (s, e) => s + e.cost })
+        method.costRule.get(IR)(objC, method, argsC, accumulatedCost)
 
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))

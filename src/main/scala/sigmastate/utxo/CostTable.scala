@@ -208,6 +208,7 @@ object CostTable {
     ("TreeRemovals_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
     ("TreeInserts_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
     ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
+    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
 
