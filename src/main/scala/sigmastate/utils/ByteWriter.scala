@@ -2,7 +2,7 @@ package sigmastate.utils
 
 import java.util._
 
-import sigmastate.utils.ByteArrayWriter.{encodeZigZagLong, encodeZigZagInt}
+import sigmastate.utils.ByteArrayWriter.{encodeZigZagInt, encodeZigZagLong, encodeVLQLong}
 import sigma.util.Extensions._
 import sigma.util.ByteArrayBuilder
 
@@ -77,7 +77,7 @@ trait ByteWriter {
   * Not thread safe
   */
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
-  @inline override def put(x: Byte): this.type = { b.append(x); this }
+  @inline override def put(x: Byte): this.type = {b.append(x); this }
   @inline override def putBoolean(x: Boolean): this.type = { b.append(x); this }
   @inline override def putShort(x: Short): this.type = { b.append(x); this }
 
@@ -153,23 +153,8 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
     *          see note above)
     */
   @inline override def putULong(x: Long): this.type = {
-    val buffer = new Array[Byte](10)  // TODO optimize allocation by removing this buffer, it seems to not necessary
-    var position = 0
-    var value = x
-    // should be fast if java -> scala conversion did not botched it
-    // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387
-    while (true) {
-      if ((value & ~0x7FL) == 0) {
-        buffer(position) = value.asInstanceOf[Byte]
-        position += 1
-        b.append(Arrays.copyOf(buffer, position))
-        return this
-      } else {
-        buffer(position) = ((value.asInstanceOf[Int] & 0x7F) | 0x80).toByte
-        position += 1
-        value >>>= 7
-      }
-    }
+    val buffer = encodeVLQLong (x)
+    b.append(buffer)
     this
     // see https://rosettacode.org/wiki/Variable-length_quantity for implementations in other languages
   }
@@ -192,6 +177,122 @@ class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def toBytes: Array[Byte] = b.toBytes
 }
 
+class ByteArrayWriterWithLog (b: ByteArrayBuilder) extends ByteArrayWriter(b) {
+  override def put(x: Byte): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Byte")
+
+    super.put(x);
+
+    SerializeLog.logPrintf(false, true, "Put Byte")
+
+    this
+  }
+
+  override def putBoolean(x: Boolean): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Boolean")
+
+    super.putBoolean(x);
+
+    SerializeLog.logPrintf(false, true, "Put Boolean")
+
+    this
+  }
+
+  override def putShort(x: Short): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Short")
+
+    super.putShort(x);
+
+    SerializeLog.logPrintf(false, true, "Put Short")
+
+    this
+  }
+
+  override def putUShort(x: Int): this.type = {
+    SerializeLog.logPrintf(true, true, "Put UShort")
+
+    super.putUShort(x)
+
+    SerializeLog.logPrintf(false, true, "Put UShort")
+
+    this
+  }
+
+  override def putInt(x: Int): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Int")
+
+    super.putInt(x);
+
+    SerializeLog.logPrintf(false, true, "Put Int")
+
+    this
+  }
+
+  override def putUInt(x: Long): this.type = {
+    SerializeLog.logPrintf(true, true, "Put UInt")
+
+    super.putUInt(x);
+
+    SerializeLog.logPrintf(false, true, "Put UInt")
+
+    this
+  }
+
+  override def putLong(x: Long): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Long")
+
+    super.putLong(x);
+
+    SerializeLog.logPrintf(false, true, "Put Long")
+
+    this
+  }
+
+
+  override def putULong(x: Long): this.type = {
+    SerializeLog.logPrintf(true, true, "Put ULong")
+
+    super.putULong(x);
+
+    SerializeLog.logPrintf(false, true, "Put ULong")
+
+    this
+
+  }
+
+  override def putBytes(xs: Array[Byte]): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Bytes")
+
+    super.putBytes(xs);
+
+    SerializeLog.logPrintf(false, true, "Put Bytes")
+
+    this
+  }
+
+  override def putBits(xs: Array[Boolean]): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Bits")
+
+    super.putBits(xs);
+
+    SerializeLog.logPrintf(false, true, "Put Bits")
+
+    this
+
+  }
+
+  @inline override def putOption[T](x: Option[T])(putValue: (this.type, T) => Unit): this.type = {
+    SerializeLog.logPrintf(true, true, "Put Option")
+
+    super.putOption(x) (putValue);
+
+    SerializeLog.logPrintf(false, true, "Put Option")
+
+    this
+  }
+
+}
+
 object ByteArrayWriter {
 
   /**
@@ -205,10 +306,17 @@ object ByteArrayWriter {
     * @param n signed Int
     * @return unsigned Int stored in a signed Int
     */
-  def encodeZigZagInt(n: Int): Int =
-  // Note:  the right-shift must be arithmetic
-  // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L934
-    (n << 1) ^ (n >> 31)
+  def encodeZigZagInt(n: Int): Int = {
+    SerializeLog.logPrintf(true, true, "ZigZagInt")
+
+    // Note:  the right-shift must be arithmetic
+    // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L934
+    val x: Int = (n << 1) ^ (n >> 31)
+
+    SerializeLog.logPrintf(false, true, "ZigZagInt")
+
+    x
+  }
 
   /**
     * Encode a ZigZag-encoded 64-bit value.  ZigZag encodes signed integers
@@ -220,9 +328,48 @@ object ByteArrayWriter {
     * @param n signed Long
     * @return unsigned Long stored in a signed Long
     */
-  def encodeZigZagLong(n: Long): Long =
-  // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L949
-  // Note:  the right-shift must be arithmetic
-    (n << 1) ^ (n >> 63)
+  def encodeZigZagLong(n: Long): Long = {
+    SerializeLog.logPrintf(true, true, "ZigZagLong")
+
+    // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L949
+    // Note:  the right-shift must be arithmetic
+    val x = (n << 1) ^ (n >> 63)
+
+    SerializeLog.logPrintf(false, true, "ZigZagLong")
+
+    x
+  }
+
+  def encodeVLQLong (x: Long): Array[Byte] = {
+
+    SerializeLog.logPrintf(true, true, "VLQLong")
+
+    val buffer = new Array[Byte](10) // TODO optimize allocation by removing this buffer, it seems to not necessary
+    var position = 0
+    var value = x
+    // should be fast if java -> scala conversion did not botched it
+    // source: http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387
+    var bDone: Boolean = false
+
+    while (!bDone) {
+      if ((value & ~0x7FL) == 0) {
+        buffer(position) = value.asInstanceOf[Byte]
+        position += 1
+        bDone = true
+        //b.append(Arrays.copyOf(buffer, position))
+        //return
+      } else {
+        buffer(position) = ((value.asInstanceOf[Int] & 0x7F) | 0x80).toByte
+        position += 1
+        value >>>= 7
+      }
+    }
+
+    val bf = Arrays.copyOf(buffer, position)
+
+    SerializeLog.logPrintf(false, true, "VLQLong")
+
+    bf
+  }
 
 }

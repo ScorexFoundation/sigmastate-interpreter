@@ -1,11 +1,12 @@
 package sigmastate.serialization
 
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, Value, ErgoTree, ConcreteCollection}
+import sigmastate.Values.{ConcreteCollection, Constant, ErgoTree, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Append
 import sigmastate.{SGroupElement, SType}
+import sigmastate.utils.SerializeLog
 
 import scala.collection.mutable
 
@@ -14,9 +15,21 @@ class ErgoTreeSerializer {
   /** Default serialization of ErgoTree. Doesn't apply any transformations and guarantee to preserve original
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
-    val w = Serializer.startWriter()
+
+    SerializeLog.logPrintf(true, true, "ErgoTree")
+
+    val w = Serializer.startWriter(bWithLog = true)
+
     serializeHeader(ergoTree, w)
+
+    SerializeLog.logPrintf(true, true, "Root")
+
     ValueSerializer.serialize(ergoTree.root, w)
+
+    SerializeLog.logPrintf(false, true, "Root")
+
+    SerializeLog.logPrintf(false, true, "ErgoTree")
+
     w.toBytes
   }
 
@@ -39,12 +52,28 @@ class ErgoTreeSerializer {
 
   /** Serialize header and constants section only.*/
   private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter): Unit = {
+
+    SerializeLog.logPrintf(true, true, "Header")
+
     w.put(ergoTree.header)
+
     if (ergoTree.isConstantSegregation) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+
+      SerializeLog.logPrintf(true, true, "Constants length")
+
       w.putUInt(ergoTree.constants.length)
+
+      SerializeLog.logPrintf(false, true, "Constants length")
+
+      SerializeLog.logPrintf(true, true, "Constants")
+
       ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
+
+      SerializeLog.logPrintf(false, true, "Constants")
     }
+
+    SerializeLog.logPrintf(false, true, "Header")
   }
 
   /** Deserialize header and constants section only. */
@@ -75,18 +104,26 @@ class ErgoTreeSerializer {
     * After the constants are collected the final byte array is composed by serializing constants and
     * then appending `treeBytes` */
   def serializeWithSegregation(tree: Value[SType]): Array[Byte] = {
+
+    SerializeLog.logPrintf(true, true, "ErgoTree with segregation")
+
     val constantStore = new ConstantStore()
-    val treeWriter = Serializer.startWriter(constantStore)
+    val treeWriter = Serializer.startWriter(Some (constantStore), bWithLog = true)
 
     // serialize tree and segregate constants into constantStore
     ValueSerializer.serialize(tree, treeWriter)
+
     val extractedConstants = constantStore.getAll
 
-    val w = Serializer.startWriter()
+    val w = Serializer.startWriter(bWithLog = true)
+
     serializeHeader(ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, null), w)
 
     // write tree bytes with ConstantsPlaceholders (which were injected during serialization)
     w.putBytes(treeWriter.toBytes)
+
+    SerializeLog.logPrintf(false, true, "ErgoTree with segregation")
+
     w.toBytes
   }
 
@@ -157,7 +194,7 @@ class ErgoTreeSerializer {
         val newVal = newVals(positions.indexOf(i))
         // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
         val constantStore = new ConstantStore()
-        val valW = Serializer.startWriter(constantStore)
+        val valW = Serializer.startWriter(Some (constantStore))
         ValueSerializer.serialize(newVal, valW)
         val newConsts = constantStore.getAll
         assert(newConsts.length == 1)

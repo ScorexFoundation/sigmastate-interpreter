@@ -4,7 +4,7 @@ import java.nio.ByteBuffer
 
 import sigma.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.utils._
+import sigmastate.utils.{SigmaByteWriterWithLog, _}
 
 trait Serializer[TFamily, T <: TFamily] {
 
@@ -53,15 +53,18 @@ object Serializer {
     * w.putLong(l)
     * val res = w.toBytes
     * res */
-  def startWriter(): SigmaByteWriter = {
+  /*def startWriter(bWithLog: Boolean = false): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = None)
+    val w : SigmaByteWriter =
+      if (bWithLog) new SigmaByteWriterWithLog(b, None)
+               else new SigmaByteWriterC(b, constantExtractionStore = None)
     w
-  }
+  }*/
 
-  def startWriter(constantExtractionStore: ConstantStore): SigmaByteWriter = {
+  def startWriter(constantExtractionStore: Option [ConstantStore] = None, bWithLog: Boolean = false): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
-    val w = new SigmaByteWriter(b, constantExtractionStore = Some(constantExtractionStore))
+    val w = if (bWithLog) new SigmaByteWriterWithLog(b, constantExtractionStore)
+                     else new SigmaByteWriterC(b, constantExtractionStore)
     w
   }
 }
