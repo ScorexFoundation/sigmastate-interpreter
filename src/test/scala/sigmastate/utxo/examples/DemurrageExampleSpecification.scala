@@ -106,7 +106,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //case 1: demurrage time hasn't come yet
     val currentHeight1 = inHeight + demurragePeriod - 1
 
-    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight1)))
+    val tx1 = createTransaction(createBox(outValue, prop, currentHeight1))
     val selfBox = createBox(inValue, prop, inHeight)
     val ctx1 = ErgoLikeContext(
       currentHeight1,
@@ -127,7 +127,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //case 2: demurrage time has come
     val currentHeight2 = inHeight + demurragePeriod
-    val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight2)))
+    val tx2 = createTransaction(createBox(outValue, prop, currentHeight2))
     val ctx2 = ErgoLikeContext(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -143,7 +143,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //miner can spend "demurrageCoeff * demurragePeriod" tokens
     val b = createBox(outValue, prop, currentHeight2)
-    val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b))
+    val tx3 = createTransaction(b)
     val ctx3 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -160,7 +160,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //miner can't spend more
     val b2 = createBox(outValue - 1, prop, currentHeight2)
-    val tx4 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b2))
+    val tx4 = createTransaction(b2)
     val ctx4 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -174,8 +174,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(createBox(outValue + 1, prop, currentHeight2)))
+    val tx5 = createTransaction(createBox(outValue + 1, prop, currentHeight2))
 
     val ctx5 = ErgoLikeContext(
       currentHeight = currentHeight2,
@@ -192,7 +191,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can destroy a box if it contains less than the storage fee
     val iv = inValue - outValue
     val b3 = createBox(iv, ErgoScriptPredef.FalseProp, currentHeight2)
-    val tx6 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b3))
+    val tx6 = createTransaction(b3)
     val selfBox6 = createBox(iv, prop, inHeight)
     val ctx6 = ErgoLikeContext(
       currentHeight = currentHeight2,

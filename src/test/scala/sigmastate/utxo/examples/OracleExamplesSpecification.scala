@@ -155,7 +155,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val sinceHeight = 40
     val timeout = 60
@@ -246,7 +246,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

@@ -27,7 +27,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         val outputs = (0 until 10).map { i =>
           new ErgoBoxCandidate(out.value, out.ergoTree, i, out.additionalTokens, out.additionalRegisters)
         }
-        val tx = ErgoLikeTransaction(txIn.inputs, txIn.outputCandidates ++ outputs)
+        val tx = new ErgoLikeTransaction(txIn.inputs, txIn.dataInputs, txIn.outputCandidates ++ outputs)
         roundTripTestWithPos(tx)(ErgoLikeTransaction.serializer)
 
         // check that token id is written only once
@@ -52,75 +52,103 @@ class ErgoLikeTransactionSpec extends PropSpec
         val outputs = (0 until 10).map { i =>
           new ErgoBoxCandidate(headOut.value, headOut.ergoTree, i, headOut.additionalTokens, headOut.additionalRegisters)
         }
-        val txIn = ErgoLikeTransaction(tx0.inputs, tx0.outputCandidates ++ outputs)
+        val di = tx0.dataInputs
+        val txIn = new ErgoLikeTransaction(tx0.inputs, di, tx0.outputCandidates ++ outputs)
         val tailOuts = txIn.outputCandidates.tail
         val headInput = txIn.inputs.head
         val tailInputs = txIn.inputs.tail
         val initialMessage = txIn.messageToSign
 
         // transaction with the same fields should have the same message to sign
-        val otx2 = ErgoLikeTransaction(headInput +: tailInputs, headOut +: tailOuts)
+        val otx2 = new ErgoLikeTransaction(headInput +: tailInputs, di, headOut +: tailOuts)
         (otx2.messageToSign sameElements initialMessage) shouldBe true
 
         /**
           * Check inputs modifications
           */
         // transaction with decreased number of inputs
-        val itx3 = ErgoLikeTransaction(tailInputs, txIn.outputCandidates)
+        val itx3 = new ErgoLikeTransaction(tailInputs, di, txIn.outputCandidates)
         (itx3.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with increased number of inputs
-        val itx4 = ErgoLikeTransaction(headInput +: txIn.inputs, txIn.outputCandidates)
+        val itx4 = new ErgoLikeTransaction(headInput +: txIn.inputs, di, txIn.outputCandidates)
         (itx4.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with shuffled inputs
         if (tailInputs.nonEmpty) {
-          val itx5 = ErgoLikeTransaction(tailInputs ++ Seq(headInput), txIn.outputCandidates)
+          val itx5 = new ErgoLikeTransaction(tailInputs ++ Seq(headInput), di, txIn.outputCandidates)
           (itx5.messageToSign sameElements initialMessage) shouldBe false
         }
 
         // transaction with modified input boxId
         val headInput6 = headInput.copy(boxId = txIn.outputs.head.id)
-        val itx6 = ErgoLikeTransaction(headInput6 +: tailInputs, txIn.outputCandidates)
+        val itx6 = new ErgoLikeTransaction(headInput6 +: tailInputs, di, txIn.outputCandidates)
         (itx6.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified input extension
         val newExtension7 = ContextExtension(headInput.spendingProof.extension.values ++ Map(Byte.MinValue -> ByteArrayConstant(Random.randomBytes(32))))
         val newProof7 = new ProverResult(headInput.spendingProof.proof, newExtension7)
         val headInput7 = headInput.copy(spendingProof = newProof7)
-        val itx7 = ErgoLikeTransaction(headInput7 +: tailInputs, txIn.outputCandidates)
+        val itx7 = new ErgoLikeTransaction(headInput7 +: tailInputs, di, txIn.outputCandidates)
         (itx7.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified input proof should not affect messageToSign
         val newProof8 = new ProverResult(headInput.spendingProof.proof, headInput.spendingProof.extension)
         val headInput8 = headInput.copy(spendingProof = newProof8)
-        val itx8 = ErgoLikeTransaction(headInput8 +: tailInputs, txIn.outputCandidates)
+        val itx8 = new ErgoLikeTransaction(headInput8 +: tailInputs, di, txIn.outputCandidates)
         (itx8.messageToSign sameElements initialMessage) shouldBe true
+
+        /**
+          * Check data inputs modifications
+          */
+        // transaction with decreased number of data inputs
+        if (di.nonEmpty) {
+          val dtx3 = new ErgoLikeTransaction(txIn.inputs, di.tail, txIn.outputCandidates)
+          (dtx3.messageToSign sameElements initialMessage) shouldBe false
+        }
+
+        // transaction with increased number of data inputs
+        val di4 = DataInput(txIn.outputs.head.id)
+        val dtx4 = new ErgoLikeTransaction(txIn.inputs, di4 +: di, txIn.outputCandidates)
+        (dtx4.messageToSign sameElements initialMessage) shouldBe false
+
+        // transaction with shuffled data inputs
+        if (di.size > 1) {
+          val dtx5 = new ErgoLikeTransaction(txIn.inputs, di.tail ++ Seq(di.head), txIn.outputCandidates)
+          (dtx5.messageToSign sameElements initialMessage) shouldBe false
+        }
+
+        // transaction with modified data input boxId
+        if (di.nonEmpty) {
+          val di6 = DataInput(txIn.outputs.head.id)
+          val dtx6 = new ErgoLikeTransaction(txIn.inputs, di6 +: di.tail, txIn.outputCandidates)
+          (dtx6.messageToSign sameElements initialMessage) shouldBe false
+        }
 
         /**
           * Check outputs modifications
           */
         // transaction with decreased number of outputs
-        val otx3 = ErgoLikeTransaction(txIn.inputs, tailOuts)
+        val otx3 = new ErgoLikeTransaction(txIn.inputs, di, tailOuts)
         (otx3.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with increased number of outputs
-        val otx4 = ErgoLikeTransaction(txIn.inputs, headOut +: txIn.outputCandidates)
+        val otx4 = new ErgoLikeTransaction(txIn.inputs, di, headOut +: txIn.outputCandidates)
         (otx4.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with shuffled outputs
-        val otx5 = ErgoLikeTransaction(txIn.inputs, tailOuts ++ Seq(txIn.outputCandidates.head))
+        val otx5 = new ErgoLikeTransaction(txIn.inputs, di, tailOuts ++ Seq(txIn.outputCandidates.head))
         (otx5.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified output value
         val headOut6 = new ErgoBoxCandidate(headOut.value - 1, headOut.ergoTree, headOut.creationHeight, headOut.additionalTokens, headOut.additionalRegisters)
-        val otx6 = ErgoLikeTransaction(txIn.inputs, headOut6 +: tailOuts)
+        val otx6 = new ErgoLikeTransaction(txIn.inputs, di, headOut6 +: tailOuts)
         (otx6.messageToSign sameElements initialMessage) shouldBe false
 
         // transaction with modified output tokens
         val newTokens = headOut.additionalTokens.map(t => t._1 -> (t._2 - 1))
         val headOut7 = new ErgoBoxCandidate(headOut.value, headOut.ergoTree, headOut.creationHeight, newTokens, headOut.additionalRegisters)
-        val otx7 = ErgoLikeTransaction(txIn.inputs, headOut7 +: tailOuts)
+        val otx7 = new ErgoLikeTransaction(txIn.inputs, di, headOut7 +: tailOuts)
         (otx7.messageToSign sameElements initialMessage) shouldBe false
 
       }

@@ -53,7 +53,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
@@ -102,7 +102,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
@@ -148,7 +148,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
 
@@ -199,7 +199,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(ErgoBox(1, recipientProposition, 0)),
       self = selfBox)
 
     avlProver.performOneOperation(Lookup(treeElements.head._1))
@@ -259,7 +259,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData), reg2 -> ByteArrayConstant(key)))
 

@@ -22,7 +22,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = boxesToSpend,
-      spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
+      spendingTransaction = createTransaction(outputs),
       self = null)
 
   private def assertProof(code: String,
@@ -76,7 +76,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(15, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -107,7 +107,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -138,7 +138,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(11, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -176,7 +176,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
@@ -219,7 +219,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
@@ -250,7 +250,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(21, pubkey, 0)
 

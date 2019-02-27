@@ -27,11 +27,11 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "one_gt_one", "1 > 1", ctx, false)
     reduce(emptyEnv, "or", "1 > 1 || 2 < 1", ctx, false)
     reduce(emptyEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", ctx, true)
-    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, true)
+    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size <= 1", ctx, true)
     reduce(emptyEnv, "and", "1 > 1 && 2 < 1", ctx, false)
     reduce(emptyEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, false)
     reduce(emptyEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, true)
-    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, false)
+    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size <= 1", ctx, false)
   }
 
   test("lazy logical ops") {
@@ -110,7 +110,7 @@ class EvaluationTest extends BaseCtxTests
 //    val boxToSpend = ErgoBox(10, TrueLeaf)
 //    val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
 //    val tx1Output2 = ErgoBox(1, projectPubKey)
-//    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+//    val tx1 = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
 //    val ergoCtx = ErgoLikeContext(
 //      currentHeight = timeout - 1,
 //      lastBlockUtxoRoot = AvlTreeData.dummy,

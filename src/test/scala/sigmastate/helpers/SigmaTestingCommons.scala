@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -75,6 +75,18 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: ErgoTree,
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
+
+  /**
+    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
+    * Normally, this transaction will be invalid as far as it will break rule that sum of
+    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
+    * in our test cases
+    */
+  def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
+    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
+  }
+
+  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {

@@ -153,7 +153,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val fullGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullGameOutput0, fullGameOutput1))
+    val fullGameTx = createTransaction(IndexedSeq(fullGameOutput0, fullGameOutput1))
 
     val fullGameContext = ErgoLikeContext(
       currentHeight = fullGameCreationHeight,
@@ -186,7 +186,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val gameOverOutput = ErgoBox(playAmount, carolPubKey, gameOverHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
+    val gameOverTx = createTransaction(gameOverOutput)
 
     val aliceProver = alice.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
     val bobProver = bob.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
@@ -275,7 +275,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val defaultWinTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(defaultWinOutput))
+    val defaultWinTx = createTransaction(defaultWinOutput)
 
     val defaultWinContext0 = ErgoLikeContext(
       currentHeight = defaultWinHeight,

@@ -83,7 +83,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
-        spendingTransaction = ErgoLikeTransaction(IndexedSeq(), tx.outputs.map(_.ergoBox).toIndexedSeq),
+        spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
       ctx
     }
