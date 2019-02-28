@@ -199,6 +199,8 @@ trait STypeCompanion {
   }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
+
+  def coster: Option[CosterFactory] = None
 }
 
 trait MethodByNameUnapply extends STypeCompanion {
@@ -254,8 +256,7 @@ case class SMethod(
     name: String,
     stype: SFunc,
     methodId: Byte,
-    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]],
-    costRule: Option[CosterFactory] = None) {
+    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue]), SValue]]) {
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
@@ -275,7 +276,7 @@ object SMethod {
   }
 
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod =
-    SMethod(objType, name, stype, methodId, None, None)
+    SMethod(objType, name, stype, methodId, None)
 }
 
 /** Special type to represent untyped values.
@@ -1083,9 +1084,7 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
     SFunc(IndexedSeq(SAvlTree, SByte), SAvlTreeOption),                        8, MethodCallIrBuilder)
     
   val containsMethod          = SMethod(this, "contains",
-    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SAvlTreeOption),       9, MethodCallIrBuilder,
-    Some(Coster(_.AvlTreeCoster))
-    )
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SAvlTreeOption),       9, MethodCallIrBuilder)
 
   val getMethod               = SMethod(this, "get",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10, MethodCallIrBuilder)
@@ -1118,6 +1117,7 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
     updateMethod,
     removeMethod
   )
+  override val coster = Some(Coster(_.AvlTreeCoster))
 }
 
 case object SContext extends SProduct with SPredefType with STypeCompanion {

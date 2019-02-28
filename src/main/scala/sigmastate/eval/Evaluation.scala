@@ -434,6 +434,7 @@ object Evaluation {
       val types = items.toArray
       tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
+    case o: SOption[a] => optionRType(stypeToRType(o.elemType))
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 

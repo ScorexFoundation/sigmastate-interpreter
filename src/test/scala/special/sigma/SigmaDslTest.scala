@@ -135,18 +135,29 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     (key, value, avlProver)
   }
 
-  property("AvlTree.digest methods equivalence") {
-    val doCheck = checkEq(
-      func[AvlTree, Coll[Byte]](
-      "{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
+  property("AvlTree properties equivalence") {
+    val doDigest = checkEq(func[AvlTree, Coll[Byte]]("{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
+    val doEnabledOps = checkEq(func[AvlTree, Byte](
+      "{ (t: AvlTree) => t.enabledOperations }")) { (t: AvlTree) => t.enabledOperations }
+    val doKeyLength = checkEq(func[AvlTree, Int]("{ (t: AvlTree) => t.keyLength }")) { (t: AvlTree) => t.keyLength }
+    val doValueLength = checkEq(func[AvlTree, Option[Int]]("{ (t: AvlTree) => t.valueLengthOpt }")) { (t: AvlTree) => t.valueLengthOpt }
+    val okInsert = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isInsertAllowed }")) { (t: AvlTree) => t.isInsertAllowed }
+    val okUpdate = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
+    val okRemove = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
 
     val (key, _, avlProver) = sampleAvlTree
     val digest = avlProver.digest.toColl
     val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    doCheck(tree)
+    doDigest(tree)
+    doEnabledOps(tree)
+    doKeyLength(tree)
+    doValueLength(tree)
+    okInsert(tree)
+    okUpdate(tree)
+    okRemove(tree)
   }
 
-  property("AvlTree.contains methods equivalence") {
+  property("AvlTree.contains equivalence") {
     val doCheck = checkEq(
       func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
       "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))

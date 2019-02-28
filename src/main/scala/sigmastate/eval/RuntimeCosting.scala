@@ -928,13 +928,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     mkCostedColl(col, col.length, cost)
   }
 
-  def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
-
-  def methodCallCost(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]) = {
-     selectFieldCost
-  }
-
-
   def mkCosted[T](v: Rep[T], cost: Rep[Int], size: Rep[Long]): Rep[Costed[T]] = {
     val res = v.elem match {
       case colE: CollElem[a,_] =>
@@ -1623,11 +1616,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
-      case Terms.MethodCall(obj, method, args) if method.costRule.isDefined =>
+      case Terms.MethodCall(obj, method, args) if method.objType.coster.isDefined =>
         val objC = eval(obj)
         val argsC = args.map(eval)
         val accumulatedCost = argsC.foldLeft(objC.cost)({ case (s, e) => s + e.cost })
-        method.costRule.get(IR)(objC, method, argsC, accumulatedCost)
+        method.objType.coster.get(IR)(objC, method, argsC, accumulatedCost)
 
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
@@ -1673,32 +1666,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
           case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
           case _ => error(s"method $method is not supported")
-        }
-
-      case Terms.MethodCall(obj, m, args) if obj.tpe.isAvlTree =>
-        import SAvlTree._
-        val treeC = asRep[Costed[AvlTree]](eval(obj))
-        val argsC = args.map(eval)
-        val argsCost = argsC.foldLeft(treeC.cost)({ case (s, e) => s + e.cost })
-        val opCost = methodCallCost(treeC, m, argsC)
-        val cost = argsCost + opCost
-        (m, argsC) match {
-          case (`digestMethod`, _) =>
-            mkCostedColl(treeC.value.digest, cost)
-          case (`enabledOperationsMethod`, _) =>
-            withDefaultSize(treeC.value.enabledOperations, cost + selectFieldCost)
-          case (`keyLengthMethod`, _) =>
-            withDefaultSize(treeC.value.keyLength, cost + selectFieldCost)
-          case (`valueLengthOptMethod`, _) =>
-            withDefaultSize(treeC.value.valueLengthOpt, cost + selectFieldCost)
-          case (`isInsertAllowedMethod`, _) =>
-            withDefaultSize(treeC.value.isInsertAllowed, cost + selectFieldCost)
-          case (`isUpdateAllowedMethod`, _) =>
-            withDefaultSize(treeC.value.isUpdateAllowed, cost + selectFieldCost)
-          case (`isRemoveAllowedMethod`, _) =>
-            withDefaultSize(treeC.value.isRemoveAllowed, cost + selectFieldCost)
-
-          case _ => error(s"method $m is not supported on $obj")
         }
 
       case _ =>
