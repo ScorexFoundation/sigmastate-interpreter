@@ -4,7 +4,7 @@ import java.security.SecureRandom
 
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.{SigmaProofOfKnowledgeTree, UncheckedTree}
+import sigmastate.{SigmaProofOfKnowledgeLeaf, UncheckedTree}
 import supertagged.TaggedType
 
 import scala.concurrent.Future
@@ -96,7 +96,7 @@ trait ZeroKnowledgeProofOfKnowledge[SP <: SigmaProtocol[SP]]
 
 trait NonInteractiveProver[SP <: SigmaProtocol[SP],
   PI <: SigmaProtocolPrivateInput[SP, CI],
-  CI <: SigmaProofOfKnowledgeTree[SP, PI],
+  CI <: SigmaProofOfKnowledgeLeaf[SP, PI],
   P <: UncheckedTree]
   extends Prover[SP, CI, PI] {
 

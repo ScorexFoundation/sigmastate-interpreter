@@ -137,7 +137,6 @@ trait Interpreter extends ScorexLogging {
                 util.Arrays.equals(newRoot.challenge, expectedChallenge)
             }
         }
-//      case _: Value[_] => false
     }
     checkingResult -> cost
   }

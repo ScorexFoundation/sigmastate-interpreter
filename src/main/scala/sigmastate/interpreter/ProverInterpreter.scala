@@ -16,9 +16,19 @@ import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupl
 
 trait Hint
 
-class OtherSecret(image: SigmaProofOfKnowledgeTree[_, _]) extends Hint
+trait OtherSecret {
+  val image: SigmaBoolean
+}
 
-case class HintsBag(hints: Seq[Hint])
+case class OtherSecretKnown(override val image: SigmaBoolean) extends OtherSecret
+
+case class OtherSecretProven(override val image: SigmaBoolean, proofTree: ProofTree) extends OtherSecret
+
+case class HintsBag(hints: Seq[Hint]) {
+  lazy val otherSecrets: Seq[OtherSecretKnown] = hints.filter(_.isInstanceOf[OtherSecretKnown]).map(_.asInstanceOf[OtherSecretKnown])
+
+  lazy val otherImages = otherSecrets.map(_.image)
+}
 
 object HintsBag {
   val empty = HintsBag(Seq())
@@ -54,7 +64,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   protected def prove(unprovenTree: UnprovenTree, message: Array[Byte], hintsBag: HintsBag): ProofT = {
 
     // Prover Step 1: Mark as real everything the prover can prove
-    val step1 = markReal(unprovenTree).get.asInstanceOf[UnprovenTree]
+    val step1 = markReal(hintsBag)(unprovenTree).get.asInstanceOf[UnprovenTree]
 
     // Prover Step 2: If the root of the tree is marked "simulated" then the prover does not have enough witnesses
     // to perform the proof. Abort.
@@ -143,7 +153,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * This will be corrected in the next step.
     * In a bottom-up traversal of the tree, do the following for each node:
     */
-  val markReal: Strategy = everywherebu(rule[UnprovenTree] {
+  def markReal(hints: HintsBag): Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
       // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)

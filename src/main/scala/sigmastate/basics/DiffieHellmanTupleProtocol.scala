@@ -58,7 +58,7 @@ case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
   * Common input: (g,h,u,v)*/
 case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: EcPointType)
   extends SigmaProtocolCommonInput[DiffieHellmanTupleProtocol]
-    with SigmaProofOfKnowledgeTree[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
+    with SigmaProofOfKnowledgeLeaf[DiffieHellmanTupleProtocol, DiffieHellmanTupleProverInput] {
   override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   lazy val g = gv
   lazy val h = hv
