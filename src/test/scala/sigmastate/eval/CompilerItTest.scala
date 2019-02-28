@@ -192,7 +192,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntegerArr1, 2, 64L))
+      Result(bigIntegerArr1, 11, 64L))
   }
   test("register_BigIntArr_Case") {
     measure(5) { i =>
@@ -216,7 +216,7 @@ class CompilerItTest extends BaseCtxTests
       cost = null,
       size = null,
       tree = null,
-      Result(bigIntegerArr1.map(i => i.add(n1)), 24, 64L))
+      Result(bigIntegerArr1.map(i => i.add(n1)), 33, 64L))
   }
   test("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()
@@ -277,7 +277,7 @@ class CompilerItTest extends BaseCtxTests
               )))),
             ValUse(1,SSigmaProp)
           ))))),
-      Result({ TrivialProp.FalseProp }, 40682, 1L)
+      Result({ TrivialProp.FalseProp }, 40736, 1L)
     )
   }
   test("crowdFunding_Case") {

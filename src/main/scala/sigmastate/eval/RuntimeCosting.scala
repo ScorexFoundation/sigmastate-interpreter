@@ -1166,7 +1166,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
         val opt = asRep[CostedOption[Any]](_opt)
-        opt.get
+        val res = opt.get
+        res
 
       // opt.isDefined =>
       case utxo.OptionIsDefined(In(_opt)) =>

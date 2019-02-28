@@ -325,7 +325,7 @@ class CCostModel extends CostModel {
 
   def CollectionConst: Int  = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
 
-  def AccessKiloByteOfData: Int  = costOf("AccessKiloByteOfData", SFunc(SUnit, SUnit))
+  def AccessKiloByteOfData: Int  = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
   def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
 

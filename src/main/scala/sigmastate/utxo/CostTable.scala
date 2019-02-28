@@ -83,6 +83,7 @@ object CostTable {
     ("AccessAvlTree", "Context => AvlTree", constCost),
 
     ("SelectField", "() => Unit", extractCost),
+    ("AccessKiloByteOfData", "() => Unit", extractCost),
     ("AccessBox", "Context => Box", extractCost),
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
     ("GetRegister", "(Box, Byte) => Option[T]", extractCost),

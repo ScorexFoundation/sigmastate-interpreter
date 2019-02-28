@@ -1048,8 +1048,9 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
-  val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)
-  val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
+  // should be lazy, otherwise lead to initialization error
+  lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)
+  lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
     SMethod(this, Value, SFunc(SBox, SLong), 1), // see ExtractAmount
