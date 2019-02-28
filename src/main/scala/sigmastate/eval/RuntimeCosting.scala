@@ -1619,8 +1619,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case Terms.MethodCall(obj, method, args) if method.objType.coster.isDefined =>
         val objC = eval(obj)
         val argsC = args.map(eval)
-        val accumulatedCost = argsC.foldLeft(objC.cost)({ case (s, e) => s + e.cost })
-        method.objType.coster.get(IR)(objC, method, argsC, accumulatedCost)
+        method.objType.coster.get(IR)(objC, method, argsC)
 
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
