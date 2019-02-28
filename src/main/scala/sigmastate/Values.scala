@@ -12,15 +12,12 @@ import scorex.crypto.authds.SerializedAdProof
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
-import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization._
-import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
+import sigmastate.serialization.{OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.CostTable.Cost
-import sigma.util.Extensions._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -34,7 +31,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Extensions, AnyValue, TestValue}
+import special.sigma.{Extensions, AnyValue}
 import sigmastate.lang.SourceContext
 
 
