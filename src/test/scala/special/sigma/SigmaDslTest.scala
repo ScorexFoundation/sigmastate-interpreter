@@ -7,7 +7,7 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver}
+import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
@@ -141,9 +141,9 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       "{ (t: AvlTree) => t.enabledOperations }")) { (t: AvlTree) => t.enabledOperations }
     val doKeyLength = checkEq(func[AvlTree, Int]("{ (t: AvlTree) => t.keyLength }")) { (t: AvlTree) => t.keyLength }
     val doValueLength = checkEq(func[AvlTree, Option[Int]]("{ (t: AvlTree) => t.valueLengthOpt }")) { (t: AvlTree) => t.valueLengthOpt }
-    val okInsert = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isInsertAllowed }")) { (t: AvlTree) => t.isInsertAllowed }
-    val okUpdate = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
-    val okRemove = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
+    val insertAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isInsertAllowed }")) { (t: AvlTree) => t.isInsertAllowed }
+    val updateAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
+    val removeAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
 
     val (key, _, avlProver) = sampleAvlTree
     val digest = avlProver.digest.toColl
@@ -152,23 +152,82 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     doEnabledOps(tree)
     doKeyLength(tree)
     doValueLength(tree)
-    okInsert(tree)
-    okUpdate(tree)
-    okRemove(tree)
+    insertAllowed(tree)
+    updateAllowed(tree)
+    removeAllowed(tree)
   }
 
-  property("AvlTree.contains equivalence") {
-    val doCheck = checkEq(
+  property("AvlTree.{contains, get, getMany} equivalence") {
+    val doContains = checkEq(
       func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
       "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
          { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }
+    val doGet = checkEq(
+      func[(AvlTree, (Coll[Byte], Coll[Byte])), Option[Coll[Byte]]](
+      "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2) }"))
+         { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.get(t._2._1, t._2._2) }
+    val doGetMany = checkEq(
+      func[(AvlTree, (Coll[Coll[Byte]], Coll[Byte])), Coll[Option[Coll[Byte]]]](
+      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }"))
+         { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }
 
     val (key, _, avlProver) = sampleAvlTree
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
     val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
     val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    doCheck((tree, (key, proof)))
+    doContains((tree, (key, proof)))
+    doGet((tree, (key, proof)))
+    val keys = builder.fromItems(key)
+//    doGetMany((tree, (keys, proof)))
+  }
+
+  property("AvlTree.{insert, update, remove} equivalence") {
+    type KV = (Coll[Byte], Coll[Byte])
+    val doInsert = checkEq(
+      func[(AvlTree, (Coll[KV], Coll[Byte])), Option[AvlTree]](
+      "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }"))
+         { (t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.insert(t._2._1, t._2._2) }
+    val doUpdate = checkEq(
+      func[(AvlTree, (Coll[KV], Coll[Byte])), Option[AvlTree]](
+        "{ (t: (AvlTree, (Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]))) => t._1.update(t._2._1, t._2._2) }"))
+        { (t: (AvlTree, (Coll[KV], Coll[Byte]))) => t._1.update(t._2._1, t._2._2) }
+    val doRemove = checkEq(
+      func[(AvlTree, (Coll[Coll[Byte]], Coll[Byte])), Option[AvlTree]](
+      "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2) }"))
+         { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.remove(t._2._1, t._2._2) }
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val key = Array.fill(32)(1.toByte).toColl
+    
+    {
+      val preInsertDigest = avlProver.digest.toColl
+      val value = bytesCollGen.sample.get
+      avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+      val insertProof = avlProver.generateProof().toColl
+      val preInsertTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(true, false, false).serializeToByte, preInsertDigest, 32, None)
+      val insertKvs = builder.fromItems((key -> value))
+      doInsert((preInsertTree, (insertKvs, insertProof)))
+    }
+
+    {
+      val preUpdateDigest = avlProver.digest.toColl
+      val newValue = bytesCollGen.sample.get
+      avlProver.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ newValue.toArray))
+      val updateProof = avlProver.generateProof().toColl
+      val preUpdateTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(false, true, false).serializeToByte, preUpdateDigest, 32, None)
+      val updateKvs = builder.fromItems((key -> newValue))
+      doUpdate((preUpdateTree, (updateKvs, updateProof)))
+    }
+
+    {
+      val preRemoveDigest = avlProver.digest.toColl
+      avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
+      val removeProof = avlProver.generateProof().toColl
+      val preRemoveTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(false, false, true).serializeToByte, preRemoveDigest, 32, None)
+      val removeKeys = builder.fromItems(key)
+      doRemove((preRemoveTree, (removeKeys, removeProof)))
+    }
   }
 
 }
