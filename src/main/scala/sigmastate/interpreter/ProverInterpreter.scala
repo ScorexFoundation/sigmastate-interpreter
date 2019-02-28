@@ -14,6 +14,15 @@ import gf2t.GF2_192
 import gf2t.GF2_192_Poly
 import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
 
+trait Hint
+
+class OtherSecret(image: SigmaProofOfKnowledgeTree[_, _]) extends Hint
+
+case class HintsBag(hints: Seq[Hint])
+
+object HintsBag {
+  val empty = HintsBag(Seq())
+}
 
 
 /**
@@ -42,7 +51,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   // todo: once the right value is (or is not) found. We should also make all loops look similar, the same
   // todo: amount of copying is done regardless of what's real or simulated,
   // todo: real vs. simulated computations take the same time, etc.
-  protected def prove(unprovenTree: UnprovenTree, message: Array[Byte]): ProofT = {
+  protected def prove(unprovenTree: UnprovenTree, message: Array[Byte], hintsBag: HintsBag): ProofT = {
 
     // Prover Step 1: Mark as real everything the prover can prove
     val step1 = markReal(unprovenTree).get.asInstanceOf[UnprovenTree]
@@ -76,10 +85,23 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     convertToUnchecked(step9)
   }
 
-  def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
-    prove(emptyEnv, exp, context, message)
+  def prove(exp: ErgoTree,
+            context: CTX,
+            message: Array[Byte],
+            hintsBag: HintsBag): Try[CostedProverResult] =
+    prove(emptyEnv, exp, context, message, hintsBag)
 
-  def prove(env: ScriptEnv, exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(exp: ErgoTree,
+            context: CTX,
+            message: Array[Byte]): Try[CostedProverResult] =
+    prove(emptyEnv, exp, context, message, HintsBag.empty)
+
+
+  def prove(env: ScriptEnv,
+            exp: ErgoTree,
+            context: CTX,
+            message: Array[Byte],
+            hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
     val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
     val propTree = applyDeserializeContext(ctx, exp.proposition)
@@ -98,7 +120,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
           case FalseProp => errorReducedToFalse
           case _ =>
             val unprovenTree = convertToUnproven(sigmaBoolean)
-            prove(unprovenTree, message)
+            prove(unprovenTree, message, hintsBag)
         }
       case _ =>
         error(s"Unexpected result of reduceToCrypto($ctx, $env, $propTree)")
@@ -304,8 +326,6 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       t.withPolynomial(q).copy(children=newChildren)
       */
 
-
-
     case su: UnprovenSchnorr =>
       if (su.simulated) {
         // Step 5 (simulated leaf -- complete the simulation)
@@ -457,4 +477,5 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     case d: UncheckedDiffieHellmanTuple => d
     case _ => ???
   }
+
 }
