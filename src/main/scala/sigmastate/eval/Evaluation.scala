@@ -445,8 +445,13 @@ object Evaluation {
     case LongType => SLong
     case StringType => SString
     case AnyType => SAny
+
     case BigIntegerRType => SBigInt
+    case BigIntRType => SBigInt
+
     case ECPointRType => SGroupElement
+    case GroupElementRType => SGroupElement
+
     case AvlTreeRType => SAvlTree
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox

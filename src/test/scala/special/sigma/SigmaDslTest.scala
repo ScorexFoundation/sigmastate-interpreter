@@ -7,9 +7,11 @@ import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.Lookup
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
+import sigmastate.eval.Extensions._
 import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.AvlTreeFlags
 import special.collection.Coll
@@ -36,7 +38,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
     val b1 = f(x); val b2 = g(x)
-    assert(b1.getClass == b2.getClass)
+//    assert(b1.getClass == b2.getClass)
     assert(b1 == b2)
   }
 
@@ -57,7 +59,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val toShort = checkEq(func[Byte,Short]("{ (x: Byte) => x.toShort }"))(x => x.toShort)
     val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Byte,BigInteger]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
+    val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
     lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Byte,Coll[Boolean]]("{ (x: Byte) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toAbs }"))(x => x.toAbs)
@@ -78,7 +80,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val toShort = checkEq(func[Int,Short]("{ (x: Int) => x.toShort }"))(x => x.toShort)
     val toInt = checkEq(func[Int,Int]("{ (x: Int) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Int,Long]("{ (x: Int) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[Int,BigInteger]("{ (x: Int) => x.toBigInt }"))(x => x.toBigInt)
+    val toBigInt = checkEq(func[Int,BigInt]("{ (x: Int) => x.toBigInt }"))(x => x.toBigInt)
     lazy val toBytes = checkEq(func[Int,Coll[Byte]]("{ (x: Int) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Int,Coll[Boolean]]("{ (x: Int) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
@@ -123,22 +125,39 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
   val bytesCollGen = bytesGen.map(builder.fromArray(_))
   implicit val arbBytes = Arbitrary(bytesCollGen)
+  val keyCollGen = bytesCollGen.map(_.slice(0, 32))
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
+  private def sampleAvlTree = {
+    val key = keyCollGen.sample.get
+    val value = bytesCollGen.sample.get
+    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
+    (key, value, avlProver)
+  }
+
+  property("AvlTree.digest methods equivalence") {
+    val doCheck = checkEq(
+      func[AvlTree, Coll[Byte]](
+      "{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
+
+    val (key, _, avlProver) = sampleAvlTree
+    val digest = avlProver.digest.toColl
+    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    doCheck(tree)
+  }
+
   property("AvlTree.contains methods equivalence") {
-    val testContains = checkEq(
+    val doCheck = checkEq(
       func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
       "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
          { (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }
 
-
-    val key = bytesCollGen.sample.get
-    val value = bytesCollGen.sample.get
-    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
+    val (key, _, avlProver) = sampleAvlTree
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
     val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
     val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    testContains((tree, (key, proof)))
+    doCheck((tree, (key, proof)))
   }
+
 }

@@ -113,9 +113,9 @@ trait SigmaTestingCommons extends PropSpec
                 case Opt(pv) => pv
                 case _ => x // cannot wrap, so just return as is
               }
-            case _ => x // don't need to wrap
+            case _ => Evaluation.toDslData(x, tpeB, isCost = false) // don't need to wrap
           }
-        case _ => res
+        case _ => Evaluation.toDslData(res, tpeB, isCost = false)
       }).asInstanceOf[B]
     }
   }
