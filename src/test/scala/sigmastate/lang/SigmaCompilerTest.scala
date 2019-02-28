@@ -268,7 +268,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("SBox.tokens") {
     testMissingCosting("SELF.tokens",
-      mkMethodCall(Self, SBox.TokensMethod, IndexedSeq()))
+      mkMethodCall(Self, SBox.tokensMethod, IndexedSeq()))
   }
 
   property("SOption.toColl") {
@@ -278,9 +278,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SAvlTree.digest") {
-    testMissingCosting("getVar[AvlTree](1).get.digest",
+    comp("getVar[AvlTree](1).get.digest") shouldBe
       mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.digestMethod, IndexedSeq())
-    )
   }
 
   property("SGroupElement.exp") {
@@ -502,7 +501,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
       )
   }

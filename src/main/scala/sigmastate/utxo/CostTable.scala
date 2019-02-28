@@ -80,9 +80,12 @@ object CostTable {
     ("ConcreteCollection", "() => Coll[IV]", constCost),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
+    ("AccessAvlTree", "Context => AvlTree", constCost),
 
+    ("SelectField", "() => Unit", extractCost),
     ("AccessBox", "Context => Box", extractCost),
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
+    ("GetRegister", "(Box, Byte) => Option[T]", extractCost),
     ("AccessRegister", "Box => Option[T]", extractCost),
     ("ExtractAmount", "(Box) => Long", extractCost),
     ("ExtractId", "(Box) => Coll[Byte]", extractCost),
@@ -102,15 +105,6 @@ object CostTable {
     ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
 
     ("If", "(Boolean, T, T) => T", logicCost),
-    //    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
-    //    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
-    //    ("If", "(Boolean, Short, Short) => Short", MinimalCost),
-    //    ("If", "(Boolean, Int, Int) => Int", MinimalCost),
-    //    ("If", "(Boolean, Long, Long) => Long", MinimalCost),
-    //    ("If", "(Boolean, BigInt, BigInt) => BigInt", MinimalCost),
-    //    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
-    //    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
-    //    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
 
     ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
     ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
@@ -204,9 +198,6 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("TreeModifications_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("TreeRemovals_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
     ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
     ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
     ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),

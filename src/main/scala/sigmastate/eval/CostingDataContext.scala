@@ -21,6 +21,7 @@ import scalan.RType
 import scorex.crypto.hash.{Sha256, Digest32, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.reflect.ClassTag
@@ -298,6 +299,39 @@ case class CHeader(
 ) extends Header {
 }
 
+class CCostModel extends CostModel {
+  private def costOf(opName: String, opType: SFunc): Int = {
+    val operId = OperationId(opName, opType)
+    costOf(operId)
+  }
+  @inline private def costOf(operId: OperationId): Int = {
+    val cost = sigmastate.utxo.CostTable.DefaultCosts(operId)
+    cost
+  }
+
+  def AccessBox: Int = costOf("AccessBox", SFunc(SContext, SBox))
+
+  def AccessAvlTree: Int = costOf("AccessAvlTree", SFunc(SContext, SAvlTree))
+
+  def GetVar: Int = costOf("GetVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+
+  def DeserializeVar: Int = costOf("DeserializeVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+
+  def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+
+  def DeserializeRegister: Int  = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+
+  def SelectField: Int      = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+
+  def CollectionConst: Int  = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+
+  def AccessKiloByteOfData: Int  = costOf("AccessKiloByteOfData", SFunc(SUnit, SUnit))
+
+  def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
+
+  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+}
+
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   override val Costing: CostedBuilder = new CCostedBuilder {
     import RType._
@@ -326,6 +360,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
       case _ => sys.error(s"Cannot create defaultValue($valueType)")
     }).asInstanceOf[T]
   }
+
+  override def CostModel: CostModel = new CCostModel
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 

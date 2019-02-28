@@ -216,7 +216,11 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         val endTree = SELF.R5[AvlTree].get
         sigmaProp(tree.insert(ops, proof).get == endTree)
       },
-      """{ sigmaProp(treeInserts(SELF.R4[AvlTree].get, ops, proof).get == SELF.R5[AvlTree].get) }""")
+      """{
+       |  val tree = SELF.R4[AvlTree].get
+       |  val endTree = SELF.R5[AvlTree].get
+       |  sigmaProp(tree.insert(ops, proof).get == endTree)
+       |}""".stripMargin)
 
       lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
     }
@@ -261,7 +265,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         val tree = SELF.R4[AvlTree].get
         sigmaProp(tree.get(key, proof).get == value)
       },
-      """{ sigmaProp(treeLookup(SELF.R4[AvlTree].get, key, proof).get == value) }""")
+      """{
+       |  val tree = SELF.R4[AvlTree].get
+       |  sigmaProp(tree.get(key, proof).get == value)
+       |}""".stripMargin)
 
       lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
     }
@@ -311,11 +318,13 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue.toSigmaProp
+    val prop = compileWithCosting(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
 
-    val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(key),
-      ByteArrayConstant(proof))).toSigmaProp
+    val propTree = IR.builder.mkMethodCall(
+      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      SAvlTree.containsMethod,
+      IndexedSeq(ByteArrayConstant(key), ByteArrayConstant(proof))
+    ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -349,9 +358,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
 
     val prop = AND(
       GE(GetVarLong(elementId).get, LongConstant(120)),
-      OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-        CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
-        GetVarByteArray(proofId).get))
+      IR.builder.mkMethodCall(
+        ExtractRegisterAs[SAvlTree.type](Self, reg1).get, SAvlTree.containsMethod,
+        IndexedSeq(CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)), GetVarByteArray(proofId).get)
+      ).asBoolValue
     ).toSigmaProp
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
     val propCompiled = compileWithCosting(env,
@@ -360,7 +370,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         |  val proof = getVar[Coll[Byte]](proofId).get
         |  val element = getVar[Long](elementId).get
         |  val elementKey = blake2b256(longToByteArray(element))
-        |  element >= 120 && isMember(tree, elementKey, proof)
+        |  element >= 120 && tree.contains(elementKey, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
     //TODO: propCompiled shouldBe prop
@@ -420,13 +430,14 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         |  val tree = SELF.R4[AvlTree].get
         |  val key = SELF.R5[Coll[Byte]].get
         |  val proof = getVar[Coll[Byte]](proofId).get
-        |  isMember(tree, key, proof)
+        |  tree.contains(key, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
-    val propTree = OptionIsDefined(TreeLookup(
+    val propTree = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ExtractRegisterAs[SByteArray](Self, reg2).get,
-      GetVarByteArray(proofId).get)).toSigmaProp
+      SAvlTree.containsMethod,
+      IndexedSeq(ExtractRegisterAs[SByteArray](Self, reg2).get, GetVarByteArray(proofId).get)
+    ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)

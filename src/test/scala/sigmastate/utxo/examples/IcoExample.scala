@@ -40,7 +40,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
         |
         |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map(toAddFn)
         |
-        |  val modifiedTree = treeInserts(SELF.R5[AvlTree].get, toAdd, proof).get
+        |  val modifiedTree = SELF.R5[AvlTree].get.insert(toAdd, proof).get
         |
         |  val expectedTree = OUTPUTS(0).R5[AvlTree].get
         |

@@ -161,6 +161,27 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           case None =>
             mkConstant[tpe.type](x.asInstanceOf[tpe.WrappedType], tpe)
         }
+      case Def(wc: LiftedConst[a,_]) =>
+        val tpe = elemToSType(s.elem)
+        val t = Evaluation.stypeToRType(tpe)
+        val tRes = Evaluation.toErgoTreeType(t)
+        val v = Evaluation.fromDslData(wc.constValue, tRes)(IR)
+        mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
+
+      case Def(IsContextProperty(v)) => v
+
+      case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkArith(x.asNumValue, y.asNumValue, opCode)
+      case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
+
       case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
         val colTpe = elemToSType(s.elem)
         mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
@@ -171,16 +192,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CBM.xor(_, colSym1, colSym2) =>
         mkXor(recurse(colSym1), recurse(colSym2))
 
-      case Def(wc: LiftedConst[a,_]) =>
-        val tpe = elemToSType(s.elem)
-        val t = Evaluation.stypeToRType(tpe)
-        val tRes = Evaluation.toErgoTreeType(t)
-        val v = Evaluation.fromDslData(wc.constValue, tRes)(IR)
-        mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
-      case Def(IsContextProperty(v)) => v
       case ContextM.getVar(_, Def(Const(id: Byte)), eVar) =>
         val tpe = elemToSType(eVar)
         mkGetVar(id, tpe)
+
       case BIM.subtract(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MinusCode)
       case BIM.add(In(x), In(y)) =>
@@ -195,17 +210,6 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, MinCode)
       case BIM.max(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
-      case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkArith(x.asNumValue, y.asNumValue, opCode)
-      case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkNode(x, y)
-      case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
-        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
-        mkNode(x, y)
-      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
-        mkNode(recurse(xSym))
 
       case CollM.apply(colSym, In(index)) =>
         val col = recurse(colSym)
@@ -234,19 +238,6 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
 
-      case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
-        val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
-        val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
-        val col = recurse(colSym)
-        val colTpe = elemToSType(colSym.elem).asCollection
-        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
-          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
-            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
-          case (Some(mth), _) => mth
-          case (None, _) => error(s"unknown method Coll.${m.getName}")
-        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
-        builder.mkMethodCall(col, method, args.toIndexedSeq)
-
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
       case BoxM.propositionBytes(In(box)) =>
@@ -270,6 +261,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case OM.isDefined(In(optionSym)) =>
         mkOptionIsDefined(optionSym.asValue[SOption[SType]])
 
+      case SigmaM.and_bool_&&(In(prop), In(cond)) =>
+        SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
+      case SigmaM.or_bool_||(In(prop), In(cond)) =>
+        SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
+      case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
+        SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
+      case SigmaM.or_sigma_||(In(p1), In(p2)) =>
+        SigmaOr(Seq(p1.asSigmaProp, p2.asSigmaProp))
+      case SigmaM.isValid(In(prop)) =>
+        mkSigmaPropIsProven(prop.asSigmaProp)
+      case SigmaM.propBytes(In(prop)) =>
+        mkSigmaPropBytes(prop.asSigmaProp)
+
       case Def(AnyZk(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asSigmaProp)
         SigmaOr(col)
@@ -283,37 +287,21 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(AllOf(_, colSyms, _)) =>
         val col = colSyms.map(recurse(_).asBoolValue)
         mkAllOf(col)
-      case Def(SDBM.allOf(_,  items)) =>
-        mkAND(recurse(items))
-      case Def(SDBM.anyOf(_,  items)) =>
-        mkOR(recurse(items))
-      case Def(SDBM.atLeast(_, bound, items)) =>
-        mkAtLeast(recurse(bound), recurse(items))
 
-      case SigmaM.and_bool_&&(In(prop), In(cond)) =>
-        SigmaAnd(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
-      case SigmaM.or_bool_||(In(prop), In(cond)) =>
-        SigmaOr(Seq(prop.asSigmaProp, mkBoolToSigmaProp(cond.asBoolValue)))
-      case SigmaM.and_sigma_&&(In(p1), In(p2)) =>
-        SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
-      case SigmaM.or_sigma_||(In(p1), In(p2)) =>
-        SigmaOr(Seq(p1.asSigmaProp, p2.asSigmaProp))
-      //      case SigmaM.lazyAnd(In(l), In(r)) =>
-      //        mkBinAnd(l.asSigmaProp, r.asSigmaProp)
-      //      case SigmaM.lazyOr(In(l), In(r)) =>
-      //        mkBinOr(l.asSigmaProp, r.asSigmaProp)
-      case SigmaM.isValid(In(prop)) =>
-        mkSigmaPropIsProven(prop.asSigmaProp)
-      case SigmaM.propBytes(In(prop)) =>
-        mkSigmaPropBytes(prop.asSigmaProp)
-      case Def(SDBM.sigmaProp(_, In(cond))) =>
+      case SDBM.allOf(_,  items) =>
+        mkAND(recurse(items))
+      case SDBM.anyOf(_,  items) =>
+        mkOR(recurse(items))
+      case SDBM.atLeast(_, bound, items) =>
+        mkAtLeast(recurse(bound), recurse(items))
+      case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)
-      case Def(SDBM.proveDlog(_, In(g))) =>
+      case SDBM.proveDlog(_, In(g)) =>
         g match {
           case gc: Constant[SGroupElement.type]@unchecked => SigmaPropConstant(ProveDlog(gc.value))
           case _ => mkCreateProveDlog(g.asGroupElement)
         }
-      case Def(SDBM.proveDHTuple(_, In(g), In(h), In(u), In(v))) =>
+      case SDBM.proveDHTuple(_, In(g), In(h), In(u), In(v)) =>
         (g, h, u, v) match {
           case (gc: Constant[SGroupElement.type]@unchecked,
           hc: Constant[SGroupElement.type]@unchecked,
@@ -323,7 +311,6 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           case _ =>
             mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
         }
-
       case SDBM.sigmaProp(_, In(cond)) =>
         mkBoolToSigmaProp(cond.asBoolValue)
       case SDBM.byteArrayToBigInt(_, colSym) =>
@@ -332,18 +319,6 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkCalcSha256(recurse(colSym))
       case SDBM.blake2b256(_, colSym) =>
         mkCalcBlake2b256(recurse(colSym))
-
-//      case AvlM.update(treeSym, opsCollSym, proofCollSym) =>
-//        mkTreeUpdates(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-//      case AvlM.insert(treeSym, opsCollSym, proofCollSym) =>
-//        mkTreeInserts(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-//      case AvlM.remove(treeSym, opsCollSym, proofCollSym) =>
-//        mkTreeRemovals(recurse(treeSym), recurse(opsCollSym), recurse(proofCollSym))
-//      case AvlM.get(treeSym, keySym, proofCollSym) =>
-//        mkTreeLookup(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
-//      case AvlM.contains(treeSym, keySym, proofCollSym) =>
-//        mkIsMember(recurse(treeSym), recurse(keySym), recurse(proofCollSym))
-
       case SDBM.longToByteArray(_, longSym) =>
         mkLongToByteArray(recurse(longSym))
       case SDBM.decodePoint(_, colSym) =>
@@ -368,6 +343,21 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(SimpleStruct(_, fields)) =>
         val items = fields.map { case (n, v) => recurse(v) }
         mkTuple(items)
+
+      // Fallback MethodCall rule: should be the last in this list of cases
+      case Def(MethodCall(objSym, m, argSyms, _)) =>
+        val obj = recurse[SType](objSym)
+        val args = argSyms.collect { case argSym: Sym => recurse[SType](argSym) }
+        val method = obj.tpe.asProduct.method(m.getName)
+          .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
+        val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
+        builder.mkMethodCall(obj, specMethod, args.toIndexedSeq)
+//        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
+//          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
+//            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
+//          case (Some(mth), _) => mth
+//          case (None, _) => error(s"unknown method Coll.${m.getName}")
+//        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
 
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")

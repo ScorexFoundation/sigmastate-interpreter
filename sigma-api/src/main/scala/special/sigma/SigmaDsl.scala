@@ -25,7 +25,7 @@ trait CostModel {
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
-  def PubKeySize: Long = 32
+  def PubKeySize: Long
 }
 
 /**

@@ -4,6 +4,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -87,9 +88,14 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
     val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
 
-    val merklePathToScript = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      CalcBlake2b256(GetVarByteArray(scriptId).get),
-      GetVarByteArray(proofId).get))
+    val merklePathToScript = OptionIsDefined(
+      IR.builder.mkMethodCall(
+        ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+        SAvlTree.getMethod,
+        IndexedSeq(
+          CalcBlake2b256(GetVarByteArray(scriptId).get),
+          GetVarByteArray(proofId).get)).asOption[SByteArray]
+    )
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 

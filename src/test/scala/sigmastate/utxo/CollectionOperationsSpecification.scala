@@ -516,7 +516,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
       EQ(
         SizeOf(MethodCall(Outputs,
-          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SInt)),
           Vector(
             ConcreteCollection(IntConstant(1), IntConstant(2))
           )

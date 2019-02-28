@@ -4,10 +4,12 @@ import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.utils.Random
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
@@ -251,10 +253,15 @@ class SpamSpecification extends SigmaTestingCommons {
     val key1 = genKey("key1")
     val value1 = genValue("value1")
 
-    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants, EQ(TreeLookup(
-      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(key1),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value1)).toSigmaProp)
+    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants,
+      EQ(
+        IR.builder.mkMethodCall(
+          ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+          SAvlTree.getMethod,
+          IndexedSeq(ByteArrayConstant(key1), ByteArrayConstant(proof))).asOption[SByteArray].get,
+          ByteArrayConstant(value1)
+      ).toSigmaProp
+    )
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)

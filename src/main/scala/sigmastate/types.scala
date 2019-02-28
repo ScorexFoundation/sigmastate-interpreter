@@ -131,6 +131,7 @@ object SType {
     def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
+    def asProduct: SProduct = tpe.asInstanceOf[SProduct]
     def asOption[T <: SType]: SOption[T] = tpe.asInstanceOf[SOption[T]]
     def whenFunc[T](action: SFunc => Unit) = if(tpe.isInstanceOf[SFunc]) action(tpe.asFunc)
     def asCollection[T <: SType] = tpe.asInstanceOf[SCollection[T]]
@@ -266,6 +267,14 @@ case class SMethod(
   def opId: OperationId = {
     val opName = objType.getClass.getSimpleName + "." + name
     OperationId(opName, stype)
+  }
+
+  def specializeFor(objTpe: SType, args: Seq[SType]): SMethod = {
+    SigmaTyper.unifyTypeLists(stype.tDom, objTpe +: args) match {
+      case Some(subst) if subst.nonEmpty =>
+        withConcreteTypes(subst)
+      case _ => this
+    }
   }
 }
 
@@ -1039,7 +1048,8 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Bytes = "bytes"
   val BytesWithNoRef = "bytesWithNoRef"
   val CreationInfo = "creationInfo"
-  val TokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
+  val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)
+  val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
     SMethod(this, Value, SFunc(SBox, SLong), 1), // see ExtractAmount
@@ -1048,8 +1058,8 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, BytesWithNoRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SFunc(SBox, SByteArray), 5), // see ExtractId
     SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6), // see ExtractCreationInfo
-    SMethod(this, s"getReg", SFunc(IndexedSeq(SByte), SOption(tT), Seq(STypeParam(tT))), 7),
-    TokensMethod,
+    getRegMethod,
+    tokensMethod,
   ) ++ registers(8)
 }
 
