@@ -53,10 +53,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def get(key: RCosted[Coll[Byte]], proof: RCosted[Coll[Byte]]): RCosted[WOption[Coll[Byte]]] = {
       val value = obj.value.get(key.value, proof.value)
       val size = sizeOfArgs
-      RCCostedOption(value,
+      val res = RCCostedOption(value,
         RWSpecialPredef.some(perKbCostOf(method, size)),
-        RWSpecialPredef.some(size),
+        RWSpecialPredef.some(sizeData(element[Coll[Byte]], colBuilder.replicate(proof.dataSize.toInt, 1L))),
         costOfArgs)
+      res
     }
     def getMany(keysC: RCosted[Coll[Coll[Byte]]], proof: RCosted[Coll[Byte]]): RCosted[Coll[WOption[Coll[Byte]]]] = {
       val keys = keysC.value
