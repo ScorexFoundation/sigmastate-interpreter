@@ -76,8 +76,10 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, exp)
-    IR.onCostingResult(env, exp, costingRes)
+    val propTree = applyDeserializeContext(context, exp)
+
+    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, propTree)
+    IR.onCostingResult(env, propTree, costingRes)
 
     IR.verifyCostFunc(costF).fold(t => throw t, x => x)
 
@@ -88,7 +90,7 @@ trait Interpreter extends ScorexLogging {
     val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
     val IntConstant(estimatedCost) = costFun(costingCtx)
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $propTree")
     }
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
@@ -109,8 +111,7 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp.proposition)
-    val (cProp, cost) = reduceToCrypto(context, env, propTree).get
+    val (cProp, cost) = reduceToCrypto(context, env, exp.proposition).get
 
     val checkingResult = cProp match {
       case TrueLeaf => true

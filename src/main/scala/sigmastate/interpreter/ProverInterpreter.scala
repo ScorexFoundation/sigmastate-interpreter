@@ -1,33 +1,51 @@
 package sigmastate.interpreter
 
+import java.math.BigInteger
+
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
 import Values._
 import scalan.util.CollectionUtil._
+
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
+import scorex.util.encode.Base16
+import sigmastate.basics._
 
 trait Hint
 
-trait OtherSecret {
+trait OtherSecret extends Hint {
   val image: SigmaBoolean
 }
 
-case class OtherSecretKnown(override val image: SigmaBoolean) extends OtherSecret
+trait CommitmentHint extends Hint {
+  val image: SigmaBoolean
+  val commitment: FirstProverMessage
+}
 
-case class OtherSecretProven(override val image: SigmaBoolean, proofTree: ProofTree) extends OtherSecret
+case class OwnCommitment(override val image: SigmaBoolean, randomness: BigInteger, commitment: FirstProverMessage) extends CommitmentHint
+case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends OtherSecret with CommitmentHint
+case class OtherSecretProven(override val image: SigmaBoolean, uncheckedTree: UncheckedTree) extends OtherSecret
+
 
 case class HintsBag(hints: Seq[Hint]) {
-  lazy val otherSecrets: Seq[OtherSecretKnown] = hints.filter(_.isInstanceOf[OtherSecretKnown]).map(_.asInstanceOf[OtherSecretKnown])
+
+  lazy val predefinedCommitments: Seq[OtherCommitment] = hints.filter(_.isInstanceOf[OtherCommitment]).map(_.asInstanceOf[OtherCommitment])
+
+  lazy val otherSecrets: Seq[OtherSecret] = hints.filter(_.isInstanceOf[OtherSecret]).map(_.asInstanceOf[OtherSecret])
 
   lazy val otherImages = otherSecrets.map(_.image)
+
+  def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
+
+  lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
+  lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
 }
 
 object HintsBag {
@@ -39,6 +57,7 @@ object HintsBag {
   * Interpreter with enhanced functionality to prove statements.
   */
 trait ProverInterpreter extends Interpreter with AttributionCore {
+
   import Interpreter._
   import CryptoConstants.secureRandomBytes
 
@@ -76,7 +95,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     // Prover Steps 4, 5, and 6 together: find challenges for simulated nodes; simulate simulated leaves;
     // compute commitments for real leaves
-    val step6 = simulateAndCommit(step3).get.asInstanceOf[UnprovenTree]
+    val step6 = simulateAndCommit(hintsBag)(step3).get.asInstanceOf[UnprovenTree]
 
     // Prover Steps 7: convert the relevant information in the tree (namely, tree structure, node types,
     // the statements being proven and commitments at the leaves)
@@ -89,7 +108,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     val step8 = step6.withChallenge(rootChallenge)
 
     // Prover Step 9: complete the proof by computing challenges at real nodes and additionally responses at real leaves
-    val step9 = proving(step8).get.asInstanceOf[ProofTree]
+    val step9 = proving(hintsBag)(step8).get.asInstanceOf[ProofTree]
 
     // Syntactic step that performs a type conversion only
     convertToUnchecked(step9)
@@ -134,12 +153,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         }
       case _ =>
         error(s"Unexpected result of reduceToCrypto($ctx, $env, $propTree)")
-        // TODO this case should be removed, because above cases should cover all possible variants
-//        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
-//          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
-//          .get
-//        val ct = convertToUnproven(sigmaBoolean)
-//        prove(ct, message)
+      // TODO this case should be removed, because above cases should cover all possible variants
+      //        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
+      //          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
+      //          .get
+      //        val ct = convertToUnproven(sigmaBoolean)
+      //        prove(ct, message)
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
@@ -174,7 +193,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case in: DLogProverInput => in.publicImage == su.proposition
         case _ => false
       }
-      su.copy(simulated = !secretKnown)
+      val simulated = if (!secretKnown) {
+        !hints.otherImages.contains(su.proposition)
+      } else false
+      su.copy(simulated = simulated)
     case dhu: UnprovenDiffieHellmanTuple =>
       // If the node is a leaf, mark it "real" if the witness for it is available; else mark it "simulated"
       val secretKnown = secrets.exists {
@@ -230,9 +252,11 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
           val kid = child.asInstanceOf[UnprovenTree]
           val (newKid, newCountOfReal) = kid.real match {
             case false => (kid, countOfReal)
-            case true => ({if (countOfReal>=t.k) kid.withSimulated(true) else kid}, countOfReal+1)
+            case true => ( {
+              if (countOfReal >= t.k) kid.withSimulated(true) else kid
+            }, countOfReal + 1)
           }
-          (children:+newKid, newCountOfReal)
+          (children :+ newKid, newCountOfReal)
         }._1
         t.copy(children = newChildren)
       }
@@ -248,20 +272,20 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * Prover Step 6: For every leaf marked "real", use the first prover step of the Sigma-protocol for that leaf to
     * compute the commitment a.
     */
-  val simulateAndCommit: Strategy = everywheretd(rule[ProofTree] {
+  def simulateAndCommit(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
     // Step 4 part 1: If the node is marked "real", then each of its simulated children gets a fresh uniformly
     // random challenge in {0,1}^t.
     case and: CAndUnproven if and.real => and // A real AND node has no simulated children
 
-      //real OR or Threshold case
+    //real OR or Threshold case
     case uc: UnprovenConjecture if uc.real =>
       val newChildren = uc.children.cast[UnprovenTree].map(c =>
         if (c.real) c
         else c.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes))
       )
       uc match {
-        case or: COrUnproven        => or.copy(children = newChildren)
-        case t: CThresholdUnproven  => t.copy(children = newChildren)
+        case or: COrUnproven => or.copy(children = newChildren)
+        case t: CThresholdUnproven => t.copy(children = newChildren)
         case _ => ???
       }
 
@@ -296,45 +320,45 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       assert(t.challengeOpt.isDefined)
       val n = t.children.length
       val unprovenChildren = t.children.cast[UnprovenTree]
-      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes*(n-t.k)) )
+      val q = GF2_192_Poly.fromByteArray(t.challengeOpt.get, secureRandomBytes(CryptoFunctions.soundnessBytes * (n - t.k)))
 
       val newChildren = unprovenChildren.foldLeft((Seq[UnprovenTree](), 1)) {
         case ((childSeq, childIndex), child) =>
           (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
       }._1
-      t.withPolynomial(q).copy(children=newChildren)
+      t.withPolynomial(q).copy(children = newChildren)
 
-      // The algorithm with better resistance to timing attacks is as follows.
-      // Pick n-k fresh uniformly random values e_1, ..., e_{n-k}
-      // as challenges for the children number 1, ..., n-k.
-      // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
-      // find (via polynomial interpolation) the
-      // lowest-degree polynomial Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at j for each j
-      // from 0 to n-k (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0).
-      // Set the challenge at child j for n-k<j<= n to equal Q(j).
+    // The algorithm with better resistance to timing attacks is as follows.
+    // Pick n-k fresh uniformly random values e_1, ..., e_{n-k}
+    // as challenges for the children number 1, ..., n-k.
+    // Let i_0 = 0. Viewing 0, 1, 2, ..., n and e_0, ..., e_{n-k} as elements of GF(2^t),
+    // find (via polynomial interpolation) the
+    // lowest-degree polynomial Q(x)=sum_{i=0}^{n-k} a_i x^i  over GF(2^t) that is equal to e_j at j for each j
+    // from 0 to n-k (this polynomial will have n-k+1 coefficients, and the lowest coefficient will be e_0).
+    // Set the challenge at child j for n-k<j<= n to equal Q(j).
 
-      /* **** Uncomment this and comment out the above algorithm if you want better resistance to timing attacks
-      assert(t.challengeOpt.isDefined)
-      val n = t.children.length
-      val unprovenChildren = t.children.cast[UnprovenTree]
-      val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
-      val (points, values, _) = childrenWithRandomChallenges.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
-        case ((p, v, count), child) =>
-          val (newPoints, newValues) =
-            if (count <= n - t.k) {
-              (p :+ count.toByte, v :+ new GF2_192(child.challengeOpt.get))
-            }
-            else (p, v)
-          (newPoints, newValues, count + 1)
-      }
-      val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
+    /* **** Uncomment this and comment out the above algorithm if you want better resistance to timing attacks
+    assert(t.challengeOpt.isDefined)
+    val n = t.children.length
+    val unprovenChildren = t.children.cast[UnprovenTree]
+    val childrenWithRandomChallenges = unprovenChildren.slice(0, n-t.k).map(_.withChallenge(Challenge @@ secureRandomBytes(CryptoFunctions.soundnessBytes)))
+    val (points, values, _) = childrenWithRandomChallenges.foldLeft(((Array[Byte](), Array[GF2_192](),1))) {
+      case ((p, v, count), child) =>
+        val (newPoints, newValues) =
+          if (count <= n - t.k) {
+            (p :+ count.toByte, v :+ new GF2_192(child.challengeOpt.get))
+          }
+          else (p, v)
+        (newPoints, newValues, count + 1)
+    }
+    val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
 
-      val newChildren = unprovenChildren.slice(n-t.k, n).foldLeft((childrenWithRandomChallenges, n-t.k+1)) {
-        case ((childSeq, childIndex), child) =>
-          (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
-      }._1
-      t.withPolynomial(q).copy(children=newChildren)
-      */
+    val newChildren = unprovenChildren.slice(n-t.k, n).foldLeft((childrenWithRandomChallenges, n-t.k+1)) {
+      case ((childSeq, childIndex), child) =>
+        (childSeq :+ child.withChallenge(Challenge @@ q.evaluate(childIndex.toByte).toByteArray), childIndex + 1)
+    }._1
+    t.withPolynomial(q).copy(children=newChildren)
+    */
 
     case su: UnprovenSchnorr =>
       if (su.simulated) {
@@ -344,8 +368,12 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
       } else {
         // Step 6 (real leaf -- compute the commitment a)
-        val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
-        su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+        hintsBag.commitments.find(_.image == su.proposition).map { proof =>
+          su.copy(commitmentOpt = Some(proof.commitment.asInstanceOf[FirstDLogProverMessage]))
+        }.getOrElse {
+          val (r, commitment) = DLogInteractiveProver.firstMessage(su.proposition)
+          su.copy(commitmentOpt = Some(commitment), randomnessOpt = Some(r))
+        }
       }
 
     case dhu: UnprovenDiffieHellmanTuple =>
@@ -375,7 +403,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * the challenge e for every node marked "real" below the root and, additionally, the response z for every leaf
     * marked "real"
     */
-  val proving: Strategy = everywheretd(rule[ProofTree] {
+  def proving(hintsBag: HintsBag): Strategy = everywheretd(rule[ProofTree] {
     // If the node is a non-leaf marked real whose challenge is e_0, proceed as follows:
     case and: CAndUnproven if and.real =>
       assert(and.challengeOpt.isDefined)
@@ -405,17 +433,17 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       // i of the node, if the child is marked "real", compute its challenge as Q(i) (if the child is marked
       // "simulated", its challenge is already Q(i), by construction of Q).
       assert(t.challengeOpt.isDefined)
-      val (points, values, _) = t.children.foldLeft(Array[Byte](), Array[GF2_192](),1) {
+      val (points, values, _) = t.children.foldLeft(Array[Byte](), Array[GF2_192](), 1) {
         case ((p, v, count), child) =>
           val (newPoints, newValues) = {
             // This is the easiest way to find out whether a child is simulated -- just to check if it alread
             // has a challenge. Other ways are more of a pain because the children can be of different types
             val challengeOpt = extractChallenge(child)
             if (challengeOpt.isEmpty) (p, v)
-            else (p:+count.toByte, v:+new GF2_192(challengeOpt.get))
+            else (p :+ count.toByte, v :+ new GF2_192(challengeOpt.get))
 
           }
-          (newPoints, newValues, count+1)
+          (newPoints, newValues, count + 1)
       }
       val q = GF2_192_Poly.interpolate(points, values, new GF2_192(t.challengeOpt.get))
       val newChildren = t.children.foldLeft(Seq[ProofTree](), 1) {
@@ -424,19 +452,43 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
             case r: UnprovenTree if r.real => r.withChallenge(Challenge @@ q.evaluate(count.toByte).toByteArray())
             case p: ProofTree => p
           }
-          (s:+newChild, count+1)
+          (s :+ newChild, count + 1)
       }._1
-      t.withPolynomial(q).copy(children=newChildren)
+      t.withPolynomial(q).copy(children = newChildren)
 
     // If the node is a leaf marked "real", compute its response according to the second prover step
     // of the Sigma-protocol given the commitment, challenge, and witness
     case su: UnprovenSchnorr if su.real =>
       assert(su.challengeOpt.isDefined, s"Real UnprovenTree $su should have challenge defined")
-      val privKey = secrets
+      val privKeyOpt = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
-        .get.asInstanceOf[DLogProverInput]
-      val z = DLogInteractiveProver.secondMessage(privKey, su.randomnessOpt.get, su.challengeOpt.get)
+
+      val z = privKeyOpt match {
+        case Some(privKey) =>
+          hintsBag.hints.filter(_.isInstanceOf[OwnCommitment]).map(_.asInstanceOf[OwnCommitment])
+            .find(_.image == su.proposition).map {oc =>
+            DLogInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DLogProverInput],
+              oc.randomness,
+              su.challengeOpt.get)
+          }.getOrElse {
+            DLogInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DLogProverInput],
+              su.randomnessOpt.get,
+              su.challengeOpt.get)
+          }
+
+        case None =>
+          hintsBag.proofs.find(_.image == su.proposition).map { proof =>
+            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
+            assert(provenSchnorr.challenge.sameElements(su.challengeOpt.get))
+            provenSchnorr.secondMessage
+          }.getOrElse {
+            val bs = secureRandomBytes(32)
+            SecondDLogProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+          }
+      }
       UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
 
     case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
@@ -455,17 +507,17 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
     case ut: UnprovenTree => ut
 
-    case a: Any =>  log.warn("Wrong input in prove(): ", a); ???
+    case a: Any => log.warn("Wrong input in prove(): ", a); ???
   })
 
 
   //converts SigmaTree => UnprovenTree
   def convertToUnproven(sigmaTree: SigmaBoolean): UnprovenTree = sigmaTree match {
-    case and @ CAND(sigmaTrees) =>
+    case and@CAND(sigmaTrees) =>
       CAndUnproven(and, None, simulated = false, sigmaTrees.map(convertToUnproven))
-    case or @ COR(children) =>
+    case or@COR(children) =>
       COrUnproven(or, None, simulated = false, children.map(convertToUnproven))
-    case threshold @ CTHRESHOLD(k, children) =>
+    case threshold@CTHRESHOLD(k, children) =>
       CThresholdUnproven(threshold, None, simulated = false, k, children.map(convertToUnproven), None)
     case ci: ProveDlog =>
       UnprovenSchnorr(ci, None, None, None, simulated = false)
@@ -478,11 +530,11 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   //converts ProofTree => UncheckedSigmaTree
   val convertToUnchecked: ProofTree => UncheckedSigmaTree = attr {
     case and: CAndUnproven =>
-      CAndUncheckedNode(and.challengeOpt.get,  and.children.map(convertToUnchecked))
+      CAndUncheckedNode(and.challengeOpt.get, and.children.map(convertToUnchecked))
     case or: COrUnproven =>
-      COrUncheckedNode(or.challengeOpt.get,  or.children.map(convertToUnchecked))
+      COrUncheckedNode(or.challengeOpt.get, or.children.map(convertToUnchecked))
     case t: CThresholdUnproven =>
-      CThresholdUncheckedNode(t.challengeOpt.get,  t.children.map(convertToUnchecked), t.k, t.polynomialOpt)
+      CThresholdUncheckedNode(t.challengeOpt.get, t.children.map(convertToUnchecked), t.k, t.polynomialOpt)
     case s: UncheckedSchnorr => s
     case d: UncheckedDiffieHellmanTuple => d
     case _ => ???

@@ -5,6 +5,7 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
+import scorex.util.encode.Base16
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
@@ -56,13 +57,17 @@ object DLogProtocol {
     }
   }
 
-  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage[DLogSigmaProtocol] {
+  case class FirstDLogProverMessage(ecData: EcPointType) extends FirstProverMessage {
+    override type SP = DLogSigmaProtocol
     override def bytes: Array[Byte] = {
       GroupElementSerializer.toBytes(ecData)
     }
+
+    override def toString: Idn = s"FirstDLogProverMessage(${Base16.encode(bytes)})"
   }
 
-  case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage[DLogSigmaProtocol] {
+  case class SecondDLogProverMessage(z: BigInt) extends SecondProverMessage {
+    override type SP = DLogSigmaProtocol
     override def bytes: Array[Byte] = z.toByteArray
   }
 

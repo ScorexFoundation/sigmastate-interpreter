@@ -7,7 +7,7 @@ import gf2t.GF2_192_Poly
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.{SigmaBoolean, SigmaPropConstant}
-import sigmastate.basics.{FirstProverMessage, ProveDHTuple, FirstDiffieHellmanTupleProverMessage}
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple, SigmaProtocol}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -25,7 +25,7 @@ trait ProofTree extends Product
 
 trait ProofTreeLeaf extends ProofTree {
   val proposition: SigmaBoolean
-  val commitmentOpt: Option[FirstProverMessage[_]]
+  val commitmentOpt: Option[FirstProverMessage]
 }
 
 trait ProofTreeConjecture extends ProofTree {

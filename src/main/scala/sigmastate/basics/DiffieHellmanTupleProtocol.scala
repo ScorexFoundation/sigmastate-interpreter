@@ -6,6 +6,7 @@ import org.bouncycastle.util.BigIntegers
 import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.basics.DLogProtocol.DLogSigmaProtocol
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
@@ -42,15 +43,20 @@ object DiffieHellmanTupleProverInput {
 
 //a = g^r, b = h^r
 case class FirstDiffieHellmanTupleProverMessage(a: CryptoConstants.EcPointType, b: CryptoConstants.EcPointType)
-  extends FirstProverMessage[DiffieHellmanTupleProtocol] {
+  extends FirstProverMessage {
+
+  override type SP = DiffieHellmanTupleProtocol
+
   override def bytes: Array[Byte] = {
     GroupElementSerializer.toBytes(a) ++ GroupElementSerializer.toBytes(b)
   }
 }
 
 //z = r + ew mod q
-case class SecondDiffieHellmanTupleProverMessage(z: BigInteger)
-  extends SecondProverMessage[DiffieHellmanTupleProtocol] {
+case class SecondDiffieHellmanTupleProverMessage(z: BigInteger) extends SecondProverMessage{
+
+  override type SP = DiffieHellmanTupleProtocol
+
   override def bytes: Array[PropositionCode] = ???
 }
 

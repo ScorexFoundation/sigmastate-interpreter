@@ -39,17 +39,21 @@ object VerifierMessage {
 }
 
 /** First message from the prover (message `a` of `SigmaProtocol`)*/
-trait FirstProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage
+trait FirstProverMessage extends ProverMessage {
+  type SP <: SigmaProtocol[SP]
+}
 
 /** Second message from the prover (message `z` of `SigmaProtocol`)*/
-trait SecondProverMessage[SP <: SigmaProtocol[SP]] extends ProverMessage
+trait SecondProverMessage extends ProverMessage {
+  type SP <: SigmaProtocol[SP]
+}
 
 /** Abstract template for sigma protocols.
   * For details see the following book
   * [1] Efficient Secure Two-Party Protocols - Techniques and Constructions, p.150)*/
 trait SigmaProtocol[SP <: SigmaProtocol[SP]] {
-  type A <: FirstProverMessage[SP]
-  type Z <: SecondProverMessage[SP]
+  type A <: FirstProverMessage
+  type Z <: SecondProverMessage
 }
 
 
