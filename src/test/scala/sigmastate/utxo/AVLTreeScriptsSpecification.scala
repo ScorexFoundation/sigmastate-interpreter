@@ -3,21 +3,19 @@ package sigmastate.utxo
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
-import scalan.RType
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{IRContext, CAvlTree, CostingSigmaDslBuilder, CSigmaProp}
+import sigmastate.eval.{IRContext,  CSigmaProp}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OperationSerializer
 import special.collection.Coll
-import special.sigma.{Context, Box, AvlTree}
+import special.sigma.{Context, AvlTree}
+
 
 class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
   import org.ergoplatform.dsl.AvlTreeHelpers._
@@ -458,4 +456,58 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val ctxv = ctx.withExtension(pr.extension)
     verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
+
+
+  property("avl tree - getMany") {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+
+    (1 to 10).foreach {i =>
+      val key = genKey(s"$i")
+      avlProver.performOneOperation(Insert(key, genValue(s"${i + 100}")))
+    }
+    avlProver.generateProof()
+
+    (3 to 5).foreach { i =>
+      val key = genKey(s"$i")
+      avlProver.performOneOperation(Lookup(key))
+    }
+    val digest = avlProver.digest
+    val proof = avlProver.generateProof()
+
+    val proofId = 31: Byte
+
+    val prover = new ErgoLikeTestProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val verifier = new ErgoLikeTestInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+
+    val env = Map("proofId" -> proofId.toLong,
+                  "keys" -> ConcreteCollection(genKey("3"), genKey("4"), genKey("5")))
+    val prop = compileWithCosting(env,
+      """{
+        |  val tree = SELF.R4[AvlTree].get
+        |  val proof = getVar[Coll[Byte]](proofId).get
+        |  sigmaProp(tree.getMany(keys, proof).forall( { (o: Option[Coll[Byte]]) => o.isDefined }))
+        |}""".stripMargin).asBoolValue.toSigmaProp
+
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(s),
+      spendingTransaction, self = s)
+    val pr = prover.prove(prop, ctx, fakeMessage).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+    verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
+  }
+
 }
