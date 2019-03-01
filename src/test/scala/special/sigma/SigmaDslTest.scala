@@ -179,7 +179,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     doContains((tree, (key, proof)))
     doGet((tree, (key, proof)))
     val keys = builder.fromItems(key)
-//    doGetMany((tree, (keys, proof)))
+    doGetMany((tree, (keys, proof)))
   }
 
   property("AvlTree.{insert, update, remove} equivalence") {

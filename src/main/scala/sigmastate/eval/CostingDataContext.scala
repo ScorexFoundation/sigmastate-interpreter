@@ -8,10 +8,9 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, Value, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
@@ -140,7 +139,18 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     }
   }
 
-  override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = ???
+  override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
+    val bv = createVerifier(proof)
+    keys.map {key =>
+      bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
+        case Success(r) => r match {
+          case Some(v) => Some(Colls.fromArray(v))
+          case _ => None
+        }
+      }
+    }
+  }
 
   override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
     if (!isInsertAllowed) {
