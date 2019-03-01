@@ -298,7 +298,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     res shouldBe CSigmaProp(TrivialProp.TrueProp)
   }
 
-  property("avl tree - simplest case") {
+  property("avl tree - contains") {
     val prover = new ErgoLikeTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
@@ -346,7 +346,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  property("avl tree - leaf satisfying condition exists") {
+  property("avl tree - contains key satisfying condition") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
