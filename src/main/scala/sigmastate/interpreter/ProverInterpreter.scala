@@ -15,7 +15,6 @@ import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
-import scorex.util.encode.Base16
 import sigmastate.basics._
 
 trait Hint
