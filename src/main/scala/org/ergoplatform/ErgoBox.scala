@@ -6,14 +6,12 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ExtractCreationInfo
 
 import scala.runtime.ScalaRunTime
@@ -150,7 +148,7 @@ object ErgoBox {
 
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 
-  val allZerosModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
+  val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 
   def apply(value: Long,
             ergoTree: ErgoTree,

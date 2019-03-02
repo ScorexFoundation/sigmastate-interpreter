@@ -57,7 +57,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
     (HEIGHT > deadline && pkB) || {
       val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
       allOf(Coll(
-        OUTPUTS(1).value >= 100,
+        OUTPUTS(1).value >= 100L,
         knownBoxId,
         OUTPUTS(1).propositionBytes == pkB.propBytes
       ))
@@ -67,7 +67,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
   """{
    |  (HEIGHT > deadline && pkB) ||
    |    allOf(Coll(
-   |      OUTPUTS(1).value >= 100,
+   |      OUTPUTS(1).value >= 100L,
    |      OUTPUTS(1).propositionBytes == pkB.propBytes,
    |      OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
    |    ))
