@@ -304,7 +304,7 @@ The remaining six registers can be used arbitrarily.
 
 To access a register, the type of the register needs to be specified in brackets following the register number (for example, \texttt{b.R4[Int]}). Note that \texttt{b.R4[T]} is of type \texttt{Option[T]}; \texttt{b.R4[T].isDefined} indicates whether it actually contains a value of type \texttt{T}, and \texttt{b.R4[T].get} obtains this value.
 
-In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including the value, all the registers, and the script \lnote{anything else?}, and \texttt{b.byteWithNoRef}, which the same but without \texttt{R3} (so that a box can be viewed independently of where it appeared \lnote{is there a good reason someone would need this? Can we explain it here?} \knote{As output id and bytes are not predictable before spending transaction is generated, if a box is willing to require spending transaction to create box w. some semantics, the only way to do it is to use box bytes cleared from transaction-specific information. A simple example of such requirement is hash(Outputs(0).bytesWithNoRef) == "0x..."}). \lnote{Are there any other box properties that scripts can access?}
+In addition to registers, scripts can access two serialized versions of the box: \texttt{b.bytes} is a serialization of the entire box including all its registers, and \texttt{b.byteWithNoRef}, which the same but without the transation identifier and the output index~(so that a box can be viewed independently of where it appeared.
 
 \paragraph{Example: atomic exchange on a single block chain}
 These box registers provide additional capabilities to \langname. Consider, for example, Alice and Bob who want to exchange tokens: they agree that  Alice will give Bob 60 tokens of type \texttt{token1} (this type is mapped an actual token id in the environment map) in exchange for 100 Ergo tokens. Alice could create an output box with value 100 and protect it with following script:
@@ -325,18 +325,15 @@ These box registers provide additional capabilities to \langname. Consider, for 
 This script ensures that the box can be spent only in a transaction that produces an output with 60 tokens of type token1 and gives them to Alice (Alice can reclaim the box after the deadline). 
 Moreover, the last condition (\texttt{OUTPUTS(0).R4[Col[Byte]].get == SELF.id}) ensures that if Alice has multiple such boxes outstanding at a given time, each will produce a separate output that identifies the corresponding input. This condition prevents the following attack: if Alice has two such boxes outstanding but the last condition is not present, then they can be both used in a single transaction that contains just one output with 60 tokens of type ``token1" --- the script of each input box will be individually satisfied, but Alice will get less only half of what owed to her.
 
-Bob, similarly, could create an output box with value 0
-\lnote{for some reason the example in the code we want value 1 --- why? It's not explained.  } and 60 tokens of type \texttt{token1} and protect it by the following script:
+Bob, similarly, could create an output box with value about 0 and 60 tokens of type \texttt{token1} and protect it by the following script:
 \begin{verbatim}
         (HEIGHT > deadline && pkB) || 
         allOf( Coll(
-                OUTPUTS(1).value >= 100,
+                OUTPUTS(1).value >= 100L,
                 OUTPUTS(1).propositionBytes == pkB.propBytes,
                 OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
          ))
 \end{verbatim}
-
-\lnote{Is the \texttt{L} after constants 60, 1, and 100 necessary? Won't conversion happen automatically? Some constants in other scripts above that probably need to be long, like 100 for height, don't have it. We should be consistent and clarify this for the reader. Also, make sure that scripts here match testing code.}
 
 A transaction containing these two boxes as inputs must produce two outputs: the first giving at least 60 tokens of type1 to Alice and the second giving at least 100 tokens of type2 to Bob. Once the two boxes are on the blockchain, anyone can create such a transaction using the two boxes as inputs, and thus effect the exchange between Alice and Bob. Unlike the cross-chain trading example above using hashing (which requires one side to go first), there are no potential problems with synchronization here, because the exchange will happen in a single transaction or will not happen at all.
 \subsection{Self-Replicating Code}
