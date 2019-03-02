@@ -107,7 +107,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
     def inRegId = reg1.asIndex
 
 
-    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "inRegId" -> inRegId, "tokenId" -> tokenId)
+    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "tokenId" -> tokenId)
 
     lazy val prop = proposition("buyer", { ctx: Context =>
       import ctx._
