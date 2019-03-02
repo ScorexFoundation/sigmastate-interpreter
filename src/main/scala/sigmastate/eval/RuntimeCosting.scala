@@ -130,8 +130,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _ => super.correctSizeDataType(eVal, eSize)
   }
 
-//  lazy val emptyLongColl: Rep[Coll[Long]] = liftConst(Colls.fromItems[Long]())
-
   def zeroSizeData[V](eVal: Elem[V]): Rep[Long] = eVal match {
     case _: BaseElem[_] => sizeData(eVal, 0L)
     case pe: PairElem[a,b] => sizeData(eVal, Pair(zeroSizeData[a](pe.eFst), zeroSizeData[b](pe.eSnd)))
@@ -354,7 +352,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   type CostedCollFunc[A,B] = Costed[A] => CostedColl[B]
+  type CostedOptionFunc[A,B] = Costed[A] => CostedOption[B]
   type RCostedCollFunc[A,B] = Rep[CostedCollFunc[A, B]]
+  type RCostedOptionFunc[A,B] = Rep[CostedOptionFunc[A, B]]
 
   implicit class RCostedCollFuncOps[A,B](f: RCostedCollFunc[A,B]) {
     implicit val eA = f.elem.eDom.eVal
@@ -369,6 +369,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       f(RCCostedPrim(x, 0, s)).sizes
     }
   }
+
+//  implicit class RCostedOptionFuncOps[A,B](f: RCostedOptionFunc[A,B]) {
+//    implicit val eA = f.elem.eDom.eVal
+//    def sliceValues: Rep[A => WOption[B]] = fun { x: Rep[A] => f(RCCostedPrim(x, 0, zeroSizeData(x.elem))).values }
+//    def sliceCosts: Rep[((A, (Int,Long))) => (Coll[Int], Int)] = fun { in: Rep[(A, (Int, Long))] =>
+//      val Pair(x, Pair(c, s)) = in
+//      val colC = f(RCCostedPrim(x, c, s))
+//      Pair(colC.costs, colC.valuesCost)
+//    }
+//    def sliceSizes: Rep[((A, Long)) => Coll[Long]] = fun { in: Rep[(A, Long)] =>
+//      val Pair(x, s) = in
+//      f(RCCostedPrim(x, 0, s)).sizes
+//    }
+//  }
 
   implicit def extendCostedFuncElem[E,A,B](e: Elem[CostedFunc[E,A,B]]): CostedFuncElem[E,A,B,_] = e.asInstanceOf[CostedFuncElem[E,A,B,_]]
 
@@ -405,6 +419,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     val sizeF = f.sliceSizes
     (calcF, costF, sizeF)
   }
+
+//  def splitCostedOptionFunc[A,B](f: RCostedOptionFunc[A,B]): (Rep[A=>WOption[B]], Rep[((A, (Int, Long))) => (WOption[Int], Int)], Rep[((A, Long)) => WOption[Long]]) = {
+//    implicit val eA = f.elem.eDom.eVal
+//    val calcF = f.sliceValues
+//    val costF = f.sliceCosts
+//    val sizeF = f.sliceSizes
+//    (calcF, costF, sizeF)
+//  }
 
   type RWOption[T] = Rep[WOption[T]]
 
@@ -826,6 +848,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
+    case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
 
@@ -1313,13 +1336,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val fC = asRep[CostedFunc[Unit, Any, Any]](evalNode(ctx, env, f))
         val xC = asRep[Costed[Any]](evalNode(ctx, env, x))
         f.tpe.asFunc.tRange match {
-          case colTpe: SCollectionType[_] =>
+          case _: SCollectionType[_] =>
             val (calcF, costF, sizeF) = splitCostedCollFunc(asRep[CostedCollFunc[Any,Any]](fC.func))
             val value = xC.value
             val values: Rep[Coll[Any]] = Apply(calcF, value, false)
             val costRes: Rep[(Coll[Int], Int)] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
             val sizes: Rep[Coll[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
             RCCostedColl(values, costRes._1, sizes, costRes._2)
+//          case optTpe: SOption[_] =>
+//            val (calcF, costF, sizeF) = splitCostedOptionFunc(asRep[CostedOptionFunc[Any,Any]](fC.func))
+//            val value = xC.value
+//            val values: Rep[WOption[Any]] = Apply(calcF, value, false)
+//            val costRes: Rep[(WOption[Int], Int)] = Apply(costF, Pair(value, Pair(xC.cost, xC.dataSize)), false)
+//            val sizes: Rep[WOption[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
+//            RCCostedOption(values, costRes._1, sizes, costRes._2)
           case _ =>
             val (calcF, costF, sizeF) = splitCostedFunc(fC.func)
             val value = xC.value
