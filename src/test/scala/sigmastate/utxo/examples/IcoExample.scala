@@ -30,15 +30,14 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val fundingScript = compileWithCosting(fundingEnv,
       """{
         |
-        |  val toAddFn = { (b: Box) =>
-        |     val pk = b.R4[Coll[Byte]].get
-        |     val value = longToByteArray(b.value)
-        |     (pk, value)
-        |  }
         |
         |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty})
         |
-        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map(toAddFn)
+        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map({ (b: Box) =>
+        |     val pk = b.R4[Coll[Byte]].get
+        |     val value = longToByteArray(b.value)
+        |     (pk, value)
+        |  })
         |
         |  val modifiedTree = SELF.R5[AvlTree].get.insert(toAdd, proof).get
         |

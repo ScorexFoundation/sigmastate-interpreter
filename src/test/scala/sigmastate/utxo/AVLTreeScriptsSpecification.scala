@@ -246,8 +246,8 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val res = in1.runDsl()
     res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
-    //    val pr = prover.prove(in1).get
-    //    contract.verifier.verify(in1, pr) shouldBe true
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree lookup") {
@@ -294,6 +294,9 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val in1 = spendingTx.inputs(0)
     val res = in1.runDsl()
     res shouldBe CSigmaProp(TrivialProp.TrueProp)
+
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree - contains") {
