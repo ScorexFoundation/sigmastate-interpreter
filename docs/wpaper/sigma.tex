@@ -87,11 +87,11 @@ A variety of cryptocurrency languages have appeared. We do not survey them here,
 Simplicity~\cite{o2017simplicity}, Marlowe~\cite{seijas2018marlowe}, TypeCoin~\cite{crary2015peer}, and many other languages.
 
 \subsection{Our Contribution: \langname}
-In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time (see \ref{sec:runningtime}). However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see  Section \ref{sec:self-replicating}).
+In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time. However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see also Section \ref{sec:self-replicating}).
 
 
 \paragraph{Built-in $\Sigma$-protocols}
-Our new language incorporates proving and verifying as first-class primitives, giving developers to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, a script protecting a transaction output can contain statements ($\Sigma$-statements) that need to proven (by producing $\Sigma$-proofs) in order to spend the output.
+Our new language incorporates proving and verifying as first-class primitives, giving developers access to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, a script protecting a transaction output can contain statements ($\Sigma$-statements) that need to proven (by producing $\Sigma$-proofs) in order to spend the output.
 
 Conceptually, $\Sigma$-proofs \cite{Cra96} are generalizations~\cite{CL06} of digital signatures.
 In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a $\Sigma$-proof: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}.
@@ -113,17 +113,14 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 
 \langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
 
-\paragraph{Running time estimation and safety checks}
-\lnote{someone should fill this in, because I know very little about it}
-See Section \ref{sec:safety} for more details.
-
-
-
+\ignore{
+    \paragraph{Running time estimation and safety checks}
+    \lnote{someone should fill this in, because I know very little about it}
+    See Section \ref{sec:safety} for more details.
+}
 
 
 \section{\langname Language Description}
-
-\lnote{Should we add, for every code example, a link to the code where it appears? That would help the reader.}
 
 The language syntax is similar to Scala, and therefore many of the constructs are easy to read for those familiar with Scala. 
 
