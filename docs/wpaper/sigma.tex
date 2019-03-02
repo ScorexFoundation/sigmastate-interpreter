@@ -101,7 +101,6 @@ In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is pop
 \item A proof of knowledge of discrete logarithm with respect to a fixed group generator: given a group element $h$, the proof convinces a verifier that the prover knows $w$ such that $h=g^w$, where $g$ is the group generator (also known as base point), without revealing $w$. This is the same as a Schnorr signature with public key $h$.
 \item A proof that of equality of discrete logarithms (i.e., a proof of a Diffie-Hellman tuple): given group elements $g_1, g_2, u_1, u_2$, the proof convinces a verifier that the prover knows $w$ such that $u_1=g_1^w$ and $u_2=g_2^w$, without revealing $w$
 \end{itemize}
-\lnote{This is not the notation used in the code, but in the code, $g$ is overloaded because it's the base point in item 1 and an arbitrary point in item 2; $h$ is also overloaded. Perhaps we should change the code to better notation and then make this text match it.}
 
 
 \langname also provides the ability to build more sophisticated $\Sigma$-protocols by using connectives $\andnode$, $\ornode$, and $\tnode$ (also known as $k$-out-of-$n$).
@@ -134,10 +133,6 @@ Before we describe the language, let us fix some terminology. A \emph{box} (ofte
 All the unspent transaction outputs (\emph{UTXO}) at a given time represent the value stored in the blockchain. A script for a box must evaluate to ``true'' when this box is used as an input to a transaction. This evaluation is helped by a \emph{proof} (for $\Sigma$-statements) and a \emph{context}, which are part of the transaction. The proof is produced by someone who knows the relevant secrets, such as secret keys; the context contains information about the spending transaction, such as details of its inputs and outputs, and the current state of the blockchain, such as the current height of the blockchain and last 10 block headers from the blockchain.
 
 \subsection{$\Sigma$-Statements}
-
-\lnote{every script example here should be also in our test code exactly as written, to make sure our own paper passes our own tests. These should be edited as the language evolves.}
-
-\lnote{If we want to show examples of the underlying syntax tree to which the language gets compiled, we can to that here, in parallel with examples in the language}
 
 The simplest script allows the owner of a public key to spend an output box in a future transaction by issuing a signature with the corresponding secret key. If the variable \texttt{pk} holds the public key, then this script is specified simply as a string
 \begin{verbatim}
@@ -385,8 +380,6 @@ The example in the paragraph is not meant for practical implementation; rather, 
 \ignore{
 \subsection{Merkle Trees}
 Explain \texttt{isMember} and provide an example of usage. Explain that the context also contains the root hash of the all the unspent output boxes in the previous block \lnote{check: previous or current block? It would seem that the current is not available, so it should be previous.}, available via the predefined variable \texttt{LastBlockUtxoRootHash}. Give examples of usage, such as oracle, MAST, FSM. (For the oracle, explain that our language is rich enough to support signature verification within the script.)
-
-\lnote{All of this has to wait until there are working code examples in \langname (currently, the examples in \texttt{OracleExamplesSpecification} and \texttt{MASTExampleSpecification} and \texttt{FsmExampleSpecification} are all written as ASTs, not as compilable code.}
 }
 
 
