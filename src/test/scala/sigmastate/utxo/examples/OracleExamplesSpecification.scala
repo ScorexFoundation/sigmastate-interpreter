@@ -4,17 +4,17 @@ import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.{R4, RegisterId}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.TrivialProp.TrueProp
 import sigmastate.eval.CSigmaProp
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -72,9 +72,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     *
     */
   property("oracle example") {
-    val oracle = new ErgoLikeTestProvingInterpreter
-    val aliceTemplate = new ErgoLikeTestProvingInterpreter
-    val bob = new ErgoLikeTestProvingInterpreter
+    val oracle = new ContextEnrichingTestProvingInterpreter
+    val aliceTemplate = new ContextEnrichingTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -155,7 +155,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val sinceHeight = 40
     val timeout = 60
@@ -208,9 +208,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     * Heavyweight authentication from the previous example is not needed then.
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoLikeTestProvingInterpreter
-    val alice = new ErgoLikeTestProvingInterpreter
-    val bob = new ErgoLikeTestProvingInterpreter
+    val oracle = new ContextEnrichingTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -246,7 +246,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,

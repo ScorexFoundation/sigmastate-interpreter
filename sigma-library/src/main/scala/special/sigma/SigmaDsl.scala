@@ -192,12 +192,14 @@ package special.sigma {
       def allZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
       def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
       def anyZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
+      def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
       def PubKey(base64String: Rep[String]): Rep[SigmaProp];
       def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp];
       def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
       def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
       def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt];
       def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]];
+      def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long];
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp];
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp];
       def isMember(tree: Rep[AvlTree], key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];

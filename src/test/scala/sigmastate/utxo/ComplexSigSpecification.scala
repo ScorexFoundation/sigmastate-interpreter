@@ -2,29 +2,29 @@ package sigmastate.utxo
 
 import org.ergoplatform.{ErgoLikeContext, Height}
 import org.scalacheck.Gen
-import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 
 import scala.util.Random
 
 class ComplexSigSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  private def proverGen: Gen[ErgoLikeTestProvingInterpreter] = for {
+  private def proverGen: Gen[ContextEnrichingTestProvingInterpreter] = for {
     _ <- Gen.const(1)
-  } yield new ErgoLikeTestProvingInterpreter()
+  } yield new ContextEnrichingTestProvingInterpreter()
 
-  private def proversGen(min: Int, max: Int): Gen[Seq[ErgoLikeTestProvingInterpreter]] =
+  private def proversGen(min: Int, max: Int): Gen[Seq[ContextEnrichingTestProvingInterpreter]] =
     Gen.listOfN(Gen.chooseNum(min, max).sample.get, proverGen)
 
   /**
     * Whether A or B, or both are able to sign a transaction
     */
   property("simplest linear-sized ring signature (1-out-of-2 OR)") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
@@ -54,9 +54,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with anyOf syntax") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
@@ -88,9 +88,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simplest linear-sized ring signature (1-out-of-3 OR), with || syntax") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkeyA = proverA.dlogSecrets.head.publicImage
@@ -123,7 +123,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
   //two secrets are known, nevertheless, one will be simulated
   property("simplest linear-sized ring signature (1-out-of-4 OR), all secrets are known") {
-    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -151,10 +151,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ANDs") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -192,10 +192,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of AND and OR") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -233,8 +233,8 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("simple sig scheme - AND of two") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -264,9 +264,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of AND and DLOG") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -302,10 +302,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of two ORs") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -343,10 +343,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - AND of AND and OR") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -387,10 +387,10 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of two ORs") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -427,9 +427,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR w. predicate") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -468,9 +468,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, parentheses") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -517,9 +517,9 @@ class ComplexSigSpecification extends SigmaTestingCommons {
   }
 
   property("complex sig scheme - OR of OR and AND w. predicate, no parentheses") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -568,7 +568,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
 
     // disable scalacheck shrinking otherwise other constraints start to fail
     import org.scalacheck.Shrink
-    implicit val noShrink: Shrink[Seq[ErgoLikeTestProvingInterpreter]] = Shrink.shrinkAny
+    implicit val noShrink: Shrink[Seq[ContextEnrichingTestProvingInterpreter]] = Shrink.shrinkAny
 
     forAll(proversGen(3, 6), minSuccessful(10 /*test is heavy*/)) { allProvers =>
       val verifier = new ErgoLikeTestInterpreter

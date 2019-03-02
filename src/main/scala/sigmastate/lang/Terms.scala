@@ -6,11 +6,12 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
+import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractRegisterAs, Slice, SigmaPropIsProven}
+import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
 import special.sigma.{AnyValue, TestValue}
 
 object Terms {
@@ -126,13 +127,21 @@ object Terms {
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
 
-  /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.*/
-  case class MethodCall(obj: Value[SType], method: SMethod, args: IndexedSeq[Value[SType]]) extends Value[SType] {
+  /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
+    * @param obj object on which method will be invoked
+    * @param method method to be invoked
+    * @param args arguments passed to the method on invocation
+    * @param typeSubst a map of concrete type for each generic type parameter
+    */
+  case class MethodCall(obj: Value[SType],
+                        method: SMethod,
+                        args: IndexedSeq[Value[SType]],
+                        typeSubst: Map[STypeIdent, SType]) extends Value[SType] {
     override val opCode: OpCode = if (args.isEmpty) OpCodes.PropertyCallCode else OpCodes.MethodCallCode
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
     override val tpe: SType = method.stype match {
-      case f: SFunc => f.tRange
-      case t => t
+      case f: SFunc => f.tRange.withSubstTypes(typeSubst)
+      case t => t.withSubstTypes(typeSubst)
     }
   }
   object MethodCall {

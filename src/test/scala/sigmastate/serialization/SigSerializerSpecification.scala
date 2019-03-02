@@ -9,7 +9,7 @@ import sigmastate.Values.{Value, SigmaPropConstant, SigmaBoolean, SigmaPropValue
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.Transformer
 
@@ -19,7 +19,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
   implicit lazy val IR = new TestingIRContext
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
-  private lazy val prover = new ErgoLikeTestProvingInterpreter()
+  private lazy val prover = new ContextEnrichingTestProvingInterpreter()
 
   private lazy val interpreterProveDlogGen: Gen[ProveDlog] =
     Gen.oneOf(prover.dlogSecrets.map(secret => ProveDlog(secret.publicImage.h)))

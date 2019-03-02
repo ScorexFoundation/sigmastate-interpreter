@@ -2,22 +2,22 @@ package org.ergoplatform.dsl
 
 import scala.util.Try
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import special.sigma.{AnyValue, TestValue, SigmaProp}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import special.sigma.{AnyValue, SigmaProp, TestValue}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import scorex.crypto.hash.Digest32
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import sigmastate.lang.Terms.ValueOps
+
 import scala.collection.mutable
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.{AvlTreeData, SType}
 
 import scala.collection.mutable.ArrayBuffer
 import scalan.Nullable
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
-import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import sigmastate.interpreter.{CostedProverResult, ProverResult}
+import sigmastate.eval.{CSigmaProp, Evaluation, IRContext}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
@@ -34,7 +34,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
 
   case class TestProvingParty(name: String) extends ProvingParty {
-    private val prover = new ErgoLikeTestProvingInterpreter
+    private val prover = new ContextEnrichingTestProvingInterpreter
 
     val pubKey: SigmaProp = CSigmaProp(prover.dlogSecrets.head.publicImage)
 
@@ -83,7 +83,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
-        spendingTransaction = ErgoLikeTransaction(IndexedSeq(), tx.outputs.map(_.ergoBox).toIndexedSeq),
+        spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
       ctx
     }

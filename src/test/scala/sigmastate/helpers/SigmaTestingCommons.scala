@@ -1,9 +1,11 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
@@ -17,8 +19,9 @@ import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
+import special.sigma._
 import spire.util.Opt
 
 import scala.annotation.tailrec
@@ -41,14 +44,23 @@ trait SigmaTestingCommons extends PropSpec
 
   val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
 
+  def checkSerializationRoundTrip(v: SValue): Unit = {
+    val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
+    withClue(s"(De)Serialization roundtrip failed for the tree:") {
+      ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes) shouldEqual v
+    }
+  }
+
   def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code)
+    val tree = compiler.compile(env, code)
+    tree
   }
 
   def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
     val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
     tree
   }
 
@@ -63,6 +75,18 @@ trait SigmaTestingCommons extends PropSpec
                 proposition: ErgoTree,
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
+
+  /**
+    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
+    * Normally, this transaction will be invalid as far as it will break rule that sum of
+    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
+    * in our test cases
+    */
+  def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
+    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
+  }
+
+  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
@@ -89,6 +113,8 @@ trait SigmaTestingCommons extends PropSpec
     val env = Interpreter.emptyEnv
     val interProp = compiler.typecheck(env, code)
     val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+    val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
     val valueFun = IR.compile[tpeB.type](IR.getDataEnv, IR.asRep[IR.Context => tpeB.WrappedType](calcF))
 
     (in: A) => {
@@ -109,6 +135,8 @@ trait SigmaTestingCommons extends PropSpec
                 case Opt(pv) => pv
                 case _ => x // cannot wrap, so just return as is
               }
+            case wt: WrapperType[_] if wt.classTag == reflect.classTag[BigInt] =>
+              IR.sigmaDslBuilderValue.BigInt(x.asInstanceOf[BigInteger])
             case _ => x // don't need to wrap
           }
         case _ => res

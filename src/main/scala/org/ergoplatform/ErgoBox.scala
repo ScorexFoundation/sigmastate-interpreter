@@ -36,13 +36,15 @@ import scala.runtime.ScalaRunTime
   * A transaction is unsealing a box. As a box can not be open twice, any further valid transaction can not be linked
   * to the same box.
   *
-  * @param value         - amount of money associated with the box
-  * @param ergoTree   guarding script, which should be evaluated to true in order to open this box
-  * @param additionalTokens - secondary tokens the box contains
+  * @param value               - amount of money associated with the box
+  * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
+  * @param additionalTokens    - secondary tokens the box contains
   * @param additionalRegisters - additional registers the box can carry over
-  * @param transactionId - id of transaction which created the box
-  * @param index         - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
-  * @param creationHeight - height when a transaction containing the box was included into the blockchain
+  * @param transactionId       - id of transaction which created the box
+  * @param index               - number of box (from 0 to total number of boxes the transaction with transactionId created - 1)
+  * @param creationHeight      - height when a transaction containing the box was created.
+  *                            This height is declared by user and should not exceed height of the block,
+  *                            containing the transaction with this box.
   */
 class ErgoBox private(
                        override val value: Long,

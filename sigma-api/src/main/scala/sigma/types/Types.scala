@@ -13,6 +13,11 @@ trait Boolean extends PrimView[scala.Boolean] {
     * @since 2.0
     */
   def toByte: Byte
+
+  /** Logical XOR
+    * @since 2.0
+    */
+  def xor(y: Boolean): Boolean
 }
 
 trait Byte extends PrimView[scala.Byte] {

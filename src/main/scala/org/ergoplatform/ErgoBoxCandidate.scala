@@ -13,11 +13,24 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import scorex.util.Extensions._
 
 import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime
 
+/**
+  * Contains the same fields as `org.ergoplatform.ErgoBox`, except if transaction id and index,
+  * that will be calculated after full transaction formation.
+  *
+  * @see org.ergoplatform.ErgoBox for more details
+  *
+  * @param value               - amount of money associated with the box
+  * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
+  * @param creationHeight      - height when a transaction containing the box was created.
+  *                            This height is declared by user and should not exceed height of the block,
+  *                            containing the transaction with this box.
+  * @param additionalTokens    - secondary tokens the box contains
+  * @param additionalRegisters - additional registers the box can carry over
+  */
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
@@ -65,7 +78,7 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
@@ -74,17 +87,17 @@ object ErgoBoxCandidate {
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
-                                        digestsInTx: Option[Array[ofByte]],
+                                        tokensInTx: Option[Array[ofByte]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        if (digestsInTx.isDefined) {
-          val digestIndex = digestsInTx.get.indexOf(new ofByte(id))
-          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
-          w.putUInt(digestIndex)
+        if (tokensInTx.isDefined) {
+          val tokenIndex = tokensInTx.get.indexOf(new ofByte(id))
+          if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
+          w.putUInt(tokenIndex)
         } else {
           w.putBytes(id)
         }
@@ -144,4 +157,5 @@ object ErgoBoxCandidate {
       parseBodyWithIndexedDigests(None, r)
     }
   }
+
 }

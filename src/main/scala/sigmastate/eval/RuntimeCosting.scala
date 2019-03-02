@@ -1382,6 +1382,10 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           withDefaultSize(ApplyBinOp(binop, x.value, y.value), x.cost + y.cost + costOf(op))
         }
 
+      case LogicalNot(input) =>
+        val inputC = evalNode(ctx, env, input)
+        withDefaultSize(ApplyUnOp(Not, inputC.value), inputC.cost + costOf(node))
+
 //      case ModQ(input) =>
 //        val inputC = asRep[Costed[WBigInteger]](eval(input))
 //        val v = inputC.value.modQ
@@ -1415,6 +1419,20 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
           withDefaultSize(res, cost)
       }
 
+      case XorOf(input) => input match {
+        case ConcreteCollection(items, tpe) =>
+          val itemsC = items.map(item => eval(item))
+          val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
+          val costs = colBuilder.fromItems(itemsC.map(_.cost): _*)
+          val cost = costs.sum(intPlusMonoid) + perItemCostOf(node, costs.length)
+          withDefaultSize(res, cost)
+        case _ =>
+          val inputC = asRep[CostedColl[Boolean]](eval(input))
+          val res = sigmaDslBuilder.xorOf(inputC.value)
+          val cost = inputC.cost + perItemCostOf(node, inputC.sizes.length)
+          withDefaultSize(res, cost)
+      }
+
       case BinOr(l, r) =>
         val lC = evalNode(ctx, env, l)
         val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
@@ -1429,6 +1447,22 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val v = And.applyLazy(lC.value, rC.value)
         val c = lC.cost + rC.cost + costOf(node)
         withDefaultSize(v, c)
+
+//      case BinXor(l, r) =>
+//        val lC = evalNode(ctx, env, l)
+//        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
+//        val v = sigmaDslBuilder.binXor(lC.value, rC.value)
+//        val c = lC.cost + rC.cost + costOf(node)
+//        withDefaultSize(v, c)
+
+      case neg: Negation[t] =>
+        val tpe = neg.input.tpe
+        val et = stypeToElem(tpe)
+        val op = NumericNegate(elemToNumeric(et))(et)
+        val inputC = evalNode(ctx, env, neg.input)
+        inputC match { case x: RCosted[a] =>
+            withDefaultSize(ApplyUnOp(op, x.value), x.cost + costOf(neg))
+        }
 
       case SigmaAnd(items) =>
         val itemsC = items.map(eval)
@@ -1520,6 +1554,12 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val cost = inputC.cost + costOf(node)
         withDefaultSize(res, cost)
 
+      case ByteArrayToLong(In(arr)) =>
+        val arrC = asRep[Costed[Coll[Byte]]](arr)
+        val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
+        val cost = arrC.cost + costOf(node)
+        withDefaultSize(value, cost)
+
       case Xor(InCollByte(l), InCollByte(r)) =>
         val values = colBuilder.xor(l.value, r.value)
         val sizes = r.sizes
@@ -1548,7 +1588,7 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
-      case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
+      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
         val (argsVals, argsCosts) = args.map {
           case sfunc: Value[SFunc]@unchecked if sfunc.tpe.isFunc =>
@@ -1585,13 +1625,24 @@ trait RuntimeCosting extends SigmaLibrary with DataCosting with Slicing { IR: Ev
         }
         withDefaultSize(value, cost)
 
-      case Terms.MethodCall(obj, method, args) if obj.tpe.isOption =>
+      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isOption =>
         val optC = asRep[CostedOption[Any]](eval(obj))
         val argsC = args.map(eval)
         (method.name, argsC) match {
           case (SOption.MapMethod.name, Seq(f)) => optC.map(asRep[Costed[Any => Any]](f))
           case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
-          case _ => error(s"method $method is not supported")
+          case _ => error(s"method $method is not supported in object $obj")
+        }
+
+      case Terms.MethodCall(obj, method, args, typeSubst) if obj.tpe.isBox =>
+        val boxC = asRep[CostedBox](eval(obj))
+        val argsC = args.map(eval)
+        (method.name, argsC) match {
+          case (SBox.GetRegMethod.name, Seq(index)) =>
+            val tpe = typeSubst(SBox.tT)
+            implicit val elem = stypeToElem(tpe).asElem[Any]
+            boxC.getReg(asRep[Int](index.value))(elem)
+          case _ => error(s"method $method is not supported in object $obj")
         }
 
       case _ =>

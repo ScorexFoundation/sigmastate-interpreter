@@ -7,7 +7,7 @@ import scorex.crypto.hash
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -39,7 +39,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     */
   property("simple FSM example") {
 
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
 
     val script1 = prover.dlogSecrets.head.publicImage.toSigmaProp
     val script2 = prover.dhSecrets.head.publicImage.toSigmaProp
@@ -139,7 +139,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox2)),
+      createTransaction(fsmBox2),
       self = fsmBox1)
 
     val spendingProof = prover
@@ -159,7 +159,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox1)),
+      createTransaction(fsmBox1),
       self = fsmBox2)
 
     val spendingProof2 = prover
@@ -187,7 +187,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
+      createTransaction(fsmBox3),
       self = fsmBox1)
 
     //honest prover fails
@@ -214,7 +214,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fsmBox3)),
+      createTransaction(fsmBox3),
       self = fsmBox2)
 
     val spendingProof23 = prover
@@ -236,7 +236,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
+      createTransaction(freeBox),
       self = fsmBox3)
 
     val spendingProof30 = prover
@@ -252,7 +252,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(freeBox)),
+      createTransaction(freeBox),
       self = fsmBox2)
 
     //honest prover fails

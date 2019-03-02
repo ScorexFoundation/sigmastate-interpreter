@@ -24,10 +24,18 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   private def comp(env: ScriptEnv, x: String): Value[SType] = compileWithCosting(env, x)
   private def comp(x: String): Value[SType] = compileWithCosting(env, x)
   private def compWOCosting(x: String): Value[SType] = compile(env, x)
-  private def compWOCosting(env: ScriptEnv, x: String): Value[SType] = compile(env, x)
 
   private def testMissingCosting(script: String, expected: SValue): Unit = {
-    compWOCosting(script) shouldBe expected
+    val tree = compWOCosting(script)
+    tree shouldBe expected
+    checkSerializationRoundTrip(tree)
+    // when implemented in coster this should be changed to a positive expectation
+    an [CosterException] should be thrownBy comp(env, script)
+  }
+
+  private def testMissingCostingWOSerialization(script: String, expected: SValue): Unit = {
+    val tree = compWOCosting(script)
+    tree shouldBe expected
     // when implemented in coster this should be changed to a positive expectation
     an [CosterException] should be thrownBy comp(env, script)
   }
@@ -96,7 +104,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("ZKProof") {
-    testMissingCosting("ZKProof { sigmaProp(HEIGHT > 1000) }",
+    testMissingCostingWOSerialization("ZKProof { sigmaProp(HEIGHT > 1000) }",
       ZKProofBlock(BoolToSigmaProp(GT(Height, IntConstant(1000)))))
   }
 
@@ -165,11 +173,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("logicalNot") {
-    testMissingCosting("!true", LogicalNot(TrueLeaf))
+    comp("!true") shouldBe LogicalNot(TrueLeaf)
   }
 
   property("Negation") {
-    testMissingCosting("-HEIGHT", Negation(Height))
+    comp("-HEIGHT") shouldBe Negation(Height)
   }
 
   property("BitInversion") {
@@ -208,9 +216,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1,2) << 2",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(2))
-      )
+        SCollection.BitShiftLeftMethod,
+        Vector(IntConstant(2)),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -218,9 +226,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1,2) >> 2",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftRightMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(2))
-      )
+        SCollection.BitShiftRightMethod,
+        Vector(IntConstant(2)),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -239,16 +247,17 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
         SCollection.IndicesMethod,
-        Vector()
+        Vector(),
+        Map(SCollection.tIV -> SBoolean)
       )
   }
 
   property("SCollection.flatMap") {
     comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
       mkMethodCall(Outputs,
-        SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
+        SCollection.FlatMapMethod,
         Vector(FuncValue(1,SBox,
-          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))))
+          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean))
   }
 
   property("SNumeric.toBytes") {
@@ -274,7 +283,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   property("SOption.toColl") {
     testMissingCosting("getVar[Int](1).toColl",
       mkMethodCall(GetVarInt(1),
-        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq()))
+        SOption.ToCollMethod, IndexedSeq(), Map(SOption.tT -> SInt)))
   }
 
   property("SAvlTree.digest") {
@@ -292,112 +301,110 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   ignore("SOption.map") {
     testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
       mkMethodCall(GetVarInt(1),
-        SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        SOption.MapMethod,
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SInt,
-          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1)))))
-      )
+          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map(SOption.tT -> SInt, SOption.tR -> SInt))
     )
   }
 
   ignore("SOption.filter") {
     testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
       mkMethodCall(GetVarInt(1),
-        SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
+        SOption.FilterMethod,
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SBoolean,
-          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0)))))
-      )
+          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0))))), Map(SOption.tT -> SInt))
     )
   }
 
   property("SOption.flatMap") {
-    testMissingCosting("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
+    testMissingCostingWOSerialization("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
       mkMethodCall(GetVarInt(1),
-        SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+        SOption.FlatMapMethod,
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SOption(SInt),
-          Some(GetVarInt(2))))
-      )
+          Some(GetVarInt(2)))),
+        Map(SOption.tT -> SInt, SOption.tR -> SInt))
     )
   }
 
   property("SCollection.segmentLength") {
     comp("OUTPUTS.segmentLength({ (out: Box) => out.value >= 1L }, 0)") shouldBe
       mkMethodCall(Outputs,
-        SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollection.SegmentLengthMethod,
         Vector(
           FuncValue(
             Vector((1, SBox)),
             GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
           IntConstant(0)
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SBox))
   }
 
   property("SCollection.indexWhere") {
     comp("OUTPUTS.indexWhere({ (out: Box) => out.value >= 1L }, 0)") shouldBe
       mkMethodCall(Outputs,
-        SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollection.IndexWhereMethod,
         Vector(
           FuncValue(
             Vector((1, SBox)),
             GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
           IntConstant(0)
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SBox))
   }
 
   property("SCollection.lastIndexWhere") {
     comp("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L }, 1)") shouldBe
       mkMethodCall(Outputs,
-        SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollection.LastIndexWhereMethod,
         Vector(
           FuncValue(
             Vector((1, SBox)),
             GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
           IntConstant(1)
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SBox))
   }
 
   property("SCollection.patch") {
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1))
-      )
+        SCollection.PatchMethod,
+        Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1)),
+        Map(SCollection.tIV -> SInt))
   }
 
   property("SCollection.updated") {
     comp("Coll(1, 2).updated(1, 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), IntConstant(1))
-      )
+        SCollection.UpdatedMethod,
+        Vector(IntConstant(1), IntConstant(1)),
+        Map(SCollection.tIV -> SInt))
   }
 
   property("SCollection.updateMany") {
     comp("Coll(1, 2).updateMany(Coll(1), Coll(3))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)), ConcreteCollection(IntConstant(3)))
-      )
+        SCollection.UpdateManyMethod,
+        Vector(ConcreteCollection(IntConstant(1)), ConcreteCollection(IntConstant(3))),
+        Map(SCollection.tIV -> SInt))
   }
 
   property("SCollection.unionSets") {
     testMissingCosting("Coll(1, 2).unionSets(Coll(1))",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)))
-      )
+        SCollection.UnionSetsMethod,
+        Vector(ConcreteCollection(IntConstant(1))),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -405,9 +412,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1, 2).diff(Coll(1))",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)))
-      )
+        SCollection.DiffMethod,
+        Vector(ConcreteCollection(IntConstant(1))),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -415,23 +422,23 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1, 2).intersect(Coll(1))",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)))
-      )
+        SCollection.IntersectMethod,
+        Vector(ConcreteCollection(IntConstant(1))),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
   property("SCollection.prefixLength") {
-    testMissingCosting("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
+    testMissingCostingWOSerialization("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
       mkMethodCall(Outputs,
-        SCollection.PrefixLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollection.PrefixLengthMethod,
         Vector(
           Terms.Lambda(
             Vector(("out",SBox)),
             SBoolean,
             Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SBox))
     )
   }
 
@@ -439,32 +446,32 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), IntConstant(0))
-      )
+        SCollection.IndexOfMethod,
+        Vector(IntConstant(1), IntConstant(0)),
+        Map(SCollection.tIV -> SInt))
   }
 
   property("SCollection.lastIndexOf") {
     testMissingCosting("Coll(1, 2).lastIndexOf(1, 0)",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), IntConstant(0))
-      )
+        SCollection.LastIndexOfMethod,
+        Vector(IntConstant(1), IntConstant(0)),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
   property("SCollection.find") {
-    testMissingCosting("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
+    testMissingCostingWOSerialization("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
       mkMethodCall(Outputs,
-        SCollection.FindMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
+        SCollection.FindMethod,
         Vector(
           Terms.Lambda(
             Vector(("out",SBox)),
             SBoolean,
             Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SBox))
     )
   }
 
@@ -482,9 +489,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1, 2).startsWith(Coll(1), 1)",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)), IntConstant(1))
-      )
+        SCollection.StartsWithMethod,
+        Vector(ConcreteCollection(IntConstant(1)), IntConstant(1)),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -492,9 +499,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("Coll(1, 2).endsWith(Coll(1))",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)))
-      )
+        SCollection.EndsWithMethod,
+        Vector(ConcreteCollection(IntConstant(1))),
+        Map(SCollection.tIV -> SInt))
     )
   }
 
@@ -502,30 +509,29 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
-      )
+        SCollection.ZipMethod,
+        Vector(ConcreteCollection(IntConstant(1), IntConstant(1))),
+        Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt))
   }
 
   property("SCollection.partition") {
     comp("Coll(1, 2).partition({ (i: Int) => i > 0 })") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        SCollection.PartitionMethod,
         Vector(FuncValue(
           Vector((1, SInt)),
           GT(ValUse(1, SInt), IntConstant(0))
-        ))
-      )
+        )),
+        Map(SCollection.tIV -> SInt))
   }
 
   property("SCollection.mapReduce") {
-    testMissingCosting(
+    testMissingCostingWOSerialization(
       "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.MapReduceMethod.withConcreteTypes(Map(
-          SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
+        SCollection.MapReduceMethod,
         Vector(
           Lambda(List(),
             Vector(("i", SInt)),
@@ -543,8 +549,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
               SelectField(Ident("tl", STuple(SLong, SLong)).asValue[STuple], 2).asInstanceOf[Value[SLong.type]])
             )
           )
-        )
-      )
+        ),
+        Map(SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong))
     )
   }
 
@@ -553,4 +559,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     costerFail("Some(10)", 1, 1)
   }
 
+  property("byteArrayToLong") {
+    comp("byteArrayToLong(longToByteArray(1L))") shouldBe ByteArrayToLong(LongToByteArray(LongConstant(1)))
+  }
+
+  property("xorOf") {
+    comp("xorOf(Coll[Boolean](true, false))") shouldBe XorOf(Seq(TrueLeaf, FalseLeaf))
+  }
 }

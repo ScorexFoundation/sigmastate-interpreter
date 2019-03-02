@@ -6,13 +6,13 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.OptionUnwrapNone
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
   property("context enriching mixed w. crypto") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -39,7 +39,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   }
 
   property("context enriching mixed w. crypto 2") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -81,7 +81,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val r = Base16.decode("bb6633db20").get
 
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(k1, ByteArrayConstant(v1))
       .withContextExtender(k2, ByteArrayConstant(v2))
 
@@ -113,7 +113,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     * The script is asking for a hash function preimage. The "proof" could be replayed, so not really a proof.
     */
   property("prover enriching context") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage))
@@ -139,7 +139,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
   }
 
   property("prover enriching context 2") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val preimage1 = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
 

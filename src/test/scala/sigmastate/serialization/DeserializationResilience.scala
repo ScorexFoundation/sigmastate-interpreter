@@ -45,6 +45,6 @@ class DeserializationResilience extends SerializationSpecification {
 
   property("invalid op code") {
     an[InvalidOpCode] should be thrownBy
-      ValueSerializer.deserialize(Array.fill[Byte](1)(255.toByte))
+      ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
   }
 }

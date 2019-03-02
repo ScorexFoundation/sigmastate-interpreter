@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform._
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -15,10 +15,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
   property("Evaluation - ColdWallet Contract Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val bob = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
     val env = Map(
@@ -54,7 +54,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
 
     val address = Pay2SHAddress(script)
 
-    val carol = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val carol = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
   }
