@@ -65,7 +65,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
         |    (alice || bob) &&
         |    (newMinBal == 0 || isValidOut)
         |  )
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
     val address = Pay2SHAddress(script)
 

@@ -92,7 +92,7 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
         |    (anyOf(Coll(user1, user2, user3)) && (SELF.value <= avbl1Key || isValid1Key)) ||
         |    (atLeast(2, Coll(user1, user2, user3)) && (SELF.value <= avbl2Key || isValid2Key))
         |  )
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
     val address = Pay2SHAddress(script)
 
