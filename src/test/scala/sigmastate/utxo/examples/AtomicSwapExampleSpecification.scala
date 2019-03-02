@@ -8,10 +8,11 @@ import sigmastate._
 import interpreter.Interpreter._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{GetVar, SizeOf}
+import sigmastate.utxo.SizeOf
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   /**
     * Atomic cross-chain trading example:
     * Alice(A) has coins in chain 1, Bob(B) has coins in chain 2, they want to exchange them atomically and with no
