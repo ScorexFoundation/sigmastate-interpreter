@@ -277,6 +277,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq()))
   }
 
+  property("SContext.dataInputs") {
+    testMissingCosting("CONTEXT.dataInputs",
+      mkMethodCall(Context, SContext.DataInputsMethod, IndexedSeq()))
+  }
+
   property("SAvlTree.digest") {
     comp("getVar[AvlTree](1).get.digest") shouldBe
       mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.digestMethod, IndexedSeq())

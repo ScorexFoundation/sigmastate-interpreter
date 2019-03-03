@@ -14,7 +14,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{IRContext, CostingSigmaDslBuilder, CFunc}
+import sigmastate.eval.{IRContext, CostingSigmaDslBuilder, CFunc, CostingDataContext}
 import sigmastate.{SInt, AvlTreeFlags, SSigmaProp, SFunc}
 import sigmastate.Values.{ErgoTree, Constant, SValue, IntConstant}
 import sigmastate.interpreter.Interpreter
@@ -243,4 +243,11 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val ctx = ErgoLikeContext.dummy(fakeSelf)
     doApply((CFunc[Int, Int](ctx, code), 10))
   }
+
+  property("Context properties equivalence") {
+    val doDataInputs = checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInput }")) { (x: Context) => x.dataInputs }
+
+//    doDataInputs(ctx)
+  }
+
 }

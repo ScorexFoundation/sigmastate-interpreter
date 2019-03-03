@@ -243,11 +243,11 @@ trait SGenericType {
 }
 
 trait CosterFactory {
-  def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostRule
+  def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler
 }
 
-case class Coster(selector: RuntimeCosting => RuntimeCosting#CostRule) extends CosterFactory {
-   def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostRule = selector(IR).asInstanceOf[IR.CostRule]
+case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler) extends CosterFactory {
+   def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler = selector(IR).asInstanceOf[IR.CostingHandler]
 }
 
 /** Method info including name, arg type and result type.
@@ -1153,4 +1153,5 @@ case object SContext extends SProduct with SPredefType with STypeCompanion {
   protected override def getMethods() = super.getMethods() ++ Seq(
     DataInputsMethod
   )
+//  override val coster = Some(Coster(_.ContextCoster))
 }

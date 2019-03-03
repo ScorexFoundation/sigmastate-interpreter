@@ -14,7 +14,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import CostModel._
   import WSpecialPredef._
 
-  trait CostRule {
+  trait CostingHandler {
     def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_]
   }
 
@@ -87,7 +87,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
   }
 
-  object AvlTreeCoster extends CostRule {
+  object AvlTreeCoster extends CostingHandler {
     override def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
       val coster = new AvlTreeCoster(asCosted[AvlTree](obj), method, args)
       val costerClass = classOf[AvlTreeCoster]

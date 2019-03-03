@@ -423,6 +423,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case SomeValue(x) => SomeValue(assignType(env, x))
     case v: NoneValue[_] => v
 
+    case Context => Context
     case Height => Height
     case MinerPubkey => MinerPubkey
     case Self => Self
