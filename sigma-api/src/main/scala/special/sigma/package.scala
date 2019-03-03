@@ -24,12 +24,14 @@ package object sigma {
   implicit val SigmaPropRType: RType[SigmaProp] = wrapperType[SigmaProp]
   implicit val BoxRType: RType[Box] = wrapperType[Box]
   implicit val AvlTreeRType: RType[AvlTree] = wrapperType[AvlTree]
+  implicit val ContextRType: RType[Context] = wrapperType[Context]
+  implicit val HeaderRType: RType[Header]   = wrapperType[Header]
+  implicit val PreHeaderRType: RType[PreHeader] = wrapperType[PreHeader]
 
   implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])
   implicit val CostModelRType: RType[CostModel] = RType.fromClassTag(classTag[CostModel])
-  implicit val ContextRType: RType[Context] = RType.fromClassTag(classTag[Context])
-  implicit val HeaderRType: RType[Header] = RType.fromClassTag(classTag[Header])
-  implicit val PreHeaderRType: RType[PreHeader] = RType.fromClassTag(classTag[PreHeader])
+
+
   implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
 

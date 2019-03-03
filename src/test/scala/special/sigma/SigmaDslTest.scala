@@ -2,7 +2,8 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.ErgoLikeContext.dummyPubkey
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.scalacheck.Gen.containerOfN
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
@@ -14,10 +15,10 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.{IRContext, CostingSigmaDslBuilder, CFunc, CostingDataContext}
-import sigmastate.{SInt, AvlTreeFlags, SSigmaProp, SFunc}
-import sigmastate.Values.{ErgoTree, Constant, SValue, IntConstant}
-import sigmastate.interpreter.Interpreter
+import sigmastate.eval._
+import sigmastate._
+import sigmastate.Values.{Constant, SValue, IntConstant, ErgoTree, BooleanConstant}
+import sigmastate.interpreter.{Interpreter, ContextExtension}
 import sigmastate.interpreter.Interpreter.emptyEnv
 import special.collection.Coll
 import special.collections.CollGens
@@ -40,6 +41,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
+
+  val SigmaDsl = CostingSigmaDslBuilder
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
     val b1 = f(x); val b2 = g(x)
@@ -133,11 +136,18 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   val keyCollGen = bytesCollGen.map(_.slice(0, 32))
   import org.ergoplatform.dsl.AvlTreeHelpers._
 
-  private def sampleAvlTree = {
+  private def sampleAvlProver = {
     val key = keyCollGen.sample.get
     val value = bytesCollGen.sample.get
     val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
     (key, value, avlProver)
+  }
+
+  private def sampleAvlTree = {
+    val (key, _, avlProver) = sampleAvlProver
+    val digest = avlProver.digest.toColl
+    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    tree
   }
 
   property("AvlTree properties equivalence") {
@@ -150,9 +160,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     val updateAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
     val removeAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
 
-    val (key, _, avlProver) = sampleAvlTree
-    val digest = avlProver.digest.toColl
-    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    val tree = sampleAvlTree
+
     doDigest(tree)
     doEnabledOps(tree)
     doKeyLength(tree)
@@ -176,7 +185,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }"))
          { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }
 
-    val (key, _, avlProver) = sampleAvlTree
+    val (key, _, avlProver) = sampleAvlProver
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
     val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
@@ -244,10 +253,45 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     doApply((CFunc[Int, Int](ctx, code), 10))
   }
 
-  property("Context properties equivalence") {
-    val doDataInputs = checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInput }")) { (x: Context) => x.dataInputs }
+  val tokenId1: Digest32 = Blake2b256("id1")
+  val tokenId2: Digest32 = Blake2b256("id2")
+  val box = createBox(10, TrivialProp.TrueProp,
+    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
+    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
-//    doDataInputs(ctx)
+  val dataBox = createBox(1000, TrivialProp.TrueProp,
+    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
+    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
+
+  val header: Header = CHeader(0,
+    Blake2b256("parentId").toColl,
+    Blake2b256("ADProofsRoot").toColl,
+    sampleAvlTree,
+    Blake2b256("transactionsRoot").toColl,
+    timestamp = 0,
+    nBits = 0,
+    height = 0,
+    extensionRoot = Blake2b256("transactionsRoot").toColl,
+    minerPk = SigmaDsl.groupGenerator,
+    powOnetimePk = SigmaDsl.groupGenerator,
+    powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3)),
+    powDistance = SigmaDsl.BigInt(BigInteger.ONE),
+    votes = Colls.emptyColl[Byte]
+    )
+  val headers = Colls.fromItems(header)
+  val preHeader: PreHeader = null
+  val ergoCtx = new ErgoLikeContext(
+    currentHeight = 0,
+    lastBlockUtxoRoot = AvlTreeData.dummy,
+    dummyPubkey, boxesToSpend = IndexedSeq(box),
+    spendingTransaction = null,
+    self = box, headers = headers, preHeader = preHeader, dataInputs = IndexedSeq(dataBox),
+    extension = ContextExtension(Map()))
+  lazy val ctx = ergoCtx.toSigmaContext(IR, false)
+
+  property("Context properties equivalence") {
+    val doDataInputs = checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInputs }")) { (x: Context) => x.dataInputs }
+    doDataInputs(ctx)
   }
 
 }

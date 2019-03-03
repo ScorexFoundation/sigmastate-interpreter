@@ -450,6 +450,7 @@ object Evaluation {
     case SAny => AnyType
     case SBigInt => BigIntRType
     case SBox => BoxRType
+    case SContext => ContextRType
     case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
@@ -482,6 +483,7 @@ object Evaluation {
     case AvlTreeRType => SAvlTree
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
+    case ContextRType => SContext
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)

@@ -14,8 +14,14 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import CostModel._
   import WSpecialPredef._
 
-  trait CostingHandler {
-    def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_]
+  abstract class CostingHandler[T](createCoster: (RCosted[T], SMethod, Seq[RCosted[_]]) => Coster[T]) {
+    def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
+      val coster = createCoster(asCosted[T](obj), method, args)
+      val costerClass = coster.getClass
+      val costerMethod = costerClass.getMethod(method.name, Array.fill(args.length)(classOf[Sym]):_*)
+      val res = costerMethod.invoke(coster, args:_*)
+      res.asInstanceOf[RCosted[_]]
+    }
   }
 
   def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
@@ -87,13 +93,14 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
   }
 
-  object AvlTreeCoster extends CostingHandler {
-    override def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
-      val coster = new AvlTreeCoster(asCosted[AvlTree](obj), method, args)
-      val costerClass = classOf[AvlTreeCoster]
-      val costerMethod = costerClass.getMethod(method.name, Array.fill(args.length)(classOf[Sym]):_*)
-      val res = costerMethod.invoke(coster, args:_*)
-      res.asInstanceOf[RCosted[_]]
+  object AvlTreeCoster extends CostingHandler[AvlTree]((obj, m, args) => new AvlTreeCoster(obj, m, args))
+
+  class ContextCoster(obj: RCosted[Context], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Context](obj, method, args){
+    import Context._
+    def dataInputs() = {
+      sigmaDslBuilder.costBoxes(obj.value.dataInputs)
     }
   }
+
+  object ContextCoster extends CostingHandler[Context]((obj, m, args) => new ContextCoster(obj, m, args))
 }

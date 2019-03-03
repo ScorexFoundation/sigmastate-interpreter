@@ -841,6 +841,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case SAny => AnyElement
     case SBigInt => bigIntElement
     case SBox => boxElement
+    case SContext => contextElement
     case SGroupElement => groupElementElement
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
@@ -865,6 +866,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _: AvlTreeElem[_] => SAvlTree
     case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
+    case _: ContextElem[_] => SContext
     case _: SigmaPropElem[_] => SSigmaProp
     case se: StructElem[_] =>
       assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
