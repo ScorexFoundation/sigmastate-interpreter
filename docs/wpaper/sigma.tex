@@ -367,9 +367,8 @@ a fixed amount specified by \texttt{fixedRate} per block until \texttt{HEIGHT} r
 
 
 \paragraph{Example: arbitrary computation via a simple cellular automaton}
-The example in the paragraph is not meant for practical implementation; rather, it is here merely to demonstrate the Turing-complete power of self-replication. It implements the so-called ``rule 110'' one-dimensional cellular automaton \cite{wolfram1986theory}, which is known to be Turing-complete \cite{cook2004universality} (with only polynomial-time overheard --- i.e., $P$-complete \cite{NW06}). See \cite{CKM18}  for more details. The code for this example is too complex to be put here; it is available at \lnote{give a reference to the code once it is written in our \langname and is sitting online somewhere}. 
-
-\lnote{maybe give a the simple example from \url{https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/test/scala/sigmastate/utxo/examples/Rule110Specification.scala\#L40?}}
+The example in the paragraph is not meant for practical implementation; rather, it is here merely to demonstrate the Turing-complete power of self-replication. It implements the so-called ``rule 110'' one-dimensional cellular automaton \cite{wolfram1986theory}, which is known to be Turing-complete \cite{cook2004universality} (with only polynomial-time overheard --- i.e., $P$-complete \cite{NW06}). See \cite{CKM18}  for more details. The code for this example is too complex to be put here; it is available at
+\url{https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/src/test/scala/sigmastate/utxo/examples/Rule110Specification.scala}.
 
 
 \ignore{
@@ -386,20 +385,26 @@ A script is converted to an abstract syntax tree using standard compilation tech
 
 \begin{itemize}
 \item We estimate the time required to process the script and, if it exceeds a certain bound, refuses to evaluate it in order to prevent a denial-of-service attack.
-\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. This statement is a tree, with  \texttt{proveDlog} or \texttt{proveDHtuple} nodes for leaves, and $\andnode$ (\texttt{\&\&}), $\ornode$ (\texttt{||}), or $\tnode$ (\lnote{insert \langname notation here}) for  non-leaves. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
+\item The evaluation converts the script not to a Boolean value, but to a $\Sigma$-statement. This statement is a tree, with  \texttt{proveDlog} or \texttt{proveDHtuple} nodes for leaves, and $\andnode$ (\texttt{\&\&}), $\ornode$ (\texttt{||}), or $\tnode$ for  non-leaves. The prover (when trying to use in a transaction the box that is protected by the script) generates a proof this $\Sigma$-statement. The verifier verifies it, obtaining a Boolean value.
 \end{itemize}
 
-\lnote{Is the above accurate about everything else being relatively standard? Is there anything we want to describe?}
+We describe these two nonstandard steps in Appendix \ref{app:safety} and Appendix \ref{app:crypto}.
 
-We describe these two nonstandard steps in Section \ref{sec:safety} and Appendix \ref{app:crypto}. \lnote{Should they be both in the appendix or both in the main body?}
+
+
+\bibliographystyle{alpha}
+\bibliography{sigma.bib}
+
+
+
+\appendix
 
 
 \section{Safety Guarantees}
-\label{sec:safety}
+\label{app:safety}
 
 We need to be sure that an adversary can not produce such a statement for
-which the Verifier spends more time than it is safe to spend. \knote{links to
-verifier dilemma, orphan rates etc}
+which the Verifier spends more time than it is safe to spend.
 
 In order to filter out malicious statements, Verifier needs to perform a
 series of safety checks in particular consistency checks and cost
@@ -430,7 +435,7 @@ of all subsequent checks to be $O(TreeSize)$.
 Cost Function is the function of the same input (Context, variables,
 registers, etc.) as Statement function, but it computes Int value of the
 computation cost of the Statement function, so it answer the question "How
-many operations it is required to compute the statement?". 
+many operations it is required to compute the statement?".
 
 The Cost Function is instantiated by the following steps:
     \begin{enumerate}
@@ -446,7 +451,7 @@ The Cost Function is instantiated by the following steps:
 The Cost Function is applied right before evaluation of the Statement by the
 following steps:
     \begin{enumerate}
-        \item construct the context as it is required for Statement evaluation 
+        \item construct the context as it is required for Statement evaluation
         \item invoke the interpreter to evaluate the Cost Function in the
         given context
         \item check resulting cost limit
@@ -477,18 +482,18 @@ $Constant$ tree nodes.
 
 \begin{figure}
 \begin{center}
-\begin{tabular}{>{$}l<{$} >{$}c<{$} >{$}l<{$}} 
+\begin{tabular}{>{$}l<{$} >{$}c<{$} >{$}l<{$}}
     \multicolumn{3}{@{}l}{\textbf{def} $genCF(D: Context, t: Value[T]): Value[Long]$}  \\
     D, v~@~ContextVar(\_) & \to & dataCost(v) \\
     D, c~@~Constant(\_) & \to & dataCost(c) \\
     D, t_1 \otimes t_2 & \to & genCF(D, t_1) + Cost_\otimes + genCF(D, t_2) \\
-    arr.map(f) & \to & 
+    arr.map(f) & \to &
         \begin{tabular}[t]{l}
             val $f_{cost}$ = $genCF(D, f)$ \\
             $sum(arr.map(\lambda x \to f_{cost}(x)))$ \\
         \end{tabular} \\
      & \to & $\mnote{arg}$ \\
-    % v @ Constant(_) & \to & 
+    % v @ Constant(_) & \to &
     %     \begin{tabular}[t]{l}
     %         $v :=$ variable with $varId$ from data environment \\
     %         return $dataCost(v)$ \\
@@ -498,17 +503,6 @@ $Constant$ tree nodes.
 \label{fig:genCFT}
 \end{center}
 \end{figure}
-
-
-
-\bibliographystyle{alpha}
-\bibliography{sigma.bib}
-
-
-
-\appendix
-
-
 
 \section{Implementation of Noninteractive $\Sigma$-protocols for an arbitrary And/Or/Threshold composition}
 \label{app:crypto}
