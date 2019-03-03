@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, SigmaLibrary, Nullable}
+import scalan.{Lazy, SigmaLibrary, Nullable, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -20,18 +20,24 @@ import sigma.util.Extensions._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
+import scalan.RType.{StringType, AnyType, LongType, IntType, ArrayType, OptionType, TupleType, BooleanType, PairType, FuncType, ByteType, ShortType}
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.{SourceContext, Terms}
+import sigmastate.lang.{Terms, SourceContext}
 import scalan.staged.Slicing
+import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import special.sigma.TestGroupElement
+import sigmastate.eval.Evaluation.rtypeToSType
+import special.collection.CollType
+import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
   import WArray._;
+  import WBigInteger._
+  import WECPoint._
   import GroupElement._;
   import BigInt._;
   import WOption._
@@ -713,13 +719,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _ => super.transformDef(d, t)
   }
 
-//  lazy val BigIntegerElement: Elem[WBigInteger] = wBigIntegerElement
-
-//  override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
-//    case BigIntegerElement => Const(x)
-//    case _ => super.toRep(x)
-//  }
-
   /** Should be specified in the final cake */
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
@@ -849,6 +848,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
+    case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
     case _ => error(s"Don't know how to convert SType $t to Elem")
   }).asElem[T#WrappedType]
 
@@ -874,6 +874,35 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
+
+  def rtypeToElem(t: RType[_]): Elem[_] = t match {
+    case BooleanType => BooleanElement
+    case ByteType => ByteElement
+    case ShortType => ShortElement
+    case IntType => IntElement
+    case LongType => LongElement
+    case StringType => StringElement
+    case AnyType => AnyElement
+
+    case BigIntegerRType => wBigIntegerElement
+    case BigIntRType => bigIntElement
+
+    case ECPointRType => wECPointElement
+    case GroupElementRType => groupElementElement
+
+    case AvlTreeRType => avlTreeElement
+    case ot: OptionType[_] => wOptionElement(rtypeToElem(ot.tA))
+    case BoxRType => boxElement
+    case SigmaPropRType => sigmaPropElement
+    case tup: TupleType => tupleStructElement(tup.items.map(t => rtypeToElem(t)):_*)
+    case at:  ArrayType[_] => wArrayElement(rtypeToElem(at.tA))
+    case ct:  CollType[_] => collElement(rtypeToElem(ct.tItem))
+    case ft:  FuncType[_,_] => funcElement(rtypeToElem(ft.tDom), rtypeToElem(ft.tRange))
+    case pt:  PairType[_,_] => pairElement(rtypeToElem(pt.tFst), rtypeToElem(pt.tSnd))
+    case pvt: PrimViewType[_,_] => rtypeToElem(pvt.tVal)
+    case _ => sys.error(s"Don't know how to convert RType $t to Elem")
+  }
+
 
   /** For a given data type returns the corresponding specific descendant of CostedElem[T] */
   def elemToCostedElem[T](implicit e: Elem[T]): Elem[Costed[T]] = (e match {

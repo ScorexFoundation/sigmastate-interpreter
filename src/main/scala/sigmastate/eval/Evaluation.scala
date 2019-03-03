@@ -82,6 +82,11 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
 
+  def verifyCalcFunc[A](f: Rep[Context => A], eA: Elem[A]) = {
+    if (f.elem.eRange != eA)
+      !!!(s"Expected function of type ${f.elem.eDom.name} => ${eA.name}, but was $f: ${f.elem.name}")
+  }
+
   def verifyCostFunc(costF: Rep[Context => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
@@ -455,6 +460,7 @@ object Evaluation {
       tupleRType(types.map(t => stypeToRType(t).asInstanceOf[SomeType]))
     case c: SCollectionType[a] => collRType(stypeToRType(c.elemType))
     case o: SOption[a] => optionRType(stypeToRType(o.elemType))
+    case SFunc(Seq(tpeArg), tpeRange, Nil) => funcRType(stypeToRType(tpeArg), stypeToRType(tpeRange))
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 
@@ -479,9 +485,6 @@ object Evaluation {
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
-//    case st: StructType =>
-////      assert(st.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
-//      STuple(st.fieldTypes.map(rtypeToSType(_)).toIndexedSeq)
     case at: ArrayType[_] => SCollection(rtypeToSType(at.tA))
     case ct: CollType[_] => SCollection(rtypeToSType(ct.tItem))
     case ft: FuncType[_,_] => SFunc(rtypeToSType(ft.tDom), rtypeToSType(ft.tRange))

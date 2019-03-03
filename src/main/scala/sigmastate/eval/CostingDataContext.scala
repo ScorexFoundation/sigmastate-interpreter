@@ -8,7 +8,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
@@ -20,6 +20,7 @@ import scalan.RType
 import scorex.crypto.hash.{Sha256, Digest32, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
@@ -279,6 +280,61 @@ object CostingBox {
     IR.sigmaDslBuilderValue.Colls.fromArray(res)
   }
 
+}
+
+/** This class represents context variable and register value of a functional type A => B.
+  * When variable or register is accessed using `getVar[A => B](id).get` or
+  * `box.getReg[A => B].get an instance of this class is returned.
+  *
+  * It internally transforms a given `tree` into executable function.
+  * This it similar to what happens during validation of propositions in the input boxes:
+  * - size check of underlying ErgoTree against limits
+  * - construction of `calcF` and `costF` graphs, both are stored together with resulting function.
+  * - check the types of `calcF` graph to be compatible with expected types A and B
+  * If anything goes wrong, this operation fails and if it is used in the script, the script also fails.
+  *
+  * When f is obtained as `val f = getVar[Int => Int](id).get` then any application `f(x)` involves size estimation
+  * using underlying `costF(x)`.
+  */
+case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
+    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
+  import CFunc._
+
+  private val compiled = {
+    import IR._
+    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
+
+    val eDom = asElem[Any](IR.rtypeToElem(tDom))
+    val eRange = asElem[Any](IR.rtypeToElem(tRange))
+
+    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
+    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+
+    // check cost
+    val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+    val IntConstant(estimatedCost) = costFun(costingCtx)
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+    }
+    // check calc
+    val calcCtx = context.toSigmaContext(IR, isCost = false)
+    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
+    val res = valueFun(calcCtx) match {
+      case Constant(f, fTpe: SFunc) => f
+      case v => v
+    }
+    res.asInstanceOf[A => B]
+  }
+
+  override def apply(x: A): B = compiled(x)
+}
+object CFunc {
+  /** The cost of creating resulting function but not its execution.
+    * Thus it is expected to be small. It can be increased if useful cases are found
+    * such that `tree` should contains heavy operations. */
+  val maxCost = 1000
 }
 
 case class CPreHeader(

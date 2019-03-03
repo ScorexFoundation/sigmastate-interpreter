@@ -971,7 +971,7 @@ object STuple extends STypeCompanion {
 case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypeParam] = Nil)
       extends SType with SGenericType
 {
-  override type WrappedType = Array[Any] => tRange.WrappedType
+  override type WrappedType = Any => tRange.WrappedType
   override val typeCode = SFunc.FuncTypeCode
   override def isConstantSize = false
   override def toString = {

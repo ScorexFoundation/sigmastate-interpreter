@@ -65,7 +65,7 @@ trait SigmaTestingCommons extends PropSpec
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResult[T]): Unit = {
       env.get(ScriptNameProp) match {
         case Some(name: String) =>
           emit(name, res)

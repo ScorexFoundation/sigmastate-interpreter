@@ -2,18 +2,23 @@ package special.sigma
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoLikeContext
 import org.scalacheck.Gen.containerOfN
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
+import scalan.RType
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.helpers.SigmaTestingCommons
 import sigma.util.Extensions._
 import sigmastate.eval.Extensions._
-import sigmastate.eval.CostingSigmaDslBuilder
-import sigmastate.AvlTreeFlags
+import sigmastate.eval.{IRContext, CostingSigmaDslBuilder, CFunc}
+import sigmastate.{SInt, AvlTreeFlags, SSigmaProp, SFunc}
+import sigmastate.Values.{ErgoTree, Constant, SValue, IntConstant}
+import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.Interpreter.emptyEnv
 import special.collection.Coll
 import special.collections.CollGens
 
@@ -230,4 +235,12 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     }
   }
 
+
+  // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
+  ignore("Func context variable") {
+    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
+    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    doApply((CFunc[Int, Int](ctx, code), 10))
+  }
 }
