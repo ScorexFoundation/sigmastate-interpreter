@@ -74,7 +74,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costs = colBuilder.replicate(len, 0)
       val inputSize = sizeOfArgs
       val sizes = colBuilder.replicate(len, inputSize div len.toLong)
-      RCCostedColl(value, costs, sizes, costOfArgs + perKbCostOf(method, inputSize))
+      val res = RCCostedColl(value, costs, sizes, costOfArgs + perKbCostOf(method, inputSize))
+      res
     }
     private def treeModifierMethod[R](meth: Rep[AvlTree] => Rep[WOption[R]]): RCosted[WOption[R]] = {
       val value = meth(obj.value)

@@ -10,9 +10,10 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval.{IRContext,  CSigmaProp}
+import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
 import special.collection.Coll
 import special.sigma.{Context, AvlTree}
@@ -508,10 +509,10 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction, self = s)
-    val pr = prover.prove(prop, ctx, fakeMessage).get
+    val pr = prover.prove(env + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
-    verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
+    verifier.verify(env + (ScriptNameProp -> "verify"), prop, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
 
 }
