@@ -289,9 +289,22 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     extension = ContextExtension(Map()))
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
+  property("Box properties equivalence") {
+    val box = ctx.dataInputs(0)
+    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.id }"))({ (x: Box) => x.id })(box)
+    checkEq(func[Box, Long]("{ (x: Box) => x.value }"))({ (x: Box) => x.value })(box)
+    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.propositionBytes }"))({ (x: Box) => x.propositionBytes })(box)
+    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.bytes }"))({ (x: Box) => x.bytes })(box)
+    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.bytesWithoutRef }"))({ (x: Box) => x.bytesWithoutRef })(box)
+    checkEq(func[Box, (Int, Coll[Byte])]("{ (x: Box) => x.creationInfo }"))({ (x: Box) => x.creationInfo })(box)
+    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.tokens }"))({ (x: Box) => x.tokens })(box)
+//    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.registers }"))({ (x: Box) => x.registers })(box)
+  }
+
   property("Context properties equivalence") {
-    val doDataInputs = checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInputs }")) { (x: Context) => x.dataInputs }
-    doDataInputs(ctx)
+    checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInputs }"))({ (x: Context) => x.dataInputs })(ctx)
+    checkEq(func[Context, Box]("{ (x: Context) => x.dataInputs(0) }"))({ (x: Context) => x.dataInputs(0) })(ctx)
+    checkEq(func[Context, Coll[Byte]]("{ (x: Context) => x.dataInputs(0).id }"))({ (x: Context) => x.dataInputs(0).id })(ctx)
   }
 
 }

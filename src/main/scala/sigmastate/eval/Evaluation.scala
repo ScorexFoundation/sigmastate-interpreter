@@ -611,7 +611,7 @@ object Evaluation {
         implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
         elemRType.asInstanceOf[RType[_]] match {
           case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toDslData(x, elemType, isCost))
+            val testArr = arr.map(x => toDslData(x, elemType, isCost).asWrappedType).toArray(elemRType.classTag)
             dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
           case _ =>
             dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])

@@ -94,6 +94,7 @@ object CostTable {
     ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
     ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
     ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
+    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),

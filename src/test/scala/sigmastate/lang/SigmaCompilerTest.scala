@@ -267,8 +267,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("SBox.tokens") {
-    testMissingCosting("SELF.tokens",
-      mkMethodCall(Self, SBox.tokensMethod, IndexedSeq()))
+    comp("SELF.tokens") shouldBe
+      mkMethodCall(Self, SBox.tokensMethod, IndexedSeq())
   }
 
   property("SOption.toColl") {

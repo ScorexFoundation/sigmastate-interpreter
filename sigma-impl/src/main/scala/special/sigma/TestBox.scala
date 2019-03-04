@@ -41,4 +41,10 @@ class TestBox(
 
   @NeverInline
   override def executeFromRegister[@Reified T](regId: Byte)(implicit cT: RType[T]): T = ???
+
+  override def hashCode(): Int = id.hashCode()
+
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
+    case obj: Box => id == obj.id
+  }))
 }

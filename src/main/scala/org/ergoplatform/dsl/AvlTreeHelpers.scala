@@ -31,10 +31,6 @@ object AvlTreeHelpers {
     Colls.fromArray(opsBytes)
   }
 
-  implicit class ArrayOps[T: RType](arr: Array[T]) {
-    def toColl: Coll[T] = Colls.fromArray(arr)
-  }
-
   implicit class ADKeyArrayOps(arr: Array[ADKey]) {
     def toColl: Coll[Coll[Byte]] = Colls.fromArray(arr.map(x => Colls.fromArray(x)))
   }

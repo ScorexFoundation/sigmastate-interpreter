@@ -1046,7 +1046,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   val Value = "value"
   val Id = "id"
   val Bytes = "bytes"
-  val BytesWithNoRef = "bytesWithNoRef"
+  val BytesWithoutRef = "bytesWithoutRef"
   val CreationInfo = "creationInfo"
   // should be lazy, otherwise lead to initialization error
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)
@@ -1056,12 +1056,13 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
     SMethod(this, Value, SFunc(SBox, SLong), 1), // see ExtractAmount
     SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2), // see ExtractScriptBytes
     SMethod(this, Bytes, SFunc(SBox, SByteArray), 3), // see ExtractBytes
-    SMethod(this, BytesWithNoRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
+    SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SFunc(SBox, SByteArray), 5), // see ExtractId
     SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6), // see ExtractCreationInfo
     getRegMethod,
     tokensMethod,
   ) ++ registers(8)
+  override val coster = Some(Coster(_.BoxCoster))
 }
 
 case object SAvlTree extends SProduct with SPredefType with STypeCompanion {

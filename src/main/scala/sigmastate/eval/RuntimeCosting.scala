@@ -1689,10 +1689,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.decodePoint(bytes.values)
         withDefaultSize(res, costOf(node))
 
-      case Terms.MethodCall(obj, method, args) if method.objType.coster.isDefined =>
-        val objC = eval(obj)
-        val argsC = args.map(eval)
-        method.objType.coster.get(IR)(objC, method, argsC)
 
       case Terms.MethodCall(obj, method, args) if obj.tpe.isCollectionLike =>
         val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))
@@ -1739,6 +1735,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           case (SOption.FilterMethod.name, Seq(f)) => optC.filter(asRep[Costed[Any => Boolean]](f))
           case _ => error(s"method $method is not supported")
         }
+
+      // fallback rule for MethodCall, should be the last case in the list
+      case Terms.MethodCall(obj, method, args) if method.objType.coster.isDefined =>
+        val objC = eval(obj)
+        val argsC = args.map(eval)
+        method.objType.coster.get(IR)(objC, method, argsC)
 
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)

@@ -1,7 +1,9 @@
 package sigmastate.eval
 
+import org.ergoplatform.ErgoBox
 import scalan.SigmaLibrary
-import sigmastate.SMethod
+import sigmastate.{SMethod, SLong}
+import sigmastate.SType.AnyOps
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -103,4 +105,19 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   object ContextCoster extends CostingHandler[Context]((obj, m, args) => new ContextCoster(obj, m, args))
+
+  class BoxCoster(obj: RCosted[Box], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Box](obj, method, args){
+    import Box._
+    import ErgoBox._
+    def tokens() = {
+      val len = MaxTokens.toInt
+      val tokens = obj.value.tokens
+      val tokenInfoSize = sizeData(tokens.elem.eItem, Pair(TokenId.size.toLong, SLong.dataSize(0L.asWrappedType)))
+      val costs = colBuilder.replicate(len, 0)
+      val sizes = colBuilder.replicate(len, tokenInfoSize)
+      RCCostedColl(tokens, costs, sizes, obj.cost + costOf(method))
+    }
+  }
+
+  object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))
 }

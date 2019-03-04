@@ -11,6 +11,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{IRContext,  CSigmaProp}
+import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import special.collection.Coll

@@ -200,7 +200,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
 import sigmastate.eval.CostingBox._
 
-class CostingBox(val IR: Evaluation,
+case class CostingBox(val IR: Evaluation,
                  isCost: Boolean,
                  val ebox: ErgoBox)
   extends TestBox(
@@ -514,27 +514,27 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
 case class CostingDataContext(
-    _dataInputs: Array[Box],
+    _dataInputs: Coll[Box],
     override val headers: Coll[Header],
     override val preHeader: PreHeader,
-    inputs: Array[Box],
-    outputs: Array[Box],
+    inputs: Coll[Box],
+    outputs: Coll[Box],
     height: Int,
     selfBox: Box,
     lastBlockUtxoRootHash: AvlTree,
-    _minerPubKey: Array[Byte],
-    vars: Array[AnyValue],
+    _minerPubKey: Coll[Byte],
+    vars: Coll[AnyValue],
     var isCost: Boolean)
     extends Context
 {
   @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
   @inline def HEIGHT: Int = height
   @inline def SELF: Box   = selfBox
-  @inline def dataInputs: Coll[Box] = builder.Colls.fromArray(_dataInputs)
-  @inline def INPUTS = builder.Colls.fromArray(inputs)
-  @inline def OUTPUTS = builder.Colls.fromArray(outputs)
+  @inline def dataInputs: Coll[Box] = _dataInputs
+  @inline def INPUTS = inputs
+  @inline def OUTPUTS = outputs
   @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
-  @inline def minerPubKey = builder.Colls.fromArray(_minerPubKey)
+  @inline def minerPubKey = _minerPubKey
 
   def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
 

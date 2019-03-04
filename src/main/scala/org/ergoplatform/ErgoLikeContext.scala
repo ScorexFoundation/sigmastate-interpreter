@@ -9,6 +9,7 @@ import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
@@ -47,12 +48,12 @@ class ErgoLikeContext(val currentHeight: Height,
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
-    val dataInputs = this.dataInputs.toArray.map(_.toTestBox(isCost))
-    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
+    val dataInputs = this.dataInputs.toArray.map(_.toTestBox(isCost)).toColl
+    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
     val outputs = if (spendingTransaction == null)
-        noOutputs
+        noOutputs.toColl
       else
-        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
+        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
       val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
@@ -62,8 +63,8 @@ class ErgoLikeContext(val currentHeight: Height,
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     new CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
-      minerPubkey,
-      vars.toArray,
+      minerPubkey.toColl,
+      vars,
       isCost)
   }
 

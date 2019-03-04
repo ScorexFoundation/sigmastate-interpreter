@@ -72,7 +72,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
           case (box, SBox.Id) => eval(mkExtractId(box))
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
           case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
