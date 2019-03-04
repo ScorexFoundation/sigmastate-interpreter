@@ -484,6 +484,7 @@ object Evaluation {
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case ContextRType => SContext
+    case HeaderRType => SHeader
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)

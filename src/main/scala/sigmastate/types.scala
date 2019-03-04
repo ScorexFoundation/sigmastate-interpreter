@@ -2,9 +2,9 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scalan.RType
-import sigmastate.SType.{AnyOps, TypeCode}
+import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigma.util.Extensions._
@@ -16,6 +16,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import sigmastate.eval.RuntimeCosting
+
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.reflect.{ClassTag, classTag}
@@ -25,10 +26,10 @@ import sigmastate.SByte.typeCode
 import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.utxo.{ByIndex, ExtractCreationInfo}
-import special.sigma.{Box, AvlTree, SigmaProp, wrapperType}
+import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
+import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree}
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
-
+import sigmastate.eval.SigmaDsl
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -78,6 +79,9 @@ sealed trait SType extends SigmaNode {
 object SType {
   /** Representation of type codes used in serialization. */
   type TypeCode = Byte
+  object Codes {
+
+  }
 
   val DummyValue = 0.asWrappedType
 
@@ -1155,4 +1159,38 @@ case object SContext extends SProduct with SPredefType with STypeCompanion {
     DataInputsMethod
   )
   override val coster = Some(Coster(_.ContextCoster))
+}
+
+case object SHeader extends SProduct with SPredefType with STypeCompanion {
+  override type WrappedType = Header
+  override val typeCode: TypeCode = 103: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: Header): Value[SHeader.type] = HeaderConstant(v)
+
+  /** Approximate data size of the given context without ContextExtension. */
+  override def dataSize(v: SType#WrappedType): Long = {
+    val h = v.asInstanceOf[Header]
+    val rootSize = SAvlTree.dataSize(SigmaDsl.toAvlTreeData(h.stateRoot).asWrappedType)
+    1 + // h.version
+    h.parentId.length +
+    h.ADProofsRoot.length +
+    rootSize +
+    h.transactionsRoot.length +
+    8 + // h.timestamp
+    8 + // h.nBits
+    4 + // h.height
+    h.extensionRoot.length +
+    CryptoConstants.EncodedGroupElementLength + //h.minerPk
+    CryptoConstants.EncodedGroupElementLength + //h.powOnetimePk,
+    h.powNonce.length +
+    SBigInt.dataSize(0.asWrappedType) + // powDistance
+    h.votes.length
+  }
+  override def isConstantSize = true
+  def ancestors = Nil
+
+//  val DataInputsMethod = SMethod(this, "dataInputs", SFunc(this, SCollection(SBox)), 1, MethodCallIrBuilder)
+  protected override def getMethods() = super.getMethods() ++ Seq(
+  )
+  override val coster = Some(Coster(_.HeaderCoster))
 }

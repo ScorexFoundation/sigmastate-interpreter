@@ -34,7 +34,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Extensions, AnyValue, TestValue}
+import special.sigma.{Extensions, AnyValue, TestValue, Header}
 import sigmastate.lang.SourceContext
 
 
@@ -332,6 +332,14 @@ object Values {
     def apply(value: ErgoLikeContext): Constant[SContext.type]  = Constant[SContext.type](value, SContext)
     def unapply(v: SValue): Option[ErgoLikeContext] = v match {
       case Constant(value: ErgoLikeContext, SContext) => Some(value)
+      case _ => None
+    }
+  }
+
+  object HeaderConstant {
+    def apply(value: Header): Constant[SHeader.type]  = Constant[SHeader.type](value, SHeader)
+    def unapply(v: SValue): Option[Header] = v match {
+      case Constant(value: Header, SHeader) => Some(value)
       case _ => None
     }
   }

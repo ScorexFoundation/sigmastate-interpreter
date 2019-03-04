@@ -120,4 +120,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))
+
+  class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
+    import Header._
+  }
+
+  object HeaderCoster extends CostingHandler[Header]((obj, m, args) => new HeaderCoster(obj, m, args))
 }

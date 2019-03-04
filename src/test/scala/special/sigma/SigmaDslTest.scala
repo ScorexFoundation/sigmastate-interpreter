@@ -3,7 +3,7 @@ package special.sigma
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoLikeTransaction}
 import org.scalacheck.Gen.containerOfN
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
@@ -18,7 +18,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate._
 import sigmastate.Values.{Constant, SValue, IntConstant, ErgoTree, BooleanConstant}
-import sigmastate.interpreter.{Interpreter, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, Interpreter}
 import sigmastate.interpreter.Interpreter.emptyEnv
 import special.collection.Coll
 import special.collections.CollGens
@@ -255,11 +255,15 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 
   val tokenId1: Digest32 = Blake2b256("id1")
   val tokenId2: Digest32 = Blake2b256("id2")
-  val box = createBox(10, TrivialProp.TrueProp,
+  val inBox = createBox(10, TrivialProp.TrueProp,
     Seq(tokenId1 -> 10L, tokenId2 -> 20L),
     Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
   val dataBox = createBox(1000, TrivialProp.TrueProp,
+    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
+    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
+
+  val outBox = createBox(10, TrivialProp.TrueProp,
     Seq(tokenId1 -> 10L, tokenId2 -> 20L),
     Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
@@ -283,9 +287,9 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   val ergoCtx = new ErgoLikeContext(
     currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy,
-    dummyPubkey, boxesToSpend = IndexedSeq(box),
-    spendingTransaction = null,
-    self = box, headers = headers, preHeader = preHeader, dataInputs = IndexedSeq(dataBox),
+    dummyPubkey, boxesToSpend = IndexedSeq(inBox),
+    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
+    self = inBox, headers = headers, preHeader = preHeader, dataInputs = IndexedSeq(dataBox),
     extension = ContextExtension(Map()))
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
@@ -298,13 +302,22 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.bytesWithoutRef }"))({ (x: Box) => x.bytesWithoutRef })(box)
     checkEq(func[Box, (Int, Coll[Byte])]("{ (x: Box) => x.creationInfo }"))({ (x: Box) => x.creationInfo })(box)
     checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.tokens }"))({ (x: Box) => x.tokens })(box)
+// TODO
 //    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.registers }"))({ (x: Box) => x.registers })(box)
+  }
+
+  property("Header properties equivalence") {
+    val h = ctx.headers(0)
+//    checkEq(func[Header, Byte]("{ (x: Header) => x.version }"))({ (x: Header) => x.version })(h)
   }
 
   property("Context properties equivalence") {
     checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInputs }"))({ (x: Context) => x.dataInputs })(ctx)
     checkEq(func[Context, Box]("{ (x: Context) => x.dataInputs(0) }"))({ (x: Context) => x.dataInputs(0) })(ctx)
     checkEq(func[Context, Coll[Byte]]("{ (x: Context) => x.dataInputs(0).id }"))({ (x: Context) => x.dataInputs(0).id })(ctx)
+
+// TODO
+//    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)
   }
 
 }
