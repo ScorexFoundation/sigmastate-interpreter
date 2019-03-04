@@ -451,6 +451,7 @@ object Evaluation {
     case SBigInt => BigIntRType
     case SBox => BoxRType
     case SContext => ContextRType
+    case SHeader => HeaderRType
     case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType

@@ -2,8 +2,9 @@ package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
 import scalan.SigmaLibrary
-import sigmastate.{SMethod, SLong}
+import sigmastate.{AvlTreeData, SLong, SMethod, SBigInt}
 import sigmastate.SType.AnyOps
+import sigmastate.interpreter.CryptoConstants
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -34,8 +35,25 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def defaultProperyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] =
       withDefaultSize(prop(obj.value), costOfArgs + selectFieldCost)
+
+    def knownSizeProperyAccess[R](prop: Rep[T] => Rep[R], size: Rep[Long]): RCosted[R] =
+      RCCostedPrim(prop(obj.value), costOfArgs + selectFieldCost, size)
+
     def defaultCollProperyAccess[R](prop: Rep[T] => Rep[Coll[R]]): Rep[CostedColl[R]] =
       mkCostedColl(prop(obj.value), costOfArgs + selectFieldCost)
+
+    def knownLengthCollProperyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] =
+      mkCostedColl(prop(obj.value), len, costOfArgs + selectFieldCost)
+
+    def digest32ProperyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
+      knownLengthCollProperyAccess(prop, CryptoConstants.hashLength)
+
+    def groupElementProperyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
+      knownSizeProperyAccess(prop, CryptoConstants.EncodedGroupElementLength.toLong)
+
+    def bigIntProperyAccess(prop: Rep[T] => Rep[BigInt]): RCosted[BigInt] =
+      knownSizeProperyAccess(prop, SBigInt.MaxSizeInBytes)
+
     def defaultOptionProperyAccess[R](prop: Rep[T] => Rep[WOption[R]]): Rep[CostedOption[R]] = {
       val v = prop(obj.value)
       RCCostedOption(v, RWSpecialPredef.some(0), RWSpecialPredef.some(obj.dataSize), costOfArgs + selectFieldCost)
@@ -124,7 +142,36 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
     import Header._
+
+    def version() = defaultProperyAccess(_.version)
+
+    def parentId() = digest32ProperyAccess(_.parentId)
+
+    def ADProofsRoot() = digest32ProperyAccess(_.ADProofsRoot)
+
+    def stateRoot() = knownSizeProperyAccess(_.stateRoot, AvlTreeData.TreeDataSize.toLong)
+
+    def transactionsRoot() = digest32ProperyAccess(_.transactionsRoot)
+
+    def timestamp() = defaultProperyAccess(_.timestamp)
+
+    def nBits() = defaultProperyAccess(_.nBits)
+
+    def height() = defaultProperyAccess(_.height)
+
+    def extensionRoot() = digest32ProperyAccess(_.extensionRoot)
+
+    def minerPk() = groupElementProperyAccess(_.minerPk)
+
+    def powOnetimePk() = groupElementProperyAccess(_.powOnetimePk)
+
+    def powNonce() = knownLengthCollProperyAccess(_.powNonce, 8)
+
+    def powDistance() = bigIntProperyAccess(_.powDistance)
+
+    def votes() = knownLengthCollProperyAccess(_.votes, 3)
   }
+
 
   object HeaderCoster extends CostingHandler[Header]((obj, m, args) => new HeaderCoster(obj, m, args))
 }

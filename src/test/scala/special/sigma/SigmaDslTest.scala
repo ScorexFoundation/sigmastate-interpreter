@@ -306,9 +306,28 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 //    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.registers }"))({ (x: Box) => x.registers })(box)
   }
 
+  case class EqualityChecker[T: RType](obj: T) {
+    def apply[R: RType](dslFunc: T => R)(script: String) =
+      checkEq(func[T, R](script))(dslFunc)(obj)
+  }
+
   property("Header properties equivalence") {
     val h = ctx.headers(0)
-//    checkEq(func[Header, Byte]("{ (x: Header) => x.version }"))({ (x: Header) => x.version })(h)
+    val eq = EqualityChecker(h)
+    eq({ (x: Header) => x.version })("{ (x: Header) => x.version }")
+    eq({ (x: Header) => x.parentId })("{ (x: Header) => x.parentId }")
+    eq({ (x: Header) => x.ADProofsRoot})("{ (x: Header) => x.ADProofsRoot}")
+    eq({ (x: Header) => x.stateRoot })("{ (x: Header) => x.stateRoot }")
+    eq({ (x: Header) => x.transactionsRoot })("{ (x: Header) => x.transactionsRoot }")
+    eq({ (x: Header) => x.timestamp })("{ (x: Header) => x.timestamp }")
+    eq({ (x: Header) => x.nBits })("{ (x: Header) => x.nBits }")
+    eq({ (x: Header) => x.height })("{ (x: Header) => x.height }")
+    eq({ (x: Header) => x.extensionRoot })("{ (x: Header) => x.extensionRoot }")
+    eq({ (x: Header) => x.minerPk })("{ (x: Header) => x.minerPk }")
+    eq({ (x: Header) => x.powOnetimePk })("{ (x: Header) => x.powOnetimePk }")
+    eq({ (x: Header) => x.powNonce })("{ (x: Header) => x.powNonce }")
+    eq({ (x: Header) => x.powDistance })("{ (x: Header) => x.powDistance }")
+    eq({ (x: Header) => x.votes })("{ (x: Header) => x.votes }")
   }
 
   property("Context properties equivalence") {

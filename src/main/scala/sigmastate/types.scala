@@ -12,7 +12,7 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 import sigmastate.SCollection._
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
 import sigmastate.eval.RuntimeCosting
@@ -104,14 +104,14 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
     * a companion object which can be used to access the list of corresponding methods.
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
-    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext,
+    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SHeader,
     SAvlTree, SBox, SOption, SCollection
   ).map { t => (t.typeId, t) }.toMap
 
@@ -224,7 +224,12 @@ trait SProduct extends SType {
   protected def getMethods(): Seq[SMethod] = Seq()
 
   /** Returns all the methods of this type. */
-  lazy val methods: Seq[SMethod] = getMethods()
+  lazy val methods: Seq[SMethod] = {
+    val ms = getMethods()
+    assert(ms.map(_.name).distinct.length == ms.length, s"Duplicate method names in $this")
+    assert(ms.map(_.methodId).distinct.length == ms.length, s"Duplicate method ids in $this")
+    ms
+  }
 
   /** Checks if `this` product has exactly the same methods as `that`. */
   def sameMethods(that: SProduct): Boolean = {
@@ -1169,28 +1174,45 @@ case object SHeader extends SProduct with SPredefType with STypeCompanion {
 
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
-    val h = v.asInstanceOf[Header]
-    val rootSize = SAvlTree.dataSize(SigmaDsl.toAvlTreeData(h.stateRoot).asWrappedType)
-    1 + // h.version
-    h.parentId.length +
-    h.ADProofsRoot.length +
-    rootSize +
-    h.transactionsRoot.length +
-    8 + // h.timestamp
-    8 + // h.nBits
-    4 + // h.height
-    h.extensionRoot.length +
-    CryptoConstants.EncodedGroupElementLength + //h.minerPk
-    CryptoConstants.EncodedGroupElementLength + //h.powOnetimePk,
-    h.powNonce.length +
+    1 + // version
+    hashLength + // parentId
+    hashLength + // ADProofsRoot
+    AvlTreeData.TreeDataSize +
+    hashLength + // transactionsRoot
+    8 + // timestamp
+    8 + // nBits
+    4 + // height
+    hashLength + // extensionRoot
+    CryptoConstants.EncodedGroupElementLength + // minerPk
+    CryptoConstants.EncodedGroupElementLength + // powOnetimePk,
+    8 + // powNonce
     SBigInt.dataSize(0.asWrappedType) + // powDistance
-    h.votes.length
+    3   // votes
   }
   override def isConstantSize = true
   def ancestors = Nil
+  private def property(name: String, tpe: SType, id: Byte) =
+    SMethod(this, name, SFunc(this, tpe), id, MethodCallIrBuilder)
 
-//  val DataInputsMethod = SMethod(this, "dataInputs", SFunc(this, SCollection(SBox)), 1, MethodCallIrBuilder)
+  val versionMethod          = property("version",  SByte,      1)
+  val parentIdMethod         = property("parentId", SByteArray, 2)
+  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 3)
+  val stateRootMethod        = property("stateRoot", SAvlTree, 4)
+  val transactionsRootMethod = property("transactionsRoot", SByteArray, 5)
+  val timestampMethod        = property("timestamp", SLong, 6)
+  val nBitsMethod            = property("nBits", SLong, 7)
+  val heightMethod           = property("height", SInt, 8)
+  val extensionRootMethod    = property("extensionRoot", SByteArray, 9)
+  val minerPkMethod          = property("minerPk", SGroupElement, 10)
+  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 11)
+  val powNonceMethod         = property("powNonce", SByteArray, 12)
+  val powDistanceMethod      = property("powDistance", SBigInt, 13)
+  val votesMethod            = property("votes", SByteArray, 14)
+
   protected override def getMethods() = super.getMethods() ++ Seq(
+    versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+    timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
+    powNonceMethod, powDistanceMethod, votesMethod
   )
   override val coster = Some(Coster(_.HeaderCoster))
 }
