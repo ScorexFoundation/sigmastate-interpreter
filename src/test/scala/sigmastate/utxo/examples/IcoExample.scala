@@ -20,7 +20,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
   /**
     * Simplest ICO example
     */
-  property("simple ico example") {
+  ignore("simple ico example") {
 
     val fundingEnv = Map(
       ScriptNameProp -> "fundingScriptEnv",

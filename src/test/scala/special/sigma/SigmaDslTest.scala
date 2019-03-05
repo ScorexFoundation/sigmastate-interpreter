@@ -56,6 +56,11 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     assert(r1 == r2)
   }
 
+  case class EqualityChecker[T: RType](obj: T) {
+    def apply[R: RType](dslFunc: T => R)(script: String) =
+      checkEq(func[T, R](script))(dslFunc)(obj)
+  }
+
   property("Boolean methods equivalence") {
     lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))(x => x.toByte)
     forAll { x: Boolean =>
@@ -303,21 +308,18 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
 
   property("Box properties equivalence") {
     val box = ctx.dataInputs(0)
-    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.id }"))({ (x: Box) => x.id })(box)
-    checkEq(func[Box, Long]("{ (x: Box) => x.value }"))({ (x: Box) => x.value })(box)
-    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.propositionBytes }"))({ (x: Box) => x.propositionBytes })(box)
-    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.bytes }"))({ (x: Box) => x.bytes })(box)
-    checkEq(func[Box, Coll[Byte]]("{ (x: Box) => x.bytesWithoutRef }"))({ (x: Box) => x.bytesWithoutRef })(box)
-    checkEq(func[Box, (Int, Coll[Byte])]("{ (x: Box) => x.creationInfo }"))({ (x: Box) => x.creationInfo })(box)
-    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.tokens }"))({ (x: Box) => x.tokens })(box)
+    val eq = EqualityChecker(box)
+    eq({ (x: Box) => x.id })("{ (x: Box) => x.id }")
+    eq({ (x: Box) => x.value })("{ (x: Box) => x.value }")
+    eq({ (x: Box) => x.propositionBytes })("{ (x: Box) => x.propositionBytes }")
+    eq({ (x: Box) => x.bytes })("{ (x: Box) => x.bytes }")
+    eq({ (x: Box) => x.bytesWithoutRef })("{ (x: Box) => x.bytesWithoutRef }")
+    eq({ (x: Box) => x.creationInfo })("{ (x: Box) => x.creationInfo }")
+    eq({ (x: Box) => x.tokens })("{ (x: Box) => x.tokens }")
 // TODO
 //    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.registers }"))({ (x: Box) => x.registers })(box)
   }
 
-  case class EqualityChecker[T: RType](obj: T) {
-    def apply[R: RType](dslFunc: T => R)(script: String) =
-      checkEq(func[T, R](script))(dslFunc)(obj)
-  }
 
   property("PreHeader properties equivalence") {
     val h = ctx.preHeader
@@ -358,7 +360,6 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
     eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
     eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
-
 
 // TODO
 //    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)

@@ -228,7 +228,9 @@ trait SProduct extends SType {
   lazy val methods: Seq[SMethod] = {
     val ms = getMethods()
     assert(ms.map(_.name).distinct.length == ms.length, s"Duplicate method names in $this")
-    assert(ms.map(_.methodId).distinct.length == ms.length, s"Duplicate method ids in $this")
+    ms.groupBy(_.objType).foreach { case (comp, ms) =>
+      assert(ms.map(_.methodId).distinct.length == ms.length, s"Duplicate method ids in $comp: $ms")
+    }
     ms
   }
 
