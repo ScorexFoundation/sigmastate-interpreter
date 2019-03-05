@@ -36,6 +36,7 @@ import special.sigma.Extensions._
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
   import Header._;
+  import PreHeader._;
   import WArray._;
   import WBigInteger._
   import WECPoint._
@@ -869,6 +870,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case SBox => boxElement
     case SContext => contextElement
     case SHeader => headerElement
+    case SPreHeader => preHeaderElement
     case SGroupElement => groupElementElement
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
@@ -895,6 +897,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _: BoxElem[_] => SBox
     case _: ContextElem[_] => SContext
     case _: HeaderElem[_] => SHeader
+    case _: PreHeaderElem[_] => SPreHeader
     case _: SigmaPropElem[_] => SSigmaProp
     case se: StructElem[_] =>
       assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })

@@ -467,6 +467,9 @@ trait PreHeader { // Testnet2
   */
 @scalan.Liftable
 trait Header {
+  /** Bytes representation of ModifierId of this Header */
+  def id: Coll[Byte]
+
   /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
 

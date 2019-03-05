@@ -27,7 +27,7 @@ import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
-import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree}
+import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, PreHeader}
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval.SigmaDsl
 
@@ -101,17 +101,18 @@ object SType {
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
   implicit val AvlTreeDataRType: RType[AvlTreeData] = RType.fromClassTag(classTag[AvlTreeData])
+  implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
     * a companion object which can be used to access the list of corresponding methods.
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
-    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SHeader,
+    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection
   ).map { t => (t.typeId, t) }.toMap
 
@@ -260,7 +261,8 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
 }
 
 /** Method info including name, arg type and result type.
-  * When stype is SFunc, then tDom - arg type and tRange - result type. */
+  * Here stype.tDom - arg type and stype.tRange - result type.
+  * `methodId` should be unique among methods of the same objType. */
 case class SMethod(
     objType: STypeCompanion,
     name: String,
@@ -388,7 +390,15 @@ object SNumericType extends STypeCompanion {
 trait SLogical extends SType {
 }
 
-case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with STypeCompanion {
+/** Monomorphic type descriptor i.e. a type without generic parameters.
+  * @see `SGenericType`
+  */
+trait SMonoType extends SType with STypeCompanion {
+  protected def property(name: String, tpe: SType, id: Byte) =
+    SMethod(this, name, SFunc(this, tpe), id, MethodCallIrBuilder)
+}
+
+case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def typeId = typeCode
@@ -402,7 +412,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def isConstantSize = true
 }
 
-case object SByte extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
+case object SByte extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte //TODO change to 4 after SByteArray is removed
   override def typeId = typeCode
@@ -423,7 +433,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with STyp
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SShort extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
+case object SShort extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
   override def typeId = typeCode
@@ -444,9 +454,10 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with STy
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SInt extends SPrimType with SEmbeddable with SNumericType {
+case object SInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
+  override def typeId: TypeCode = typeCode
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 4
   override def isConstantSize = true
@@ -466,9 +477,10 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType {
 }
 
 //todo: make PreservingNonNegativeInt type for registers which value should be preserved?
-case object SLong extends SPrimType with SEmbeddable with SNumericType {
+case object SLong extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
+  override def typeId: TypeCode = typeCode
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 8
   override def isConstantSize = true
@@ -489,7 +501,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType {
 }
 
 /** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
-case object SBigInt extends SPrimType with SEmbeddable with SNumericType with STypeCompanion {
+case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
   override def typeId: TypeCode = typeCode
@@ -537,7 +549,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with ST
 }
 
 /** NOTE: this descriptor both type and type companion */
-case object SString extends SProduct with STypeCompanion {
+case object SString extends SProduct with SMonoType {
   override type WrappedType = String
   override def ancestors: Seq[SType] = Nil
   override val typeCode: TypeCode = 102: Byte
@@ -548,7 +560,7 @@ case object SString extends SProduct with STypeCompanion {
 }
 
 /** NOTE: this descriptor both type and type companion */
-case object SGroupElement extends SProduct with SPrimType with SEmbeddable with STypeCompanion {
+case object SGroupElement extends SProduct with SPrimType with SEmbeddable with SMonoType {
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
@@ -564,7 +576,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   def ancestors = Nil
 }
 
-case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical with STypeCompanion {
+case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical with SMonoType {
   import SType._
   override type WrappedType = SigmaBoolean
   override val typeCode: TypeCode = 8: Byte
@@ -608,7 +620,7 @@ case object SUnit extends SPrimType {
 
 /** Type description of optional values. Instances of `Option`
   *  are either constructed by `Some` or by `None` constructors. */
-case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {
+case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct {  // TODO make SOption inherit SGenericType
   override type WrappedType = Option[ElemType#WrappedType]
   override val typeCode: TypeCode = SOption.OptionTypeCode
   override def dataSize(v: SType#WrappedType) = {
@@ -901,6 +913,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val SSigmaPropArray    = SCollection(SSigmaProp)
   val SBoxArray          = SCollection(SBox)
   val SAvlTreeArray      = SCollection(SAvlTree)
+  val SHeaderArray       = SCollection(SHeader)
 }
 
 case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
@@ -1028,7 +1041,7 @@ object STypeIdent {
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 
-case object SBox extends SProduct with SPredefType with STypeCompanion {
+case object SBox extends SProduct with SPredefType with SMonoType {
   override type WrappedType = ErgoBox
   override val typeCode: TypeCode = 99: Byte
   override def typeId = typeCode
@@ -1074,7 +1087,7 @@ case object SBox extends SProduct with SPredefType with STypeCompanion {
   override val coster = Some(Coster(_.BoxCoster))
 }
 
-case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
+case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override type WrappedType = AvlTreeData
   override val typeCode: TypeCode = 100: Byte
   override def typeId = typeCode
@@ -1141,7 +1154,7 @@ case object SAvlTree extends SProduct with SPredefType with STypeCompanion {
   override val coster = Some(Coster(_.AvlTreeCoster))
 }
 
-case object SContext extends SProduct with SPredefType with STypeCompanion {
+case object SContext extends SProduct with SPredefType with SMonoType {
   override type WrappedType = ErgoLikeContext
   override val typeCode: TypeCode = 101: Byte
   override def typeId = typeCode
@@ -1159,14 +1172,17 @@ case object SContext extends SProduct with SPredefType with STypeCompanion {
   override def isConstantSize = false
   def ancestors = Nil
 
-  val DataInputsMethod = SMethod(this, "dataInputs", SFunc(this, SCollection(SBox)), 1, MethodCallIrBuilder)
+  val dataInputsMethod = property("dataInputs", SBoxArray, 1)
+  val headersMethod    = property("headers", SHeaderArray, 2)
+  val preHeaderMethod  = property("preHeader", SPreHeader, 3)
+
   protected override def getMethods() = super.getMethods() ++ Seq(
-    DataInputsMethod
+    dataInputsMethod, headersMethod, preHeaderMethod
   )
   override val coster = Some(Coster(_.ContextCoster))
 }
 
-case object SHeader extends SProduct with SPredefType with STypeCompanion {
+case object SHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Header
   override val typeCode: TypeCode = 103: Byte
   override def typeId = typeCode
@@ -1174,6 +1190,7 @@ case object SHeader extends SProduct with SPredefType with STypeCompanion {
 
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
+    hashLength + // parentId
     1 + // version
     hashLength + // parentId
     hashLength + // ADProofsRoot
@@ -1191,28 +1208,60 @@ case object SHeader extends SProduct with SPredefType with STypeCompanion {
   }
   override def isConstantSize = true
   def ancestors = Nil
-  private def property(name: String, tpe: SType, id: Byte) =
-    SMethod(this, name, SFunc(this, tpe), id, MethodCallIrBuilder)
 
-  val versionMethod          = property("version",  SByte,      1)
-  val parentIdMethod         = property("parentId", SByteArray, 2)
-  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 3)
-  val stateRootMethod        = property("stateRoot", SAvlTree, 4)
-  val transactionsRootMethod = property("transactionsRoot", SByteArray, 5)
-  val timestampMethod        = property("timestamp", SLong, 6)
-  val nBitsMethod            = property("nBits", SLong, 7)
-  val heightMethod           = property("height", SInt, 8)
-  val extensionRootMethod    = property("extensionRoot", SByteArray, 9)
-  val minerPkMethod          = property("minerPk", SGroupElement, 10)
-  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 11)
-  val powNonceMethod         = property("powNonce", SByteArray, 12)
-  val powDistanceMethod      = property("powDistance", SBigInt, 13)
-  val votesMethod            = property("votes", SByteArray, 14)
+  val idMethod               = property("id", SByteArray, 1)
+  val versionMethod          = property("version",  SByte,      2)
+  val parentIdMethod         = property("parentId", SByteArray, 3)
+  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4)
+  val stateRootMethod        = property("stateRoot", SAvlTree, 5)
+  val transactionsRootMethod = property("transactionsRoot", SByteArray, 6)
+  val timestampMethod        = property("timestamp", SLong, 7)
+  val nBitsMethod            = property("nBits", SLong, 8)
+  val heightMethod           = property("height", SInt, 9)
+  val extensionRootMethod    = property("extensionRoot", SByteArray, 10)
+  val minerPkMethod          = property("minerPk", SGroupElement, 11)
+  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12)
+  val powNonceMethod         = property("powNonce", SByteArray, 13)
+  val powDistanceMethod      = property("powDistance", SBigInt, 14)
+  val votesMethod            = property("votes", SByteArray, 15)
 
   protected override def getMethods() = super.getMethods() ++ Seq(
-    versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
+    idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
     timestampMethod, nBitsMethod, heightMethod, extensionRootMethod, minerPkMethod, powOnetimePkMethod,
     powNonceMethod, powDistanceMethod, votesMethod
   )
   override val coster = Some(Coster(_.HeaderCoster))
+}
+
+case object SPreHeader extends SProduct with SPredefType with SMonoType {
+  override type WrappedType = PreHeader
+  override val typeCode: TypeCode = 104: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: PreHeader): Value[SPreHeader.type] = PreHeaderConstant(v)
+
+  /** Approximate data size of the given context without ContextExtension. */
+  override def dataSize(v: SType#WrappedType): Long = {
+    1 + // version
+        hashLength + // parentId
+        8 + // timestamp
+        8 + // nBits
+        4 + // height
+        CryptoConstants.EncodedGroupElementLength + // minerPk
+        3   // votes
+  }
+  override def isConstantSize = true
+  def ancestors = Nil
+
+  val versionMethod          = property("version",  SByte,      1)
+  val parentIdMethod         = property("parentId", SByteArray, 2)
+  val timestampMethod        = property("timestamp", SLong, 6)
+  val nBitsMethod            = property("nBits", SLong, 7)
+  val heightMethod           = property("height", SInt, 8)
+  val minerPkMethod          = property("minerPk", SGroupElement, 10)
+  val votesMethod            = property("votes", SByteArray, 14)
+
+  protected override def getMethods() = super.getMethods() ++ Seq(
+    versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod
+  )
+  override val coster = Some(Coster(_.PreHeaderCoster))
 }

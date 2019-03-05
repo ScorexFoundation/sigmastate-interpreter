@@ -25,6 +25,7 @@ trait Types extends Core {
     "ByteArray" -> SByteArray,
     "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp,
     "Header" -> SHeader,
+    "PreHeader" -> SPreHeader,
     "String" -> SString,
     "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )

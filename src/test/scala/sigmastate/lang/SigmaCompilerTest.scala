@@ -279,7 +279,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   property("SContext.dataInputs") {
     testMissingCosting("CONTEXT.dataInputs",
-      mkMethodCall(Context, SContext.DataInputsMethod, IndexedSeq()))
+      mkMethodCall(Context, SContext.dataInputsMethod, IndexedSeq()))
   }
 
   property("SAvlTree.digest") {

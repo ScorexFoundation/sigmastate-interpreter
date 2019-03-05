@@ -79,6 +79,9 @@ object ErgoLikeContext {
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
   val dummyPreHeader: PreHeader = null
 
+  /** Maximimum number of headers in `headers` collection of the context. */
+  val MaxHeaders = 10
+
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
             minerPubkey: Array[Byte],

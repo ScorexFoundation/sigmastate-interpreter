@@ -348,6 +348,7 @@ case class CPreHeader(
 ) extends PreHeader {}
 
 case class CHeader(
+  id: Coll[Byte],
   version: Byte,
   parentId: Coll[Byte],
   ADProofsRoot: Coll[Byte],

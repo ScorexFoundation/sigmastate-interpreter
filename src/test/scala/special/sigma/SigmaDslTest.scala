@@ -267,8 +267,9 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     Seq(tokenId1 -> 10L, tokenId2 -> 20L),
     Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
-  val header: Header = CHeader(0,
-    Blake2b256("parentId").toColl,
+  val header: Header = CHeader(Blake2b256("Header.id").toColl,
+    0,
+    Blake2b256("Header.parentId").toColl,
     Blake2b256("ADProofsRoot").toColl,
     sampleAvlTree,
     Blake2b256("transactionsRoot").toColl,
@@ -283,7 +284,14 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     votes = Colls.emptyColl[Byte]
     )
   val headers = Colls.fromItems(header)
-  val preHeader: PreHeader = null
+  val preHeader: PreHeader = CPreHeader(0,
+    Blake2b256("parentId").toColl,
+    timestamp = 0,
+    nBits = 0,
+    height = 0,
+    minerPk = SigmaDsl.groupGenerator,
+    votes = Colls.emptyColl[Byte]
+  )
   val ergoCtx = new ErgoLikeContext(
     currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -311,9 +319,22 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       checkEq(func[T, R](script))(dslFunc)(obj)
   }
 
+  property("PreHeader properties equivalence") {
+    val h = ctx.preHeader
+    val eq = EqualityChecker(h)
+    eq({ (x: PreHeader) => x.version })("{ (x: PreHeader) => x.version }")
+    eq({ (x: PreHeader) => x.parentId })("{ (x: PreHeader) => x.parentId }")
+    eq({ (x: PreHeader) => x.timestamp })("{ (x: PreHeader) => x.timestamp }")
+    eq({ (x: PreHeader) => x.nBits })("{ (x: PreHeader) => x.nBits }")
+    eq({ (x: PreHeader) => x.height })("{ (x: PreHeader) => x.height }")
+    eq({ (x: PreHeader) => x.minerPk })("{ (x: PreHeader) => x.minerPk }")
+    eq({ (x: PreHeader) => x.votes })("{ (x: PreHeader) => x.votes }")
+  }
+  
   property("Header properties equivalence") {
     val h = ctx.headers(0)
     val eq = EqualityChecker(h)
+// TODO costing for  eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
     eq({ (x: Header) => x.version })("{ (x: Header) => x.version }")
     eq({ (x: Header) => x.parentId })("{ (x: Header) => x.parentId }")
     eq({ (x: Header) => x.ADProofsRoot})("{ (x: Header) => x.ADProofsRoot}")
@@ -331,9 +352,13 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   }
 
   property("Context properties equivalence") {
-    checkEq(func[Context, Coll[Box]]("{ (x: Context) => x.dataInputs }"))({ (x: Context) => x.dataInputs })(ctx)
-    checkEq(func[Context, Box]("{ (x: Context) => x.dataInputs(0) }"))({ (x: Context) => x.dataInputs(0) })(ctx)
-    checkEq(func[Context, Coll[Byte]]("{ (x: Context) => x.dataInputs(0).id }"))({ (x: Context) => x.dataInputs(0).id })(ctx)
+    val eq = EqualityChecker(ctx)
+    eq({ (x: Context) => x.dataInputs })("{ (x: Context) => x.dataInputs }")
+    eq({ (x: Context) => x.dataInputs(0) })("{ (x: Context) => x.dataInputs(0) }")
+    eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
+    eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
+    eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
+
 
 // TODO
 //    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)

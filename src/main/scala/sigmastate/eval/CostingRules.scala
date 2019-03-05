@@ -1,8 +1,8 @@
 package sigmastate.eval
 
-import org.ergoplatform.ErgoBox
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scalan.SigmaLibrary
-import sigmastate.{AvlTreeData, SLong, SMethod, SBigInt}
+import sigmastate.{AvlTreeData, SBigInt, SLong, SMethod}
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 
@@ -121,6 +121,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def dataInputs() = {
       sigmaDslBuilder.costBoxes(obj.value.dataInputs)
     }
+    def headers() = {
+      knownLengthCollProperyAccess(_.headers, ErgoLikeContext.MaxHeaders)
+    }
+    def preHeader() = defaultProperyAccess(_.preHeader)
   }
 
   object ContextCoster extends CostingHandler[Context]((obj, m, args) => new ContextCoster(obj, m, args))
@@ -172,6 +176,27 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def votes() = knownLengthCollProperyAccess(_.votes, 3)
   }
 
-
   object HeaderCoster extends CostingHandler[Header]((obj, m, args) => new HeaderCoster(obj, m, args))
+
+  class PreHeaderCoster(obj: RCosted[PreHeader], method: SMethod, args: Seq[RCosted[_]]) extends Coster[PreHeader](obj, method, args){
+    import PreHeader._
+
+//    def id() = digest32ProperyAccess(_.id)
+
+    def version() = defaultProperyAccess(_.version)
+
+    def parentId() = digest32ProperyAccess(_.parentId)
+
+    def timestamp() = defaultProperyAccess(_.timestamp)
+
+    def nBits() = defaultProperyAccess(_.nBits)
+
+    def height() = defaultProperyAccess(_.height)
+
+    def minerPk() = groupElementProperyAccess(_.minerPk)
+
+    def votes() = knownLengthCollProperyAccess(_.votes, 3)
+  }
+
+  object PreHeaderCoster extends CostingHandler[PreHeader]((obj, m, args) => new PreHeaderCoster(obj, m, args))
 }

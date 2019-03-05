@@ -452,6 +452,7 @@ object Evaluation {
     case SBox => BoxRType
     case SContext => ContextRType
     case SHeader => HeaderRType
+    case SPreHeader => PreHeaderRType
     case SGroupElement => GroupElementRType
     case SAvlTree => AvlTreeRType
     case SSigmaProp => SigmaPropRType
@@ -486,6 +487,7 @@ object Evaluation {
     case BoxRType => SBox
     case ContextRType => SContext
     case HeaderRType => SHeader
+    case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
     case SigmaBooleanRType => SSigmaProp
     case tup: TupleType => STuple(tup.items.map(t => rtypeToSType(t)).toIndexedSeq)
@@ -551,6 +553,7 @@ object Evaluation {
         case SigmaPropRType => SigmaBooleanRType
         case BoxRType => ErgoBoxRType
         case AvlTreeRType => AvlTreeDataRType
+        case ContextRType => ErgoLikeContextRType
         case _ => sys.error(s"Unknown WrapperType: $w")
       }
     case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
@@ -560,6 +563,7 @@ object Evaluation {
     case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
     case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
     case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
+    case HeaderRType | PreHeaderRType => dslType
     case AnyType | AnyRefType | NothingType | StringType => dslType
     case _ =>
       sys.error(s"Don't know how to toErgoTreeType($dslType)")

@@ -34,7 +34,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Extensions, AnyValue, TestValue, Header}
+import special.sigma.{Header, Extensions, AnyValue, TestValue, PreHeader}
 import sigmastate.lang.SourceContext
 
 
@@ -336,6 +336,14 @@ object Values {
     }
   }
 
+  object PreHeaderConstant {
+    def apply(value: PreHeader): Constant[SPreHeader.type]  = Constant[SPreHeader.type](value, SPreHeader)
+    def unapply(v: SValue): Option[PreHeader] = v match {
+      case Constant(value: PreHeader, SPreHeader) => Some(value)
+      case _ => None
+    }
+  }
+  
   object HeaderConstant {
     def apply(value: Header): Constant[SHeader.type]  = Constant[SHeader.type](value, SHeader)
     def unapply(v: SValue): Option[Header] = v match {
