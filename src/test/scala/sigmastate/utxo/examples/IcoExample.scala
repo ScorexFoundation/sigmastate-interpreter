@@ -20,8 +20,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
   /**
     * Simplest ICO example
     */
-  ignore("simple ico example") {
-
+  ignore("simple ico example - fundraising stage only") {
     val fundingEnv = Map(
       ScriptNameProp -> "fundingScriptEnv",
       "proof" -> Array.emptyByteArray
@@ -74,7 +73,53 @@ class IcoExample extends SigmaTestingCommons { suite =>
       self = projectBoxBefore)
 
     projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
-
   }
 
+  ignore("simple ico example - fixing stage") {
+
+    val fixingEnv = Map(
+      ScriptNameProp -> "fixingScriptEnv"
+    )
+
+    val fixingProp = compileWithCosting(fixingEnv,
+      """{
+        |
+        |  val openTree = SELF.R4[AvlTree].get
+        |
+        |  val closedTree = OUTPUTS(0).R4[AvlTree].get
+        |
+        |  val digestPreserved = openTree.digest == closedTree.digest
+        |  val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
+        |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
+        |  val treeIsClosed = closedTree.enabledOperations == 0
+        |
+        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
+        |}""".stripMargin
+    ).asBoolValue.toSigmaProp
+
+    val projectProver = new ErgoLikeTestProvingInterpreter
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+
+    val projectBoxBeforeClosing = ErgoBox(10, fixingProp, 0, Seq(),
+      Map(R4 -> AvlTreeConstant(openTreeData)))
+
+    val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+
+    val projectBoxAfterClosing = ErgoBox(10, fixingProp, 0, Seq(),
+      Map(R4 -> AvlTreeConstant(closedTreeData)))
+
+    val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing))
+
+    val fundingContext = ErgoLikeContext(
+      currentHeight = 1000,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
+      spendingTransaction = fixingTx,
+      self = projectBoxBeforeClosing)
+
+    projectProver.prove(fixingEnv, fixingProp, fundingContext, fakeMessage).get
+  }
 }
