@@ -310,7 +310,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val sOracle = mockTx
         .outBox(value = 1L, contract.oracleSignature)
         .withRegs(reg1 -> temperature)
@@ -318,7 +318,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val sAlice = mockTx.outBox(10, contract.prop)
     val sBob   = mockTx.outBox(10, contract.prop)
 
-    val tx = block(50).newTransaction().spending(sOracle, sAlice, sBob)
+    val tx = candidateBlock(50).newTransaction().spending(sOracle, sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
     val in = tx.inputs(1)
     val res = in.runDsl()

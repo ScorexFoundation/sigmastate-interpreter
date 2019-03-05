@@ -78,7 +78,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   override protected def mkVerifyingParty(name: String): VerifyingParty = TestVerifyingParty(name)
 
-  case class TestInputBox(tx: Transaction, utxoBox: OutBox) extends InputBox {
+  case class TestInputBox(tx: TransactionCandidate, utxoBox: OutBox) extends InputBox {
     private [dsl] def toErgoContext: ErgoLikeContext = {
       val propSpec = utxoBox.propSpec
       val ctx = new ErgoLikeContext(
@@ -100,7 +100,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     }
   }
 
-  case class TestOutBox(tx: Transaction, boxIndex: Int, value: Long, propSpec: PropositionSpec) extends OutBox {
+  case class TestOutBox(tx: TransactionCandidate, boxIndex: Int, value: Long, propSpec: PropositionSpec) extends OutBox {
     private var _tokens: Seq[Token] = Seq()
     private var _regs: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()
 
@@ -129,7 +129,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     def id = ergoBox.id
   }
 
-  case class TestTransaction(block: Block) extends Transaction {
+  case class MockTransaction(block: BlockCandidate) extends TransactionCandidate {
     private val _inputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
     def inputs: Seq[InputBox] = _inputs
 
@@ -169,10 +169,10 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   }
 
-  case class TestBlock(height: Int) extends Block {
-    def newTransaction() = TestTransaction(this)
-    override def getTransactions(): Seq[ChainTransaction] = ???
+  case class BBlockCandidate(height: Int) extends BlockCandidate {
+    def newTransaction() = MockTransaction(this)
+//    def onTopOf(chain: ChainBlock*)
   }
 
-  def block(height: Int): Block = TestBlock(height)
+  def candidateBlock(height: Int): BlockCandidate = BBlockCandidate(height)
 }
