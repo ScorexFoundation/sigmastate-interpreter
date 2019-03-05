@@ -1824,7 +1824,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val boxC = asRep[CostedBox](eval(obj))
         val argsC = args.map(eval)
         (method.name, argsC) match {
-          case (SBox.GetRegMethod.name, Seq(index)) =>
+          case (SBox.getRegMethod.name, Seq(index)) =>
             val tpe = typeSubst(SBox.tT)
             implicit val elem = stypeToElem(tpe).asElem[Any]
             boxC.getReg(asRep[Int](index.value))(elem)
@@ -1832,7 +1832,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args) if method.objType.coster.isDefined =>
+      case Terms.MethodCall(obj, method, args, _) if method.objType.coster.isDefined =>
         val objC = eval(obj)
         val argsC = args.map(eval)
         method.objType.coster.get(IR)(objC, method, argsC)

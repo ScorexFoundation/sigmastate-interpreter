@@ -12,13 +12,12 @@ import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
 import scala.util.Try
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.lang.Terms.ValueOps
 import special.sigma.{AnyValue, TestValue, SigmaProp}
 

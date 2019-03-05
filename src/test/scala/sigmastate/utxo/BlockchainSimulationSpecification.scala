@@ -1,23 +1,22 @@
 package sigmastate.utxo
 
-import java.io.{File, FileWriter}
+import java.io.{FileWriter, File}
 
 import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Matchers}
+import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoTransactionValidator}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{AvlTreeData, AvlTreeFlags, GE}
+import sigmastate.{GE, AvlTreeData, AvlTreeFlags}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap

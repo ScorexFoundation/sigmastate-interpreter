@@ -3,12 +3,12 @@ package special.sigma
 import java.math.BigInteger
 
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalacheck.Gen.containerOfN
 import com.google.common.primitives.Longs
-import org.ergoplatform.dsl.{SigmaContractSyntax, StdContracts, TestContractSpec}
+import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, StdContracts}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
 import scalan.RType
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -21,40 +21,24 @@ import sigmastate.eval._
 import sigmastate._
 import sigmastate.Values.{Constant, SValue, IntConstant, ErgoTree, BooleanConstant}
 import sigmastate.interpreter.{ContextExtension, Interpreter}
-import sigmastate.interpreter.Interpreter.emptyEnv
+import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptEnv}
 import special.collection.Coll
 import sigmastate.eval.CBigInt
 import sigmastate.serialization.generators.ValueGenerators
-import special.collection.{Builder, Coll}
+import special.collection.{Coll, Builder}
 import special.collections.CollGens
-
-trait SigmaTypeGens extends ValueGenerators {
-  import Gen._; import Arbitrary._
-  import sigma.types._
-  val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
-  implicit val arbBoolean = Arbitrary(genBoolean)
-
-  val genByte = Arbitrary.arbByte.arbitrary.map(CByte(_): Byte)
-  implicit val arbByte = Arbitrary(genByte)
-
-  val genInt = Arbitrary.arbInt.arbitrary.map(CInt(_): Int)
-  implicit val arbInt = Arbitrary(genInt)
-
-  val genBigInt = arbBigInteger.arbitrary.map(CBigInt(_): BigInt)
-  implicit val arbBigInt = Arbitrary(genBigInt)
-}
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
 class SigmaDslTest extends PropSpec
   with PropertyChecks
   with Matchers
-  with SigmaTestingCommons
-  with SigmaTypeGens
-  with SigmaContractSyntax
-  with StdContracts { suite =>
+  with SigmaTestingCommons with SigmaContractSyntax
+  with SigmaTypeGens { suite =>
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+
+  override def contractEnv: ScriptEnv = Map()
 
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
@@ -244,24 +228,6 @@ class SigmaDslTest extends PropSpec
       val insertKvs = Colls.fromItems((key -> value))
       doInsert((preInsertTree, (insertKvs, insertProof)))
     }
-  ignore("longToByteArray equivalence") {
-    // TODO fix Array[Byte] != CollOverArray in result type comparison
-    val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
-      longToByteArray(x)
-    }
-    forAll { x: Long => eq(x) }
-  }
-
-  property("byteArrayToLong equivalence") {
-    val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
-      byteArrayToLong(x)
-    }
-    forAll { x: Array[Byte] =>
-      whenever(x.length >= 8) {
-        eq(Builder.DefaultCollBuilder.fromArray(x))
-      }
-    }
-  }
 
     {
       val preUpdateDigest = avlProver.digest.toColl
@@ -283,6 +249,24 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  ignore("longToByteArray equivalence") {
+    // TODO fix Array[Byte] != CollOverArray in result type comparison
+    val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
+      longToByteArray(x)
+    }
+    forAll { x: Long => eq(x) }
+  }
+
+  property("byteArrayToLong equivalence") {
+    val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
+      byteArrayToLong(x)
+    }
+    forAll { x: Array[Byte] =>
+      whenever(x.length >= 8) {
+        eq(Builder.DefaultCollBuilder.fromArray(x))
+      }
+    }
+  }
 
   // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
   ignore("Func context variable") {
@@ -398,6 +382,7 @@ class SigmaDslTest extends PropSpec
 // TODO
 //    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)
   }
+
   property("xorOf equivalence") {
     val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => xorOf(x) }")) { x =>
       xorOf(x)

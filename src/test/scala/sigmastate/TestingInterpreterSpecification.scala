@@ -5,11 +5,10 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
 

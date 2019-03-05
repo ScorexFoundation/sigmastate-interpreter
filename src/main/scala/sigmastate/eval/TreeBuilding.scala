@@ -286,7 +286,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         if (regId.isConst)
           mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
         else
-          builder.mkMethodCall(box, SBox.GetRegMethod, IndexedSeq(recurse(regId)),
+          builder.mkMethodCall(box, SBox.getRegMethod, IndexedSeq(recurse(regId)),
             Map(SBox.tT -> tpe.elemType))
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
@@ -399,7 +399,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val method = obj.tpe.asProduct.method(m.getName)
           .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
         val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-        builder.mkMethodCall(obj, specMethod, args.toIndexedSeq)
+        builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
 //        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
 //          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
 //            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))

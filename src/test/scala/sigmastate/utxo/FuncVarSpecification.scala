@@ -5,7 +5,7 @@ import sigmastate.Values.Constant
 import sigmastate.eval.CFunc
 import sigmastate.SType.AnyOps
 import sigmastate.{SInt, SFunc}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms.ValueOps
 
@@ -20,7 +20,7 @@ class FuncVarSpecification extends SigmaTestingCommons {
     val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
         .withContextExtender(scriptId, Constant(CFunc[Int, Int](ctx, code).asWrappedType, SFunc(SInt, SInt)))
     val prop = compileWithCosting(emptyEnv, s"{ val f = getVar[Int => Int](1).get; f(10) > 0 }").asBoolValue.asSigmaProp
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)

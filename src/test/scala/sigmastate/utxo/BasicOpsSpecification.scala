@@ -360,7 +360,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ SELF.getReg[Int](getVar[Int](intVar1).get + 4).get == 1}",
       BoolToSigmaProp(
         EQ(
-          MethodCall(Self, SBox.GetRegMethod,
+          MethodCall(Self, SBox.getRegMethod,
             IndexedSeq(Plus(GetVarInt(1).get, IntConstant(4))), Map(SBox.tT -> SInt)
           ).asInstanceOf[Value[SOption[SType]]].get,
           IntConstant(1)

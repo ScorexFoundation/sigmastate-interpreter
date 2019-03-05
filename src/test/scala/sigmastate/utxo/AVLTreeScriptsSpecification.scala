@@ -482,7 +482,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
 
     val proofId = 31: Byte
 
-    val prover = new ErgoLikeTestProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val prover = new ContextEnrichingTestProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
