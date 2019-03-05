@@ -39,13 +39,19 @@ class UsingContextPropertiesSpecification extends SigmaTestingCommons { suite =>
       },
       "{ sigmaProp(CONTEXT.dataInputs(0).value > INPUTS(0).value) } ")
 
+      lazy val headerProp = proposition("headerProp",
+      { CONTEXT: Context => import CONTEXT._
+        sigmaProp(CONTEXT.headers(0).version == 0)
+      },
+      "{ sigmaProp(CONTEXT.headers(0).version == 0) } ")
+
       lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
     }
 
     val contract = ContextContract[spec.type](prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val d = mockTx
         .outBox(100, contract.proverSig)
         .withRegs(reg1 -> id.toColl)
@@ -54,7 +60,7 @@ class UsingContextPropertiesSpecification extends SigmaTestingCommons { suite =>
     val s2 = mockTx
         .outBox(20, contract.dataBoxProp)
 
-    val spendingTx = block(50).newTransaction()
+    val spendingTx = candidateBlock(1).newTransaction()
         .withDataInputs(d)
         .spending(s1, s2)
 

@@ -131,7 +131,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
     * It creates a transaction in the target block with two holder boxes and two change boxes.
     * @return a pair of holder boxes
     */
-  def startExchange(targetBlock: Block, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
+  def startExchange(targetBlock: BlockCandidate, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
     require(buyerErgBox.propSpec == buyerSignature && sellerTokenBox.propSpec == sellerSignature)
 
     val tx = targetBlock.newTransaction().spending(buyerErgBox, sellerTokenBox)

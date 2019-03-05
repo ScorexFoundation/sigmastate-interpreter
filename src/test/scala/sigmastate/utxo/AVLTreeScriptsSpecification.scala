@@ -70,12 +70,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val contract = AvlTreeContract[spec.type](opsBytes, proof, prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val s = mockTx
       .outBox(20, contract.treeProp)
       .withRegs(reg1 -> tree, reg2 -> endTree)
 
-    val spendingTx = block(50).newTransaction().spending(s)
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
     val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
@@ -136,12 +136,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val contract = AvlTreeContract[spec.type](opsBytes0, proof0, opsBytes1, proof1, prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val s = mockTx
         .outBox(20, contract.treeProp)
         .withRegs(reg1 -> tree, reg2 -> endTree)
 
-    val spendingTx = block(50).newTransaction().spending(s)
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
     val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
@@ -186,12 +186,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val contract = AvlTreeContract[spec.type](removalKeys.toColl, proof, prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val s = mockTx
         .outBox(20, contract.treeProp)
         .withRegs(reg1 -> tree, reg2 -> endTree)
 
-    val spendingTx = block(50).newTransaction().spending(s)
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
     val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
@@ -236,12 +236,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val contract = AvlTreeContract[spec.type](insertPairs.toColl, proof, prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val s = mockTx
         .outBox(20, contract.treeProp)
         .withRegs(reg1 -> tree, reg2 -> endTree)
 
-    val spendingTx = block(50).newTransaction().spending(s)
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
     val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
@@ -285,12 +285,12 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val contract = AvlTreeContract[spec.type](key.toColl, proof, value.toColl, prover)(spec)
     import contract.spec._
 
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val s = mockTx
         .outBox(20, contract.treeProp)
         .withRegs(reg1 -> treeData)
 
-    val spendingTx = block(50).newTransaction().spending(s)
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
     val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)

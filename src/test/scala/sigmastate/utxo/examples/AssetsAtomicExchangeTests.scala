@@ -79,7 +79,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     // setup buyer's box from which we will transfer Ergs to holder box
     val mockBuyerBox = mockTx
         .outBox(100, contract.buyerSignature)
@@ -89,7 +89,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
         .withTokens(Token(contract.tokenId, 60))
 
     // ACT
-    val startBlock = block(50)
+    val startBlock = candidateBlock(50)
     // start exchange protocol
     val (ergHolder, tokenHolder) = contract.startExchange(startBlock, mockBuyerBox, mockSellerBox, 100, Token(contract.tokenId, 60))
     // setup spending transaction
@@ -116,7 +116,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which will be spent
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     // setup buyer's box from which we will transfer Ergs to holder box
     val mockBuyerBox = mockTx
         .outBox(10000, contract.buyerSignature)
@@ -126,12 +126,12 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
         .withTokens(Token(contract.token1, 60))
 
     // ACT
-    val startBlock = block(0)
+    val startBlock = candidateBlock(0)
     // start exchange protocol
     val (buyerHolder, sellerHolder) = contract.startExchange(startBlock, mockBuyerBox, mockSellerBox, 10000, Token(contract.token1, 60))
 
     // setup spending transaction
-    val spendingTx = block(0).newTransaction().spending(buyerHolder, sellerHolder)
+    val spendingTx = candidateBlock(0).newTransaction().spending(buyerHolder, sellerHolder)
     spendingTx.outBox(5050, contract.buyerSignature)
         .withTokens(Token(contract.token1, 10))
         .withRegs(R4 -> buyerHolder.id)

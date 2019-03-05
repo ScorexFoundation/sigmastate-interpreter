@@ -66,7 +66,7 @@ trait ContractSpec {
   protected def mkVerifyingParty(name: String): VerifyingParty
 
   trait InputBox {
-    def tx: Transaction
+    def tx: TransactionCandidate
     def utxoBox: OutBox
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp
     private [dsl] def toErgoContext: ErgoLikeContext
@@ -74,7 +74,7 @@ trait ContractSpec {
 
   trait OutBox {
     def id: BoxId
-    def tx: Transaction
+    def tx: TransactionCandidate
     def boxIndex: Int
     def value: Long
     def propSpec: PropositionSpec
@@ -84,15 +84,15 @@ trait ContractSpec {
     private[dsl] def ergoBox: ErgoBox
   }
 
-  trait Transaction extends ChainTransaction {
-    def block: Block
+  trait TransactionCandidate {
+    def block: BlockCandidate
     def dataInputs: Seq[InputBox]
     def inputs: Seq[InputBox]
     def outputs: Seq[OutBox]
     def inBox(utxoBox: OutBox): InputBox
     def outBox(value: Long, propSpec: PropositionSpec): OutBox
-    def spending(utxos: OutBox*): Transaction
-    def withDataInputs(dataBoxes: OutBox*): Transaction
+    def spending(utxos: OutBox*): TransactionCandidate
+    def withDataInputs(dataBoxes: OutBox*): TransactionCandidate
   }
 
   trait ChainTransaction {
@@ -105,9 +105,9 @@ trait ContractSpec {
   }
 
   /** Block which serve as transaction context. */
-  trait Block extends ChainBlock {
+  trait BlockCandidate {
     def height: Int
-    def newTransaction(): Transaction
+    def newTransaction(): TransactionCandidate
   }
 
   val MinErgValue = 1
