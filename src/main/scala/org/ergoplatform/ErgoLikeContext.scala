@@ -38,10 +38,14 @@ class ErgoLikeContext(val currentHeight: Height,
                  ) extends ErgoContext {
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, newExtension)
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataInputs, boxesToSpend, spendingTransaction, self, newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, newSpendingTransaction, self, extension)
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataInputs, boxesToSpend, newSpendingTransaction, self, extension)
 
   import ErgoLikeContext._
   import Evaluation._

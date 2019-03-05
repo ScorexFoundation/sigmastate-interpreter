@@ -10,13 +10,11 @@ import sigmastate.SCollection.SByteArray
 import sigmastate._
 import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, ValDef, ValUse}
 import sigmastate.eval.{CSigmaProp, Evaluation}
+import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
 import special.collection.Coll
 import special.sigma.Extensions._
-
-
-
 
 /** An example of an atomic ergo <=> asset exchange.
   * Let's assume that Alice is willing to buy 60 assets of type "token1" for 100 ergo coins, and Bob

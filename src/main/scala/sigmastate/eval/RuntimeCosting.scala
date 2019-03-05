@@ -1181,6 +1181,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           withDefaultSize(resV, costOf(c))
       }
 
+      case org.ergoplatform.Context  => ctx
       case Height  => ctx.HEIGHT
       case Inputs  => ctx.INPUTS
       case Outputs => ctx.OUTPUTS

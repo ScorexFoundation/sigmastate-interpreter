@@ -127,29 +127,31 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
-  def buildValue(mainG: PGraph,
+  def buildValue(ctx: Rep[Context],
+                 mainG: PGraph,
                  env: DefEnv,
                  s: Sym,
                  defId: Int,
                  constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
-    def recurse[T <: SType](s: Sym) = buildValue(mainG, env, s, defId, constantsProcessing).asValue[T]
-    object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(mainG, env, s, defId, constantsProcessing)) }
+    def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
+    object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
+      case _ if s == ctx => org.ergoplatform.Context
       case _ if env.contains(s) =>
         val (id, tpe) = env(s)
         ValUse(id, tpe) // recursion base
       case Def(Lambda(lam, _, x, y)) =>
         val varId = defId + 1       // arguments are treated as ValDefs and occupy id space
         val env1 = env + (x -> (varId, elemToSType(x.elem)))
-        val block = processAstGraph(mainG, env1, lam, varId + 1, constantsProcessing)
+        val block = processAstGraph(ctx, mainG, env1, lam, varId + 1, constantsProcessing)
         val rhs = mkFuncValue(Vector((varId, elemToSType(x.elem))), block)
         rhs
       case Def(Apply(fSym, xSym, _)) =>
         val Seq(f, x) = Seq(fSym, xSym).map(recurse)
         builder.mkApply(f, IndexedSeq(x))
       case Def(th @ ThunkDef(root, _)) =>
-        val block = processAstGraph(mainG, env, th, defId, constantsProcessing)
+        val block = processAstGraph(ctx, mainG, env, th, defId, constantsProcessing)
         block
       case Def(Const(x)) =>
         val tpe = elemToSType(s.elem)
@@ -165,7 +167,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val tpe = elemToSType(s.elem)
         val t = Evaluation.stypeToRType(tpe)
         val tRes = Evaluation.toErgoTreeType(t)
-        val v = Evaluation.fromDslData(wc.constValue, tRes)(IR)
+        val v = Evaluation.fromDslData(wc.constValue, tRes)
         mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
 
       case Def(IsContextProperty(v)) => v
@@ -364,7 +366,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     }
   }
 
-  private def processAstGraph(mainG: PGraph,
+  private def processAstGraph(ctx: Rep[Context],
+                              mainG: PGraph,
                               env: DefEnv,
                               subG: AstGraph,
                               defId: Int,
@@ -379,7 +382,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         && IsInternalDef.unapply(d).isEmpty
         && IsNonConstantDef.unapply(d).nonEmpty)
       {
-        val rhs = buildValue(mainG, curEnv, s, curId, constantsProcessing)
+        val rhs = buildValue(ctx, mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
         val vd = ValDef(curId, Seq(), rhs)
         curEnv = curEnv + (s -> (curId, vd.tpe))  // assign valId to s, so it can be use in ValUse
@@ -387,7 +390,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       }
     }
     val Seq(root) = subG.roots
-    val rhs = buildValue(mainG, curEnv, root, curId, constantsProcessing)
+    val rhs = buildValue(ctx, mainG, curEnv, root, curId, constantsProcessing)
     val res = if (valdefs.nonEmpty) BlockValue(valdefs.toIndexedSeq, rhs) else rhs
     res
   }
@@ -396,7 +399,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                             constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
-    val block = processAstGraph(mainG, Map(), mainG, 0, constantsProcessing)
+    val block = processAstGraph(asRep[Context](lam.x), mainG, Map(), mainG, 0, constantsProcessing)
     block.asValue[T]
   }
 }

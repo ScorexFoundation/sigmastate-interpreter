@@ -32,7 +32,7 @@ trait ContractSyntax { contract: SigmaContract =>
     val env = contractEnv.mapValues { v =>
       val tV = Evaluation.rtypeOf(v).get
       val treeType = Evaluation.toErgoTreeType(tV)
-      val data = Evaluation.fromDslData(v, treeType)(spec.IR)
+      val data = Evaluation.fromDslData(v, treeType)
       val elemTpe = Evaluation.rtypeToSType(treeType)
       spec.IR.builder.mkConstant[SType](data.asWrappedType, elemTpe)
     }

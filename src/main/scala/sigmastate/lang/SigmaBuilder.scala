@@ -19,8 +19,10 @@ import sigmastate.utxo._
 import scalan.Nullable
 import sigmastate.SOption.SIntOption
 import sigmastate.basics.ProveDHTuple
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.collection.Coll
 import special.sigma.{AvlTree, SigmaProp, GroupElement}
 
 import scala.util.DynamicVariable
@@ -242,6 +244,9 @@ trait SigmaBuilder {
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
     case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))
 
+    case coll: Coll[a] =>
+      implicit val tA = coll.tItem
+      Nullable(coll.toTreeData)
     case v: SValue => Nullable(v)
     case _ => Nullable.None
   }

@@ -21,15 +21,6 @@ trait ContractSpec {
 
   val IR: IRContext
 
-  import SType.AnyOps
-  implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
-    def toTreeData: Constant[SType] = {
-      val treeType = Evaluation.toErgoTreeType(tA)
-      val treeData = Evaluation.fromDslData(data, tRes = treeType)(IR)
-      IR.builder.mkConstant(treeData.asWrappedType, Evaluation.rtypeToSType(tA))
-    }
-  }
-
   trait PropositionSpec {
     def name: String
     def dslSpec: Proposition
@@ -95,11 +86,13 @@ trait ContractSpec {
 
   trait Transaction extends ChainTransaction {
     def block: Block
+    def dataInputs: Seq[InputBox]
     def inputs: Seq[InputBox]
     def outputs: Seq[OutBox]
     def inBox(utxoBox: OutBox): InputBox
     def outBox(value: Long, propSpec: PropositionSpec): OutBox
     def spending(utxos: OutBox*): Transaction
+    def withDataInputs(dataBoxes: OutBox*): Transaction
   }
 
   trait ChainTransaction {

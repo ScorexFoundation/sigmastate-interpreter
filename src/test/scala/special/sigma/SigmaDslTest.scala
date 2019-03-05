@@ -23,26 +23,12 @@ import sigmastate.interpreter.Interpreter.emptyEnv
 import special.collection.Coll
 import special.collections.CollGens
 
-trait SigmaTypeGens {
-  import sigma.types._
-  val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
-  implicit val arbBoolean = Arbitrary(genBoolean)
-  
-  val genByte = Arbitrary.arbByte.arbitrary.map(CByte(_): Byte)
-  implicit val arbByte = Arbitrary(genByte)
-
-  val genInt = Arbitrary.arbInt.arbitrary.map(CInt(_): Int)
-  implicit val arbInt = Arbitrary(genInt)
-}
-
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
-class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with SigmaTestingCommons with CollGens with SigmaTypeGens {
+class SigmaDslTest extends SigmaTestingCommons with CollGens with SigmaTypeGens {
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
   }
-
-  val SigmaDsl = CostingSigmaDslBuilder
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
     val b1 = f(x); val b2 = g(x)
@@ -136,7 +122,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   }
 
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
-  val bytesCollGen = bytesGen.map(builder.fromArray(_))
+  val bytesCollGen = bytesGen.map(Colls.fromArray(_))
   implicit val arbBytes = Arbitrary(bytesCollGen)
   val keyCollGen = bytesCollGen.map(_.slice(0, 32))
   import org.ergoplatform.dsl.AvlTreeHelpers._
@@ -151,7 +137,7 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
   private def sampleAvlTree = {
     val (key, _, avlProver) = sampleAvlProver
     val digest = avlProver.digest.toColl
-    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
     tree
   }
 
@@ -194,10 +180,10 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
     val digest = avlProver.digest.toColl
     val proof = avlProver.generateProof().toColl
-    val tree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
+    val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
     doContains((tree, (key, proof)))
     doGet((tree, (key, proof)))
-    val keys = builder.fromItems(key)
+    val keys = Colls.fromItems(key)
     doGetMany((tree, (keys, proof)))
   }
 
@@ -224,8 +210,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       val value = bytesCollGen.sample.get
       avlProver.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
       val insertProof = avlProver.generateProof().toColl
-      val preInsertTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(true, false, false).serializeToByte, preInsertDigest, 32, None)
-      val insertKvs = builder.fromItems((key -> value))
+      val preInsertTree = SigmaDsl.avlTree(AvlTreeFlags(true, false, false).serializeToByte, preInsertDigest, 32, None)
+      val insertKvs = Colls.fromItems((key -> value))
       doInsert((preInsertTree, (insertKvs, insertProof)))
     }
 
@@ -234,8 +220,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       val newValue = bytesCollGen.sample.get
       avlProver.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ newValue.toArray))
       val updateProof = avlProver.generateProof().toColl
-      val preUpdateTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(false, true, false).serializeToByte, preUpdateDigest, 32, None)
-      val updateKvs = builder.fromItems((key -> newValue))
+      val preUpdateTree = SigmaDsl.avlTree(AvlTreeFlags(false, true, false).serializeToByte, preUpdateDigest, 32, None)
+      val updateKvs = Colls.fromItems((key -> newValue))
       doUpdate((preUpdateTree, (updateKvs, updateProof)))
     }
 
@@ -243,8 +229,8 @@ class SigmaDslTest extends PropSpec with PropertyChecks with Matchers with Sigma
       val preRemoveDigest = avlProver.digest.toColl
       avlProver.performOneOperation(Remove(ADKey @@ key.toArray))
       val removeProof = avlProver.generateProof().toColl
-      val preRemoveTree = CostingSigmaDslBuilder.avlTree(AvlTreeFlags(false, false, true).serializeToByte, preRemoveDigest, 32, None)
-      val removeKeys = builder.fromItems(key)
+      val preRemoveTree = SigmaDsl.avlTree(AvlTreeFlags(false, false, true).serializeToByte, preRemoveDigest, 32, None)
+      val removeKeys = Colls.fromItems(key)
       doRemove((preRemoveTree, (removeKeys, removeProof)))
     }
   }

@@ -7,6 +7,7 @@ import sigmastate.interpreter.{ProverResult, CostedProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, noHeaders}
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
@@ -80,10 +81,13 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
   case class TestInputBox(tx: Transaction, utxoBox: OutBox) extends InputBox {
     private [dsl] def toErgoContext: ErgoLikeContext = {
       val propSpec = utxoBox.propSpec
-      val ctx = ErgoLikeContext(
+      val ctx = new ErgoLikeContext(
         currentHeight = tx.block.height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
+        headers     = noHeaders,
+        preHeader   = dummyPreHeader,
+        dataInputs  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = ErgoLikeTransaction(IndexedSeq(), tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
@@ -129,12 +133,21 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     private val _inputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
     def inputs: Seq[InputBox] = _inputs
 
+    private val _dataInputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
+    def dataInputs: Seq[InputBox] = _dataInputs
+
     private val _outputs = mutable.ArrayBuffer.empty[OutBox]
     def outputs: Seq[OutBox] = _outputs
 
     def inBox(utxoBox: OutBox) = {
       val box = TestInputBox(this, utxoBox)
       _inputs += box
+      box
+    }
+
+    def dataBox(dataBox: OutBox) = {
+      val box = TestInputBox(this, dataBox)
+      _dataInputs += box
       box
     }
 
@@ -146,6 +159,11 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
     def spending(utxos: OutBox*) = {
       for (b <- utxos) inBox(b)
+      this
+    }
+
+    def withDataInputs(dataBoxes: OutBox*) = {
+      for (b <- dataBoxes) dataBox(b)
       this
     }
 

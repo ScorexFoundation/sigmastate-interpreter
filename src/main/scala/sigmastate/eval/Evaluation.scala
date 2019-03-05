@@ -66,7 +66,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: ThunkDef[_] =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
     case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
-    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.LastBlockUtxoRootHash(_) |
+    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) |
          ContextM.cost(_) | ContextM.dataSize(_) =>
     case SigmaM.propBytes(_) =>
@@ -423,7 +423,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           val tpeRes = elemToSType(eRes)
           val tRes = Evaluation.stypeToRType(tpeRes)
           val treeType = Evaluation.toErgoTreeType(tRes)
-          val constValue = Evaluation.fromDslData(x, treeType)(IR)
+          val constValue = Evaluation.fromDslData(x, treeType)
           builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
       }
     }
@@ -569,9 +569,9 @@ object Evaluation {
       sys.error(s"Don't know how to toErgoTreeType($dslType)")
   }
 
-  /** Generic converter from types used in SigmaDsl to types used in ErgoTree values. */
-  def fromDslData[T](value: Any, tRes: RType[T])(implicit IR: Evaluation): T = {
-    val dsl = IR.sigmaDslBuilderValue
+  /** Generic converter from types used in SigmaDsl to types used in ErgoTree values.
+    * @param tRes should describe ErgoTree type (i.e. it can be obtained using toErgoTreeType method)*/
+  def fromDslData[T](value: Any, tRes: RType[T]): T = {
     val res = (value, tRes) match {
       case (w: WrapperOf[_], _) => w.wrappedValue
       case (coll: Coll[a], tarr: ArrayType[a1]) =>
