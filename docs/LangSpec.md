@@ -787,7 +787,7 @@ def allOf(conditions: Coll[Boolean]): Boolean
 /** Returns true if at least on element of the conditions is true */
 def anyOf(conditions: Coll[Boolean]): Boolean
 
-/** Similar to allOf, but performing logical XOR operation instead of `||` 
+/** Similar to allOf, but performing logical XOR operation instead of `&&` 
   * @since 2.0
   */
 def xorOf(conditions: Coll[Boolean]): Boolean 

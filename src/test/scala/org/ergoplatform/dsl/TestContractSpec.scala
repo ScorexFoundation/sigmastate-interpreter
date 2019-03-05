@@ -37,7 +37,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
 
   case class TestProvingParty(name: String) extends ProvingParty {
-    private val prover = new ErgoLikeTestProvingInterpreter
+    private val prover = new ContextEnrichingTestProvingInterpreter
 
     val pubKey: SigmaProp = CSigmaProp(prover.dlogSecrets.head.publicImage)
 
@@ -89,7 +89,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         preHeader   = dummyPreHeader,
         dataInputs  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
-        spendingTransaction = ErgoLikeTransaction(IndexedSeq(), tx.outputs.map(_.ergoBox).toIndexedSeq),
+        spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
       ctx
     }

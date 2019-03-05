@@ -60,12 +60,14 @@ package special.sigma {
       @NeverInline def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = delayInvoke;
       @NeverInline def allZK(props: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def anyZK(props: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = delayInvoke;
+      @NeverInline override def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = delayInvoke;
       @NeverInline def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = delayInvoke;
       @NeverInline def PubKey(base64String: Rep[String]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = delayInvoke;
       @NeverInline def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = delayInvoke;
+      @NeverInline def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = delayInvoke;
       @NeverInline def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = delayInvoke;
       @NeverInline def groupGenerator: Rep[GroupElement] = delayInvoke;

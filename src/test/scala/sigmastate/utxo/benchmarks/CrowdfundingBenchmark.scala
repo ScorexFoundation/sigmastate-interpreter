@@ -4,7 +4,7 @@ package sigmastate.utxo.benchmarks
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import scalan.util.BenchmarkUtil._
 
 class CrowdfundingBenchmark extends SigmaTestingCommons {
@@ -15,7 +15,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
     val tx1Output1 = ErgoBox(contract.minToRaise, contract.projectPubKey, 0)
     val tx1Output2 = ErgoBox(1, contract.projectPubKey, 0)
     //normally this transaction would invalid, but we're not checking it in this test
-    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+    val tx = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
     val ctx = ErgoLikeContext(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -34,9 +34,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
   ignore("Evaluation by Precompiled Kernel(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeTestProvingInterpreter
+      val backerProver = new ContextEnrichingTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeTestProvingInterpreter
+      val projectProver = new ContextEnrichingTestProvingInterpreter
       val contract = new CrowdFundingKernelContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 
@@ -57,9 +57,9 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
   ignore("Evaluation by Script Interpretation(!!! ignore)") {
     runTasks(nTasks) { iTask =>
       //backer's prover with his private key
-      val backerProver = new ErgoLikeTestProvingInterpreter
+      val backerProver = new ContextEnrichingTestProvingInterpreter
       //project's prover with his private key
-      val projectProver = new ErgoLikeTestProvingInterpreter
+      val projectProver = new ContextEnrichingTestProvingInterpreter
       val contract = new CrowdFundingScriptContract(timeout, minToRaise, backerProver, projectProver)
       val ctx = createTestContext(contract)
 

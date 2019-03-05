@@ -2,16 +2,16 @@ package sigmastate.eval
 
 import scala.collection.mutable.ArrayBuffer
 import sigmastate._
-import sigmastate.Values.{FuncValue, FalseLeaf, Constant, SValue, BlockValue, ConstantNode, SigmaPropConstant, BoolValue, Value, BooleanConstant, SigmaBoolean, ValDef, GroupElementConstant, ValUse, ConcreteCollection}
+import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, EvaluatedCollection, FalseLeaf, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.serialization.OpCodes._
 import org.ergoplatform._
 import java.math.BigInteger
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.{OperationId, ValueOps}
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ValueSerializer, ConstantStore}
+import sigmastate.serialization.{ConstantStore, ValueSerializer}
 import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
 import ErgoLikeContext._
 
@@ -24,7 +24,7 @@ import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.lang.SigmaBuilder
+import sigmastate.lang.{SigmaBuilder, SigmaTyper}
 
 trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._
@@ -91,8 +91,15 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   }
 
   object IsLogicalUnOp {
-    def unapply(op: UnOp[_,_]): Option[BoolValue => Value[SBoolean.type]] = op match {
-      case Not => Some({ v: BoolValue => builder.mkEQ(v, FalseLeaf) })
+    def unapply(op: UnOp[_,_]): Option[BoolValue => BoolValue] = op match {
+      case Not => Some({ v: BoolValue => builder.mkLogicalNot(v) })
+      case _ => None
+    }
+  }
+
+  object IsNumericUnOp {
+    def unapply(op: UnOp[_,_]): Option[SValue => SValue] = op match {
+      case NumericNegate(_) => Some({ v: SValue => builder.mkNegation(v.asNumValue) })
       case _ => None
     }
   }
@@ -212,6 +219,19 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, MinCode)
       case BIM.max(In(x), In(y)) =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
+      case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkArith(x.asNumValue, y.asNumValue, opCode)
+      case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
+      case Def(ApplyUnOp(IsNumericUnOp(mkNode), xSym)) =>
+        mkNode(recurse(xSym))
 
       case CollM.apply(colSym, In(index)) =>
         val col = recurse(colSym)
@@ -240,13 +260,34 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
 
+      case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
+        val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
+        val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
+        val col = recurse(colSym)
+        val colTpe = elemToSType(colSym.elem).asCollection
+        val (method, typeSubst) = (SCollection.methods.find(_.name == m.getName), args) match {
+          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
+            val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
+            (mth, typeSubst)
+          case (Some(mth @ SCollection.ZipMethod), Seq(coll: EvaluatedCollection[_, _])) =>
+            val typeSubst = Map(SCollection.tOV -> coll.elementType)
+            (mth, typeSubst)
+          case (Some(mth), _) => (mth, SigmaTyper.emptySubst)
+          case (None, _) => error(s"unknown method Coll.${m.getName}")
+        }
+        builder.mkMethodCall(col, method, args.toIndexedSeq, typeSubst + (SCollection.tIV -> colTpe.elemType))
+
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))
       case BoxM.propositionBytes(In(box)) =>
         mkExtractScriptBytes(box.asBox)
       case BoxM.getReg(In(box), regId, _) =>
         val tpe = elemToSType(s.elem).asOption
-        mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+        if (regId.isConst)
+          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+        else
+          builder.mkMethodCall(box, SBox.GetRegMethod, IndexedSeq(recurse(regId)),
+            Map(SBox.tT -> tpe.elemType))
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
@@ -296,7 +337,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkOR(recurse(items))
       case SDBM.atLeast(_, bound, items) =>
         mkAtLeast(recurse(bound), recurse(items))
-      case SDBM.sigmaProp(_, In(cond)) =>
+      case Def(SDBM.xorOf(_,  items)) =>
+        mkXorOf(recurse(items))
+
+      case Def(SDBM.sigmaProp(_, In(cond))) =>
         mkBoolToSigmaProp(cond.asBoolValue)
       case SDBM.proveDlog(_, In(g)) =>
         g match {
@@ -323,6 +367,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkCalcBlake2b256(recurse(colSym))
       case SDBM.longToByteArray(_, longSym) =>
         mkLongToByteArray(recurse(longSym))
+      case SDBM.byteArrayToLong(_, colSym) =>
+        mkByteArrayToLong(recurse(colSym))
       case SDBM.decodePoint(_, colSym) =>
         mkDecodePoint(recurse(colSym))
 

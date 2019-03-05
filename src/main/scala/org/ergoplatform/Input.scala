@@ -4,38 +4,56 @@ import java.util
 
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
-import sigmastate.interpreter.ProverResult
+import scorex.util.encode.Base16
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
+/**
+  * Inputs, that are used to enrich script context, but won't be spent by the transaction
+  *
+  * @param boxId - id of a box to add into context (should be in UTXO)
+  */
+case class DataInput(boxId: BoxId)
 
-class UnsignedInput(val boxId: BoxId) {
+/**
+  * Inputs of formed, but unsigned transaction
+  *
+  * @param boxId     - id of a box to spent
+  * @param extension - user-defined variables to be put into context
+  */
+class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
+
+  def this(boxId: BoxId) = this(boxId, ContextExtension.empty)
+
   require(boxId.size == BoxId.size, s"incorrect boxId size, expected: $BoxId.size, got: ${boxId.size}")
 
+  // todo check whether it is correct to compare inputs (Input use the same equals) by boxId only?
   override def equals(obj: Any): Boolean = obj match {
     case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
+
+  /**
+    * Input, that should be signed by prover and verified by verifier.
+    * Contains all the input data except of signature itself.
+    */
+  def inputToSign: Input = Input(boxId: BoxId, ProverResult(Array[Byte](), extension))
 }
 
-object UnsignedInput {
-  object serializer extends SigmaSerializer[UnsignedInput, UnsignedInput] {
-
-    @inline
-    override def serialize(obj: UnsignedInput, w: SigmaByteWriter): Unit =
-      w.putBytes(obj.boxId)
-
-    @inline
-    override def parse(r: SigmaByteReader): UnsignedInput =
-      new UnsignedInput(ADKey @@ r.getBytes(BoxId.size))
-  }
-}
-
+/**
+  * Fully signed transaction input
+  *
+  * @param boxId         - id of a box to spent
+  * @param spendingProof - proof of spending correctness
+  */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
-  extends UnsignedInput(boxId) {
+  extends UnsignedInput(boxId, spendingProof.extension) {
+  override def toString: String = s"Input(${Base16.encode(boxId)},$spendingProof)"
 }
 
 object Input {
+
   object serializer extends SigmaSerializer[Input, Input] {
 
     override def serialize(obj: Input, w: SigmaByteWriter): Unit = {
@@ -49,4 +67,5 @@ object Input {
       Input(ADKey @@ boxId, spendingProof)
     }
   }
+
 }

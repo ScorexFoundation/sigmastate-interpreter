@@ -120,6 +120,8 @@ object CostTable {
     ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+    ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("LogicalNot", "(Boolean) => Boolean", logicCost),
 
     ("GT", "(T,T) => Boolean", comparisonCost),
     ("GE", "(T,T) => Boolean", comparisonCost),
@@ -168,6 +170,12 @@ object CostTable {
     ("%", "(Int, Int) => Int", multiply),
     ("%", "(Long, Long) => Long", multiply),
 
+    ("Negation", "(Byte) => Byte", MinimalCost),
+    ("Negation", "(Short) => Short", MinimalCost),
+    ("Negation", "(Int) => Int", MinimalCost),
+    ("Negation", "(Long) => Long", MinimalCost),
+    ("Negation", "(BigInt) => BigInt", MinimalCost),
+
     ("+", "(BigInt, BigInt) => BigInt", plusMinusBigInt),
     ("+_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
@@ -208,6 +216,7 @@ object CostTable {
     ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", hashPerKb * 2),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
+    ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
 
     ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
 

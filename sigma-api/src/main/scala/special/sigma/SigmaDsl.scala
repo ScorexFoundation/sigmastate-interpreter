@@ -577,6 +577,8 @@ trait SigmaContract {
   def anyOf(conditions: Coll[Boolean]): Boolean = this.builder.anyOf(conditions)
   def anyZK(conditions: Coll[SigmaProp]): SigmaProp = this.builder.anyZK(conditions)
 
+  def xorOf(conditions: Coll[Boolean]): Boolean = this.builder.xorOf(conditions)
+
   def PubKey(base64String: String): SigmaProp = this.builder.PubKey(base64String)
 
   def sigmaProp(b: Boolean): SigmaProp = this.builder.sigmaProp(b)
@@ -586,6 +588,7 @@ trait SigmaContract {
 
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = this.builder.byteArrayToBigInt(bytes)
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
+  def byteArrayToLong(bytes: Coll[Byte]): Long = this.builder.byteArrayToLong(bytes)
 
   def proveDlog(g: GroupElement): SigmaProp = this.builder.proveDlog(g)
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
@@ -629,6 +632,8 @@ trait SigmaDslBuilder {
   def anyOf(conditions: Coll[Boolean]): Boolean
   def anyZK(conditions: Coll[SigmaProp]): SigmaProp
 
+  def xorOf(conditions: Coll[Boolean]): Boolean
+
   def PubKey(base64String: String): SigmaProp
 
   def sigmaProp(b: Boolean): SigmaProp
@@ -638,6 +643,7 @@ trait SigmaDslBuilder {
 
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
   def longToByteArray(l: Long): Coll[Byte]
+  def byteArrayToLong(bytes: Coll[Byte]): Long
 
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp

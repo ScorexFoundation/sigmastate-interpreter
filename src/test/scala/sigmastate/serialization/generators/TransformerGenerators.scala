@@ -278,4 +278,7 @@ trait TransformerGenerators {
     b <- booleanConstGen
   } yield mkBoolToSigmaProp(b).asInstanceOf[BoolToSigmaProp]
 
+  val byteArrayToLongGen: Gen[ByteArrayToLong] =
+    arbByteArrayConstant.arbitrary.map { v =>
+      mkByteArrayToLong(v).asInstanceOf[ByteArrayToLong] }
 }

@@ -5,7 +5,7 @@ import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.Values.{BlockValue, FalseLeaf, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedVariable, TrueLeaf, ValDef, ValUse}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.serialization.OpCodes._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
@@ -84,7 +84,7 @@ class ErgoTreeBuildingTest extends BaseCtxTests
   }
 
   test("Crowd Funding") {
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val backerPK  = prover.dlogSecrets(0).publicImage
     val projectPK = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)

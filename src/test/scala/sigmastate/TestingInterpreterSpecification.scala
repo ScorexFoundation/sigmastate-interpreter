@@ -202,10 +202,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
-      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
+      testEval(s"OUTPUTS.size.toByte.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toShort.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toInt.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toLong.$castSuffix == 0.$castSuffix")
     }
     testWithCasting("toByte")
     testWithCasting("toShort")

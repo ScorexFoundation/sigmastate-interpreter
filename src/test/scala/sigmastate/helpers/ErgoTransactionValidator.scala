@@ -1,10 +1,11 @@
-package sigmastate.utxo
+package sigmastate.helpers
 
-import sigmastate.eval.{RuntimeIRContext, IRContext}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import org.ergoplatform._
+import sigmastate.eval.IRContext
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.utxo.CostTable
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext) extends ErgoLikeInterpreter(maxCost) {
   override type CTX = ErgoLikeContext

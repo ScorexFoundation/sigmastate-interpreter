@@ -6,9 +6,9 @@ import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
 import interpreter.Interpreter._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.utxo.{ErgoLikeTestInterpreter, GetVar, SizeOf}
+import sigmastate.utxo.{GetVar, SizeOf}
 
 class AtomicSwapExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -23,8 +23,8 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     */
   property("atomic cross-chain trading") {
     val x = Random.randomBytes(32)
-    val proverA = (new ErgoLikeTestProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
-    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverA = (new ContextEnrichingTestProvingInterpreter).withContextExtender(1, ByteArrayConstant(x))
+    val proverB = new ContextEnrichingTestProvingInterpreter
     val pubkeyA = proverA.dlogSecrets.head.publicImage
     val pubkeyB = proverB.dlogSecrets.head.publicImage
     val verifier = new ErgoLikeTestInterpreter

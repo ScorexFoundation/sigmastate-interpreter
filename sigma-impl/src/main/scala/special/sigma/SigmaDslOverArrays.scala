@@ -60,6 +60,9 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def anyZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.exists(p => p.isValid))
 
   @NeverInline
+  override def xorOf(conditions: Coll[Boolean]): Boolean = conditions.toArray.distinct.length == 2
+
+  @NeverInline
   def sigmaProp(b: Boolean): SigmaProp = MockSigma(b)
 
   @NeverInline
@@ -83,6 +86,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
+  @NeverInline
+  def byteArrayToLong(bytes: Coll[Byte]): Long = Longs.fromByteArray(bytes.toArray)
 
   @NeverInline
   def proveDlog(g: GroupElement): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])

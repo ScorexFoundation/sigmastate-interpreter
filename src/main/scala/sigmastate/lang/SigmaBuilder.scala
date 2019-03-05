@@ -9,9 +9,9 @@ import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -24,6 +24,8 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.{AvlTree, SigmaProp, GroupElement}
+import sigmastate.lang.SigmaTyper.STypeSubst
+import special.sigma.{GroupElement, SigmaProp}
 
 import scala.util.DynamicVariable
 
@@ -50,6 +52,7 @@ trait SigmaBuilder {
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+  def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue
 
   def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
   def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
@@ -74,6 +77,7 @@ trait SigmaBuilder {
                        falseBranch: Value[T]): Value[T]
 
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
+  def mkByteArrayToLong(input: Value[SByteArray]): Value[SLong.type]
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
   def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
   def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
@@ -177,8 +181,8 @@ trait SigmaBuilder {
 
   def mkMethodCall(obj: Value[SType],
                    method: SMethod,
-                   args: IndexedSeq[Value[SType]]): Value[SType]
-
+                   args: IndexedSeq[Value[SType]],
+                   typeSubst: STypeSubst): Value[SType]
   def mkLambda(args: IndexedSeq[(String, SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
@@ -320,6 +324,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input).withSrcCtx(currentSrcCtx.value)
 
+  override def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue =
+    XorOf(input).withSrcCtx(currentSrcCtx.value)
+
   override def mkAnyOf(input: Seq[Value[SBoolean.type]]) =
     OR(input).withSrcCtx(currentSrcCtx.value)
   override def mkAllOf(input: Seq[Value[SBoolean.type]]) =
@@ -358,6 +365,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
     LongToByteArray(input).withSrcCtx(currentSrcCtx.value)
+
+  override def mkByteArrayToLong(input: Value[SByteArray]): Value[SLong.type] =
+    ByteArrayToLong(input).withSrcCtx(currentSrcCtx.value)
 
   override def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type] =
     ByteArrayToBigInt(input).withSrcCtx(currentSrcCtx.value)
@@ -542,8 +552,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMethodCall(obj: Value[SType],
                             method: SMethod,
-                            args: IndexedSeq[Value[SType]]): Value[SType] =
-    MethodCall(obj, method, args).withSrcCtx(currentSrcCtx.value)
+                            args: IndexedSeq[Value[SType]],
+                            typeSubst: STypeSubst = Map()): Value[SType] =
+    MethodCall(obj, method, args, typeSubst).withSrcCtx(currentSrcCtx.value)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,

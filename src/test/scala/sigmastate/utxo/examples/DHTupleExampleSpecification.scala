@@ -9,11 +9,10 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class DHTupleExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext
@@ -30,7 +29,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val g = dlogGroup.generator
 
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
 
     val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
@@ -58,7 +57,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
     // a blockchain node verifying a block containing a spending transaction
     val verifier = new ErgoLikeTestInterpreter
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
 
     val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
@@ -67,7 +66,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val g_xy = GroupElementConstant(dlogGroup.exponentiate(g_x, y)) // g^xy
 
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     val outBox = ErgoBox(10, carolPubKey, 70, Nil,
@@ -77,7 +76,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
       )
     )
 
-    val tx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox))
+    val tx = createTransaction(IndexedSeq(outBox))
 
     val context = ErgoLikeContext(
       currentHeight = 70,
@@ -89,7 +88,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
     )
     val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
 
-    val proofBob = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofBob = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtBob)
     ).prove(env, script, context, fakeMessage).get.proof
 
@@ -97,7 +96,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val dhtAlice = DiffieHellmanTupleProverInput(x, ProveDHTuple(g, g_y, g_x, g_xy))
 
-    val proofAlice = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofAlice = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtAlice)
     ).prove(env, script, context, fakeMessage).get.proof
 
@@ -105,7 +104,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val dhtBad = DiffieHellmanTupleProverInput(BigInt(10).bigInteger, ProveDHTuple(g, g_y, g_x, g_xy))
 
-    val proofBad = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofBad = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtBad)
     ).prove(env, script, context, fakeMessage).get.proof
 

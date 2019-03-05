@@ -157,7 +157,9 @@ object SigmaPredef {
 
     val ByteArrayToLongFunc = PredefinedFunc("byteArrayToLong",
       Lambda(Vector("input" -> SByteArray), SLong, None),
-      undefined
+      { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
+        mkByteArrayToLong(arg)
+      }
     )
 
     val DecodePointFunc = PredefinedFunc("decodePoint",
@@ -237,7 +239,7 @@ object SigmaPredef {
 
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      undefined
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",
