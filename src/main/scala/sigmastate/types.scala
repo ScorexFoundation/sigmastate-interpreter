@@ -1256,11 +1256,11 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
 
   val versionMethod          = property("version",  SByte,      1)
   val parentIdMethod         = property("parentId", SByteArray, 2)
-  val timestampMethod        = property("timestamp", SLong, 6)
-  val nBitsMethod            = property("nBits", SLong, 7)
-  val heightMethod           = property("height", SInt, 8)
-  val minerPkMethod          = property("minerPk", SGroupElement, 10)
-  val votesMethod            = property("votes", SByteArray, 14)
+  val timestampMethod        = property("timestamp", SLong, 3)
+  val nBitsMethod            = property("nBits", SLong, 4)
+  val heightMethod           = property("height", SInt, 5)
+  val minerPkMethod          = property("minerPk", SGroupElement, 6)
+  val votesMethod            = property("votes", SByteArray, 7)
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod
