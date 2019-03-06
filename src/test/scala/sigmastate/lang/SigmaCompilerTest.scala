@@ -2,7 +2,6 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
-import org.scalatest.exceptions.TestFailedException
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
@@ -10,14 +9,13 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
-import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
-  implicit lazy val IR = new TestingIRContext {
+  implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
   }
 
@@ -212,23 +210,25 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-// TODO costing for << and >> method
-//  property("Collection.BitShiftLeft") {
-//    comp("Coll(1,2) << 2") shouldBe
-//      mkMethodCall(
-//        ConcreteCollection(IntConstant(1), IntConstant(2)),
-//        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-//        Vector(IntConstant(2)), Map())
-//  }
-//  property("Collection.BitShiftRight") {
-//    testMissingCosting("Coll(1,2) >> 2",
-//      mkMethodCall(
-//        ConcreteCollection(IntConstant(1), IntConstant(2)),
-//        SCollection.BitShiftRightMethod,
-//        Vector(IntConstant(2)),
-//        Map(SCollection.tIV -> SInt))
-//    )
-//  }
+  // TODO costing for << method
+  ignore("Collection.BitShiftLeft") {
+    comp("Coll(1,2) << 2") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2)), Map())
+  }
+
+  // TODO costing for  >> method
+  ignore("Collection.BitShiftRight") {
+    testMissingCosting("Coll(1,2) >> 2",
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftRightMethod,
+        Vector(IntConstant(2)),
+        Map(SCollection.tIV -> SInt))
+    )
+  }
 
   property("Collection.BitShiftRightZeroed") {
     testMissingCosting("Coll(true, false) >>> 2",
