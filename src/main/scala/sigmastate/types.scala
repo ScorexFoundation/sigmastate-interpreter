@@ -76,7 +76,9 @@ sealed trait SType extends SigmaNode {
     sys.error(s"Don't know how mkConstant for data value $v with T = $this")
 
   def withSubstTypes(subst: Map[STypeIdent, SType]): SType =
-    SigmaTyper.applySubst(this, subst)
+    if (subst.isEmpty) this
+    else
+      SigmaTyper.applySubst(this, subst)
 
 }
 
@@ -384,7 +386,7 @@ trait SNumericType extends SProduct {
 }
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
-  def typeId: TypeCode = 1: Byte
+  def typeId: TypeCode = 96: Byte
   val ToByte = "toByte"
   val ToShort = "toShort"
   val ToInt = "toInt"
@@ -474,7 +476,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
 case object SInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
-  override def typeId: TypeCode = typeCode
+  override def typeId = typeCode
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 4
   override def isConstantSize = true
@@ -497,7 +499,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
 case object SLong extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
-  override def typeId: TypeCode = typeCode
+  override def typeId = typeCode
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 8
   override def isConstantSize = true
@@ -521,7 +523,7 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInteger
   override val typeCode: TypeCode = 6: Byte
-  override def typeId: TypeCode = typeCode
+  override def typeId = typeCode
   override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
 
   /** Type of Relation binary op like GE, LE, etc. */
@@ -623,14 +625,14 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
 /** Any other type is implicitly subtype of this type. */
 case object SAny extends SPrimType {
   override type WrappedType = Any
-  override val typeCode: Byte = 97: Byte
+  override val typeCode: TypeCode = 97: Byte
   override def isConstantSize = false
 }
 
 /** The type with single inhabitant value `()` */
 case object SUnit extends SPrimType {
   override type WrappedType = Unit
-  override val typeCode: Byte = 98: Byte
+  override val typeCode: TypeCode = 98: Byte
   override def dataSize(v: SType#WrappedType) = 1
   override def isConstantSize = true
 }
@@ -1059,7 +1061,7 @@ case class STypeIdent(name: String) extends SType {
   override def toString = name
 }
 object STypeIdent {
-  val TypeCode = 103: Byte
+  val TypeCode: TypeCode = 103: Byte
   implicit def liftString(n: String): STypeIdent = STypeIdent(n)
 }
 
@@ -1206,7 +1208,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 
 case object SHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Header
-  override val typeCode: TypeCode = 103: Byte
+  override val typeCode: TypeCode = 104: Byte
   override def typeId = typeCode
   override def mkConstant(v: Header): Value[SHeader.type] = HeaderConstant(v)
 
@@ -1257,7 +1259,7 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
 
 case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = PreHeader
-  override val typeCode: TypeCode = 104: Byte
+  override val typeCode: TypeCode = 105: Byte
   override def typeId = typeCode
   override def mkConstant(v: PreHeader): Value[SPreHeader.type] = PreHeaderConstant(v)
 

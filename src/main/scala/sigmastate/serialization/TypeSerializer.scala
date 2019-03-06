@@ -28,6 +28,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SUnit => w.put(SUnit.typeCode)
     case SBox => w.put(SBox.typeCode)
     case SAvlTree => w.put(SAvlTree.typeCode)
+    case SContext => w.put(SContext.typeCode)
+    case SHeader => w.put(SHeader.typeCode)
+    case SPreHeader => w.put(SPreHeader.typeCode)
     case c: SCollectionType[a] => c.elemType match {
       case p: SEmbeddable =>
         val code = p.embedIn(CollectionTypeCode)
@@ -178,6 +181,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SUnit.typeCode => SUnit
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
+        case SContext.typeCode => SContext
+        case SHeader.typeCode => SHeader
+        case SPreHeader.typeCode => SPreHeader
         case STypeIdent.TypeCode => {
           val nameLength = r.getUByte()
           val name = new String(r.getBytes(nameLength), StandardCharsets.UTF_8)
