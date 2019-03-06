@@ -1,8 +1,6 @@
 package sigmastate.utxo
 
-import java.lang.reflect.InvocationTargetException
-
-import org.ergoplatform.ErgoBox.{R4, R6, R8}
+import org.ergoplatform.ErgoBox.{R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
@@ -12,7 +10,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestI
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
-import scalan.BaseCtxTests
+
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
