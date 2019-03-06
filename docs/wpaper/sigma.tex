@@ -137,7 +137,7 @@ The simplest script allows the owner of a public key to spend an output box in a
         pk
 \end{verbatim}
 
-In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We postpone the discussion of how to invoke the compiler outside of Scala code.}
+In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We defer the discussion of how to invoke the compiler outside of Scala code to another article.}
 Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
