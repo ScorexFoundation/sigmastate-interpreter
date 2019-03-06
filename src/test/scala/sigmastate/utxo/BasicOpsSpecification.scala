@@ -358,7 +358,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   // TODO should be fixed
   ignore("Box.getReg") {
     test("Extract1", env, ext,
-      "{ SELF.getReg[Int](getVar[Int](intVar1).get + 4).get == 1}",
+      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4).toByte ).get == 1}",
       BoolToSigmaProp(
         EQ(
           MethodCall(Self, SBox.getRegMethod,
