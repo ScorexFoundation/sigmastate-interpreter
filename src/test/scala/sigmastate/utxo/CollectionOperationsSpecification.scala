@@ -458,9 +458,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
       EQ(
         MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-          IndexOfMethod,
+          IndexOfMethod.withConcreteTypes(Map(tIV -> SLong)),
           Vector(LongConstant(1), IntConstant(0)),
-          Map(tIV -> SLong)),
+          Map()),
         IntConstant(0)
       ),
       IndexedSeq(1L, 1L))
@@ -476,12 +476,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
       EQ(
         MethodCall(Outputs,
-          SegmentLengthMethod,
+          SegmentLengthMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(0)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(1)),
       IndexedSeq(1L, 2L))
   }
@@ -490,12 +490,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
       EQ(
         MethodCall(Outputs,
-          IndexWhereMethod,
+          IndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(0)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(0)),
       IndexedSeq(1L, 2L))
   }
@@ -504,12 +504,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
       EQ(
         MethodCall(Outputs,
-          LastIndexWhereMethod,
+          LastIndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(1)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(0)),
       IndexedSeq(1L, 2L))
   }
@@ -522,7 +522,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           Vector(
             ConcreteCollection(IntConstant(1), IntConstant(2))
           ),
-          Map(tIV -> SBox, tOV -> SInt)).asCollection[STuple]),
+          Map()).asCollection[STuple]),
         IntConstant(2)),
       IndexedSeq(1L, 2L))
   }
@@ -533,11 +533,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         SizeOf(
           SelectField(
             MethodCall(Outputs,
-              PartitionMethod,
+              PartitionMethod.withConcreteTypes(Map(tIV -> SBox)),
               Vector(
                 FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
               ),
-              Map(tIV -> SBox)).asValue[STuple],
+              Map()).asValue[STuple],
             1
           ).asCollection[SType]
         ),
@@ -551,9 +551,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            PatchMethod,
+            PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),
@@ -566,9 +566,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdatedMethod,
+            UpdatedMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(IntConstant(0), LongConstant(3)),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),
@@ -581,9 +581,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdateManyMethod,
+            UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),
