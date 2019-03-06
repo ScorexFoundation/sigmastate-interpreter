@@ -263,19 +263,20 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
-        val col = recurse(colSym)
-        val colTpe = elemToSType(colSym.elem).asCollection
-        val (method, typeSubst) = (SCollection.methods.find(_.name == m.getName), args) match {
-          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
+        val col = recurse(colSym).asCollection[SType]
+        val colTpe = col.tpe // elemToSType(colSym.elem).asCollection
+        val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
+        val typeSubst = (method, args) match {
+          case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
-            (mth, typeSubst)
-          case (Some(mth @ SCollection.ZipMethod), Seq(coll: EvaluatedCollection[_, _])) =>
+            typeSubst
+          case (mth @ SCollection.ZipMethod, Seq(coll: EvaluatedCollection[_, _])) =>
             val typeSubst = Map(SCollection.tOV -> coll.elementType)
-            (mth, typeSubst)
-          case (Some(mth), _) => (mth, SigmaTyper.emptySubst)
-          case (None, _) => error(s"unknown method Coll.${m.getName}")
+            typeSubst
+          case (mth, _) => SigmaTyper.emptySubst
         }
-        builder.mkMethodCall(col, method, args.toIndexedSeq, typeSubst + (SCollection.tIV -> colTpe.elemType))
+        val specMethod = method.withConcreteTypes(typeSubst + (SCollection.tIV -> colTpe.elemType))
+        builder.mkMethodCall(col, specMethod, args.toIndexedSeq, Map())
 
       case BoxM.value(box) =>
         mkExtractAmount(recurse[SBox.type](box))

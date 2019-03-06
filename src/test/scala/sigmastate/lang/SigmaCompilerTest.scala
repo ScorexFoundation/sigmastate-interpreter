@@ -212,25 +212,23 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-  property("Collection.BitShiftLeft") {
-    testMissingCosting("Coll(1,2) << 2",
-      mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftLeftMethod,
-        Vector(IntConstant(2)),
-        Map(SCollection.tIV -> SInt))
-    )
-  }
-
-  property("Collection.BitShiftRight") {
-    testMissingCosting("Coll(1,2) >> 2",
-      mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.BitShiftRightMethod,
-        Vector(IntConstant(2)),
-        Map(SCollection.tIV -> SInt))
-    )
-  }
+// TODO costing for << and >> method
+//  property("Collection.BitShiftLeft") {
+//    comp("Coll(1,2) << 2") shouldBe
+//      mkMethodCall(
+//        ConcreteCollection(IntConstant(1), IntConstant(2)),
+//        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+//        Vector(IntConstant(2)), Map())
+//  }
+//  property("Collection.BitShiftRight") {
+//    testMissingCosting("Coll(1,2) >> 2",
+//      mkMethodCall(
+//        ConcreteCollection(IntConstant(1), IntConstant(2)),
+//        SCollection.BitShiftRightMethod,
+//        Vector(IntConstant(2)),
+//        Map(SCollection.tIV -> SInt))
+//    )
+//  }
 
   property("Collection.BitShiftRightZeroed") {
     testMissingCosting("Coll(true, false) >>> 2",
@@ -254,9 +252,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   property("SCollection.flatMap") {
     comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
       mkMethodCall(Outputs,
-        SCollection.FlatMapMethod,
+        SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
         Vector(FuncValue(1,SBox,
-          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean))
+          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map())
   }
 
   property("SNumeric.toBytes") {

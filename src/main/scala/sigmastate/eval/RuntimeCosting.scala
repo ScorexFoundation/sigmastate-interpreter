@@ -1828,6 +1828,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val tpe = typeSubst(SBox.tT)
             implicit val elem = stypeToElem(tpe).asElem[Any]
             boxC.getReg(asRep[Int](index.value))(elem)
+          case _ if method.objType.coster.isDefined =>
+            method.objType.coster.get(IR)(boxC, method, argsC)
           case _ => error(s"method $method is not supported in object $obj")
         }
 
