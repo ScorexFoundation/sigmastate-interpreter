@@ -7,45 +7,42 @@ package special.sigma {
     import Box._;
     import Coll._;
     import Context._;
-    import Costed._;
-    import CostedBox._;
-    import CostedBuilder._;
-    import CostedColl._;
-    import CostedOption._;
-    import CostedSigmaObject._;
     import Header._;
     import PreHeader._;
-    import SigmaDslBuilder._;
-    trait CostedSigmaObject[Val] extends Costed[Val] {
-      implicit def eVal: Elem[Val];
-      def dsl: Rep[SigmaDslBuilder];
-      def builder: Rep[CostedBuilder] = CostedSigmaObject.this.dsl.Costing
+    import Size._;
+    import SizeAnyValue._;
+    import SizeBox._;
+    import SizeBuilder._;
+    import SizeContext._;
+    import WOption._;
+    import WRType._;
+    @Liftable trait SizeAnyValue extends Size[AnyValue] {
+      def tVal: Rep[WRType[Any]];
+      def valueSize: Rep[Size[Any]]
     };
-    trait CostedContext extends CostedSigmaObject[Context] {
-      def dataInputs: Rep[CostedColl[Box]];
-      def OUTPUTS: Rep[CostedColl[Box]];
-      def INPUTS: Rep[CostedColl[Box]];
-      def HEIGHT: Rep[Costed[Int]];
-      def SELF: Rep[CostedBox];
-      def selfBoxIndex: Rep[Costed[Int]];
-      def LastBlockUtxoRootHash: Rep[Costed[AvlTree]];
-      def headers: Rep[CostedColl[Header]];
-      def preHeader: Rep[Costed[PreHeader]];
-      def minerPubKey: Rep[CostedColl[Byte]];
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]]
+    @Liftable trait SizeBox extends Size[Box] {
+      def propositionBytes: Rep[Size[Coll[Byte]]];
+      def bytes: Rep[Size[Coll[Byte]]];
+      def bytesWithoutRef: Rep[Size[Coll[Byte]]];
+      def registers: Rep[Size[Coll[WOption[AnyValue]]]]
     };
-    trait CostedBox extends CostedSigmaObject[Box] {
-      def id: Rep[CostedColl[Byte]];
-      def valueCosted: Rep[Costed[Long]];
-      def bytes: Rep[CostedColl[Byte]];
-      def bytesWithoutRef: Rep[CostedColl[Byte]];
-      def propositionBytes: Rep[CostedColl[Byte]];
-      def registers: Rep[CostedColl[AnyValue]];
-      def getReg[T](id: Rep[Int])(implicit cT: Elem[T]): Rep[CostedOption[T]];
-      def creationInfo: Rep[Costed[scala.Tuple2[Int, Coll[Byte]]]]
+    @Liftable trait SizeContext extends Size[Context] {
+      def outputs: Rep[Size[Coll[Box]]];
+      def inputs: Rep[Size[Coll[Box]]];
+      def dataInputs: Rep[Size[Coll[Box]]];
+      def selfBox: Rep[Size[Box]];
+      def lastBlockUtxoRootHash: Rep[Size[AvlTree]];
+      def headers: Rep[Size[Coll[Header]]];
+      def preHeader: Rep[Size[PreHeader]]
     };
-    trait CostedSigmaObjectCompanion;
-    trait CostedContextCompanion;
-    trait CostedBoxCompanion
+    @Liftable trait SizeBuilder extends Def[SizeBuilder] {
+      def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue];
+      def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]]): Rep[SizeBox];
+      def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]]): Rep[SizeContext]
+    };
+    trait SizeAnyValueCompanion;
+    trait SizeBoxCompanion;
+    trait SizeContextCompanion;
+    trait SizeBuilderCompanion
   }
 }

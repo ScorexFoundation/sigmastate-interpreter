@@ -32,6 +32,7 @@ import SigmaDslBuilder._
 import SigmaProp._
 import WBigInteger._
 import WOption._
+import WRType._
 
 object CostModel extends EntityObject("CostModel") {
   // entityConst: single const for each entity
@@ -118,6 +119,13 @@ object CostModel extends EntityObject("CostModel") {
       asRep[Long](mkMethodCall(self,
         CostModelClass.getMethod("dataSize", classOf[Sym], classOf[Elem[_]]),
         List(x, cT),
+        true, false, element[Long]))
+    }
+
+    override def PubKeySize: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        CostModelClass.getMethod("PubKeySize"),
+        List(),
         true, false, element[Long]))
     }
   }
@@ -211,6 +219,13 @@ object CostModel extends EntityObject("CostModel") {
       asRep[Long](mkMethodCall(source,
         thisClass.getMethod("dataSize", classOf[Sym], classOf[Elem[_]]),
         List(x, cT),
+        true, true, element[Long]))
+    }
+
+    def PubKeySize: Rep[Long] = {
+      asRep[Long](mkMethodCall(source,
+        thisClass.getMethod("PubKeySize"),
+        List(),
         true, true, element[Long]))
     }
   }
@@ -1698,11 +1713,19 @@ object AnyValue extends EntityObject("AnyValue") {
 
     private val AnyValueClass = classOf[AnyValue]
 
-    override def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(self,
-        AnyValueClass.getMethod("dataSize"),
+    // manual fix
+    override def value: Rep[Any] = {
+      asRep[Any](mkMethodCall(self,
+        AnyValueClass.getMethod("value"),
         List(),
-        true, false, element[Long]))
+        true, false, AnyElement))
+    }
+
+    override def tVal: Rep[WRType[Any]] = {
+      asRep[WRType[Any]](mkMethodCall(self,
+        AnyValueClass.getMethod("tVal"),
+        List(),
+        true, false, element[WRType[Any]]))
     }
   }
 
@@ -1727,11 +1750,19 @@ object AnyValue extends EntityObject("AnyValue") {
     override def transform(t: Transformer) = AnyValueAdapter(t(source))
     private val thisClass = classOf[AnyValue]
 
-    def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("dataSize"),
+    // manual fix
+    def value: Rep[Any] = {
+      asRep[Any](mkMethodCall(source,
+        thisClass.getMethod("value"),
         List(),
-        true, true, element[Long]))
+        true, true, AnyElement))
+    }
+
+    def tVal: Rep[WRType[Any]] = {
+      asRep[WRType[Any]](mkMethodCall(source,
+        thisClass.getMethod("tVal"),
+        List(),
+        true, true, element[WRType[Any]]))
     }
   }
 
@@ -1750,7 +1781,7 @@ object AnyValue extends EntityObject("AnyValue") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[AnyValue], classOf[SAnyValue], Set(
-        "dataSize"
+        "value", "tVal"
         ))
     }
 
@@ -1793,9 +1824,22 @@ object AnyValue extends EntityObject("AnyValue") {
   }
 
   object AnyValueMethods {
-    object dataSize {
+    object value {
       def unapply(d: Def[_]): Nullable[Rep[AnyValue]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AnyValueElem[_]] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AnyValueElem[_]] && method.getName == "value" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[AnyValue]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[AnyValue]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object tVal {
+      def unapply(d: Def[_]): Nullable[Rep[AnyValue]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AnyValueElem[_]] && method.getName == "tVal" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[AnyValue]]]
         case _ => Nullable.None
@@ -1862,20 +1906,6 @@ object Box extends EntityObject("Box") {
         BoxClass.getMethod("bytesWithoutRef"),
         List(),
         true, false, element[Coll[Byte]]))
-    }
-
-    override def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(self,
-        BoxClass.getMethod("cost"),
-        List(),
-        true, false, element[Int]))
-    }
-
-    override def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(self,
-        BoxClass.getMethod("dataSize"),
-        List(),
-        true, false, element[Long]))
     }
 
     override def registers: Rep[Coll[AnyValue]] = {
@@ -1970,20 +2000,6 @@ object Box extends EntityObject("Box") {
         true, true, element[Coll[Byte]]))
     }
 
-    def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(source,
-        thisClass.getMethod("cost"),
-        List(),
-        true, true, element[Int]))
-    }
-
-    def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("dataSize"),
-        List(),
-        true, true, element[Long]))
-    }
-
     def registers: Rep[Coll[AnyValue]] = {
       asRep[Coll[AnyValue]](mkMethodCall(source,
         thisClass.getMethod("registers"),
@@ -2035,7 +2051,7 @@ object Box extends EntityObject("Box") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Box], classOf[SBox], Set(
-        "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "cost", "dataSize", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo", "executeFromRegister"
+        "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo", "executeFromRegister"
         ))
     }
 
@@ -2133,32 +2149,6 @@ object Box extends EntityObject("Box") {
     object bytesWithoutRef {
       def unapply(d: Def[_]): Nullable[Rep[Box]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BoxElem[_]] && method.getName == "bytesWithoutRef" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object cost {
-      def unapply(d: Def[_]): Nullable[Rep[Box]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BoxElem[_]] && method.getName == "cost" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[Box]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[BoxElem[_]] && method.getName == "dataSize" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
@@ -2415,20 +2405,6 @@ object AvlTree extends EntityObject("AvlTree") {
         true, false, element[WOption[Int]]))
     }
 
-    override def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(self,
-        AvlTreeClass.getMethod("cost"),
-        List(),
-        true, false, element[Int]))
-    }
-
-    override def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(self,
-        AvlTreeClass.getMethod("dataSize"),
-        List(),
-        true, false, element[Long]))
-    }
-
     override def isInsertAllowed: Rep[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         AvlTreeClass.getMethod("isInsertAllowed"),
@@ -2556,20 +2532,6 @@ object AvlTree extends EntityObject("AvlTree") {
         true, true, element[WOption[Int]]))
     }
 
-    def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(source,
-        thisClass.getMethod("cost"),
-        List(),
-        true, true, element[Int]))
-    }
-
-    def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("dataSize"),
-        List(),
-        true, true, element[Long]))
-    }
-
     def isInsertAllowed: Rep[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         thisClass.getMethod("isInsertAllowed"),
@@ -2663,7 +2625,7 @@ object AvlTree extends EntityObject("AvlTree") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[AvlTree], classOf[SAvlTree], Set(
-        "digest", "enabledOperations", "keyLength", "valueLengthOpt", "cost", "dataSize", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
+        "digest", "enabledOperations", "keyLength", "valueLengthOpt", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
         ))
     }
 
@@ -2748,32 +2710,6 @@ object AvlTree extends EntityObject("AvlTree") {
     object valueLengthOpt {
       def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "valueLengthOpt" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object cost {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "cost" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[AvlTreeElem[_]] && method.getName == "dataSize" =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
         case _ => Nullable.None
@@ -3243,6 +3179,13 @@ object Header extends EntityObject("Header") {
 
     private val HeaderClass = classOf[Header]
 
+    override def id: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(self,
+        HeaderClass.getMethod("id"),
+        List(),
+        true, false, element[Coll[Byte]]))
+    }
+
     override def version: Rep[Byte] = {
       asRep[Byte](mkMethodCall(self,
         HeaderClass.getMethod("version"),
@@ -3363,6 +3306,13 @@ object Header extends EntityObject("Header") {
     override def transform(t: Transformer) = HeaderAdapter(t(source))
     private val thisClass = classOf[Header]
 
+    def id: Rep[Coll[Byte]] = {
+      asRep[Coll[Byte]](mkMethodCall(source,
+        thisClass.getMethod("id"),
+        List(),
+        true, true, element[Coll[Byte]]))
+    }
+
     def version: Rep[Byte] = {
       asRep[Byte](mkMethodCall(source,
         thisClass.getMethod("version"),
@@ -3477,7 +3427,7 @@ object Header extends EntityObject("Header") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Header], classOf[SHeader], Set(
-        "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
+        "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
         ))
     }
 
@@ -3520,6 +3470,19 @@ object Header extends EntityObject("Header") {
   }
 
   object HeaderMethods {
+    object id {
+      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[HeaderElem[_]] && method.getName == "id" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object version {
       def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
         case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[HeaderElem[_]] && method.getName == "version" =>
@@ -3808,20 +3771,6 @@ object Context extends EntityObject("Context") {
         List(id, cT),
         true, false, element[WOption[T]]))
     }
-
-    override def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(self,
-        ContextClass.getMethod("cost"),
-        List(),
-        true, false, element[Int]))
-    }
-
-    override def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(self,
-        ContextClass.getMethod("dataSize"),
-        List(),
-        true, false, element[Long]))
-    }
   }
 
   implicit object LiftableContext
@@ -3928,20 +3877,6 @@ object Context extends EntityObject("Context") {
         List(id, cT),
         true, true, element[WOption[T]]))
     }
-
-    def cost: Rep[Int] = {
-      asRep[Int](mkMethodCall(source,
-        thisClass.getMethod("cost"),
-        List(),
-        true, true, element[Int]))
-    }
-
-    def dataSize: Rep[Long] = {
-      asRep[Long](mkMethodCall(source,
-        thisClass.getMethod("dataSize"),
-        List(),
-        true, true, element[Long]))
-    }
   }
 
   // entityProxy: single proxy for each type family
@@ -3959,7 +3894,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
-        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "cost", "dataSize"
+        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar"
         ))
     }
 
@@ -4157,32 +4092,6 @@ object Context extends EntityObject("Context") {
         case _ => Nullable.None
       }
     }
-
-    object cost {
-      def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "cost" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "dataSize" =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
   }
 
   object ContextCompanionMethods {
@@ -4287,7 +4196,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "proveDlog", "proveDHTuple", "groupGenerator", "canOpen", "asFunction"
+        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "canOpen", "asFunction"
         ))
     }
 
@@ -4434,6 +4343,19 @@ object SigmaContract extends EntityObject("SigmaContract") {
       }
     }
 
+    object xorOf {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "xorOf" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
     object PubKey {
       def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[String])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "PubKey" =>
@@ -4507,6 +4429,19 @@ object SigmaContract extends EntityObject("SigmaContract") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Long])] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object byteArrayToLong {
+      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaContractElem[_]] && method.getName == "byteArrayToLong" =>
+          val res = (receiver, args(0))
+          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
@@ -4626,29 +4561,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         SigmaDslBuilderClass.getMethod("CostModel"),
         List(),
         true, false, element[CostModel]))
-    }
-
-    override def costBoxes(bs: Rep[Coll[Box]]): Rep[CostedColl[Box]] = {
-      asRep[CostedColl[Box]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("costBoxes", classOf[Sym]),
-        List(bs),
-        true, false, element[CostedColl[Box]]))
-    }
-
-    override def costColWithConstSizedItem[T](xs: Rep[Coll[T]], len: Rep[Int], itemSize: Rep[Long]): Rep[CostedColl[T]] = {
-      implicit val eT = xs.eA
-      asRep[CostedColl[T]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("costColWithConstSizedItem", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(xs, len, itemSize),
-        true, false, element[CostedColl[T]]))
-    }
-
-    override def costOption[T](opt: Rep[WOption[T]], opCost: Rep[Int]): Rep[CostedOption[T]] = {
-      implicit val eT = opt.eA
-      asRep[CostedOption[T]](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("costOption", classOf[Sym], classOf[Sym]),
-        List(opt, opCost),
-        true, false, element[CostedOption[T]]))
     }
 
     override def verifyZK(cond: Rep[Thunk[SigmaProp]]): Rep[Boolean] = {
@@ -4856,29 +4768,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, true, element[CostModel]))
     }
 
-    def costBoxes(bs: Rep[Coll[Box]]): Rep[CostedColl[Box]] = {
-      asRep[CostedColl[Box]](mkMethodCall(source,
-        thisClass.getMethod("costBoxes", classOf[Sym]),
-        List(bs),
-        true, true, element[CostedColl[Box]]))
-    }
-
-    def costColWithConstSizedItem[T](xs: Rep[Coll[T]], len: Rep[Int], itemSize: Rep[Long]): Rep[CostedColl[T]] = {
-      implicit val eT = xs.eA
-      asRep[CostedColl[T]](mkMethodCall(source,
-        thisClass.getMethod("costColWithConstSizedItem", classOf[Sym], classOf[Sym], classOf[Sym]),
-        List(xs, len, itemSize),
-        true, true, element[CostedColl[T]]))
-    }
-
-    def costOption[T](opt: Rep[WOption[T]], opCost: Rep[Int]): Rep[CostedOption[T]] = {
-      implicit val eT = opt.eA
-      asRep[CostedOption[T]](mkMethodCall(source,
-        thisClass.getMethod("costOption", classOf[Sym], classOf[Sym]),
-        List(opt, opCost),
-        true, true, element[CostedOption[T]]))
-    }
-
     def verifyZK(cond: Rep[Thunk[SigmaProp]]): Rep[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         thisClass.getMethod("verifyZK", classOf[Sym]),
@@ -5050,7 +4939,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
-        "Colls", "Monoids", "Costing", "CostModel", "costBoxes", "costColWithConstSizedItem", "costOption", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger", "avlTree"
+        "Colls", "Monoids", "Costing", "CostModel", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "BigInt", "toBigInteger", "avlTree"
         ))
     }
 
@@ -5140,45 +5029,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costBoxes {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Box]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "costBoxes" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Box]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Box]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costColWithConstSizedItem {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "costColWithConstSizedItem" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costOption {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "costOption" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
