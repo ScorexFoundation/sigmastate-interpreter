@@ -257,20 +257,17 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map())
   }
 
-  // TODO should be fixed
-  ignore("SNumeric.toBytes") {
+  property("SNumeric.toBytes") {
     testMissingCosting("4.toBytes",
       mkMethodCall(IntConstant(4), SInt.method("toBytes").get, IndexedSeq()))
   }
 
-  // TODO should be fixed
-  ignore("SNumeric.toBits") {
+  property("SNumeric.toBits") {
     testMissingCosting("4.toBits",
       mkMethodCall(IntConstant(4), SInt.method("toBits").get, IndexedSeq()))
   }
 
-  // TODO should be fixed
-  ignore("SBigInt.multModQ") {
+  property("SBigInt.multModQ") {
     testMissingCosting("1.toBigInt.multModQ(2.toBigInt)",
       mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2))))
   }

@@ -207,9 +207,8 @@ trait STypeCompanion {
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
-  def getMethodById(methodId: Byte): SMethod = {
-    methods(methodId - 1)
-  }
+  def getMethodById(methodId: Byte): SMethod =
+    methods.filter(_.objType == this).apply(methodId - 1)
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -386,7 +385,7 @@ trait SNumericType extends SProduct {
 }
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
-  def typeId: TypeCode = 96: Byte
+  def typeId: TypeCode = 106: Byte
   val ToByte = "toByte"
   val ToShort = "toShort"
   val ToInt = "toInt"
