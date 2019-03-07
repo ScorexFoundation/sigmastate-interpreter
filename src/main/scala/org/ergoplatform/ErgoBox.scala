@@ -6,14 +6,12 @@ import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import scorex.util.serialization.{Reader, Serializer, Writer}
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.ExtractCreationInfo
 
 import scala.runtime.ScalaRunTime
@@ -54,7 +52,7 @@ class ErgoBox private(
                        val transactionId: ModifierId,
                        val index: Short,
                        override val creationHeight: Int
-) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
+                     ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
@@ -85,7 +83,7 @@ class ErgoBox private(
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2)}), $transactionId, " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
@@ -104,7 +102,7 @@ object ErgoBox {
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
-  val SReferenceRegType = ExtractCreationInfo.ResultType
+  val SReferenceRegType: STuple = ExtractCreationInfo.ResultType
 
   type Amount = Long
 
@@ -114,6 +112,7 @@ object ErgoBox {
 
     override def toString: Idn = "R" + number
   }
+
   abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
@@ -128,29 +127,29 @@ object ErgoBox {
   object R8 extends NonMandatoryRegisterId(8)
   object R9 extends NonMandatoryRegisterId(9)
 
-  val ValueRegId = R0
-  val ScriptRegId = R1
-  val TokensRegId = R2
-  val ReferenceRegId = R3
+  val ValueRegId: MandatoryRegisterId = R0
+  val ScriptRegId: MandatoryRegisterId = R1
+  val TokensRegId: MandatoryRegisterId = R2
+  val ReferenceRegId: MandatoryRegisterId = R3
 
   val MaxTokens: Byte = 4
 
   val maxRegisters = 10
   val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
   val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
-  val startingNonMandatoryIndex = nonMandatoryRegisters.head.number
+  val startingNonMandatoryIndex: Byte = nonMandatoryRegisters.head.number
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 
-  val allRegisters = (mandatoryRegisters ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
-  val mandatoryRegistersCount = mandatoryRegisters.size.toByte
-  val nonMandatoryRegistersCount = nonMandatoryRegisters.size.toByte
+  val allRegisters: Vector[RegisterId] = (mandatoryRegisters ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
+  val mandatoryRegistersCount: Byte = mandatoryRegisters.size.toByte
+  val nonMandatoryRegistersCount: Byte = nonMandatoryRegisters.size.toByte
 
   val registerByName: Map[String, RegisterId] = allRegisters.map(r => s"R${r.number}" -> r).toMap
   val registerByIndex: Map[Byte, RegisterId] = allRegisters.map(r => r.number -> r).toMap
 
   def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
 
-  val allZerosModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
+  val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 
   def apply(value: Long,
             ergoTree: ErgoTree,
@@ -180,4 +179,5 @@ object ErgoBox {
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
   }
+
 }
