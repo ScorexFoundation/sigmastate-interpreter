@@ -537,13 +537,6 @@ case class CostingDataContext(
   @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
   @inline def minerPubKey = _minerPubKey
 
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-
-  def dataSize = {
-    val inputsSize = INPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    val outputsSize = OUTPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + LastBlockUtxoRootHash.dataSize
-  }
 
   def findSelfBoxIndex: Int = {
     var i = 0

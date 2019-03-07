@@ -7,78 +7,58 @@ import scala.reflect.ClassTag
 import scalan.RType
 import scalan.{NeverInline, Reified}
 
-class CCostedContext(val ctx: Context) extends CostedContext {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def dataInputs: CostedColl[Box] = dsl.costBoxes(ctx.dataInputs)
-  def OUTPUTS: CostedColl[Box] = dsl.costBoxes(ctx.OUTPUTS)
-  def INPUTS: CostedColl[Box] = dsl.costBoxes(ctx.INPUTS)
-  def HEIGHT: Costed[Int] = {
-    val cost = dsl.CostModel.SelectField
-    new CCostedPrim(ctx.HEIGHT, cost, 4L)
-  }
-  def SELF: CostedBox = new CCostedBox(ctx.SELF, dsl.CostModel.AccessBox)
-  def LastBlockUtxoRootHash: Costed[AvlTree] = {
-    val tree = ctx.LastBlockUtxoRootHash
-    new CCostedPrim(tree, dsl.CostModel.AccessAvlTree, tree.dataSize)
-  }
-  def minerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.minerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
-  def getVar[T](id: Byte)(implicit cT: RType[T]): CostedOption[T] = {
-    val opt = ctx.getVar(id)(cT)
-    dsl.costOption(opt, dsl.CostModel.GetVar)
-  }
-
-  def value = ctx
-  def cost = ctx.cost
-  def dataSize = ctx.dataSize
-
-  def selfBoxIndex: Costed[Int] = {
-    val cost = dsl.CostModel.SelectField
-    new CCostedPrim(ctx.selfBoxIndex, cost, 4L)
-  }
-
+class CSizeAnyValue(val tVal: RType[Any], val valueSize: Size[Any]) extends SizeAnyValue {
   @NeverInline
-  def headers: CostedColl[Header] = SpecialPredef.rewritableMethod
-
-  @NeverInline
-  def preHeader: Costed[PreHeader] = SpecialPredef.rewritableMethod
+  override def dataSize: Long = { ???
+  }
 }
 
-class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
-  def valueCosted: Costed[Long] = {
-    val cost = dsl.CostModel.SelectField
-    new CCostedPrim(box.value, cost, 8L)
-  }
-  def bytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytes, box.bytes.length, 1)
-  def bytesWithoutRef: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytesWithoutRef, box.bytesWithoutRef.length, 1)
-  def propositionBytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.propositionBytes, box.propositionBytes.length, 1)
-  def registers: CostedColl[AnyValue] = {
-    val len = box.registers.length
-    val costs = dsl.Colls.replicate(len, dsl.CostModel.AccessBox)
-    val sizes = box.registers.map(o => o.dataSize)
-    new CCostedColl(box.registers, costs, sizes, dsl.CostModel.CollectionConst)
-  }
-  def getReg[@Reified T](id: Int)(implicit cT:RType[T]): CostedOption[T] = {
-    val opt = box.getReg(id)(cT)
-    dsl.costOption(opt, dsl.CostModel.GetRegister)
-  }
-
+class CSizeBox(
+    val propositionBytes: Size[Coll[Byte]],
+    val bytes: Size[Coll[Byte]],
+    val bytesWithoutRef: Size[Coll[Byte]],
+    val registers: Size[Coll[Option[AnyValue]]],
+) extends SizeBox {
   @NeverInline
-  def creationInfo: Costed[(Int, Coll[Byte])] = SpecialPredef.rewritableMethod
-
-  def value: Box = box
-  def dataSize: Long = box.dataSize
+  override def dataSize: Long = {
+    // since `bytes` already contains all serialized data we just return it here
+    // however for cost estimation this size is not equal to the sum of the components
+    // and we need each component size independently
+    bytes.dataSize
+  }
 }
 
-//class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
-//  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-//  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.digest, dsl.CostModel.PubKeySize.toInt, 1)
-//  def enabledOperations: Costed[Byte] = new CCostedPrim(tree.enabledOperations, dsl.CostModel.SelectField, 1)
-//  def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
-//  def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
-//
-//  def value = tree
-//  def dataSize = tree.dataSize
-//}
+class CSizeContext(
+    val outputs: Size[Coll[Box]],
+    val inputs: Size[Coll[Box]],
+    val dataInputs: Size[Coll[Box]],
+    val selfBox: Size[Box],
+    val lastBlockUtxoRootHash: Size[AvlTree],
+    val headers: Size[Coll[Header]],
+    val preHeader: Size[PreHeader]
+) extends SizeContext {
+  @NeverInline
+  override def dataSize: Long = {
+    outputs.dataSize + inputs.dataSize + dataInputs.dataSize +
+        lastBlockUtxoRootHash.dataSize + headers.dataSize + preHeader.dataSize +
+        33L // minerPubKey
+  }
+}
 
+class CSizeBuilder extends SizeBuilder {
+  def mkSizeAnyValue(tVal: RType[Any], valueSize: Size[Any]): SizeAnyValue = new CSizeAnyValue(tVal, valueSize)
+
+  def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
+      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]]): SizeBox = {
+    new CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers)
+  }
+
+  def mkSizeContext(outputs: Size[Coll[Box]],
+      inputs: Size[Coll[Box]],
+      dataInputs: Size[Coll[Box]],
+      selfBox: Size[Box],
+      lastBlockUtxoRootHash: Size[AvlTree],
+      headers: Size[Coll[Header]],
+      preHeader: Size[PreHeader]): SizeContext =
+    new CSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader)
+}

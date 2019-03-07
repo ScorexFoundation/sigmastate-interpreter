@@ -28,10 +28,6 @@ class TestBox(
       }
     } else None
   }
-  @NeverInline
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-  @NeverInline
-  def dataSize = bytes.length
 
   def creationInfo: (Int, Coll[Byte]) = this.getReg[(Int, Coll[Byte])](3).get
 

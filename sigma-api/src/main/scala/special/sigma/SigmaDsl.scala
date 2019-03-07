@@ -247,7 +247,8 @@ trait SigmaProp {
 
 @scalan.Liftable
 trait AnyValue {
-  def dataSize: Long
+  def value: Any
+  def tVal: RType[Any]
 }
 
 @scalan.Liftable
@@ -267,8 +268,7 @@ trait Box {
 
   /** Serialized bytes of this box's content, excluding transactionId and index of output. */
   def bytesWithoutRef: Coll[Byte]
-  def cost: Int
-  def dataSize: Long
+
   def registers: Coll[AnyValue]
 
   /** Extracts register by id and type.
@@ -324,7 +324,7 @@ trait Box {
   def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
 
   @Internal
-  override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"
+  override def toString = s"Box(id=$id; value=$value; regs=$registers)"
 }
 
 /** Type of data which efficiently authenticates potentially huge dataset having key-value dictionary interface.
@@ -354,9 +354,6 @@ trait AvlTree {
   
   /** If non-empty, all the values under the tree are of the same length. */
   def valueLengthOpt: Option[Int]
-
-  def cost: Int
-  def dataSize: Long
 
   /** Checks if Insert operation is allowed for this tree instance. */
   def isInsertAllowed: Boolean
@@ -553,9 +550,6 @@ trait Context {
 
   def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
-
-  private[sigma] def cost: Int
-  private[sigma] def dataSize: Long
 }
 
 @scalan.Liftable
@@ -594,13 +588,6 @@ trait SigmaContract {
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
     this.builder.proveDHTuple(g, h, u, v)
 
-//  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean =
-//    this.builder.isMember(tree, key, proof)
-//  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] =
-//    this.builder.treeLookup(tree, key, proof)
-//  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] =
-//    this.builder.treeModifications(tree, operations, proof)
-
   def groupGenerator: GroupElement = this.builder.groupGenerator
 
   @clause def canOpen(ctx: Context): Boolean
@@ -614,13 +601,6 @@ trait SigmaDslBuilder {
   def Monoids: MonoidBuilder
   def Costing: CostedBuilder
   def CostModel: CostModel
-
-  def costBoxes(bs: Coll[Box]): CostedColl[Box]
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T]
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T]
 
   def verifyZK(cond: => SigmaProp): Boolean
 
