@@ -12,7 +12,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
@@ -466,9 +466,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/421
   ignore("indices") {
     assertProof("OUTPUTS.indices == Coll(0)",
-      EQ(MethodCall(Outputs, IndicesMethod, Vector(), Map(tIV -> SBox)), ConcreteCollection(IntConstant(0))),
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0))),
       IndexedSeq(1L, 1L))
   }
 
