@@ -5,7 +5,7 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes.OpCode
-import sigma.util.Extensions._
+import sigmastate.utils.SerializeLog
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.utxo.CostTable.Cost
 
@@ -22,8 +22,21 @@ case class ConstantSerializer(builder: SigmaBuilder)
   def serializeBody(obj: Constant[SType], w: SigmaByteWriter): Unit = serialize(obj, w)
 
   override def serialize(c: Constant[SType], w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false,"Constant")
+
+    SerializeLog.logPrintf(true, true, false,"Type")
+
     w.putType(c.tpe)
+
+    SerializeLog.logPrintf(false, true, false,"Type")
+
+    SerializeLog.logPrintf(true, true, false,"Data")
+
     DataSerializer.serialize(c.value, c.tpe, w)
+
+    SerializeLog.logPrintf(false, true, false,"Data")
+
+    SerializeLog.logPrintf(false, true, false, "Constant")
   }
 
   override def deserialize(r: SigmaByteReader): Constant[SType] = {

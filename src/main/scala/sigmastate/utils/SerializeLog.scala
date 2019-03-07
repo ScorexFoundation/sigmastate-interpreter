@@ -13,10 +13,13 @@ object SerializeLog {
 
   //true for serialize, false for deserialize
   //true for Start, false for End
-  def logPrintf(isStart: Boolean, isSerialize: Boolean, strLog: String) = {
+  def logPrintf(isStart: Boolean, isSerialize: Boolean, isReal: Boolean, strLog: String) = {
     if (!isStart) Depth -= 1;
     var strSpaces: String = "  " * Depth;
-    var strHeaderStartEnd = if (isStart) "[Start]" else "[End]";
+    var strHeaderStartEnd = if (isStart)
+                                  if (isReal) "[Start Real]" else "[Start]"
+                            else
+                                  if (isReal) "[End Real]" else "[End]";
     var strHeaderSerialize = if (isSerialize) "[Serialize]" else "[Deserialize]";
     val fr = new FileWriter(logFile, true)
     if (isStart) Depth += 1;

@@ -16,19 +16,19 @@ class ErgoTreeSerializer {
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
 
-    SerializeLog.logPrintf(true, true, "ErgoTree")
+    SerializeLog.logPrintf(true, true, false, "ErgoTree")
 
     val w = Serializer.startWriter(bWithLog = true)
 
     serializeHeader(ergoTree, w)
 
-    SerializeLog.logPrintf(true, true, "Root")
+    SerializeLog.logPrintf(true, true, false, "Root")
 
     ValueSerializer.serialize(ergoTree.root, w)
 
-    SerializeLog.logPrintf(false, true, "Root")
+    SerializeLog.logPrintf(false, true, false, "Root")
 
-    SerializeLog.logPrintf(false, true, "ErgoTree")
+    SerializeLog.logPrintf(false, true, false, "ErgoTree")
 
     w.toBytes
   }
@@ -53,27 +53,27 @@ class ErgoTreeSerializer {
   /** Serialize header and constants section only.*/
   private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter): Unit = {
 
-    SerializeLog.logPrintf(true, true, "Header")
+    SerializeLog.logPrintf(true, true, false,"Header")
 
     w.put(ergoTree.header)
 
     if (ergoTree.isConstantSegregation) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-      SerializeLog.logPrintf(true, true, "Constants length")
+      SerializeLog.logPrintf(true, true, false, "Constants length")
 
       w.putUInt(ergoTree.constants.length)
 
-      SerializeLog.logPrintf(false, true, "Constants length")
+      SerializeLog.logPrintf(false, true, false, "Constants length")
 
-      SerializeLog.logPrintf(true, true, "Constants")
+      SerializeLog.logPrintf(true, true, false, "Constants")
 
       ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
 
-      SerializeLog.logPrintf(false, true, "Constants")
+      SerializeLog.logPrintf(false, true, false, "Constants")
     }
 
-    SerializeLog.logPrintf(false, true, "Header")
+    SerializeLog.logPrintf(false, true, false, "Header")
   }
 
   /** Deserialize header and constants section only. */
@@ -105,13 +105,19 @@ class ErgoTreeSerializer {
     * then appending `treeBytes` */
   def serializeWithSegregation(tree: Value[SType]): Array[Byte] = {
 
-    SerializeLog.logPrintf(true, true, "ErgoTree with segregation")
+    SerializeLog.logPrintf(true, true, false,"ErgoTree with segregation")
 
     val constantStore = new ConstantStore()
+
     val treeWriter = Serializer.startWriter(Some (constantStore), bWithLog = true)
 
     // serialize tree and segregate constants into constantStore
+
+    SerializeLog.logPrintf(true, true, false, ">Treewriter")
+
     ValueSerializer.serialize(tree, treeWriter)
+
+    SerializeLog.logPrintf(false, true, false, "<Treewriter")
 
     val extractedConstants = constantStore.getAll
 
@@ -119,10 +125,15 @@ class ErgoTreeSerializer {
 
     serializeHeader(ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, null), w)
 
+    SerializeLog.logPrintf(true, true, false, "Treewriter bytes")
+
     // write tree bytes with ConstantsPlaceholders (which were injected during serialization)
     w.putBytes(treeWriter.toBytes)
 
-    SerializeLog.logPrintf(false, true, "ErgoTree with segregation")
+    SerializeLog.logPrintf(false, true, false, "Treewriter bytes")
+
+
+    SerializeLog.logPrintf(false, true, false, "ErgoTree with segregation")
 
     w.toBytes
   }

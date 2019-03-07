@@ -142,20 +142,55 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
+      //andruiman: don't understand this
     case c: Constant[SType] =>
       w.constantExtractionStore match {
         case Some(constantStore) =>
+          SerializeLog.logPrintf(true, true, false, "Constant with store");
           val ph = constantStore.put(c)(DeserializationSigmaBuilder)
+
+          SerializeLog.logPrintf(true, true, false, "OpCode");
           w.put(ph.opCode)
+          SerializeLog.logPrintf(false, true, false, "OpCode");
+
+          SerializeLog.logPrintf(true, true, false, "Placeholders");
+
           constantPlaceholderSerializer.serializeBody(ph, w)
+
+          SerializeLog.logPrintf(false, true, false, "Placeholders");
+
+          SerializeLog.logPrintf(false, true, false, "Constant with store");
         case None =>
+          SerializeLog.logPrintf(true, true, false, "Constant without store");
+
           constantSerializer.serialize(c, w)
+
+          SerializeLog.logPrintf(false, true, false, "Constant without store");
       }
     case _ =>
+      SerializeLog.logPrintf(true, true, false, "Non-constant");
+
       val opCode = v.opCode
+
+      SerializeLog.logPrintf(true, true, false, "OpCode");
+
       w.put(opCode)
+
+      SerializeLog.logPrintf(false, true, false, "OpCode");
+
+      val s = "0x%02X".format(opCode).mkString("")
+      val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
+      val t = ser.toString()
+
+      SerializeLog.logPrintf(true, true, false, "Body [opCode=" + s + "; Serializer=" + t+ "]");
+
       // help compiler recognize the type
-      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serializeBody(v, w)
+
+      ser.serializeBody(v, w)
+
+      SerializeLog.logPrintf(false, true, false, "Body [opCode=" + s + "; Serializer=" + t+ "]");
+
+      SerializeLog.logPrintf(false, true, false, "Non-constant");
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
