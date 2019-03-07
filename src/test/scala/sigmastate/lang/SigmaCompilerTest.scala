@@ -299,6 +299,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     )
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
   ignore("SOption.map") {
     testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
       mkMethodCall(GetVarInt(1),
@@ -309,7 +310,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map())
     )
   }
-
+  
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
   ignore("SOption.filter") {
     testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
       mkMethodCall(GetVarInt(1),
