@@ -424,6 +424,7 @@ class SigmaDslTest extends PropSpec
     forAll { x: (Boolean, Boolean) => eq(x) }
   }
 
+  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg equivalence") {
     // TODO implement in SigmaDsl (interpreter test passes in BasicOpsSpec.Box.getReg test)
 //    val eq = checkEq(func[Box, Int]("{ (x: Box) => x.getReg[Int](1).get }")) { x => x.getReg(1).get }

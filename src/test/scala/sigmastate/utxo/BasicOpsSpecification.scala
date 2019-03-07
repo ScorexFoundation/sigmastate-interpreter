@@ -353,7 +353,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       rootCause(_).isInstanceOf[InvalidType])
   }
 
-  // TODO should be fixed
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg") {
     test("Extract1", env, ext,
       "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4).toByte ).get == 1}",

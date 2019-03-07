@@ -14,7 +14,7 @@ class FuncVarSpecification extends SigmaTestingCommons {
     override val okPrintEvaluatedEntries: Boolean = false
   }
 
-  // TODO costing: implement special CostedFunc for getVar, and getReg methods
+  // TODO : related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/417
   ignore("Func context variable") {
     val scriptId = 21.toByte
     val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
