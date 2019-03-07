@@ -210,7 +210,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-  // TODO costing for << method
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   ignore("Collection.BitShiftLeft") {
     comp("Coll(1,2) << 2") shouldBe
       mkMethodCall(
@@ -219,7 +219,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Vector(IntConstant(2)), Map())
   }
 
-  // TODO costing for  >> method
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   ignore("Collection.BitShiftRight") {
     testMissingCosting("Coll(1,2) >> 2",
       mkMethodCall(

@@ -5,7 +5,7 @@ import sigmastate.Values.Constant
 import sigmastate.eval.CFunc
 import sigmastate.SType.AnyOps
 import sigmastate.{SInt, SFunc}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
+import sigmastate.helpers.{SigmaTestingCommons, ContextEnrichingTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms.ValueOps
 
