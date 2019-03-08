@@ -441,11 +441,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       EQ(
         ByIndex(
           MethodCall(Outputs,
-            FlatMapMethod,
+            FlatMapMethod.withConcreteTypes(Map(tIV -> SBox, tOV -> SByte)),
             Vector(FuncValue(1, SBox,
               ExtractScriptBytes(ValUse(1, SBox))
             )),
-            Map(tIV -> SBox, tOV -> SByte)
+            Map()
           ).asCollection[SByte.type],
           IntConstant(0)
         ),
