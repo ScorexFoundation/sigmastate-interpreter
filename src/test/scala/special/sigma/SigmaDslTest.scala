@@ -249,8 +249,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  ignore("longToByteArray equivalence") {
-    // TODO fix Array[Byte] != CollOverArray in result type comparison
+  property("longToByteArray equivalence") {
     val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
       longToByteArray(x)
     }
