@@ -411,8 +411,8 @@ class SigmaDslTest extends PropSpec
     forAll { x: BigInt => negBigInteger(x) }
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/424
   ignore("BinXor(logical XOR) equivalence") {
-    // TODO implement
     val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
       x => x._1 ^ x._2
     }
