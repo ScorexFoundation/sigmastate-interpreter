@@ -21,7 +21,7 @@ import sigma.util.Extensions._
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
 
-  override def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
+  override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     val res: Sym = node match {
       case Ident(n, _) =>

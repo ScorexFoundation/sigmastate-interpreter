@@ -67,13 +67,12 @@ trait Evaluation extends RuntimeCosting { IR =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
     case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_) |
-         ContextM.cost(_) | ContextM.dataSize(_) =>
+         ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
     case SigmaM.propBytes(_) =>
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) | CollM.append(_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
-    case AvlM.dataSize(_) =>
+    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) /*| BoxM.cost(_) | BoxM.dataSize(_)*/ | BoxM.getReg(_,_,_) =>
+//    case AvlM.dataSize(_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Upcast[_,_] =>
@@ -349,8 +348,8 @@ trait Evaluation extends RuntimeCosting { IR =>
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-              case SAvlTree =>
-                data.asInstanceOf[special.sigma.AvlTree].dataSize
+//              case SAvlTree =>
+//                data.asInstanceOf[special.sigma.AvlTree].dataSize
               case _ => data match {
                 case w: WrapperOf[_] =>
                   tpe.dataSize(w.wrappedValue.asWrappedType)
