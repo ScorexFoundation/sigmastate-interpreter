@@ -436,6 +436,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/423
   ignore("flatMap") {
     assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
       EQ(
