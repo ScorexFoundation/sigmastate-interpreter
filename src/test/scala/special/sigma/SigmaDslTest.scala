@@ -5,8 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalacheck.Gen.containerOfN
-import com.google.common.primitives.Longs
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, StdContracts}
+import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
@@ -19,14 +18,11 @@ import sigma.util.Extensions._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate._
-import sigmastate.Values.{Constant, SValue, IntConstant, ErgoTree, BooleanConstant}
-import sigmastate.interpreter.{ContextExtension, Interpreter}
+import sigmastate.Values.{IntConstant, BooleanConstant}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptEnv}
-import special.collection.Coll
-import sigmastate.eval.CBigInt
-import sigmastate.serialization.generators.ValueGenerators
 import special.collection.{Coll, Builder}
-import special.collections.CollGens
+
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
