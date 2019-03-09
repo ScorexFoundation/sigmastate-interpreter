@@ -1095,6 +1095,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val BytesWithoutRef = "bytesWithoutRef"
   val CreationInfo = "creationInfo"
   // should be lazy, otherwise lead to initialization error
+  lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6) // see ExtractCreationInfo
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
@@ -1104,7 +1105,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
     SMethod(this, Bytes, SFunc(SBox, SByteArray), 3), // see ExtractBytes
     SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
     SMethod(this, Id, SFunc(SBox, SByteArray), 5), // see ExtractId
-    SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6), // see ExtractCreationInfo
+    creationInfoMethod,
     getRegMethod,
     tokensMethod,
   ) ++ registers(8)
@@ -1196,12 +1197,22 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   override def isConstantSize = false
   def ancestors = Nil
 
+  val tT = STypeIdent("T")
   val dataInputsMethod = property("dataInputs", SBoxArray, 1)
   val headersMethod    = property("headers", SHeaderArray, 2)
   val preHeaderMethod  = property("preHeader", SPreHeader, 3)
+  val inputsMethod     = property("INPUTS", SBoxArray, 4)
+  val outputsMethod    = property("OUTPUTS", SBoxArray, 5)
+  val heightMethod     = property("HEIGHT", SInt, 6)
+  val selfMethod       = property("SELF", SBox, 7)
+  val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8)
+  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9)
+  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10)
+  val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
 
   protected override def getMethods() = super.getMethods() ++ Seq(
-    dataInputsMethod, headersMethod, preHeaderMethod
+    dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
+    selfBoxIndexMethod, lastBlockUtxoRootHashMethod, minerPubKeyMethod, getVarMethod
   )
   override val coster = Some(Coster(_.ContextCoster))
 }

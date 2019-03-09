@@ -455,6 +455,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     toECPoint(ge).asInstanceOf[EcPointType]
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
+    if (props.length > AtLeast.MaxChildrenCount)
+      throw new IllegalArgumentException(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: ${props.length}")
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = AtLeast.reduce(bound, sigmaTrees)
     CSigmaProp(tree)

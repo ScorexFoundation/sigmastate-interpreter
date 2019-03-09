@@ -68,8 +68,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
 
+  // TODO move initialization to init() to support resetContext
   lazy val SizeUnit: RSize[Unit] = costedBuilder.mkSizePrim(0L, UnitElement)
+  lazy val SizeBoolean: RSize[Boolean] = costedBuilder.mkSizePrim(1L, BooleanElement)
   lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
+  lazy val SizeLong: RSize[Long] = costedBuilder.mkSizePrim(8L, LongElement)
   lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
   lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
   lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])

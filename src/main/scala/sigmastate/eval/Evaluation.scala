@@ -86,7 +86,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       !!!(s"Expected function of type ${f.elem.eDom.name} => ${eA.name}, but was $f: ${f.elem.name}")
   }
 
-  def verifyCostFunc(costF: Rep[Context => Int]): Try[Unit] = {
+  def verifyCostFunc(costF: Rep[((Int, Size[Context])) => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
   }
