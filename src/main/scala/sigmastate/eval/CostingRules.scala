@@ -1,14 +1,16 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scalan.SigmaLibrary
-import sigmastate.{AvlTreeData, SBigInt, SLong, SMethod}
+import sigmastate._
+import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
   import BigInt._
+  import SigmaProp._
   import AvlTree._
   import GroupElement._
   import CollBuilder._
@@ -22,6 +24,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import SizeContext._
   import CCostedPrim._
   import CCostedOption._
+  import CCostedFunc._
   import CostedColl._
   import CCostedColl._
   import SigmaDslBuilder._
@@ -65,10 +68,15 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
 
+  lazy val SizeUnit: RSize[Unit] = costedBuilder.mkSizePrim(0L, UnitElement)
   lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
   lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
   lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
   lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])
+
+  def SizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
+
+  def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = SizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
 
   def tryCast[To](x: Rep[Def[_]])(implicit eTo: Elem[To]): Rep[To] = {
     if (x.elem <:< eTo)
@@ -96,6 +104,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   def mkCostedOption[T](value: ROption[T], costOpt: ROption[Int], sizeOpt: ROption[Size[T]], accCost: Rep[Int]): RCostedOption[T] =
     costedBuilder.mkCostedOption(value, costOpt, sizeOpt, accCost)
+
+  def mkCostedFunc[A,R](f: RFuncCosted[A,R], cost: Rep[Int], codeSize: Rep[Long], eArg: Elem[A], eRes: Elem[R]): Rep[CostedFunc[Unit, A, R]] = {
+    val envC = RCCostedPrim((), 0, SizeUnit)
+    val sFunc = costedBuilder.mkSizeFunc(SizeUnit, codeSize, eArg, eRes)
+    RCCostedFunc(envC, f, cost, sFunc)
+  }
 
   abstract class Coster[T](obj: RCosted[T], method: SMethod, args: Seq[RCosted[_]]) {
     def costOfArgs = (obj +: args).map(_.cost)

@@ -270,10 +270,10 @@ class SigmaDslTest extends PropSpec
 
   // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
   ignore("Func context variable") {
-    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
-    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-    doApply((CFunc[Int, Int](ctx, code), 10))
+//    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
+//    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
+//    val ctx = ErgoLikeContext.dummy(fakeSelf)
+//    doApply((CFunc[Int, Int](ctx, code), 10))
   }
 
   val tokenId1: Digest32 = Blake2b256("id1")

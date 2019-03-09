@@ -22,11 +22,14 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val costedBuilderValue = sigmaDslBuilderValue.Costing
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
-  type RCostingResult[T] = Rep[(Context => T, Context => Int)]
+  type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
 
   def doCosting(env: ScriptEnv, typed: SValue): RCostingResult[Any] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    split2(asRep[Context => Costed[Any]](costed))
+    val f = asRep[Costed[Context] => Costed[Any]](costed)
+    val calcF = f.sliceCalc
+    val costF = f.sliceCost
+    Pair(calcF, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */

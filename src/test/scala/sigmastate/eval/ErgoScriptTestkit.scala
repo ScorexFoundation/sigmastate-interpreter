@@ -132,11 +132,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
 
     def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
-      val costed = script match {
+      val costed = asRep[Costed[Context] => Costed[Any]](script match {
         case Code(code) => compileAndCost(env, code)
         case Tree(tree) => cost(env, tree)
-      }
-      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
+      })
+      val calcF = costed.sliceCalc
+      val costF = costed.sliceCost
+      val sizeF = costed.sliceSize
+      val res = Tuple(calcF, costF, sizeF)
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
@@ -261,14 +264,17 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
-  def compileAndCost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
+  def compileAndCost(env: ScriptEnv, code: String): Rep[Costed[Context] => Costed[SType#WrappedType]] = {
     val typed = compiler.typecheck(env, code)
     cost(env, typed)
   }
 
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
     val costed = compileAndCost(env, script)
-    val Tuple(valueF, costF, sizeF) = split3(costed)
+    val valueF = costed.sliceCalc
+    val costF  = costed.sliceCost
+    val sizeF  = costed.sliceSize
+    
     emit(name, valueF, costF, sizeF)
     verifyCostFunc(costF) shouldBe(Success(()))
     verifyIsProven(valueF) shouldBe(Success(()))

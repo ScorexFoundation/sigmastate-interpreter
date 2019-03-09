@@ -308,16 +308,16 @@ case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
     val eRange = asElem[Any](IR.rtypeToElem(tRange))
 
     IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
-    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+//    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+//    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
 
     // check cost
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(costingCtx)
-    if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
-    }
+//    val costingCtx = context.toSigmaContext(IR, isCost = true)
+//    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+//    val IntConstant(estimatedCost) = costFun(costingCtx)
+//    if (estimatedCost > maxCost) {
+//      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+//    }
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
     val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
