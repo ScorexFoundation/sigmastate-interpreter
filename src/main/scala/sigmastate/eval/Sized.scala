@@ -14,6 +14,8 @@ trait Sized[T] {
 }
 trait SizedLowPriority {
   implicit def collIsSized[T: Sized: RType]: Sized[Coll[T]] = (xs: Coll[T]) => new CSizeColl(xs.map(Sized[T].size))
+  implicit def optionIsSized[T: Sized]: Sized[Option[T]] = (xs: Option[T]) => new CSizeOption(xs.map(Sized[T].size))
+  implicit def pairIsSized[A: Sized, B: Sized]: Sized[(A,B)] = (in: (A,B)) => new CSizePair(Sized[A].size(in._1), Sized[B].size(in._2))
 }
 object Sized extends SizedLowPriority {
   def apply[T](implicit sz: Sized[T]): Sized[T] = sz
@@ -24,19 +26,31 @@ object Sized extends SizedLowPriority {
   val SizeShort: Size[Short] = new CSizePrim(2L, ShortType)
   val SizeInt: Size[Int] = new CSizePrim(4L, IntType)
   val SizeLong: Size[Long] = new CSizePrim(8L, LongType)
+  val SizeBigInt: Size[BigInt] = new CSizePrim(MaxSizeInBytes, BigIntRType)
+  val SizeGroupElement: Size[GroupElement] = new CSizePrim(CryptoConstants.EncodedGroupElementLength, GroupElementRType)
+  val SizeAvlTree: Size[AvlTree] = new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
 
   implicit val BooleanIsSized: Sized[Boolean] = (x: Boolean) => SizeBoolean
   implicit val ByteIsSized: Sized[Byte] = (x: Byte) => SizeByte
   implicit val ShortIsSized: Sized[Short] = (x: Short) => SizeShort
   implicit val IntIsSized: Sized[Int] = (x: Int) => SizeInt
   implicit val LongIsSized: Sized[Long] = (x: Long) => SizeLong
-  implicit val BigIntIsSized: Sized[BigInt] = (x: BigInt) => new CSizePrim(MaxSizeInBytes, BigIntRType)
-  implicit val AvlTreeIsSized: Sized[AvlTree] = (x: AvlTree) => new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
+  implicit val BigIntIsSized: Sized[BigInt] = (x: BigInt) => SizeBigInt
+  implicit val GroupElementIsSized: Sized[GroupElement] = (x: GroupElement) => SizeGroupElement
+  implicit val AvlTreeIsSized: Sized[AvlTree] = (x: AvlTree) => SizeAvlTree
 
   private def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => Sized[Boolean]
     case ByteType => Sized[Byte]
+    case ShortType => Sized[Short]
+    case IntType => Sized[Int]
+    case LongType => Sized[Long]
+    case BigIntRType => Sized[BigInt]
+    case GroupElementRType => Sized[GroupElement]
+    case AvlTreeRType => Sized[AvlTree]
     case ct: CollType[a] => collIsSized(typeToSized(ct.tItem), ct.tItem)
+    case ct: OptionType[a] => optionIsSized(typeToSized(ct.tA))
+    case ct: PairType[a, b] => pairIsSized(typeToSized(ct.tFst), typeToSized(ct.tSnd))
     case _ => sys.error(s"Don't know how to compute Sized for type $t")
   }).asInstanceOf[Sized[T]]
 
@@ -55,7 +69,8 @@ object Sized extends SizedLowPriority {
   }
 
   private def sizeOfAnyValue(v: AnyValue): Size[Option[AnyValue]] = {
-    val size = sizeOf(v)
+    val anyV = if (v == null) TestValue(null, null) else v
+    val size = sizeOf(anyV)
     new CSizeOption[AnyValue](Some(size))
   }
 
@@ -88,7 +103,10 @@ object Sized extends SizedLowPriority {
     val rootHash = sizeOf(ctx.LastBlockUtxoRootHash)
     val headers = sizeOf(ctx.headers)
     val preHeader = sizeOf(ctx.preHeader)
-    val vars = ctx.vars.map(sizeOf(_))
+    val vars = ctx.vars.map { v =>
+      val anyV = if(v == null) TestValue(null, null) else v
+      sizeOf(anyV)
+    }
     new CSizeContext(outputs, inputs, dataInputs, selfBox, rootHash, headers, preHeader, vars)
   }
 

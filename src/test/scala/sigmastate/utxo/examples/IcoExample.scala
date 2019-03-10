@@ -20,9 +20,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
   /**
     * Simplest ICO example
     */
-  ignore("simple ico example - fundraising stage only") {
+  property("simple ico example - fundraising stage only") {
     val fundingEnv = Map(
-      ScriptNameProp -> "fundingScriptEnv",
       "proof" -> Array.emptyByteArray
     )
 
@@ -72,7 +71,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       spendingTransaction = fundingTx,
       self = projectBoxBefore)
 
-    projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
+    projectProver.prove(fundingEnv + (ScriptNameProp -> "fundingScriptEnv"), fundingScript, fundingContext, fakeMessage).get
   }
 
   ignore("simple ico example - fixing stage") {

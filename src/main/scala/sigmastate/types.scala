@@ -590,7 +590,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, MethodCallIrBuilder)
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = CryptoConstants.groupSize.toLong
+  override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
   override def isConstantSize = true
   def ancestors = Nil
 }

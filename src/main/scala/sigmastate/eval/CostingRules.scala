@@ -80,6 +80,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
   lazy val SizeLong: RSize[Long] = costedBuilder.mkSizePrim(8L, LongElement)
   lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
+  lazy val SizeString: RSize[String] = costedBuilder.mkSizePrim(256L, StringElement)
   lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
   lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])
 
@@ -89,9 +90,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     costedBuilder.mkSizeColl(sizes)
   }
 
-  def SizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
+  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
 
-  def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = SizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
+  def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
 
   case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
     override def transform(t: Transformer) = Cast(eTo, t(x))

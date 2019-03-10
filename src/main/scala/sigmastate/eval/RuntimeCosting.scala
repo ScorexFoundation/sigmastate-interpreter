@@ -356,7 +356,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def typeSize(tpe: SType): Rep[Long] = {
-    assert(tpe.isConstantSize)
+    assert(tpe.isConstantSize, s"Expected constant size type but was $tpe")
     val size = tpe.dataSize(SType.DummyValue)
     toRep(size)
   }
@@ -1241,6 +1241,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val tree: special.sigma.AvlTree = CAvlTree(treeData)
           val treeV = liftConst(tree)
           RCCostedPrim(treeV, costOf(c), SizeAvlTree)
+        case s: String =>
+          val resV = toRep(s)(stypeToElem(tpe).asElem[String])
+          RCCostedPrim(resV, costOf(c), SizeString)
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
           withConstantSize(resV, costOf(c))
@@ -1288,7 +1291,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val vC = asRep[Costed[GroupElement]](_v)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
         val cost = opCost(Seq(vC.cost), costOfDHTuple)
-        RCCostedPrim(resV, cost, SizeSigmaProp(vC.size.dataSize))
+        RCCostedPrim(resV, cost, mkSizeSigmaProp(vC.size.dataSize))
 
       case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
         val gvC = asRep[Costed[GroupElement]](_gv)
@@ -1297,7 +1300,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val vvC = asRep[Costed[GroupElement]](_vv)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
         val cost = opCost(Seq(gvC.cost, hvC.cost, uvC.cost, vvC.cost), costOfDHTuple)
-        RCCostedPrim(resV, cost, SizeSigmaProp(gvC.size.dataSize * 4L))
+        RCCostedPrim(resV, cost, mkSizeSigmaProp(gvC.size.dataSize * 4L))
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
@@ -1361,6 +1364,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val res = if (fieldIndex == 1) pair.l else pair.r
             res
         }
+
+      case Values.Tuple(InSeq(Seq(x, y))) =>
+        RCCostedPair(x, y)
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
@@ -1578,16 +1584,16 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         val boxC = asRep[Costed[Box]](box)
-        val sBox = tryCast[SizeBox](boxC.size)
+        val sBox = asSizeBox(boxC.size)
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
         val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
-        val sizeOpt = ??? //sBox.getReg(regId.number.toInt)(elem)
-        RCCostedOption(valueOpt, SOME(0), sizeOpt, opCost(Seq(boxC.cost), costOf(node)))
+        val sReg = asSizeOption(sBox.getReg(regId.number)(elem))
+        RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(Seq(boxC.cost), sigmaDslBuilder.CostModel.GetRegister))
 
       case BoolToSigmaProp(bool) =>
         val boolC = eval(bool)
         val value = sigmaDslBuilder.sigmaProp(boolC.value)
-        RCCostedPrim(value, opCost(Seq(boolC.cost), costOf(node)), SizeSigmaProp(1L))
+        RCCostedPrim(value, opCost(Seq(boolC.cost), costOf(node)), mkSizeSigmaProp(1L))
 
       case AtLeast(bound, input) =>
         val inputC = asRep[CostedColl[SigmaProp]](evalNode(ctx, env, input))
@@ -1600,7 +1606,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val res = sigmaDslBuilder.atLeast(boundC.value, inputC.values)
         val cost = opCost(Seq(boundC.cost, inputC.cost), costOf(node))
         val sInput = tryCast[SizeColl[SigmaProp]](inputC.size)
-        RCCostedPrim(res, cost, SizeSigmaProp(sInput.dataSize))
+        RCCostedPrim(res, cost, mkSizeSigmaProp(sInput.dataSize))
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
@@ -1726,7 +1732,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val costs = itemsC.map(_.cost)
         val cost = opCost(costs, perItemCostOf(node, costs.length))
         val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
-        RCCostedPrim(res, cost, SizeSigmaProp(size))
+        RCCostedPrim(res, cost, mkSizeSigmaProp(size))
 
       case SigmaOr(items) =>
         val itemsC = items.map(eval)
@@ -1734,7 +1740,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val costs = itemsC.map(_.cost)
         val cost = opCost(costs, perItemCostOf(node, costs.length))
         val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
-        RCCostedPrim(res, cost, SizeSigmaProp(size))
+        RCCostedPrim(res, cost, mkSizeSigmaProp(size))
 
 //      case If(c, t, e) =>
 //        val cC = evalNode(ctx, env, c)

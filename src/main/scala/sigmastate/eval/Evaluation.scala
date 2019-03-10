@@ -41,9 +41,34 @@ trait Evaluation extends RuntimeCosting { IR =>
   import GroupElement._
   import Liftables._
   import WSpecialPredef._
+  import Size._
+  import SizePair._
+  import CSizePair._
+  import SizeColl._
+  import CSizeColl._
+  import SizeOption._
+  import CSizeOption._
+  import SizeFunc._
+  import CSizeFunc._
+  import SizeAnyValue._
+  import CSizeAnyValue._
+  import SizeSigmaProp._
+  import SizeBox._
+  import CSizeBox._
+  import SizeContext._
+  import CSizeContext._
 
   val okPrintEvaluatedEntries: Boolean = false
 
+  private val SCM = SizeContextMethods
+  private val SBM = SizeBoxMethods
+  private val SSPM = SizeSigmaPropMethods
+  private val SAVM = SizeAnyValueMethods
+  private val SizeM = SizeMethods
+  private val SPairM = SizePairMethods
+  private val SCollM = SizeCollMethods
+  private val SOptM = SizeOptionMethods
+  private val SFuncM = SizeFuncMethods
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val CollM = CollMethods
@@ -58,7 +83,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: SizeData[_,_] =>
+    case _: SizeData[_,_] | _: OpCost | _: Cast[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
@@ -66,6 +91,20 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: ThunkDef[_] =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
     case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
+
+    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
+         SCM.preHeader(_) | SCM.getVar(_,_,_) =>
+    case SBM.propositionBytes(_) |  SBM.bytes(_) |  SBM.bytesWithoutRef(_) |  SBM.registers(_) |  SBM.getReg(_,_,_) |
+         SBM.tokens(_)  =>
+    case SSPM.propBytes(_) =>
+    case SAVM.tVal(_) | SAVM.valueSize(_) =>
+    case SizeM.dataSize(_) =>
+    case SPairM.l(_) | SPairM.r(_) =>
+    case SCollM.sizes(_) =>
+    case SOptM.sizeOpt(_) =>
+    case SFuncM.sizeEnv(_) =>
+    case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
     case SigmaM.propBytes(_) =>
