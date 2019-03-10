@@ -193,7 +193,7 @@ object Interpreter {
   type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
-  val emptyEnv: ScriptEnv = Map()
+  val emptyEnv: ScriptEnv = Map.empty[String, Any]
   val ScriptNameProp = "ScriptName"
 
   def error(msg: String) = throw new InterpreterException(msg)

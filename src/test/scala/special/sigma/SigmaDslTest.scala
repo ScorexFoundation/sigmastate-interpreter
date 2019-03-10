@@ -263,6 +263,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
   // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
   ignore("Func context variable") {
     val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }

@@ -17,7 +17,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {
@@ -134,6 +134,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/428
   ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
     val height = 50
     val proverA = new ContextEnrichingTestProvingInterpreter
