@@ -296,40 +296,40 @@ object CostingBox {
   * When f is obtained as `val f = getVar[Int => Int](id).get` then any application `f(x)` involves size estimation
   * using underlying `costF(x)`.
   */
-case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
-    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
-  import CFunc._
-
-  private val compiled = {
-    import IR._
-    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
-
-    val eDom = asElem[Any](IR.rtypeToElem(tDom))
-    val eRange = asElem[Any](IR.rtypeToElem(tRange))
-
-    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
-//    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-//    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
-
-    // check cost
-//    val costingCtx = context.toSigmaContext(IR, isCost = true)
-//    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-//    val IntConstant(estimatedCost) = costFun(costingCtx)
-//    if (estimatedCost > maxCost) {
-//      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+//case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
+//    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
+//  import CFunc._
+//
+//  private val compiled = {
+//    import IR._
+//    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
+//
+//    val eDom = asElem[Any](IR.rtypeToElem(tDom))
+//    val eRange = asElem[Any](IR.rtypeToElem(tRange))
+//
+//    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
+////    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+////    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+//
+//    // check cost
+////    val costingCtx = context.toSigmaContext(IR, isCost = true)
+////    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+////    val IntConstant(estimatedCost) = costFun(costingCtx)
+////    if (estimatedCost > maxCost) {
+////      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+////    }
+//    // check calc
+//    val calcCtx = context.toSigmaContext(IR, isCost = false)
+//    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
+//    val res = valueFun(calcCtx) match {
+//      case Constant(f, fTpe: SFunc) => f
+//      case v => v
 //    }
-    // check calc
-    val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
-    val res = valueFun(calcCtx) match {
-      case Constant(f, fTpe: SFunc) => f
-      case v => v
-    }
-    res.asInstanceOf[A => B]
-  }
-
-  override def apply(x: A): B = compiled(x)
-}
+//    res.asInstanceOf[A => B]
+//  }
+//
+//  override def apply(x: A): B = compiled(x)
+//}
 object CFunc {
   /** The cost of creating resulting function but not its execution.
     * Thus it is expected to be small. It can be increased if useful cases are found

@@ -164,8 +164,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       println(printEnvEntry(sym, value))
   }
 
-  def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
-
+  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Rep[A => B])
+                           (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): SA => SB =
+  {
     def evalSizeData(data: SizeData[_,_], dataEnv: DataEnv): Any = {
       val info = dataEnv(data.sizeInfo)
       data.eVal match {
@@ -185,7 +186,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
 
-    def evaluate(ctxSym: Rep[Context], te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
+    def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
@@ -204,13 +205,12 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(data)
           case d @ BoxM.getReg(box, _, elem) =>
-            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, false)(IR))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -303,7 +303,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
-                val (e, _) = evaluate(ctxSym, te).run(env)
+                val (e, _) = evaluate(te).run(env)
                 e
               }
               val res = resEnv(y)
@@ -318,7 +318,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case ThunkDef(y, schedule) =>
             val th = () => {
               val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
-                val (e, _) = evaluate(ctxSym, te).run(env)
+                val (e, _) = evaluate(te).run(env)
                 e
               }
               resEnv(y)
@@ -406,27 +406,38 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
 
-    val res = (ctx: SContext) => {
+    val res = (x: SA) => {
       val g = new PGraph(f)
-      val ctxSym = f.getLambda.x
-      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
-        val (e, _) = evaluate(ctxSym, te).run(env)
+      val xSym = f.getLambda.x
+      val resEnv = g.schedule.foldLeft(dataEnv + (xSym -> x.asInstanceOf[AnyRef])) { (env, te) =>
+        val (e, _) = evaluate(te).run(env)
         e
       }
-      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
-      fun(ctx) match {
-        case sb: SigmaBoolean => builder.liftAny(sb).get
-        case v: Value[_] => v
-        case x =>
-          val eRes = f.elem.eRange
-          val tpeRes = elemToSType(eRes)
-          val tRes = Evaluation.stypeToRType(tpeRes)
-          val treeType = Evaluation.toErgoTreeType(tRes)
-          val constValue = Evaluation.fromDslData(x, treeType)
-          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
-      }
+      val fun = resEnv(f).asInstanceOf[SA => SB]
+      val y = fun(x)
+      y
     }
-    res.asInstanceOf[ContextFunc[T]]
+    res
+//    val res = (ctx: SContext) => {
+//      val g = new PGraph(f)
+//      val ctxSym = f.getLambda.x
+//      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
+//        val (e, _) = evaluate(ctxSym, te).run(env)
+//        e
+//      }
+//      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
+//      fun(ctx) match {
+//        case sb: SigmaBoolean => builder.liftAny(sb).get
+//        case v: Value[_] => v
+//        case x =>
+//          val eRes = f.elem.eRange
+//          val tpeRes = elemToSType(eRes)
+//          val tRes = Evaluation.stypeToRType(tpeRes)
+//          val treeType = Evaluation.toErgoTreeType(tRes)
+//          val constValue = Evaluation.fromDslData(x, treeType)
+//          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
+//      }
+//    }
   }
 }
 

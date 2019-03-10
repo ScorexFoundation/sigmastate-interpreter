@@ -24,9 +24,9 @@ trait IRContext extends Evaluation with TreeBuilding {
 
   type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
 
-  def doCosting(env: ScriptEnv, typed: SValue): RCostingResult[Any] = {
+  def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    val f = asRep[Costed[Context] => Costed[Any]](costed)
+    val f = asRep[Costed[Context] => Costed[T]](costed)
     val calcF = f.sliceCalc
     val costF = f.sliceCost
     Pair(calcF, costF)

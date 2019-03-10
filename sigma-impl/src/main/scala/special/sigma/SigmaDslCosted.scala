@@ -9,8 +9,7 @@ import scalan.{NeverInline, Reified}
 
 class CSizeAnyValue(val tVal: RType[Any], val valueSize: Size[Any]) extends SizeAnyValue {
   @NeverInline
-  override def dataSize: Long = { ???
-  }
+  override def dataSize: Long = valueSize.dataSize
 }
 
 class CSizeBox(

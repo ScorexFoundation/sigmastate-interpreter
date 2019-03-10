@@ -8,10 +8,10 @@ import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractivePr
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
@@ -76,6 +76,7 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
+    import IR.Size._; import IR.Context._
     val costingRes @ IR.Pair(calcF, costF) = doCosting(env, exp)
     IR.onCostingResult(env, exp, costingRes)
 
@@ -85,8 +86,8 @@ trait Interpreter extends ScorexLogging {
 
     // check cost
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(costingCtx)
+    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF)
+    val estimatedCost = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
