@@ -3,9 +3,9 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{Matchers, FunSuite}
+import org.scalatest.{FunSuite, Matchers}
 import special.sigma.Extensions._
-import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestSigmaDslBuilder, SigmaDslBuilder}
+import special.sigma.{Box, Context, ContractsTestkit, MockSigma, SigmaContract, SigmaDslBuilder, SigmaProp, TestBox, TestSigmaDslBuilder}
 
 import scala.language.implicitConversions
 
@@ -13,11 +13,14 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
 
   implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
-  ignore("atLeast") {
+
+  test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
+
     // border cases
     SigmaDsl.atLeast(0, props).isValid shouldBe true
     SigmaDsl.atLeast(5, props).isValid shouldBe false
+
     // normal cases
     SigmaDsl.atLeast(1, props).isValid shouldBe true
     SigmaDsl.atLeast(2, props).isValid shouldBe true

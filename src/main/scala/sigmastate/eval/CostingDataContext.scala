@@ -448,7 +448,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
-    props.map { case csp: CSigmaProp => csp.sigmaTree }
+    props.map {
+      case csp: CSigmaProp => csp.sigmaTree
+      case m: MockSigma => TrivialProp(m.isValid)   //needed for tests, e.g. "atLeast" test
+    }
   }
 
   @inline private def toEcPointType(ge: GroupElement): EcPointType =
