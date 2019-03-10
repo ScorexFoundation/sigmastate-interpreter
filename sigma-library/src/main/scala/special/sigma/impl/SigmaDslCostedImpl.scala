@@ -159,11 +159,11 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
 
 object CSizeBox extends EntityObject("CSizeBox") {
   case class CSizeBoxCtor
-      (override val propositionBytes: Rep[Size[Coll[Byte]]], override val bytes: Rep[Size[Coll[Byte]]], override val bytesWithoutRef: Rep[Size[Coll[Byte]]], override val registers: Rep[Size[Coll[WOption[AnyValue]]]])
-    extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers) with Def[CSizeBox] {
+      (override val propositionBytes: Rep[Size[Coll[Byte]]], override val bytes: Rep[Size[Coll[Byte]]], override val bytesWithoutRef: Rep[Size[Coll[Byte]]], override val registers: Rep[Size[Coll[WOption[AnyValue]]]], override val tokens: Rep[Size[Coll[(Coll[Byte], Long)]]])
+    extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) with Def[CSizeBox] {
     override lazy val eVal: Elem[Box] = implicitly[Elem[Box]]
     lazy val selfType = element[CSizeBox]
-    override def transform(t: Transformer) = CSizeBoxCtor(t(propositionBytes), t(bytes), t(bytesWithoutRef), t(registers))
+    override def transform(t: Transformer) = CSizeBoxCtor(t(propositionBytes), t(bytes), t(bytesWithoutRef), t(registers), t(tokens))
     private val thisClass = classOf[SizeBox]
 
     override def dataSize: Rep[Long] = {
@@ -172,6 +172,13 @@ object CSizeBox extends EntityObject("CSizeBox") {
         List(),
         true, false, element[Long]))
     }
+
+    override def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+      asRep[Size[WOption[T]]](mkMethodCall(self,
+        thisClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
+        List(id, tT),
+        true, false, element[Size[WOption[T]]]))
+    }
   }
   // elem for concrete class
   class CSizeBoxElem(val iso: Iso[CSizeBoxData, CSizeBox])
@@ -179,28 +186,28 @@ object CSizeBox extends EntityObject("CSizeBox") {
     with ConcreteElem[CSizeBoxData, CSizeBox] {
     override lazy val parent: Option[Elem[_]] = Some(sizeBoxElement)
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override def convertSizeBox(x: Rep[SizeBox]) = RCSizeBox(x.propositionBytes, x.bytes, x.bytesWithoutRef, x.registers)
-    override def getDefaultRep = RCSizeBox(element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[WOption[AnyValue]]]].defaultRepValue)
+    override def convertSizeBox(x: Rep[SizeBox]) = RCSizeBox(x.propositionBytes, x.bytes, x.bytesWithoutRef, x.registers, x.tokens)
+    override def getDefaultRep = RCSizeBox(element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[Byte]]].defaultRepValue, element[Size[Coll[WOption[AnyValue]]]].defaultRepValue, element[Size[Coll[(Coll[Byte], Long)]]].defaultRepValue)
     override lazy val tag = {
       weakTypeTag[CSizeBox]
     }
   }
 
   // state representation type
-  type CSizeBoxData = (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], Size[Coll[WOption[AnyValue]]])))
+  type CSizeBoxData = (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))
 
   // 3) Iso for concrete class
   class CSizeBoxIso
     extends EntityIso[CSizeBoxData, CSizeBox] with Def[CSizeBoxIso] {
     override def transform(t: Transformer) = new CSizeBoxIso()
-    private lazy val _safeFrom = fun { p: Rep[CSizeBox] => (p.propositionBytes, p.bytes, p.bytesWithoutRef, p.registers) }
+    private lazy val _safeFrom = fun { p: Rep[CSizeBox] => (p.propositionBytes, p.bytes, p.bytesWithoutRef, p.registers, p.tokens) }
     override def from(p: Rep[CSizeBox]) =
-      tryConvert[CSizeBox, (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], Size[Coll[WOption[AnyValue]]])))](eTo, eFrom, p, _safeFrom)
-    override def to(p: Rep[(Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], Size[Coll[WOption[AnyValue]]])))]) = {
-      val Pair(propositionBytes, Pair(bytes, Pair(bytesWithoutRef, registers))) = p
-      RCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers)
+      tryConvert[CSizeBox, (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))](eTo, eFrom, p, _safeFrom)
+    override def to(p: Rep[(Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))]) = {
+      val Pair(propositionBytes, Pair(bytes, Pair(bytesWithoutRef, Pair(registers, tokens)))) = p
+      RCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
     }
-    lazy val eFrom = pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], element[Size[Coll[WOption[AnyValue]]]])))
+    lazy val eFrom = pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[WOption[AnyValue]]]], element[Size[Coll[(Coll[Byte], Long)]]]))))
     lazy val eTo = new CSizeBoxElem(self)
     lazy val selfType = new CSizeBoxIsoElem
     def productArity = 0
@@ -223,8 +230,8 @@ object CSizeBox extends EntityObject("CSizeBox") {
     }
 
     @scalan.OverloadId("fromFields")
-    def apply(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]]): Rep[CSizeBox] =
-      mkCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers)
+    def apply(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[(Coll[Byte], Long)]]]): Rep[CSizeBox] =
+      mkCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
 
     def unapply(p: Rep[SizeBox]) = unmkCSizeBox(p)
   }
@@ -256,12 +263,12 @@ object CSizeBox extends EntityObject("CSizeBox") {
     reifyObject(new CSizeBoxIso())
 
   def mkCSizeBox
-    (propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]]): Rep[CSizeBox] = {
-    new CSizeBoxCtor(propositionBytes, bytes, bytesWithoutRef, registers)
+    (propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[(Coll[Byte], Long)]]]): Rep[CSizeBox] = {
+    new CSizeBoxCtor(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
   }
   def unmkCSizeBox(p: Rep[SizeBox]) = p.elem.asInstanceOf[Elem[_]] match {
     case _: CSizeBoxElem @unchecked =>
-      Some((asRep[CSizeBox](p).propositionBytes, asRep[CSizeBox](p).bytes, asRep[CSizeBox](p).bytesWithoutRef, asRep[CSizeBox](p).registers))
+      Some((asRep[CSizeBox](p).propositionBytes, asRep[CSizeBox](p).bytes, asRep[CSizeBox](p).bytesWithoutRef, asRep[CSizeBox](p).registers, asRep[CSizeBox](p).tokens))
     case _ =>
       None
   }
@@ -279,6 +286,19 @@ object CSizeBox extends EntityObject("CSizeBox") {
         case _ => Nullable.None
       }
     }
+
+    object getReg {
+      def unapply(d: Def[_]): Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBoxElem] && method.getName == "getReg" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
   }
 
   object CSizeBoxCompanionMethods {
@@ -288,11 +308,11 @@ object CSizeBox extends EntityObject("CSizeBox") {
 
 object CSizeContext extends EntityObject("CSizeContext") {
   case class CSizeContextCtor
-      (override val outputs: Rep[Size[Coll[Box]]], override val inputs: Rep[Size[Coll[Box]]], override val dataInputs: Rep[Size[Coll[Box]]], override val selfBox: Rep[Size[Box]], override val lastBlockUtxoRootHash: Rep[Size[AvlTree]], override val headers: Rep[Size[Coll[Header]]], override val preHeader: Rep[Size[PreHeader]])
-    extends CSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader) with Def[CSizeContext] {
+      (override val outputs: Rep[Size[Coll[Box]]], override val inputs: Rep[Size[Coll[Box]]], override val dataInputs: Rep[Size[Coll[Box]]], override val selfBox: Rep[Size[Box]], override val lastBlockUtxoRootHash: Rep[Size[AvlTree]], override val headers: Rep[Size[Coll[Header]]], override val preHeader: Rep[Size[PreHeader]], override val vars: Rep[Coll[Size[AnyValue]]])
+    extends CSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars) with Def[CSizeContext] {
     override lazy val eVal: Elem[Context] = implicitly[Elem[Context]]
     lazy val selfType = element[CSizeContext]
-    override def transform(t: Transformer) = CSizeContextCtor(t(outputs), t(inputs), t(dataInputs), t(selfBox), t(lastBlockUtxoRootHash), t(headers), t(preHeader))
+    override def transform(t: Transformer) = CSizeContextCtor(t(outputs), t(inputs), t(dataInputs), t(selfBox), t(lastBlockUtxoRootHash), t(headers), t(preHeader), t(vars))
     private val thisClass = classOf[SizeContext]
 
     override def dataSize: Rep[Long] = {
@@ -301,6 +321,13 @@ object CSizeContext extends EntityObject("CSizeContext") {
         List(),
         true, false, element[Long]))
     }
+
+    override def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+      asRep[Size[WOption[T]]](mkMethodCall(self,
+        thisClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
+        List(id, tT),
+        true, false, element[Size[WOption[T]]]))
+    }
   }
   // elem for concrete class
   class CSizeContextElem(val iso: Iso[CSizeContextData, CSizeContext])
@@ -308,28 +335,29 @@ object CSizeContext extends EntityObject("CSizeContext") {
     with ConcreteElem[CSizeContextData, CSizeContext] {
     override lazy val parent: Option[Elem[_]] = Some(sizeContextElement)
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
-    override def convertSizeContext(x: Rep[SizeContext]) = RCSizeContext(x.outputs, x.inputs, x.dataInputs, x.selfBox, x.lastBlockUtxoRootHash, x.headers, x.preHeader)
-    override def getDefaultRep = RCSizeContext(element[Size[Coll[Box]]].defaultRepValue, element[Size[Coll[Box]]].defaultRepValue, element[Size[Coll[Box]]].defaultRepValue, element[Size[Box]].defaultRepValue, element[Size[AvlTree]].defaultRepValue, element[Size[Coll[Header]]].defaultRepValue, element[Size[PreHeader]].defaultRepValue)
+    override def convertSizeContext(x: Rep[SizeContext]) = // Converter is not generated by meta
+!!!("Cannot convert from SizeContext to CSizeContext: missing fields List(vars)")
+    override def getDefaultRep = RCSizeContext(element[Size[Coll[Box]]].defaultRepValue, element[Size[Coll[Box]]].defaultRepValue, element[Size[Coll[Box]]].defaultRepValue, element[Size[Box]].defaultRepValue, element[Size[AvlTree]].defaultRepValue, element[Size[Coll[Header]]].defaultRepValue, element[Size[PreHeader]].defaultRepValue, element[Coll[Size[AnyValue]]].defaultRepValue)
     override lazy val tag = {
       weakTypeTag[CSizeContext]
     }
   }
 
   // state representation type
-  type CSizeContextData = (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], Size[PreHeader]))))))
+  type CSizeContextData = (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))
 
   // 3) Iso for concrete class
   class CSizeContextIso
     extends EntityIso[CSizeContextData, CSizeContext] with Def[CSizeContextIso] {
     override def transform(t: Transformer) = new CSizeContextIso()
-    private lazy val _safeFrom = fun { p: Rep[CSizeContext] => (p.outputs, p.inputs, p.dataInputs, p.selfBox, p.lastBlockUtxoRootHash, p.headers, p.preHeader) }
+    private lazy val _safeFrom = fun { p: Rep[CSizeContext] => (p.outputs, p.inputs, p.dataInputs, p.selfBox, p.lastBlockUtxoRootHash, p.headers, p.preHeader, p.vars) }
     override def from(p: Rep[CSizeContext]) =
-      tryConvert[CSizeContext, (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], Size[PreHeader]))))))](eTo, eFrom, p, _safeFrom)
-    override def to(p: Rep[(Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], Size[PreHeader]))))))]) = {
-      val Pair(outputs, Pair(inputs, Pair(dataInputs, Pair(selfBox, Pair(lastBlockUtxoRootHash, Pair(headers, preHeader)))))) = p
-      RCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader)
+      tryConvert[CSizeContext, (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))](eTo, eFrom, p, _safeFrom)
+    override def to(p: Rep[(Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))]) = {
+      val Pair(outputs, Pair(inputs, Pair(dataInputs, Pair(selfBox, Pair(lastBlockUtxoRootHash, Pair(headers, Pair(preHeader, vars))))))) = p
+      RCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
     }
-    lazy val eFrom = pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Box]], pairElement(element[Size[AvlTree]], pairElement(element[Size[Coll[Header]]], element[Size[PreHeader]]))))))
+    lazy val eFrom = pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Box]], pairElement(element[Size[AvlTree]], pairElement(element[Size[Coll[Header]]], pairElement(element[Size[PreHeader]], element[Coll[Size[AnyValue]]])))))))
     lazy val eTo = new CSizeContextElem(self)
     lazy val selfType = new CSizeContextIsoElem
     def productArity = 0
@@ -352,8 +380,8 @@ object CSizeContext extends EntityObject("CSizeContext") {
     }
 
     @scalan.OverloadId("fromFields")
-    def apply(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]]): Rep[CSizeContext] =
-      mkCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader)
+    def apply(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[CSizeContext] =
+      mkCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
 
     def unapply(p: Rep[SizeContext]) = unmkCSizeContext(p)
   }
@@ -385,12 +413,12 @@ object CSizeContext extends EntityObject("CSizeContext") {
     reifyObject(new CSizeContextIso())
 
   def mkCSizeContext
-    (outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]]): Rep[CSizeContext] = {
-    new CSizeContextCtor(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader)
+    (outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[CSizeContext] = {
+    new CSizeContextCtor(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
   }
   def unmkCSizeContext(p: Rep[SizeContext]) = p.elem.asInstanceOf[Elem[_]] match {
     case _: CSizeContextElem @unchecked =>
-      Some((asRep[CSizeContext](p).outputs, asRep[CSizeContext](p).inputs, asRep[CSizeContext](p).dataInputs, asRep[CSizeContext](p).selfBox, asRep[CSizeContext](p).lastBlockUtxoRootHash, asRep[CSizeContext](p).headers, asRep[CSizeContext](p).preHeader))
+      Some((asRep[CSizeContext](p).outputs, asRep[CSizeContext](p).inputs, asRep[CSizeContext](p).dataInputs, asRep[CSizeContext](p).selfBox, asRep[CSizeContext](p).lastBlockUtxoRootHash, asRep[CSizeContext](p).headers, asRep[CSizeContext](p).preHeader, asRep[CSizeContext](p).vars))
     case _ =>
       None
   }
@@ -404,6 +432,19 @@ object CSizeContext extends EntityObject("CSizeContext") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[Rep[CSizeContext]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object getVar {
+      def unapply(d: Def[_]): Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeContextElem] && method.getName == "getVar" =>
+          val res = (receiver, args(0), args(1))
+          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
@@ -530,26 +571,26 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     }
 
     object mkSizeBox {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]])] = d match {
+      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBuilderElem] && method.getName == "mkSizeBox" =>
-          val res = (receiver, args(0), args(1), args(2), args(3))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]])]]
+          val res = (receiver, args(0), args(1), args(2), args(3), args(4))
+          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]])] = exp match {
+      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }
     }
 
     object mkSizeContext {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]])] = d match {
+      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = d match {
         case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBuilderElem] && method.getName == "mkSizeContext" =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4), args(5), args(6))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]])]]
+          val res = (receiver, args(0), args(1), args(2), args(3), args(4), args(5), args(6), args(7))
+          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]])] = exp match {
+      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

@@ -12,10 +12,7 @@ package special.sigma {
     import CollBuilder._;
     import CollOverArrayBuilder._;
     import CostModel._;
-    import Costed._;
     import CostedBuilder._;
-    import CostedColl._;
-    import CostedOption._;
     import GroupElement._;
     import MonoidBuilder._;
     import MonoidBuilderInst._;

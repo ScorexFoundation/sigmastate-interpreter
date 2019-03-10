@@ -12,8 +12,6 @@ package special.sigma {
     import Context._;
     import CostModel._;
     import CostedBuilder._;
-    import CostedColl._;
-    import CostedOption._;
     import GroupElement._;
     import Header._;
     import MonoidBuilder._;

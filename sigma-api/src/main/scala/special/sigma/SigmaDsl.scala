@@ -550,6 +550,7 @@ trait Context {
 
   def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
+  def vars: Coll[AnyValue]
 }
 
 @scalan.Liftable
