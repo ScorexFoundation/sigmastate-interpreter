@@ -115,25 +115,25 @@ class SigmaDslTest extends PropSpec
   }
   // TODO add tests for Short, Long, BigInt operations
 
-  property("sigma.types.Byte methods equivalence") {
-    import sigma.types._
-    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
-    forAll { x: Byte =>
-      Seq(toInt).foreach(_(x))
-    }
-  }
-
-  property("sigma.types.Int methods equivalence") {
-    import sigma.types._
-    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
-    lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
-    forAll { in: scala.Int =>
-      whenever(scala.Byte.MinValue <= in && in <= scala.Byte.MaxValue) {
-        val x = CInt(in)
-        toByte(x)
-      }
-    }
-  }
+//  property("sigma.types.Byte methods equivalence") {
+//    import sigma.types._
+//    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
+//    forAll { x: Byte =>
+//      Seq(toInt).foreach(_(x))
+//    }
+//  }
+//
+//  property("sigma.types.Int methods equivalence") {
+//    import sigma.types._
+//    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
+//    lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+//    forAll { in: scala.Int =>
+//      whenever(scala.Byte.MinValue <= in && in <= scala.Byte.MaxValue) {
+//        val x = CInt(in)
+//        toByte(x)
+//      }
+//    }
+//  }
 
   val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
   val bytesCollGen = bytesGen.map(Colls.fromArray(_))

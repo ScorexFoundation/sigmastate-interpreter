@@ -55,9 +55,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   import Size._;
   import SizeBox._;
   import SizeColl._;
+  import SizeOption._;
+  import SizePair._;
   import SizeContext._
   import CSizeContext._
   import CSizePrim._
+  import CSizePair._
+  import CSizeColl._
+  import CSizeOption._
   import Costed._;
   import CostedPrim._;
   import CCostedPrim._;
@@ -551,7 +556,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     val CCM = CostedCollMethods
     val CostedM = CostedMethods
     val CostedOptionM = CostedOptionMethods
-//    val CostedBoxM = CostedBoxMethods
     val WOptionM = WOptionMethods
     val WArrayM = WArrayMethods
     val CM = CollMethods
@@ -560,6 +564,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     val SDBM = SigmaDslBuilderMethods
 
     d match {
+      // Rule: cast(eTo, x) if x.elem <:< eTo  ==>  x
+      case Cast(eTo: Elem[to], x) if eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass) =>
+        x
+
       case WArrayM.length(Def(arrC: WArrayConst[_,_])) => arrC.constValue.length
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
@@ -710,21 +718,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        implicit val eA = opt.elem.eItem
 //        RCCostedPrim(opt.isDefined, costedBuilder.SelectFieldCost, 1L)
 
-//      case CCostedPrimCtor(v, c, s) =>
-//        val res = v.elem.asInstanceOf[Elem[_]] match {
-////          case be: BoxElem[_] => RCCostedBox(asRep[Box](v), c)
-//          case pe: PairElem[a,b] =>
-//            val p = asRep[(a,b)](v)
-//            costedPrimToPair(p, c, s)
-//          case ce: CollElem[a,_] if ce.eItem.isConstantSize =>
-//            val col = asRep[Coll[a]](v)
-//            costedPrimToColl(col, c, s)
+      case CCostedPrimCtor(v, c, s) =>
+        val res = v.elem.asInstanceOf[Elem[_]] match {
+          case pe: PairElem[a,b] if s.elem.isInstanceOf[CSizePairElem[_,_]] =>
+            val p = asRep[(a,b)](v)
+            costedPrimToPair(p, c, asRep[Size[(a,b)]](s))
+          case ce: CollElem[a,_] if s.elem.isInstanceOf[CSizeCollElem[_]] =>
+            val col = asRep[Coll[a]](v)
+            costedPrimToColl(col, c, asRep[Size[Coll[a]]](s))
 //          case oe: WOptionElem[a,_] =>
 //            val opt = asRep[WOption[a]](v)
 //            costedPrimToOption(opt, c, s)
-//          case _ => super.rewriteDef(d)
-//        }
-//        res
+          case _ => super.rewriteDef(d)
+        }
+        res
 
 //      case CostedBuilderM.costedValue(b, x, SPCM.some(cost)) =>
 //        dataCost(x, Some(asRep[Int](cost)))
@@ -744,12 +751,21 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
-  def costedPrimToColl[A](col: Rep[Coll[A]], c: Rep[Int], s: Rep[Long]) = s match {
-    case Def(SizeData(_, info)) if info.elem.isInstanceOf[CollElem[_, _]] =>
-      val sizeColl = info.asRep[Coll[Long]]
-      mkCostedColl(col, sizeColl.length, c)
+  def costedPrimToColl[A](coll: Rep[Coll[A]], c: Rep[Int], s: RSize[Coll[A]]): RCostedColl[A] = s.elem.asInstanceOf[Any] match {
+    case _: CSizeCollElem[_] =>
+      val sizes = asSizeColl(s).sizes
+      val costs = colBuilder.replicate(sizes.length, 0)
+      mkCostedColl(coll, costs, sizes, c)
     case _ =>
-      mkCostedColl(col, col.length, c)
+      !!!(s"Expected RCSizeColl node but was $s -> ${s.rhs}")
+  }
+
+  def costedPrimToOption[A](opt: Rep[WOption[A]], c: Rep[Int], s: RSize[WOption[A]]) = s.elem.asInstanceOf[Any] match {
+    case _: CSizeOptionElem[_] =>
+      val sizeOpt = asSizeOption(s).sizeOpt
+      mkCostedOption(opt, SOME(0), sizeOpt, c)
+    case _ =>
+      !!!(s"Expected RCSizeOption node but was $s -> ${s.rhs}")
   }
 
 //  def costedPrimToOption[A](opt: Rep[WOption[A]], c: Rep[Int], s: Rep[Long]) = s match {
@@ -763,14 +779,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 ////      error(s"Cannot CostedPrim to CostedOption for non-constant-size type ${opt.elem.eItem.name}")
 //  }
 
-//  def costedPrimToPair[A,B](p: Rep[(A,B)], c: Rep[Int], s: Rep[Long]) = s match {
-//    case Def(SizeData(_, info)) if info.elem.isInstanceOf[PairElem[_,_]] =>
-//      val Pair(sa, sb) = info.asRep[(Long,Long)]
-//      RCCostedPair(RCCostedPrim(p._1, c, sa), RCCostedPrim(p._2, c, sb))
-//    case _ =>
-//      // TODO costing: this is approximation (we essentially double the cost and size)
-//      RCCostedPair(RCCostedPrim(p._1, c, s), RCCostedPrim(p._2, c, s))
-//  }
+  def costedPrimToPair[A,B](p: Rep[(A,B)], c: Rep[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
+    case _: CSizePairElem[_,_] =>
+      val sPair = asSizePair(s)
+      RCCostedPair(RCCostedPrim(p._1, c, sPair.l), RCCostedPrim(p._2, c, sPair.r))
+    case _ =>
+      !!!(s"Expected RCSizePair node but was $s -> ${s.rhs}")
+  }
 
 //  override def rewriteNonInvokableMethodCall(mc: MethodCall): Rep[_] = mc match {
 //    case IsConstSizeCostedColl(col) =>
@@ -1240,8 +1255,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case MinerPubkey => ContextCoster(ctx, SContext.minerPubKeyMethod, Nil)
 
       case op @ GetVar(id, optTpe) =>
-        val eVar = stypeToElem(optTpe.elemType)
-        ???
+        stypeToElem(optTpe.elemType) match { case e: Elem[t] =>
+          val v = ctx.value.getVar[t](id)(e)
+          val s = tryCast[SizeContext](ctx.size).getVar(id)(e)
+          RCCostedPrim(v, sigmaDslBuilder.CostModel.GetVar, s)
+        }
 
       case Terms.Block(binds, res) =>
         var curEnv = env
@@ -1337,7 +1355,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             RCCostedPrim(v, c, s)
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
-            val pair = asRep[CostedPair[a,b]](_tup)
+            implicit val ea = pe.eFst
+            implicit val eb = pe.eSnd
+            val pair = tryCast[CostedPair[a,b]](_tup)
             val res = if (fieldIndex == 1) pair.l else pair.r
             res
         }

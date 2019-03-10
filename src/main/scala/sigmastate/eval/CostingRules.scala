@@ -21,8 +21,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import SizePrim._
   import SizeColl._
   import SizeOption._
+  import SizePair._
+  import SizeBox._
   import SizeContext._
   import CCostedPrim._
+  import CCostedPair._
   import CCostedOption._
   import CCostedFunc._
   import CostedColl._
@@ -31,6 +34,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import CostModel._
   import WSpecialPredef._
   import WRType._
+  import WOption._
   import Box._
 
   abstract class CostingHandler[T](createCoster: (RCosted[T], SMethod, Seq[RCosted[_]]) => Coster[T]) {
@@ -71,26 +75,53 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   // TODO move initialization to init() to support resetContext
   lazy val SizeUnit: RSize[Unit] = costedBuilder.mkSizePrim(0L, UnitElement)
   lazy val SizeBoolean: RSize[Boolean] = costedBuilder.mkSizePrim(1L, BooleanElement)
+  lazy val SizeByte: RSize[Byte] = costedBuilder.mkSizePrim(1L, ByteElement)
+  lazy val SizeShort: RSize[Short] = costedBuilder.mkSizePrim(2L, ShortElement)
   lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
   lazy val SizeLong: RSize[Long] = costedBuilder.mkSizePrim(8L, LongElement)
   lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
   lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
   lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])
 
+  lazy val SizeHashBytes: RSize[Coll[Byte]] = {
+    val len: Rep[Int] = CryptoConstants.hashLength
+    val sizes = colBuilder.replicate(len, SizeByte)
+    costedBuilder.mkSizeColl(sizes)
+  }
+
   def SizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
 
   def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = SizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
 
-  def tryCast[To](x: Rep[Def[_]])(implicit eTo: Elem[To]): Rep[To] = {
-    if (x.elem <:< eTo)
-      x.asRep[To]
-    else
-      Convert(eTo, eTo, x, fun { x: Rep[To] => x })
+  case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
+    override def transform(t: Transformer) = Cast(eTo, t(x))
   }
 
-  def asCostedColl[T: Elem](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = tryCast[CostedColl[T]](collC)
-  def asSizeColl[T: Elem](collS: RSize[Coll[T]]): Rep[SizeColl[T]] = tryCast[SizeColl[T]](collS)
-  def asSizeOption[T: Elem](collS: RSize[WOption[T]]): Rep[SizeOption[T]] = tryCast[SizeOption[T]](collS)
+  def tryCast[To](x: Rep[Def[_]])(implicit eTo: Elem[To]): Rep[To] = {
+    if (eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass))
+      x.asRep[To]
+    else
+      Cast(eTo, x)
+  }
+
+  def asCostedColl[T](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = {
+    implicit val eT = collC.elem.eVal.eItem
+    tryCast[CostedColl[T]](collC)
+  }
+  def asSizeColl[T](collS: RSize[Coll[T]]): Rep[SizeColl[T]] = {
+    implicit val eT = collS.elem.eVal.eItem
+    tryCast[SizeColl[T]](collS)
+  }
+  def asSizePair[A, B](s: RSize[(A,B)]): Rep[SizePair[A,B]] = {
+    implicit val eA = s.elem.eVal.eFst
+    implicit val eB = s.elem.eVal.eSnd
+    tryCast[SizePair[A,B]](s)
+  }
+  def asSizeOption[T](optS: RSize[WOption[T]]): Rep[SizeOption[T]] = {
+    implicit val eA = optS.elem.eVal.eItem
+    tryCast[SizeOption[T]](optS)
+  }
+  def asSizeBox(ctx: RSize[Box]): Rep[SizeBox] = tryCast[SizeBox](ctx)
   def asSizeContext(ctx: RSize[Context]): Rep[SizeContext] = tryCast[SizeContext](ctx)
 
   def SOME[A](x: Rep[A]): Rep[WOption[A]] = RWSpecialPredef.some(x)
@@ -100,7 +131,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     costedBuilder.mkSizeColl(sizes)
   }
 
+  def mkSizeColl[T](len: Rep[Int], sItem: RSize[T]): Rep[Size[Coll[T]]] = {
+    val sizes = colBuilder.replicate(len, sItem)
+    costedBuilder.mkSizeColl(sizes)
+  }
+
   def mkSizeOption[T](size: RSize[T]): Rep[Size[WOption[T]]] = costedBuilder.mkSizeOption(SOME(size))
+  def mkSizePair[A, B](l: RSize[A], r: RSize[B]): Rep[Size[(A,B)]] = costedBuilder.mkSizePair(l, r)
 
   def mkCostedColl[T](values: RColl[T], costs: RColl[Int], sizes: RColl[Size[T]], valuesCost: Rep[Int]): RCostedColl[T] =
     costedBuilder.mkCostedColl(values, costs, sizes, valuesCost)
@@ -135,6 +172,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def bigIntProperyAccess(prop: Rep[T] => Rep[BigInt]): RCosted[BigInt] =
       knownSizeProperyAccess(prop, SizeBigInt)
+
+    def defaultProperyAccess[R](prop: Rep[T] => Rep[R], propSize: RSize[T] => RSize[R]): RCosted[R] =
+      RCCostedPrim(prop(obj.value), opCost(costOfArgs, selectFieldCost), propSize(obj.size))
 
     def defaultOptionProperyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
       val v = prop(obj.value)
@@ -283,19 +323,26 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class BoxCoster(obj: RCosted[Box], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Box](obj, method, args){
     import Box._
     import ErgoBox._
-    def tokens() = { ???
-    // TODO first add tokens to SizeBox
-//      val len = MaxTokens.toInt
-//      val tokens = obj.value.tokens
-//      val tokenInfoSize = sizeData(tokens.elem.eItem, Pair(TokenId.size.toLong, SLong.dataSize(0L.asWrappedType)))
-//      val costs = colBuilder.replicate(len, 0)
-//      val sizes = colBuilder.replicate(len, tokenInfoSize)
-//      RCCostedColl(tokens, costs, sizes, obj.cost + costOf(method))
+
+    def creationInfo: RCosted[(Int, Coll[Byte])] = {
+      val info = obj.value.creationInfo
+      val cost = opCost(Seq(obj.cost), sigmaDslBuilder.CostModel.SelectField)
+      val l = RCCostedPrim(info._1, cost, SizeInt)
+      val r = mkCostedColl(info._2, CryptoConstants.hashLength, cost)
+      RCCostedPair(l, r)
     }
-    //  @NeverInline
-    //  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-    //  @NeverInline
-    //  def dataSize = bytes.length
+
+    def tokens() = {
+      val tokens = obj.value.tokens
+      val sTokens = asSizeColl(asSizeBox(obj.size).tokens).sizes
+      val sTokenId = SizeHashBytes
+      val sToken = mkSizePair(sTokenId, SizeLong)
+      val len = sTokens.length
+      val sInfo = mkSizeColl(len, sToken)
+      val costs = colBuilder.replicate(len, 0)
+      val sizes = colBuilder.replicate(len, sToken)
+      RCCostedColl(tokens, costs, sizes, opCost(Seq(obj.cost), costOf(method)))
+    }
 
 //    def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
 //    def valueCosted: Costed[Long] = {
@@ -380,7 +427,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   class OptionCoster[T](obj: RCosted[WOption[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[WOption[T]](obj, method, args){
     import WOption._
-//    def get: Costed[T] = builder.mkCostedPrim(value.get, cost, dataSize)
+    implicit val eT = obj.elem.eVal.eItem
+    def get(): RCosted[T] = defaultProperyAccess(_.get, asSizeOption(_).sizeOpt.get)
 //    def getOrElse(default: Costed[T]): Costed[T] = {
 //      val v = value.getOrElse(default.value)
 //      val c = accumulatedCost + costOpt.getOrElse(default.cost)
