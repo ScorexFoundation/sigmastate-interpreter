@@ -21,7 +21,6 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
       val ctxForBacker = testContext(noInputs, noOutputs, height = 200, self, emptyAvlTree, dummyPubkey, Array())
       val ok = contract.canOpen(ctxForBacker)
       assert(ok)
-      assert(self.dataSize == noBytes.length)
     }
 
     { // then project can open

@@ -1915,7 +1915,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //    coll.
 //  }
 
-  def buildCostedGraph[T](envVals: Map[Any, SValue], tree: Value[T]): Rep[Costed[Context] => Costed[T]] = {
+  def buildCostedGraph[T](envVals: Map[Any, SValue], tree: SValue): Rep[Costed[Context] => Costed[T]] = {
     fun { ctxC: RCosted[Context] =>
       val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
       val res = asCosted[T](evalNode(ctxC, env, tree))
@@ -1923,8 +1923,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
-  def cost(env: ScriptEnv, typed: SValue): Rep[Costed[Context] => Costed[SType#WrappedType]] = {
-    val cg = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
+  def cost[T](env: ScriptEnv, typed: SValue): Rep[Costed[Context] => Costed[T]] = {
+    val cg = buildCostedGraph[T](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
     cg
   }
 

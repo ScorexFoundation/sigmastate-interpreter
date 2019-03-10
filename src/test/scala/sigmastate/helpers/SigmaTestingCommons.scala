@@ -106,6 +106,8 @@ trait SigmaTestingCommons extends PropSpec
   }
 
   def func[A: RType, B: RType](func: String)(implicit IR: IRContext): A => B = {
+    import IR._
+    import IR.Context._;
     val tA = RType[A]
     val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
@@ -119,10 +121,12 @@ trait SigmaTestingCommons extends PropSpec
       """.stripMargin
     val env = Interpreter.emptyEnv
     val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
     val tree = IR.buildTree(calcF)
     checkSerializationRoundTrip(tree)
-    val valueFun = IR.compile[tpeB.type](IR.getDataEnv, IR.asRep[IR.Context => tpeB.WrappedType](calcF))
+    val lA = calcF.elem.eDom.liftable.asLiftable[SContext, IR.Context]
+    val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+    val valueFun = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
 
     (in: A) => {
       implicit val cA = tA.classTag
@@ -131,65 +135,66 @@ trait SigmaTestingCommons extends PropSpec
         .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = valueFun(calcCtx)
-      (TransformingSigmaBuilder.unliftAny(res) match {
-        case Nullable(x) => // x is a value extracted from Constant
-          tB match {
-            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
-              View.mkPrimView(x) match {
-                case Opt(pv) => pv
-                case _ => x // cannot wrap, so just return as is
-              }
-            case _ => Evaluation.toDslData(x, tpeB, isCost = false) // don't need to wrap
-          }
-        case _ => Evaluation.toDslData(res, tpeB, isCost = false)
-      }).asInstanceOf[B]
+      res.asInstanceOf[B]
+//      (TransformingSigmaBuilder.unliftAny(res) match {
+//        case Nullable(x) => // x is a value extracted from Constant
+//          tB match {
+//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
+//              View.mkPrimView(x) match {
+//                case Opt(pv) => pv
+//                case _ => x // cannot wrap, so just return as is
+//              }
+//            case _ => Evaluation.toDslData(x, tpeB, isCost = false) // don't need to wrap
+//          }
+//        case _ => Evaluation.toDslData(res, tpeB, isCost = false)
+//      }).asInstanceOf[B]
     }
   }
 
-  def func2[A: RType, B: RType, R: RType](func: String)(implicit IR: IRContext): (A, B) => R = {
-    val tA = RType[A]
-    val tB = RType[B]
-    val tR = RType[R]
-    val tpeA = Evaluation.rtypeToSType(tA)
-    val tpeB = Evaluation.rtypeToSType(tB)
-    val tpeR = Evaluation.rtypeToSType(tR)
-    val code =
-      s"""{
-         |  val func = $func
-         |  val res = func(getVar[${tA.name}](1).get, getVar[${tB.name}](2).get)
-         |  res
-         |}
-      """.stripMargin
-    val env = Interpreter.emptyEnv
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    val valueFun = IR.compile[tpeR.type](IR.getDataEnv, IR.asRep[IR.Context => tpeR.WrappedType](calcF))
-
-    (in1: A, in2: B) => {
-      implicit val cA = tA.classTag
-      implicit val cB = tB.classTag
-      val x = fromPrimView(in1)
-      val y = fromPrimView(in2)
-      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
-        .withBindings(
-          1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA),
-          2.toByte -> Constant[SType](y.asInstanceOf[SType#WrappedType], tpeB))
-      val calcCtx = context.toSigmaContext(IR, isCost = false)
-      val res = valueFun(calcCtx)
-      (TransformingSigmaBuilder.unliftAny(res) match {
-        case Nullable(x) => // x is a value extracted from Constant
-          tB match {
-            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
-              View.mkPrimView(x) match {
-                case Opt(pv) => pv
-                case _ => x // cannot wrap, so just return as is
-              }
-            case _ => x // don't need to wrap
-          }
-        case _ => res
-      }).asInstanceOf[R]
-    }
-  }
+//  def func2[A: RType, B: RType, R: RType](func: String)(implicit IR: IRContext): (A, B) => R = {
+//    val tA = RType[A]
+//    val tB = RType[B]
+//    val tR = RType[R]
+//    val tpeA = Evaluation.rtypeToSType(tA)
+//    val tpeB = Evaluation.rtypeToSType(tB)
+//    val tpeR = Evaluation.rtypeToSType(tR)
+//    val code =
+//      s"""{
+//         |  val func = $func
+//         |  val res = func(getVar[${tA.name}](1).get, getVar[${tB.name}](2).get)
+//         |  res
+//         |}
+//      """.stripMargin
+//    val env = Interpreter.emptyEnv
+//    val interProp = compiler.typecheck(env, code)
+//    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+//    val valueFun = IR.compile[tpeR.type](IR.getDataEnv, IR.asRep[IR.Context => tpeR.WrappedType](calcF))
+//
+//    (in1: A, in2: B) => {
+//      implicit val cA = tA.classTag
+//      implicit val cB = tB.classTag
+//      val x = fromPrimView(in1)
+//      val y = fromPrimView(in2)
+//      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
+//        .withBindings(
+//          1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA),
+//          2.toByte -> Constant[SType](y.asInstanceOf[SType#WrappedType], tpeB))
+//      val calcCtx = context.toSigmaContext(IR, isCost = false)
+//      val res = valueFun(calcCtx)
+//      (TransformingSigmaBuilder.unliftAny(res) match {
+//        case Nullable(x) => // x is a value extracted from Constant
+//          tB match {
+//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
+//              View.mkPrimView(x) match {
+//                case Opt(pv) => pv
+//                case _ => x // cannot wrap, so just return as is
+//              }
+//            case _ => x // don't need to wrap
+//          }
+//        case _ => res
+//      }).asInstanceOf[R]
+//    }
+//  }
 
   def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
     try {

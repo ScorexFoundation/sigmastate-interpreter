@@ -3,7 +3,7 @@ package sigmastate.eval
 import java.lang.reflect.Method
 
 import sigmastate.SType
-import sigmastate.Values.SValue
+import sigmastate.Values.{SValue, Value}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 
@@ -35,6 +35,29 @@ trait IRContext extends Evaluation with TreeBuilding {
   /** Can be overriden to to do for example logging or saving of graphs */
   private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResult[T]) {
   }
+
+  import Size._; import Context._;
+
+  def checkCost(ctx: SContext, exp: Value[SType],
+                costF: Rep[Size[Context] => Int], maxCost: Int): Int = {
+    val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF)
+    val estimatedCost = costFun(Sized.sizeOf(ctx))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+    }
+    estimatedCost
+  }
+
+  def checkCostEx(ctx: SContext, exp: Value[SType],
+                costF: Rep[((Int, Size[Context])) => Int], maxCost: Int): Int = {
+    val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF)
+    val estimatedCost = costFun((0, Sized.sizeOf(ctx)))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+    }
+    estimatedCost
+  }
+
 }
 
 /** IR context to be used by blockchain nodes to validate transactions. */
