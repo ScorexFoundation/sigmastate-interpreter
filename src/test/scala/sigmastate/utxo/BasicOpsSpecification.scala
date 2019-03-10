@@ -561,24 +561,17 @@ class BasicOpsSpecification extends SigmaTestingCommons {
    )
   }
 
-  ignore("Nested logical ops 2") {
-    test("nestedLogic", env, ext,
+  property("Nested logical ops 2") {
+    test("nestedLogic2", env, ext,
       """{
        |    val c = OUTPUTS(0).R4[Int].get
        |    val d = OUTPUTS(0).R5[Int].get
        |
-       |    OUTPUTS.size == 2 &&
+       |    OUTPUTS.size == 1 &&
        |    OUTPUTS(0).value == SELF.value &&
-       |    OUTPUTS(1).value == SELF.value &&
-       |    blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&
-       |    blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&
-       |    OUTPUTS(1).R4[GroupElement].get == d &&
-       |    OUTPUTS(1).R5[GroupElement].get == c && {
-       |      proveDHTuple(g, c, u, d) ||
-       |      proveDHTuple(g, d, u, c)
-       |    }
-       |}""".stripMargin,
-      FalseLeaf,
+       |    {{ c != d || d == c }  && { true || false } }
+       |} """.stripMargin,
+      null,
       true
     )
   }
