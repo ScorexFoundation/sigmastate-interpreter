@@ -204,7 +204,7 @@ class SpamSpecification extends SigmaTestingCommons {
       preHeader = ErgoLikeContext.dummyPreHeader,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = null)
+      self = inputs(0))
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 

@@ -134,7 +134,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     //context w/out extensions
     assertExceptionThrown(verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
-      rootCause(_).isInstanceOf[NoSuchElementException])
+      rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException])
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
@@ -163,7 +163,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     //context w/out extensions
     assertExceptionThrown(
       verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
-      rootCause(_).isInstanceOf[NoSuchElementException]
+      rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException]
     )
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }

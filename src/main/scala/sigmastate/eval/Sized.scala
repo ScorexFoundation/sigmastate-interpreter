@@ -39,7 +39,7 @@ object Sized extends SizedLowPriority {
   implicit val GroupElementIsSized: Sized[GroupElement] = (x: GroupElement) => SizeGroupElement
   implicit val AvlTreeIsSized: Sized[AvlTree] = (x: AvlTree) => SizeAvlTree
 
-  private def typeToSized[T](t: RType[T]): Sized[T] = (t match {
+  def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => Sized[Boolean]
     case ByteType => Sized[Byte]
     case ShortType => Sized[Short]
@@ -61,13 +61,15 @@ object Sized extends SizedLowPriority {
   }).asInstanceOf[Sized[T]]
 
   implicit val anyValueIsSized: Sized[AnyValue] = (x: AnyValue) => {
-    val size = if (x.value == null)
-      new CSizePrim[Any](0L, AnyType)
-    else {
+    if (x.tVal == null) {
+      val size = new CSizePrim[Any](0L, NothingType.asInstanceOf[RType[Any]])
+      new CSizeAnyValue(NothingType.asInstanceOf[RType[Any]], size)
+    } else {
+      assert(x.value != null, s"Invalid AnyValue: non-null type ${x.tVal} and null value.")
       val sized = typeToSized(x.tVal)
-      sized.size(x.value)
+      val size = sized.size(x.value)
+      new CSizeAnyValue(x.tVal, size)
     }
-    new CSizeAnyValue(x.tVal, size)
   }
 
   implicit val CollByteIsSized: Sized[Coll[Byte]] = (xs: Coll[Byte]) => {
@@ -75,8 +77,8 @@ object Sized extends SizedLowPriority {
   }
 
   private def sizeOfAnyValue(v: AnyValue): Size[Option[AnyValue]] = {
-    val anyV = if (v == null) TestValue(null, null) else v
-    val size = sizeOf(anyV)
+    if (v == null) return new CSizeOption[AnyValue](None)
+    val size = sizeOf(v)
     new CSizeOption[AnyValue](Some(size))
   }
 

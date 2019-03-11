@@ -271,7 +271,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
     val costed = compileAndCost[Any](env, script)
-    val valueF = costed.sliceCalc
+    val valueF = costed.sliceCalc(true)
     val costF  = costed.sliceCost
     val sizeF  = costed.sliceSize
     

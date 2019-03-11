@@ -29,6 +29,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import SigmaProp._
   import Coll._
   import CReplColl._
+  import PairOfCols._
   import AnyValue._
   import Box._
   import AvlTree._
@@ -111,6 +112,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
          ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
     case SigmaM.propBytes(_) =>
+    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] =>
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) |
          CollM.append(_,_) | CollM.foldLeft(_,_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
@@ -230,7 +232,10 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
 
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
-      object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
+      object In { def unapply(s: Sym): Option[Any] = dataEnv.get(s) match {
+        case s @ Some(_) => s
+        case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
+      }}
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
         var startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
@@ -385,6 +390,10 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
+            out(res)
+
+          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
+            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
             out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
