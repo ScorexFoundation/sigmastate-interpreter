@@ -105,6 +105,15 @@ object CostTable {
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collAccess),
     ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
+    ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
+    ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.lastIndexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.zip", "(Coll[IV],Coll[OV]) => Coll[(IV,OV)]", collToColl),
+    ("SCollection$.partition", "(Coll[IV],(IV) => Boolean) => (Coll[IV],Coll[IV])", collToColl),
+    ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
+    ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
+    ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
 

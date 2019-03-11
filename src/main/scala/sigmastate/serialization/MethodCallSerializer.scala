@@ -32,7 +32,7 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
     val methodId = r.getByte()
     val obj = r.getValue()
     val args = if (opCode == OpCodes.MethodCallCode) r.getValues() else IndexedSeq()
-    val method = MethodCall.fromIds(typeId, methodId)
+    val method = SMethod.fromIds(typeId, methodId)
     val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
 //    val typeSubst: STypeSubst = method.stype match {
 //      case genType: SGenericType =>

@@ -146,13 +146,6 @@ object Terms {
       case t => t.withSubstTypes(typeSubst)
     }
   }
-  object MethodCall {
-    def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-      val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
-      val method = typeCompanion.getMethodById(methodId)
-      method
-    }
-  }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")

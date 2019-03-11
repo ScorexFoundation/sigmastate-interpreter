@@ -316,6 +316,12 @@ object SMethod {
 
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod =
     SMethod(objType, name, stype, methodId, None)
+
+  def fromIds(typeId: Byte, methodId: Byte): SMethod = {
+    val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
+    val method = typeCompanion.getMethodById(methodId)
+    method
+  }
 }
 
 /** Special type to represent untyped values.

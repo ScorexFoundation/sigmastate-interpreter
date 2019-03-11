@@ -440,6 +440,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
+  // TODO costing rule in CollCoster
   ignore("flatMap") {
     assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
       EQ(
@@ -470,9 +471,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
-  ignore("indices") {
-    assertProof("OUTPUTS.indices == Coll(0)",
-      EQ(MethodCall(Outputs, IndicesMethod, Vector(), Map(tIV -> SBox)), ConcreteCollection(IntConstant(0))),
+  property("indices") {
+    assertProof("OUTPUTS.indices == Coll(0, 1)",
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),
       IndexedSeq(1L, 1L))
   }
 
