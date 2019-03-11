@@ -13,7 +13,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestP
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
-class IcoExample extends SigmaTestingCommons { suite =>
+class IcoExample extends SigmaTestingCommons {
+  suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext()
   lazy val spec = TestContractSpec(suite)
   lazy val backer = spec.ProvingParty("Alice")
@@ -50,16 +51,15 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val flags = AvlTreeFlags.AllOperationsAllowed
-    val initTreeData = new AvlTreeData(digest, flags, 32, None)
+    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
     val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(32)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
+      Map(R4 -> ByteArrayConstant(Array.fill(16)(0: Byte) ++ Array.fill(16)(1: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
     val inputBoxes = IndexedSeq(projectBoxBefore)
 
     inputBoxes.foreach { b =>
-      val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].bytes
+      val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value
       val v = Longs.toByteArray(b.value)
       avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
     }
@@ -83,7 +83,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
+    projectProver.prove(fundingEnv + (ScriptNameProp -> "fundingScriptEnv"), fundingScript, fundingContext, fakeMessage).get
   }
 
   property("simple ico example - fixing stage") {
@@ -94,7 +94,6 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val fixingProp = compileWithCosting(fixingEnv,
       """{
-        |
         |  val openTree = SELF.R4[AvlTree].get
         |
         |  val closedTree = OUTPUTS(0).R4[AvlTree].get
@@ -104,9 +103,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
         |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
         |  val treeIsClosed = closedTree.enabledOperations == 0
         |
-        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
+        |  sigmaProp(digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed)
         |}""".stripMargin
-    ).asBoolValue.toSigmaProp
+    ).asSigmaProp
 
     val projectProver = new ErgoLikeTestProvingInterpreter
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)

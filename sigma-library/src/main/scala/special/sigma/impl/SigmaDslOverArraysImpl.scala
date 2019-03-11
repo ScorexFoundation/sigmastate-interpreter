@@ -12,16 +12,12 @@ import IsoUR._
 import Converter._
 import AvlTree._
 import BigInt._
-import Box._
 import CCostedBuilder._
 import Coll._
 import CollBuilder._
 import CollOverArrayBuilder._
 import CostModel._
-import Costed._
 import CostedBuilder._
-import CostedColl._
-import CostedOption._
 import GroupElement._
 import MonoidBuilder._
 import MonoidBuilderInst._
@@ -30,7 +26,6 @@ import SigmaProp._
 import WBigInteger._
 import WECPoint._
 import WOption._
-import WSpecialPredef._
 import TestSigmaDslBuilder._
 
 object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
@@ -209,6 +204,13 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         List(ge),
         true, false, element[WECPoint]))
     }
+
+    override def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
+      asRep[AvlTree](mkMethodCall(self,
+        thisClass.getMethod("avlTree", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
+        List(operationFlags, digest, keyLength, valueLengthOpt),
+        true, false, element[AvlTree]))
+    }
   }
   // elem for concrete class
   class TestSigmaDslBuilderElem(val iso: Iso[TestSigmaDslBuilderData, TestSigmaDslBuilder])
@@ -351,45 +353,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[Rep[TestSigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costBoxes {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Box]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "costBoxes" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Box]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Box]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costColWithConstSizedItem {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "costColWithConstSizedItem" =>
-          val res = (receiver, args(0), args(1), args(2))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[T]], Rep[Int], Rep[Long]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object costOption {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "costOption" =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WOption[T]], Rep[Int]) forSome {type T}] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

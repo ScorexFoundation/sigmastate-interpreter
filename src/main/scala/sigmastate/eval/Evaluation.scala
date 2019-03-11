@@ -29,6 +29,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import SigmaProp._
   import Coll._
   import CReplColl._
+  import AnyValue._
   import Box._
   import AvlTree._
   import CollBuilder._
@@ -38,12 +39,39 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WBigInteger._
   import WArray._
   import WOption._
+  import WRType._
   import GroupElement._
   import Liftables._
   import WSpecialPredef._
+  import Size._
+  import CSizePrim._
+  import SizePair._
+  import CSizePair._
+  import SizeColl._
+  import CSizeColl._
+  import SizeOption._
+  import CSizeOption._
+  import SizeFunc._
+  import CSizeFunc._
+  import SizeAnyValue._
+  import CSizeAnyValue._
+  import SizeSigmaProp._
+  import SizeBox._
+  import CSizeBox._
+  import SizeContext._
+  import CSizeContext._
 
   val okPrintEvaluatedEntries: Boolean = false
 
+  private val SCM = SizeContextMethods
+  private val SBM = SizeBoxMethods
+  private val SSPM = SizeSigmaPropMethods
+  private val SAVM = SizeAnyValueMethods
+  private val SizeM = SizeMethods
+  private val SPairM = SizePairMethods
+  private val SCollM = SizeCollMethods
+  private val SOptM = SizeOptionMethods
+  private val SFuncM = SizeFuncMethods
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
   private val CollM = CollMethods
@@ -58,7 +86,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: SizeData[_,_] =>
+    case _: SizeData[_,_] | _: OpCost | _: Cast[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
@@ -66,14 +94,27 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: ThunkDef[_] =>
     case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
     case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
+
+    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
+         SCM.preHeader(_) | SCM.getVar(_,_,_) =>
+    case SBM.propositionBytes(_) |  SBM.bytes(_) |  SBM.bytesWithoutRef(_) |  SBM.registers(_) |  SBM.getReg(_,_,_) |
+         SBM.tokens(_)  =>
+    case SSPM.propBytes(_) =>
+    case SAVM.tVal(_) | SAVM.valueSize(_) =>
+    case SizeM.dataSize(_) =>
+    case SPairM.l(_) | SPairM.r(_) =>
+    case SCollM.sizes(_) =>
+    case SOptM.sizeOpt(_) =>
+    case SFuncM.sizeEnv(_) =>
+    case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_) |
-         ContextM.cost(_) | ContextM.dataSize(_) =>
+         ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
     case SigmaM.propBytes(_) =>
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) | CollM.append(_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.cost(_) | BoxM.dataSize(_) | BoxM.getReg(_,_,_) =>
-    case AvlM.dataSize(_) =>
+    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) /*| BoxM.cost(_) | BoxM.dataSize(_)*/ | BoxM.getReg(_,_,_) =>
+//    case AvlM.dataSize(_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Upcast[_,_] =>
@@ -87,7 +128,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       !!!(s"Expected function of type ${f.elem.eDom.name} => ${eA.name}, but was $f: ${f.elem.name}")
   }
 
-  def verifyCostFunc(costF: Rep[Context => Int]): Try[Unit] = {
+  def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
   }
@@ -165,8 +206,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       println(printEnvEntry(sym, value))
   }
 
-  def compile[T <: SType](dataEnv: Map[Sym, AnyRef], f: Rep[Context => T#WrappedType]): ContextFunc[T] = {
-
+  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Rep[A => B])
+                           (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): SA => SB =
+  {
     def evalSizeData(data: SizeData[_,_], dataEnv: DataEnv): Any = {
       val info = dataEnv(data.sizeInfo)
       data.eVal match {
@@ -186,7 +228,7 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
 
-    def evaluate(ctxSym: Rep[Context], te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
+    def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(dataEnv(s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
@@ -205,13 +247,12 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(data)
           case d @ BoxM.getReg(box, _, elem) =>
-            val ctxObj = dataEnv(ctxSym).asInstanceOf[CostingDataContext]
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, false)(IR))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -304,7 +345,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
-                val (e, _) = evaluate(ctxSym, te).run(env)
+                val (e, _) = evaluate(te).run(env)
                 e
               }
               val res = resEnv(y)
@@ -319,7 +360,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case ThunkDef(y, schedule) =>
             val th = () => {
               val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
-                val (e, _) = evaluate(ctxSym, te).run(env)
+                val (e, _) = evaluate(te).run(env)
                 e
               }
               resEnv(y)
@@ -344,13 +385,38 @@ trait Evaluation extends RuntimeCosting { IR =>
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
             out(res)
+
+          case CSizePrimCtor(In(dataSize: Long), tVal) =>
+            val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
+            out(res)
+          case CSizePairCtor(In(l: SSize[_]), In(r: SSize[_])) =>
+            val res = new special.collection.CSizePair(l, r)
+            out(res)
+          case CSizeCollCtor(In(sizes: SColl[SSize[_]] @unchecked)) =>
+            val res = new special.collection.CSizeColl(sizes)
+            out(res)
+          case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
+            val res = new special.collection.CSizeOption(optSize)
+            out(res)
+          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
+            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
+            out(res)
+          case CSizeBoxCtor(
+                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
+                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
+                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
+            val res = new special.sigma.CSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
+            out(res)
+
           case costOp: CostOf =>
             out(costOp.eval)
+          case OpCost(_, In(c: Int)) =>
+            out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
-              case SAvlTree =>
-                data.asInstanceOf[special.sigma.AvlTree].dataSize
+//              case SAvlTree =>
+//                data.asInstanceOf[special.sigma.AvlTree].dataSize
               case _ => data match {
                 case w: WrapperOf[_] =>
                   tpe.dataSize(w.wrappedValue.asWrappedType)
@@ -363,6 +429,10 @@ trait Evaluation extends RuntimeCosting { IR =>
             assert(tpe.isConstantSize)
             val size = tpe.dataSize(SType.DummyValue)
             out(size)
+          case c @ Cast(eTo, In(v)) =>
+            assert(eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass),
+              s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            out(v)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)
@@ -407,27 +477,38 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
 
-    val res = (ctx: SContext) => {
+    val res = (x: SA) => {
       val g = new PGraph(f)
-      val ctxSym = f.getLambda.x
-      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
-        val (e, _) = evaluate(ctxSym, te).run(env)
+      val xSym = f.getLambda.x
+      val resEnv = g.schedule.foldLeft(dataEnv + (xSym -> x.asInstanceOf[AnyRef])) { (env, te) =>
+        val (e, _) = evaluate(te).run(env)
         e
       }
-      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
-      fun(ctx) match {
-        case sb: SigmaBoolean => builder.liftAny(sb).get
-        case v: Value[_] => v
-        case x =>
-          val eRes = f.elem.eRange
-          val tpeRes = elemToSType(eRes)
-          val tRes = Evaluation.stypeToRType(tpeRes)
-          val treeType = Evaluation.toErgoTreeType(tRes)
-          val constValue = Evaluation.fromDslData(x, treeType)
-          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
-      }
+      val fun = resEnv(f).asInstanceOf[SA => SB]
+      val y = fun(x)
+      y
     }
-    res.asInstanceOf[ContextFunc[T]]
+    res
+//    val res = (ctx: SContext) => {
+//      val g = new PGraph(f)
+//      val ctxSym = f.getLambda.x
+//      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
+//        val (e, _) = evaluate(ctxSym, te).run(env)
+//        e
+//      }
+//      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
+//      fun(ctx) match {
+//        case sb: SigmaBoolean => builder.liftAny(sb).get
+//        case v: Value[_] => v
+//        case x =>
+//          val eRes = f.elem.eRange
+//          val tpeRes = elemToSType(eRes)
+//          val tRes = Evaluation.stypeToRType(tpeRes)
+//          val treeType = Evaluation.toErgoTreeType(tRes)
+//          val constValue = Evaluation.fromDslData(x, treeType)
+//          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
+//      }
+//    }
   }
 }
 

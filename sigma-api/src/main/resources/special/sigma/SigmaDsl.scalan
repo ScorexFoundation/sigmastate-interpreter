@@ -11,8 +11,6 @@ package special.sigma {
     import Context._;
     import CostModel._;
     import CostedBuilder._;
-    import CostedColl._;
-    import CostedOption._;
     import GroupElement._;
     import Header._;
     import MonoidBuilder._;
@@ -22,6 +20,7 @@ package special.sigma {
     import SigmaProp._;
     import WBigInteger._;
     import WOption._;
+    import WRType._;
     @Liftable trait CostModel extends Def[CostModel] {
       def AccessBox: Rep[Int];
       def AccessAvlTree: Rep[Int];
@@ -33,7 +32,7 @@ package special.sigma {
       def CollectionConst: Rep[Int];
       def AccessKiloByteOfData: Rep[Int];
       @Reified(value = "T") def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long];
-      def PubKeySize: Rep[Long] = toRep(32L.asInstanceOf[Long])
+      def PubKeySize: Rep[Long]
     };
     @Liftable trait BigInt extends Def[BigInt] {
       def toByte: Rep[Byte];
@@ -76,7 +75,8 @@ package special.sigma {
       @OverloadId(value = "or_bool") def ||(other: Rep[Boolean]): Rep[SigmaProp]
     };
     @Liftable trait AnyValue extends Def[AnyValue] {
-      def dataSize: Rep[Long]
+      def value: Rep[Any];
+      def tVal: Rep[WRType[Any]]
     };
     @Liftable trait Box extends Def[Box] {
       def id: Rep[Coll[Byte]];
@@ -84,8 +84,6 @@ package special.sigma {
       def propositionBytes: Rep[Coll[Byte]];
       def bytes: Rep[Coll[Byte]];
       def bytesWithoutRef: Rep[Coll[Byte]];
-      def cost: Rep[Int];
-      def dataSize: Rep[Long];
       def registers: Rep[Coll[AnyValue]];
       def getReg[T](i: Rep[Int])(implicit cT: Elem[T]): Rep[WOption[T]];
       def R0[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(0.asInstanceOf[Int]));
@@ -107,8 +105,6 @@ package special.sigma {
       def enabledOperations: Rep[Byte];
       def keyLength: Rep[Int];
       def valueLengthOpt: Rep[WOption[Int]];
-      def cost: Rep[Int];
-      def dataSize: Rep[Long];
       def isInsertAllowed: Rep[Boolean];
       def isUpdateAllowed: Rep[Boolean];
       def isRemoveAllowed: Rep[Boolean];
@@ -131,6 +127,7 @@ package special.sigma {
       def votes: Rep[Coll[Byte]]
     };
     @Liftable trait Header extends Def[Header] {
+      def id: Rep[Coll[Byte]];
       def version: Rep[Byte];
       def parentId: Rep[Coll[Byte]];
       def ADProofsRoot: Rep[Coll[Byte]];
@@ -159,8 +156,7 @@ package special.sigma {
       def preHeader: Rep[PreHeader];
       def minerPubKey: Rep[Coll[Byte]];
       def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]];
-      def cost: Rep[Int];
-      def dataSize: Rep[Long]
+      def vars: Rep[Coll[AnyValue]]
     };
     @Liftable trait SigmaContract extends Def[SigmaContract] {
       def builder: Rep[SigmaDslBuilder];
@@ -171,12 +167,14 @@ package special.sigma {
       def allZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = this.builder.allZK(conditions);
       def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = this.builder.anyOf(conditions);
       def anyZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = this.builder.anyZK(conditions);
+      def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = this.builder.xorOf(conditions);
       def PubKey(base64String: Rep[String]): Rep[SigmaProp] = this.builder.PubKey(base64String);
       def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp] = this.builder.sigmaProp(b);
       def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = this.builder.blake2b256(bytes);
       def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = this.builder.sha256(bytes);
       def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = this.builder.byteArrayToBigInt(bytes);
       def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = this.builder.longToByteArray(l);
+      def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = this.builder.byteArrayToLong(bytes);
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDlog(g);
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
       def groupGenerator: Rep[GroupElement] = this.builder.groupGenerator;
@@ -188,9 +186,6 @@ package special.sigma {
       def Monoids: Rep[MonoidBuilder];
       def Costing: Rep[CostedBuilder];
       def CostModel: Rep[CostModel];
-      def costBoxes(bs: Rep[Coll[Box]]): Rep[CostedColl[Box]];
-      def costColWithConstSizedItem[T](xs: Rep[Coll[T]], len: Rep[Int], itemSize: Rep[Long]): Rep[CostedColl[T]];
-      def costOption[T](opt: Rep[WOption[T]], opCost: Rep[Int]): Rep[CostedOption[T]];
       def verifyZK(cond: Rep[Thunk[SigmaProp]]): Rep[Boolean];
       def atLeast(bound: Rep[Int], props: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
       def allOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];

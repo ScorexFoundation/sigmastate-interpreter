@@ -3,11 +3,13 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import scalan.RType
-import sigmastate.SType
+import scalan.RType._
+import sigmastate.{SHeader, SType, SByte, SPreHeader}
 import sigmastate.Values.Constant
 import sigmastate.lang.DefaultSigmaBuilder
-import special.collection.Coll
+import special.collection.{CSizePrim, Size, CSizeOption, Coll, CSizeColl}
 import special.sigma._
+import SType.AnyOps
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -25,7 +27,6 @@ object Extensions {
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
   }
 
-  import SType.AnyOps
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
     def toTreeData: Constant[SType] = {
       val treeType = Evaluation.toErgoTreeType(tA)
@@ -33,5 +34,6 @@ object Extensions {
       DefaultSigmaBuilder.mkConstant(treeData.asWrappedType, Evaluation.rtypeToSType(tA))
     }
   }
+
 
 }

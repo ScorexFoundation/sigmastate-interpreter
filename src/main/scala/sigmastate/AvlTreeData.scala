@@ -84,11 +84,11 @@ object AvlTreeData {
     }
 
     override def parse(r: SigmaByteReader): AvlTreeData = {
-      val startingDigest = r.getBytes(DigestSize)
+      val digest = r.getBytes(DigestSize)
       val tf = AvlTreeFlags(r.getByte())
       val keyLength = r.getUInt().toInt
       val valueLengthOpt = r.getOption(r.getUInt().toInt)
-      AvlTreeData(ADDigest @@ startingDigest, tf, keyLength, valueLengthOpt)
+      AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
   }
 

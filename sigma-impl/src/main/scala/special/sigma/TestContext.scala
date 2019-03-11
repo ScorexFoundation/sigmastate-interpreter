@@ -2,8 +2,8 @@ package special.sigma
 
 import scalan.RType
 
-case class TestValue[A](val value: A)(implicit val tA: RType[A]) extends AnyValue {
-  def dataSize = SigmaPredef.dataSize(value)
+case class TestValue[A](value: A, tVal: RType[Any]) extends AnyValue {
+  def tA: RType[A] = tVal.asInstanceOf[RType[A]]
   override def toString = s"Value($value)"
 }
 

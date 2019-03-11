@@ -8,10 +8,10 @@ import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractivePr
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
-import sigmastate.eval.IRContext
+import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
@@ -66,6 +66,17 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
+  def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
+    import IR.Size._; import IR.Context._;
+    val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF)
+    val estimatedCost = costFun((0, Sized.sizeOf(costingCtx)))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+    }
+    estimatedCost
+  }
+
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -76,30 +87,36 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, exp)
+    import IR._; import Size._; import Context._; import SigmaProp._
+    val costingRes @ Pair(calcF, costF) = doCosting[SigmaProp](env, exp)
     IR.onCostingResult(env, exp, costingRes)
 
-    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+    verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
 
-    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+    verifyIsProven(calcF).fold(t => throw t, x => x)
 
-    // check cost
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(costingCtx)
-    if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
-    }
+    val estimatedCost = checkCostEx(costingCtx, exp, costF, maxCost.toInt)
+
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SSigmaProp.type](IR.getDataEnv, calcF.asRep[IR.Context => SSigmaProp.WrappedType])
-    val res = valueFun(calcCtx) match {
-      case SigmaPropConstant(sb) => sb
-      case FalseLeaf => TrivialProp.FalseProp
-      case TrueLeaf => TrivialProp.TrueProp
-      case res => error(s"Expected SigmaBoolean value but was $res")
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case sp: SigmaPropElem[_] =>
+        val valueFun = IR.compile[SContext, SSigmaProp, IR.Context, IR.SigmaProp](IR.getDataEnv, calcF)
+        valueFun(calcCtx)
+      case BooleanElement =>
+        val valueFun = IR.compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val b = valueFun(calcCtx)
+        sigmaDslBuilderValue.sigmaProp(b)
     }
-    res -> estimatedCost
+
+//    match {
+//      case SigmaPropConstant(sb) => sb
+//      case FalseLeaf => TrivialProp.FalseProp
+//      case TrueLeaf => TrivialProp.TrueProp
+//      case res => error(s"Expected SigmaBoolean value but was $res")
+//    }
+    SigmaDsl.toSigmaBoolean(res) -> estimatedCost
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =

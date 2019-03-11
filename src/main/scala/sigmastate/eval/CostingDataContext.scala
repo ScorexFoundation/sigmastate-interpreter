@@ -40,6 +40,7 @@ case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupEl
 
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
+
   override def isValid: Boolean = sigmaTree match {
     case p: TrivialProp => p.condition
     case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
@@ -142,7 +143,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
   override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
     val bv = createVerifier(proof)
-    keys.map {key =>
+    keys.map { key =>
       bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
         case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
         case Success(r) => r match {
@@ -159,7 +160,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     } else {
       val bv = createVerifier(proof)
       operations.forall { case (key, value) =>
-        bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+        val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+        if (insertRes.isFailure) {
+          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest)")
+        }
+        insertRes.isSuccess
       }
       bv.digest match {
         case Some(d) => Some(updateDigest(Colls.fromArray(d)))
@@ -201,8 +206,8 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 import sigmastate.eval.CostingBox._
 
 case class CostingBox(val IR: Evaluation,
-                 isCost: Boolean,
-                 val ebox: ErgoBox)
+                      isCost: Boolean,
+                      val ebox: ErgoBox)
   extends TestBox(
     colBytes(ebox.id)(IR),
     ebox.value,
@@ -210,8 +215,7 @@ case class CostingBox(val IR: Evaluation,
     colBytes(ebox.bytesWithNoRef)(IR),
     colBytes(ebox.propositionBytes)(IR),
     regs(ebox, isCost)(IR)
-  ) with WrapperOf[ErgoBox]
-{
+  ) with WrapperOf[ErgoBox] {
   override val builder = new CostingSigmaDslBuilder()
 
   override def wrappedValue: ErgoBox = ebox
@@ -222,7 +226,7 @@ case class CostingBox(val IR: Evaluation,
         if (i < 0 || i >= registers.length) None
         else {
           val value = registers(i)
-          if (value != null ) {
+          if (value != null) {
             // once the value is not null it should be of the right type
             value match {
               case value: TestValue[_] if value.value != null =>
@@ -243,7 +247,7 @@ case class CostingBox(val IR: Evaluation,
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
-      case info: Tuple2[Int, Coll[Byte]] @unchecked => info
+      case info: Tuple2[Int, Coll[Byte]]@unchecked => info
       case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
         (arr(0).asInstanceOf[Int], builder.Colls.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>
@@ -254,8 +258,10 @@ case class CostingBox(val IR: Evaluation,
 }
 
 object CostingBox {
+
   import Evaluation._
   import sigmastate.SType._
+
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
   def regs(ebox: ErgoBox, isCost: Boolean)(implicit IR: Evaluation): Coll[AnyValue] = {
@@ -295,41 +301,41 @@ object CostingBox {
   *
   * When f is obtained as `val f = getVar[Int => Int](id).get` then any application `f(x)` involves size estimation
   * using underlying `costF(x)`.
-  */
-case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
-    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
-  import CFunc._
-
-  private val compiled = {
-    import IR._
-    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
-
-    val eDom = asElem[Any](IR.rtypeToElem(tDom))
-    val eRange = asElem[Any](IR.rtypeToElem(tRange))
-
-    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
-    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
-
-    // check cost
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(costingCtx)
-    if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
-    }
-    // check calc
-    val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
-    val res = valueFun(calcCtx) match {
-      case Constant(f, fTpe: SFunc) => f
-      case v => v
-    }
-    res.asInstanceOf[A => B]
-  }
-
-  override def apply(x: A): B = compiled(x)
-}
+  * */
+//case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
+//    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
+//  import CFunc._
+//
+//  private val compiled = {
+//    import IR._
+//    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
+//
+//    val eDom = asElem[Any](IR.rtypeToElem(tDom))
+//    val eRange = asElem[Any](IR.rtypeToElem(tRange))
+//
+//    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
+////    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+////    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+//
+//    // check cost
+////    val costingCtx = context.toSigmaContext(IR, isCost = true)
+////    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+////    val IntConstant(estimatedCost) = costFun(costingCtx)
+////    if (estimatedCost > maxCost) {
+////      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+////    }
+//    // check calc
+//    val calcCtx = context.toSigmaContext(IR, isCost = false)
+//    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
+//    val res = valueFun(calcCtx) match {
+//      case Constant(f, fTpe: SFunc) => f
+//      case v => v
+//    }
+//    res.asInstanceOf[A => B]
+//  }
+//
+//  override def apply(x: A): B = compiled(x)
+//}
 object CFunc {
   /** The cost of creating resulting function but not its execution.
     * Thus it is expected to be small. It can be increased if useful cases are found
@@ -338,32 +344,32 @@ object CFunc {
 }
 
 case class CPreHeader(
-  version: Byte,
-  parentId: Coll[Byte],
-  timestamp: Long,
-  nBits: Long,
-  height: Int,
-  minerPk: GroupElement,
-  votes: Coll[Byte],
-) extends PreHeader {}
+                       version: Byte,
+                       parentId: Coll[Byte],
+                       timestamp: Long,
+                       nBits: Long,
+                       height: Int,
+                       minerPk: GroupElement,
+                       votes: Coll[Byte],
+                     ) extends PreHeader {}
 
 case class CHeader(
-  id: Coll[Byte],
-  version: Byte,
-  parentId: Coll[Byte],
-  ADProofsRoot: Coll[Byte],
-  stateRoot: AvlTree,
-  transactionsRoot: Coll[Byte],
-  timestamp: Long,
-  nBits: Long,
-  height: Int,
-  extensionRoot: Coll[Byte],
-  minerPk: GroupElement,
-  powOnetimePk: GroupElement,
-  powNonce: Coll[Byte],
-  powDistance: BigInt,
-  votes: Coll[Byte],
-) extends Header {
+                    id: Coll[Byte],
+                    version: Byte,
+                    parentId: Coll[Byte],
+                    ADProofsRoot: Coll[Byte],
+                    stateRoot: AvlTree,
+                    transactionsRoot: Coll[Byte],
+                    timestamp: Long,
+                    nBits: Long,
+                    height: Int,
+                    extensionRoot: Coll[Byte],
+                    minerPk: GroupElement,
+                    powOnetimePk: GroupElement,
+                    powNonce: Coll[Byte],
+                    powDistance: BigInt,
+                    votes: Coll[Byte],
+                  ) extends Header {
 }
 
 class CCostModel extends CostModel {
@@ -371,6 +377,7 @@ class CCostModel extends CostModel {
     val operId = OperationId(opName, opType)
     costOf(operId)
   }
+
   @inline private def costOf(operId: OperationId): Int = {
     val cost = sigmastate.utxo.CostTable.DefaultCosts(operId)
     cost
@@ -386,27 +393,30 @@ class CCostModel extends CostModel {
 
   def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
 
-  def DeserializeRegister: Int  = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+  def DeserializeRegister: Int = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
 
-  def SelectField: Int      = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+  def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
 
-  def CollectionConst: Int  = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
 
-  def AccessKiloByteOfData: Int  = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
+  def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
   def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
 
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
+class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
+  dsl =>
   override val Costing: CostedBuilder = new CCostedBuilder {
+
     import RType._
+
     override def defaultValue[T](valueType: RType[T]): T = (valueType match {
-      case BooleanType  => false
+      case BooleanType => false
       case ByteType => 0.toByte
       case ShortType => 0.toShort
-      case IntType  => 0
+      case IntType => 0
       case LongType => 0L
       case StringType => ""
       case CharType => 0.toChar
@@ -450,7 +460,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     props.map {
       case csp: CSigmaProp => csp.sigmaTree
-      case m: MockSigma => TrivialProp(m.isValid)   //needed for tests, e.g. "atLeast" test
+      case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
     }
   }
 
@@ -458,6 +468,8 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     toECPoint(ge).asInstanceOf[EcPointType]
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
+    if (props.length > AtLeast.MaxChildrenCount)
+      throw new IllegalArgumentException(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: ${props.length}")
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = AtLeast.reduce(bound, sigmaTrees)
     CSigmaProp(tree)
@@ -502,9 +514,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   override def substConstants[T](scriptBytes: Coll[Byte],
-      positions: Coll[Int],
-      newValues: Coll[T])
-      (implicit cT: RType[T]): Coll[Byte] = {
+                                 positions: Coll[Int],
+                                 newValues: Coll[T])
+                                (implicit cT: RType[T]): Coll[Byte] = {
     val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
     val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
     Colls.fromArray(res)
@@ -518,35 +530,34 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
 case class CostingDataContext(
-    _dataInputs: Coll[Box],
-    override val headers: Coll[Header],
-    override val preHeader: PreHeader,
-    inputs: Coll[Box],
-    outputs: Coll[Box],
-    height: Int,
-    selfBox: Box,
-    lastBlockUtxoRootHash: AvlTree,
-    _minerPubKey: Coll[Byte],
-    vars: Coll[AnyValue],
-    var isCost: Boolean)
-    extends Context
-{
+                               _dataInputs: Coll[Box],
+                               override val headers: Coll[Header],
+                               override val preHeader: PreHeader,
+                               inputs: Coll[Box],
+                               outputs: Coll[Box],
+                               height: Int,
+                               selfBox: Box,
+                               lastBlockUtxoRootHash: AvlTree,
+                               _minerPubKey: Coll[Byte],
+                               vars: Coll[AnyValue],
+                               var isCost: Boolean)
+  extends Context {
   @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
+
   @inline def HEIGHT: Int = height
-  @inline def SELF: Box   = selfBox
+
+  @inline def SELF: Box = selfBox
+
   @inline def dataInputs: Coll[Box] = _dataInputs
+
   @inline def INPUTS = inputs
+
   @inline def OUTPUTS = outputs
+
   @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+
   @inline def minerPubKey = _minerPubKey
 
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-
-  def dataSize = {
-    val inputsSize = INPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    val outputsSize = OUTPUTS.map(_.dataSize).sum(builder.Monoids.longPlusMonoid)
-    8L + (if (SELF == null) 0 else SELF.dataSize) + inputsSize + outputsSize + LastBlockUtxoRootHash.dataSize
-  }
 
   def findSelfBoxIndex: Int = {
     var i = 0
@@ -566,7 +577,7 @@ case class CostingDataContext(
         if (id < 0 || id >= vars.length) None
         else {
           val value = vars(id)
-          if (value != null ) {
+          if (value != null) {
             // once the value is not null it should be of the right type
             value match {
               case value: TestValue[_] if value.value != null =>
@@ -584,7 +595,7 @@ case class CostingDataContext(
       implicit val tag: ClassTag[T] = tT.classTag
       if (id < 0 || id >= vars.length) return None
       val value = vars(id)
-      if (value != null ) {
+      if (value != null) {
         // once the value is not null it should be of the right type
         value match {
           case value: TestValue[_] if value.value != null && value.tA == tT =>

@@ -20,29 +20,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   def CostModel: CostModel = new TestCostModel
 
-  def costBoxes(bs: Coll[Box]): CostedColl[Box] = {
-    val len = bs.length
-    val perItemCost = this.CostModel.AccessBox
-    val costs = this.Colls.replicate(len, perItemCost)
-    val sizes = bs.map(b => b.dataSize)
-    val valuesCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(bs, costs, sizes, valuesCost)
-  }
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T] = {
-    val perItemCost = (len.toLong * itemSize / 1024L + 1L) * this.CostModel.AccessKiloByteOfData.toLong
-    val costs = this.Colls.replicate(len, perItemCost.toInt)
-    val sizes = this.Colls.replicate(len, itemSize)
-    val valueCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(xs, costs, sizes, valueCost)
-  }
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T] = {
-    val none = this.Costing.mkCostedNone[T](opCost)
-    opt.fold[CostedOption[T]](none)(x => this.Costing.mkCostedSome(this.Costing.costedValue(x, SpecialPredef.some(opCost))))
-  }
-
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
 

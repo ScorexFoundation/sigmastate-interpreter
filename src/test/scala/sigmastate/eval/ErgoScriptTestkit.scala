@@ -26,6 +26,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import IR._
   import Liftables._
   import Context._
+  import Size._
 //  import WBigInteger._
   import BigInt._
 
@@ -113,6 +114,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       printGraphs: Boolean = true,
       measureTime: Boolean = false)
   {
+    lazy val tree = script match {
+      case Code(code) => compiler.typecheck(env, code)
+      case Tree(t) => t
+    }
     lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsProven(f)))
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
@@ -131,12 +136,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       case _ => Pair(xs.head, pairify(xs.tail))
     }
 
-    def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
-      val costed = script match {
-        case Code(code) => compileAndCost(env, code)
-        case Tree(tree) => cost(env, tree)
-      }
-      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
+    def doCosting: Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] = {
+      val costed = cost[Any](env, tree)
+      val calcF = costed.sliceCalc
+      val costF = fun { sCtx: RSize[Context] => costed.sliceCost(Pair(0, sCtx)) }
+      val sizeF = fun { sCtx: RSize[Context] => costed.sliceSize(sCtx).dataSize }
+      val res = Tuple(calcF, costF, sizeF)
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
@@ -158,8 +163,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
 
     def doReduce(): Unit = {
-      val Tuple(calcF, costF, sizeF) = doCosting
-      verifyCostFunc(costF) shouldBe Success(())
+      val Pair(calcF, Pair(costF, sizeF)) = doCosting
+      verifyCostFunc(asRep[Any => Int](costF)) shouldBe Success(())
       verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
@@ -180,25 +185,23 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
         // check cost
         val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
-        val costFun = IR.compile[SInt.type](getDataEnv, costF)
-        val IntConstant(estimatedCost) = costFun(costCtx)
-        checkExpected(estimatedCost, expectedResult.cost,
-          "Cost evaluation: estimatedCost = %s, expectedResult.cost = %s")
-        (estimatedCost < CostTable.ScriptLimit) shouldBe true
+        val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
 
         // check size
-        val sizeFun = IR.compile[SLong.type](getDataEnv, sizeF)
-        val LongConstant(estimatedSize) = sizeFun(costCtx)
-        checkExpected(estimatedSize, expectedResult.size,
-          "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
-        )
+        {
+          val lA = sizeF.elem.eDom.liftable.asLiftable[SSize[SContext], Size[Context]]
+          val sizeFun = IR.compile[SSize[SContext], Long, Size[Context], Long](getDataEnv, sizeF)(lA, liftable[Long, Long])
+          val estimatedSize = sizeFun(Sized.sizeOf(costCtx))
+          checkExpected(estimatedSize, expectedResult.size,
+            "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
+          )
+        }
 
         // check calc
-        val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-        val res = valueFun(calcCtx) match {
-          case Constant(res: Any, _) => res
-          case v => v
-        }
+        val lA = calcF.elem.eDom.liftable.asLiftable[SContext, Context]
+        val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+        val valueFun = IR.compile(getDataEnv, calcF)(lA, lB)
+        val res = valueFun(calcCtx)
         checkExpected(res, expectedResult.calc,
           "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
       }
@@ -231,7 +234,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
                  expectedCost: Rep[Context] => Rep[Int] = null,
                  expectedSize: Rep[Context] => Rep[Long] = null,
                  printGraphs: Boolean = true
-                ): Rep[(Context => Any, (Context => Int, Context => Long))] =
+                ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
     val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
@@ -246,7 +249,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       expectedCost: Rep[Context] => Rep[Int] = null,
       expectedSize: Rep[Context] => Rep[Long] = null,
       printGraphs: Boolean = true
-      ): Rep[(Context => Any, (Context => Int, Context => Long))] =
+      ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
     checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
   }
@@ -261,16 +264,19 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
-  def compileAndCost(env: ScriptEnv, code: String): Rep[Context => Costed[SType#WrappedType]] = {
+  def compileAndCost[T](env: ScriptEnv, code: String): Rep[Costed[Context] => Costed[T]] = {
     val typed = compiler.typecheck(env, code)
-    cost(env, typed)
+    cost[T](env, typed)
   }
 
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
-    val costed = compileAndCost(env, script)
-    val Tuple(valueF, costF, sizeF) = split3(costed)
+    val costed = compileAndCost[Any](env, script)
+    val valueF = costed.sliceCalc
+    val costF  = costed.sliceCost
+    val sizeF  = costed.sliceSize
+    
     emit(name, valueF, costF, sizeF)
-    verifyCostFunc(costF) shouldBe(Success(()))
+    verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
     verifyIsProven(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
   }

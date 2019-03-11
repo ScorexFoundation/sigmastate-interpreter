@@ -13,10 +13,10 @@ class SigmaDslCostedTests extends FunSuite with ContractsTestkit with Matchers {
   val p2: SigmaProp = new special.sigma.MockSigma(false)
   val dsl: SigmaDslBuilder = SigmaDsl
 
-  test("CostedContext") {
-    val ctxC = new CCostedContext(ctx)
-    ctx.cost shouldBe 4
-    ctxC.INPUTS.cost shouldBe 2
-    ctxC.OUTPUTS.cost shouldBe 1
-  }
+//  test("CostedContext") {
+//    val ctxC = new CCostedContext(ctx)
+//    ctx.cost shouldBe 4
+//    ctxC.INPUTS.cost shouldBe 2
+//    ctxC.OUTPUTS.cost shouldBe 1
+//  }
 }

@@ -377,6 +377,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
         mkIf(cond, thenP, elseP)
 
+      case Def(Tup(In(x), In(y))) =>
+        mkTuple(Seq(x, y))  
       case Def(First(pair)) =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>

@@ -13,7 +13,8 @@ trait SigmaLibrary extends Library
     with SigmaDslModule
     with CostedObjectsModule
     with SigmaDslOverArraysModule
-    with SigmaDslCostedModule {
+    with SigmaDslCostedModule
+{
   import WArray._
   import Coll._
   import CollBuilder._
@@ -21,6 +22,11 @@ trait SigmaLibrary extends Library
   import SigmaContract._
   import WECPoint._
   import SigmaDslBuilder._
+  import WRType._
+  import Size._
+
+  implicit lazy val wRTypeAnyElement = wRTypeElement(AnyElement)
+  implicit lazy val sizeAnyElement = sizeElement(AnyElement)
 
   private val WA = WArrayMethods
   private val CM = CollMethods
@@ -121,11 +127,6 @@ trait SigmaLibrary extends Library
       }
       else
         super.rewriteDef(d)
-  }
-
-  override def toRep[A](x: A)(implicit eA: Elem[A]):Rep[A] = eA match {
-//    case EcPointElement => Const(x)
-    case _ => super.toRep(x)
   }
 
 }
