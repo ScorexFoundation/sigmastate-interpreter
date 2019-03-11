@@ -16,9 +16,13 @@ package special.sigma {
     import SizeBox._;
     import SizeBuilder._;
     import SizeContext._;
+    import SizeSigmaProp._;
     import WOption._;
     import WRType._;
     abstract class CSizeAnyValue(val tVal: Rep[WRType[Any]], val valueSize: Rep[Size[Any]]) extends SizeAnyValue {
+      @NeverInline override def dataSize: Rep[Long] = delayInvoke
+    };
+    abstract class CSizeSigmaProp(val propBytes: Rep[Size[Coll[Byte]]]) extends SizeSigmaProp {
       @NeverInline override def dataSize: Rep[Long] = delayInvoke
     };
     abstract class CSizeBox(val propositionBytes: Rep[Size[Coll[Byte]]], val bytes: Rep[Size[Coll[Byte]]], val bytesWithoutRef: Rep[Size[Coll[Byte]]], val registers: Rep[Size[Coll[WOption[AnyValue]]]], val tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]) extends SizeBox {
@@ -35,6 +39,7 @@ package special.sigma {
       def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext] = RCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
     };
     trait CSizeAnyValueCompanion;
+    trait CSizeSigmaPropCompanion;
     trait CSizeBoxCompanion;
     trait CSizeContextCompanion;
     trait CSizeBuilderCompanion

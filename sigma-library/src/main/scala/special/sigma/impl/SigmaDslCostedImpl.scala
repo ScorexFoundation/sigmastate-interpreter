@@ -24,10 +24,14 @@ import SizeAnyValue._
 import SizeBox._
 import SizeBuilder._
 import SizeContext._
+import SizeSigmaProp._
 import WOption._
 import WRType._
 import CSizeBuilder._
+import CSizeSigmaProp._
 import Context._  // manual fix
+import SigmaProp._  // manual fix
+
 object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
   case class CSizeAnyValueCtor
       (override val tVal: Rep[WRType[Any]], override val valueSize: Rep[Size[Any]])
@@ -156,6 +160,131 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
   }
 } // of object CSizeAnyValue
   registerEntityObject("CSizeAnyValue", CSizeAnyValue)
+
+object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
+  case class CSizeSigmaPropCtor
+      (override val propBytes: Rep[Size[Coll[Byte]]])
+    extends CSizeSigmaProp(propBytes) with Def[CSizeSigmaProp] {
+    override lazy val eVal: Elem[SigmaProp] = implicitly[Elem[SigmaProp]]
+    lazy val selfType = element[CSizeSigmaProp]
+    override def transform(t: Transformer) = CSizeSigmaPropCtor(t(propBytes))
+    private val thisClass = classOf[SizeSigmaProp]
+
+    override def dataSize: Rep[Long] = {
+      asRep[Long](mkMethodCall(self,
+        thisClass.getMethod("dataSize"),
+        List(),
+        true, false, element[Long]))
+    }
+  }
+  // elem for concrete class
+  class CSizeSigmaPropElem(val iso: Iso[CSizeSigmaPropData, CSizeSigmaProp])
+    extends SizeSigmaPropElem[CSizeSigmaProp]
+    with ConcreteElem[CSizeSigmaPropData, CSizeSigmaProp] {
+    override lazy val parent: Option[Elem[_]] = Some(sizeSigmaPropElement)
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
+    override def convertSizeSigmaProp(x: Rep[SizeSigmaProp]) = RCSizeSigmaProp(x.propBytes)
+    override def getDefaultRep = RCSizeSigmaProp(element[Size[Coll[Byte]]].defaultRepValue)
+    override lazy val tag = {
+      weakTypeTag[CSizeSigmaProp]
+    }
+  }
+
+  // state representation type
+  type CSizeSigmaPropData = Size[Coll[Byte]]
+
+  // 3) Iso for concrete class
+  class CSizeSigmaPropIso
+    extends EntityIso[CSizeSigmaPropData, CSizeSigmaProp] with Def[CSizeSigmaPropIso] {
+    override def transform(t: Transformer) = new CSizeSigmaPropIso()
+    private lazy val _safeFrom = fun { p: Rep[CSizeSigmaProp] => p.propBytes }
+    override def from(p: Rep[CSizeSigmaProp]) =
+      tryConvert[CSizeSigmaProp, Size[Coll[Byte]]](eTo, eFrom, p, _safeFrom)
+    override def to(p: Rep[Size[Coll[Byte]]]) = {
+      val propBytes = p
+      RCSizeSigmaProp(propBytes)
+    }
+    lazy val eFrom = element[Size[Coll[Byte]]]
+    lazy val eTo = new CSizeSigmaPropElem(self)
+    lazy val selfType = new CSizeSigmaPropIsoElem
+    def productArity = 0
+    def productElement(n: Int) = ???
+  }
+  case class CSizeSigmaPropIsoElem() extends Elem[CSizeSigmaPropIso] {
+    def getDefaultRep = reifyObject(new CSizeSigmaPropIso())
+    lazy val tag = {
+      weakTypeTag[CSizeSigmaPropIso]
+    }
+    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
+  }
+  // 4) constructor and deconstructor
+  class CSizeSigmaPropCompanionCtor extends CompanionDef[CSizeSigmaPropCompanionCtor] with CSizeSigmaPropCompanion {
+    def selfType = CSizeSigmaPropCompanionElem
+    override def toString = "CSizeSigmaPropCompanion"
+
+    @scalan.OverloadId("fromFields")
+    def apply(propBytes: Rep[Size[Coll[Byte]]]): Rep[CSizeSigmaProp] =
+      mkCSizeSigmaProp(propBytes)
+
+    def unapply(p: Rep[SizeSigmaProp]) = unmkCSizeSigmaProp(p)
+  }
+  lazy val CSizeSigmaPropRep: Rep[CSizeSigmaPropCompanionCtor] = new CSizeSigmaPropCompanionCtor
+  lazy val RCSizeSigmaProp: CSizeSigmaPropCompanionCtor = proxyCSizeSigmaPropCompanion(CSizeSigmaPropRep)
+  implicit def proxyCSizeSigmaPropCompanion(p: Rep[CSizeSigmaPropCompanionCtor]): CSizeSigmaPropCompanionCtor = {
+    if (p.rhs.isInstanceOf[CSizeSigmaPropCompanionCtor])
+      p.rhs.asInstanceOf[CSizeSigmaPropCompanionCtor]
+    else
+      proxyOps[CSizeSigmaPropCompanionCtor](p)
+  }
+
+  implicit case object CSizeSigmaPropCompanionElem extends CompanionElem[CSizeSigmaPropCompanionCtor] {
+    lazy val tag = weakTypeTag[CSizeSigmaPropCompanionCtor]
+    protected def getDefaultRep = CSizeSigmaPropRep
+  }
+
+  implicit def proxyCSizeSigmaProp(p: Rep[CSizeSigmaProp]): CSizeSigmaProp =
+    proxyOps[CSizeSigmaProp](p)
+
+  implicit class ExtendedCSizeSigmaProp(p: Rep[CSizeSigmaProp]) {
+    def toData: Rep[CSizeSigmaPropData] = {
+      isoCSizeSigmaProp.from(p)
+    }
+  }
+
+  // 5) implicit resolution of Iso
+  implicit def isoCSizeSigmaProp: Iso[CSizeSigmaPropData, CSizeSigmaProp] =
+    reifyObject(new CSizeSigmaPropIso())
+
+  def mkCSizeSigmaProp
+    (propBytes: Rep[Size[Coll[Byte]]]): Rep[CSizeSigmaProp] = {
+    new CSizeSigmaPropCtor(propBytes)
+  }
+  def unmkCSizeSigmaProp(p: Rep[SizeSigmaProp]) = p.elem.asInstanceOf[Elem[_]] match {
+    case _: CSizeSigmaPropElem @unchecked =>
+      Some((asRep[CSizeSigmaProp](p).propBytes))
+    case _ =>
+      None
+  }
+
+    object CSizeSigmaPropMethods {
+    object dataSize {
+      def unapply(d: Def[_]): Nullable[Rep[CSizeSigmaProp]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CSizeSigmaPropElem] && method.getName == "dataSize" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[CSizeSigmaProp]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[CSizeSigmaProp]] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+  }
+
+  object CSizeSigmaPropCompanionMethods {
+  }
+} // of object CSizeSigmaProp
+  registerEntityObject("CSizeSigmaProp", CSizeSigmaProp)
 
 object CSizeBox extends EntityObject("CSizeBox") {
   case class CSizeBoxCtor

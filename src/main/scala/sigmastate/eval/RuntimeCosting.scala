@@ -656,12 +656,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        val sizes = colBuilder.replicate(xs.sizes.length, 1L)
 //        RCostedColl(vals, costs, sizes, xs.valuesCost)
 
-//      case CostedBoxM.creationInfo(boxC) =>
-//        val info = boxC.value.creationInfo
-//        val cost = boxC.cost + sigmaDslBuilder.CostModel.SelectField
-//        val l = RCCostedPrim(info._1, cost, 4L)
-//        val r = mkCostedColl(info._2, 34, cost)
-//        RCCostedPair(l, r)
 
 //      case CostedOptionM.get(optC @ CostedBoxM.getReg(_, Def(Const(2)), regE)) /*if regId == ErgoBox.R2.asIndex*/ =>
 //        require(regE.isInstanceOf[CollElem[_,_]],
@@ -723,12 +717,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           case pe: PairElem[a,b] if s.elem.isInstanceOf[CSizePairElem[_,_]] =>
             val p = asRep[(a,b)](v)
             costedPrimToPair(p, c, asRep[Size[(a,b)]](s))
-          case ce: CollElem[a,_] if s.elem.isInstanceOf[CSizeCollElem[_]] =>
+          case ce: CollElem[a,_] /*if s.elem.isInstanceOf[CSizeCollElem[_]]*/ =>
             val col = asRep[Coll[a]](v)
             costedPrimToColl(col, c, asRep[Size[Coll[a]]](s))
-//          case oe: WOptionElem[a,_] =>
-//            val opt = asRep[WOption[a]](v)
-//            costedPrimToOption(opt, c, s)
+          case oe: WOptionElem[a,_] if s.elem.isInstanceOf[CSizeOptionElem[_]] =>
+            val opt = asRep[WOption[a]](v)
+            costedPrimToOption(opt, c, asRep[Size[WOption[a]]](s))
           case _ => super.rewriteDef(d)
         }
         res
@@ -752,12 +746,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def costedPrimToColl[A](coll: Rep[Coll[A]], c: Rep[Int], s: RSize[Coll[A]]): RCostedColl[A] = s.elem.asInstanceOf[Any] match {
-    case _: CSizeCollElem[_] =>
+    case se: SizeElem[_,_] if se.eVal.isInstanceOf[CollElem[_,_]] =>
       val sizes = asSizeColl(s).sizes
       val costs = colBuilder.replicate(sizes.length, 0)
       mkCostedColl(coll, costs, sizes, c)
     case _ =>
-      !!!(s"Expected RCSizeColl node but was $s -> ${s.rhs}")
+      !!!(s"Expected Size[Coll[A]] node but was $s -> ${s.rhs}")
   }
 
   def costedPrimToOption[A](opt: Rep[WOption[A]], c: Rep[Int], s: RSize[WOption[A]]) = s.elem.asInstanceOf[Any] match {
@@ -768,36 +762,25 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       !!!(s"Expected RCSizeOption node but was $s -> ${s.rhs}")
   }
 
-//  def costedPrimToOption[A](opt: Rep[WOption[A]], c: Rep[Int], s: Rep[Long]) = s match {
-//    case Def(SizeData(_, info)) if info.elem.isInstanceOf[WOptionElem[_, _]] =>
-//      val sizeOpt = info.asRep[WOption[Long]]
-//      mkCostedOption(opt, sizeOpt, c)
-//    case _ => //if opt.elem.eItem.isConstantSize =>
-//      val sizeOpt = RWSpecialPredef.some(s)
-//      mkCostedOption(opt, sizeOpt, c)
-////    case _ =>
-////      error(s"Cannot CostedPrim to CostedOption for non-constant-size type ${opt.elem.eItem.name}")
-//  }
-
   def costedPrimToPair[A,B](p: Rep[(A,B)], c: Rep[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
-    case _: CSizePairElem[_,_] =>
+    case _: SizePairElem[_,_,_] =>
       val sPair = asSizePair(s)
       RCCostedPair(RCCostedPrim(p._1, c, sPair.l), RCCostedPrim(p._2, c, sPair.r))
     case _ =>
       !!!(s"Expected RCSizePair node but was $s -> ${s.rhs}")
   }
 
-//  override def rewriteNonInvokableMethodCall(mc: MethodCall): Rep[_] = mc match {
-//    case IsConstSizeCostedColl(col) =>
-//      costedPrimToColl(col.value, col.cost, col.dataSize)
-//    case IsCostedPair(p) =>
-//      val v = p.value
-//      val c = p.cost
-//      val s = p.dataSize
-//      costedPrimToPair(v, c, s)
-//    case _ =>
-//      super.rewriteNonInvokableMethodCall(mc)
-//  }
+  override def rewriteNonInvokableMethodCall(mc: MethodCall): Rep[_] = mc match {
+    case IsConstSizeCostedColl(col: RCosted[Coll[Any]]@unchecked) =>
+      costedPrimToColl(col.value, col.cost, asSizeColl(col.size))
+    case IsCostedPair(p) =>
+      val v = asRep[(Any,Any)](p.value)
+      val c = p.cost
+      val s = asRep[Size[(Any,Any)]](p.size)
+      costedPrimToPair(v, c, asSizePair(s))
+    case _ =>
+      super.rewriteNonInvokableMethodCall(mc)
+  }
 
   override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
     case c: CostOf => c.self

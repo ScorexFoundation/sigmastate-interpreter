@@ -155,7 +155,8 @@ package special.sigma {
       def headers: Rep[Coll[Header]];
       def preHeader: Rep[PreHeader];
       def minerPubKey: Rep[Coll[Byte]];
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]]
+      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]];
+      def vars: Rep[Coll[AnyValue]]
     };
     @Liftable trait SigmaContract extends Def[SigmaContract] {
       def builder: Rep[SigmaDslBuilder];

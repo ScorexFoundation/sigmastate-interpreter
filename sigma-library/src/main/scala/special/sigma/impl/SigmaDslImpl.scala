@@ -3769,6 +3769,13 @@ object Context extends EntityObject("Context") {
         List(id, cT),
         true, false, element[WOption[T]]))
     }
+
+    override def vars: Rep[Coll[AnyValue]] = {
+      asRep[Coll[AnyValue]](mkMethodCall(self,
+        ContextClass.getMethod("vars"),
+        List(),
+        true, false, element[Coll[AnyValue]]))
+    }
   }
 
   implicit object LiftableContext
@@ -3875,6 +3882,13 @@ object Context extends EntityObject("Context") {
         List(id, cT),
         true, true, element[WOption[T]]))
     }
+
+    def vars: Rep[Coll[AnyValue]] = {
+      asRep[Coll[AnyValue]](mkMethodCall(source,
+        thisClass.getMethod("vars"),
+        List(),
+        true, true, element[Coll[AnyValue]]))
+    }
   }
 
   // entityProxy: single proxy for each type family
@@ -3892,7 +3906,7 @@ object Context extends EntityObject("Context") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
-        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar"
+        "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
         ))
     }
 
@@ -4086,6 +4100,19 @@ object Context extends EntityObject("Context") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
+        case Def(d) => unapply(d)
+        case _ => Nullable.None
+      }
+    }
+
+    object vars {
+      def unapply(d: Def[_]): Nullable[Rep[Context]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[ContextElem[_]] && method.getName == "vars" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
+        case _ => Nullable.None
+      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

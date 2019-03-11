@@ -12,6 +12,11 @@ class CSizeAnyValue(val tVal: RType[Any], val valueSize: Size[Any]) extends Size
   override def dataSize: Long = valueSize.dataSize
 }
 
+class CSizeSigmaProp(val propBytes: Size[Coll[Byte]]) extends SizeSigmaProp {
+  @NeverInline
+  override def dataSize: Long = propBytes.dataSize
+}
+
 class CSizeBox(
     val propositionBytes: Size[Coll[Byte]],
     val bytes: Size[Coll[Byte]],
