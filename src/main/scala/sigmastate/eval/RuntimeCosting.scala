@@ -625,29 +625,27 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
         RCCostedColl(vals, costs, sizes, xs.valuesCost) // TODO add cost of map node
 
-      case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) => ???
-//        val f = asRep[Costed[(b,a)] => Costed[b]](_f)
-//        val (calcF, costF, sizeF) = splitCostedFunc[(b,a), b](f)
-//        val resV = xs.values.foldLeft(zero.value, calcF)
-//        val mRes = AllMarking(element[Int])
-//        val mCostF = sliceAnalyzer.analyzeFunc(costF, mRes)
-//
-//        mCostF.mDom match {
-//          case PairMarking(markA,_) if markA.isEmpty =>
-//            implicit val eA = xs.elem.eItem
-//            implicit val eB = zero.elem.eVal
-//            val slicedCostF = fun { in: Rep[(Int, Long)] => costF(Pair(variable[(b,a)], in)) }
-//            val cost = xs.costs.zip(xs.sizes).map(slicedCostF).sum(intPlusMonoid)
-//            if (elemToSType(zero.elem.eVal).isConstantSize)
-//              RCCostedPrim(resV, cost, zero.dataSize)
-//            else {
-//              // TODO costing: make more accurate cost estimation
-//              RCCostedPrim(resV, cost, zero.dataSize)
-//            }
-//          case _ =>
-//            error(s"Cost of the folded function depends on data: $d")
-//        }
+      case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
+        val f = asRep[Costed[(b,a)] => Costed[b]](_f)
+        val (calcF/*: Rep[((b,a)) => b]*/,
+             costF/*: Rep[((Int, Size[(b,a)])) => Int]*/,
+             sizeF/*: Rep[Size[(b,a)] => Size[b]]*/) = splitCostedFunc[(b,a), b](f)
 
+        val resV = xs.values.foldLeft(zero.value, calcF)
+
+        implicit val eA: Elem[a] = xs.elem.eItem
+        implicit val eB: Elem[b] = zero.elem.eVal
+        val Pair(resS, resC) = xs.costs.zip(xs.sizes).foldLeft(
+            Pair(zero.size, 0),
+            fun { in: Rep[((Size[b], Int), (Int, Size[a]))] =>
+              val Pair(Pair(accSizeB, accCost), Pair(xCost, xSize)) = in
+              val sBA = RCSizePair(accSizeB, xSize)
+              val res = Pair(sizeF(sBA), costF(Pair(xCost, sBA)))
+              res
+            }
+        )
+        RCCostedPrim(resV, resC, resS)
+        
 //      case CCM.filterCosted(xs: RCostedColl[a], _f: RCostedFunc[_,_]) =>
 //        val f = asRep[Costed[a] => Costed[Boolean]](_f)
 //        val (calcF, costF, _) = splitCostedFunc[a, Boolean](f)
