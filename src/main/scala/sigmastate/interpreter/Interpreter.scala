@@ -87,21 +87,29 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    import IR.Size._; import IR.Context._; import IR.SigmaProp._
-    val costingRes @ IR.Pair(calcF, costF) = doCosting[SigmaProp](env, exp)
+    import IR._; import Size._; import Context._; import SigmaProp._
+    val costingRes @ Pair(calcF, costF) = doCosting[SigmaProp](env, exp)
     IR.onCostingResult(env, exp, costingRes)
 
-    IR.verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
+    verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
 
-    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+    verifyIsProven(calcF).fold(t => throw t, x => x)
 
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val estimatedCost = IR.checkCostEx(costingCtx, exp, costF, maxCost.toInt)
+    val estimatedCost = checkCostEx(costingCtx, exp, costF, maxCost.toInt)
 
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SContext, SSigmaProp, IR.Context, IR.SigmaProp](IR.getDataEnv, calcF)
-    val res = valueFun(calcCtx)
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case sp: SigmaPropElem[_] =>
+        val valueFun = IR.compile[SContext, SSigmaProp, IR.Context, IR.SigmaProp](IR.getDataEnv, calcF)
+        valueFun(calcCtx)
+      case BooleanElement =>
+        val valueFun = IR.compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val b = valueFun(calcCtx)
+        sigmaDslBuilderValue.sigmaProp(b)
+    }
+
 //    match {
 //      case SigmaPropConstant(sb) => sb
 //      case FalseLeaf => TrivialProp.FalseProp

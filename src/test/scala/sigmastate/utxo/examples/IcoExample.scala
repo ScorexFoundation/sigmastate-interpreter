@@ -70,7 +70,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     projectProver.prove(fundingEnv + (ScriptNameProp -> "fundingScriptEnv"), fundingScript, fundingContext, fakeMessage).get
   }
 
-  ignore("simple ico example - fixing stage") {
+  property("simple ico example - fixing stage") {
 
     val fixingEnv = Map(
       ScriptNameProp -> "fixingScriptEnv"
@@ -78,7 +78,6 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val fixingProp = compileWithCosting(fixingEnv,
       """{
-        |
         |  val openTree = SELF.R4[AvlTree].get
         |
         |  val closedTree = OUTPUTS(0).R4[AvlTree].get
@@ -88,9 +87,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
         |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
         |  val treeIsClosed = closedTree.enabledOperations == 0
         |
-        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
+        |  sigmaProp(digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed)
         |}""".stripMargin
-    ).asBoolValue.toSigmaProp
+    ).asSigmaProp
 
     val projectProver = new ErgoLikeTestProvingInterpreter
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
