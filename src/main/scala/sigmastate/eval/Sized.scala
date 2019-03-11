@@ -48,6 +48,7 @@ object Sized extends SizedLowPriority {
     case BigIntRType => Sized[BigInt]
     case GroupElementRType => Sized[GroupElement]
     case AvlTreeRType => Sized[AvlTree]
+    case SigmaPropRType => sigmaPropIsSized
     case ct: CollType[a] => collIsSized(typeToSized(ct.tItem), ct.tItem)
     case ct: OptionType[a] => optionIsSized(typeToSized(ct.tA))
     case ct: PairType[a, b] => pairIsSized(typeToSized(ct.tFst), typeToSized(ct.tSnd))
@@ -84,6 +85,9 @@ object Sized extends SizedLowPriority {
     new CSizeColl(Colls.replicate(b.tokens.length, sToken))
   }
 
+  implicit val sigmaPropIsSized: Sized[SigmaProp] = (b: SigmaProp) => {
+    new CSizeSigmaProp(sizeOf(b.propBytes))
+  }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
     new CSizeBox(
       sizeOf(b.propositionBytes),

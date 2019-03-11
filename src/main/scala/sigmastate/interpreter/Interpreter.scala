@@ -88,7 +88,7 @@ trait Interpreter extends ScorexLogging {
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._; import Size._; import Context._; import SigmaProp._
-    val costingRes @ Pair(calcF, costF) = doCosting[SigmaProp](env, exp)
+    val costingRes @ Pair(calcF, costF) = doCosting(env, exp, true)
     IR.onCostingResult(env, exp, costingRes)
 
     verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
@@ -102,10 +102,10 @@ trait Interpreter extends ScorexLogging {
     val calcCtx = context.toSigmaContext(IR, isCost = false)
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
       case sp: SigmaPropElem[_] =>
-        val valueFun = IR.compile[SContext, SSigmaProp, IR.Context, IR.SigmaProp](IR.getDataEnv, calcF)
+        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
         valueFun(calcCtx)
       case BooleanElement =>
-        val valueFun = IR.compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
         val b = valueFun(calcCtx)
         sigmaDslBuilderValue.sigmaProp(b)
     }
