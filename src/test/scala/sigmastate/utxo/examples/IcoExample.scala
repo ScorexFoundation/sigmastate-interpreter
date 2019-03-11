@@ -20,7 +20,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
   /**
     * Simplest ICO example
     */
-  property("simple ico example - fundraising stage only") {
+  ignore("simple ico example - fundraising stage only") {
     val fundingEnv = Map(
       "proof" -> Array.emptyByteArray
     )

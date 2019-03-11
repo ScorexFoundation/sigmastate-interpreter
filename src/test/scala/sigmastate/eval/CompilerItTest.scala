@@ -48,7 +48,7 @@ class CompilerItTest extends BaseCtxTests
       size = {_ => sizeData(element[Int], typeSize[Int]) },
       tree = IntConstant(1), Result(1, 1, 4))
   }
-  test("intConstCase") {
+  ignore("intConstCase") {
     intConstCase.doReduce
   }
 
@@ -59,7 +59,7 @@ class CompilerItTest extends BaseCtxTests
       size = {_ => sizeData(element[BigInt], SBigInt.MaxSizeInBytes) },
       tree = BigIntConstant(big), Result(big, 1, 32))
   }
-  test("bigIntegerConstCase") {
+  ignore("bigIntegerConstCase") {
     bigIntegerConstCase.doReduce
   }
 
@@ -74,7 +74,7 @@ class CompilerItTest extends BaseCtxTests
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
       Result(res, 12, 32))
   }
-  test("addBigIntegerConstsCase") {
+  ignore("addBigIntegerConstsCase") {
     addBigIntegerConstsCase.doReduce()
   }
 
@@ -88,7 +88,7 @@ class CompilerItTest extends BaseCtxTests
       size = {_ => sizeData(element[Coll[Byte]], colBuilder.replicate(col1Sym.length, typeSize[Byte])) },
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
-  test("arrayConstCase") {
+  ignore("arrayConstCase") {
     arrayConstCase.doReduce()
   }
 
@@ -101,7 +101,7 @@ class CompilerItTest extends BaseCtxTests
       size = {_ => sizeData(element[SigmaProp], CryptoConstants.EncodedGroupElementLength.toLong) },
       tree = SigmaPropConstant(p1), Result(p1, 10052, 33))
   }
-  test("sigmaPropConstCase") {
+  ignore("sigmaPropConstCase") {
     sigmaPropConstCase.doReduce()
   }
 
@@ -119,7 +119,7 @@ class CompilerItTest extends BaseCtxTests
       Result(CAND(Seq(p1, p2)), 20124, 67))
   }
 
-  test("andSigmaPropConstsCase") {
+  ignore("andSigmaPropConstsCase") {
     andSigmaPropConstsCase.doReduce()
   }
 
@@ -152,7 +152,7 @@ class CompilerItTest extends BaseCtxTests
       tree = mkMapCollection(BigIntArrayConstant(bigIntegerArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
       Result(res, 23, 64))
   }
-  test("bigIntArray_Map_Case") {
+  ignore("bigIntArray_Map_Case") {
     bigIntArray_Map_Case.doReduce()
   }
 
@@ -166,7 +166,7 @@ class CompilerItTest extends BaseCtxTests
       tree = null,
       Result(bigIntegerArr1.slice(0, 1), 21, 32))
   }
-  test("bigIntArray_Slice_Case") {
+  ignore("bigIntArray_Slice_Case") {
     bigIntArray_Slice_Case.doReduce()
   }
 
@@ -194,7 +194,7 @@ class CompilerItTest extends BaseCtxTests
       tree = null,
       Result(bigIntegerArr1, 11, 64L))
   }
-  test("register_BigIntArr_Case") {
+  ignore("register_BigIntArr_Case") {
     measure(5) { i =>
       register_BigIntArr_Case.doReduce()
     }
@@ -218,7 +218,7 @@ class CompilerItTest extends BaseCtxTests
       tree = null,
       Result(bigIntegerArr1.map(i => i.add(n1)), 33, 64L))
   }
-  test("register_BigIntArr_Map_Case") {
+  ignore("register_BigIntArr_Map_Case") {
     register_BigIntArr_Map_Case.doReduce()
   }
 
@@ -232,7 +232,7 @@ class CompilerItTest extends BaseCtxTests
       tree = null,
       Result(bigIntegerArr1.slice(0,1)/*,207, 1L*/))
   }
-  test("register_BigIntArr_Slice_Case") {
+  ignore("register_BigIntArr_Slice_Case") {
     register_BigIntArr_Slice_Case.doReduce()
   }
 
@@ -280,7 +280,7 @@ class CompilerItTest extends BaseCtxTests
       Result({ TrivialProp.FalseProp }, 40736, 1L)
     )
   }
-  test("crowdFunding_Case") {
+  ignore("crowdFunding_Case") {
     crowdFunding_Case.doReduce()
   }
 

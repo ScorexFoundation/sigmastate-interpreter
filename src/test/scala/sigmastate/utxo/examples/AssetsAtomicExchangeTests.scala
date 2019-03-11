@@ -110,7 +110,7 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }
 
-  property("partial filling") {
+  ignore("partial filling") {
     val contract = AssetsPartialFilling[spec.type](70, tokenId, buyer, seller)(spec)
     import contract.spec._
 

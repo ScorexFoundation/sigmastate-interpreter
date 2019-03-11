@@ -57,7 +57,7 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
-  test("lambdas") {
+  ignore("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
 

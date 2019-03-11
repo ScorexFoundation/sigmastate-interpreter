@@ -42,7 +42,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (res, (t - t0) < Timeout)
   }
 
-  property("huge byte array") {
+  ignore("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
 
@@ -172,7 +172,7 @@ class SpamSpecification extends SigmaTestingCommons {
     }
   }
 
-  property("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+  ignore("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
     implicit lazy val IR = new TestingIRContext {
       this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
@@ -221,7 +221,7 @@ class SpamSpecification extends SigmaTestingCommons {
     res.isFailure shouldBe true
   }
 
-  property("too heavy avl tree lookup") {
+  ignore("too heavy avl tree lookup") {
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
     def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)

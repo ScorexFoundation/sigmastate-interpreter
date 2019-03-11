@@ -36,7 +36,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   import SigmaDslBuilder._; import WOption._
   import Liftables._
   
-  test("SType.dataSize") {
+  ignore("SType.dataSize") {
     def check(tpe: SType, v: Any, exp: Long) =
       tpe.dataSize(v.asWrappedType) shouldBe exp
 
@@ -62,7 +62,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     check(STuple(SInt, STuple(SInt, SInt)), Array(10, Array[Any](20, 30)), 2 + 4 + (2 + 4 + 4))
   }
 
-  test("constants") {
+  ignore("constants") {
 //    check("int", "1", _ => 1, _ => constCost[Int], _ => sizeOf(1))
 //    check("long", "1L", _ => 1L, _ => constCost[Long], _ => sizeOf(1L))
 //    check("boolean", "true", _ => true, _ => constCost[Boolean], _ => sizeOf(true))
@@ -92,7 +92,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     )
   }
 
-  test("operations") {
+  ignore("operations") {
     import NumericOps._
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
@@ -147,7 +147,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 //      ctx => ctx.OUTPUTS.filter(fun(out => { out.value >= 0L })))
   }
 
-  test("lambdas") {
+  ignore("lambdas") {
     check("lam1", "{ (out: Box) => out.value >= 0L }",
       ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam2", "{ val f = { (out: Box) => out.value >= 0L }; f }",
@@ -163,7 +163,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       { ctx => val x = IF (ctx.OUTPUTS.length > 0) THEN ctx.OUTPUTS(0).value ELSE ctx.SELF.value; x })
   }
 
-  test("Crowd Funding") {
+  ignore("Crowd Funding") {
     val prover = new ContextEnrichingTestProvingInterpreter()
     val backerPK  = prover.dlogSecrets(0).publicImage
     val projectPK = prover.dlogSecrets(1).publicImage
@@ -221,7 +221,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     */
   }
 
-  test("Demurrage") {
+  ignore("Demurrage") {
     val prover = new ContextEnrichingTestProvingInterpreter()
     val regScriptPK = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
