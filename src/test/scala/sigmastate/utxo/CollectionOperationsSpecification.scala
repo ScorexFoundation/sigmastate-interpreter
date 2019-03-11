@@ -17,13 +17,17 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
-    ergoplatform.ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = boxesToSpend,
-      spendingTransaction = createTransaction(outputs),
-      self = null)
+    {
+      // TODO this means the context is not totally correct
+      val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
+      ergoplatform.ErgoLikeContext(
+        currentHeight = 50,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = toSpend,
+        spendingTransaction = createTransaction(outputs),
+        self = selfBox)
+    }
 
   private def assertProof(code: String,
                           expectedComp: SigmaPropValue,

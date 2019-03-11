@@ -23,11 +23,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import SizeColl._
   import SizeOption._
   import SizePair._
+  import CSizePair._
   import SizeBox._
   import SizeContext._
   import CCostedPrim._
   import CCostedPair._
   import CCostedOption._
+  import CostedFunc._
   import CCostedFunc._
   import CostedColl._
   import CCostedColl._
@@ -109,6 +111,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   def asCostedColl[T](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = {
     implicit val eT = collC.elem.eVal.eItem
     tryCast[CostedColl[T]](collC)
+  }
+  def asCostedFunc[A,B](fC: RCosted[A => B]): Rep[CostedFunc[Unit,A,B]] = {
+    implicit val eA = fC.elem.eVal.eDom
+    implicit val eB = fC.elem.eVal.eRange
+    tryCast[CostedFunc[Unit, A, B]](fC)(costedFuncElement(UnitElement, eA, eB))
   }
   def asSizeColl[T](collS: RSize[Coll[T]]): Rep[SizeColl[T]] = {
     implicit val eT = collS.elem.eVal.eItem
@@ -431,14 +438,16 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     import WOption._
     implicit val eT = obj.elem.eVal.eItem
     def get(): RCosted[T] = defaultProperyAccess(_.get, asSizeOption(_).sizeOpt.get)
-//    def getOrElse(default: Costed[T]): Costed[T] = {
-//      val v = value.getOrElse(default.value)
-//      val c = accumulatedCost + costOpt.getOrElse(default.cost)
-//      val s = sizeOpt.getOrElse(default.dataSize)
-//      builder.mkCostedPrim(v, c, s)
-//    }
-//    def isEmpty: Costed[Boolean] = builder.mkCostedPrim(value.isEmpty, cost, 1L)
-//    def isDefined: Costed[Boolean] = builder.mkCostedPrim(value.isDefined, cost, 1L)
+
+    def getOrElse(default: RCosted[T]): RCosted[T] = {
+      val v = obj.value.getOrElse(default.value)
+      val c = opCost(costOfArgs, selectFieldCost)
+      val s = asSizeOption(obj.size).sizeOpt.getOrElse(default.size)
+      RCCostedPrim(v, c, s)
+    }
+
+    def isDefined: RCosted[Boolean] = constantSizeProperyAccess(_.isDefined)
+    def isEmpty: RCosted[Boolean] = constantSizeProperyAccess(_.isEmpty)
   }
 
   object OptionCoster extends CostingHandler[WOption[Any]]((obj, m, args) => new OptionCoster[Any](obj, m, args))
@@ -447,6 +456,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class CollCoster[T](obj: RCosted[Coll[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Coll[T]](obj, method, args) {
     import Coll._
     implicit val eT = obj.elem.eVal.eItem
+
     def indices(): RCostedColl[Int] =
       knownLengthCollProperyAccess(_.indices, asSizeColl(obj.size).sizes.length)
 
@@ -472,9 +482,61 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       }
     }
 
-//    def segmentLength(p: RCosted[A => Boolean], from: RCosted[Int]): RCosted[Int] = {
-//      ???
-//    }
+    def indexOf(elem: RCosted[T], from: RCosted[Int]): RCosted[Int] = {
+      val c = opCost(costOfArgs, perKbCostOf(method, obj.size.dataSize))
+      RCCostedPrim(obj.value.indexOf(elem.value, from.value), c, SizeInt)
+    }
+
+    def segmentLength(p: RCosted[T => Boolean], from: RCosted[Int]): RCosted[Int] = {
+//      val pCost: Rep[((Int, Size[A])) => Int] = asCostedFunc(p).func.sliceCost
+      // TODO costing rule should be more accurate
+      val c = opCost(costOfArgs, costOf(method))
+      RCCostedPrim(obj.value.segmentLength(p.value, from.value), c, SizeInt)
+    }
+
+    def indexWhere(p: RCosted[T => Boolean], from: RCosted[Int]): RCosted[Int] = {
+      // TODO costing rule should be more accurate
+      val c = opCost(costOfArgs, costOf(method))
+      RCCostedPrim(obj.value.indexWhere(p.value, from.value), c, SizeInt)
+    }
+
+    def lastIndexWhere(p: RCosted[T => Boolean], end: RCosted[Int]): RCosted[Int] = {
+      // TODO costing rule should be more accurate
+      val c = opCost(costOfArgs, costOf(method))
+      RCCostedPrim(obj.value.lastIndexWhere(p.value, end.value), c, SizeInt)
+    }
+
+    def zip[B](ys: RCosted[Coll[B]]): RCosted[Coll[(T, B)]] = {
+      implicit val eB = ys.elem.eVal.eItem
+      val values = obj.value.zip(ys.value)
+      val xsC = asCostedColl(obj)
+      val ysC = asCostedColl(ys)
+      // TODO optimize: it make sence to add more high level operations to avoid building large graphs
+      val costs = xsC.costs.zip(ysC.costs).map(fun { in: Rep[(Int,Int)] => in._1 + in._2 })
+      val sizes = xsC.sizes.zip(ysC.sizes).map(fun { in: Rep[(Size[T],Size[B])] => RCSizePair(in._1, in._2): RSize[(T,B)] })
+      val c = opCost(costOfArgs, costOf(method))
+      RCCostedColl(values, costs, sizes, c)
+    }
+
+    def partition(pred: RCosted[T => Boolean]): RCosted[(Coll[T], Coll[T])] = {
+      // TODO costing rule should be more accurate
+      val xsC = asCostedColl(obj)
+      val Pair(lvalues, rvalues) = xsC.value.partition(pred.value)
+      val costs = xsC.costs
+      val sizes = xsC.sizes
+      val c = opCost(costOfArgs, costOf(method))
+      RCCostedPair(RCCostedColl(lvalues, costs, sizes, c), RCCostedColl(rvalues, costs, sizes, c))
+    }
+
+    def patch(from: RCosted[Int], patch: RCosted[Coll[T]], replaced: RCosted[Int]): RCosted[Coll[T]] = {
+      val xsC = asCostedColl(obj)
+      val patchC = asCostedColl(patch)
+      val values = xsC.value.patch(from.value, patch.value, replaced.value)
+      val sizes = xsC.sizes.append(patchC.sizes)
+      val costs = xsC.costs.append(patchC.costs)
+      val c = opCost(costOfArgs, costOf(method)) // TODO costing rule should be more accurate
+      RCCostedColl(values, costs, sizes, c)
+    }
   }
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))

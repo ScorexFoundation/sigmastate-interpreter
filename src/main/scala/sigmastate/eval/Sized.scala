@@ -49,13 +49,18 @@ object Sized extends SizedLowPriority {
     case GroupElementRType => Sized[GroupElement]
     case AvlTreeRType => Sized[AvlTree]
     case SigmaPropRType => sigmaPropIsSized
+    case AnyValueRType => anyValueIsSized
+    case BoxRType => boxIsSized
+    case HeaderRType => headerIsSized
+    case PreHeaderRType => preHeaderIsSized
+    case ContextRType => contextIsSized
     case ct: CollType[a] => collIsSized(typeToSized(ct.tItem), ct.tItem)
     case ct: OptionType[a] => optionIsSized(typeToSized(ct.tA))
     case ct: PairType[a, b] => pairIsSized(typeToSized(ct.tFst), typeToSized(ct.tSnd))
     case _ => sys.error(s"Don't know how to compute Sized for type $t")
   }).asInstanceOf[Sized[T]]
 
-  implicit val AnyValueIsSized: Sized[AnyValue] = (x: AnyValue) => {
+  implicit val anyValueIsSized: Sized[AnyValue] = (x: AnyValue) => {
     val size = if (x.value == null)
       new CSizePrim[Any](0L, AnyType)
     else {
