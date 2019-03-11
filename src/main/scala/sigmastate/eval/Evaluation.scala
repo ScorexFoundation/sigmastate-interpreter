@@ -29,6 +29,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   import SigmaProp._
   import Coll._
   import CReplColl._
+  import AnyValue._
   import Box._
   import AvlTree._
   import CollBuilder._
@@ -38,10 +39,12 @@ trait Evaluation extends RuntimeCosting { IR =>
   import WBigInteger._
   import WArray._
   import WOption._
+  import WRType._
   import GroupElement._
   import Liftables._
   import WSpecialPredef._
   import Size._
+  import CSizePrim._
   import SizePair._
   import CSizePair._
   import SizeColl._
@@ -382,8 +385,33 @@ trait Evaluation extends RuntimeCosting { IR =>
           case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
             val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
             out(res)
+
+          case CSizePrimCtor(In(dataSize: Long), tVal) =>
+            val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
+            out(res)
+          case CSizePairCtor(In(l: SSize[_]), In(r: SSize[_])) =>
+            val res = new special.collection.CSizePair(l, r)
+            out(res)
+          case CSizeCollCtor(In(sizes: SColl[SSize[_]] @unchecked)) =>
+            val res = new special.collection.CSizeColl(sizes)
+            out(res)
+          case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
+            val res = new special.collection.CSizeOption(optSize)
+            out(res)
+          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
+            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
+            out(res)
+          case CSizeBoxCtor(
+                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
+                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
+                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
+            val res = new special.sigma.CSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
+            out(res)
+
           case costOp: CostOf =>
             out(costOp.eval)
+          case OpCost(_, In(c: Int)) =>
+            out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
             val size = tpe match {
@@ -401,6 +429,10 @@ trait Evaluation extends RuntimeCosting { IR =>
             assert(tpe.isConstantSize)
             val size = tpe.dataSize(SType.DummyValue)
             out(size)
+          case c @ Cast(eTo, In(v)) =>
+            assert(eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass),
+              s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            out(v)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)

@@ -27,10 +27,6 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val fundingScript = compileWithCosting(fundingEnv,
       """{
-        |
-        |
-        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty})
-        |
         |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map({ (b: Box) =>
         |     val pk = b.R4[Coll[Byte]].get
         |     val value = longToByteArray(b.value)
