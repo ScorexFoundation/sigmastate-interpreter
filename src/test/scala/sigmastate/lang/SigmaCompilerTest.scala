@@ -212,32 +212,33 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-// TODO costing for << and >> method
-//  property("Collection.BitShiftLeft") {
-//    comp("Coll(1,2) << 2") shouldBe
-//      mkMethodCall(
-//        ConcreteCollection(IntConstant(1), IntConstant(2)),
-//        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-//        Vector(IntConstant(2)), Map())
-//  }
-//  property("Collection.BitShiftRight") {
-//    testMissingCosting("Coll(1,2) >> 2",
-//      mkMethodCall(
-//        ConcreteCollection(IntConstant(1), IntConstant(2)),
-//        SCollection.BitShiftRightMethod,
-//        Vector(IntConstant(2)),
-//        Map(SCollection.tIV -> SInt))
-//    )
-//  }
+  // TODO add costing for << and >> method in CollCoster
+  ignore("Collection.BitShiftLeft") {
+    comp("Coll(1,2) << 2") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
+        Vector(IntConstant(2)), Map())
+  }
 
-  property("Collection.BitShiftRightZeroed") {
-    testMissingCosting("Coll(true, false) >>> 2",
+  // TODO add costing for << and >> method in CollCoster
+  ignore("Collection.BitShiftRight") {
+    comp("Coll(1,2) >> 2") shouldBe
+      mkMethodCall(
+        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        SCollection.BitShiftRightMethod,
+        Vector(IntConstant(2)),
+        Map(SCollection.tIV -> SInt))
+  }
+
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("Collection.BitShiftRightZeroed") {
+    comp("Coll(true, false) >>> 2") shouldBe
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
         SCollection.BitShiftRightZeroedMethod,
         Vector(IntConstant(2))
       )
-    )
   }
 
   property("Collection.indices") {
@@ -249,7 +250,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       )
   }
 
-  property("SCollection.flatMap") {
+  // TODO enable after such lambda is implemented in CollCoster.flatMap
+  ignore("SCollection.flatMap") {
     comp("OUTPUTS.flatMap({ (out: Box) => Coll(out.value >= 1L) })") shouldBe
       mkMethodCall(Outputs,
         SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
@@ -259,20 +261,20 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
 
   // TODO should be fixed
   ignore("SNumeric.toBytes") {
-    testMissingCosting("4.toBytes",
-      mkMethodCall(IntConstant(4), SInt.method("toBytes").get, IndexedSeq()))
+    comp("4.toBytes") shouldBe
+      mkMethodCall(IntConstant(4), SInt.method("toBytes").get, IndexedSeq())
   }
 
   // TODO should be fixed
   ignore("SNumeric.toBits") {
-    testMissingCosting("4.toBits",
-      mkMethodCall(IntConstant(4), SInt.method("toBits").get, IndexedSeq()))
+    comp("4.toBits") shouldBe
+      mkMethodCall(IntConstant(4), SInt.method("toBits").get, IndexedSeq())
   }
 
   // TODO should be fixed
   ignore("SBigInt.multModQ") {
-    testMissingCosting("1.toBigInt.multModQ(2.toBigInt)",
-      mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2))))
+    comp("1.toBigInt.multModQ(2.toBigInt)") shouldBe
+      mkMethodCall(BigIntConstant(1), SBigInt.MultModQMethod, IndexedSeq(BigIntConstant(2)))
   }
 
   property("SBox.tokens") {
@@ -280,10 +282,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(Self, SBox.tokensMethod, IndexedSeq())
   }
 
-  property("SOption.toColl") {
-    testMissingCosting("getVar[Int](1).toColl",
+  // TODO add rule to OptionCoster
+  ignore("SOption.toColl") {
+    comp("getVar[Int](1).toColl") shouldBe
       mkMethodCall(GetVarInt(1),
-        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq(), Map()))
+        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq(), Map())
   }
 
   property("SContext.dataInputs") {
@@ -296,36 +299,39 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(GetVar(1.toByte, SAvlTree).get, SAvlTree.digestMethod, IndexedSeq())
   }
 
-  property("SGroupElement.exp") {
-    testMissingCosting("g1.exp(1.toBigInt)",
-      mkMethodCall(GroupElementConstant(ecp1), SGroupElement.method("exp").get, IndexedSeq(BigIntConstant(1)))
-    )
+  // TODO add costing rule
+  ignore("SGroupElement.exp") {
+    comp("g1.exp(1.toBigInt)") shouldBe
+      mkMethodCall(GroupElementConstant(ecp1),
+        SGroupElement.method("exp").get,
+        IndexedSeq(BigIntConstant(1)))
   }
 
+  // TODO  add rule to OptionCoster
   ignore("SOption.map") {
-    testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
+    comp("getVar[Int](1).map({(i: Int) => i + 1})") shouldBe
       mkMethodCall(GetVarInt(1),
         SOption.MapMethod,
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SInt,
           Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map(SOption.tT -> SInt, SOption.tR -> SInt))
-    )
   }
 
+  // TODO  add rule to OptionCoster
   ignore("SOption.filter") {
-    testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
+    comp("getVar[Int](1).filter({(i: Int) => i > 0})") shouldBe
       mkMethodCall(GetVarInt(1),
         SOption.FilterMethod,
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SBoolean,
           Some(GT(Ident("i", SInt).asIntValue, IntConstant(0))))), Map(SOption.tT -> SInt))
-    )
   }
 
-  property("SOption.flatMap") {
-    testMissingCostingWOSerialization("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})",
+  // TODO  add rule to OptionCoster
+  ignore("SOption.flatMap") {
+    comp("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})") shouldBe
       mkMethodCall(GetVarInt(1),
         SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
         IndexedSeq(Terms.Lambda(
@@ -333,10 +339,10 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           SOption(SInt),
           Some(GetVarInt(2)))),
         Map())
-    )
   }
 
-  property("SCollection.segmentLength") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.segmentLength") {
     comp("OUTPUTS.segmentLength({ (out: Box) => out.value >= 1L }, 0)") shouldBe
       mkMethodCall(Outputs,
         SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
@@ -349,7 +355,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.indexWhere") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.indexWhere") {
     comp("OUTPUTS.indexWhere({ (out: Box) => out.value >= 1L }, 0)") shouldBe
       mkMethodCall(Outputs,
         SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
@@ -362,7 +369,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.lastIndexWhere") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.lastIndexWhere") {
     comp("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L }, 1)") shouldBe
       mkMethodCall(Outputs,
         SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
@@ -375,7 +383,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.patch") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.patch") {
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -384,7 +393,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.updated") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.updated") {
     comp("Coll(1, 2).updated(1, 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -393,7 +403,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.updateMany") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.updateMany") {
     comp("Coll(1, 2).updateMany(Coll(1), Coll(3))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -402,38 +413,39 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.unionSets") {
-    testMissingCosting("Coll(1, 2).unionSets(Coll(1))",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.unionSets") {
+    comp("Coll(1, 2).unionSets(Coll(1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1))),
         Map())
-    )
   }
 
-  property("SCollection.diff") {
-    testMissingCosting("Coll(1, 2).diff(Coll(1))",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.diff") {
+    comp("Coll(1, 2).diff(Coll(1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1))),
         Map())
-    )
   }
 
-  property("SCollection.intersect") {
-    testMissingCosting("Coll(1, 2).intersect(Coll(1))",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.intersect") {
+    comp("Coll(1, 2).intersect(Coll(1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1))),
         Map())
-    )
   }
 
-  property("SCollection.prefixLength") {
-    testMissingCostingWOSerialization("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.prefixLength") {
+    comp("OUTPUTS.prefixLength({ (out: Box) => out.value >= 1L })") shouldBe
       mkMethodCall(Outputs,
         SCollection.PrefixLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
         Vector(
@@ -443,10 +455,10 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
             Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
         ),
         Map())
-    )
   }
 
-  property("SCollection.indexOf") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.indexOf") {
     comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -455,18 +467,19 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.lastIndexOf") {
-    testMissingCosting("Coll(1, 2).lastIndexOf(1, 0)",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.lastIndexOf") {
+    comp("Coll(1, 2).lastIndexOf(1, 0)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0)),
         Map())
-    )
   }
 
-  property("SCollection.find") {
-    testMissingCostingWOSerialization("OUTPUTS.find({ (out: Box) => out.value >= 1L })",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.find") {
+    comp("OUTPUTS.find({ (out: Box) => out.value >= 1L })") shouldBe
       mkMethodCall(Outputs,
         SCollection.FindMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
         Vector(
@@ -476,40 +489,40 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
             Some(GE(ExtractAmount(Ident("out",SBox).asBox),LongConstant(1))))
         ),
         Map())
-    )
   }
 
-  property("Collection.distinct") {
-    testMissingCosting("Coll(true, false).distinct",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("Collection.distinct") {
+    comp("Coll(true, false).distinct") shouldBe
       mkMethodCall(
         ConcreteCollection(TrueLeaf, FalseLeaf),
         SCollection.DistinctMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
-    )
   }
 
-  property("SCollection.startsWith") {
-    testMissingCosting("Coll(1, 2).startsWith(Coll(1), 1)",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.startsWith") {
+    comp("Coll(1, 2).startsWith(Coll(1), 1)") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1)), IntConstant(1)),
         Map())
-    )
   }
 
-  property("SCollection.endsWith") {
-    testMissingCosting("Coll(1, 2).endsWith(Coll(1))",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.endsWith") {
+    comp("Coll(1, 2).endsWith(Coll(1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1))),
         Map())
-    )
   }
 
-  property("SCollection.zip") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.zip") {
     comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -518,7 +531,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       )
   }
 
-  property("SCollection.partition") {
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.partition") {
     comp("Coll(1, 2).partition({ (i: Int) => i > 0 })") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
@@ -530,9 +544,10 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.mapReduce") {
-    testMissingCostingWOSerialization(
-      "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })",
+  // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
+  ignore("SCollection.mapReduce") {
+    comp(
+      "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })") shouldBe
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.MapReduceMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
@@ -555,7 +570,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           )
         ),
         Map())
-    )
   }
 
   property("failed option constructors (not supported)") {

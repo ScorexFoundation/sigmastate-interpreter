@@ -1791,23 +1791,23 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case sigmastate.Upcast(In(inputC), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         val res = upcast(inputC.value)(elem)
-        withConstantSize(res, inputC.cost + costOf(node))
+        withConstantSize(res, opCost(Seq(inputC.cost), costOf(node)))
 
       case sigmastate.Downcast(In(inputC), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         val res = downcast(inputC.value)(elem)
-        withConstantSize(res, inputC.cost + costOf(node))
+        withConstantSize(res, opCost(Seq(inputC.cost), costOf(node)))
 
       case LongToByteArray(In(input)) =>
         val inputC = asRep[Costed[Long]](input)
         val res = sigmaDslBuilder.longToByteArray(inputC.value)
-        val cost = inputC.cost + costOf(node)
-        withConstantSize(res, cost)
+        val cost = opCost(Seq(inputC.cost), costOf(node))
+        mkCostedColl(res, 8, cost)
 
       case ByteArrayToLong(In(arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](arr)
         val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
-        val cost = arrC.cost + costOf(node)
+        val cost = opCost(Seq(arrC.cost), costOf(node))
         withConstantSize(value, cost)
 
       case Xor(InCollByte(l), InCollByte(r)) =>
@@ -1815,7 +1815,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val sizes = r.sizes
         val len = sizes.length
         val costs = colBuilder.replicate(len, 0)
-        val cost = perKbCostOf(node, len.toLong)
+        val cost = opCost(Seq(l.cost, r.cost), perKbCostOf(node, len.toLong))
         RCCostedColl(values, costs, sizes, cost)
 
 // TODO should be
@@ -1823,6 +1823,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        val inputC = evalNode(ctx, env, input)
 //        withDefaultSize(inputC.value, inputC.cost + costOf(node))
 
+// TODO why we need this here?
       case sigmastate.Values.ConstantPlaceholder(index, tpe) =>
         val elem = toLazyElem(stypeToElem(tpe))
         val res = constantPlaceholder(index)(elem)
@@ -1836,7 +1837,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
       case DecodePoint(InCollByte(bytes)) =>
         val res = sigmaDslBuilder.decodePoint(bytes.values)
-        withConstantSize(res, opCost(Seq(bytes.cost), costOf(node)))
+        RCCostedPrim(res, opCost(Seq(bytes.cost), costOf(node)), SizeGroupElement)
 
 //      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isCollectionLike =>
 //        val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))

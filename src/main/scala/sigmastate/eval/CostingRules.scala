@@ -1,11 +1,12 @@
 package sigmastate.eval
 
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import scalan.SigmaLibrary
+import scalan.{SigmaLibrary, RType}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
+import special.collection.Coll
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -441,4 +442,40 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   object OptionCoster extends CostingHandler[WOption[Any]]((obj, m, args) => new OptionCoster[Any](obj, m, args))
+
+
+  class CollCoster[T](obj: RCosted[Coll[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Coll[T]](obj, method, args) {
+    import Coll._
+    implicit val eT = obj.elem.eVal.eItem
+    def indices(): RCostedColl[Int] =
+      knownLengthCollProperyAccess(_.indices, asSizeColl(obj.size).sizes.length)
+
+    def getSizePropertyMethod[B](mc: MethodCall): RSize[T] => RColl[Size[B]] = {
+      ???
+    }
+
+    def flatMap[B](fC: RCosted[T => Coll[B]]): RCostedColl[B] = {
+      val f = fC.value
+      f match {
+        // Pattern: xs.flatMap(x => x.property)
+        case Def(Lambda(l,_,_,Def(mc @ MethodCall(x, m, Nil, _)))) if x == l.x =>
+          val sObj = asSizeColl(obj.size)
+          val sizes: RColl[Size[B]] = sObj.sizes.flatMap(fun { s: RSize[T] =>
+            val sizeProp = getSizePropertyMethod[B](mc)
+            sizeProp(s)
+          })
+          val values = obj.value.flatMap(f)
+          val costs = colBuilder.replicate(sizes.length, 0)
+          RCCostedColl(values, costs, sizes, opCost(costOfArgs, costOf(method)))
+        case _ =>
+          !!!(s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
+      }
+    }
+
+//    def segmentLength(p: RCosted[A => Boolean], from: RCosted[Int]): RCosted[Int] = {
+//      ???
+//    }
+  }
+
+  object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))
 }

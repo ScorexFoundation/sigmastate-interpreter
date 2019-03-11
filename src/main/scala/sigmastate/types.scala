@@ -773,6 +773,7 @@ object SCollectionType {
 
 object SCollection extends STypeCompanion with MethodByNameUnapply {
   override def typeId = SCollectionType.CollectionTypeCode
+  override def coster: Option[CosterFactory] = Some(Coster(_.CollCoster))
 
   val tIV = STypeIdent("IV")
   val paramIV = STypeParam(tIV)
