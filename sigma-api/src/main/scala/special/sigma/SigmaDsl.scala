@@ -214,10 +214,9 @@ trait GroupElement {
   /**
     * Get an encoding of the point value, optionally in compressed format.
     *
-    * @param compressed whether to generate a compressed point encoding.
     * @return the point encoding
     */
-  def getEncoded(compressed: Boolean): Coll[Byte]
+  def getEncoded: Coll[Byte]
 }
 
 /** Proposition which can be proven and verified by sigma protocol. */

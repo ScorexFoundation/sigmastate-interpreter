@@ -86,7 +86,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         minerPubkey = ErgoLikeContext.dummyPubkey,
         headers     = noHeaders,
         preHeader   = dummyPreHeader,
-        dataInputs  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
+        dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
