@@ -3,9 +3,11 @@ package sigmastate.eval
 import java.lang.reflect.Method
 
 import sigmastate.SType
-import sigmastate.Values.{SValue, Value}
+import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
+
+import scala.util.Try
 
 trait IRContext extends Evaluation with TreeBuilding {
   import TestSigmaDslBuilder._
@@ -23,6 +25,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
+  type RCostingResultEx[T] = Rep[(Context => T, ((Context, (Int, Size[Context]))) => Int)]
 
   def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
@@ -40,8 +43,16 @@ trait IRContext extends Evaluation with TreeBuilding {
     Pair(calcF, costF)
   }
 
+  def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
+    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
+    val f = asRep[Costed[Context] => Costed[Any]](costed)
+    val calcF = f.sliceCalc(okRemoveIsProven)
+    val costF = f.sliceCostEx
+    Pair(calcF, costF)
+  }
+
   /** Can be overriden to to do for example logging or saving of graphs */
-  private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResult[T]) {
+  private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResultEx[T]) {
   }
 
   import Size._; import Context._;
@@ -60,6 +71,16 @@ trait IRContext extends Evaluation with TreeBuilding {
                 costF: Rep[((Int, Size[Context])) => Int], maxCost: Long): Int = {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF)
     val estimatedCost = costFun((0, Sized.sizeOf(ctx)))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+    }
+    estimatedCost
+  }
+
+  def checkCostWithContext(ctx: SContext, exp: Value[SType],
+                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Int = {
+    val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](getDataEnv, costF)
+    val estimatedCost = costFun((ctx, (0, Sized.sizeOf(ctx))))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }

@@ -12,7 +12,7 @@ import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.lang.exceptions.{InterpreterException, CosterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -88,7 +88,7 @@ trait Interpreter extends ScorexLogging {
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._; import Size._; import Context._; import SigmaProp._
-    val costingRes @ Pair(calcF, costF) = doCosting(env, exp, true)
+    val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
     IR.onCostingResult(env, exp, costingRes)
 
     verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
@@ -96,7 +96,8 @@ trait Interpreter extends ScorexLogging {
     verifyIsProven(calcF).fold(t => throw t, x => x)
 
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val estimatedCost = checkCostEx(costingCtx, exp, costF, maxCost)
+    val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
+//      .fold(t => throw new CosterException(s"Script cannot be executed.", exp.sourceContext.toList.headOption, Some(t)), identity)
 
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)

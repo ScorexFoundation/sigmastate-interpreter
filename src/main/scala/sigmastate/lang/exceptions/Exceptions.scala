@@ -2,8 +2,8 @@ package sigmastate.lang.exceptions
 
 import sigmastate.lang.SourceContext
 
-class SigmaException(val message: String, val source: Option[SourceContext] = None)
-    extends Exception(message) {
+class SigmaException(val message: String, val source: Option[SourceContext] = None, val cause: Option[Throwable] = None)
+    extends Exception(message, cause.orNull) {
 
   override def getMessage: String = source.map { srcCtx =>
     val lineNumberStrPrefix = s"line ${srcCtx.line}: "
@@ -27,8 +27,8 @@ class SerializerException(message: String, source: Option[SourceContext] = None)
 class BuilderException(message: String, source: Option[SourceContext] = None)
   extends SigmaException(message, source)
 
-class CosterException(message: String, source: Option[SourceContext])
-    extends SigmaException(message, source)
+class CosterException(message: String, source: Option[SourceContext], cause: Option[Throwable] = None)
+    extends SigmaException(message, source, cause)
 
 class InterpreterException(message: String, source: Option[SourceContext] = None)
   extends SigmaException(message, source)

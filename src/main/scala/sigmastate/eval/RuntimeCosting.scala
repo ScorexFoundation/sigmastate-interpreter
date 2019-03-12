@@ -401,6 +401,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       f(RCCostedPrim(placeholder[A], c, s)).cost
     }
 
+    def sliceCostEx: Rep[((A, (Int,Size[A]))) => Int] = fun { in: Rep[(A, (Int, Size[A]))] =>
+      val Pair(ctx, Pair(c, s)) = in
+      f(RCCostedPrim(ctx, c, s)).cost
+    }
+
     def sliceSize: Rep[Size[A] => Size[B]] = fun { in: Rep[Size[A]] =>
       val s = in
       val arg = RCCostedPrim(placeholder[A], 0, s)
@@ -1520,7 +1525,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val xsC = asRep[CostedColl[Any]](eval(xs))
         val iC = asRep[Costed[Int]](eval(i))
         val iV = iC.value
-        val size = xsC.sizes(iV)
+        val size = xsC.sizes(iV)  // TO
         default match {
           case Some(defaultValue) =>
             val defaultC = asRep[Costed[Any]](eval(defaultValue))
