@@ -41,11 +41,17 @@ class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
     typecheck(env, parsed)
   }
 
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
+  private[sigmastate] def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = {
     val typed = typecheck(env, code)
     val spec = new SigmaSpecializer(builder)
     val ir = spec.specialize(typed)
     ir
+  }
+
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val interProp = typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
+    IR.buildTree(calcF)
   }
 }
 
