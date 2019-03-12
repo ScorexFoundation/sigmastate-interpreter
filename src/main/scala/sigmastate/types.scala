@@ -1100,6 +1100,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val Bytes = "bytes"
   val BytesWithoutRef = "bytesWithoutRef"
   val CreationInfo = "creationInfo"
+  val GetReg = "getReg"
   // should be lazy, otherwise lead to initialization error
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6) // see ExtractCreationInfo
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SByte), SOption(tT), Seq(STypeParam(tT))), 7)

@@ -57,6 +57,8 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
+  // TODO Caused by: java.lang.AssertionError: assertion failed:
+  //  Invalid cast Cast(SizeCollElem<SizeColl[Coll[Int], Int]>, s1572): interface special.collection.SizeColl is not assignable from class special.collection.CSizePrim
   ignore("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
