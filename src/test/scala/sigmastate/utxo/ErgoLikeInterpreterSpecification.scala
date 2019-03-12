@@ -134,8 +134,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/428
-  ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
+  // related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/428
+  // checks that cost of the folded function doesn't depend on data
+  property("mixing scenario w. timeout") {
     val height = 50
     val proverA = new ContextEnrichingTestProvingInterpreter
     val proverB = new ContextEnrichingTestProvingInterpreter
@@ -170,17 +171,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asSigmaProp
 
-      val prop = BinOr(
-        BinAnd(LE(Height, LongConstant(timeout)),
-          EQ(CalcBlake2b256(
-            Fold.concat[SByte.type](
-              MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox))))
-            ).asByteArray
-          ),
-            ByteArrayConstant(properHash))),
-        BinAnd(GT(Height, LongConstant(timeout)), sender.isProven)
-      ).toSigmaProp
-      compiledProp shouldBe prop
       compiledProp
     }
 
