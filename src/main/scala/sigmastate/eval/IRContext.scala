@@ -59,7 +59,7 @@ trait IRContext extends Evaluation with TreeBuilding {
 
   def checkCost(ctx: SContext, exp: Value[SType],
                 costF: Rep[Size[Context] => Int], maxCost: Long): Int = {
-    val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, isCosting = true)
+    val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
@@ -69,7 +69,7 @@ trait IRContext extends Evaluation with TreeBuilding {
 
   def checkCostEx(ctx: SContext, exp: Value[SType],
                 costF: Rep[((Int, Size[Context])) => Int], maxCost: Long): Int = {
-    val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, true)
+    val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
@@ -78,12 +78,12 @@ trait IRContext extends Evaluation with TreeBuilding {
   }
 
   def checkCostWithContext(ctx: SContext, exp: Value[SType],
-                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Int = {
+                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
-                    getDataEnv, costF, true)
+                    getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new Error(msgCostLimitError(estimatedCost, maxCost))
     }
     estimatedCost
   }

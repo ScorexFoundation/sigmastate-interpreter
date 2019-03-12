@@ -3,6 +3,7 @@ package sigmastate.utxo
 import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
+import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -12,7 +13,8 @@ import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.lang.exceptions.CosterException
 
 
 /**
@@ -30,7 +32,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 15000000).foreach(_ => hf(block))
+    (1 to 3000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -42,6 +44,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (res, (t - t0) < Timeout)
   }
 
+  // TODO optimze costing graph adding RW rule (this is probable reason why timeout is exceeded)
   ignore("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
@@ -172,7 +175,7 @@ class SpamSpecification extends SigmaTestingCommons {
     }
   }
 
-  ignore("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+  property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
       this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
@@ -181,7 +184,8 @@ class SpamSpecification extends SigmaTestingCommons {
           println(printEnvEntry(sym, value))
       }
     }
-    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val limitlessProver = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
@@ -208,20 +212,30 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 
+    // check that execution terminated withing timeout due to costing exception and cost limit
     val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    val (res, terminated) = termination(() => prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage))
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
-
-    val verifier = new ErgoLikeTestInterpreter
-    val (res, terminated) = termination(() => verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage))
-    val pt2 = System.currentTimeMillis()
-    println(s"Verifier time: ${(pt2 - pt) / 1000.0} seconds")
     terminated shouldBe true
-    res.isFailure shouldBe true
+    assertExceptionThrown(
+      res.fold(t => throw t, identity),
+      t => {
+        rootCause(t).isInstanceOf[CosterException] && t.getMessage.contains("Script cannot be executed")
+      }
+    )
+
+    // measure time required to execute the script itself and it is more then timeout
+    val (_, calcTime) = BenchmarkUtil.measureTime {
+      import limitlessProver.IR._
+      val costingRes @ Pair(calcF, costF) = doCostingEx(emptyEnv, prop, true)
+      val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
+      limitlessProver.calcResult(calcCtx, calcF)
+    }
+    assert(calcTime > Timeout)
   }
 
-  ignore("too heavy avl tree lookup") {
+  property("too heavy avl tree lookup") {
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
     def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
