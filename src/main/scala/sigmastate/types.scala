@@ -1193,12 +1193,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
-    val ctx = v.asInstanceOf[ErgoLikeContext]
-    val avlSize = SAvlTree.dataSize(ctx.lastBlockUtxoRoot.asWrappedType)
-    val inputSize = ctx.boxesToSpend.foldLeft(0L)((acc, b) => acc + b.dataSize)
-    val outputSize = ctx.spendingTransaction.outputs.foldLeft(0L)((acc, b) => acc + b.dataSize)
-    8L +   // Height
-        avlSize + ctx.minerPubkey.length + inputSize + outputSize
+    sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
   }
   override def isConstantSize = false
   def ancestors = Nil
