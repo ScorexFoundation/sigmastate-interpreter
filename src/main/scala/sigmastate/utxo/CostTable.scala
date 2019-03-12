@@ -200,6 +200,8 @@ object CostTable {
     ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
+    ("ModQ", "(BigInt) => BigInt", MinimalCost),
+
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
 

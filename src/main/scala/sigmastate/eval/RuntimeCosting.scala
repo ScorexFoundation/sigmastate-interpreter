@@ -1632,10 +1632,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val inputC = evalNode(ctx, env, input)
         withConstantSize(ApplyUnOp(Not, inputC.value), opCost(Seq(inputC.cost), costOf(node)))
 
-//      case ModQ(input) =>
-//        val inputC = asRep[Costed[WBigInteger]](eval(input))
-//        val v = inputC.value.modQ
-//        RCCostedPrim(v, inputC.cost + costOf(node), SBigInt.MaxSizeInBytes)
+      case ModQ(input) =>
+        val inputC = asRep[Costed[BigInt]](eval(input))
+        val v = inputC.value.modQ
+        RCCostedPrim(v, opCost(Seq(inputC.cost), costOf(node)), SizeBigInt)
 
       case OR(input) => input match {
         case ConcreteCollection(items, tpe) =>
