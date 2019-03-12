@@ -7,10 +7,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.lang.exceptions.OptionUnwrapNone
+
 
 class ContextEnrichingSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
+
   property("context enriching mixed w. crypto") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val preimage = prover.contextExtenders(1).value.asInstanceOf[Array[Byte]]
@@ -70,8 +72,8 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, compiledScript, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  // todo: fix broken XOR for byte arrays
-  // in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
+  // todo: ignored because of https://github.com/ScorexFoundation/sigmastate-interpreter/issues/419
+  // todo: and https://github.com/ScorexFoundation/sigmastate-interpreter/issues/420
   ignore("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
@@ -88,7 +90,12 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compileWithCosting(env,
       """{
-        |  (getVar[Coll[Byte]](k1).get | getVar[Coll[Byte]](k2).get) == r
+        |
+        |  // def Xor(c1: Coll[Byte], c2: Coll[Byte]): Coll[Byte] = c1.zipWith(c2, { (x, y) => x ^ y })
+        |
+        |  def Xor(c1: Coll[Byte], c2: Coll[Byte]): Coll[Byte] = c1.zip(c2).map({ (t : (Byte, Byte)) => t._1 ^ t._2 })
+        |
+        |  Xor(getVar[Coll[Byte]](k1).get, getVar[Coll[Byte]](k2).get) == r
         |}
       """.stripMargin).asBoolValue.toSigmaProp
 

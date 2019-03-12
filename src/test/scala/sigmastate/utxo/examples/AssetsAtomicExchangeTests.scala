@@ -4,12 +4,12 @@ import org.ergoplatform.{Height, Outputs, ErgoBox, Self}
 import org.ergoplatform.ErgoBox.R4
 import sigmastate.helpers.SigmaTestingCommons
 import org.ergoplatform.dsl.ContractSyntax.Token
-import org.ergoplatform.dsl.{ErgoContractSpec, ContractSpec, TestContractSpec}
+import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, BlockValue, SigmaPropConstant, Value, ByteArrayConstant, ValDef, ValUse}
-import sigmastate.eval.{CSigmaProp, Evaluation}
+import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ValDef, ValUse}
+import sigmastate.eval.CSigmaProp
 import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo._
@@ -155,4 +155,5 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
     val sellerProof = contract.tokenSeller.prove(input1, sellerExt).get
     contract.verifier.verify(input1, sellerProof) shouldBe true
   }
+
 }

@@ -2,7 +2,6 @@ package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
-import org.scalatest.exceptions.TestFailedException
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
@@ -10,14 +9,13 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
-import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
-  implicit lazy val IR = new TestingIRContext {
+  implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
   }
 
@@ -212,7 +210,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     testMissingCosting("1 >>> 2", mkBitShiftRightZeroed(IntConstant(1), IntConstant(2)))
   }
 
-  // TODO add costing for << and >> method in CollCoster
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   ignore("Collection.BitShiftLeft") {
     comp("Coll(1,2) << 2") shouldBe
       mkMethodCall(
@@ -221,14 +219,15 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Vector(IntConstant(2)), Map())
   }
 
-  // TODO add costing for << and >> method in CollCoster
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/418
   ignore("Collection.BitShiftRight") {
-    comp("Coll(1,2) >> 2") shouldBe
+    testMissingCosting("Coll(1,2) >> 2",
       mkMethodCall(
         ConcreteCollection(IntConstant(1), IntConstant(2)),
         SCollection.BitShiftRightMethod,
         Vector(IntConstant(2)),
         Map(SCollection.tIV -> SInt))
+    )
   }
 
   // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster
@@ -307,26 +306,31 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         IndexedSeq(BigIntConstant(1)))
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
   // TODO  add rule to OptionCoster
   ignore("SOption.map") {
-    comp("getVar[Int](1).map({(i: Int) => i + 1})") shouldBe
+    testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
       mkMethodCall(GetVarInt(1),
-        SOption.MapMethod,
+        SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SInt,
-          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map(SOption.tT -> SInt, SOption.tR -> SInt))
+          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map())
+    )
   }
+
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
 
   // TODO  add rule to OptionCoster
   ignore("SOption.filter") {
-    comp("getVar[Int](1).filter({(i: Int) => i > 0})") shouldBe
+    testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
       mkMethodCall(GetVarInt(1),
-        SOption.FilterMethod,
+        SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
         IndexedSeq(Terms.Lambda(
           Vector(("i", SInt)),
           SBoolean,
-          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0))))), Map(SOption.tT -> SInt))
+          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0))))), Map())
+    )
   }
 
   // TODO  add rule to OptionCoster

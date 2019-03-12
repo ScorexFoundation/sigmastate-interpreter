@@ -8,20 +8,18 @@ import sigmastate._
 
 class MethodCallSerializerSpecification extends SerializationSpecification {
 
-  // TODO should be fixed
-  ignore("MethodCall deserialization round trip") {
+  property("MethodCall deserialization round trip") {
     val expr = MethodCall(Outputs,
-      SCollection.FlatMapMethod,
+      SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)),
       Vector(FuncValue(1, SBox, ExtractScriptBytes(ValUse(1, SBox)))),
-      Map(SCollection.tIV -> SBox, SCollection.tOV -> SByte)
+      Map()
     )
     roundTripTest(expr)
   }
 
-  // TODO should be fixed
-  ignore("MethodCall deserialization round trip (non-generic method)") {
+  property("MethodCall deserialization round trip (non-generic method)") {
     val expr = MethodCall(Outputs,
-      SMethod(SCollection, "size", SFunc(SBox, SInt), 1),
+      SMethod(SCollection, "size", SFunc(SCollection[SBox.type], SInt), 1),
       Vector(),
       Map()
     )

@@ -5,8 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalacheck.Gen.containerOfN
-import com.google.common.primitives.Longs
-import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec, StdContracts}
+import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
@@ -19,14 +18,11 @@ import sigma.util.Extensions._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate._
-import sigmastate.Values.{Constant, SValue, IntConstant, ErgoTree, BooleanConstant}
-import sigmastate.interpreter.{ContextExtension, Interpreter}
+import sigmastate.Values.{IntConstant, BooleanConstant}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptEnv}
-import special.collection.Coll
-import sigmastate.eval.CBigInt
-import sigmastate.serialization.generators.ValueGenerators
 import special.collection.{Coll, Builder}
-import special.collections.CollGens
+
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -249,8 +245,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  ignore("longToByteArray equivalence") {
-    // TODO fix Array[Byte] != CollOverArray in result type comparison
+  property("longToByteArray equivalence") {
     val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
       longToByteArray(x)
     }
@@ -268,6 +263,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
   // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
   ignore("Func context variable") {
 //    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
@@ -443,14 +439,15 @@ class SigmaDslTest extends PropSpec
     forAll { x: BigInt => negBigInteger(x) }
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/424
   ignore("BinXor(logical XOR) equivalence") {
-    // TODO implement
     val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
       x => x._1 ^ x._2
     }
     forAll { x: (Boolean, Boolean) => eq(x) }
   }
 
+  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg equivalence") {
     // TODO implement in SigmaDsl (interpreter test passes in BasicOpsSpec.Box.getReg test)
 //    val eq = checkEq(func[Box, Int]("{ (x: Box) => x.getReg[Int](1).get }")) { x => x.getReg(1).get }

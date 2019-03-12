@@ -3,12 +3,8 @@ package sigmastate
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
-import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogSigmaProtocol, DLogProverInput}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer

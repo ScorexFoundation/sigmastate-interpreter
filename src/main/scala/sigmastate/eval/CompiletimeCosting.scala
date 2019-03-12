@@ -3,19 +3,15 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
-import sigmastate.lang.Terms.{Apply, _}
-import sigmastate.lang.SigmaPredef._
+import sigmastate.Values.{Constant, Value}
+import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.SType._
 import sigmastate.SCollection._
 import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
-import sigmastate.lang.SigmaSpecializer.error
-import sigmastate.lang.{Terms, TransformingSigmaBuilder}
+import sigmastate.lang.Terms
 import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>

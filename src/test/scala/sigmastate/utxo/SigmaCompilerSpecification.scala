@@ -11,7 +11,7 @@ import sigmastate._
   * Specification for compile function
   */
 class SigmaCompilerSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private def compile(code: String, env: ScriptEnv = Map()): Value[SType] = compileWithCosting(env, code)
 
@@ -27,7 +27,7 @@ class SigmaCompilerSpecification extends SigmaTestingCommons {
   }
 
   // TODO: enable after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 is done
-  ignore("modular arithmetic ops") {
+  property("modular arithmetic ops") {
     compile("10.toBigInt.modQ") shouldEqual ModQ(BigIntConstant(10))
     compile("10.toBigInt.plusModQ(2.toBigInt)") shouldEqual
       PlusModQ(BigIntConstant(10), BigIntConstant(2))

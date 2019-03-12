@@ -1,8 +1,6 @@
 package sigmastate.utxo
 
-import java.lang.reflect.InvocationTargetException
-
-import org.ergoplatform.ErgoBox.{R4, R6, R8}
+import org.ergoplatform.ErgoBox.{R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
@@ -12,7 +10,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestI
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
-import scalan.BaseCtxTests
+
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -355,10 +353,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       rootCause(_).isInstanceOf[InvalidType])
   }
 
-  // TODO should be fixed
+  // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg") {
     test("Extract1", env, ext,
-      "{ SELF.getReg[Int](getVar[Int](intVar1).get + 4).get == 1}",
+      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4).toByte ).get == 1}",
       BoolToSigmaProp(
         EQ(
           MethodCall(Self, SBox.getRegMethod,
@@ -563,28 +561,22 @@ class BasicOpsSpecification extends SigmaTestingCommons {
    )
   }
 
-  ignore("Nested logical ops 2") {
-    test("nestedLogic", env, ext,
+  property("Nested logical ops 2") {
+    test("nestedLogic2", env, ext,
       """{
        |    val c = OUTPUTS(0).R4[Int].get
        |    val d = OUTPUTS(0).R5[Int].get
        |
-       |    OUTPUTS.size == 2 &&
+       |    OUTPUTS.size == 1 &&
        |    OUTPUTS(0).value == SELF.value &&
-       |    OUTPUTS(1).value == SELF.value &&
-       |    blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&
-       |    blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&
-       |    OUTPUTS(1).R4[GroupElement].get == d &&
-       |    OUTPUTS(1).R5[GroupElement].get == c && {
-       |      proveDHTuple(g, c, u, d) ||
-       |      proveDHTuple(g, d, u, c)
-       |    }
-       |}""".stripMargin,
-      FalseLeaf,
+       |    {{ c != d || d == c }  && { true || false } }
+       |} """.stripMargin,
+      null,
       true
     )
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
   ignore("Option.map") {
     test("Option.map", env, ext,
       "getVar[Int](intVar1).map({(i: Int) => i + 1}).get == 2",
@@ -593,6 +585,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
   ignore("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
