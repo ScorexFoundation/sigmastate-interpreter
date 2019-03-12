@@ -5,24 +5,25 @@ import java.math.BigInteger
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, ConstantNode, ErgoTree, IntConstant, SValue, SigmaBoolean, Value}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
+import special.collection.{Builder, CCostedBuilder, Coll, CollType, CostedBuilder}
 import special.sigma._
 import special.sigma.Extensions._
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scalan.RType
-import scorex.crypto.hash.{Sha256, Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.GroupElementSerializer
 
 import scala.reflect.ClassTag
 
@@ -34,8 +35,11 @@ case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wra
   override val dsl = CostingSigmaDslBuilder
 }
 
-case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
+case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
   override val dsl = CostingSigmaDslBuilder
+
+  override def getEncoded: Coll[Byte] = dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
+
 }
 
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
@@ -358,7 +362,7 @@ case class CHeader(
                     version: Byte,
                     parentId: Coll[Byte],
                     ADProofsRoot: Coll[Byte],
-                    stateRoot: AvlTree,
+                    stateRoot: CAvlTree,
                     transactionsRoot: Coll[Byte],
                     timestamp: Long,
                     nBits: Long,
@@ -442,7 +446,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
 
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
-  override def GroupElement(p: ECPoint): GroupElement = new CGroupElement(p)
+  override def GroupElement(p: ECPoint): GroupElement = p match {
+    case ept: EcPointType => CGroupElement(ept)
+    case m => sys.error(s"Point of type ${m.getClass} is not supported")
+  }
 
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
@@ -452,7 +459,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
   def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
 
-  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = {
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
     val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
     CAvlTree(treeData)
   }

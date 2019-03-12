@@ -63,6 +63,7 @@ digraph conversions {
     GroupElement -> SigmaProp [label="proveDlog(...)"]
     GroupElement -> Boolean [label=".isIdentity"]
     GroupElement -> Bytes [label=".nonce"]
+      //todo remove compressed flag, use GroupElementSerializer
     GroupElement -> Bytes [label=".getEncoded(compressed)" color=red]
 
     String -> Bytes [label="fromBase58(...)"]

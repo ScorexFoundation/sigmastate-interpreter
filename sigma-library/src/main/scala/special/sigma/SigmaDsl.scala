@@ -65,6 +65,7 @@ package special.sigma {
       def multiply(k: Rep[BigInt]): Rep[GroupElement];
       def add(that: Rep[GroupElement]): Rep[GroupElement];
       def negate: Rep[GroupElement];
+      //todo remove compressed flag, use GroupElementSerializer
       def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]]
     };
     @Liftable trait SigmaProp extends Def[SigmaProp] {

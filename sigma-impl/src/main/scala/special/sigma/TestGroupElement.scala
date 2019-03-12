@@ -16,5 +16,4 @@ abstract class TestGroupElement(private[sigma] val value: ECPoint) extends Group
 
   override def negate: GroupElement = dsl.GroupElement(value.negate())
 
-  override def getEncoded(compressed: Boolean): Coll[Byte] = dsl.Colls.fromArray(value.getEncoded(compressed))
 }

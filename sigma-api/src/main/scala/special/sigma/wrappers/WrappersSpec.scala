@@ -10,6 +10,7 @@ import special.sigma.SigmaPredef
 import scala.reflect.ClassTag
 
 trait ECPointWrapSpec extends WrapSpecBase {
+  //todo remove compressed flag, use GroupElementSerializer
   def getEncoded[A](g: ECPoint, compressed: Boolean): Array[Byte] = g.getEncoded(compressed)
   def multiply(l: ECPoint, r: BigInteger) = l.multiply(r)
   def add(l: ECPoint, r: ECPoint) = l.add(r)

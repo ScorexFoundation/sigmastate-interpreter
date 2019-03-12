@@ -144,7 +144,7 @@ class SigmaDslTest extends PropSpec
     (key, value, avlProver)
   }
 
-  private def sampleAvlTree = {
+  private def sampleAvlTree:CAvlTree = {
     val (key, _, avlProver) = sampleAvlProver
     val digest = avlProver.digest.toColl
     val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
@@ -312,11 +312,12 @@ class SigmaDslTest extends PropSpec
     votes = Colls.emptyColl[Byte]
   )
   val ergoCtx = new ErgoLikeContext(
-    currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy,
-    dummyPubkey, boxesToSpend = IndexedSeq(inBox),
+    currentHeight = preHeader.height,
+    lastBlockUtxoRoot = header.stateRoot.asInstanceOf[CAvlTree].treeData,
+    preHeader.minerPk.getEncoded.toArray,
+    boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
-    self = inBox, headers = headers, preHeader = preHeader, dataInputs = IndexedSeq(dataBox),
+    self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension(Map()))
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
