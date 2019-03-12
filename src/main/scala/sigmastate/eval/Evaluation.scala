@@ -209,9 +209,83 @@ trait Evaluation extends RuntimeCosting { IR =>
       println(printEnvEntry(sym, value))
   }
 
-  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Rep[A => B])
-                           (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): SA => SB =
+  def getFromEnv(dataEnv: DataEnv, s: Sym): Any = dataEnv.get(s) match {
+    case Some(v) => v
+    case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
+  }
+
+  class CostCounter(initialCost: Int) {
+    private var _currentCost: Int = initialCost
+
+    @inline def += (n: Int) = {
+      this._currentCost += n
+    }
+    @inline def currentCost: Int = _currentCost
+    @inline def resetCost() = { _currentCost = initialCost }
+  }
+
+  class CostAccumulator(initialCost: Int, isCosting: Boolean) {
+
+    @inline private def initialStack() = List(new Scope(Set()))
+    private var _scopeStack: List[Scope] = initialStack
+
+    @inline def currentVisited: Set[Sym] = _scopeStack.head.visited
+    @inline def currentScope: Scope = _scopeStack.head
+    @inline private def getCostFromEnv(dataEnv: DataEnv, s: Sym): Int = getFromEnv(dataEnv, s).asInstanceOf[Int]
+
+    class Scope(visitiedOnEntry: Set[Sym]) extends CostCounter(0) {
+      private var _visited: Set[Sym] = visitiedOnEntry
+      @inline def visited = _visited
+      @inline def add(op: OpCost, opCost: Int, dataEnv: DataEnv) = {
+        for (arg <- op.args) {
+          if (!_visited.contains(arg)) {
+            val argCost = getCostFromEnv(dataEnv, arg)
+            this += argCost
+            _visited += arg
+          }
+        }
+        this += opCost
+        _visited += op.opCost
+      }
+    }
+
+    /** Called once for each operation of a scope (lambda or thunk).
+      * if isCosting then delegate to the currentScope */
+    @inline def add(op: OpCost, dataEnv: DataEnv) = {
+      val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
+      if (isCosting) {
+        currentScope.add(op, opCost, dataEnv)
+      }
+      opCost
+    }
+
+    /** Called before any operation of a new scope (lambda or thunk)*/
+    def startScope() = {
+      _scopeStack = new Scope(currentVisited) :: _scopeStack
+    }
+
+    /** Called after all operations of a scope are executed (lambda or thunk)*/
+    def endScope() = {
+      val cost = currentScope.currentCost
+      _scopeStack = _scopeStack.tail
+      _scopeStack.head += cost
+    }
+
+    /** Resets this accumulator into initial state to be ready for new graph execution. */
+    def reset() = {
+      _scopeStack = initialStack()
+    }
+
+    /** Returns total accumulated cost */
+    @inline def totalCost: Int = currentScope.currentCost
+  }
+
+
+  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Rep[A => B], isCosting: Boolean = false)
+                           (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): SA => (SB, Int) =
   {
+    val costAccumulator = new CostAccumulator(0, isCosting)
+
     def evalSizeData(data: SizeData[_,_], dataEnv: DataEnv): Any = {
       val info = dataEnv(data.sizeInfo)
       data.eVal match {
@@ -232,10 +306,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
 
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
-      object In { def unapply(s: Sym): Option[Any] = dataEnv.get(s) match {
-        case s @ Some(_) => s
-        case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
-      }}
+      object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
         var startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
@@ -350,11 +421,13 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
+              costAccumulator.startScope()
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
                 val (e, _) = evaluate(te).run(env)
                 e
               }
               val res = resEnv(y)
+              costAccumulator.endScope()
               res
             }
             out(f)
@@ -365,11 +438,14 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Second(In(p: Tuple2[_,_])) => out(p._2)
           case ThunkDef(y, schedule) =>
             val th = () => {
+              costAccumulator.startScope()
               val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
                 val (e, _) = evaluate(te).run(env)
                 e
               }
-              resEnv(y)
+              val res = resEnv(y)
+              costAccumulator.endScope()
+              res
             }
             out(th)
 
@@ -420,7 +496,8 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case costOp: CostOf =>
             out(costOp.eval)
-          case OpCost(_, In(c: Int)) =>
+          case op: OpCost =>
+            val c = costAccumulator.add(op, dataEnv)
             out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
@@ -488,6 +565,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
 
     val res = (x: SA) => {
+      costAccumulator.reset() // reset accumulator to initial state
       val g = new PGraph(f)
       val xSym = f.getLambda.x
       val resEnv = g.schedule.foldLeft(dataEnv + (xSym -> x.asInstanceOf[AnyRef])) { (env, te) =>
@@ -496,29 +574,9 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
       val fun = resEnv(f).asInstanceOf[SA => SB]
       val y = fun(x)
-      y
+      (y, costAccumulator.totalCost)
     }
     res
-//    val res = (ctx: SContext) => {
-//      val g = new PGraph(f)
-//      val ctxSym = f.getLambda.x
-//      val resEnv = g.schedule.foldLeft(dataEnv + (ctxSym -> ctx)) { (env, te) =>
-//        val (e, _) = evaluate(ctxSym, te).run(env)
-//        e
-//      }
-//      val fun = resEnv(f).asInstanceOf[SigmaContext => Any]
-//      fun(ctx) match {
-//        case sb: SigmaBoolean => builder.liftAny(sb).get
-//        case v: Value[_] => v
-//        case x =>
-//          val eRes = f.elem.eRange
-//          val tpeRes = elemToSType(eRes)
-//          val tRes = Evaluation.stypeToRType(tpeRes)
-//          val treeType = Evaluation.toErgoTreeType(tRes)
-//          val constValue = Evaluation.fromDslData(x, treeType)
-//          builder.mkConstant[SType](constValue.asInstanceOf[SType#WrappedType], tpeRes)
-//      }
-//    }
   }
 }
 

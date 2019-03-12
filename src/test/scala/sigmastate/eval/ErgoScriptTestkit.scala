@@ -201,7 +201,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         val lA = calcF.elem.eDom.liftable.asLiftable[SContext, Context]
         val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
         val valueFun = IR.compile(getDataEnv, calcF)(lA, lB)
-        val res = valueFun(calcCtx)
+        val (res, _) = valueFun(calcCtx)
         checkExpected(res, expectedResult.calc,
           "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
       }

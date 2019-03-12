@@ -69,8 +69,8 @@ trait Interpreter extends ScorexLogging {
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._; import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF)
-    val estimatedCost = costFun((0, Sized.sizeOf(costingCtx)))
+    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, true)
+    val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
@@ -104,10 +104,11 @@ trait Interpreter extends ScorexLogging {
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
       case sp: SigmaPropElem[_] =>
         val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
-        valueFun(calcCtx)
+        val (sp, _) = valueFun(calcCtx)
+        sp
       case BooleanElement =>
         val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
-        val b = valueFun(calcCtx)
+        val (b, _) = valueFun(calcCtx)
         sigmaDslBuilderValue.sigmaProp(b)
     }
 
