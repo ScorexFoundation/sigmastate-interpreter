@@ -58,7 +58,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       }
     }
 
-    val prop = compileWithCosting(env, script).asBoolValue.toSigmaProp
+    val prop = compile(env, script).asBoolValue.toSigmaProp
     if (propExp != null)
       prop shouldBe propExp
 

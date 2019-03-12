@@ -49,7 +49,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // y is Bob's secret key and h = g^y is kind of like his "public key"
     // The Diffie-Hellman solution is g_xy = g_y^x = g_x^y = g^xy.
-    val fullMixScript = compileWithCosting(fullMixEnv,
+    val fullMixScript = compile(fullMixEnv,
       """{
         |  val e = SELF.R4[GroupElement].get
         |  val f = SELF.R5[GroupElement].get
@@ -72,7 +72,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // The proveDHTuple instruction takes parameters (g, h, u, v) where g, h are generators (discrete log bases)
     // with u = g^x and v = h^x. Note that y = log_g(h), where y is Bob's secret.
 
-    val halfMixScript = compileWithCosting(halfMixEnv,
+    val halfMixScript = compile(halfMixEnv,
       """{
         |  val c = OUTPUTS(0).R4[GroupElement].get
         |  val d = OUTPUTS(0).R5[GroupElement].get

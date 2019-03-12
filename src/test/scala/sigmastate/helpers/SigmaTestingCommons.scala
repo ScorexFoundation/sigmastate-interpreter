@@ -51,12 +51,9 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
-    val tree = compiler.compileWithoutCosting(env, code)
-    tree
-  }
+  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = compiler.compileWithoutCosting(env, code)
 
-  def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
     val tree = compiler.compile(env, code)
     checkSerializationRoundTrip(tree)
     tree

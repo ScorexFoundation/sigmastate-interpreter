@@ -54,7 +54,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), code).asBoolValue.toSigmaProp
+    val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
@@ -68,7 +68,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
 
     val expProp = Exists(Outputs,
       FuncValue(Vector((1, SBox)),
@@ -100,7 +100,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
 
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
@@ -132,7 +132,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
       ).toSigmaProp
@@ -161,7 +161,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
@@ -202,7 +202,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
@@ -246,7 +246,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compileWithCosting(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
+    val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
     val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
     prop shouldBe propTree
 

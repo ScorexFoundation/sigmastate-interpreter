@@ -37,7 +37,7 @@ class Rule110Specification extends SigmaTestingCommons {
     }
     val verifier = new ErgoLikeTestInterpreter
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """{
         |  val indices: Coll[Int] = Coll(0, 1, 2, 3, 4, 5)
         |  val inLayer: Coll[Byte] = SELF.R4[Coll[Byte]].get

@@ -28,7 +28,7 @@ class IcoExample extends SigmaTestingCommons {
       ScriptNameProp -> "fundingScriptEnv"
     )
 
-    val fundingScript = compileWithCosting(fundingEnv,
+    val fundingScript = compile(fundingEnv,
       """{
         |  val proof = getVar[Coll[Byte]](1).get
         |
@@ -92,7 +92,7 @@ class IcoExample extends SigmaTestingCommons {
       ScriptNameProp -> "fixingScriptEnv"
     )
 
-    val fixingProp = compileWithCosting(fixingEnv,
+    val fixingProp = compile(fixingEnv,
       """{
         |  val openTree = SELF.R4[AvlTree].get
         |

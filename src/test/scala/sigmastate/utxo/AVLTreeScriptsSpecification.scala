@@ -322,7 +322,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compileWithCosting(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
+    val prop = compile(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
 
     val propTree = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
@@ -368,7 +368,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       ).asBoolValue
     ).toSigmaProp
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
-    val propCompiled = compileWithCosting(env,
+    val propCompiled = compile(env,
       """{
         |  val tree = SELF.R3[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get
@@ -429,7 +429,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val tree = SELF.R4[AvlTree].get
         |  val key = SELF.R5[Coll[Byte]].get
@@ -490,7 +490,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
 
     val env = Map("proofId" -> proofId.toLong,
                   "keys" -> ConcreteCollection(genKey("3"), genKey("4"), genKey("5")))
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val tree = SELF.R4[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get

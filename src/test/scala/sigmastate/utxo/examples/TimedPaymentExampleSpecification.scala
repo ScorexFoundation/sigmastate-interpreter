@@ -30,7 +30,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       "alice" -> alicePubKey
     )
 
-    val script = compileWithCosting(env,
+    val script = compile(env,
       """{ alice && HEIGHT <= getVar[Int](1).get }""".stripMargin
     ).asSigmaProp
 

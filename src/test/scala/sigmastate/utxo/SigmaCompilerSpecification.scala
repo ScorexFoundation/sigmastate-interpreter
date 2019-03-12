@@ -13,13 +13,13 @@ import sigmastate._
 class SigmaCompilerSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
-  private def compile(code: String, env: ScriptEnv = Map()): Value[SType] = compileWithCosting(env, code)
+  private def compile(code: String, env: ScriptEnv = Map()): Value[SType] = compile(env, code)
 
   property(">= compile") {
     val elementId = 1: Byte
     val env = Map("elementId" -> elementId)
     val propTree = GE(GetVarInt(elementId).get, IntConstant(120))
-    val propComp = compileWithCosting(env,
+    val propComp = compile(env,
       """{
         |  getVar[Int](elementId).get >= 120
         |}""".stripMargin).asBoolValue

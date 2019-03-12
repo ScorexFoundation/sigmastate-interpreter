@@ -45,12 +45,12 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compileWithCosting(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp1 = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
     val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
-    val compiledProp2 = compileWithCosting(env,
+    val compiledProp2 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
@@ -73,7 +73,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
-    val compiledProp3 = compileWithCosting(env,
+    val compiledProp3 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
@@ -91,7 +91,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
-    val compiledProp4 = compileWithCosting(env,
+    val compiledProp4 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
@@ -269,7 +269,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compileWithCosting(env,
+    val compiledProp = compile(env,
       """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asSigmaProp
     val prop = AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI))
 
@@ -409,16 +409,16 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val keyName = "pubkeyA"
     val env = Map(keyName -> pubkeyA)
     val pubKeysStrExceeding = Array.fill[String](AtLeast.MaxChildrenCount + 1)(keyName).mkString(",")
-    an[CosterException] should be thrownBy compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
+    an[CosterException] should be thrownBy compile(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
     an[CosterException] should be thrownBy
-      compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
+      compile(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
 
     // max children should work fine
     val pubKeysStrMax = Array.fill[String](AtLeast.MaxChildrenCount)(keyName).mkString(",")
-    compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
-    compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
+    compile(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
+    compile(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
 
     // collection with unknown items should pass
-    compileWithCosting(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
+    compile(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
   }
 }

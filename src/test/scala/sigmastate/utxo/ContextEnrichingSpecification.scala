@@ -19,7 +19,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("blake" -> Blake2b256(preimage), "pubkey" -> pubkey)
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
@@ -47,7 +47,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("blake" -> Blake2b256(preimage1 ++ preimage2), "pubkey" -> pubkey)
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       """{
         |  pubkey && blake2b256(getVar[Coll[Byte]](1).get ++ getVar[Coll[Byte]](2).get) == blake
         |}
@@ -88,7 +88,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       .withContextExtender(k2, ByteArrayConstant(v2))
 
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       """{
         |
         |  // def Xor(c1: Coll[Byte], c2: Coll[Byte]): Coll[Byte] = c1.zipWith(c2, { (x, y) => x ^ y })
@@ -124,7 +124,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val preimage = prover.contextExtenders(1: Byte).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage))
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       """{
         |  blake2b256(getVar[Coll[Byte]](1).get) == blake
         |}
@@ -151,7 +151,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val preimage2 = prover.contextExtenders(2).value.asInstanceOf[Array[Byte]]
 
     val env = Map("blake" -> Blake2b256(preimage2 ++ preimage1))
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       """{
         |  blake2b256(getVar[Coll[Byte]](2).get ++ getVar[Coll[Byte]](1).get) == blake
         |}
