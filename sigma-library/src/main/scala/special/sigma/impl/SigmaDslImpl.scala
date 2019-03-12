@@ -1205,6 +1205,7 @@ object GroupElement extends EntityObject("GroupElement") {
         true, false, element[GroupElement]))
     }
 
+    //todo remove compressed flag, use GroupElementSerializer
     override def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         GroupElementClass.getMethod("getEncoded", classOf[Sym]),
@@ -1262,6 +1263,7 @@ object GroupElement extends EntityObject("GroupElement") {
         true, true, element[GroupElement]))
     }
 
+    //todo remove compressed flag, use GroupElementSerializer
     def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         thisClass.getMethod("getEncoded", classOf[Sym]),

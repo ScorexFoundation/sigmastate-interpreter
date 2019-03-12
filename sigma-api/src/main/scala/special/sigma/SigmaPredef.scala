@@ -12,7 +12,6 @@ object SigmaPredef {
     case _: Int => 4
     case _: Long => 8
 //    case b: Box => b.dataSize
-    case p: ECPoint => p.getEncoded(true).length
     case _ => sys.error(s"Cannot compute dataSize($v)")
   }
   

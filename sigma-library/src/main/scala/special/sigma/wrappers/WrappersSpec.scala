@@ -8,6 +8,7 @@ package special.sigma.wrappers {
     import WSigmaPredef._;
     import WrapSpecBase._;
     trait ECPointWrapSpec extends WrapSpecBase {
+      //todo remove compressed flag, use GroupElementSerializer
       def getEncoded[A](g: Rep[WECPoint], compressed: Rep[Boolean]): Rep[WArray[Byte]] = g.getEncoded(compressed);
       def multiply(l: Rep[WECPoint], r: Rep[WBigInteger]): Rep[WECPoint] = l.multiply(r);
       def add(l: Rep[WECPoint], r: Rep[WECPoint]): Rep[WECPoint] = l.add(r)
