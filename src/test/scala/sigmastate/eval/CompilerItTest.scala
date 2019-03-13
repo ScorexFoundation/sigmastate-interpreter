@@ -45,7 +45,7 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "intConst", "1", ergoCtx,
       calc = {_ => 1 },
       cost = {_ => constCost[Int]},
-      size = {_ => sizeData(element[Int], typeSize[Int]) },
+      size = null,
       tree = IntConstant(1), Result(1, 1, 4))
   }
   ignore("intConstCase") {
@@ -56,7 +56,7 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "bigIntegerConst", "big", ergoCtx,
       calc = {_ => bigSym },
       cost = {_ => constCost[BigInt]},
-      size = {_ => sizeData(element[BigInt], SBigInt.MaxSizeInBytes) },
+      size = null,
       tree = BigIntConstant(big), Result(big, 1, 32))
   }
   ignore("bigIntegerConstCase") {
@@ -70,7 +70,7 @@ class CompilerItTest extends BaseCtxTests
       calc = {_ => bigSym.add(n1Sym) },
       cost = {_ => constCost[BigInt] + constCost[BigInt] +
           costOf("+", SFunc(Vector(SBigInt, SBigInt), SBigInt)) },
-      size = {_ => sizeData(element[BigInt], SBigInt.MaxSizeInBytes) },
+      size = null,
       tree = mkPlus(BigIntConstant(big), BigIntConstant(n1)),
       Result(res, 12, 32))
   }
@@ -85,7 +85,7 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "arrayConst", "arr1", ergoCtx,
       calc = {_ => col1Sym },
       cost = {_ => constCost[Coll[Byte]] },
-      size = {_ => sizeData(element[Coll[Byte]], colBuilder.replicate(col1Sym.length, typeSize[Byte])) },
+      size = null,
       tree = ByteArrayConstant(arr1), Result(res, 1, 2))
   }
   ignore("arrayConstCase") {
@@ -98,7 +98,7 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "sigmaPropConst", "p1", ergoCtx,
       calc = {_ => resSym },
       cost = null,
-      size = {_ => sizeData(element[SigmaProp], CryptoConstants.EncodedGroupElementLength.toLong) },
+      size = null,
       tree = SigmaPropConstant(p1), Result(p1, 10052, 33))
   }
   ignore("sigmaPropConstCase") {
@@ -146,9 +146,7 @@ class CompilerItTest extends BaseCtxTests
 //        val costs = colBuilder.replicate(arr.length, 0).zip(arrSizes).map(f)
 //        constCost[Coll[WBigInteger]] + costs.sum(intPlusMonoid)
 //      },
-      size = { _ =>
-        sizeData(element[Coll[BigInt]], colBuilder.replicate(liftConst(bigIntegerArr1).length, typeSize[BigInt]))
-      },
+      size = null,
       tree = mkMapCollection(BigIntArrayConstant(bigIntegerArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
       Result(res, 23, 64))
   }

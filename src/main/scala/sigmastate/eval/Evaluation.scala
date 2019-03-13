@@ -88,7 +88,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: SizeData[_,_] | _: OpCost | _: Cast[_] =>
+    case _: OpCost | _: Cast[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
@@ -301,25 +301,6 @@ trait Evaluation extends RuntimeCosting { IR =>
   {
     val costAccumulator = new CostAccumulator(0, costLimit)
 
-    def evalSizeData(data: SizeData[_,_], dataEnv: DataEnv): Any = {
-      val info = dataEnv(data.sizeInfo)
-      data.eVal match {
-        case _: BaseElem[_] => info.asInstanceOf[Long]
-        case _: PairElem[_,_] =>
-          val (l, r) = info.asInstanceOf[(Long,Long)]
-          l + r
-        case _: CollElem[_,_] =>
-          val coll = info.asInstanceOf[SColl[Long]]
-          coll.sum(longPlusMonoidValue)
-        case _: WOptionElem[_,_] =>
-          val sizeOpt = info.asInstanceOf[Option[Long]]
-          sizeOpt.getOrElse(0L)
-        case _: EntityElem[_] =>
-          info.asInstanceOf[Long]
-        case _ => error(s"Cannot evalSizeData($data)")
-      }
-    }
-
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
@@ -353,7 +334,6 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
-          case sd: SizeData[_,_] => out(evalSizeData(sd, dataEnv))
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)

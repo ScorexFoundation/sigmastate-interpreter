@@ -141,21 +141,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       super.createAllMarking(e)
   }
 
-  protected override def correctSizeDataType[TVal, TSize](eVal: Elem[TVal], eSize: Elem[TSize]): Boolean = eVal match {
-    case e: AvlTreeElem[_] => eSize == LongElement
-    case e: SigmaPropElem[_] => eSize == LongElement
-    case _ => super.correctSizeDataType(eVal, eSize)
-  }
-
-  def zeroSizeData[V](eVal: Elem[V]): Rep[Long] = eVal match {
-    case _: BaseElem[_] => sizeData(eVal, 0L)
-    case pe: PairElem[a,b] => sizeData(eVal, Pair(zeroSizeData[a](pe.eFst), zeroSizeData[b](pe.eSnd)))
-    case ce: CollElem[_,_] => sizeData(eVal, colBuilder.fromItems(zeroSizeData(ce.eItem)))
-    case oe: WOptionElem[_,_] => sizeData(eVal, RWSpecialPredef.some(zeroSizeData(oe.eItem)))
-    case _: EntityElem[_] => sizeData(eVal, 0L)
-    case _ => error(s"Cannot create zeroSizeData($eVal)")
-  }
-
   def zeroSize[V](eVal: Elem[V]): RSize[V] = asRep[Size[V]](eVal match {
     case pe: PairElem[a,b] => costedBuilder.mkSizePair(zeroSize[a](pe.eFst), zeroSize[b](pe.eSnd))
     case ce: CollElem[_,_] =>
@@ -165,12 +150,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _: BaseElem[_] | _: EntityElem[_] => costedBuilder.mkSizePrim(0L, eVal)
     case _ => error(s"Cannot create zeroSize($eVal)")
   })
-
-  override def calcSizeFromData[V, S](data: SizeData[V, S]): Rep[Long] = data.eVal match {
-    case e: AvlTreeElem[_] => asRep[Long](data.sizeInfo)
-    case e: SigmaPropElem[_] => asRep[Long](data.sizeInfo)
-    case _ => super.calcSizeFromData(data)
-  }
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
     override def transform(t: Transformer): Def[IntPlusMonoidData] = this
@@ -358,7 +337,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def typeSize(tpe: SType): Rep[Long] = {
-    assert(tpe.isConstantSize, s"Expected constant size type but was $tpe")
+    assert(tpe.isConstantSize, {
+      s"Expected constant size type but was $tpe"
+    })
     val size = tpe.dataSize(SType.DummyValue)
     toRep(size)
   }
@@ -552,7 +533,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   implicit class ElemOpsForCosting(e: Elem[_]) {
-    def isConstantSize: Boolean = elemToSType(e).isConstantSize
+    def isConstantSize: Boolean = e.sourceType.isConstantSize
   }
 
   type CostedTh[T] = Th[Costed[T]]
@@ -627,9 +608,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         implicit val eB = f.elem.eRange.eVal
 
         val costs = xs.costs.zip(xs.sizes).map(costF)
-        val tpeB = elemToSType(eB)
-        val sizes = if (tpeB.isConstantSize) {
-          colBuilder.replicate(xs.sizes.length, costedBuilder.mkSizePrim(typeSize(tpeB), eB): RSize[b])
+        val sizes = if (eB.isConstantSize) {
+          colBuilder.replicate(xs.sizes.length, constantTypeSize(eB): RSize[b])
         } else {
           xs.sizes.map(sizeF)
         }
@@ -773,12 +753,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
-  var _colBuilder: Rep[CollBuilder] = _
-  var _sizeBuilder: Rep[SizeBuilder] = _
-  var _costedBuilder: Rep[CostedBuilder] = _
-  var _intPlusMonoid: Rep[Monoid[Int]] = _
-  var _longPlusMonoid: Rep[Monoid[Long]] = _
-  var _sigmaDslBuilder: Rep[SigmaDslBuilder] = _
+  private var _colBuilder: Rep[CollBuilder] = _
+  private var _sizeBuilder: Rep[SizeBuilder] = _
+  private var _costedBuilder: Rep[CostedBuilder] = _
+  private var _intPlusMonoid: Rep[Monoid[Int]] = _
+  private var _longPlusMonoid: Rep[Monoid[Long]] = _
+  private var _sigmaDslBuilder: Rep[SigmaDslBuilder] = _
 
   init() // initialize global context state
 
@@ -796,6 +776,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
     _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
     _sigmaDslBuilder = RTestSigmaDslBuilder()
+  }
+
+  protected override def onReset(): Unit = {
+    super.onReset()
+    init()
   }
 
 // TODO This is experimental alternative which is 10x faster in MeasureIRContext benchmark
@@ -830,11 +815,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //    _longPlusMonoid = null
 //    _sigmaDslBuilder = null
 //  }
-
-  protected override def onReset(): Unit = {
-    super.onReset()
-    init()
-  }
 
   import Cost._
 

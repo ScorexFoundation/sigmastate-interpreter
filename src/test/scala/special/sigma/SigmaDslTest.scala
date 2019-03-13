@@ -108,6 +108,13 @@ class SigmaDslTest extends PropSpec
   }
   // TODO add tests for Short, Long, BigInt operations
 
+  property("GroupElement properties equivalence") {
+    val ge = SigmaDsl.groupGenerator
+    val eq = EqualityChecker(ge)
+//    eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
+//    eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
+  }
+
 //  property("sigma.types.Byte methods equivalence") {
 //    import sigma.types._
 //    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)

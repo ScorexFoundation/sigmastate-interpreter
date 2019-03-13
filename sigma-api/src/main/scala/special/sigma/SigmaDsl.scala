@@ -198,15 +198,15 @@ trait GroupElement {
 
   def isInfinity: Boolean
 
-  /** Multiplies this <code>GroupElement</code> by the given number.
-    * @param k The multiplicator.
-    * @return <code>k * this</code>.
+  /** Exponentiate this <code>GroupElement</code> to the given number.
+    * @param k The power.
+    * @return <code>this to the power of k</code>.
     * @since 2.0
     */
-  def multiply(k: BigInt): GroupElement
+  def exp(k: BigInt): GroupElement
 
   /** Group operation. */
-  def add(that: GroupElement): GroupElement
+  def multiply(that: GroupElement): GroupElement
 
   /** Inverse element in the group. */
   def negate: GroupElement

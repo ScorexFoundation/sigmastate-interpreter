@@ -72,8 +72,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     val symArr1 = liftConst(Colls.fromArray(arr1))
     checkInEnv(env, "arr", "arr1",
       {_ => symArr1},
-      {_ => constCost[Coll[Byte]]},
-      { _ => sizeData(element[Coll[Byte]], colBuilder.replicate(symArr1.length, typeSize[Byte])) } )
+      {_ => constCost[Coll[Byte]]})
     checkInEnv(env, "arr2", "arr1.size",
       {_ => liftConst(Colls.fromArray(arr1)).length },
       { _ =>
@@ -82,10 +81,10 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
       })
 
     val n1Sym = liftConst(dslValue.BigInt(n1))
-    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[BigInt] }, { _ => sizeData(element[BigInt], sizeOf(n1Sym)) })
+    checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[BigInt] })
 
     val g1Sym = liftConst(g1)
-    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[GroupElement]}, { _ => sizeData(element[GroupElement], typeSize[GroupElement]) })
+    checkInEnv(env, "group", "g1", {_ => g1Sym }, {_ => constCost[GroupElement]})
 
     checkInEnv(env, "sigmaprop", "p1.propBytes",
       { _ => liftConst(dslValue.SigmaProp(p1)).propBytes }
