@@ -1,6 +1,5 @@
 package sigmastate.utxo
 
-import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
@@ -21,7 +20,7 @@ import sigmastate.lang.exceptions.CosterException
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
 class SpamSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   lazy val Timeout: Long = {
@@ -44,7 +43,6 @@ class SpamSpecification extends SigmaTestingCommons {
     (res, (t - t0) < Timeout)
   }
 
-  // TODO optimze costing graph adding RW rule (this is probable reason why timeout is exceeded)
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
@@ -60,10 +58,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val prt = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage)
-//    prt.isSuccess shouldBe true
-
-    val pr = prt.get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, terminated) = termination(() =>
@@ -81,7 +76,6 @@ class SpamSpecification extends SigmaTestingCommons {
     * The scripts with more than 150 levels are considered malicious.
   */
   property("big byte array with a lot of operations") {
-//    fail("fix the stack overflow in this test")
 
     val ba = Random.randomBytes(5000000)
 
@@ -212,7 +206,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 
-    // check that execution terminated withing timeout due to costing exception and cost limit
+    // check that execution terminated within timeout due to costing exception and cost limit
     val pt0 = System.currentTimeMillis()
     val (res, terminated) = termination(() => prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage))
     val pt = System.currentTimeMillis()
@@ -232,6 +226,7 @@ class SpamSpecification extends SigmaTestingCommons {
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }
+    println(s"Full time to execute the script: ${calcTime / 1000.0} seconds")
     assert(calcTime > Timeout)
   }
 

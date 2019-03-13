@@ -54,11 +54,12 @@ class ErgoLikeContext(val currentHeight: Height,
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
-  assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray) , "Incorrect preHeader minerPubkey")
-  assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)) , "Incorrect lastBlockUtxoRoot")
+  assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
+  assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   headers.toArray.indices.foreach { i =>
-    if (i > 0) assert(headers(i).parentId == headers(i - 1).id, s"Incorrect chain: ${headers(i - 1)},${headers(i)}")
+    if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
+  assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
@@ -101,7 +102,7 @@ object ErgoLikeContext {
   type Height = Int
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
-  
+
   val noBoxes = IndexedSeq.empty[ErgoBox]
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
   val dummyPreHeader: PreHeader = null
