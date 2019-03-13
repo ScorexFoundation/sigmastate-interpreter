@@ -128,7 +128,7 @@ trait SigmaTestingCommons extends PropSpec
       val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
         .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
       val calcCtx = context.toSigmaContext(IR, isCost = false)
-      val res = valueFun(calcCtx)
+      val (res, _) = valueFun(calcCtx)
       res.asInstanceOf[B]
 //      (TransformingSigmaBuilder.unliftAny(res) match {
 //        case Nullable(x) => // x is a value extracted from Constant

@@ -73,12 +73,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
-//      case Select(obj: SigmaBoolean, field, _) =>
-//        field match {
-//          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-//          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
-//        }
-
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
         val index = fn.substring(1).toByte
         eval(mkSelectField(tuple.asTuple, index))

@@ -16,6 +16,7 @@ class AssetsAtomicExchangeErgoTests extends SigmaTestingCommons { suite =>
   lazy val buyerBoxId: Coll[Byte] = spec.Coll(Blake2b256("BBox"))
   lazy val sellerBoxId: Coll[Byte] = spec.Coll(Blake2b256("SBox"))
 
+  // TODO should be enabled after ErgoContractSpec is implemented
   ignore("atomic exchange spec") {
     val contract = AssetsAtomicExchange[spec.type](70, tokenId, buyer, seller)(spec)
     import contract.spec._

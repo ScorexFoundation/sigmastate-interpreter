@@ -69,14 +69,28 @@ trait Interpreter extends ScorexLogging {
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._; import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF)
-    val estimatedCost = costFun((0, Sized.sizeOf(costingCtx)))
+    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
+    val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
       throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
 
+  def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
+    import IR._; import Context._; import SigmaProp._
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case sp: SigmaPropElem[_] =>
+        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
+        val (sp, _) = valueFun(context)
+        sp
+      case BooleanElement =>
+        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val (b, _) = valueFun(context)
+        sigmaDslBuilderValue.sigmaProp(b)
+    }
+    res
+  }
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -97,26 +111,14 @@ trait Interpreter extends ScorexLogging {
 
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
-//      .fold(t => throw new CosterException(s"Script cannot be executed.", exp.sourceContext.toList.headOption, Some(t)), identity)
+      .fold(t => throw new CosterException(
+        s"Script cannot be executed $exp: ", exp.sourceContext.toList.headOption, Some(t)), identity)
 
+//    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
+    
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case sp: SigmaPropElem[_] =>
-        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
-        valueFun(calcCtx)
-      case BooleanElement =>
-        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
-        val b = valueFun(calcCtx)
-        sigmaDslBuilderValue.sigmaProp(b)
-    }
-
-//    match {
-//      case SigmaPropConstant(sb) => sb
-//      case FalseLeaf => TrivialProp.FalseProp
-//      case TrueLeaf => TrivialProp.TrueProp
-//      case res => error(s"Expected SigmaBoolean value but was $res")
-//    }
+    val res = calcResult(calcCtx, calcF)
     SigmaDsl.toSigmaBoolean(res) -> estimatedCost
   }
 
