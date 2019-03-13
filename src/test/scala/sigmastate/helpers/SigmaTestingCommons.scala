@@ -32,8 +32,9 @@ trait SigmaTestingCommons extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers with TestUtils with TestContexts {
 
-
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
+
+  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
