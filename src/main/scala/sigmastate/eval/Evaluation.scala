@@ -600,10 +600,6 @@ object Evaluation {
   import special.collection._
   import ErgoLikeContext._
   
-  case class GenericRType[T <: AnyRef](classTag : ClassTag[T]) extends RType[T]
-
-  def AnyRefRType[T <: AnyRef: ClassTag]: RType[T] = GenericRType[T](scala.reflect.classTag[T])
-
   def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
     case SBoolean => BooleanType
     case SByte => ByteType
@@ -724,7 +720,7 @@ object Evaluation {
     case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
     case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
     case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
-    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
+    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tLeft), toErgoTreeType(p.tRight))
     case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
     case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
     case HeaderRType | PreHeaderRType => dslType

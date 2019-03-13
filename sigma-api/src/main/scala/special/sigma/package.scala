@@ -4,8 +4,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import scalan.RType
+import scalan.RType.GeneralType
 
-import scala.reflect.{classTag, ClassTag}
+import scala.reflect.{ClassTag, classTag}
 
 package sigma {
 
@@ -13,6 +14,7 @@ package sigma {
     override def classTag: ClassTag[Wrapper] = cWrapper
     override def toString: String = cWrapper.toString
     override def name: String = cWrapper.runtimeClass.getSimpleName
+    override def isConstantSize: Boolean = false  // pessimistic but safe default
   }
 
 }
@@ -21,8 +23,12 @@ package object sigma {
   def wrapperType[W: ClassTag]: RType[W] = WrapperType(classTag[W])
 
   // TODO make these types into GeneralType (same as Header and PreHeader)
-  implicit val BigIntRType: RType[BigInt] = wrapperType[BigInt]
-  implicit val GroupElementRType: RType[GroupElement] = wrapperType[GroupElement]
+  implicit val BigIntRType: RType[BigInt] = new WrapperType(classTag[BigInt]) {
+    override def isConstantSize: Boolean = true
+  }
+  implicit val GroupElementRType: RType[GroupElement] = new WrapperType(classTag[GroupElement]) {
+    override def isConstantSize: Boolean = true
+  }
   implicit val SigmaPropRType: RType[SigmaProp] = wrapperType[SigmaProp]
   implicit val BoxRType: RType[Box] = wrapperType[Box]
   implicit val AvlTreeRType: RType[AvlTree] = wrapperType[AvlTree]
@@ -30,8 +36,12 @@ package object sigma {
 
   // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)
   // and no conversion is necessary
-  implicit val HeaderRType: RType[Header]   = RType.fromClassTag(classTag[Header])
-  implicit val PreHeaderRType: RType[PreHeader] = RType.fromClassTag(classTag[PreHeader])
+  implicit val HeaderRType: RType[Header] = new GeneralType(classTag[Header]) {
+    override def isConstantSize: Boolean = true
+  }
+  implicit val PreHeaderRType: RType[PreHeader] = new GeneralType(classTag[PreHeader]) {
+    override def isConstantSize: Boolean = true
+  }
 
   implicit val AnyValueRType: RType[AnyValue] = RType.fromClassTag(classTag[AnyValue])
   implicit val CostModelRType: RType[CostModel] = RType.fromClassTag(classTag[CostModel])
@@ -40,8 +50,12 @@ package object sigma {
   implicit val SigmaContractRType: RType[SigmaContract] = RType.fromClassTag(classTag[SigmaContract])
   implicit val SigmaDslBuilderRType: RType[SigmaDslBuilder] = RType.fromClassTag(classTag[SigmaDslBuilder])
 
-  implicit val BigIntegerRType: RType[BigInteger] = RType.fromClassTag(classTag[BigInteger])
-  implicit val ECPointRType: RType[ECPoint] = RType.fromClassTag(classTag[ECPoint])
+  implicit val BigIntegerRType: RType[BigInteger] = new GeneralType(classTag[BigInteger]) {
+    override def isConstantSize: Boolean = true
+  }
+  implicit val ECPointRType: RType[ECPoint] = new GeneralType(classTag[ECPoint]) {
+    override def isConstantSize: Boolean = true
+  }
 
 
   implicit val SizeAnyValueRType: RType[SizeAnyValue] = RType.fromClassTag(classTag[SizeAnyValue])

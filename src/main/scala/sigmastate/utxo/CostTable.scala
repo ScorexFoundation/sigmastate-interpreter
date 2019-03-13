@@ -35,6 +35,14 @@ object CostTable {
   val constCost = 1
   val lambdaCost = 1
 
+  /** Cost of creating new instances (kind of memory allocation cost).
+    * When the instance already exists them the corresponding Access/Extract cost should be added.
+    */
+  val newPrimValueCost = 1
+  val newCollValueCost = 1
+  val newPairValueCost = 1
+  val newOptionValueCost = 1
+
   val plusMinus = 2
   val multiply = 10
 

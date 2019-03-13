@@ -221,24 +221,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     */
   }
 
-  ignore("Demurrage") {
+  test("Demurrage") {
     val prover = new ContextEnrichingTestProvingInterpreter()
     val regScriptPK = prover.dlogSecrets(0).publicImage
     val env = envDem ++ Seq("regScript" -> regScriptPK)
-    checkInEnv(env, "Demurrage", demurrageScript,
-    { ctx: Rep[Context] =>
-      val regScript = liftConst(dslValue.SigmaProp(regScriptPK))
-      val selfBytes = ctx.SELF.propositionBytes
-      val selfValue = ctx.SELF.value
-      val c2 = dsl.allOf(colBuilder.fromItems(
-        ctx.HEIGHT >= ctx.SELF.getReg[Int](4).get + demurragePeriod,
-        ctx.OUTPUTS.exists(fun { out =>
-          (out.value >= selfValue - demurrageCost) lazy_&& Thunk{out.propositionBytes === selfBytes}
-        })
-      ))
-      regScript.isValid lazy_|| Thunk{c2}
-    }
-    )
+    checkInEnv(env, "Demurrage", demurrageScript, null)
   }
 
   test("measure: costed context data") {

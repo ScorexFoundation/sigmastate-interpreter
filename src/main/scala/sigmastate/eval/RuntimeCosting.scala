@@ -665,6 +665,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        RCostedColl(vals, costs, sizes, xs.valuesCost)
 
 
+      case CostedM.cost(Def(CCostedCollCtor(_, costs, _, accCost))) => opCost(Seq(accCost), costs.sum(intPlusMonoid))
+      case CostedM.cost(Def(CCostedOptionCtor(_, costOpt, _, accCost))) => opCost(Seq(accCost), costOpt.getOrElse(Thunk(0)))
+      case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) => opCost(Seq(accCost), l.cost + r.cost)
 
       case CostedM.value(Def(CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_))) =>
         func.sliceCalc
@@ -744,7 +747,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   def costedPrimToPair[A,B](p: Rep[(A,B)], c: Rep[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
     case se: SizeElem[_,_] if se.eVal.isInstanceOf[PairElem[_,_]] =>
       val sPair = asSizePair(s)
-      RCCostedPair(RCCostedPrim(p._1, c, sPair.l), RCCostedPrim(p._2, c, sPair.r))
+      RCCostedPair(RCCostedPrim(p._1, 0, sPair.l), RCCostedPrim(p._2, 0, sPair.r), c)
     case _ =>
       !!!(s"Expected RCSizePair node but was $s -> ${s.rhs}")
   }
@@ -1355,7 +1358,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
-        RCCostedPair(x, y)
+        RCCostedPair(x, y, opCost(Seq(x.cost, y.cost), CostTable.newPairValueCost))
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
