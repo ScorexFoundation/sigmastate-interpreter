@@ -45,7 +45,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   // TODO optimze costing graph adding RW rule (this is probable reason why timeout is exceeded)
-  ignore("huge byte array") {
+  property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
 

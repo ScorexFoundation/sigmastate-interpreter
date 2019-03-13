@@ -557,6 +557,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   type CostedTh[T] = Th[Costed[T]]
 
+  class ElemAccessor[T](prop: Rep[T] => Elem[_]) {
+    def unapply(s: Sym): Option[Elem[_]] = { val sR = asRep[T](s); Some(prop(sR)) }
+  }
+  object ElemAccessor {
+    def apply[T](prop: Rep[T] => Elem[_]): ElemAccessor[T] = new ElemAccessor(prop)
+  }
+
+  val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]](_.elem.eItem.eVal)
+
   override def rewriteDef[T](d: Def[T]): Rep[_] = {
     val CBM = CollBuilderMethods
     val SigmaM = SigmaPropMethods
@@ -578,7 +587,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         x
 
       case SM.dataSize(Def(CSizeCollCtor(CBM.replicate(_, n, s: RSize[a]@unchecked)))) => s.dataSize * n.toLong
-//      case SM.dataSize(bs @ SBM.propositionBytes(_)) => asSizeColl(asRep[Size[Coll[Byte]]](bs)).sizes.length
+
+      case SM.dataSize(Def(CSizeCollCtor(sizes @ EValOfSizeColl(eVal)))) if eVal.isConstantSize =>
+        sizes.length.toLong * typeSize(eVal)
 
       case CM.map(CM.zip(CBM.replicate(_, n, x: Rep[a]), ys: RColl[b]@unchecked), _f) =>
         val f = asRep[((a,b)) => Any](_f)
