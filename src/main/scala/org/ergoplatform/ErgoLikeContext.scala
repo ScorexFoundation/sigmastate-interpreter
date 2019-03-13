@@ -59,6 +59,7 @@ class ErgoLikeContext(val currentHeight: Height,
   headers.toArray.indices.foreach { i =>
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
+  assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
