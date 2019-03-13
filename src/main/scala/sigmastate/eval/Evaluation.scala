@@ -506,7 +506,7 @@ trait Evaluation extends RuntimeCosting { IR =>
                  In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
                  In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
                  In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-            val res = new special.sigma.CSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
+            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
             out(res)
 
           case costOp: CostOf =>
@@ -532,8 +532,9 @@ trait Evaluation extends RuntimeCosting { IR =>
             val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case c @ Cast(eTo, In(v)) =>
-            assert(eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass),
-              s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            if (!eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass)) {
+              error(s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            }
             out(v)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
