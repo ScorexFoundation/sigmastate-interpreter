@@ -62,11 +62,10 @@ package special.sigma {
     };
     @Liftable trait GroupElement extends Def[GroupElement] {
       def isInfinity: Rep[Boolean];
-      def multiply(k: Rep[BigInt]): Rep[GroupElement];
-      def add(that: Rep[GroupElement]): Rep[GroupElement];
+      def exp(k: Rep[BigInt]): Rep[GroupElement];
+      def multiply(that: Rep[GroupElement]): Rep[GroupElement];
       def negate: Rep[GroupElement];
-      //todo remove compressed flag, use GroupElementSerializer
-      def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]]
+      def getEncoded: Rep[Coll[Byte]]
     };
     @Liftable trait SigmaProp extends Def[SigmaProp] {
       def isValid: Rep[Boolean];

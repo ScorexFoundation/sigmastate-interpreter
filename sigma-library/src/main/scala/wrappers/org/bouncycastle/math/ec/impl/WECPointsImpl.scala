@@ -53,7 +53,6 @@ object WECPoint extends EntityObject("WECPoint") {
         true, false, element[WECPoint]))
     }
 
-    //todo remove compressed flag, use GroupElementSerializer
     override def getEncoded(x$1: Rep[Boolean]): Rep[WArray[Byte]] = {
       asRep[WArray[Byte]](mkMethodCall(self,
         WECPointClass.getMethod("getEncoded", classOf[Sym]),
@@ -98,7 +97,6 @@ object WECPoint extends EntityObject("WECPoint") {
         true, true, element[WECPoint]))
     }
 
-    //todo remove compressed flag, use GroupElementSerializer
     def getEncoded(x$1: Rep[Boolean]): Rep[WArray[Byte]] = {
       asRep[WArray[Byte]](mkMethodCall(source,
         thisClass.getMethod("getEncoded", classOf[Sym]),

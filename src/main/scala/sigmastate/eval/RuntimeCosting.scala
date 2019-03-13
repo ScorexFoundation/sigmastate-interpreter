@@ -1277,14 +1277,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
         val r = asRep[Costed[BigInt]](_r)
-        val value = l.value.multiply(r.value)
+        val value = l.value.exp(r.value)
         val cost = opCost(Seq(l.cost, r.cost), costOf(node))
         RCCostedPrim(value, cost, SizeGroupElement)
 
       case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
         val r = asRep[Costed[GroupElement]](_r)
-        val value = l.value.add(r.value)
+        val value = l.value.multiply(r.value)
         val cost = opCost(Seq(l.cost, r.cost), costOf(node))
         RCCostedPrim(value, cost, SizeGroupElement)
 
