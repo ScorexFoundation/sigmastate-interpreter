@@ -12,7 +12,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 class DataSerializerSpecification extends SerializationSpecification {
 
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
-    val w = Serializer.startWriter()
+    val w = Serializer.startWriter(bWithLog=true)
     DataSerializer.serialize(obj, tpe, w)
     val bytes = w.toBytes
     val r = Serializer.startReader(bytes, 0)

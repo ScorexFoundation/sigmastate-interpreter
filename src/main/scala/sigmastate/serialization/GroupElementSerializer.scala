@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 
 /**
   * A serializer which encodes group elements, so elliptic curve points in our case, to bytes, and decodes points
@@ -20,6 +20,9 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
   private lazy val identityPointEncoding = Array.fill(encodingSize)(0: Byte)
 
   override def serializeBody(point: EcPointType, w: SigmaByteWriter): Unit = {
+
+    SerializeLog.logPrintf(true, true, false, "GroupElementSerializer")
+
     val bytes = if (point.isInfinity) {
       identityPointEncoding
     } else {
@@ -32,6 +35,8 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
       PO
     }
     w.putBytes(bytes)
+
+    SerializeLog.logPrintf(false, true, false, "GroupElementSerializer")
   }
 
   override def parseBody(r: SigmaByteReader): EcPointType = {

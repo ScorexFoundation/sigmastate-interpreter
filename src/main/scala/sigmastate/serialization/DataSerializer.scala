@@ -39,6 +39,7 @@ object DataSerializer {
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
       AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
+    //andruiman: what is the difference between SCollection and SCollectionType?
     case tColl: SCollectionType[a] =>
       val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
@@ -50,7 +51,8 @@ object DataSerializer {
         case _ =>
           arr.foreach(x => serialize(x, tColl.elemType, w))
       }
-
+    //andruiman: why not serialize array length?
+    //maybe because the tuple type is stored before?
     case t: STuple =>
       val arr = v.asInstanceOf[t.WrappedType]
       val len = arr.length

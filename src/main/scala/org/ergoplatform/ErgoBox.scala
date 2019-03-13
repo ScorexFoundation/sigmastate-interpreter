@@ -160,6 +160,7 @@ object ErgoBox {
   object serializer extends Serializer[ErgoBox, ErgoBox] {
 
     override def serializeBody(obj: ErgoBox, w: SigmaByteWriter): Unit = {
+
       ErgoBoxCandidate.serializer.serializeBody(obj, w)
       val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length

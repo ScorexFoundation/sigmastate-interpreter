@@ -16,6 +16,8 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
 
   override def serializeBody(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit = {
 
+    SerializeLog.logPrintf(true, true, false, "SigmaTransformerSerializer")
+
     SerializeLog.logPrintf(true, true, false, "Items length")
     w.putUInt(obj.items.length)
     SerializeLog.logPrintf(false, true, false, "Items length")
@@ -23,6 +25,8 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
     SerializeLog.logPrintf(true, true, false, "Items")
     obj.items.foreach(w.putValue)
     SerializeLog.logPrintf(false, true, false, "Items")
+
+    SerializeLog.logPrintf(false, true, false, "SigmaTransformerSerializer")
   }
 
   override def parseBody(r: SigmaByteReader): SigmaPropValue = {
