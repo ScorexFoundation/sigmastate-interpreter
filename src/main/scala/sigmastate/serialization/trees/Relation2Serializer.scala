@@ -5,7 +5,7 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 
 
@@ -14,15 +14,39 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
 
   override def serializeBody(obj: R, w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false,"Relation2")
+
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
+
     (typedRel.left, typedRel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
+        SerializeLog.logPrintf(true, true, false,"Boolean constants")
+
+        SerializeLog.logPrintf(true, true, false,"ConcreteCollectionBooleanConstantCode")
         w.put(ConcreteCollectionBooleanConstantCode)
+        SerializeLog.logPrintf(false, true, false,"ConcreteCollectionBooleanConstantCode")
+
+        SerializeLog.logPrintf(true, true, false,"LeftRight bits")
+        //andruiman: don't understand this
         w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
+        SerializeLog.logPrintf(false, true, false,"LeftRight bits")
+
+        SerializeLog.logPrintf(false, true, false,"Boolean constants")
       case _ =>
+        SerializeLog.logPrintf(true, true, false,"Not boolean constants")
+
+        SerializeLog.logPrintf(true, true, false,"Left")
         w.putValue(typedRel.left)
+        SerializeLog.logPrintf(false, true, false,"Left")
+
+        SerializeLog.logPrintf(true, true, false,"Right")
         w.putValue(typedRel.right)
+        SerializeLog.logPrintf(false, true, false,"Right")
+
+        SerializeLog.logPrintf(false, true, false,"Not boolean constants")
     }
+
+    SerializeLog.logPrintf(false, true, false,"Relation2")
   }
 
   override def parseBody(r: SigmaByteReader): R = {

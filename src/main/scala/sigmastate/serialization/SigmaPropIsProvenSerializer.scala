@@ -11,11 +11,13 @@ object SigmaPropIsProvenSerializer extends ValueSerializer[SigmaPropIsProven] {
   override val opCode: Byte = SigmaPropIsProvenCode
 
   def serializeBody(obj: SigmaPropIsProven, w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false, "SigmaPropIsProven input")
+    SerializeLog.logPrintf(true, true, false, "SigmaPropIsProven")
+    SerializeLog.logPrintf(true, true, false, "Input")
 
     w.putValue(obj.input)
 
-    SerializeLog.logPrintf(false, true, false, "SigmaPropIsProven input")
+    SerializeLog.logPrintf(false, true, false, "Input")
+    SerializeLog.logPrintf(false, true, false, "SigmaPropIsProven")
   }
 
   def parseBody(r: SigmaByteReader): Values.Value[SType] = {

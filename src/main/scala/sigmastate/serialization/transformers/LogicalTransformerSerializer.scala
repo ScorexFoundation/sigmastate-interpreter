@@ -4,7 +4,6 @@ import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigma.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
 import sigmastate.{SBoolean, SCollection}
@@ -18,11 +17,13 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
   override val opCode: OpCode = code
 
   override def serializeBody(obj: Transformer[I, O], w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false, "Transformer input")
+    SerializeLog.logPrintf(true, true, false, "Logical transformer")
 
+    SerializeLog.logPrintf(true, true, false, "Input")
     w.putValue(obj.input)
+    SerializeLog.logPrintf(false, true, false, "Input")
 
-    SerializeLog.logPrintf(false, true, false, "Transformer input")
+    SerializeLog.logPrintf(false, true, false, "Logical transformer")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SBoolean.type] =

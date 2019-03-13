@@ -15,8 +15,10 @@ case class SimpleTransformerSerializer[I <: SType, O <: SType]
 
   override val opCode: OpCode = code
 
-  override def serializeBody(obj: Transformer[I, O], w: SigmaByteWriter): Unit =
+  override def serializeBody(obj: Transformer[I, O], w: SigmaByteWriter): Unit = {
+    
     w.putValue(obj.input)
+  }
 
   override def parseBody(r: SigmaByteReader): Value[O] =
     cons(r.getValue().asValue[I])

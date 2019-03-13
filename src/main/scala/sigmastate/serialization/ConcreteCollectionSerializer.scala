@@ -4,7 +4,6 @@ import sigmastate.{SCollection, SType}
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions._
 import sigmastate.utils.SerializeLog
 
 case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
@@ -13,6 +12,8 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
   override val opCode: Byte = ConcreteCollectionCode
 
   override def serializeBody(cc: ConcreteCollection[_ <: SType], w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "ConcreteCollection")
+
     SerializeLog.logPrintf(true, true, false,"Size")
     w.putUShort(cc.items.size)
     SerializeLog.logPrintf(false, true, false,"Size")
@@ -24,6 +25,8 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
     SerializeLog.logPrintf(true, true, false,"Elements")
     cc.items.foreach(w.putValue)
     SerializeLog.logPrintf(false, true, false,"Elements")
+
+    SerializeLog.logPrintf(false, true, false, "ConcreteCollection")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SCollection[SType]] = {

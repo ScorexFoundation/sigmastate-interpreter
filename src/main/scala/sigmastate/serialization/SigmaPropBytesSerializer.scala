@@ -1,17 +1,22 @@
 package sigmastate.serialization
 
-import sigmastate.{Values, SType}
+import sigmastate.{SType, Values}
 import sigmastate.lang.Terms._
-import sigma.util.Extensions._
 import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SigmaPropBytes
 
 object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
   override val opCode: Byte = SigmaPropBytesCode
 
   def serializeBody(obj: SigmaPropBytes, w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "SigmaPropBytes")
+    SerializeLog.logPrintf(true, true, false, "Input")
+
     w.putValue(obj.input)
+
+    SerializeLog.logPrintf(false, true, false, "Input")
+    SerializeLog.logPrintf(false, true, false, "SigmaPropBytes")
   }
 
   def parseBody(r: SigmaByteReader): Values.Value[SType] = {

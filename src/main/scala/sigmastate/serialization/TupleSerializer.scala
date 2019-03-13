@@ -4,7 +4,7 @@ import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.serialization.OpCodes._
 import sigma.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   extends ValueSerializer[Tuple] {
@@ -13,8 +13,17 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
 
   override def serializeBody(obj: Tuple, w: SigmaByteWriter): Unit = {
     val length = obj.length
+    SerializeLog.logPrintf(true, true, false,"Tuple")
+
+    SerializeLog.logPrintf(true, true, false,"Length")
     w.putUByte(length)
+    SerializeLog.logPrintf(false, true, false,"Length")
+
+    SerializeLog.logPrintf(true, true, false,"Items")
     obj.items.foreach(w.putValue)
+    SerializeLog.logPrintf(false, true, false,"Items")
+
+    SerializeLog.logPrintf(false, true, false,"Tuple")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {

@@ -7,7 +7,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{DataSerializer, OpCodes, ValueSerializer}
 import sigma.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 
 case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
                                          Value[SGroupElement.type],
@@ -19,23 +19,49 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
 
   private val constCodePrefix: Byte = 0
 
-  override def serializeBody(obj: ProveDHTuple, w: SigmaByteWriter): Unit = obj match {
-    case ProveDHTuple(
-    gv @ Constant(_, SGroupElement),
-    hv @ Constant(_, SGroupElement),
-    uv @ Constant(_, SGroupElement),
-    vv @ Constant(_, SGroupElement)) =>
-      w.put(constCodePrefix)
-      w.putType(SGroupElement)
-      DataSerializer.serialize(gv.value, gv.tpe, w)
-      DataSerializer.serialize(hv.value, hv.tpe, w)
-      DataSerializer.serialize(uv.value, uv.tpe, w)
-      DataSerializer.serialize(vv.value, vv.tpe, w)
-    case _ =>
-      w.putValue(obj.gv)
-      w.putValue(obj.hv)
-      w.putValue(obj.uv)
-      w.putValue(obj.vv)
+  override def serializeBody(obj: ProveDHTuple, w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false,"ProveDHTuple")
+
+    obj match {
+      case ProveDHTuple(
+      gv @ Constant(_, SGroupElement),
+      hv @ Constant(_, SGroupElement),
+      uv @ Constant(_, SGroupElement),
+      vv @ Constant(_, SGroupElement)) =>
+        SerializeLog.logPrintf(true, true, false,"SGroupElement constants")
+
+        SerializeLog.logPrintf(true, true, false,"constCodePrefix")
+        w.put(constCodePrefix)
+        SerializeLog.logPrintf(false, true, false,"constCodePrefix")
+
+        SerializeLog.logPrintf(true, true, false,"SGroupElement type")
+        w.putType(SGroupElement)
+        SerializeLog.logPrintf(false, true, false,"SGroupElement type")
+
+        SerializeLog.logPrintf(true, true, false,"4 values: gv, hv, uv, vv")
+
+        DataSerializer.serialize(gv.value, gv.tpe, w)
+        DataSerializer.serialize(hv.value, hv.tpe, w)
+        DataSerializer.serialize(uv.value, uv.tpe, w)
+        DataSerializer.serialize(vv.value, vv.tpe, w)
+
+        SerializeLog.logPrintf(false, true, false,"4 values: gv, hv, uv, vv")
+
+        SerializeLog.logPrintf(false, true, false,"SGroupElement constants")
+      case _ =>
+        SerializeLog.logPrintf(true, true, false,"Not constants")
+        SerializeLog.logPrintf(true, true, false,"4 values: gv, hv, uv, vv")
+
+        w.putValue(obj.gv)
+        w.putValue(obj.hv)
+        w.putValue(obj.uv)
+        w.putValue(obj.vv)
+
+        SerializeLog.logPrintf(false, true, false,"4 values: gv, hv, uv, vv")
+        SerializeLog.logPrintf(false, true, false,"Not constants")
+    }
+
+    SerializeLog.logPrintf(false, true, false,"ProveDHTuple")
   }
 
   override def parseBody(r: SigmaByteReader): SigmaBoolean = {
