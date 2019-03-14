@@ -28,10 +28,6 @@ class TestBox(
       }
     } else None
   }
-  @NeverInline
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-  @NeverInline
-  def dataSize = bytes.length
 
   def creationInfo: (Int, Coll[Byte]) = this.getReg[(Int, Coll[Byte])](3).get
 
@@ -41,4 +37,10 @@ class TestBox(
 
   @NeverInline
   override def executeFromRegister[@Reified T](regId: Byte)(implicit cT: RType[T]): T = ???
+
+  override def hashCode(): Int = id.hashCode()
+
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
+    case obj: Box => id == obj.id
+  }))
 }

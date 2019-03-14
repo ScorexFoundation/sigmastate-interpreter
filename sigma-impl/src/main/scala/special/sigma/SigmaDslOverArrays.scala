@@ -12,21 +12,6 @@ import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
 
-case class TestAvlTree(
-    startingDigest: Coll[Byte],
-    keyLength: Int,
-    valueLengthOpt: Option[Int] = None,
-    maxNumOperations: Option[Int] = None,
-    maxDeletes: Option[Int] = None ) extends AvlTree {
-  def builder = new TestSigmaDslBuilder
-  @NeverInline
-  def dataSize = startingDigest.length + 4 + valueLengthOpt.fold(0L)(_ => 4)
-  @NeverInline
-  def cost = (dataSize / builder.CostModel.AccessKiloByteOfData.toLong).toInt
-  @NeverInline
-  def digest: Coll[Byte] = ???
-}
-
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
   def Colls: CollBuilder = new CollOverArrayBuilder
@@ -34,29 +19,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def Costing: CostedBuilder = new CCostedBuilder
   @NeverInline
   def CostModel: CostModel = new TestCostModel
-
-  def costBoxes(bs: Coll[Box]): CostedColl[Box] = {
-    val len = bs.length
-    val perItemCost = this.CostModel.AccessBox
-    val costs = this.Colls.replicate(len, perItemCost)
-    val sizes = bs.map(b => b.dataSize)
-    val valuesCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(bs, costs, sizes, valuesCost)
-  }
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T] = {
-    val perItemCost = (len.toLong * itemSize / 1024L + 1L) * this.CostModel.AccessKiloByteOfData.toLong
-    val costs = this.Colls.replicate(len, perItemCost.toInt)
-    val sizes = this.Colls.replicate(len, itemSize)
-    val valueCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(xs, costs, sizes, valueCost)
-  }
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T] = {
-    val none = this.Costing.mkCostedNone[T](opCost)
-    opt.fold[CostedOption[T]](none)(x => this.Costing.mkCostedSome(this.Costing.costedValue(x, SpecialPredef.some(opCost))))
-  }
 
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
@@ -110,15 +72,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???
 
-  @NeverInline
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = treeLookup(tree, key, proof).isDefined
-
-  @NeverInline
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
-
-  @NeverInline
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
-
   @Internal val __curve__ = CustomNamedCurves.getByName("secp256k1")
   @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]
 
@@ -149,5 +102,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
   @NeverInline
   def toECPoint(ge: GroupElement): ECPoint = ge.value
+
+  @NeverInline
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = SpecialPredef.rewritableMethod
 }
 

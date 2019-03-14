@@ -42,7 +42,7 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
       "g_x" -> g_x
     )
 
-    val script = compileWithCosting(env,
+    val script = compile(env,
       """{
         |  val g_y = OUTPUTS(0).R4[GroupElement].get
         |  val g_xy = OUTPUTS(0).R5[GroupElement].get

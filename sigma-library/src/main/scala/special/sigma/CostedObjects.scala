@@ -7,49 +7,50 @@ package special.sigma {
     import Box._;
     import Coll._;
     import Context._;
-    import Costed._;
-    import CostedAvlTree._;
-    import CostedBox._;
-    import CostedBuilder._;
-    import CostedColl._;
-    import CostedOption._;
-    import CostedSigmaObject._;
-    import SigmaDslBuilder._;
-    trait CostedSigmaObject[Val] extends Costed[Val] {
-      implicit def eVal: Elem[Val];
-      def dsl: Rep[SigmaDslBuilder];
-      def builder: Rep[CostedBuilder] = CostedSigmaObject.this.dsl.Costing
+    import Header._;
+    import PreHeader._;
+    import SigmaProp._;
+    import Size._;
+    import SizeAnyValue._;
+    import SizeBox._;
+    import SizeBuilder._;
+    import SizeContext._;
+    import WOption._;
+    import WRType._;
+    @Liftable trait SizeAnyValue extends Size[AnyValue] {
+      def tVal: Rep[WRType[Any]];
+      def valueSize: Rep[Size[Any]]
     };
-    trait CostedContext extends CostedSigmaObject[Context] {
-      def OUTPUTS: Rep[CostedColl[Box]];
-      def INPUTS: Rep[CostedColl[Box]];
-      def HEIGHT: Rep[Costed[Int]];
-      def SELF: Rep[CostedBox];
-      def LastBlockUtxoRootHash: Rep[CostedAvlTree];
-      def MinerPubKey: Rep[CostedColl[Byte]];
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]];
-      def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]]
+    @Liftable trait SizeSigmaProp extends Size[SigmaProp] {
+      def propBytes: Rep[Size[Coll[Byte]]]
     };
-    trait CostedBox extends CostedSigmaObject[Box] {
-      def id: Rep[CostedColl[Byte]];
-      def valueCosted: Rep[Costed[Long]];
-      def bytes: Rep[CostedColl[Byte]];
-      def bytesWithoutRef: Rep[CostedColl[Byte]];
-      def propositionBytes: Rep[CostedColl[Byte]];
-      def registers: Rep[CostedColl[AnyValue]];
-      def getReg[T](id: Rep[Int])(implicit cT: Elem[T]): Rep[CostedOption[T]];
-      def creationInfo: Rep[Costed[scala.Tuple2[Int, Coll[Byte]]]]
+    @Liftable trait SizeBox extends Size[Box] {
+      def propositionBytes: Rep[Size[Coll[Byte]]];
+      def bytes: Rep[Size[Coll[Byte]]];
+      def bytesWithoutRef: Rep[Size[Coll[Byte]]];
+      def registers: Rep[Size[Coll[WOption[AnyValue]]]];
+      def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]];
+      def tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]
     };
-    trait CostedAvlTree extends CostedSigmaObject[AvlTree] {
-      def startingDigest: Rep[CostedColl[Byte]];
-      def keyLength: Rep[Costed[Int]];
-      def valueLengthOpt: Rep[CostedOption[Int]];
-      def maxNumOperations: Rep[CostedOption[Int]];
-      def maxDeletes: Rep[CostedOption[Int]]
+    @Liftable trait SizeContext extends Size[Context] {
+      def outputs: Rep[Size[Coll[Box]]];
+      def inputs: Rep[Size[Coll[Box]]];
+      def dataInputs: Rep[Size[Coll[Box]]];
+      def selfBox: Rep[Size[Box]];
+      def lastBlockUtxoRootHash: Rep[Size[AvlTree]];
+      def headers: Rep[Size[Coll[Header]]];
+      def preHeader: Rep[Size[PreHeader]];
+      def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]]
     };
-    trait CostedSigmaObjectCompanion;
-    trait CostedContextCompanion;
-    trait CostedBoxCompanion;
-    trait CostedAvlTreeCompanion
+    @Liftable trait SizeBuilder extends Def[SizeBuilder] {
+      def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue];
+      def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]): Rep[SizeBox];
+      def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext]
+    };
+    trait SizeAnyValueCompanion;
+    trait SizeSigmaPropCompanion;
+    trait SizeBoxCompanion;
+    trait SizeContextCompanion;
+    trait SizeBuilderCompanion
   }
 }

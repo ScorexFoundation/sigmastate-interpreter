@@ -3,25 +3,21 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
-import sigmastate.lang.Terms.{Apply, _}
-import sigmastate.lang.SigmaPredef._
+import sigmastate.Values.{Constant, Value}
+import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.SType._
 import sigmastate.SCollection._
 import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
-import sigmastate.lang.SigmaSpecializer.error
-import sigmastate.lang.{Terms, TransformingSigmaBuilder}
+import sigmastate.lang.Terms
 import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
 
-  override def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
+  override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     val res: Sym = node match {
       case Ident(n, _) =>
@@ -72,16 +68,10 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
           case (box, SBox.Id) => eval(mkExtractId(box))
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
           case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
           case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
-
-//      case Select(obj: SigmaBoolean, field, _) =>
-//        field match {
-//          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-//          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
-//        }
 
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>
         val index = fn.substring(1).toByte

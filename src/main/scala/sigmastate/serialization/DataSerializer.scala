@@ -8,6 +8,7 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 import sigmastate._
+import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.collection.mutable
@@ -52,7 +53,7 @@ object DataSerializer {
       }
 
     case t: STuple =>
-      val arr = v.asInstanceOf[t.WrappedType]
+      val arr = Evaluation.fromDslTuple(v, t).asInstanceOf[t.WrappedType]
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)

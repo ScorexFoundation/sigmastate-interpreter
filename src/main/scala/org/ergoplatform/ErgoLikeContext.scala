@@ -9,45 +9,79 @@ import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
 import special.sigma
-import special.sigma.{AnyValue, TestValue, Box, WrapperType}
+import special.sigma.{WrapperType, Header, Box, AnyValue, TestValue, PreHeader}
 import SType._
 import RType._
 import special.sigma.Extensions._
+
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
 
-// todo: write description
+/**
+  * TODO currentHeight and minerPubkey should be calculated from PreHeader
+  * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
+  *
+  * @param self - box that contains the script we're evaluating
+  * @param currentHeight - height of a block with the current `spendingTransaction`
+  * @param lastBlockUtxoRoot - state root before current block application
+  * @param minerPubkey - public key of a miner of the block with the current `spendingTransaction`
+  * @param headers - fixed number of last block headers in descending order (first header is the newest one)
+  * @param preHeader - fields of block header with the current `spendingTransaction`, that can be predicted
+  *                  by a miner before it's formation
+  * @param dataBoxes -  boxes, that corresponds to id's of `spendingTransaction.dataInputs`
+  * @param boxesToSpend - boxes, that corresponds to id's of `spendingTransaction.inputs`
+  * @param spendingTransaction - transaction that contains `self` box
+  * @param extension - prover-defined key-value pairs, that may be used inside a script
+  */
 class ErgoLikeContext(val currentHeight: Height,
                       val lastBlockUtxoRoot: AvlTreeData,
                       val minerPubkey: Array[Byte],
+                      val headers: Coll[Header],
+                      val preHeader: PreHeader,
+                      val dataBoxes: IndexedSeq[ErgoBox],
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map())
                  ) extends ErgoContext {
+
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
+  assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
+  assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
+  assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
+  headers.toArray.indices.foreach { i =>
+    if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
+  }
+  assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, newExtension)
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
-    ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, newSpendingTransaction, self, extension)
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension)
 
   import ErgoLikeContext._
   import Evaluation._
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
-    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost))
+    val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
+    val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
     val outputs = if (spendingTransaction == null)
-        noOutputs
+        noOutputs.toColl
       else
-        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost))
+        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
       val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
@@ -55,10 +89,10 @@ class ErgoLikeContext(val currentHeight: Height,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
-    new CostingDataContext(IR,
-      inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
-      minerPubkey,
-      vars.toArray,
+    new CostingDataContext(
+      dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
+      minerPubkey.toColl,
+      vars,
       isCost)
   }
 
@@ -69,6 +103,13 @@ object ErgoLikeContext {
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
 
+  val noBoxes = IndexedSeq.empty[ErgoBox]
+  val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val dummyPreHeader: PreHeader = null
+
+  /** Maximimum number of headers in `headers` collection of the context. */
+  val MaxHeaders = 10
+
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
             minerPubkey: Array[Byte],
@@ -76,7 +117,11 @@ object ErgoLikeContext {
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
             extension: ContextExtension = ContextExtension(Map())) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey, boxesToSpend, spendingTransaction, self, extension)
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
+      noHeaders,
+      dummyPreHeader,
+      noBoxes,
+      boxesToSpend, spendingTransaction, self, extension)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
@@ -164,3 +209,8 @@ case object Self extends NotReadyValueBox {
   def opType = SFunc(SContext, SBox)
 }
 
+case object Context extends NotReadyValue[SContext.type] {
+  override val opCode: OpCode = OpCodes.ContextCode
+  override def tpe: SContext.type = SContext
+  override def opType: SFunc = SFunc(SUnit, SContext)
+}

@@ -25,7 +25,7 @@ trait CostModel {
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
-  def PubKeySize: Long = 32
+  def PubKeySize: Long
 }
 
 /**
@@ -198,15 +198,15 @@ trait GroupElement {
 
   def isInfinity: Boolean
 
-  /** Multiplies this <code>GroupElement</code> by the given number.
-    * @param k The multiplicator.
-    * @return <code>k * this</code>.
+  /** Exponentiate this <code>GroupElement</code> to the given number.
+    * @param k The power.
+    * @return <code>this to the power of k</code>.
     * @since 2.0
     */
-  def multiply(k: BigInt): GroupElement
+  def exp(k: BigInt): GroupElement
 
   /** Group operation. */
-  def add(that: GroupElement): GroupElement
+  def multiply(that: GroupElement): GroupElement
 
   /** Inverse element in the group. */
   def negate: GroupElement
@@ -214,10 +214,9 @@ trait GroupElement {
   /**
     * Get an encoding of the point value, optionally in compressed format.
     *
-    * @param compressed whether to generate a compressed point encoding.
     * @return the point encoding
     */
-  def getEncoded(compressed: Boolean): Coll[Byte]
+  def getEncoded: Coll[Byte]
 }
 
 /** Proposition which can be proven and verified by sigma protocol. */
@@ -247,7 +246,8 @@ trait SigmaProp {
 
 @scalan.Liftable
 trait AnyValue {
-  def dataSize: Long
+  def value: Any
+  def tVal: RType[Any]
 }
 
 @scalan.Liftable
@@ -267,8 +267,7 @@ trait Box {
 
   /** Serialized bytes of this box's content, excluding transactionId and index of output. */
   def bytesWithoutRef: Coll[Byte]
-  def cost: Int
-  def dataSize: Long
+
   def registers: Coll[AnyValue]
 
   /** Extracts register by id and type.
@@ -324,58 +323,195 @@ trait Box {
   def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
 
   @Internal
-  override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"
+  override def toString = s"Box(id=$id; value=$value; regs=$registers)"
 }
 
+/** Type of data which efficiently authenticates potentially huge dataset having key-value dictionary interface.
+  * Only root hash of dynamic AVL+ tree, tree height, key length, optional value length, and access flags are stored
+  * in an instance of the datatype.
+  *
+  * Please note that standard hash function from `scorex.crypto.hash` is used, and height is stored along with root hash of
+  * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
+  */
 @scalan.Liftable
 trait AvlTree {
-  def startingDigest: Coll[Byte]
-  def keyLength: Int
-  def valueLengthOpt: Option[Int]
-  def maxNumOperations: Option[Int]
-  def maxDeletes: Option[Int]
-  def cost: Int
-  def dataSize: Long
   /** Returns digest of the state represent by this tree.
+    * Authenticated tree digest: root hash along with tree height
     * @since 2.0
     */
   def digest: Coll[Byte]
+
+  /** Flags of enabled operations packed in single byte.
+    * isInsertAllowed == (enabledOperations & 0x01) != 0
+    * isUpdateAllowed == (enabledOperations & 0x02) != 0
+    * isRemoveAllowed == (enabledOperations & 0x04) != 0
+    */
+  def enabledOperations: Byte
+
+  /** All the elements under the tree have the same length of the keys */
+  def keyLength: Int
+  
+  /** If non-empty, all the values under the tree are of the same length. */
+  def valueLengthOpt: Option[Int]
+
+  /** Checks if Insert operation is allowed for this tree instance. */
+  def isInsertAllowed: Boolean
+
+  /** Checks if Update operation is allowed for this tree instance. */
+  def isUpdateAllowed: Boolean
+
+  /** Checks if Remove operation is allowed for this tree instance. */
+  def isRemoveAllowed: Boolean
+
+  /** Replace digest of this tree producing a new tree.
+    * Since AvlTree is immutable, this tree instance remains unchanged.
+    * @param newDigest   a new digest
+    * @return a copy of this AvlTree instance where `this.digest` replaced by `newDigest`
+    */
+  def updateDigest(newDigest: Coll[Byte]): AvlTree
+
+  /** Enable/disable operations of this tree producing a new tree.
+    * Since AvlTree is immutable, `this` tree instance remains unchanged.
+    * @param newOperations  a new flags which specify available operations on a new tree.
+    * @return               a copy of this AvlTree instance where `this.enabledOperations`
+    *                       replaced by `newOperations`
+    */
+  def updateOperations(newOperations: Byte): AvlTree
+
+  /** Checks if an entry with key `key` exists in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return `true` if a leaf with the key `key` exists
+    * Return `false` if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof
+    */
+  def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
+
+  /** Perform a lookup of key `key` in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(bytes) of leaf with key `key` if it exists
+    * Return None if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof
+    */
+  def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
+
+  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
+    * @param keys    keys of elements of this authenticated dictionary.
+    * @param proof
+    */
+  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
+
+  /** Perform insertions of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
+    * @param proof
+    */
+  def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Perform updates of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
+    * @param proof
+    */
+  def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+
+  /** Perform removal of entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of keys to remove from this authenticated dictionary.
+    * @param proof
+    */
+  def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
 
-/** Represents data of the block headers available in scripts.
+/** Only header fields that can be predicted by a miner.
   * @since 2.0
   */
-trait Header {
+@scalan.Liftable
+trait PreHeader { // Testnet2
+  /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
 
-  /** Bytes representation of ModifierId of the previous block in the blockchain */
+  /** Id of parent block */
+  def parentId: Coll[Byte] // ModifierId
+
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
+  def timestamp: Long
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is unsigned Int*/
+  def nBits: Long  // actually it is unsigned Int
+
+  /** Block height */
+  def height: Int
+
+  /** Miner public key. Should be used to collect block rewards. */
+  def minerPk: GroupElement
+
+  def votes: Coll[Byte]
+}
+
+/** Represents data of the block header available in Sigma propositions.
+  * @since 2.0
+  */
+@scalan.Liftable
+trait Header {
+  /** Bytes representation of ModifierId of this Header */
+  def id: Coll[Byte]
+
+  /** Block version, to be increased on every soft and hardfork. */
+  def version: Byte
+
+  /** Bytes representation of ModifierId of the parent block */
   def parentId: Coll[Byte] //
 
+  /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
-  def stateRoot: Coll[Byte]  // ADDigest  //33 bytes! extra byte with tree height here!
+
+  /** AvlTree) of a state after block application */
+  def stateRoot: AvlTree
+
+  /** Root hash (for a Merkle tree) of transactions in a block. */
   def transactionsRoot: Coll[Byte]  // Digest32
+
+  /** Block timestamp (in milliseconds since beginning of Unix Epoch) */
   def timestamp: Long
-  def nBits: Long  // actually it is unsigned Int
+
+  /** Current difficulty in a compressed view.
+    * NOTE: actually it is unsigned Int*/
+  def nBits: Long
+
+  /** Block height */
   def height: Int
+
+  /** Root hash of extension section */
   def extensionRoot: Coll[Byte] // Digest32
-  def minerPk: GroupElement    // pk
-  def powOnetimePk: GroupElement  // w
-  def powNonce: Coll[Byte]        // n
-  def powDistance: BigInt        // d
-}
 
-/** Only header fields that can be predicted by a miner
-  * @since 2.0
-  */
-trait Preheader { // Testnet2
-  def version: Byte
-  def parentId: Coll[Byte] // ModifierId
-  def timestamp: Long
-  def nBits: Long  // actually it is unsigned Int
-  def height: Int
+  /** Miner public key. Should be used to collect block rewards.
+    * Part of Autolykos solution. */
   def minerPk: GroupElement
+
+  /** One-time public key. Prevents revealing of miners secret. */
+  def powOnetimePk: GroupElement
+
+  /** nonce */
+  def powNonce: Coll[Byte]
+
+  /** Distance between pseudo-random number, corresponding to nonce `powNonce` and a secret,
+    * corresponding to `minerPk`. The lower `powDistance` is, the harder it was to find this solution. */
+  def powDistance: BigInt
+
+  def votes: Coll[Byte] //3 bytes
 }
 
+/** Represents data available in Sigma language using `CONTEXT` global variable*/
 @scalan.Liftable
 trait Context {
   def builder: SigmaDslBuilder
@@ -386,13 +522,16 @@ trait Context {
   /** A collection of inputs of the current transaction, the transaction where selfBox is one of the inputs. */
   def INPUTS: Coll[Box]
 
+  /** A collection of inputs of the current transaction that will not be spent. */
+  def dataInputs: Coll[Box]
+
   /** Height (block number) of the block which is currently being validated. */
   def HEIGHT: Int
 
   /** Box whose proposition is being currently executing */
   def SELF: Box
 
-  /** Zero based index in `inputs` of `selfBox`. */
+  /** Zero based index in `inputs` of `selfBox`. -1 if self box is not in the INPUTS collection. */
   def selfBoxIndex: Int
 
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
@@ -406,13 +545,11 @@ trait Context {
   /**
     * @since 2.0
     */
-  def preheader: Preheader
+  def preHeader: PreHeader
 
-  def MinerPubKey: Coll[Byte]
+  def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
-  def getConstant[T](id: Byte)(implicit cT: RType[T]): T
-  def cost: Int
-  def dataSize: Long
+  def vars: Coll[AnyValue]
 }
 
 @scalan.Liftable
@@ -448,13 +585,18 @@ trait SigmaContract {
   def byteArrayToLong(bytes: Coll[Byte]): Long = this.builder.byteArrayToLong(bytes)
 
   def proveDlog(g: GroupElement): SigmaProp = this.builder.proveDlog(g)
-  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = this.builder.proveDHTuple(g, h, u, v)
-
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = this.builder.isMember(tree, key, proof)
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeLookup(tree, key, proof)
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = this.builder.treeModifications(tree, operations, proof)
+  def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
+    this.builder.proveDHTuple(g, h, u, v)
 
   def groupGenerator: GroupElement = this.builder.groupGenerator
+
+  def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
+
+  @Reified("T")
+  def substConstants[T](scriptBytes: Coll[Byte],
+      positions: Coll[Int],
+      newValues: Coll[T])
+      (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 
   @clause def canOpen(ctx: Context): Boolean
 
@@ -467,13 +609,6 @@ trait SigmaDslBuilder {
   def Monoids: MonoidBuilder
   def Costing: CostedBuilder
   def CostModel: CostModel
-
-  def costBoxes(bs: Coll[Box]): CostedColl[Box]
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T]
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T]
 
   def verifyZK(cond: => SigmaProp): Boolean
 
@@ -501,10 +636,6 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-
   def groupGenerator: GroupElement
 
   @Reified("T")
@@ -516,5 +647,8 @@ trait SigmaDslBuilder {
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
   def toBigInteger(n: BigInt): BigInteger
+
+  /** Construct a new authenticated dictionary with given parameters and tree root digest. */
+  def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 }
 

@@ -1,23 +1,26 @@
 package sigmastate.utxo
 
-import org.ergoplatform
 import org.ergoplatform._
 import org.scalacheck.Gen
+import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.utils.Random
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
+import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.lang.exceptions.CosterException
 
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
 class SpamSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   lazy val Timeout: Long = {
@@ -28,7 +31,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 15000000).foreach(_ => hf(block))
+    (1 to 3000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -55,10 +58,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val prt = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage)
-//    prt.isSuccess shouldBe true
-
-    val pr = prt.get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, terminated) = termination(() =>
@@ -76,7 +76,6 @@ class SpamSpecification extends SigmaTestingCommons {
     * The scripts with more than 150 levels are considered malicious.
   */
   property("big byte array with a lot of operations") {
-//    fail("fix the stack overflow in this test")
 
     val ba = Random.randomBytes(5000000)
 
@@ -170,7 +169,7 @@ class SpamSpecification extends SigmaTestingCommons {
     }
   }
 
-  property("transaction with many inputs and outputs") { // TODO avoid too complex cost function by approximating INPUT and OUTPUT sizes
+  property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
       this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
@@ -179,7 +178,8 @@ class SpamSpecification extends SigmaTestingCommons {
           println(printEnvEntry(sym, value))
       }
     }
-    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val limitlessProver = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
 
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
@@ -197,23 +197,37 @@ class SpamSpecification extends SigmaTestingCommons {
     val ctx = new ErgoLikeContext(currentHeight = 0,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
+      dataBoxes = ErgoLikeContext.noBoxes,
+      headers = ErgoLikeContext.noHeaders,
+      preHeader = ErgoLikeContext.dummyPreHeader,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = null)
+      self = inputs(0))
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 
+    // check that execution terminated within timeout due to costing exception and cost limit
     val pt0 = System.currentTimeMillis()
-    val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    val (res, terminated) = termination(() => prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage))
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
-
-    val verifier = new ErgoLikeTestInterpreter
-    val (res, terminated) = termination(() => verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage))
-    val pt2 = System.currentTimeMillis()
-    println(s"Verifier time: ${(pt2 - pt) / 1000.0} seconds")
     terminated shouldBe true
-    res.isFailure shouldBe true
+    assertExceptionThrown(
+      res.fold(t => throw t, identity),
+      t => {
+        rootCause(t).isInstanceOf[CosterException] && t.getMessage.contains("Script cannot be executed")
+      }
+    )
+
+    // measure time required to execute the script itself and it is more then timeout
+    val (_, calcTime) = BenchmarkUtil.measureTime {
+      import limitlessProver.IR._
+      val costingRes @ Pair(calcF, costF) = doCostingEx(emptyEnv, prop, true)
+      val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
+      limitlessProver.calcResult(calcCtx, calcF)
+    }
+    println(s"Full time to execute the script: ${calcTime / 1000.0} seconds")
+    assert(calcTime > Timeout)
   }
 
   property("too heavy avl tree lookup") {
@@ -243,15 +257,20 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println("proof size: " + proof.length)
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val key1 = genKey("key1")
     val value1 = genValue("value1")
 
-    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants, EQ(TreeLookup(
-      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(key1),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value1)).toSigmaProp)
+    val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants,
+      EQ(
+        IR.builder.mkMethodCall(
+          ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+          SAvlTree.getMethod,
+          IndexedSeq(ByteArrayConstant(key1), ByteArrayConstant(proof))).asOption[SByteArray].get,
+          ByteArrayConstant(value1)
+      ).toSigmaProp
+    )
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)

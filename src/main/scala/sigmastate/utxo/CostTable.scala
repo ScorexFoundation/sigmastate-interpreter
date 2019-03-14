@@ -31,9 +31,18 @@ object CostTable {
 
   val expCost = 5000
   val multiplyGroup = 50
+  val negateGroup = 50
   val groupElementConst = 1
   val constCost = 1
   val lambdaCost = 1
+
+  /** Cost of creating new instances (kind of memory allocation cost).
+    * When the instance already exists them the corresponding Access/Extract cost should be added.
+    */
+  val newPrimValueCost = 1
+  val newCollValueCost = 1
+  val newPairValueCost = 1
+  val newOptionValueCost = 1
 
   val plusMinus = 2
   val multiply = 10
@@ -80,9 +89,13 @@ object CostTable {
     ("ConcreteCollection", "() => Coll[IV]", constCost),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
+    ("AccessAvlTree", "Context => AvlTree", constCost),
 
+    ("SelectField", "() => Unit", extractCost),
+    ("AccessKiloByteOfData", "() => Unit", extractCost),
     ("AccessBox", "Context => Box", extractCost),
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
+    ("GetRegister", "(Box, Byte) => Option[T]", extractCost),
     ("AccessRegister", "Box => Option[T]", extractCost),
     ("ExtractAmount", "(Box) => Long", extractCost),
     ("ExtractId", "(Box) => Coll[Byte]", extractCost),
@@ -90,27 +103,29 @@ object CostTable {
     ("ExtractScriptBytes", "(Box) => Coll[Byte]", extractCost),
     ("ExtractBytesWithNoRef", "(Box) => Coll[Byte]", extractCost),
     ("ExtractRegisterAs", "(Box,Byte) => Coll[BigInt]", extractCost),
+    ("SBox$.tokens", "(Box) => Coll[(Coll[Byte],Long)]", extractCost),
 
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
     ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collAccess),
     ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
+    ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
+    ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.lastIndexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
+    ("SCollection$.zip", "(Coll[IV],Coll[OV]) => Coll[(IV,OV)]", collToColl),
+    ("SCollection$.partition", "(Coll[IV],(IV) => Boolean) => (Coll[IV],Coll[IV])", collToColl),
+    ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
+    ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
+    ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
-    //    ("If", "(Boolean, Unit, Unit) => Unit", MinimalCost),
-    //    ("If", "(Boolean, Byte, Byte) => Byte", MinimalCost),
-    //    ("If", "(Boolean, Short, Short) => Short", MinimalCost),
-    //    ("If", "(Boolean, Int, Int) => Int", MinimalCost),
-    //    ("If", "(Boolean, Long, Long) => Long", MinimalCost),
-    //    ("If", "(Boolean, BigInt, BigInt) => BigInt", MinimalCost),
-    //    ("If", "(Boolean, GroupElement, GroupElement) => GroupElement", MinimalCost),
-    //    ("If", "(Boolean, SigmaProp, SigmaProp) => SigmaProp", MinimalCost),
-    //    ("If", "(Boolean, Array[IV], Array[IV]) => Array[IV]", MinimalCost),
 
     ("SigmaPropIsProven", "SigmaProp => Boolean", logicCost),
     ("BoolToSigmaProp", "Boolean => SigmaProp", logicCost),
@@ -195,6 +210,8 @@ object CostTable {
     ("%", "(BigInt, BigInt) => BigInt", multiplyBigInt),
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
+    ("ModQ", "(BigInt) => BigInt", MinimalCost),
+
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
 
@@ -212,8 +229,12 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("TreeModifications_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
-    ("TreeLookup_per_kb", "(AvlTree, Coll[Byte], Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
+    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
+    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
+    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
+    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", hashPerKb * 2),
+    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
+    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", hashPerKb * 2),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
     ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),

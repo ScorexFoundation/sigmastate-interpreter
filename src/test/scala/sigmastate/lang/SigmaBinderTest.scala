@@ -213,10 +213,6 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
   }
 
-  property("fail Coll construction (type mismatch)") {
-    fail(env, "Coll[Long](1L, 2)", 1, 16)
-  }
-
   property("fail Some (invalid arguments)") {
     fail(env, "Some(1, 2)", 1, 1)
     fail(env, "Some()", 1, 1)

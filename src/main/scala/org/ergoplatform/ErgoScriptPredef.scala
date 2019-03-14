@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
@@ -10,7 +9,6 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.{SLong, _}
-import special.sigma.{SigmaDslBuilder, Context, SigmaContract}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.utxo._

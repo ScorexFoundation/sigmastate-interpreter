@@ -12,13 +12,13 @@ class CrowdFundingTests extends SigmaTestingCommons { suite =>
     val contract = CrowdFunding[spec.type](100, 1000, backer, project)(spec)
     import contract.spec._
 
-    val holderBox = block(0).newTransaction()
+    val holderBox = candidateBlock(0).newTransaction()
         .outBox(10, contract.holderProp)
 
     //First case: height < timeout, project is able to claim amount of tokens not less than required threshold
     {
       // normally this transaction would be invalid (ill-balanced), but we're not checking it in this test
-      val spendingTx = block(contract.deadline - 1).newTransaction().spending(holderBox)
+      val spendingTx = candidateBlock(contract.deadline - 1).newTransaction().spending(holderBox)
       spendingTx.outBox(contract.minToRaise, contract.projectSignature)
 
       // ASSERT
@@ -36,7 +36,7 @@ class CrowdFundingTests extends SigmaTestingCommons { suite =>
 
     //Second case: height < timeout, project is NOT able to claim amount of tokens less than required threshold
     {
-      val spendingTx = block(contract.deadline - 1).newTransaction().spending(holderBox)
+      val spendingTx = candidateBlock(contract.deadline - 1).newTransaction().spending(holderBox)
       spendingTx.outBox(contract.minToRaise - 1, contract.projectSignature)
       val input0 = spendingTx.inputs(0)
 
@@ -51,7 +51,7 @@ class CrowdFundingTests extends SigmaTestingCommons { suite =>
 
     //Third case: height >= timeout
     {
-      val spendingTx = block(contract.deadline).newTransaction().spending(holderBox)
+      val spendingTx = candidateBlock(contract.deadline).newTransaction().spending(holderBox)
       spendingTx.outBox(contract.minToRaise + 1, contract.projectSignature)
       val input0 = spendingTx.inputs(0)
 

@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
-import scorex.util.serialization._
+
 import scala.util.Try
 
 /**
