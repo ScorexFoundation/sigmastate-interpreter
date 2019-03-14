@@ -3,119 +3,185 @@ package sigmastate.utxo
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
+import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval.{IRContext, CSigmaProp}
+import sigmastate.eval.Extensions._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OperationSerializer
+import special.collection.Coll
+import special.sigma.{Context, AvlTree}
 
-class AVLTreeScriptsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
+
+class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
+  import org.ergoplatform.dsl.AvlTreeHelpers._
+  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  lazy val prover = spec.ProvingParty("Alice")
+  private implicit lazy val IR: IRContext = spec.IR
+
+  private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
   def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
-
   def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
-  property("avl tree modification") {
-    val prover = new ContextEnrichingTestProvingInterpreter
-    val verifier = new ErgoLikeTestInterpreter
-    val pubkey = prover.dlogSecrets.head.publicImage
+  val inKey = genKey("init key")
+  val inValue = genValue("init value")
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    val inKey = genKey("init key")
-    avlProver.performOneOperation(Insert(inKey, genValue("init value")))
-    avlProver.generateProof()
-    val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, 32, None)
+  property("avl tree - removals") {
+    case class AvlTreeContract[Spec <: ContractSpec]
+      (ops: Coll[Coll[Byte]], proof: Coll[Byte], prover: Spec#ProvingParty)
+      (implicit val spec: Spec) extends SigmaContractSyntax
+    {
+      def pkProver = prover.pubKey
+      import syntax._
+      lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
 
-    val operations: Seq[Operation] = (0 to 10).map(i => Insert(genKey(i.toString), genValue(i.toString))) :+
-      Update(inKey, genValue("updated value"))
-    val serializer = new OperationSerializer(avlProver.keyLength, avlProver.valueLengthOpt)
-    val opsBytes: Array[Byte] = serializer.serializeSeq(operations)
-    operations.foreach(o => avlProver.performOneOperation(o))
-    val proof = avlProver.generateProof()
-    val endDigest = avlProver.digest
+      lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
+        sigmaProp(SELF.R4[AvlTree].get.remove(ops, proof).get == SELF.R5[AvlTree].get)
+      },
+      """{
+       |  sigmaProp(SELF.R4[AvlTree].get.remove(ops, proof).get == SELF.R5[AvlTree].get)
+       |}
+      """.stripMargin)
 
-    val prop = EQ(TreeModifications(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(opsBytes),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(endDigest)).toSigmaProp
-    val env = Map("ops" -> opsBytes, "proof" -> proof, "endDigest" -> endDigest)
-    val propCompiled = compileWithCosting(env, """treeModifications(SELF.R4[AvlTree].get, ops, proof).get == endDigest""").asBoolValue.toSigmaProp
-    prop shouldBe propCompiled
+      lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
+    }
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
-    val newBoxes = IndexedSeq(newBox1)
+    val entries = (0 to 10).map { i => (genKey(i.toString) -> genValue(i.toString)) }
+    val (tree, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, entries:_*)
 
-    val spendingTransaction = createTransaction(newBoxes)
+    val removalKeys = (0 to 10).map(i => genKey(i.toString)).toArray
+    val removals: Seq[Operation] = removalKeys.map(k => Remove(k))
+    removals.foreach(o => avlProver.performOneOperation(o))
 
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+    val proof = avlProver.generateProof().toColl
+    val endDigest = avlProver.digest.toColl
+    val endTree = tree.updateDigest(endDigest)
 
-    val ctx = ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(s),
-      spendingTransaction,
-      self = s)
+    val contract = AvlTreeContract[spec.type](removalKeys.toColl, proof, prover)(spec)
+    import contract.spec._
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val mockTx = candidateBlock(0).newTransaction()
+    val s = mockTx
+        .outBox(20, contract.treeProp)
+        .withRegs(reg1 -> tree, reg2 -> endTree)
+
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
+    val newBox1 = spendingTx.outBox(10, contract.proverSig)
+
+    val in1 = spendingTx.inputs(0)
+    val res = in1.runDsl()
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
+
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
+  }
+
+  property("avl tree - inserts") {
+    case class AvlTreeContract[Spec <: ContractSpec]
+      (ops: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte], prover: Spec#ProvingParty)
+      (implicit val spec: Spec) extends SigmaContractSyntax
+    {
+      def pkProver = prover.pubKey
+      import syntax._
+      lazy val contractEnv = Env("pkProver" -> pkProver, "ops" -> ops, "proof" -> proof)
+
+      lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
+        val tree = SELF.R4[AvlTree].get
+        val endTree = SELF.R5[AvlTree].get
+        sigmaProp(tree.insert(ops, proof).get == endTree)
+      },
+      """{
+       |  val tree = SELF.R4[AvlTree].get
+       |  val endTree = SELF.R5[AvlTree].get
+       |  sigmaProp(tree.insert(ops, proof).get == endTree)
+       |}""".stripMargin)
+
+      lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
+    }
+
+    val (tree, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed)
+    val insertPairs = (0 to 10).map { i => (genKey(i.toString), genValue(i.toString)) }.toArray
+    insertPairs.foreach { case (k, v) => avlProver.performOneOperation(Insert(k, v)) }
+
+    val proof = avlProver.generateProof().toColl
+    val endDigest = avlProver.digest.toColl
+    val endTree = tree.updateDigest(endDigest)
+
+    val contract = AvlTreeContract[spec.type](insertPairs.toColl, proof, prover)(spec)
+    import contract.spec._
+
+    val mockTx = candidateBlock(0).newTransaction()
+    val s = mockTx
+        .outBox(20, contract.treeProp)
+        .withRegs(reg1 -> tree, reg2 -> endTree)
+
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
+    val newBox1 = spendingTx.outBox(10, contract.proverSig)
+
+    val in1 = spendingTx.inputs(0)
+    val res = in1.runDsl()
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
+
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree lookup") {
-    val prover = new ContextEnrichingTestProvingInterpreter
-    val verifier = new ErgoLikeTestInterpreter
+    case class AvlTreeContract[Spec <: ContractSpec]
+      (key: Coll[Byte], proof: Coll[Byte], value: Coll[Byte], prover: Spec#ProvingParty)
+      (implicit val spec: Spec) extends SigmaContractSyntax
+    {
+      def pkProver = prover.pubKey
+      import syntax._
+      lazy val contractEnv = Env("pkProver" -> pkProver, "key" -> key, "proof" -> proof, "value" -> value)
 
-    val pubkey = prover.dlogSecrets.head.publicImage
+      lazy val treeProp = proposition("treeProp", { ctx: Context => import ctx._
+        val tree = SELF.R4[AvlTree].get
+        sigmaProp(tree.get(key, proof).get == value)
+      },
+      """{
+       |  val tree = SELF.R4[AvlTree].get
+       |  sigmaProp(tree.get(key, proof).get == value)
+       |}""".stripMargin)
 
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+      lazy val proverSig = proposition("proverSig", { _ => pkProver }, "pkProver")
+    }
 
     val key = genKey("key")
     val value = genValue("value")
-    avlProver.performOneOperation(Insert(key, value))
-    avlProver.performOneOperation(Insert(genKey("key2"), genValue("value2")))
-    avlProver.generateProof()
-
+    val (tree, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, key -> value, genKey("key2") -> genValue("value2"))
     avlProver.performOneOperation(Lookup(genKey("key")))
 
     val digest = avlProver.digest
-    val proof = avlProver.generateProof()
+    val proof = avlProver.generateProof().toColl
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val contract = AvlTreeContract[spec.type](key.toColl, proof, value.toColl, prover)(spec)
+    import contract.spec._
 
+    val mockTx = candidateBlock(0).newTransaction()
+    val s = mockTx
+        .outBox(20, contract.treeProp)
+        .withRegs(reg1 -> treeData)
 
-    val prop = EQ(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(key),
-      ByteArrayConstant(proof)).get, ByteArrayConstant(value)).toSigmaProp
+    val spendingTx = candidateBlock(50).newTransaction().spending(s)
+    val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
-    val env = Map("key" -> key, "proof" -> proof, "value" -> value)
-    val propCompiled = compileWithCosting(env, """treeLookup(SELF.R4[AvlTree].get, key, proof).get == value""").asBoolValue.toSigmaProp
-    prop shouldBe propCompiled
+    val in1 = spendingTx.inputs(0)
+    val res = in1.runDsl()
+    res shouldBe CSigmaProp(TrivialProp.TrueProp)
 
-    val newBox1 = ErgoBox(10, pubkey, 0)
-    val newBoxes = IndexedSeq(newBox1)
-
-    val spendingTransaction = createTransaction(newBoxes)
-
-    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
-
-    val ctx = ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(s),
-      spendingTransaction,
-      self = s)
-
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(in1).get
+    contract.verifier.verify(in1, pr) shouldBe true
   }
 
   property("avl tree - simplest case") {
@@ -135,14 +201,16 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val env = Map("key" -> key, "proof" -> proof)
-    val prop = compileWithCosting(env, """isMember(SELF.R4[AvlTree].get, key, proof)""").asBoolValue.toSigmaProp
+    val prop = compile(env, """SELF.R4[AvlTree].get.contains(key, proof)""").asBoolValue.toSigmaProp
 
-    val propTree = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ByteArrayConstant(key),
-      ByteArrayConstant(proof))).toSigmaProp
+    val propTree = IR.builder.mkMethodCall(
+      ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+      SAvlTree.containsMethod,
+      IndexedSeq(ByteArrayConstant(key), ByteArrayConstant(proof))
+    ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -164,33 +232,34 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
-  property("avl tree - leaf satisfying condition exists") {
+  property("avl tree - contains key satisfying condition") {
     val elements = Seq(123, 22)
     val treeElements = elements.map(i => Longs.toByteArray(i)).map(s => (ADKey @@ Blake2b256(s), ADValue @@ s))
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, 32, None)
+    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
     val proofId = 0: Byte
     val elementId = 1: Byte
 
     val prop = AND(
       GE(GetVarLong(elementId).get, LongConstant(120)),
-      OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-        CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)),
-        GetVarByteArray(proofId).get))
+      IR.builder.mkMethodCall(
+        ExtractRegisterAs[SAvlTree.type](Self, reg1).get, SAvlTree.containsMethod,
+        IndexedSeq(CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)), GetVarByteArray(proofId).get)
+      ).asBoolValue
     ).toSigmaProp
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
-    val propCompiled = compileWithCosting(env,
+    val propCompiled = compile(env,
       """{
         |  val tree = SELF.R3[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get
         |  val element = getVar[Long](elementId).get
         |  val elementKey = blake2b256(longToByteArray(element))
-        |  element >= 120 && isMember(tree, elementKey, proof)
+        |  element >= 120 && tree.contains(elementKey, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
-    // TODO propCompiled shouldBe prop
+    //TODO: propCompiled shouldBe prop
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
@@ -233,7 +302,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val digest = avlProver.digest
     val proof = avlProver.generateProof()
 
-    val treeData = new AvlTreeData(digest, 32, None)
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
 
     val proofId = 31: Byte
 
@@ -242,18 +311,19 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("proofId" -> proofId.toLong)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val tree = SELF.R4[AvlTree].get
         |  val key = SELF.R5[Coll[Byte]].get
         |  val proof = getVar[Coll[Byte]](proofId).get
-        |  isMember(tree, key, proof)
+        |  tree.contains(key, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
-    val propTree = OptionIsDefined(TreeLookup(
+    val propTree = IR.builder.mkMethodCall(
       ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      ExtractRegisterAs[SByteArray](Self, reg2).get,
-      GetVarByteArray(proofId).get)).toSigmaProp
+      SAvlTree.containsMethod,
+      IndexedSeq(ExtractRegisterAs[SByteArray](Self, reg2).get, GetVarByteArray(proofId).get)
+    ).asBoolValue.toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
@@ -274,4 +344,57 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons {
     val ctxv = ctx.withExtension(pr.extension)
     verifier.verify(prop, ctxv, pr, fakeMessage).get._1 shouldBe true
   }
+
+  property("avl tree - getMany") {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+
+    (1 to 10).foreach {i =>
+      val key = genKey(s"$i")
+      avlProver.performOneOperation(Insert(key, genValue(s"${i + 100}")))
+    }
+    avlProver.generateProof()
+
+    (3 to 5).foreach { i =>
+      val key = genKey(s"$i")
+      avlProver.performOneOperation(Lookup(key))
+    }
+    val digest = avlProver.digest
+    val proof = avlProver.generateProof()
+
+    val proofId = 31: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter().withContextExtender(proofId, ByteArrayConstant(proof))
+    val verifier = new ErgoLikeTestInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+
+    val env = Map("proofId" -> proofId.toLong,
+                  "keys" -> ConcreteCollection(genKey("3"), genKey("4"), genKey("5")))
+    val prop = compile(env,
+      """{
+        |  val tree = SELF.R4[AvlTree].get
+        |  val proof = getVar[Coll[Byte]](proofId).get
+        |  sigmaProp(tree.getMany(keys, proof).forall( { (o: Option[Coll[Byte]]) => o.isDefined }))
+        |}""".stripMargin).asBoolValue.toSigmaProp
+
+    val newBox1 = ErgoBox(10, pubkey, 0)
+    val newBoxes = IndexedSeq(newBox1)
+
+    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(s),
+      spendingTransaction, self = s)
+    val pr = prover.prove(env + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+
+    val ctxv = ctx.withExtension(pr.extension)
+    verifier.verify(env + (ScriptNameProp -> "verify"), prop, ctxv, pr, fakeMessage).get._1 shouldBe true
+  }
+
 }

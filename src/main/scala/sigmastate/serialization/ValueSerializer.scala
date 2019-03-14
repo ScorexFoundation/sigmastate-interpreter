@@ -9,7 +9,7 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
-import sigmastate.serialization.trees.{Relation3Serializer, QuadrupleSerializer, Relation2Serializer}
+import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
@@ -46,8 +46,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     Relation2Serializer(LeCode, mkLE[SType]),
     Relation2Serializer(EqCode, mkEQ[SType]),
     Relation2Serializer(NeqCode, mkNEQ[SType]),
-    QuadrupleSerializer(TreeLookupCode, mkTreeLookup),
-    QuadrupleSerializer(TreeModificationsCode, mkTreeModifications),
+    CreateAvlTreeSerializer(mkCreateAvlTree),
+    QuadrupleSerializer(AvlTreeGetCode, mkTreeLookup),
+//    QuadrupleSerializer(TreeUpdatesCode, mkTreeUpdates),
+//    QuadrupleSerializer(TreeInsertsCode, mkTreeInserts),
+//    QuadrupleSerializer(TreeRemovalsCode, mkTreeRemovals),
     Relation2Serializer(BinOrCode, mkBinOr),
     Relation2Serializer(BinAndCode, mkBinAnd),
     Relation2Serializer(BinXorCode, mkBinXor),
@@ -73,6 +76,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaPropIsProvenSerializer,
     SigmaPropBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
+    CaseObjectSerialization(ContextCode, Context),
     CaseObjectSerialization(HeightCode, Height),
     CaseObjectSerialization(MinerPubkeyCode, MinerPubkey),
     CaseObjectSerialization(InputsCode, Inputs),

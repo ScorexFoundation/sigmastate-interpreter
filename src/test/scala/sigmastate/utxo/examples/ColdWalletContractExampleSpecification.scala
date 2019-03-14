@@ -30,7 +30,7 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
       "minSpend" -> IntConstant(100)
     )
 
-    val script = compileWithCosting(env,
+    val script = compile(env,
       """{
         |  val r4 = SELF.R4[Int].get // height at which period started
         |  val min = SELF.R5[Long].get // min Balance needed in this period

@@ -1,73 +1,81 @@
 package special.sigma
 
-import special.SpecialPredef
-import special.collection.{Coll, _}
+import special.collection._
+import scalan.{RType, NeverInline}
 
-import scala.reflect.ClassTag
-import scalan.RType
-import scalan.{NeverInline, Reified}
+class CSizeAnyValue(val tVal: RType[Any], val valueSize: Size[Any]) extends SizeAnyValue {
+  @NeverInline
+  override def dataSize: Long = valueSize.dataSize
+}
 
-class CCostedContext(val ctx: Context) extends CostedContext {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def OUTPUTS: CostedColl[Box] = dsl.costBoxes(ctx.OUTPUTS)
-  def INPUTS: CostedColl[Box] = dsl.costBoxes(ctx.INPUTS)
-  def HEIGHT: Costed[Int] = {
-    val cost = dsl.CostModel.SelectField
-    new CCostedPrim(ctx.HEIGHT, cost, 4L)
-  }
-  def SELF: CostedBox = new CCostedBox(ctx.SELF, dsl.CostModel.AccessBox)
-  def LastBlockUtxoRootHash: CostedAvlTree = new CCostedAvlTree(ctx.LastBlockUtxoRootHash, dsl.CostModel.AccessAvlTree)
-  def MinerPubKey: CostedColl[Byte] = dsl.costColWithConstSizedItem(ctx.MinerPubKey, dsl.CostModel.PubKeySize.toInt, 1)
-  def getVar[T](id: Byte)(implicit cT: RType[T]): CostedOption[T] = {
-    val opt = ctx.getVar(id)(cT)
-    dsl.costOption(opt, dsl.CostModel.GetVar)
+class CSizeSigmaProp(val propBytes: Size[Coll[Byte]]) extends SizeSigmaProp {
+  @NeverInline
+  override def dataSize: Long = propBytes.dataSize
+}
+
+class CSizeBox(
+    val propositionBytes: Size[Coll[Byte]],
+    val bytes: Size[Coll[Byte]],
+    val bytesWithoutRef: Size[Coll[Byte]],
+    val registers: Size[Coll[Option[AnyValue]]],
+    val tokens: Size[Coll[(Coll[Byte], Long)]]
+) extends SizeBox {
+  @NeverInline
+  override def dataSize: Long = {
+    // since `bytes` already contains all serialized data we just return it here
+    // however for cost estimation this size is not equal to the sum of the components
+    // and we need each component size independently
+    bytes.dataSize
   }
 
   @NeverInline
-  def getConstant[T](id: Byte)(implicit cT: RType[T]): Costed[T] = SpecialPredef.rewritableMethod
-
-  def value = ctx
-  def cost = ctx.cost
-  def dataSize = ctx.dataSize
+  override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
+    sys.error(s"Shouldn't be called and must be overriden by the class in sigmastate.eval package")
+  }
 }
 
-class CCostedBox(val box: Box, val cost: Int) extends CostedBox {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
-  def valueCosted: Costed[Long] = {
-    val cost = dsl.CostModel.SelectField
-    new CCostedPrim(box.value, cost, 8L)
-  }
-  def bytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytes, box.bytes.length, 1)
-  def bytesWithoutRef: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytesWithoutRef, box.bytesWithoutRef.length, 1)
-  def propositionBytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.propositionBytes, box.propositionBytes.length, 1)
-  def registers: CostedColl[AnyValue] = {
-    val len = box.registers.length
-    val costs = dsl.Colls.replicate(len, dsl.CostModel.AccessBox)
-    val sizes = box.registers.map(o => o.dataSize)
-    new CCostedColl(box.registers, costs, sizes, dsl.CostModel.CollectionConst)
-  }
-  def getReg[@Reified T](id: Int)(implicit cT:RType[T]): CostedOption[T] = {
-    val opt = box.getReg(id)(cT)
-    dsl.costOption(opt, dsl.CostModel.GetRegister)
+class CSizeContext(
+    val outputs: Size[Coll[Box]],
+    val inputs: Size[Coll[Box]],
+    val dataInputs: Size[Coll[Box]],
+    val selfBox: Size[Box],
+    val lastBlockUtxoRootHash: Size[AvlTree],
+    val headers: Size[Coll[Header]],
+    val preHeader: Size[PreHeader],
+    val vars: Coll[Size[AnyValue]]
+) extends SizeContext {
+  @NeverInline
+  override def dataSize: Long = {
+    outputs.dataSize + inputs.dataSize + dataInputs.dataSize +
+        lastBlockUtxoRootHash.dataSize + headers.dataSize + preHeader.dataSize +
+        33L // minerPubKey
   }
 
   @NeverInline
-  def creationInfo: Costed[(Int, Coll[Byte])] = SpecialPredef.rewritableMethod
-
-  def value: Box = box
-  def dataSize: Long = box.dataSize
+  override def getVar[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
+    val varSize = vars(id.toInt).asInstanceOf[SizeAnyValue]
+    assert(varSize.tVal == tT, s"Unexpected context variable type found ${varSize.tVal}: expected $tT")
+    val foundSize = varSize.valueSize.asInstanceOf[Size[T]]
+    new CSizeOption[T](Some(foundSize))
+  }
 }
 
-class CCostedAvlTree(val tree: AvlTree, val cost: Int) extends CostedAvlTree {
-  def dsl: SigmaDslBuilder = new TestSigmaDslBuilder
-  def startingDigest: CostedColl[Byte] = dsl.costColWithConstSizedItem(tree.startingDigest, dsl.CostModel.PubKeySize.toInt, 1)
-  def keyLength: Costed[Int] = new CCostedPrim(tree.keyLength, dsl.CostModel.SelectField, 4)
-  def valueLengthOpt: CostedOption[Int] = dsl.costOption(tree.valueLengthOpt, dsl.CostModel.SelectField)
-  def maxNumOperations: CostedOption[Int] = dsl.costOption(tree.maxNumOperations, dsl.CostModel.SelectField)
-  def maxDeletes: CostedOption[Int] = dsl.costOption(tree.maxDeletes, dsl.CostModel.SelectField)
+class CSizeBuilder extends SizeBuilder {
+  def mkSizeAnyValue(tVal: RType[Any], valueSize: Size[Any]): SizeAnyValue = new CSizeAnyValue(tVal, valueSize)
 
-  def value = tree
-  def dataSize = tree.dataSize
+  def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
+      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]],
+      tokens: Size[Coll[(Coll[Byte], Long)]]): SizeBox = {
+    new CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
+  }
+
+  def mkSizeContext(outputs: Size[Coll[Box]],
+      inputs: Size[Coll[Box]],
+      dataInputs: Size[Coll[Box]],
+      selfBox: Size[Box],
+      lastBlockUtxoRootHash: Size[AvlTree],
+      headers: Size[Coll[Header]],
+      preHeader: Size[PreHeader],
+      vars: Coll[Size[AnyValue]]): SizeContext =
+    new CSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
 }
-

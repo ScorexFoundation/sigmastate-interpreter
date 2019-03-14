@@ -10,14 +10,14 @@ import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   property("scripts EQ/NEQ") {
@@ -31,7 +31,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val e = compileWithCosting(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
     val exp = TrueLeaf
     e shouldBe exp
 
@@ -56,8 +56,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val wrongProp = SigmaPropConstant(ProveDHTuple(ci.g, ci.h, ci.u, ci.u))
 
     val env = Map("g" -> ci.g, "h" -> ci.h, "u" -> ci.u, "v" -> ci.v, "s" -> secret.publicImage)
-    val compiledProp1 = compileWithCosting(env, "s").asSigmaProp
-    val compiledProp2 = compileWithCosting(env, "proveDHTuple(g, h, u, v)").asSigmaProp
+    val compiledProp1 = compile(env, "s").asSigmaProp
+    val compiledProp2 = compile(env, "proveDHTuple(g, h, u, v)").asSigmaProp
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 
@@ -87,7 +87,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhB = proverB.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhB" -> pubdhB)
-    val compiledProp = compileWithCosting(env, """pubkeyA || pubdhB""").asSigmaProp
+    val compiledProp = compile(env, """pubkeyA || pubdhB""").asSigmaProp
 
     val prop = SigmaOr(pubkeyA, pubdhB)
     compiledProp shouldBe prop
@@ -114,7 +114,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubdhA = proverA.dhSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyA, "pubdhA" -> pubdhA)
-    val compiledProp = compileWithCosting(env, """pubkeyA && pubdhA""").asSigmaProp
+    val compiledProp = compile(env, """pubkeyA && pubdhA""").asSigmaProp
 
     val prop = SigmaAnd(pubkeyA, pubdhA)
     compiledProp shouldBe prop
@@ -134,7 +134,9 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     proverB.prove(compiledProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
-  ignore("mixing scenario w. timeout") {  // TODO Cost of the folded function depends on data
+  // related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/428
+  // checks that cost of the folded function doesn't depend on data
+  property("mixing scenario w. timeout") {
     val height = 50
     val proverA = new ContextEnrichingTestProvingInterpreter
     val proverB = new ContextEnrichingTestProvingInterpreter
@@ -160,26 +162,15 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     def mixingRequestProp(sender: ProveDlog, timeout: Int) = {
       val env = Map("sender" -> sender, "timeout" -> timeout, "properHash" -> properHash)
-      val compiledProp = compileWithCosting(env,
+      val compiledProp = compile(env,
         """{
           |  val notTimePassed = HEIGHT <= timeout
-          |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithNoRef})
+          |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithoutRef})
           |  val outSumBytes = outBytes.fold(Coll[Byte](), {(arr1: Coll[Byte], arr2: Coll[Byte]) => arr1 ++ arr2})
           |  val timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asSigmaProp
 
-      val prop = BinOr(
-        BinAnd(LE(Height, LongConstant(timeout)),
-          EQ(CalcBlake2b256(
-            Fold.concat[SByte.type](
-              MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractBytesWithNoRef(ValUse(1, SBox))))
-            ).asByteArray
-          ),
-            ByteArrayConstant(properHash))),
-        BinAnd(GT(Height, LongConstant(timeout)), sender.isProven)
-      ).toSigmaProp
-      compiledProp shouldBe prop
       compiledProp
     }
 
@@ -187,7 +178,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(),
+      boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
 
@@ -210,7 +201,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val outValues = OUTPUTS.map({ (box: Box) => box.value })
         |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
@@ -254,7 +245,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val compiledProp = compileWithCosting(env, """pubkey && OUTPUTS(0).value > 10""").asSigmaProp
+    val compiledProp = compile(env, """pubkey && OUTPUTS(0).value > 10""").asSigmaProp
 
     val prop = SigmaAnd(pubkey, BoolToSigmaProp(GT(ExtractAmount(ByIndex(Outputs, 0)), LongConstant(10))))
     compiledProp shouldBe prop
@@ -325,7 +316,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val regPubkey1 = ErgoBox.nonMandatoryRegisters.head
     val regPubkey2 = ErgoBox.nonMandatoryRegisters.tail.head
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """{
         |  val pubkey1 = SELF.R4[GroupElement].get
         |  val pubkey2 = SELF.R5[GroupElement].get
@@ -429,7 +420,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val spendingTransaction = createTransaction(newBoxes)
 
     val env = Map("brother" -> brother)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val okInputs = INPUTS.size == 2
         |  val okIds = INPUTS(0).id == brother.id
@@ -443,7 +434,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     // try a version of the script that matches the white paper
     val altEnv = Map("friend" -> brother)
-    val altProp = compileWithCosting(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""").asBoolValue.toSigmaProp
+    val altProp = compile(altEnv, """INPUTS.size == 2 && INPUTS(0).id == friend.id""").asBoolValue.toSigmaProp
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
@@ -470,7 +461,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prover.prove(prop, wrongCtx, fakeMessage).isFailure shouldBe true
     verifier.verify(prop, wrongCtx, pr, fakeMessage).fold(t => throw t, x => x)._1 shouldBe false
 
-    val prop2 = compileWithCosting(env,
+    val prop2 = compile(env,
       """{
         |  val okInputs = INPUTS.size == 3
         |  val okIds = INPUTS(0).id == brother.id
@@ -503,7 +494,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val spendingTransaction = createTransaction(newBoxes)
 
     val env = Map("friend" -> friend)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |
         | def isFriend(inputBox: Box) = inputBox.id == friend.id
@@ -523,7 +514,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     prop shouldBe propExpected
 
     // same script written differently
-    val altProp = compileWithCosting(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })").asBoolValue.toSigmaProp
+    val altProp = compile(env, "INPUTS.exists ({ (inputBox: Box) => inputBox.id == friend.id })").asBoolValue.toSigmaProp
     altProp shouldBe prop
 
     val s = ErgoBox(10, prop, 0, Seq(), Map())
@@ -577,7 +568,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     val helloHash = Blake2b256.hash(preimageHello)
 
     val env = Map("helloHash" -> helloHash)
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         |  val cond = INPUTS(0).value > 10
         |  val preimage = if (cond)
@@ -642,12 +633,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
   property("non-const ProveDHT") {
     import sigmastate.interpreter.CryptoConstants.dlogGroup
-    compileWithCosting(Map("gA" -> dlogGroup.generator),
+    compile(Map("gA" -> dlogGroup.generator),
       "proveDHTuple(gA, OUTPUTS(0).R4[GroupElement].get, gA, gA)"
     ).asInstanceOf[BlockValue].result shouldBe a [CreateProveDHTuple]
   }
 
   property("non-const ProveDlog") {
-    compileWithCosting(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [CreateProveDlog]
+    compile(Map(), "proveDlog(OUTPUTS(0).R4[GroupElement].get)" ) shouldBe a [CreateProveDlog]
   }
 }

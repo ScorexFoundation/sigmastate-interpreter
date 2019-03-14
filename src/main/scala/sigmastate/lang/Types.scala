@@ -24,6 +24,8 @@ trait Types extends Core {
     "Boolean" -> SBoolean, "Byte" -> SByte, "Short" -> SShort, "Int" -> SInt,"Long" -> SLong, "BigInt" -> SBigInt,
     "ByteArray" -> SByteArray,
     "AvlTree" -> SAvlTree, "Context" -> SContext, "GroupElement" -> SGroupElement, "SigmaProp" -> SSigmaProp,
+    "Header" -> SHeader,
+    "PreHeader" -> SPreHeader,
     "String" -> SString,
     "Box" -> SBox, "Unit" -> SUnit, "Any" -> SAny
   )

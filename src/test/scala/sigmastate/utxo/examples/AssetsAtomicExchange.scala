@@ -23,7 +23,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
   def pkA = tokenBuyer.pubKey
   def pkB = tokenSeller.pubKey
 
-  lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "tokenId" -> tokenId)
+  lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "tokenId" -> tokenId)
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>
     import ctx._
@@ -38,7 +38,6 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
       ))
     }
   },
-  env,
   """{
    |  (HEIGHT > deadline && pkA) || {
    |    val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
@@ -64,7 +63,6 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
       ))
     }
   },
-  env,
   """{
    |  (HEIGHT > deadline && pkB) ||
    |    allOf(Coll(
@@ -75,8 +73,8 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
    |}
   """.stripMargin)
 
-  lazy val buyerSignature  = proposition("buyerSignature", _ => pkA, env, "pkA")
-  lazy val sellerSignature = proposition("sellerSignature", _ => pkB, env, "pkB")
+  lazy val buyerSignature  = proposition("buyerSignature", _ => pkA, "pkA")
+  lazy val sellerSignature = proposition("sellerSignature", _ => pkB, "pkB")
 
   import spec._
 
@@ -85,7 +83,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
     * It creates a transaction in the target block with two holder boxes and two change boxes.
     * @return a pair of holder boxes
     */
-  def startExchange(targetBlock: Block, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
+  def startExchange(targetBlock: BlockCandidate, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
     require(buyerErgBox.propSpec == buyerSignature && sellerTokenBox.propSpec == sellerSignature)
 
     val tx = targetBlock.newTransaction().spending(buyerErgBox, sellerTokenBox)
@@ -101,7 +99,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
     * @param  sellerHolder  holder box with seller's tokens
     * @return               a pair of boxes with buyers's tokens and seller's Ergs
     * */
-  def finishExchange(targetBlock: Block, buyerHolder: OutBox, sellerHolder: OutBox): (OutBox, OutBox) = {
+  def finishExchange(targetBlock: BlockCandidate, buyerHolder: OutBox, sellerHolder: OutBox): (OutBox, OutBox) = {
     require(buyerHolder.propSpec == buyerProp && sellerHolder.propSpec == sellerProp)
     val spendingTx = targetBlock.newTransaction().spending(buyerHolder, sellerHolder)
     val buyerTokens = spendingTx

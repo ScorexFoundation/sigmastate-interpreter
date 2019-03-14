@@ -12,18 +12,22 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
-    ergoplatform.ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = boxesToSpend,
-      spendingTransaction = createTransaction(outputs),
-      self = null)
+    {
+      // TODO this means the context is not totally correct
+      val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
+      ergoplatform.ErgoLikeContext(
+        currentHeight = 50,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = toSpend,
+        spendingTransaction = createTransaction(outputs),
+        self = selfBox)
+    }
 
   private def assertProof(code: String,
                           expectedComp: SigmaPropValue,
@@ -50,7 +54,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), code).asBoolValue.toSigmaProp
+    val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
@@ -64,7 +68,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
 
     val expProp = Exists(Outputs,
       FuncValue(Vector((1, SBox)),
@@ -96,7 +100,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
 
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
@@ -128,7 +132,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
       ).toSigmaProp
@@ -157,7 +161,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
@@ -198,7 +202,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
          }""".stripMargin).asBoolValue.toSigmaProp
@@ -242,7 +246,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compileWithCosting(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
+    val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
     val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
     prop shouldBe propTree
 
@@ -436,16 +440,18 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/423
+  // TODO costing rule in CollCoster
   ignore("flatMap") {
     assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
       EQ(
         ByIndex(
           MethodCall(Outputs,
-            FlatMapMethod,
+            FlatMapMethod.withConcreteTypes(Map(tIV -> SBox, tOV -> SByte)),
             Vector(FuncValue(1, SBox,
               ExtractScriptBytes(ValUse(1, SBox))
             )),
-            Map(tIV -> SBox, tOV -> SByte)
+            Map()
           ).asCollection[SByte.type],
           IntConstant(0)
         ),
@@ -458,17 +464,18 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
       EQ(
         MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-          IndexOfMethod,
+          IndexOfMethod.withConcreteTypes(Map(tIV -> SLong)),
           Vector(LongConstant(1), IntConstant(0)),
-          Map(tIV -> SLong)),
+          Map()),
         IntConstant(0)
       ),
       IndexedSeq(1L, 1L))
   }
 
-  ignore("indices") {
-    assertProof("OUTPUTS.indices == Coll(0)",
-      EQ(MethodCall(Outputs, IndicesMethod, Vector(), Map(tIV -> SBox)), ConcreteCollection(IntConstant(0))),
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/421
+  property("indices") {
+    assertProof("OUTPUTS.indices == Coll(0, 1)",
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),
       IndexedSeq(1L, 1L))
   }
 
@@ -476,12 +483,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
       EQ(
         MethodCall(Outputs,
-          SegmentLengthMethod,
+          SegmentLengthMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(0)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(1)),
       IndexedSeq(1L, 2L))
   }
@@ -490,12 +497,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
       EQ(
         MethodCall(Outputs,
-          IndexWhereMethod,
+          IndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(0)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(0)),
       IndexedSeq(1L, 2L))
   }
@@ -504,12 +511,12 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
       EQ(
         MethodCall(Outputs,
-          LastIndexWhereMethod,
+          LastIndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
           Vector(
             FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
             IntConstant(1)
           ),
-          Map(tIV -> SBox)),
+          Map()),
         IntConstant(0)),
       IndexedSeq(1L, 2L))
   }
@@ -518,11 +525,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
       EQ(
         SizeOf(MethodCall(Outputs,
-          ZipMethod,
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SInt)),
           Vector(
             ConcreteCollection(IntConstant(1), IntConstant(2))
           ),
-          Map(tIV -> SBox, tOV -> SInt)).asCollection[STuple]),
+          Map()).asCollection[STuple]),
         IntConstant(2)),
       IndexedSeq(1L, 2L))
   }
@@ -533,11 +540,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         SizeOf(
           SelectField(
             MethodCall(Outputs,
-              PartitionMethod,
+              PartitionMethod.withConcreteTypes(Map(tIV -> SBox)),
               Vector(
                 FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
               ),
-              Map(tIV -> SBox)).asValue[STuple],
+              Map()).asValue[STuple],
             1
           ).asCollection[SType]
         ),
@@ -551,9 +558,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            PatchMethod,
+            PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),
@@ -566,9 +573,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdatedMethod,
+            UpdatedMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(IntConstant(0), LongConstant(3)),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),
@@ -581,9 +588,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         ByIndex(
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdateManyMethod,
+            UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
             Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
-            Map(tIV -> SLong)).asCollection[SType],
+            Map()).asCollection[SType],
           IntConstant(0)
         ),
         LongConstant(3)),

@@ -2,12 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.{SGroupElement, CreateProveDlog}
-import sigmastate.Values.{Value, SigmaBoolean, SigmaPropValue}
+import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 
 case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
   extends SigmaSerializer[ProveDlog, ProveDlog] {
@@ -34,3 +33,5 @@ case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPro
     cons(v)
   }
 }
+
+

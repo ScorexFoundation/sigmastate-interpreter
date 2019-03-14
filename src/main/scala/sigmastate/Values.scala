@@ -17,6 +17,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
 import sigmastate.serialization._
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utxo.CostTable.Cost
 import sigma.util.Extensions._
@@ -33,7 +34,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Extensions, AnyValue, TestValue}
+import special.sigma.{Header, Extensions, AnyValue, TestValue, PreHeader}
 import sigmastate.lang.SourceContext
 
 
@@ -321,18 +322,32 @@ object Values {
   implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
-        c.value.startingDigest,
+        c.value.digest,
         proof,
         c.value.keyLength,
-        c.value.valueLengthOpt,
-        c.value.maxNumOperations,
-        c.value.maxDeletes)
+        c.value.valueLengthOpt)
   }
 
   object ContextConstant {
     def apply(value: ErgoLikeContext): Constant[SContext.type]  = Constant[SContext.type](value, SContext)
     def unapply(v: SValue): Option[ErgoLikeContext] = v match {
       case Constant(value: ErgoLikeContext, SContext) => Some(value)
+      case _ => None
+    }
+  }
+
+  object PreHeaderConstant {
+    def apply(value: PreHeader): Constant[SPreHeader.type]  = Constant[SPreHeader.type](value, SPreHeader)
+    def unapply(v: SValue): Option[PreHeader] = v match {
+      case Constant(value: PreHeader, SPreHeader) => Some(value)
+      case _ => None
+    }
+  }
+  
+  object HeaderConstant {
+    def apply(value: Header): Constant[SHeader.type]  = Constant[SHeader.type](value, SHeader)
+    def unapply(v: SValue): Option[Header] = v match {
+      case Constant(value: Header, SHeader) => Some(value)
       case _ => None
     }
   }

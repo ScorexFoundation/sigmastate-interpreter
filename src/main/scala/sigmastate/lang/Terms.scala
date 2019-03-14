@@ -14,6 +14,8 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
 import special.sigma.{AnyValue, TestValue}
 
+import scala.language.implicitConversions
+
 object Terms {
 
   /** Frontend representation of a block of Val definitions.
@@ -144,17 +146,13 @@ object Terms {
       case t => t.withSubstTypes(typeSubst)
     }
   }
-  object MethodCall {
-    def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-      val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
-      val method = typeCompanion.getMethodById(methodId)
-      method
-    }
-  }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
+  }
+  object STypeParam {
+    implicit def typeIdentToTypeParam(id: STypeIdent): STypeParam = STypeParam(id)
   }
 
   /** Frontend implementation of lambdas. Should be transformed to FuncValue. */
@@ -188,15 +186,17 @@ object Terms {
     def asNumValue: Value[SNumericType] = v.asInstanceOf[Value[SNumericType]]
     def asStringValue: Value[SString.type] = v.asInstanceOf[Value[SString.type]]
     def asBoolValue: Value[SBoolean.type] = v.asInstanceOf[Value[SBoolean.type]]
+    def asByteValue: Value[SByte.type] = v.asInstanceOf[Value[SByte.type]]
+    def asShortValue: Value[SShort.type] = v.asInstanceOf[Value[SShort.type]]
     def asIntValue: Value[SInt.type] = v.asInstanceOf[Value[SInt.type]]
     def asLongValue: Value[SLong.type] = v.asInstanceOf[Value[SLong.type]]
-    def asSigmaBoolean: SigmaBoolean = v.asInstanceOf[SigmaBoolean]
+    def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asBox: Value[SBox.type] = v.asInstanceOf[Value[SBox.type]]
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
     def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
-    def asBigInt: Value[SBigInt.type] = v.asInstanceOf[Value[SBigInt.type]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
+    def asOption[T <: SType]: Value[SOption[T]] = v.asInstanceOf[Value[SOption[T]]]
     def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]
     def asFunc: Value[SFunc] = v.asInstanceOf[Value[SFunc]]
     def asConcreteCollection[T <: SType]: ConcreteCollection[T] = v.asInstanceOf[ConcreteCollection[T]]
@@ -229,7 +229,7 @@ object Terms {
       */
     def withPropagatedSrcCtx[T <: SType](srcCtx: Nullable[SourceContext]): Value[T] = {
       rewrite(everywherebu(rule[SValue] {
-        case node if node.sourceContext.isEmpty =>
+        case node if node != null && node.sourceContext.isEmpty =>
           node.withSrcCtx(srcCtx)
       }))(v).asValue[T]
     }

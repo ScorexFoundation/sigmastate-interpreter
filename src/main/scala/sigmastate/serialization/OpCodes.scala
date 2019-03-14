@@ -108,8 +108,13 @@ object OpCodes extends ValueCodes {
   val AppendCode           : OpCode = (LastConstantCode + 67).toByte
   val SliceCode            : OpCode = (LastConstantCode + 68).toByte
   val FilterCode           : OpCode = (LastConstantCode + 69).toByte
-  val TreeLookupCode       : OpCode = (LastConstantCode + 70).toByte
-  val TreeModificationsCode: OpCode = (LastConstantCode + 71).toByte
+  val AvlTreeCode          : OpCode = (LastConstantCode + 70).toByte
+  val AvlTreeGetCode       : OpCode = (LastConstantCode + 71).toByte
+//  val TreeUpdatesCode      : OpCode = (LastConstantCode + 71).toByte
+//  val TreeInsertsCode      : OpCode = (LastConstantCode + 72).toByte
+//  val TreeRemovalsCode     : OpCode = (LastConstantCode + 73).toByte
+//  val TreeGetManyCode      : OpCode = (LastConstantCode + 74).toByte
+//  val TreeContainsCode     : OpCode = (LastConstantCode + 75).toByte
   // reserved 72 - 80 (9)
 
   // Type casts codes

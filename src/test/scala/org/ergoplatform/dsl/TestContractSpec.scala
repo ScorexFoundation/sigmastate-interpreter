@@ -1,29 +1,31 @@
 package org.ergoplatform.dsl
 
-import scala.util.Try
 import sigmastate.interpreter.Interpreter.ScriptNameProp
-import special.sigma.{AnyValue, SigmaProp, TestValue}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import scorex.crypto.hash.Digest32
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import sigmastate.lang.Terms.ValueOps
 
 import scala.collection.mutable
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.{AvlTreeData, SType}
+import sigmastate.interpreter.{ProverResult, CostedProverResult}
 
 import scala.collection.mutable.ArrayBuffer
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, noHeaders}
 import scalan.Nullable
-import sigmastate.interpreter.{CostedProverResult, ProverResult}
-import sigmastate.eval.{CSigmaProp, Evaluation, IRContext}
-import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
+import scorex.crypto.hash.Digest32
+
+import scala.util.Try
+import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import sigmastate.{AvlTreeData, SType}
+import sigmastate.Values.{ErgoTree, EvaluatedValue}
+import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.lang.Terms.ValueOps
+import special.sigma.{AnyValue, TestValue, SigmaProp}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
   case class TestPropositionSpec(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) extends PropositionSpec {
     lazy val ergoTree: ErgoTree = {
-      val value = testSuite.compileWithCosting(scriptSpec.env, scriptSpec.code)
+      val value = testSuite.compile(scriptSpec.env, scriptSpec.code)
       val tree: ErgoTree = value.asSigmaProp
       tree
     }
@@ -75,13 +77,16 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   override protected def mkVerifyingParty(name: String): VerifyingParty = TestVerifyingParty(name)
 
-  case class TestInputBox(tx: Transaction, utxoBox: OutBox) extends InputBox {
+  case class TestInputBox(tx: TransactionCandidate, utxoBox: OutBox) extends InputBox {
     private [dsl] def toErgoContext: ErgoLikeContext = {
       val propSpec = utxoBox.propSpec
-      val ctx = ErgoLikeContext(
+      val ctx = new ErgoLikeContext(
         currentHeight = tx.block.height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
+        headers     = noHeaders,
+        preHeader   = dummyPreHeader,
+        dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox)
@@ -94,7 +99,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     }
   }
 
-  case class TestOutBox(tx: Transaction, boxIndex: Int, value: Long, propSpec: PropositionSpec) extends OutBox {
+  case class TestOutBox(tx: TransactionCandidate, boxIndex: Int, value: Long, propSpec: PropositionSpec) extends OutBox {
     private var _tokens: Seq[Token] = Seq()
     private var _regs: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()
 
@@ -123,9 +128,12 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     def id = ergoBox.id
   }
 
-  case class TestTransaction(block: Block) extends Transaction {
+  case class MockTransaction(block: BlockCandidate) extends TransactionCandidate {
     private val _inputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
     def inputs: Seq[InputBox] = _inputs
+
+    private val _dataInputs: ArrayBuffer[InputBox] = mutable.ArrayBuffer.empty[InputBox]
+    def dataInputs: Seq[InputBox] = _dataInputs
 
     private val _outputs = mutable.ArrayBuffer.empty[OutBox]
     def outputs: Seq[OutBox] = _outputs
@@ -133,6 +141,12 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     def inBox(utxoBox: OutBox) = {
       val box = TestInputBox(this, utxoBox)
       _inputs += box
+      box
+    }
+
+    def dataBox(dataBox: OutBox) = {
+      val box = TestInputBox(this, dataBox)
+      _dataInputs += box
       box
     }
 
@@ -147,12 +161,17 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       this
     }
 
+    def withDataInputs(dataBoxes: OutBox*) = {
+      for (b <- dataBoxes) dataBox(b)
+      this
+    }
+
   }
 
-  case class TestBlock(height: Int) extends Block {
-    def newTransaction() = TestTransaction(this)
-    override def getTransactions(): Seq[ChainTransaction] = ???
+  case class BBlockCandidate(height: Int) extends BlockCandidate {
+    def newTransaction() = MockTransaction(this)
+//    def onTopOf(chain: ChainBlock*)
   }
 
-  def block(height: Int): Block = TestBlock(height)
+  def candidateBlock(height: Int): BlockCandidate = BBlockCandidate(height)
 }

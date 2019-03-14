@@ -18,15 +18,14 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
     val self = new TestBox(selfId, 10, noBytes, noBytes, noBytes, noRegisters)
 
     { // when backer can open
-      val ctxForBacker = new TestContext(noInputs, noOutputs, height = 200, self, emptyAvlTree, dummyPubkey, Array())
+      val ctxForBacker = testContext(noInputs, noOutputs, height = 200, self, emptyAvlTree, dummyPubkey, Array())
       val ok = contract.canOpen(ctxForBacker)
       assert(ok)
-      assert(self.dataSize == noBytes.length)
     }
 
     { // then project can open
       val out = new TestBox(outId, minToRaise, noBytes, noBytes, project.propBytes, noRegisters)
-      val ctxForProject = new TestContext(Array(), Array(out), height = 50, self, emptyAvlTree, dummyPubkey, Array())
+      val ctxForProject = testContext(Array(), Array(out), height = 50, self, emptyAvlTree, dummyPubkey, Array())
       val ok = contract.canOpen(ctxForProject)
       assert(ok)
     }
@@ -45,11 +44,11 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
     val out = new TestBox(outId, outValue, noBytes, noBytes, prop, regs(Map(R4 -> toAnyValue(curHeight))))
 
     { //case 1: demurrage time hasn't come yet
-      val ctxForProject = new TestContext(
+      val ctxForProject = testContext(
         inputs = Array(),
         outputs = Array(out),
         height = outHeight + demurragePeriod - 1,
-        selfBox = new TestBox(
+        self = new TestBox(
           selfId, outValue,
           noBytes, noBytes,
           prop,
@@ -68,11 +67,11 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
     }
 
     { //case 2: demurrage time has come (user can spend all the money)
-      val ctxForProject = new TestContext(
+      val ctxForProject = testContext(
         inputs = Array(),
         outputs = Array(out),
         height = outHeight + demurragePeriod,
-        selfBox = new TestBox(
+        self = new TestBox(
           selfId, outValue,
           noBytes, noBytes,
           prop,
@@ -90,11 +89,11 @@ class SigmaExamplesTests extends FunSuite with ContractsTestkit {
       val minerOut = new TestBox(outId, outValue - demurrageCost,
         noBytes, noBytes,
         prop, regs(Map(R4 -> toAnyValue(curHeight))))
-      val ctxForMiner = new TestContext(
+      val ctxForMiner = testContext(
         inputs = Array(),
         outputs = Array(minerOut),
         height = outHeight + demurragePeriod,
-        selfBox = new TestBox(
+        self = new TestBox(
           selfId, outValue,
           noBytes, noBytes,
           prop,

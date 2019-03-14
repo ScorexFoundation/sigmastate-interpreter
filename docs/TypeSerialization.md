@@ -167,7 +167,7 @@ x = 0xXX      | `Byte`           |  `byte(x)` - one byte storing value x
 b = false/true| `Boolean`        |  `if (b) byte(0x01) else byte(0x00)]` - one byte storing 0 or 1
 n = 0xXXXXXXXXXXXXXXXX  |  `Int`              |  `[XX,XX,XX,XX,XX,XX,XX,XX]` - big endian 8 bytes
 N = new BigInteger()    |  `BigInt`           |  xs = N.toByteArray, `[serialize(xs)]` - serialize as `Coll[Byte]`, see also BigInteger.toByteArray
-e = new EcPoint()       |  `GroupElement`     |  `[e.getEncoded(true)]` see also org.bouncycastle.math.ec.EcPoint.getEncoded(true)
+e = new EcPoint()       |  `GroupElement`     |  `[e.getEncoded]` see also use GroupElementSerializer
 box = new ErgoBox()     |  `Box`              |  `[putLong(box.value), putValue(box.proposition), putArray[Any](box.registers), 32, putBytes(box.transactionId), putShort(box.boxId)]`
 t = new AvlTree()       |  `AvlTree`          |  `[serialize(t.startingDigest), putInt(t.keyLength), putOpt(t.valueLengthOpt), putOpt(t.maxNumOperations), putOpt(t.maxDeletes)]`
 xs = Coll(x1, .., xN)  |  `Coll[T]`      |  `[xs.length & 0xXXXX, serialize(x1), ..., serialize(xN)]` - 2 bytes of length and recursive bytes of all the elements
