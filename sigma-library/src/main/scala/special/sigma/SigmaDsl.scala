@@ -61,11 +61,11 @@ package special.sigma {
       def negate: Rep[BigInt]
     };
     @Liftable trait GroupElement extends Def[GroupElement] {
-      def isInfinity: Rep[Boolean];
+      def isIdentity: Rep[Boolean];
       def exp(k: Rep[BigInt]): Rep[GroupElement];
       def multiply(that: Rep[GroupElement]): Rep[GroupElement];
-      def negate: Rep[GroupElement];
-      def getEncoded: Rep[Coll[Byte]]
+      def inverse: Rep[GroupElement];
+      def toBytes: Rep[Coll[Byte]]
     };
     @Liftable trait SigmaProp extends Def[SigmaProp] {
       def isValid: Rep[Boolean];

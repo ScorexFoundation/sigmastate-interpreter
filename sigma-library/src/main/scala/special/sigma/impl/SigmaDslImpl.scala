@@ -1177,7 +1177,7 @@ object GroupElement extends EntityObject("GroupElement") {
 
     private val GroupElementClass = classOf[GroupElement]
 
-    override def isInfinity: Rep[Boolean] = {
+    override def isIdentity: Rep[Boolean] = {
       asRep[Boolean](mkMethodCall(self,
         GroupElementClass.getMethod("isInfinity"),
         List(),
@@ -1198,14 +1198,14 @@ object GroupElement extends EntityObject("GroupElement") {
         true, false, element[GroupElement]))
     }
 
-    override def negate: Rep[GroupElement] = {
+    override def inverse: Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
         GroupElementClass.getMethod("negate"),
         List(),
         true, false, element[GroupElement]))
     }
 
-    override def getEncoded: Rep[Coll[Byte]] = {
+    override def toBytes: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
         GroupElementClass.getMethod("getEncoded"),
         List(),
@@ -1234,7 +1234,7 @@ object GroupElement extends EntityObject("GroupElement") {
     override def transform(t: Transformer) = GroupElementAdapter(t(source))
     private val thisClass = classOf[GroupElement]
 
-    def isInfinity: Rep[Boolean] = {
+    def isIdentity: Rep[Boolean] = {
       asRep[Boolean](mkMethodCall(source,
         thisClass.getMethod("isInfinity"),
         List(),
@@ -1255,14 +1255,14 @@ object GroupElement extends EntityObject("GroupElement") {
         true, true, element[GroupElement]))
     }
 
-    def negate: Rep[GroupElement] = {
+    def inverse: Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
         thisClass.getMethod("negate"),
         List(),
         true, true, element[GroupElement]))
     }
 
-    def getEncoded: Rep[Coll[Byte]] = {
+    def toBytes: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
         thisClass.getMethod("getEncoded"),
         List(),
