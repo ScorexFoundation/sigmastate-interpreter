@@ -5,25 +5,25 @@ import java.math.BigInteger
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, IntConstant, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{Builder, CCostedBuilder, Coll, CollType, CostedBuilder}
+import special.collection.{CSizePrim, Builder, Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
 
-import scala.util.{Failure, Success}
-import scalan.RType
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scala.util.{Success, Failure}
+import scalan.{NeverInline, RType}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.GroupElementSerializer
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 
 import scala.reflect.ClassTag
 
@@ -209,6 +209,37 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
 
 import sigmastate.eval.CostingBox._
 
+class EvalSizeBox(
+    propositionBytes: Size[Coll[Byte]],
+    bytes: Size[Coll[Byte]],
+    bytesWithoutRef: Size[Coll[Byte]],
+    registers: Size[Coll[Option[AnyValue]]],
+    tokens: Size[Coll[(Coll[Byte], Long)]]
+) extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) {
+  override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
+    val varSize = registers.asInstanceOf[SizeColl[Option[AnyValue]]].sizes(id.toInt)
+    val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
+    val regSize = foundSize match {
+      case Some(varSize: SizeAnyValue) =>
+        assert(varSize.tVal == tT, s"Unexpected register type found ${varSize.tVal}: expected $tT")
+        val regSize = varSize.valueSize.asInstanceOf[Size[T]]
+        regSize
+      case _ =>
+        val z = Zero.typeToZero(tT)
+        val zeroVal = z.zero
+        val sized = Sized.typeToSized(tT)
+        sized.size(zeroVal)
+    }
+    new CSizeOption[T](Some(regSize))
+  }
+}
+class EvalSizeBuilder extends CSizeBuilder {
+  override def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
+      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]],
+      tokens: Size[Coll[(Coll[Byte], Long)]]): SizeBox = {
+    new EvalSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
+  }
+}
 case class CostingBox(val IR: Evaluation,
                       isCost: Boolean,
                       val ebox: ErgoBox)
@@ -530,7 +561,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   }
 
   override def decodePoint(encoded: Coll[Byte]): GroupElement = {
-    this.GroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
+    val r = SigmaSerializer.startReader(encoded.toArray)
+    val p = GroupElementSerializer.parse(r)
+    this.GroupElement(p)
   }
 }
 

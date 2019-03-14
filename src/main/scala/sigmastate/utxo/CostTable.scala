@@ -31,9 +31,18 @@ object CostTable {
 
   val expCost = 5000
   val multiplyGroup = 50
+  val negateGroup = 50
   val groupElementConst = 1
   val constCost = 1
   val lambdaCost = 1
+
+  /** Cost of creating new instances (kind of memory allocation cost).
+    * When the instance already exists them the corresponding Access/Extract cost should be added.
+    */
+  val newPrimValueCost = 1
+  val newCollValueCost = 1
+  val newPairValueCost = 1
+  val newOptionValueCost = 1
 
   val plusMinus = 2
   val multiply = 10
@@ -100,6 +109,7 @@ object CostTable {
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
     ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),

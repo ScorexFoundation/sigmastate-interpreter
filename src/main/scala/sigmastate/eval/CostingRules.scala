@@ -6,6 +6,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.utxo.CostTable
 import special.collection.Coll
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
@@ -221,6 +222,18 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 //    }
   }
 
+  class GroupElementCoster(obj: RCosted[GroupElement], method: SMethod, args: Seq[RCosted[_]]) extends Coster[GroupElement](obj, method, args){
+    import GroupElement._
+    def getEncoded: RCosted[Coll[Byte]] =
+      knownLengthCollProperyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
+
+    def negate: RCosted[GroupElement] = {
+      RCCostedPrim(obj.value.negate, opCost(costOfArgs, costOf(method)), SizeGroupElement)
+    }
+  }
+
+  object GroupElementCoster extends CostingHandler[GroupElement]((obj, m, args) => new GroupElementCoster(obj, m, args))
+
   class AvlTreeCoster(obj: RCosted[AvlTree], method: SMethod, args: Seq[RCosted[_]]) extends Coster[AvlTree](obj, method, args){
     import AvlTree._
     def digest() = knownLengthCollProperyAccess(_.digest, AvlTreeData.DigestSize)
@@ -336,9 +349,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
       val cost = opCost(Seq(obj.cost), sigmaDslBuilder.CostModel.SelectField)
-      val l = RCCostedPrim(info._1, cost, SizeInt)
-      val r = mkCostedColl(info._2, CryptoConstants.hashLength, cost)
-      RCCostedPair(l, r)
+      val l = RCCostedPrim(info._1, 0, SizeInt)
+      val r = mkCostedColl(info._2, CryptoConstants.hashLength, 0)
+      RCCostedPair(l, r, cost)
     }
 
     def tokens() = {
@@ -525,7 +538,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costs = xsC.costs
       val sizes = xsC.sizes
       val c = opCost(costOfArgs, costOf(method))
-      RCCostedPair(RCCostedColl(lvalues, costs, sizes, c), RCCostedColl(rvalues, costs, sizes, c))
+      RCCostedPair(
+        RCCostedColl(lvalues, costs, sizes, CostTable.newCollValueCost),
+        RCCostedColl(rvalues, costs, sizes, CostTable.newCollValueCost), c)
     }
 
     def patch(from: RCosted[Int], patch: RCosted[Coll[T]], replaced: RCosted[Int]): RCosted[Coll[T]] = {

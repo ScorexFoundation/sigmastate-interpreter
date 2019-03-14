@@ -88,7 +88,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: SizeData[_,_] | _: OpCost | _: Cast[_] =>
+    case _: OpCost | _: Cast[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
@@ -301,25 +301,6 @@ trait Evaluation extends RuntimeCosting { IR =>
   {
     val costAccumulator = new CostAccumulator(0, costLimit)
 
-    def evalSizeData(data: SizeData[_,_], dataEnv: DataEnv): Any = {
-      val info = dataEnv(data.sizeInfo)
-      data.eVal match {
-        case _: BaseElem[_] => info.asInstanceOf[Long]
-        case _: PairElem[_,_] =>
-          val (l, r) = info.asInstanceOf[(Long,Long)]
-          l + r
-        case _: CollElem[_,_] =>
-          val coll = info.asInstanceOf[SColl[Long]]
-          coll.sum(longPlusMonoidValue)
-        case _: WOptionElem[_,_] =>
-          val sizeOpt = info.asInstanceOf[Option[Long]]
-          sizeOpt.getOrElse(0L)
-        case _: EntityElem[_] =>
-          info.asInstanceOf[Long]
-        case _ => error(s"Cannot evalSizeData($data)")
-      }
-    }
-
     def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
@@ -353,7 +334,6 @@ trait Evaluation extends RuntimeCosting { IR =>
             }
             out(data)
           case Const(x) => out(x.asInstanceOf[AnyRef])
-          case sd: SizeData[_,_] => out(evalSizeData(sd, dataEnv))
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)
@@ -506,7 +486,7 @@ trait Evaluation extends RuntimeCosting { IR =>
                  In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
                  In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
                  In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-            val res = new special.sigma.CSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
+            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
             out(res)
 
           case costOp: CostOf =>
@@ -532,8 +512,9 @@ trait Evaluation extends RuntimeCosting { IR =>
             val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case c @ Cast(eTo, In(v)) =>
-            assert(eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass),
-              s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            if (!eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass)) {
+              error(s"Invalid cast $c: ${eTo.sourceType.classTag.runtimeClass} is not assignable from ${v.getClass}")
+            }
             out(v)
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
@@ -600,10 +581,6 @@ object Evaluation {
   import special.collection._
   import ErgoLikeContext._
   
-  case class GenericRType[T <: AnyRef](classTag : ClassTag[T]) extends RType[T]
-
-  def AnyRefRType[T <: AnyRef: ClassTag]: RType[T] = GenericRType[T](scala.reflect.classTag[T])
-
   def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
     case SBoolean => BooleanType
     case SByte => ByteType
@@ -724,7 +701,7 @@ object Evaluation {
     case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
     case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
     case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
-    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tA), toErgoTreeType(p.tB))
+    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tLeft), toErgoTreeType(p.tRight))
     case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
     case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
     case HeaderRType | PreHeaderRType => dslType

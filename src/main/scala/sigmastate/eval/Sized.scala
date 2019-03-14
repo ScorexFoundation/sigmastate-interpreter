@@ -96,7 +96,7 @@ object Sized extends SizedLowPriority {
     new CSizeSigmaProp(sizeOf(b.propBytes))
   }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
-    new CSizeBox(
+    new EvalSizeBox(
       sizeOf(b.propositionBytes),
       sizeOf(b.bytes),
       sizeOf(b.bytesWithoutRef),

@@ -1,11 +1,7 @@
 package special.sigma
 
-import special.SpecialPredef
-import special.collection.{Coll, CCostedPrim, _}
-
-import scala.reflect.ClassTag
-import scalan.RType
-import scalan.{NeverInline, Reified}
+import special.collection._
+import scalan.{RType, NeverInline}
 
 class CSizeAnyValue(val tVal: RType[Any], val valueSize: Size[Any]) extends SizeAnyValue {
   @NeverInline
@@ -34,17 +30,7 @@ class CSizeBox(
 
   @NeverInline
   override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
-    val varSize = registers.asInstanceOf[SizeColl[Option[AnyValue]]].sizes(id.toInt)
-    val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
-    val regSize = foundSize match {
-      case Some(varSize: SizeAnyValue) =>
-        assert(varSize.tVal == tT, s"Unexpected register type found ${varSize.tVal}: expected $tT")
-        val regSize = varSize.valueSize.asInstanceOf[Size[T]]
-        regSize
-      case _ =>
-        new CSizePrim(0L, tT)
-    }
-    new CSizeOption[T](Some(regSize))
+    sys.error(s"Shouldn't be called and must be overriden by the class in sigmastate.eval package")
   }
 }
 

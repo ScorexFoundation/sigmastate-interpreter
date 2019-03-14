@@ -1184,16 +1184,16 @@ object GroupElement extends EntityObject("GroupElement") {
         true, false, element[Boolean]))
     }
 
-    override def multiply(k: Rep[BigInt]): Rep[GroupElement] = {
+    override def exp(k: Rep[BigInt]): Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
-        GroupElementClass.getMethod("multiply", classOf[Sym]),
+        GroupElementClass.getMethod("exp", classOf[Sym]),
         List(k),
         true, false, element[GroupElement]))
     }
 
-    override def add(that: Rep[GroupElement]): Rep[GroupElement] = {
+    override def multiply(that: Rep[GroupElement]): Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(self,
-        GroupElementClass.getMethod("add", classOf[Sym]),
+        GroupElementClass.getMethod("multiply", classOf[Sym]),
         List(that),
         true, false, element[GroupElement]))
     }
@@ -1205,11 +1205,10 @@ object GroupElement extends EntityObject("GroupElement") {
         true, false, element[GroupElement]))
     }
 
-    //todo remove compressed flag, use GroupElementSerializer
-    override def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]] = {
+    override def getEncoded: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(self,
-        GroupElementClass.getMethod("getEncoded", classOf[Sym]),
-        List(compressed),
+        GroupElementClass.getMethod("getEncoded"),
+        List(),
         true, false, element[Coll[Byte]]))
     }
   }
@@ -1242,16 +1241,16 @@ object GroupElement extends EntityObject("GroupElement") {
         true, true, element[Boolean]))
     }
 
-    def multiply(k: Rep[BigInt]): Rep[GroupElement] = {
+    def exp(k: Rep[BigInt]): Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
-        thisClass.getMethod("multiply", classOf[Sym]),
+        thisClass.getMethod("exp", classOf[Sym]),
         List(k),
         true, true, element[GroupElement]))
     }
 
-    def add(that: Rep[GroupElement]): Rep[GroupElement] = {
+    def multiply(that: Rep[GroupElement]): Rep[GroupElement] = {
       asRep[GroupElement](mkMethodCall(source,
-        thisClass.getMethod("add", classOf[Sym]),
+        thisClass.getMethod("multiply", classOf[Sym]),
         List(that),
         true, true, element[GroupElement]))
     }
@@ -1263,11 +1262,10 @@ object GroupElement extends EntityObject("GroupElement") {
         true, true, element[GroupElement]))
     }
 
-    //todo remove compressed flag, use GroupElementSerializer
-    def getEncoded(compressed: Rep[Boolean]): Rep[Coll[Byte]] = {
+    def getEncoded: Rep[Coll[Byte]] = {
       asRep[Coll[Byte]](mkMethodCall(source,
-        thisClass.getMethod("getEncoded", classOf[Sym]),
-        List(compressed),
+        thisClass.getMethod("getEncoded"),
+        List(),
         true, true, element[Coll[Byte]]))
     }
   }
@@ -1287,7 +1285,7 @@ object GroupElement extends EntityObject("GroupElement") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[GroupElement], classOf[SGroupElement], Set(
-        "isInfinity", "multiply", "add", "negate", "getEncoded"
+        "isInfinity", "exp", "multiply", "negate", "getEncoded"
         ))
     }
 
@@ -1343,9 +1341,9 @@ object GroupElement extends EntityObject("GroupElement") {
       }
     }
 
-    object multiply {
+    object exp {
       def unapply(d: Def[_]): Nullable[(Rep[GroupElement], Rep[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "multiply" =>
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "exp" =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Rep[GroupElement], Rep[BigInt])]]
         case _ => Nullable.None
@@ -1356,9 +1354,9 @@ object GroupElement extends EntityObject("GroupElement") {
       }
     }
 
-    object add {
+    object multiply {
       def unapply(d: Def[_]): Nullable[(Rep[GroupElement], Rep[GroupElement])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "add" =>
+        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "multiply" =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Rep[GroupElement], Rep[GroupElement])]]
         case _ => Nullable.None
@@ -1383,13 +1381,13 @@ object GroupElement extends EntityObject("GroupElement") {
     }
 
     object getEncoded {
-      def unapply(d: Def[_]): Nullable[(Rep[GroupElement], Rep[Boolean])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "getEncoded" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[GroupElement], Rep[Boolean])]]
+      def unapply(d: Def[_]): Nullable[Rep[GroupElement]] = d match {
+        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[GroupElementElem[_]] && method.getName == "getEncoded" =>
+          val res = receiver
+          Nullable(res).asInstanceOf[Nullable[Rep[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[GroupElement], Rep[Boolean])] = exp match {
+      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

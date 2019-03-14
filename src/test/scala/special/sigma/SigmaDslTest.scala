@@ -1,15 +1,17 @@
 package special.sigma
 
+import java.math.BigInteger
+
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.util.Extensions._
 import sigmastate.Values.{BooleanConstant, IntConstant}
 import sigmastate._
@@ -18,7 +20,7 @@ import sigmastate.eval._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import special.collection.{Builder, Coll}
+import special.collection.{Coll, Builder}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -107,6 +109,30 @@ class SigmaDslTest extends PropSpec
     }
   }
   // TODO add tests for Short, Long, BigInt operations
+
+  property("GroupElement operations equivalence") {
+    val ge = SigmaDsl.groupGenerator
+    val n = SigmaDsl.BigInt(BigInteger.TEN)
+    val g2 = ge.exp(n)
+
+    {
+      val eq = EqualityChecker(ge)
+//      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+      eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
+      eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
+      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
+    }
+
+    {
+      val eq = EqualityChecker((ge, n))
+      eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
+    }
+
+    {
+      val eq = EqualityChecker((ge, g2))
+      eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
+    }
+  }
 
 //  property("sigma.types.Byte methods equivalence") {
 //    import sigma.types._

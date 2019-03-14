@@ -588,11 +588,20 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
+  override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1),
     SMethod(this, "nonce",      SFunc(this, SByteArray), 2),
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this, SBoolean), SByteArray), 3),
-    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, MethodCallIrBuilder)
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 3, MethodCallIrBuilder),
+    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, Some {
+      case (builder, obj, method, Seq(arg), tparamSubst) =>
+        builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
+    }),
+    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 5, Some {
+      case (builder, obj, method, Seq(arg), tparamSubst) =>
+        builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
+    }),
+    SMethod(this, "negate", SFunc(this, this), 6, MethodCallIrBuilder)
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
@@ -948,18 +957,30 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   import STuple._
   override val typeCode = STuple.TupleTypeCode
 
+  override def isConstantSize: Boolean = {
+    items.forall(t => t.isConstantSize)
+  }
+
   override def dataSize(v: SType#WrappedType) = {
-    val arr = (v match {
-      case col: Coll[_] => col.toArray
-      case p: Tuple2[_,_] => p.toArray
-      case _ => v
-    }).asInstanceOf[Array[Any]]
-    assert(arr.length == items.length)
-    var sum: Long = 2 // header
-    for (i <- arr.indices) {
-      sum += items(i).dataSize(arr(i).asInstanceOf[SType#WrappedType])
+    if (isConstantSize) {
+      var sum: Long = 2 // header
+      for (item <- items) {
+        sum += item.dataSize(v)
+      }
+      sum
+    } else {
+      val arr = (v match {
+        case col: Coll[_] => col.toArray
+        case p: Tuple2[_,_] => p.toArray
+        case _ => v
+      }).asInstanceOf[Array[Any]]
+      assert(arr.length == items.length)
+      var sum: Long = 2 // header
+      for (i <- arr.indices) {
+        sum += items(i).dataSize(arr(i).asInstanceOf[SType#WrappedType])
+      }
+      sum
     }
-    sum
   }
 
   override def elemType: SAny.type = SAny
