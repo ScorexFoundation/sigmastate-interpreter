@@ -85,7 +85,7 @@
 
 \begin{abstract}
 %This article describes \langname via examples. 
-We use \langname to create smart contracts for several protocols such as an XOR game, a rock-paper-scissors game, {\em reversible addresses} that have anti-theft features, and {\em \mixname}, a mixing protocol to enhance anonymity. 
+We use \langname to create smart contracts for several protocols such as an XOR game, a rock-paper-scissors game, {\em reversible addresses} that have anti-theft features, and {\em \mixname}, a protocol to enhance transaction privacy. 
 
 %We create several protocols using \langname, such as games and mixing protocols. 
 \end{abstract}
@@ -178,12 +178,13 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 The most fundamental primitive in \langname is a \emph{box}, which is roughly like a UTXO of Bitcoin. Each transaction spends (destroys) some boxes by using them as inputs and creates new boxes as outputs. A box is a data structure made of upto ten {\em registers} labelled $R_0, R_1,\ldots R_9$, four of which are mandatory. 
 $R_0$ contains the monetary value of the box. $R_1$ contains the script protecting the box, $R_2$ contains assets 
 
-\section{\langname Examples}
-
-We give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository~\cite{langrepo}. 
+In the following sections, we give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository~\cite{langrepo}. 
 Although \langname syntax looks similar to Scala, it is not Scala. To avoid confusion, \langname code is highlighted like \Hi{\texttt{this}}. 
 %The examples use the protocol concepts defined in Appendix~\ref{ergo:internals}. 
 %To do: add appendix explaining box structure, how a tx is formed, etc. For now refer to yellow paper
+\section{Basic Examples: Addressing Bitcoin's Limitations}
+
+We present some examples showing how \langname is superior to Bitcoin's script. The examples use P2SH address and each example highlights a limitation of Bitcoin. 
 
 \subsection{Short-lived Unconfirmed Transactions: Paying for Coffee}
 
@@ -198,7 +199,7 @@ Alice encodes her public key \texttt{alice} inside environment \texttt{env} and 
 
 Alice's address is computed as: \texttt{val aliceAddress = Pay2SHAddress(aliceScript)}. Any funds deposited to \texttt{aliceAddress} can only be spent if the spending transaction satisfies following:
 \begin{enumerate}
-	\item Context variable with id 1 of the UTXO to be spent must contain an integer, say $i$.
+	\item Context variable with id 1 of the box being spent must contain an integer, say $i$.
 	\item The height at mining should be less than or equal to $i$. 
 \end{enumerate}
 
@@ -220,17 +221,14 @@ After 24 hours, these UTXOs become `normal' and can only be spent by the receive
 
 This is done by storing the hot-wallet funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party.\footnote{The trusted party must be decided at the time of address generation and cannot be changed later. To use a different trusted party, a new address has to be generated.} Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. A reversible address is a P2SH\footnote{As in Bitcoin, a P2SH (Pay to Script Hash) address is created from the hash of a script encoding spending conditions for any UTXOs controlled by that address.} address whose script encodes the following conditions:   
 \begin{enumerate}
-	\item I can only be spent by \texttt{alice}.
-	\item Any UTXO created by spending me must be protected by a script requring the following: 	
+	\item This input box can only be spent by \texttt{alice}.
+	\item Any output box created by spending this input box must have in its register \texttt{R5} a number at least \texttt{blocksIn24h} more than the current height. 
+	\item Any output box created by spending this input box must be protected by a script requring the following: 	
 	\begin{enumerate}
-		\item ``My register \texttt{R4} contains an arbitrary public key called \texttt{bob}.'' 
-		\item ``My register \texttt{R5} contains an arbitrary integer called \texttt{bobDeadline}.'' 
-		\item ``I can only be spent by \texttt{carol} if blockchain height $\leq$ \texttt{bobDeadline}.''
-		\item ``I can only be spent by \texttt{bob} if blockchain height $>$ \texttt{bobDeadline}.''	
-	\end{enumerate}  
-	\item Any UTXO created by spending me must satisfy the following: 	
-	\begin{enumerate}
-		\item Its register \texttt{R5} contains a number at least \texttt{blocksIn24h} more than the current height. 
+		\item Its register \texttt{R4} must have an arbitrary public key called \texttt{bob}.'' 
+		\item Its register \texttt{R5} must have an arbitrary integer called \texttt{bobDeadline}.'' 
+		\item It can only be spent spent by \texttt{carol} if \texttt{HEIGHT $\leq$ bobDeadline}.''
+		\item It can only be spent by \texttt{bob} if \texttt{HEIGHT $>$ bobDeadline}.''	
 	\end{enumerate}  
 \end{enumerate}
 
@@ -240,7 +238,7 @@ Let \texttt{bob} be the public key of a customer who is withdrawing. The sender 
 
 If an unauthorized transaction is detected from \texttt{alice}, an ``abort procedure'' is triggered via \texttt{carol}: all funds sent from \texttt{alice} currently in the locked state are suspect and need to diverted elsewhere. Additionally, UTXOs currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
-Note that such reversible addresses are designed for storing large amount of funds needed for automated withdraws (such as an exchange hot-wallet). They are not designed for storing funds for personal use (such as paying for a coffee).
+Note that such reversible addresses are designed for storing large amount of funds needed for automated withdraws (such as an exchange hot-wallet). They are not designed for storing funds for personal use (such as paying for a coffee). 
 
 Concretely, such an address is created as follows. First hardcode \texttt{carol} inside \texttt{withdrawEnv}. Then create a script and compile it to get its binary version called \texttt{withdrawScript}:
 \begin{alltt}
@@ -283,7 +281,7 @@ val script = compile(env, """ \Hi{\{}
   \Hi{val nStart:Int = if (notExpired) start else HEIGHT}
   \Hi{val nMin:Long = if (notExpired) min else keep}
   
-  \Hi{val valid = OUTPUTS.exists(\{(out:Box) =>}
+  \Hi{val valid = INPUTS.size == 1 && OUTPUTS.exists(\{(out:Box) =>}
     \Hi{out.propositionBytes == SELF.propositionBytes &&}
     \Hi{out.value >= nMin && out.R4[Int].get >= nStart && out.R5[Long].get == nMin\})}
     
@@ -304,6 +302,11 @@ Spending from this address is done in periods of 24 hours or more (but never les
 %	\item For two keys the amount is 10\% or 1000 Ergs (whichever is higher).
 %	\item If all three two keys are spending then there are no restrictions. 
 %\end{enumerate}
+
+
+\section{Advanced Examples: Two-party Protocols}
+
+In this section, we describe somes two-party protocols that can be created with Ergo
 
 \subsection{The XOR Game}
 
@@ -350,16 +353,16 @@ Finally, Alice sets \texttt{scriptHash} as an environment variable for the compi
   \Hi{val bobDeadline   = out.R6[Int].get}
   \Hi{val validBobInput = b == 0 || b == 1}
 
-  \Hi{alice || \{ validBobInput && blake2b256(out.propositionBytes) == scriptHash &&}
-  \Hi{OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value * 2 \}}
+  \Hi{validBobInput && blake2b256(out.propositionBytes) == scriptHash &&}
+  \Hi{OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value * 2 }
 \end{alltt}
 
-The above script requires that the transaction spending the half-game box must either be signed by Alice or generate exactly one output box with the following properties:
+The above script requires that the transaction spending the half-game box must generate exactly one output box with the following properties:
 
 \begin{enumerate}
 	\item Its value must be at least twice that of the half-game box.
-	\item Register \texttt{R4} must contain a byte that is either 0 or 1. This encodes Bob's choice $b$.
-	\item Register \texttt{R6} must contain an integer that is at least 30 more than the height at which the box is generated. This will correspond to the height at which Bob automatically wins.
+	\item Its register \texttt{R4} must contain a byte that is either 0 or 1. This encodes Bob's choice $b$.
+	\item Its register \texttt{R6} must contain an integer that is at least 30 more than the height at which the box is generated. This will correspond to the height at which Bob automatically wins.
 	\item It must be protected by a script whose hash equals \texttt{scriptHash}.
 \end{enumerate}
  
@@ -405,33 +408,35 @@ The above code ensures that \texttt{R7} of the first output contains Alice's pub
 \subsection{A Mixing Protocol}
 \label{mix}
 
-We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. Because of the DDH-hard requirement, we must ensure that the underlying group does not support an efficient bilinear pairing (which makes the DDH easy). The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
+We describe a mixing protocol called \mixname, whose security depends on the hardness of the {\em Decision Diffie-Hellman} (DDH) Problem in $G$. 
+%Because of the DDH-hard requirement, we must ensure that the underlying group does not support an efficient bilinear pairing (which makes the DDH easy). 
+The protocol is motivated from ZeroCoin~\cite{zerocoin} (ZC) to overcomes some of its drawbacks (discussed later). 
 %Since \mixname depends on the hardness of the DDH problem, it cannot be used on groups that support an efficient bilinear pairing (where this problem is easy).
 %The name \mixname is a portmanteau of {\em Two} and {\em Mix}. 
 \mixname essentially mixes two coins and so provides ``50\% anonymity'' in one round. A coin is successively mixed to increase the anonymity to any desired level (say 99.99999\%). 
 
 \mixname has a pool, called the {\em Half-Mix} pool (H-pool), which contains coins ready for mixing. 
-To mix an arbitrary coin (which could itself be the output of a previous mix), any one of the two actions can be performed:
+To mix an arbitrary non-H-pool coin $B$ (which could itself be the output of a previous mix), any one of the two actions can be performed:
 \begin{enumerate}
-	\item Pick another coin from the H-pool (if it is non-empty), ``mix'' them by converting them to two indistinguisble coins, each spendable by their respective owner. We call this the {\em mix} Step.
-	\item Add the coin to the H-pool and wait for someone to mix them. This is the {\em pool} Step.
+	\item Pick a coin $A$ from the H-pool (if it is non-empty) and convert $(A, B)$ to two indistinguisble coins $\{O_A, O_B\}$, each spendable by their respective owner. Note that the original boxes $A, B$ are destroyed. Thus, $A$ is removed from the H-pool. We call this the {\em mix} operation. 
+	\item Add coin $B$ to the H-pool and wait for someone to use it in mix. This is the {\em pool} operation.
 \end{enumerate}
 
-Without loss of generality, Alice will pool and Bob will mix. In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
+ Without loss of generality, Alice will pool and Bob will mix. In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
 
 \begin{enumerate}
-	\item \textbf{Pool:} To add a coin to the pool, Alice picks random generator $g\in G$ and $x\in \mathbb{Z}_q$. Let $u = g^{x}$. Alice creates an output box $A$ containing $(g, u)$ and protected by the script given below. She waits for Bob to join by spending $A$ subject to the conditions given in the script. 
+	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks random generator $g\in G$ and $x\in \mathbb{Z}_q$. Let $u = g^{x}$. Alice creates an output box $A$ containing $(g, u)$ and protected by the script given below. She waits for Bob to join by spending $A$ subject to the conditions given in the script. 
 	Alice's spending condition for $A$ is that any transaction spending $A$ should be as follows: 
 	
 	\begin{enumerate}
 		\item It has two inputs of equal value, one of which is $A$. %The value of the second input should be the same as in $A$. 
-		\item It has two outputs $(O_0, O_1)$ with data tuples $(g, c, u, d)$ and $(g, d, u, c)$ respectively. That is, the data of each output contains a 4-tuple where the first and third elements are $g$ and $u$ respectively and the second and fourth elements are swapped. 
-		\item The spender of $A$ must satisfy $\texttt{proveDHTuple}(g, u, c, d)\lor \texttt{proveDHTuple}(g, u, d, c)$.
+		\item It has two outputs $(O_0, O_1)$ with data tuples $(g, c_1, u, c_2)$ and $(g, c_2, u, c_1)$ respectively. That is, the data of each output contains a 4-tuple where the first and third elements are $g$ and $u$ respectively and the second and fourth elements are swapped. 
+		\item The spender of $A$ must satisfy $\texttt{proveDHTuple}(g, u, c_1, c_2)\lor \texttt{proveDHTuple}(g, u, c_2, c_1)$.
 		\item The outputs should be protected by the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
 	\end{enumerate}
 	
 	
-	\item \textbf{Mix:} Bob randomly picks one unspent box from the pool, for instance, $A$. Bob then picks a random secret bit $b \in \mathbb{Z}_2$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values (and indistinguishable) such that $O_b$ is spendable only by Alice and $O_{1-b}$ is spendable only by Bob. This is done as follows:
+	\item \textbf{Mix:} Bob randomly picks a Half-Mix box from the H-pool, for instance, $A$. Bob then picks a random secret bit $b \in \mathbb{Z}_2$ and spends $A$ with another of his own unspent box $B$. The spending transaction creates two new unspent boxes $O_0, O_1$ of equal values (and indistinguishable) such that $O_b$ is spendable only by Alice and $O_{1-b}$ is spendable only by Bob. This is done as follows:
 	
 	\begin{enumerate}
 		\item Bob picks secret $y\in \mathbb{Z}_q$. Let $h = {g}^{y}$ and $v = {u}^{y}$.  %Let $c_b = g^y$ and $c_{1-b} = g^{xy}$. Bob 
@@ -441,7 +446,7 @@ Without loss of generality, Alice will pool and Bob will mix. In practice, each 
 		$\tau_\textsf{A}$ be the proposition: ``Parse data as $(g, h, u, v)$ and
 		prove knowledge of $x$ such that $u = {g}^{x}$ and ${v} = {h}^{x}$.'' This is encoded as $\texttt{proveDHTuple}(g, h, u, v)$.
 		
-		\item Let $\tau_{\textsf{B}}$ be the proposition: ``Parse data as $(g, v, u, h)$ and
+		\item Let $\tau_{\textsf{B}}$ be the proposition: ``Parse data as $(g, *, *, h)$ and
 		prove knowledge of $y$ such that $h = {g}^{y}$.'' 
 		%		Observe that $h, v$ have been swapped from $\tau_\textsf{A}$. 
 		This is encoded as $\texttt{proveDlog}(h)$, keeping $g$ as the default generator.
@@ -449,40 +454,64 @@ Without loss of generality, Alice will pool and Bob will mix. In practice, each 
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
 		
 	\end{enumerate}
-	\item \textbf{Spend:} Both Alice and Bob later spent their respective boxes using their secrets. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
+	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
-\textbf{\langname Code:} First define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{g\_x} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
+\textbf{\langname Code:} First define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{gX} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
 
 \begin{alltt}
 val fullMixScript = compile(env, """ \Hi{\{}
-  \Hi{val e = SELF.R4[GroupElement].get}
-  \Hi{val f = SELF.R5[GroupElement].get}
-  \Hi{proveDlog(f) || proveDHTuple(g, e, g_x, f) \}} """)
+  \Hi{val c1 = SELF.R4[GroupElement].get}
+  \Hi{val c2 = SELF.R5[GroupElement].get}
+  \Hi{proveDlog(c2) || proveDHTuple(g, c1, gX, c2) \}} """)
 \end{alltt}
 
 Compute a hash of the above compiled script: \texttt{val scriptHash = Blake2b256(fullMixScript)}
 Alice's Half-Mix box is protected by the following \langname code:
 
 \begin{alltt}
-	\Hi{val c = OUTPUTS(0).R4[GroupElement].get}
-	\Hi{val d = OUTPUTS(0).R5[GroupElement].get}
+	\Hi{val c1 = OUTPUTS(0).R4[GroupElement].get}
+	\Hi{val c2 = OUTPUTS(0).R5[GroupElement].get}
 	
 	\Hi{OUTPUTS(0).value == SELF.value && OUTPUTS(1).value == SELF.value &&}
 	\Hi{blake2b256(OUTPUTS(0).propositionBytes) == scriptHash &&}
 	\Hi{blake2b256(OUTPUTS(1).propositionBytes) == scriptHash &&}
-	\Hi{OUTPUTS(1).R4[GroupElement].get == d && OUTPUTS(1).R5[GroupElement].get == c &&}
-	\Hi{OUTPUTS.size == 2 && (proveDHTuple(g, g_x, c, d) || proveDHTuple(g, g_x, d, c))}
+	\Hi{OUTPUTS(1).R4[GroupElement].get == c2 && OUTPUTS(1).R5[GroupElement].get == c1 &&}
+	\Hi{OUTPUTS.size == 2 && (proveDHTuple(g, gX, c1, c2) || proveDHTuple(g, gX, c2, c1))}
 \end{alltt}
 
-
 \textbf{Security:} We claim the security of the protocol based on the following reasoning. Before spending, the outputs are indistinguisble under the DDH assumption. Since they are both spent using a $\Sigma$-OR-proof, their indistinguishability is preserved. Also, Alice can spend exactly one output, since the other one does not contain a valid DDH tuple. Similarly, Bob can spend exactly one output, since he does not know the discrete log of $g^{xy}$ to base $g$. The output that Bob can spend is exactly the one that Alice cannot. Finally, note that Bob cannot generate invalid outputs since he must prove that they are of the correct form. 
-For this to work, each output must be of a fixed value and the fee should be zero. We discuss below how to handle non-zero fee. 
 
 \textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
 
-%\textbf{Handling Fee:} TBD
+\textbf{Offchain Pool:} Alice's Half-Mix box can be stored off-chain till the mixing step. Alice can either hand her unbroadcasted transaction directly to Bob or store it with a 3rd party service. Bob (or the 3rd party) will broadcast both Half and Full mix transactions after the mix step. It will be interesting to have a variant of the protocol where both Alice and Bob add Half-Mix coins to the H-Pool and any arbitrary 3rd party can combine them without interacting with Alice or Bob. 
 
-\section{Oracle Example}
+%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
+
+\textbf{Handling Fee:} To ensure perfect privacy and fairness, each output must have a fixed value and zero fee. However, zero-fee transactions are not practical. We describe below a few approaches to deduct fee. 
+%a combination of which may be used. 
+For simplicity, assume that relevant transactions are mined by a 3rd party accepting fee in tokens\footnote{Tokens are additional assets stored in register R3 of a box as a collection of (token-ID, quantity) pairs. Every transaction may generate at most one token-ID of arbitrary quantity, where token-ID is the box-ID of the first input. For any other token-ID, the sum of quantities in outputs must be less or equal to the sum of quantities in inputs.} such that each box creation requires one token. A straightforward method of handling fee is as follows. Alice's Half-Mix box contains $i$ such tokens and requires each output box of the mix to contain exactly $i-1$ tokens. This will allow Alice to mix her coin $i$ times. While being perfectly fair, this method has usability issues because there may not be readily available boxes with the desired number of tokens.  
+ 
+\begin{enumerate}
+	\item \textbf{Approximate Fairness:} Bob will mix by picking from the H-pool a box with token quantity ``closer'' to that of his own non-H-pool box. He will generate two outputs with equal quantity of tokens after deducting fee. Alice's script could encode the maximum allowed difference in quantities. In the worst case, to mix $i$ times, Alice will have to start with a box of $2^i$ tokens.
+		
+	\item \textbf{Fee accumulation:} Fee can be accumulated rather than paid upfront. %For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
+	Additionally, fee can keep accumulating as long as the mixed outputs are spent within the system (i.e., sent back to the H-pool or used in another mix operation). The accumulated fee is paid when the coin exits the system.
+		The accumulated fee of the mix transaction is the sum of accumulated fee of the inputs plus mining fee. This accumulated fee is equally shared by the two mixed outputs. 
+	
+%	as long as the spending transaction either performs a pool or mix operation and the accumulated fee is paid at the time the coin leaves the mixing system. 
+%	The accumulated fee for the mix transaction is the sum of accumulated fee of the inputs plus the mining fee for the mix transaction. To ensure privacy, this accumulated fee is equally shared by the two outputs. 
+	\item \textbf{First spender pays:} Instead of sharing the (accumulated) fee equally in the mixed outputs, the first party to spend the mixed output should pay the entire (accumulated) fee, while the second party gets a free ride. This can be achieved using additional tokens as follows: 
+	\begin{enumerate}
+		\item Any box added to the H-pool must have exactly two quantities of a newly created token with token-ID $x$ (i.e., $x$ is the id of the first input box of the creating transaction). 
+		\item A mix transaction must generate two more boxes each with one quantity of token $x$. 
+		\item Spending any box with token $x$ must generate one box with two quantities of token $x$. The newly created box must also be protected by the same proposition.
+		\item Spending any mixed output must generate one more box with two quantities of token $x$.
+	\end{enumerate}
+	Any transaction spending the mixed output is the second spender if there exists an input box with two quantities of token $x$, otherwise it is the first spender.
+	
+\end{enumerate}
+
+%For simplicity, we can assume an intermediary providing the protocol as a service. This involves handling handling tokens and mining.
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
