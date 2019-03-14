@@ -590,6 +590,14 @@ trait SigmaContract {
 
   def groupGenerator: GroupElement = this.builder.groupGenerator
 
+  def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
+
+  @Reified("T")
+  def substConstants[T](scriptBytes: Coll[Byte],
+      positions: Coll[Int],
+      newValues: Coll[T])
+      (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
+
   @clause def canOpen(ctx: Context): Boolean
 
   def asFunction: Context => Boolean = (ctx: Context) => this.canOpen(ctx)

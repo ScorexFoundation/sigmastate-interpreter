@@ -588,11 +588,15 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override type WrappedType = EcPointType
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
+  override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1),
     SMethod(this, "nonce",      SFunc(this, SByteArray), 2),
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 3),
-    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, MethodCallIrBuilder)
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 3, MethodCallIrBuilder),
+    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, Some {
+      case (builder, obj, method, Seq(arg), tparamSubst) =>
+        builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
+    })
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong

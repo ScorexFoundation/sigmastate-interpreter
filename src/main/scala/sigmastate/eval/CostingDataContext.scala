@@ -16,14 +16,14 @@ import special.sigma._
 import special.sigma.Extensions._
 
 import scala.util.{Success, Failure}
-import scalan.{RType, NeverInline}
+import scalan.{NeverInline, RType}
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.GroupElementSerializer
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
 
 import scala.reflect.ClassTag
 
@@ -561,7 +561,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   }
 
   override def decodePoint(encoded: Coll[Byte]): GroupElement = {
-    this.GroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
+    val r = SigmaSerializer.startReader(encoded.toArray)
+    val p = GroupElementSerializer.parse(r)
+    this.GroupElement(p)
   }
 }
 
