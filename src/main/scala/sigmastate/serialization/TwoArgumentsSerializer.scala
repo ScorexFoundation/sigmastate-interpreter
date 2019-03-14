@@ -10,19 +10,19 @@ case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]
   extends ValueSerializer[OV] {
 
   override def serializeBody(obj: OV, w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false,"TwoArguments operation")
+    SerializeLog.logPrintf(true, true, false,"TwoArguments")
 
     val typedOp = obj.asInstanceOf[TwoArgumentsOperation[LIV, RIV, LIV]]
 
-    SerializeLog.logPrintf(true, true, false,"Left")
+    SerializeLog.logPrintf(true, true, false,"left")
     w.putValue(typedOp.left)
-    SerializeLog.logPrintf(false, true, false,"Left")
+    SerializeLog.logPrintf(false, true, false,"left")
 
-    SerializeLog.logPrintf(true, true, false,"Right")
+    SerializeLog.logPrintf(true, true, false,"right")
     w.putValue(typedOp.right)
-    SerializeLog.logPrintf(false, true, false,"Right")
+    SerializeLog.logPrintf(false, true, false,"right")
 
-    SerializeLog.logPrintf(false, true, false,"TwoArguments operation")
+    SerializeLog.logPrintf(false, true, false,"TwoArguments")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {

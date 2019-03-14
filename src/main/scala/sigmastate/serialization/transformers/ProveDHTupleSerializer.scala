@@ -28,7 +28,7 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
       hv @ Constant(_, SGroupElement),
       uv @ Constant(_, SGroupElement),
       vv @ Constant(_, SGroupElement)) =>
-        SerializeLog.logPrintf(true, true, false,"SGroupElement constants")
+        SerializeLog.logPrintf(true, true, false,"SGroupElementConstants")
 
         SerializeLog.logPrintf(true, true, false,"constCodePrefix")
         w.put(constCodePrefix)
@@ -38,27 +38,43 @@ case class ProveDHTupleSerializer(cons: (Value[SGroupElement.type],
         w.putType(SGroupElement)
         SerializeLog.logPrintf(false, true, false,"SGroupElement type")
 
-        SerializeLog.logPrintf(true, true, false,"4 values: gv, hv, uv, vv")
-
+        SerializeLog.logPrintf(true, true, false,"gv data")
         DataSerializer.serialize(gv.value, gv.tpe, w)
+        SerializeLog.logPrintf(false, true, false,"gv data")
+
+        SerializeLog.logPrintf(true, true, false,"hv data")
         DataSerializer.serialize(hv.value, hv.tpe, w)
+        SerializeLog.logPrintf(false, true, false,"hv data")
+
+        SerializeLog.logPrintf(true, true, false,"uv data")
         DataSerializer.serialize(uv.value, uv.tpe, w)
+        SerializeLog.logPrintf(false, true, false,"uv data")
+
+        SerializeLog.logPrintf(true, true, false,"vv data")
         DataSerializer.serialize(vv.value, vv.tpe, w)
+        SerializeLog.logPrintf(false, true, false,"vv data")
 
-        SerializeLog.logPrintf(false, true, false,"4 values: gv, hv, uv, vv")
-
-        SerializeLog.logPrintf(false, true, false,"SGroupElement constants")
+        SerializeLog.logPrintf(false, true, false,"SGroupElementConstants")
       case _ =>
-        SerializeLog.logPrintf(true, true, false,"Not constants")
-        SerializeLog.logPrintf(true, true, false,"4 values: gv, hv, uv, vv")
+        SerializeLog.logPrintf(true, true, false,"Not SGroupElementConstants")
 
+        SerializeLog.logPrintf(true, true, false,"gv")
         w.putValue(obj.gv)
-        w.putValue(obj.hv)
-        w.putValue(obj.uv)
-        w.putValue(obj.vv)
+        SerializeLog.logPrintf(false, true, false,"gv")
 
-        SerializeLog.logPrintf(false, true, false,"4 values: gv, hv, uv, vv")
-        SerializeLog.logPrintf(false, true, false,"Not constants")
+        SerializeLog.logPrintf(true, true, false,"hv")
+        w.putValue(obj.hv)
+        SerializeLog.logPrintf(false, true, false,"hv")
+
+        SerializeLog.logPrintf(true, true, false,"uv")
+        w.putValue(obj.uv)
+        SerializeLog.logPrintf(false, true, false,"uv")
+
+        SerializeLog.logPrintf(true, true, false,"vv")
+        w.putValue(obj.vv)
+        SerializeLog.logPrintf(false, true, false,"vv")
+
+        SerializeLog.logPrintf(false, true, false,"Not SGroupElementConstants")
     }
 
     SerializeLog.logPrintf(false, true, false,"ProveDHTuple")

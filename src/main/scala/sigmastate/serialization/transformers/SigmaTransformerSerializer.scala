@@ -15,18 +15,18 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
   override val opCode: OpCode = code
 
   override def serializeBody(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "SigmaTransformer")
 
-    SerializeLog.logPrintf(true, true, false, "SigmaTransformerSerializer")
-
-    SerializeLog.logPrintf(true, true, false, "Items length")
+    //andruiman: why not use putValues?
+    SerializeLog.logPrintf(true, true, false, "items.length")
     w.putUInt(obj.items.length)
-    SerializeLog.logPrintf(false, true, false, "Items length")
+    SerializeLog.logPrintf(false, true, false, "items.length")
 
-    SerializeLog.logPrintf(true, true, false, "Items")
+    SerializeLog.logPrintf(true, true, false, "items*")
     obj.items.foreach(w.putValue)
-    SerializeLog.logPrintf(false, true, false, "Items")
+    SerializeLog.logPrintf(false, true, false, "items*")
 
-    SerializeLog.logPrintf(false, true, false, "SigmaTransformerSerializer")
+    SerializeLog.logPrintf(false, true, false, "SigmaTransformer")
   }
 
   override def parseBody(r: SigmaByteReader): SigmaPropValue = {

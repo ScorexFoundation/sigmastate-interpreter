@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.serialization.OpCodes._
 import sigma.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
@@ -14,9 +14,21 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
   override val opCode: OpCode = FuncValueCode
 
   override def serializeBody(obj: FuncValue, w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "FuncValue")
+
+    SerializeLog.logPrintf(true, true, false, "args.length")
     w.putUInt(obj.args.length)
+    SerializeLog.logPrintf(false, true, false, "args.length")
+
+    SerializeLog.logPrintf(true, true, false, "(args.idx, args.tpe)*")
     obj.args.foreach{ case (idx, tpe) => w.putUInt(idx).putType(tpe) }
+    SerializeLog.logPrintf(false, true, false, "(args.idx, args.tpe)*")
+
+    SerializeLog.logPrintf(true, true, false, "body")
     w.putValue(obj.body)
+    SerializeLog.logPrintf(false, true, false, "body")
+
+    SerializeLog.logPrintf(false, true, false, "FuncValue")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {

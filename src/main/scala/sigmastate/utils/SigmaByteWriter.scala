@@ -57,13 +57,13 @@ class SigmaByteWriterWithLog(b: ByteArrayBuilder, val constantExtractionStore: O
 
     SerializeLog.logPrintf(true, true, false, "Values")
 
-    SerializeLog.logPrintf(true, true, false, "Values length")
-
+    SerializeLog.logPrintf(true, true, false, "length")
     putUInt(xs.length)
+    SerializeLog.logPrintf(false, true, false, "length")
 
-    SerializeLog.logPrintf(false, true, false, "Values length")
-
+    SerializeLog.logPrintf(true, true, false, "values*")
     xs.foreach(putValue(_))
+    SerializeLog.logPrintf(false, true, false, "values*")
 
     SerializeLog.logPrintf(false, true, false, "Values")
 

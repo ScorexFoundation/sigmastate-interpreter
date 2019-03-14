@@ -14,17 +14,17 @@ case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: STyp
   override def serializeBody(obj: Quadruple[S1, S2, S3, S4], w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false,"Quadruple")
 
-    SerializeLog.logPrintf(true, true, false,"First")
+    SerializeLog.logPrintf(true, true, false,"first")
     w.putValue(obj.first)
-    SerializeLog.logPrintf(false, true, false,"First")
+    SerializeLog.logPrintf(false, true, false,"first")
 
-    SerializeLog.logPrintf(true, true, false,"Second")
+    SerializeLog.logPrintf(true, true, false,"second")
     w.putValue(obj.second)
-    SerializeLog.logPrintf(false, true, false,"Second")
+    SerializeLog.logPrintf(false, true, false,"second")
 
-    SerializeLog.logPrintf(true, true, false,"Third")
+    SerializeLog.logPrintf(true, true, false,"third")
     w.putValue(obj.third)
-    SerializeLog.logPrintf(false, true, false,"Third")
+    SerializeLog.logPrintf(false, true, false,"third")
 
     SerializeLog.logPrintf(false, true, false,"Quadruple")
   }

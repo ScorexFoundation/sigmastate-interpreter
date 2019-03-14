@@ -17,13 +17,13 @@ case class LogicalTransformerSerializer[I <: SCollection[SBoolean.type], O <: SB
   override val opCode: OpCode = code
 
   override def serializeBody(obj: Transformer[I, O], w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false, "Logical transformer")
+    SerializeLog.logPrintf(true, true, false, "LogicalTransformer")
 
-    SerializeLog.logPrintf(true, true, false, "Input")
+    SerializeLog.logPrintf(true, true, false, "input")
     w.putValue(obj.input)
-    SerializeLog.logPrintf(false, true, false, "Input")
+    SerializeLog.logPrintf(false, true, false, "input")
 
-    SerializeLog.logPrintf(false, true, false, "Logical transformer")
+    SerializeLog.logPrintf(false, true, false, "LogicalTransformer")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SBoolean.type] =

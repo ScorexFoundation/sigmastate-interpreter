@@ -15,13 +15,13 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
     val length = obj.length
     SerializeLog.logPrintf(true, true, false,"Tuple")
 
-    SerializeLog.logPrintf(true, true, false,"Length")
+    SerializeLog.logPrintf(true, true, false,"length")
     w.putUByte(length)
-    SerializeLog.logPrintf(false, true, false,"Length")
+    SerializeLog.logPrintf(false, true, false,"length")
 
-    SerializeLog.logPrintf(true, true, false,"Items")
+    SerializeLog.logPrintf(true, true, false,"items*")
     obj.items.foreach(w.putValue)
-    SerializeLog.logPrintf(false, true, false,"Items")
+    SerializeLog.logPrintf(false, true, false,"items*")
 
     SerializeLog.logPrintf(false, true, false,"Tuple")
   }

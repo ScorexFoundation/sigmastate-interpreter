@@ -11,15 +11,13 @@ case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
   override val opCode: OpCode = ConstantPlaceholderIndexCode
 
   override def serializeBody(obj: ConstantPlaceholder[SType], w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false,"Constant placeholder")
+    SerializeLog.logPrintf(true, true, false,"ConstantPlaceholder")
 
     SerializeLog.logPrintf(true, true, false,"id")
-
     w.putUInt(obj.id)
-
     SerializeLog.logPrintf(false, true, false,"id")
 
-    SerializeLog.logPrintf(false, true, false,"Constant placeholder")
+    SerializeLog.logPrintf(false, true, false,"ConstantPlaceholder")
 
   }
 

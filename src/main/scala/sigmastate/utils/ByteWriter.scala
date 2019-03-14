@@ -14,10 +14,8 @@ trait ByteWriter {
     * @return
     * @throws AssertionError if x is outside of the unsigned byte range
     */
-  def putUByte(x: Int): this.type = {
-    assert(x >= 0 && x <= 0xFF, s"$x is out of unsigned byte range")
-    put(x.toByte)
-  }
+  def putUByte(x: Int): this.type
+
   def putBoolean(x: Boolean): this.type
   def putShort(x: Short): this.type
 
@@ -78,6 +76,12 @@ trait ByteWriter {
   */
 class ByteArrayWriter(b: ByteArrayBuilder) extends ByteWriter {
   @inline override def put(x: Byte): this.type = {b.append(x); this }
+
+  @inline override def putUByte(x: Int): this.type = {
+    assert(x >= 0 && x <= 0xFF, s"$x is out of unsigned byte range")
+    put(x.toByte)
+  }
+
   @inline override def putBoolean(x: Boolean): this.type = { b.append(x); this }
   @inline override def putShort(x: Short): this.type = { b.append(x); this }
 
@@ -184,6 +188,16 @@ class ByteArrayWriterWithLog (b: ByteArrayBuilder) extends ByteArrayWriter(b) {
     super.put(x);
 
     SerializeLog.logPrintf(false, true, true, "Put Byte")
+
+    this
+  }
+
+  override def putUByte(x: Int): this.type = {
+    SerializeLog.logPrintf(true, true, true, "Put UByte")
+
+    super.putUByte(x);
+
+    SerializeLog.logPrintf(false, true, true, "Put UByte")
 
     this
   }

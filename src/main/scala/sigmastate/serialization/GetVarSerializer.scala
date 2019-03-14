@@ -13,9 +13,17 @@ case class GetVarSerializer(cons: (Byte, SType) => Value[SOption[SType]])
   override val opCode: OpCode = GetVarCode
 
   override def serializeBody(obj: GetVar[_ <: SType], w: SigmaByteWriter): Unit = {
-    SerializeLog.logPrintf(true, true, false, "VarId")
+    SerializeLog.logPrintf(true, true, false, "GetVar")
+
+    SerializeLog.logPrintf(true, true, false, "varId")
     w.put(obj.varId)
-      .putType(obj.tpe.elemType)
+    SerializeLog.logPrintf(false, true, false, "varId")
+
+    SerializeLog.logPrintf(true, true, false, "tpe.elemType")
+    w.putType(obj.tpe.elemType)
+    SerializeLog.logPrintf(false, true, false, "tpe.elemType")
+
+    SerializeLog.logPrintf(false, true, false, "GetVar")
   }
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {

@@ -24,17 +24,13 @@ case class ConstantSerializer(builder: SigmaBuilder)
   override def serialize(c: Constant[SType], w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false,"Constant")
 
-    SerializeLog.logPrintf(true, true, false,"Type")
-
+    SerializeLog.logPrintf(true, true, false,"tpe")
     w.putType(c.tpe)
+    SerializeLog.logPrintf(false, true, false,"tpe")
 
-    SerializeLog.logPrintf(false, true, false,"Type")
-
-    SerializeLog.logPrintf(true, true, false,"Data")
-
+    SerializeLog.logPrintf(true, true, false,"value")
     DataSerializer.serialize(c.value, c.tpe, w)
-
-    SerializeLog.logPrintf(false, true, false,"Data")
+    SerializeLog.logPrintf(false, true, false,"values")
 
     SerializeLog.logPrintf(false, true, false, "Constant")
   }

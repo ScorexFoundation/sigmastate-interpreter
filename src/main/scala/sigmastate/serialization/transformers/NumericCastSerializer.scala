@@ -6,7 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigma.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
 
 case class NumericCastSerializer(code: OpCode,
@@ -15,9 +15,19 @@ case class NumericCastSerializer(code: OpCode,
 
   override val opCode: OpCode = code
 
-  override def serializeBody(obj: Transformer[SNumericType, SNumericType], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .putType(obj.tpe)
+  override def serializeBody(obj: Transformer[SNumericType, SNumericType], w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "NumericCast")
+
+    SerializeLog.logPrintf(true, true, false, "input")
+    w.putValue (obj.input)
+    SerializeLog.logPrintf(false, true, false, "input")
+
+    SerializeLog.logPrintf(true, true, false, "tpe")
+    w.putType (obj.tpe)
+    SerializeLog.logPrintf(false, true, false, "tpe")
+
+    SerializeLog.logPrintf(false, true, false, "NumericCast")
+  }
 
   override def parseBody(r: SigmaByteReader): Value[SNumericType] = {
     val input = r.getValue().asNumValue

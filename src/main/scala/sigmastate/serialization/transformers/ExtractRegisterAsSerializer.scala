@@ -6,7 +6,7 @@ import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigma.util.Extensions._
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SOption, SType}
 
@@ -14,10 +14,23 @@ case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SOpt
   extends ValueSerializer[ExtractRegisterAs[SType]] {
   override val opCode: OpCode = OpCodes.ExtractRegisterAs
 
-  override def serializeBody(obj: ExtractRegisterAs[SType], w: SigmaByteWriter): Unit =
+  override def serializeBody(obj: ExtractRegisterAs[SType], w: SigmaByteWriter): Unit = {
+    SerializeLog.logPrintf(true, true, false, "ExtractRegisterAs")
+
+    SerializeLog.logPrintf(true, true, false, "input")
     w.putValue(obj.input)
-      .put(obj.registerId.number)
-      .putType(obj.tpe.elemType)
+    SerializeLog.logPrintf(false, true, false, "input")
+
+    SerializeLog.logPrintf(true, true, false, "registerId.number")
+    w.put(obj.registerId.number)
+    SerializeLog.logPrintf(false, true, false, "registerId.number")
+
+    SerializeLog.logPrintf(true, true, false, "tpe.elemType")
+    w.putType(obj.tpe.elemType)
+    SerializeLog.logPrintf(false, true, false, "tpe.elemType")
+
+    SerializeLog.logPrintf(false, true, false, "ExtractRegisterAs")
+  }
 
   override def parseBody(r: SigmaByteReader): Value[SType] = {
     val input = r.getValue()

@@ -20,7 +20,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
 
     (typedRel.left, typedRel.right) match {
       case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
-        SerializeLog.logPrintf(true, true, false,"Boolean constants")
+        SerializeLog.logPrintf(true, true, false,"BooleanConstants")
 
         SerializeLog.logPrintf(true, true, false,"ConcreteCollectionBooleanConstantCode")
         w.put(ConcreteCollectionBooleanConstantCode)
@@ -31,19 +31,19 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
         w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
         SerializeLog.logPrintf(false, true, false,"LeftRight bits")
 
-        SerializeLog.logPrintf(false, true, false,"Boolean constants")
+        SerializeLog.logPrintf(false, true, false,"BooleanConstants")
       case _ =>
-        SerializeLog.logPrintf(true, true, false,"Not boolean constants")
+        SerializeLog.logPrintf(true, true, false,"Not BooleanConstants")
 
-        SerializeLog.logPrintf(true, true, false,"Left")
+        SerializeLog.logPrintf(true, true, false,"left")
         w.putValue(typedRel.left)
-        SerializeLog.logPrintf(false, true, false,"Left")
+        SerializeLog.logPrintf(false, true, false,"left")
 
-        SerializeLog.logPrintf(true, true, false,"Right")
+        SerializeLog.logPrintf(true, true, false,"right")
         w.putValue(typedRel.right)
-        SerializeLog.logPrintf(false, true, false,"Right")
+        SerializeLog.logPrintf(false, true, false,"right")
 
-        SerializeLog.logPrintf(false, true, false,"Not boolean constants")
+        SerializeLog.logPrintf(false, true, false,"Not BooleanConstants")
     }
 
     SerializeLog.logPrintf(false, true, false,"Relation2")

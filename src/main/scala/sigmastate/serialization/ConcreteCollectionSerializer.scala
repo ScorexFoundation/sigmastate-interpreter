@@ -14,17 +14,17 @@ case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) 
   override def serializeBody(cc: ConcreteCollection[_ <: SType], w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false, "ConcreteCollection")
 
-    SerializeLog.logPrintf(true, true, false,"Size")
+    SerializeLog.logPrintf(true, true, false,"items.size")
     w.putUShort(cc.items.size)
-    SerializeLog.logPrintf(false, true, false,"Size")
+    SerializeLog.logPrintf(false, true, false,"items.size")
 
-    SerializeLog.logPrintf(true, true, false,"ElemType")
+    SerializeLog.logPrintf(true, true, false,"tpe.elemType")
     w.putType(cc.tpe.elemType)
-    SerializeLog.logPrintf(false, true, false,"ElemType")
+    SerializeLog.logPrintf(false, true, false,"tpe.elemType")
 
-    SerializeLog.logPrintf(true, true, false,"Elements")
+    SerializeLog.logPrintf(true, true, false,"items*")
     cc.items.foreach(w.putValue)
-    SerializeLog.logPrintf(false, true, false,"Elements")
+    SerializeLog.logPrintf(false, true, false,"items*")
 
     SerializeLog.logPrintf(false, true, false, "ConcreteCollection")
   }

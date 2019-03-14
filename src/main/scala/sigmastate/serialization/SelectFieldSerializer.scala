@@ -14,13 +14,13 @@ case class SelectFieldSerializer(cons: (Value[STuple], Byte) => Value[SType]) ex
   override def serializeBody(obj: SelectField, w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false,"SelectField")
 
-    SerializeLog.logPrintf(true, true, false,"Input")
+    SerializeLog.logPrintf(true, true, false,"input")
     w.putValue(obj.input)
-    SerializeLog.logPrintf(false, true, false,"Input")
+    SerializeLog.logPrintf(false, true, false,"input")
 
-    SerializeLog.logPrintf(true, true, false,"FieldIndex")
+    SerializeLog.logPrintf(true, true, false,"fieldIndex")
     w.put(obj.fieldIndex)
-    SerializeLog.logPrintf(false, true, false,"FieldIndex")
+    SerializeLog.logPrintf(false, true, false,"fieldIndex")
 
     SerializeLog.logPrintf(false, true, false,"SelectField")
   }

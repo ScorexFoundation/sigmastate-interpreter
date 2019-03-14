@@ -13,13 +13,13 @@ case class TaggedVariableSerializer(cons: (Byte, SType) => Value[SType])
   override def serializeBody(obj: TaggedVariable[_ <: SType], w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false, "TaggedVariable")
 
-    SerializeLog.logPrintf(true, true, false, "VarId")
+    SerializeLog.logPrintf(true, true, false, "varId")
     w.put(obj.varId)
-    SerializeLog.logPrintf(false, true, false, "VarId")
+    SerializeLog.logPrintf(false, true, false, "varId")
 
-    SerializeLog.logPrintf(true, true, false, "Type")
+    SerializeLog.logPrintf(true, true, false, "tpe")
     w.putType(obj.tpe)
-    SerializeLog.logPrintf(false, true, false, "Type")
+    SerializeLog.logPrintf(false, true, false, "tpe")
 
     SerializeLog.logPrintf(false, true, false, "TaggedVariable")
   }
