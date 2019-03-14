@@ -600,7 +600,8 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 5, Some {
       case (builder, obj, method, Seq(arg), tparamSubst) =>
         builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
-    })
+    }),
+    SMethod(this, "negate", SFunc(this, this), 6, MethodCallIrBuilder)
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong

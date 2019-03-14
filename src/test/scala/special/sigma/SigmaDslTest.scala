@@ -120,7 +120,7 @@ class SigmaDslTest extends PropSpec
 //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
       eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
-//      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
+      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
     }
 
     {

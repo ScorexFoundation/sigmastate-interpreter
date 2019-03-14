@@ -224,7 +224,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   class GroupElementCoster(obj: RCosted[GroupElement], method: SMethod, args: Seq[RCosted[_]]) extends Coster[GroupElement](obj, method, args){
     import GroupElement._
-    def getEncoded: RCosted[Coll[Byte]] = knownLengthCollProperyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
+    def getEncoded: RCosted[Coll[Byte]] =
+      knownLengthCollProperyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
+
+    def negate: RCosted[GroupElement] = {
+      RCCostedPrim(obj.value.negate, opCost(costOfArgs, costOf(method)), SizeGroupElement)
+    }
   }
 
   object GroupElementCoster extends CostingHandler[GroupElement]((obj, m, args) => new GroupElementCoster(obj, m, args))

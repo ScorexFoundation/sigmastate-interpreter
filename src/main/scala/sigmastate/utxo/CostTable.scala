@@ -31,6 +31,7 @@ object CostTable {
 
   val expCost = 5000
   val multiplyGroup = 50
+  val negateGroup = 50
   val groupElementConst = 1
   val constCost = 1
   val lambdaCost = 1
@@ -108,6 +109,7 @@ object CostTable {
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
     ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
