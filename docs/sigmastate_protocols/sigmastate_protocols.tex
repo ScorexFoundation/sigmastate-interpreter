@@ -253,8 +253,9 @@ Compute \texttt{hash = Blake2b256(withdrawScript)}. Hardcode \texttt{alice}, \te
 \begin{alltt}
 	val depositScript = compile(depositEnv, """ \Hi{\{}
   \Hi{alice && OUTPUTS.forall( \{(out:Box) =>}
-    \Hi{out.R5[Int].get >= HEIGHT + blocksIn24h && }
-    \Hi{blake2b256(out.propositionBytes) == hash\} ) \}} """)
+    \Hi{(out.R5[Int].get >= HEIGHT + blocksIn24h && }
+    \Hi{ blake2b256(out.propositionBytes) == hash) ||}
+    \Hi{out.propositionBytes == SELF.propositionBytes\} ) \}} """)
 \end{alltt}
 
 Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
@@ -306,8 +307,9 @@ Spending from this address is done in periods of 24 hours or more (but never les
 
 \section{Advanced Examples: Two-party Protocols}
 
-In this section, we describe somes two-party protocols that can be created with Ergo
+\langname enables us to create complex protocols. In this section, we focus on two-party protocols between two arbitrary parties Alice and Bob which can be performed in two rounds (i.e., transactions). Alice initiates the protocol by creating a box  protected by a script encoding the protocol rules. In the second round, Bob completes the protocol by spending Alice's box usually with one of his own and creating additional boxes that encode the final state of the protocol. 
 
+All the protocols here allow the first round to be offchain in the sense that Alice's box creation may be deferred until the time Bob actually participates in the protocol. Alice instead sends her box-creation transaction to Bob, who will then publish both transactions at a later time. 
 \subsection{The XOR Game}
 
 We describe a simple game called ``Same or Different'' or the XOR game. Alice and Bob both submit a coin each and select a bit independently. If the bits are same, Alice gets both coins, else Bob gets both coins. The game requires 3 transactions (steps). 
@@ -483,13 +485,15 @@ Alice's Half-Mix box is protected by the following \langname code:
 
 \textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
 
-\textbf{Offchain Pool:} Alice's Half-Mix box can be stored off-chain till the mixing step. Alice can either hand her unbroadcasted transaction directly to Bob or store it with a 3rd party service. Bob (or the 3rd party) will broadcast both Half and Full mix transactions after the mix step. It will be interesting to have a variant of the protocol where both Alice and Bob add Half-Mix coins to the H-Pool and any arbitrary 3rd party can combine them without interacting with Alice or Bob. 
+\textbf{Offchain Pool:} Alice's Half-Mix box can be stored off-chain till the mixing step. Alice can either hand her unbroadcasted transaction directly to Bob or store it with a 3rd party service. Bob (or the 3rd party) will broadcast both Half and Full mix transactions after the mix step. It will be interesting to have an offchain variant of the protocol where both Alice and Bob add their Half-Mix coins to the H-Pool and a 3rd party can combine them without interacting with Alice or Bob. 
 
 %further improvements. Can we reduce offchain data size, do multiple mixes offchain?
 
 \textbf{Handling Fee:} To ensure perfect privacy and fairness, each output must have a fixed value and zero fee. However, zero-fee transactions are not practical. We describe below a few approaches to deduct fee. 
 %a combination of which may be used. 
-For simplicity, assume that relevant transactions are mined by a 3rd party accepting fee in tokens\footnote{Tokens are additional assets stored in register R3 of a box as a collection of (token-ID, quantity) pairs. Every transaction may generate at most one token-ID of arbitrary quantity, where token-ID is the box-ID of the first input. For any other token-ID, the sum of quantities in outputs must be less or equal to the sum of quantities in inputs.} such that each box creation requires one token. A straightforward method of handling fee is as follows. Alice's Half-Mix box contains $i$ such tokens and requires each output box of the mix to contain exactly $i-1$ tokens. This will allow Alice to mix her coin $i$ times. While being perfectly fair, this method has usability issues because there may not be readily available boxes with the desired number of tokens.  
+Assume that fee will be paid in tokens\footnote{Tokens are additional assets stored in register R3 of a box as a collection of (token-ID, quantity) pairs. Every transaction may generate at most one token-ID of arbitrary quantity, where token-ID is the box-ID of the first input. For any other token-ID, the sum of quantities in outputs must be less or equal to the sum of quantities in inputs.} and mined by some 3rd party.
+
+ A straightforward method of handling fee is as follows. Alice's Half-Mix box contains $i$ such tokens and requires each output box of the mix to contain exactly $i-1$ tokens. This allows Alice to mix her coin $i$ times, which is optimal and fair. However, this has two drawbacks. Firstly, it has weakened privacy because it restricts which coins can be mixed. Secondly, it impacts usability because there may not be any available boxes with the desired number of tokens. The following tweaks to the basic protocol can be used to overcome these drawbacks. 
  
 \begin{enumerate}
 	\item \textbf{Approximate Fairness:} Bob will mix by picking from the H-pool a box with token quantity ``closer'' to that of his own non-H-pool box. He will generate two outputs with equal quantity of tokens after deducting fee. Alice's script could encode the maximum allowed difference in quantities. In the worst case, to mix $i$ times, Alice will have to start with a box of $2^i$ tokens.
@@ -501,13 +505,20 @@ For simplicity, assume that relevant transactions are mined by a 3rd party accep
 %	as long as the spending transaction either performs a pool or mix operation and the accumulated fee is paid at the time the coin leaves the mixing system. 
 %	The accumulated fee for the mix transaction is the sum of accumulated fee of the inputs plus the mining fee for the mix transaction. To ensure privacy, this accumulated fee is equally shared by the two outputs. 
 	\item \textbf{First spender pays:} Instead of sharing the (accumulated) fee equally in the mixed outputs, the first party to spend the mixed output should pay the entire (accumulated) fee, while the second party gets a free ride. This can be achieved using additional tokens as follows: 
+	
+	A transaction creating Alice's box for the H-pool must generate exactly 4 tokens and those should be present in Alice's box. Let $x$ be the token-ID of this token. A mix transaction must generate four boxes each with 1 quantity of token $x$ as follows:
 	\begin{enumerate}
-		\item Any box added to the H-pool must have exactly two quantities of a newly created token with token-ID $x$ (i.e., $x$ is the id of the first input box of the creating transaction). 
-		\item A mix transaction must generate two more boxes each with one quantity of token $x$. 
-		\item Spending any box with token $x$ must generate one box with two quantities of token $x$. The newly created box must also be protected by the same proposition.
-		\item Spending any mixed output must generate one more box with two quantities of token $x$.
+		\item Two standard mixed boxes $O_0, O_1$ with the additional spending condition that the sum of quantities of token $x$ in the inputs is $\geq 3$.
+		\item Two new boxes $O_2, O_3$ with the following identical spending conditions:
+		\begin{enumerate}
+			\item The spending transaction must have one output box containing 2 quantities of token $x$ and protected by the same script as this box. 
+			\item Exactly one output box in the spending transaction can contain token $x$.
+		\end{enumerate}
+%		\item A mixed box can only be spent if the sum of quantities of token $x$ in the inputs is $\geq 3$.
 	\end{enumerate}
-	Any transaction spending the mixed output is the second spender if there exists an input box with two quantities of token $x$, otherwise it is the first spender.
+	
+	The first spender will spend both $O_2$ and $O_3$ to generate a new box with 2 quantities of token $x$ and spendable only by the second spender. 
+	Thus, a transaction spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. %, otherwise it is the first spender.
 	
 \end{enumerate}
 
