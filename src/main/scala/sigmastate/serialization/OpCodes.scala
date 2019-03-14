@@ -108,10 +108,14 @@ object OpCodes extends ValueCodes {
   val AppendCode           : OpCode = (LastConstantCode + 67).toByte
   val SliceCode            : OpCode = (LastConstantCode + 68).toByte
   val FilterCode           : OpCode = (LastConstantCode + 69).toByte
-  val TreeLookupCode       : OpCode = (LastConstantCode + 70).toByte
-  val StringConcatCode     : OpCode = (LastConstantCode + 71).toByte
-  val TreeModificationsCode: OpCode = (LastConstantCode + 72).toByte
-  // reserved 73 - 80 (8)
+  val AvlTreeCode          : OpCode = (LastConstantCode + 70).toByte
+  val AvlTreeGetCode       : OpCode = (LastConstantCode + 71).toByte
+//  val TreeUpdatesCode      : OpCode = (LastConstantCode + 71).toByte
+//  val TreeInsertsCode      : OpCode = (LastConstantCode + 72).toByte
+//  val TreeRemovalsCode     : OpCode = (LastConstantCode + 73).toByte
+//  val TreeGetManyCode      : OpCode = (LastConstantCode + 74).toByte
+//  val TreeContainsCode     : OpCode = (LastConstantCode + 75).toByte
+  // reserved 72 - 80 (9)
 
   // Type casts codes
   val ExtractAmountCode        : OpCode = (LastConstantCode + 81).toByte
@@ -127,10 +131,12 @@ object OpCodes extends ValueCodes {
   val CalcSha256Code             : OpCode = (LastConstantCode + 92).toByte
   val ProveDlogCode              : OpCode = (LastConstantCode + 93).toByte
   val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte
-  val SigmaPropIsProvenCode       : OpCode = (LastConstantCode + 95).toByte
+  val SigmaPropIsProvenCode      : OpCode = (LastConstantCode + 95).toByte
   val SigmaPropBytesCode         : OpCode = (LastConstantCode + 96).toByte
-  val BoolToSigmaPropCode        : OpCode = (LastConstantCode + 97 ).toByte
-  val TrivialProofCode           : OpCode = (LastConstantCode + 98).toByte  // reserved 99 (1)
+  val BoolToSigmaPropCode        : OpCode = (LastConstantCode + 97).toByte
+  // we don't rely on this yet but it's nice to have TrivialPropFalseCode.toUByte < TrivialPropTrueCode.toUByte
+  val TrivialPropFalseCode       : OpCode = (LastConstantCode + 98).toByte
+  val TrivialPropTrueCode        : OpCode = (LastConstantCode + 99).toByte
 
   // Deserialization codes
   val DeserializeContextCode : OpCode = (LastConstantCode + 100).toByte
@@ -184,5 +190,6 @@ object OpCodes extends ValueCodes {
   val CollRotateLeftCode     : OpCode = (LastConstantCode + 140).toByte
   val CollRotateRightCode     : OpCode = (LastConstantCode + 141).toByte
 
-  // reserved 142 - 143 (2)
+  val ContextCode             : OpCode = (LastConstantCode + 142).toByte
+  val XorOfCode               : OpCode = (LastConstantCode + 143).toByte
 }

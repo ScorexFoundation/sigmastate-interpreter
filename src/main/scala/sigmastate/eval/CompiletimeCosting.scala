@@ -3,74 +3,25 @@ package sigmastate.eval
 import org.ergoplatform.ErgoBox
 
 import scala.language.{existentials, implicitConversions}
-import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{Constant, NotReadyValue, SValue, SigmaBoolean, SigmaPropConstant, Value}
-import sigmastate.lang.Terms.{Apply, _}
-import sigmastate.lang.SigmaPredef._
+import sigmastate.Values.{Constant, Value}
+import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import sigmastate.SType._
 import sigmastate.SCollection._
 import sigmastate.SBigInt._
 import sigmastate.Values.Value.Typed
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
-import sigmastate.lang.SigmaSpecializer.error
-import sigmastate.lang.{Terms, TransformingSigmaBuilder}
+import sigmastate.lang.Terms
+import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
   import builder._
 
-  override def evalNode[T <: SType](ctx: Rep[CostedContext], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
+  override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
     val res: Sym = node match {
       case Ident(n, _) =>
         env.getOrElse(n, !!!(s"Variable $n not found in environment $env"))
-
-      // Rule: allOf(arr) --> AND(arr)
-      case Terms.Apply(AllSym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkAND(arr))
-
-      // Rule: anyOf(arr) --> OR(arr)
-      case Terms.Apply(AnySym, Seq(arr: Value[SCollection[SBoolean.type]]@unchecked)) =>
-        eval(mkOR(arr))
-
-      // Rule: atLeast(bound, arr) --> AtLeast(bound, arr)
-      case Terms.Apply(AtLeastSym, Seq(bound: SValue, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
-        eval(mkAtLeast(bound.asIntValue, arr))
-
-      case Terms.Apply(Blake2b256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcBlake2b256(arg))
-
-      case Terms.Apply(Sha256Sym, Seq(arg: Value[SByteArray]@unchecked)) =>
-        eval(mkCalcSha256(arg))
-
-      case Terms.Apply(IsMemberSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkIsMember(tree, key, proof))
-
-      case Terms.Apply(ProveDlogSym, Seq(g: Value[SGroupElement.type]@unchecked)) =>
-        eval(mkProveDlog(g))
-
-      case Terms.Apply(LongToByteArraySym, Seq(arg: Value[SLong.type]@unchecked)) =>
-        eval(mkLongToByteArray(arg))
-
-      case Terms.Apply(ByteArrayToBigIntSym, Seq(arr: Value[SByteArray]@unchecked)) =>
-        eval(mkByteArrayToBigInt(arr))
-
-      case Terms.Apply(SigmaPropSym, Seq(bool: Value[SBoolean.type]@unchecked)) =>
-        eval(mkBoolToSigmaProp(bool))
-
-      case Terms.Apply(ProveDHTupleSym, Seq(g, h, u, v)) =>
-        eval(mkProveDiffieHellmanTuple(
-          g.asGroupElement,
-          h.asGroupElement,
-          u.asGroupElement,
-          v.asGroupElement))
-
-      case Terms.Apply(TreeModificationsSym, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeModifications(tree, operations, proof))
-
-      case Terms.Apply(TreeLookupSym, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked, proof: Value[SByteArray]@unchecked)) =>
-        eval(mkTreeLookup(tree, key, proof))
 
       case sigmastate.Upcast(Constant(value, _), toTpe: SNumericType) =>
         eval(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
@@ -83,7 +34,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
         if (obj.tpe.isCollectionLike)
           eval(mkSizeOf(obj.asValue[SCollection[SType]]))
         else
-          error(s"The type of $obj is expected to be Collection to select 'size' property")
+          error(s"The type of $obj is expected to be Collection to select 'size' property", obj.sourceContext.toOption)
 
       // Rule: proof.isProven --> IsValid(proof)
       case Select(p, SSigmaProp.IsProven, _) if p.tpe == SSigmaProp =>
@@ -96,14 +47,8 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       // box.R$i[valType] =>
       case sel @ Select(Typed(box, SBox), regName, Some(SOption(valType))) if regName.startsWith("R") =>
         val reg = ErgoBox.registerByName.getOrElse(regName,
-          error(s"Invalid register name $regName in expression $sel"))
+          error(s"Invalid register name $regName in expression $sel", sel.sourceContext.toOption))
         eval(mkExtractRegisterAs(box.asBox, reg, SOption(valType)).asValue[SOption[valType.type]])
-
-      // col.getOrElse(i, default) =>
-      case Terms.Apply(Select(col,"getOrElse", _), Seq(index, defaultValue)) =>
-        val index1 = index.asValue[SInt.type]
-        val defaultValue1 = defaultValue.asValue[SType]
-        eval(mkByIndex(col.asValue[SCollection[SType]], index1, Some(defaultValue1)))
 
       // opt.get =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.Get, _) =>
@@ -123,15 +68,9 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
           case (box, SBox.PropositionBytes) => eval(mkExtractScriptBytes(box))
           case (box, SBox.Id) => eval(mkExtractId(box))
           case (box, SBox.Bytes) => eval(mkExtractBytes(box))
-          case (box, SBox.BytesWithNoRef) => eval(mkExtractBytesWithNoRef(box))
+          case (box, SBox.BytesWithoutRef) => eval(mkExtractBytesWithNoRef(box))
           case (box, SBox.CreationInfo) => eval(mkExtractCreationInfo(box))
-          case _ => error(s"Invalid access to Box property in $sel: field $field is not found")
-        }
-
-      case Select(obj: SigmaBoolean, field, _) =>
-        field match {
-          case SigmaBoolean.PropBytes => eval(SigmaPropBytes(SigmaPropConstant(obj)))
-          case SigmaBoolean.IsProven => eval(SigmaPropIsProven(SigmaPropConstant(obj)))
+          case _ => error(s"Invalid access to Box property in $sel: field $field is not found", sel.sourceContext.toOption)
         }
 
       case Select(tuple, fn, _) if tuple.tpe.isTuple && fn.startsWith("_") =>

@@ -1,10 +1,9 @@
 package sigmastate.utxo.benchmarks
 
-import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.SBoolean
-import sigmastate.Values.Value
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.Values.{Value, SigmaPropValue}
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -14,18 +13,18 @@ import scala.util.Try
 class CrowdFundingScriptContract(
                                   timeout: Int,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeTestProvingInterpreter,
-                                  override val projectProver: ErgoLikeTestProvingInterpreter
+                                  override val backerProver: ContextEnrichingTestProvingInterpreter,
+                                  override val projectProver: ContextEnrichingTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
-  val compiledProposition: Value[SBoolean.type] = {
+  val compiledProposition: SigmaPropValue = {
     val env = Map(
       "timeout" -> timeout,
       "minToRaise" -> minToRaise,
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey
     )
-    val compiledScript = compiler.compile(env,
+    val compiledScript = compiler.compileWithoutCosting(env,
       """{
        | val c1 = HEIGHT >= timeout && backerPubKey
        | val c2 = allOf(Coll(
@@ -37,8 +36,7 @@ class CrowdFundingScriptContract(
        | ))
        | c1 || c2
        | }
-      """.stripMargin,
-      TestnetNetworkPrefix).asBoolValue
+      """.stripMargin).asSigmaProp
     compiledScript
   }
 

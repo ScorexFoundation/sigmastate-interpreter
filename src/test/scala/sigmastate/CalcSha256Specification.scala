@@ -1,11 +1,10 @@
 package sigmastate
 
 import org.ergoplatform.ErgoLikeContext
-import org.scalatest.prop.{PropertyChecks, TableFor2, GeneratorDrivenPropertyChecks}
-import org.scalatest.Matchers
+import org.scalatest.prop.TableFor2
 import scorex.util.encode.Base16
 import sigmastate.Values.{CollectionConstant, ByteArrayConstant}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 
 class CalcSha256Specification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
@@ -30,13 +29,13 @@ class CalcSha256Specification extends SigmaTestingCommons {
   )
 
   property("CalcSha256: Should pass standard tests.") {
-    val int = new ErgoLikeTestProvingInterpreter()
+    val int = new ContextEnrichingTestProvingInterpreter()
     val ctx = ErgoLikeContext.dummy(fakeSelf)
     forAll(objects) { (in, result) =>
-      val calcSha256 = CalcSha256(stringToByteConstant(in))
       val expectedResult = decodeString(result)
+      val calcSha256 = EQ(CalcSha256(stringToByteConstant(in)), expectedResult)
       val res = int.reduceToCrypto(ctx, calcSha256).get._1
-      res shouldBe expectedResult
+      res shouldBe TrivialProp.TrueProp
     }
   }
 

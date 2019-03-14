@@ -176,4 +176,14 @@ class TransformersSerializationSpec extends SerializationSpecification {
   property("BoolToSigmaProp: Serializer round trip") {
     forAll(boolToSigmaPropGen) { v => roundTripTest(v) }
   }
+
+  property("ByteArrayToLong: Serializer round trip") {
+    forAll(byteArrayToLongGen) { roundTripTest(_) }
+  }
+
+  property("XorOf: Serializer round trip") {
+    forAll(logicalExprTreeNodeGen(Seq(XorOf.apply))) { tree =>
+      roundTripTest(tree)
+    }
+  }
 }

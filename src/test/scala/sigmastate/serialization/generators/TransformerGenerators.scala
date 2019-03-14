@@ -276,6 +276,9 @@ trait TransformerGenerators {
 
   val boolToSigmaPropGen: Gen[BoolToSigmaProp] = for {
     b <- booleanConstGen
-  } yield mkBoolToSigmaProp(b)
+  } yield mkBoolToSigmaProp(b).asInstanceOf[BoolToSigmaProp]
 
+  val byteArrayToLongGen: Gen[ByteArrayToLong] =
+    arbByteArrayConstant.arbitrary.map { v =>
+      mkByteArrayToLong(v).asInstanceOf[ByteArrayToLong] }
 }

@@ -9,11 +9,11 @@ object ModQSerializer extends ValueSerializer[ModQ] {
 
   override val opCode: Byte = OpCodes.ModQCode
 
-  def serializeBody(obj: ModQ, w: SigmaByteWriter): Unit = {
+  def serialize(obj: ModQ, w: SigmaByteWriter): Unit = {
     w.putValue(obj.input)
   }
 
-  def parseBody(r: SigmaByteReader): Value[SType] = {
+  def parse(r: SigmaByteReader): Value[SType] = {
     val p = r.getValue().asBigInt
     ModQ(p)
   }

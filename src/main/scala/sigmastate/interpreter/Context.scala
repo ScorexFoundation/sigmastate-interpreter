@@ -3,13 +3,15 @@ package sigmastate.interpreter
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
-import sigmastate.serialization.Serializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
 import special.sigma
+import special.sigma.AnyValue
 
 /**
-  * Variables to be put into context
+  * User-defined variables to be put into context
+  *
+  * @param values - key-value pairs
   */
 case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
   def add(bindings: (Byte, EvaluatedValue[_ <: SType])*): ContextExtension =
@@ -19,14 +21,14 @@ case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
 object ContextExtension {
   val empty = ContextExtension(Map())
 
-  object serializer extends Serializer[ContextExtension, ContextExtension] {
+  object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
 
-    override def serializeBody(obj: ContextExtension, w: SigmaByteWriter): Unit = {
+    override def serialize(obj: ContextExtension, w: SigmaByteWriter): Unit = {
       w.putUByte(obj.values.size)
-      obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
+      obj.values.foreach { case (id, v) => w.put(id).putValue(v) }
     }
 
-    override def parseBody(r: SigmaByteReader): ContextExtension = {
+    override def parse(r: SigmaByteReader): ContextExtension = {
       val extSize = r.getByte()
       val ext = (0 until extSize)
         .map(_ => (r.getByte(), r.getValue().asInstanceOf[EvaluatedValue[_ <: SType]]))
@@ -34,18 +36,19 @@ object ContextExtension {
       ContextExtension(ext)
     }
   }
+
 }
 
 
-trait Context{
+trait Context {
   val extension: ContextExtension
 
   def withExtension(newExtension: ContextExtension): Context
 
   def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): Context = {
-    val ext = extension.add(bindings:_*)
+    val ext = extension.add(bindings: _*)
     withExtension(ext)
   }
 
-  def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context
+  def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }

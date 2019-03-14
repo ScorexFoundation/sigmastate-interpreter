@@ -8,41 +8,41 @@ import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.lang.Terms._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
+import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
 class XorGameExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
+  /** XOR game:
 
-  /** XOR game example:
-
-     Alice creates a XOR game of "playAmount" amount of ergs until some "timeout" height, called aliceDeadline.
-     Another player (Bob) then creates a transaction using this output that follows the game protocol
-     given below. In the game, Alice will create "halfGameOutput" output (a "Half game" UTXO).
-     Bob will spend Alice's output and create another output called "fullGameOutput" (a "Full game" UTXO).
-     After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner
+     Alice creates a XOR game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
+     Another player (Bob) then sends a transaction spending Alice's UTXO and creating another output called "fullGameOutput" (a "Full game" UTXO).
+     After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner.
+     The transactions encode the following protocol.
 
      protocol:
        Step 1: Alice commits to secret bit a as follows:
                   Generate random s and compute h = Hash(s||a)
                   h is the commitment to a
-               Alice also selects the "play amount" which can be 0 (a "friendly" game)
+               Alice also selects the "play amount", the amount each player must spend to participate.
                She generates a halfGameOutput encoding h and some spending condition given below by halfGameScript
        Step 2: Bob chooses random bit b (public) and creates a new tx spending Alice's UTXO along with
-               some others such that there is one output that has the spending conditions given by fullGameScript.
+               some others and creating one output that has the spending conditions given by fullGameScript.
                (one of the conditions being that the amount of that output is >= twice the play amount.)
        Step 3: Alice reveals (s, a) to open her commitment and wins if a == b. Otherwise Bob wins.
+               If Alice fails to open her commitment before some deadline then Bob automatically wins.
 
     For simplicity, we will use following bytes to designate bits
         0x00 = false
         0x01 = true
+
     */
   property("Evaluation - XorGame Example") {
 
     // Alice is first player, who initiates the game
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
     val a:Byte = if (scala.util.Random.nextBoolean) 0x01 else 0x00 // Alice's random choice
@@ -51,41 +51,43 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
 
     val fullGameEnv = Map(
       ScriptNameProp -> "fullGameScriptEnv",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "h" -> h
     )
 
-    val fullGameScript = compileWithCosting(fullGameEnv,
+    val fullGameScript = compile(fullGameEnv,
       """{
         |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
         |  val b           = SELF.R4[Byte].get          // Bob's public bit b (represented as a byte)
-        |  val bobPubKey   = SELF.R5[SigmaProp].get
+        |  val bob         = SELF.R5[SigmaProp].get     // Bob's public key
         |  val bobDeadline = SELF.R6[Int].get           // after this height, Bob gets to spend unconditionally
         |
-        |  (bobPubKey && HEIGHT > bobDeadline) || {
+        |  (bob && HEIGHT > bobDeadline) || {
         |    blake2b256(s ++ Coll(a)) == h && {         // h is Alice's original commitment from the halfGameScript
-        |      alicePubKey && a == b || bobPubKey && a != b
+        |      alice && a == b || bob && a != b
         |    }
         |  }
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
 
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
-      "alicePubKey" -> alicePubKey,
+      "alice" -> alicePubKey,
       "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
     )
 
-    val halfGameScript = compileWithCosting(halfGameEnv,
+    // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
+    // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
+    // before some minimum height.
+    val halfGameScript = compile(halfGameEnv,
       """{
-        |  alicePubKey || {
+        |  alice || {
         |    val out           = OUTPUTS(0)
         |    val b             = out.R4[Byte].get
-        |    val bobPubKey     = out.R5[SigmaProp].get
         |    val bobDeadline   = out.R6[Int].get
         |    val validBobInput = b == 0 || b == 1
-        |
+        |    // Bob needs to ensure that out.R5 contains his public key
         |    OUTPUTS.size == 1 &&
         |    bobDeadline >= HEIGHT+30 &&
         |    out.value >= SELF.value * 2 &&
@@ -93,7 +95,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
         |    blake2b256(out.propositionBytes) == fullGameScriptHash
         |  }
         |}
-      """.stripMargin).asBoolValue
+      """.stripMargin).asSigmaProp
 
     /////////////////////////////////////////////////////////
     //// Alice starts creating a Half-Game
@@ -119,7 +121,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     /////////////////////////////////////////////////////////
 
     // Alice pays to Carol. Game ends here
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     val abortHalfGameHeight = halfGameCreationHeight + 10 // can be anything
@@ -134,13 +136,13 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val abortHalfGameOutput = ErgoBox(playAmount, carolPubKey, abortHalfGameHeight, Nil,
       Map(
         R4 -> ByteConstant(0), // dummy data. Has to be given, even though not needed as per halfGameScript
-        R5 -> SigmaPropConstant((new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage), // dummy statement
+        R5 -> SigmaPropConstant((new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage), // dummy statement
         R6 -> IntConstant(0) // dummy data. Has to be given, even though not needed as per halfGameScript
       )
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val abortHalfGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(abortHalfGameOutput))
+    val abortHalfGameTx = createTransaction(abortHalfGameOutput)
 
     val abortHalfGameContext = ErgoLikeContext(
       currentHeight = abortHalfGameHeight,
@@ -162,7 +164,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //a variable indicating height at which the tx spending halfGameTx is created
     val fullGameCreationHeight = halfGameCreationHeight + 10
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = if (scala.util.Random.nextBoolean) 0x01 else 0x00
@@ -176,7 +178,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val fullGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullGameOutput))
+    val fullGameTx = createTransaction(fullGameOutput)
 
     val fullGameContext = ErgoLikeContext(
       currentHeight = fullGameCreationHeight,
@@ -195,6 +197,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     /////////////////////////////////////////////////////////
     //// fullGameOutput represents the Full-Game "box" created by Bob.
     /////////////////////////////////////////////////////////
+
 
     val winner = {
       if (a != b) {
@@ -225,7 +228,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val gameOverOutput = ErgoBox(playAmount*2, carolPubKey, gameOverHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
+    val gameOverTx = createTransaction(gameOverOutput)
 
     val gameOverContext = ErgoLikeContext(
       currentHeight = gameOverHeight,
@@ -252,7 +255,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val defaultWinTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(defaultWinOutput))
+    val defaultWinTx = createTransaction(defaultWinOutput)
 
     val defaultWinContext = ErgoLikeContext(
       currentHeight = defaultWinHeight,
@@ -263,7 +266,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       self = fullGameOutput // what is the use of self?
     )
 
-    val sDummy = Array[Byte]()
+    val sDummy = Array[Byte]()  // empty value for s; commitment cannot be opened but still Bob will be able to spend
     val aDummy:Byte = 0
     // below we need to specify a and s (even though they are not needed)
     val proofDefaultWin = bob.withContextExtender(
@@ -273,6 +276,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     ).prove(fullGameEnv, fullGameScript, defaultWinContext, fakeMessage).get
 
     verifier.verify(fullGameEnv, fullGameScript, defaultWinContext, proofDefaultWin, fakeMessage).get._1 shouldBe true
+
   }
 
 }

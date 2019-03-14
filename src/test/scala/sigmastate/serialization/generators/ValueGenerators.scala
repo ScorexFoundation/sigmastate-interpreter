@@ -3,6 +3,7 @@ package sigmastate.serialization.generators
 import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.ErgoScriptPredef.{TrueProp, FalseProp}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -12,7 +13,8 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -75,10 +77,14 @@ trait ValueGenerators extends TypeGenerators {
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
-  val groupElementConstGen: Gen[GroupElementConstant] = for {
+
+  val groupElementGen: Gen[EcPointType] = for {
     _ <- Gen.const(1)
-    el = CryptoConstants.dlogGroup.createRandomGenerator()
-  } yield mkConstant[SGroupElement.type](el, SGroupElement)
+  } yield CryptoConstants.dlogGroup.createRandomElement()
+
+  val groupElementConstGen: Gen[GroupElementConstant] = for {
+    p <- groupElementGen
+  } yield mkConstant[SGroupElement.type](p, SGroupElement)
 
   def taggedVar[T <: SType](implicit aT: Arbitrary[T]): Gen[TaggedVariable[T]] = for {
     t <- aT.arbitrary
@@ -86,14 +92,13 @@ trait ValueGenerators extends TypeGenerators {
   } yield mkTaggedVariable(id, t)
 
 
-  val proveDlogGen: Gen[ProveDlog] =
-    arbGroupElementConstant.arbitrary.map(v => mkProveDlog(v).asInstanceOf[ProveDlog])
+  val proveDlogGen: Gen[ProveDlog] = for { v <- groupElementGen } yield ProveDlog(v)
   val proveDHTGen: Gen[ProveDHTuple] = for {
-    gv: Value[SGroupElement.type] <- groupElementConstGen
-    hv: Value[SGroupElement.type] <- groupElementConstGen
-    uv: Value[SGroupElement.type] <- groupElementConstGen
-    vv: Value[SGroupElement.type] <- groupElementConstGen
-  } yield mkProveDiffieHellmanTuple(gv, hv, uv, vv).asInstanceOf[ProveDHTuple]
+    gv <- groupElementGen
+    hv <- groupElementGen
+    uv <- groupElementGen
+    vv <- groupElementGen
+  } yield ProveDHTuple(gv, hv, uv, vv)
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
   val sigmaPropGen: Gen[SigmaPropValue] =
@@ -148,7 +153,12 @@ trait ValueGenerators extends TypeGenerators {
 
   val unsignedInputGen: Gen[UnsignedInput] = for {
     boxId <- boxIdGen
-  } yield new UnsignedInput(boxId)
+    contextExt <- contextExtensionGen
+  } yield new UnsignedInput(boxId, contextExt)
+
+  val dataInputGen: Gen[DataInput] = for {
+    boxId <- boxIdGen
+  } yield DataInput(boxId)
 
   val inputGen: Gen[Input] = for {
     boxId <- boxIdGen
@@ -167,13 +177,18 @@ trait ValueGenerators extends TypeGenerators {
           yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
       }
 
+  def avlTreeFlagsGen: Gen[AvlTreeFlags] = for {
+    insert <- arbBool.arbitrary
+    update <- arbBool.arbitrary
+    remove <- arbBool.arbitrary
+  } yield AvlTreeFlags(insert, update, remove)
+
   def avlTreeDataGen: Gen[AvlTreeData] = for {
-    digest <- Gen.listOfN(32, arbByte.arbitrary).map(_.toArray)
+    digest <- Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(_.toArray)
+    flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-    mn <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-    md <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
-  } yield AvlTreeData(ADDigest @@ digest, keyLength, vl, mn, md)
+  } yield AvlTreeData(ADDigest @@ digest, flags, keyLength, vl)
 
   def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
 
@@ -218,7 +233,7 @@ trait ValueGenerators extends TypeGenerators {
   val ergoBoxGen: Gen[ErgoBox] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- unsignedShortGen
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
@@ -231,7 +246,7 @@ trait ValueGenerators extends TypeGenerators {
   def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
-    b <- Gen.oneOf(TrueLeaf, FalseLeaf, p)
+    b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
@@ -252,11 +267,12 @@ trait ValueGenerators extends TypeGenerators {
   } yield tokens
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
-    inputs <- Gen.listOf(inputGen)
+    inputs <- Gen.nonEmptyListOf(inputGen)
     tokens <- tokensGen
+    dataInputs <- Gen.listOf(dataInputGen)
     outputsCount <- Gen.chooseNum(50, 200)
     outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
-  } yield ErgoLikeTransaction(inputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+  } yield new ErgoLikeTransaction(inputs.toIndexedSeq, dataInputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 
   // distinct list of elements from a given generator
   // with a maximum number of elements to discard

@@ -7,8 +7,30 @@ import scala.reflect.ClassTag
 object Helpers {
   def xor(ba1: Array[Byte], ba2: Array[Byte]): Array[Byte] = ba1.zip(ba2).map(t => (t._1 ^ t._2).toByte)
 
+  /** Same as `xor` but makes in-place update of the first argument (hence suffix `U`)
+    * This is boxing-free version.
+    * @return reference to the updated first argument to easy chaining of calls. */
+  def xorU(ba1: Array[Byte], ba2: Array[Byte]): Array[Byte] = {
+    var i = 0
+    while (i < ba1.length) {
+      ba1(i) = (ba1(i) ^ ba2(i)).toByte
+      i += 1
+    }
+    ba1
+  }
+
   def xor(bas: Array[Byte]*): Array[Byte] =
     bas.reduce({case (ba, ba1) => xor(ba, ba1)}: ((Array[Byte], Array[Byte]) => Array[Byte]))
+
+  /** Same as `xor` but makes in-place update of the first argument (hence suffix `U`)
+    * This is boxing-free version.
+    * @return reference to the updated first argument to easy chaining of calls. */
+  def xorU(target: Array[Byte], xss: Seq[Array[Byte]]): Array[Byte] = {
+    for (xs <- xss) {
+      xorU(target, xs)
+    }
+    target
+  }
 
   def anyOf(arr: Array[Boolean]): Boolean = arr.exists(identity)
   def allOf(arr: Array[Boolean]): Boolean = arr.forall(identity)
@@ -54,20 +76,6 @@ object Helpers {
       case _ => false
     }
 
-  /**
-    * Helper to construct a byte array from a bunch of bytes. The inputs are actually ints so that I
-    * can use hex notation and not get stupid errors about precision.
-  */
-  def bytesFromInts(bytesAsInts: Int*): Array[Byte] = {
-    val a = new Array[Byte](bytesAsInts.length)
-    for (i <- a.indices) {
-      val v = bytesAsInts(i)
-      // values from unsigned byte range will be encoded as negative values which is expected here
-      assert(v >= Byte.MinValue && v <= 0xFF, s"$v is out of the signed/unsigned Byte range")
-      a(i) = v.toByte
-    }
-    a
-  }
 }
 
 object Overloading {

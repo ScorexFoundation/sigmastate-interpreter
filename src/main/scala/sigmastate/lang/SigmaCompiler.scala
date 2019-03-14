@@ -1,27 +1,37 @@
 package sigmastate.lang
 
-import sigmastate.SType
-import sigmastate.lang.syntax.ParserException
 import fastparse.core.Parsed
 import fastparse.core.Parsed.Success
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import sigmastate.Values.{SValue, SigmaTree, Value}
+import org.ergoplatform.ErgoLikeContext
+import scalan.RType
+import sigmastate.{SBoolean, SType}
+import sigmastate.Values.{TrueLeaf, Value, Constant, SValue}
+import sigmastate.eval.{Evaluation, IRContext}
+import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.syntax.ParserException
 
-class SigmaCompiler(builder: SigmaBuilder) {
+/**
+  * @param networkPrefix network prefix to decode an ergo address from string (PK op)
+  * @param builder
+  */
+class SigmaCompiler(networkPrefix: NetworkPrefix, builder: SigmaBuilder) {
 
   def parse(x: String): SValue = {
     SigmaParser(x, builder) match {
       case Success(v, i) => v
-      case f: Parsed.Failure[_,_] =>
-        throw new ParserException(s"Syntax error: $f", Some(f))
+      case f: Parsed.Failure[_,String] =>
+        throw new ParserException(s"Syntax error: $f", Some(SourceContext.fromParserFailure(f)))
     }
   }
 
   def typecheck(env: ScriptEnv, parsed: SValue): Value[SType] = {
-    val binder = new SigmaBinder(env, builder)
+    val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
+    val binder = new SigmaBinder(env, builder, networkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val typer = new SigmaTyper(builder)
+    val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val typed = typer.typecheck(bound)
     typed
   }
@@ -31,14 +41,21 @@ class SigmaCompiler(builder: SigmaBuilder) {
     typecheck(env, parsed)
   }
 
-  def compile(env: ScriptEnv, code: String, networkPrefix: NetworkPrefix): Value[SType] = {
+  private[sigmastate] def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = {
     val typed = typecheck(env, code)
-    val spec = new SigmaSpecializer(builder, networkPrefix)
+    val spec = new SigmaSpecializer(builder)
     val ir = spec.specialize(typed)
     ir
+  }
+
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val interProp = typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting(env, interProp, true)
+    IR.buildTree(calcF)
   }
 }
 
 object SigmaCompiler {
-  def apply(builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler = new SigmaCompiler(builder)
+  def apply(networkPrefix: NetworkPrefix, builder: SigmaBuilder = TransformingSigmaBuilder): SigmaCompiler =
+    new SigmaCompiler(networkPrefix, builder)
 }

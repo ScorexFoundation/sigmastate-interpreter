@@ -1,79 +1,27 @@
 package sigmastate.interpreter
 
 import java.util
-import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.bouncycastle.math.ec.ECPoint
-import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
-import scorex.crypto.hash.Blake2b256
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{ByteArrayConstant, _}
-import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.Values._
+import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.serialization.{ValueSerializer, OpCodes, Serializer, OperationSerializer}
-import sigmastate.basics.{BcDlogFp, Curve25519, DiffieHellmanTupleInteractiveProver, FirstDiffieHellmanTupleProverMessage}
-import sigmastate.interpreter.Interpreter.VerificationResult
-import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{OpCodes, OperationSerializer, Serializer, ValueSerializer}
-import sigmastate.utils.Extensions._
-import sigmastate.utils.Helpers
-import sigmastate.utxo.{GetVar, DeserializeContext, Transformer}
+import sigmastate.basics._
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.lang.exceptions.{InterpreterException, CosterException}
+import sigmastate.serialization.ValueSerializer
+import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import special.sigma.InvalidType
 
-import scala.util.{Success, Failure, Try}
+import scala.util.Try
 
-
-object CryptoConstants {
-  type EcPointType = Curve25519Point
-
-  val dlogGroup: BcDlogFp[EcPointType] = Curve25519
-  lazy val secureRandom = dlogGroup.secureRandom
-
-  def secureRandomBytes(howMany: Int) = {
-    val bytes = new Array[Byte](howMany)
-    secureRandom.nextBytes(bytes)
-    bytes
-  }
-
-  /** Size of the binary representation of any group element (2 ^ groupSizeBits == <number of elements in a group>) */
-  val groupSizeBits: Int = 256
-
-  /** Number of bytes to represent any group element as byte array */
-  val groupSize: Int = 256 / 8 //32 bytes
-
-  //size of challenge in Sigma protocols, in bits
-  //if this anything but 192, threshold won't work, because we have polynomials over GF(2^192) and no others
-  //so DO NOT change the value without implementing polynomials over GF(2^soundnessBits) first
-  //and changing code that calls on GF2_192 and GF2_192_Poly classes!!!
-  implicit val soundnessBits: Int = 192.ensuring(_ < groupSizeBits, "2^t < q condition is broken!")
-}
-
-object CryptoFunctions {
-  lazy val soundnessBytes = CryptoConstants.soundnessBits / 8
-
-  def hashFn(input: Array[Byte]): Array[Byte] = {
-    Blake2b256.hash(input).take(soundnessBytes)
-  }
-
-  def showECPoint(p: ECPoint) = {
-    val rawX = p.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.getRawYCoord.toString.substring(0, 6)
-    s"ECPoint($rawX,$rawY,...)"
-  }
-}
 
 trait Interpreter extends ScorexLogging {
 
-  import CryptoConstants._
   import Interpreter.ReductionResult
 
   type CTX <: Context
@@ -118,6 +66,31 @@ trait Interpreter extends ScorexLogging {
     res
   }
 
+  def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
+    import IR.Size._; import IR.Context._;
+    val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
+    val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
+    if (estimatedCost > maxCost) {
+      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+    }
+    estimatedCost
+  }
+
+  def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
+    import IR._; import Context._; import SigmaProp._
+    val res = calcF.elem.eRange.asInstanceOf[Any] match {
+      case sp: SigmaPropElem[_] =>
+        val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
+        val (sp, _) = valueFun(context)
+        sp
+      case BooleanElement =>
+        val valueFun = compile[SContext, Boolean, IR.Context, Boolean](IR.getDataEnv, asRep[Context => Boolean](calcF))
+        val (b, _) = valueFun(context)
+        sigmaDslBuilderValue.sigmaProp(b)
+    }
+    res
+  }
   /**
     * As the first step both prover and verifier are applying context-specific transformations and then estimating
     * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
@@ -128,39 +101,35 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    val costingRes @ IR.Pair(calcF, costF) = doCosting(env, exp)
+    import IR._; import Size._; import Context._; import SigmaProp._
+    val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
     IR.onCostingResult(env, exp, costingRes)
 
-    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+    verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
 
-    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+    verifyIsProven(calcF).fold(t => throw t, x => x)
 
-    // check cost
     val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
-    val IntConstant(estimatedCost) = costFun(costingCtx)
-    if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
-    }
+    val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
+      .fold(t => throw new CosterException(
+        s"Script cannot be executed $exp: ", exp.sourceContext.toList.headOption, Some(t)), identity)
+
+//    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
+    
     // check calc
     val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val valueFun = IR.compile[SBoolean.type](IR.getDataEnv, calcF.asRep[IR.Context => SBoolean.WrappedType])
-    val res = valueFun(calcCtx)
-    val resValue = res match {
-      case SigmaPropConstant(sb) => sb
-      case _ => res
-    }
-    resValue -> estimatedCost
+    val res = calcResult(calcCtx, calcF)
+    SigmaDsl.toSigmaBoolean(res) -> estimatedCost
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp)
+    val propTree = applyDeserializeContext(context, exp.proposition)
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
@@ -169,6 +138,7 @@ trait Interpreter extends ScorexLogging {
       case cProp: SigmaBoolean =>
         cProp match {
           case TrivialProp.TrueProp => true
+          case TrivialProp.FalseProp => false
           case _ =>
             // Perform Verifier Steps 1-3
             SigSerializer.parseAndComputeChallenges(cProp, proof) match {
@@ -187,7 +157,7 @@ trait Interpreter extends ScorexLogging {
                 util.Arrays.equals(newRoot.challenge, expectedChallenge)
             }
         }
-      case _: Value[_] => false
+//      case _: Value[_] => false
     }
     checkingResult -> cost
   }
@@ -211,7 +181,7 @@ trait Interpreter extends ScorexLogging {
     case _ => ???
   })
 
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -219,7 +189,7 @@ trait Interpreter extends ScorexLogging {
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
-  def verify(env: ScriptEnv, exp: Value[SBoolean.type],
+  def verify(env: ScriptEnv, exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -229,21 +199,23 @@ trait Interpreter extends ScorexLogging {
 
 
   //todo: do we need the method below?
-  def verify(exp: Value[SBoolean.type],
+  def verify(exp: ErgoTree,
              context: CTX,
              proof: ProofT,
              message: Array[Byte]): Try[VerificationResult] = {
     verify(Interpreter.emptyEnv, exp, context, SigSerializer.toBytes(proof), message)
   }
+
 }
 
 object Interpreter {
   type VerificationResult = (Boolean, Long)
-  type ReductionResult = (Value[SBoolean.type], Long)
+  type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]
-  val emptyEnv: ScriptEnv = Map()
+  val emptyEnv: ScriptEnv = Map.empty[String, Any]
   val ScriptNameProp = "ScriptName"
 
   def error(msg: String) = throw new InterpreterException(msg)
+
 }

@@ -1,12 +1,12 @@
 package sigmastate.utxo.examples
 
-import sigmastate.interpreter.Interpreter.ScriptNameProp
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 
@@ -23,69 +23,88 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     * Often lack of reversible payments is considered a drawback in Bitcoin. ErgoScript allows us to easily design
     * reversible payments.
     *
-    * assume Alice (alicePubKey) is the (hot) wallet of mining pool or an exchange.
+    * Use-case:
     *
-    * Bob (bobPubKey) is an account holder with the pool or exchange. He may legitimately withdraw funds anytime.
-    * The funds will be sent from a box controlled by alicePubKey. This is the normal scenario
+    *  Consider the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet.
     *
-    * However, since alicePubKey is from a hot wallet, it could get compromised. Once compromised, any funds sent
-    * from alicePubKey to some bobPubKey are not normal withdrawals and should be invalidated (aborted), provided
-    * that the breach is discovered within a certain time (example 24 hours).
+    *  Since its a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
     *
-    * In the abort scenario, we require that all withdraws are reversed and those funds are sent to a different
-    * secure address (unrelated to alicePubKey).
+    *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet by
+    *  moving them to a secure address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
     *
-    * The abort scenario would (and should) be performed by a key different from alicePubKey
-    * Assume that abort can be done by Carol (carolPubKey) only.
+    *  In order to achieve this, we require that all coins sent via the hot-wallet (both legitimate and by the attacker)
+    *  have a 24 hour cooling off period, during which the created UTXOs are "locked" and can only be spent by a trusted
+    *  private key (which is different from the hot-wallet private key)
+    *  Once this period is over, those coins become normal and can only be spent by the customer who withdrew.
     *
-    * The protocol is as follows:
-    * Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
+    *  This is achieved by storing the hot-wallet funds in a <b>Reversible Address</b>, a special type of address.
     *
-    * She then creates a wallet address using a script called walletScript, which requires that the
-    * spending condition generate a single box protected by withdrawScript
+    *  The reversible address is a P2SH address created using a script that encodes our spending condition.
+    *  The script requires that any UTXO created by spending this box can only be spent by the trusted party during the
+    *  locking period. Thus, all funds sent from such addresses have a temporary lock.
+    *
+    *  Note that reversible addresses are designed for storing large amount of funds needed for automated withdraws
+    *  (such as an exchange hot-wallet). They are NOT designed for storing funds for personal use (such as paying for a coffee).
+    *
+    *  We use the following notation in the code:
+    *
+    *  Alice is the hot-wallet with public key alicePubKey
+    *
+    *  Bob with public key bobPubKey is a customer withdrawing from Alice. This is the normal scenario
+    *
+    *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., she can reverse payments)
+    *
+    *  Once alicePubKey is compromised (i.e., a transaction spending from this key is found to be unauthorized), an "abort procedure"
+    *  is triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
+    *
+    *  A reversible address is created by Alice as follows:
+    *
+    *  1. Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
+    *  2. She then creates a script called depositScript which requires that all created boxes be protected by withdrawScript.
+    *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */
   property("Evaluation - Reversible Tx Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter // private key of trusted party who can abort withdraws
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val withdrawEnv = Map(
       ScriptNameProp -> "withdrawEnv",
-      "carolPubKey" -> carolPubKey // this pub key can reverse payments
+      "carol" -> carolPubKey // this pub key can reverse payments
     )
 
-    val withdrawScript = compileWithCosting(withdrawEnv,
+    val withdrawScript = compile(withdrawEnv,
       """{
-        |  val bobPubKey   = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
+        |  val bob         = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
         |
-        |  (bobPubKey && HEIGHT > bobDeadline) ||
-        |  (carolPubKey && HEIGHT <= bobDeadline)       // carolPubKey hardwired via withdrawEnv
-        |}""".stripMargin).asBoolValue
+        |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
+        |}""".stripMargin).asSigmaProp
 
-    val walletEnv = Map(
-      ScriptNameProp -> "walletEnv",
-      "alicePubKey" -> alicePubKey,
+    val depositEnv = Map(
+      ScriptNameProp -> "depositEnv",
+      "alice" -> alicePubKey,
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
-    val walletScript = compileWithCosting(walletEnv,
+    val depositScript = compile(depositEnv,
       """{
-        |  alicePubKey &&
-        |  OUTPUTS.size == 1 &&
-        |  blake2b256(OUTPUTS(0).propositionBytes) == withdrawScriptHash &&
-        |  OUTPUTS(0).R5[Int].get >= HEIGHT + 30       // bobDeadline stored in R5. after this height, Bob gets to spend unconditionally
+        |  alice && OUTPUTS.forall({(out:Box) =>
+        |    out.R5[Int].get >= HEIGHT + 30 &&
+        |    blake2b256(out.propositionBytes) == withdrawScriptHash
+        |  })
         |}""".stripMargin
-    ).asBoolValue
+    ).asSigmaProp
+    // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
 
-    val walletAddress = Pay2SHAddress(walletScript)
+    val depositAddress = Pay2SHAddress(depositScript)
     // The above is a "reversible wallet" address.
     // Payments sent from this wallet are all reversible for a certain time
 
@@ -96,7 +115,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     // In the example, we don't create the transaction; we just create a box below
 
 
-    val depositOutput = ErgoBox(depositAmount, walletAddress.script, depositHeight)
+    val depositOutput = ErgoBox(depositAmount, depositAddress.script, depositHeight)
 
     // Now Alice wants to give Bob some amount from the wallet in a "reversible" way.
 
@@ -112,7 +131,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val withdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(reversibleWithdrawOutput))
+    val withdrawTx = createTransaction(reversibleWithdrawOutput)
 
     val withdrawContext = ErgoLikeContext(
       currentHeight = withdrawHeight,
@@ -123,16 +142,16 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = depositOutput
     )
 
-    val proofWithdraw = alice.prove(walletEnv, walletScript, withdrawContext, fakeMessage).get.proof
+    val proofWithdraw = alice.prove(depositEnv, depositScript, withdrawContext, fakeMessage).get.proof
 
     val verifier = new ErgoLikeTestInterpreter
 
-    verifier.verify(walletEnv, walletScript, withdrawContext, proofWithdraw, fakeMessage).get._1 shouldBe true
+    verifier.verify(depositEnv, depositScript, withdrawContext, proofWithdraw, fakeMessage).get._1 shouldBe true
 
     // Possibility 1: Normal scenario
     // Bob spends after bobDeadline. He sends to Dave
 
-    val dave = new ErgoLikeTestProvingInterpreter
+    val dave = new ContextEnrichingTestProvingInterpreter
     val davePubKey = dave.dlogSecrets.head.publicImage
 
     val bobSpendAmount = 10
@@ -141,9 +160,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val bobSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(bobSpendOutput))
-
-    // val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
+    val bobSpendTx = createTransaction(bobSpendOutput)
 
     val bobSpendContext = ErgoLikeContext(
       currentHeight = bobSpendHeight,
@@ -168,9 +185,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val carolSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolSpendOutput))
-
-    // val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
+    val carolSpendTx = createTransaction(carolSpendOutput)
 
     val carolSpendContext = ErgoLikeContext(
       currentHeight = carolSpendHeight,
@@ -184,6 +199,6 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val proofCarolSpend = carol.prove(withdrawEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
 
     verifier.verify(withdrawEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
-  }
 
+  }
 }

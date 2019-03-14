@@ -1,22 +1,31 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
+import org.ergoplatform.ErgoScriptPredef.TrueProp
+import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction}
+import org.scalacheck.Arbitrary.arbByte
+import org.scalacheck.Gen
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Assertion, Matchers, PropSpec}
+import scalan.{Nullable, RType, TestContexts, TestUtils}
 import scorex.crypto.hash.Blake2b256
-import scorex.util._
-import sigmastate.Values.{EvaluatedValue, SValue, TrueLeaf, Value, GroupElementConstant}
-import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.{SGroupElement, SBoolean, SType}
+import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
+import sigma.types.{IsPrimView, PrimViewType, View}
+import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.interpreter.{CryptoConstants, Interpreter}
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
+import sigmastate.{SGroupElement, SType}
+import special.sigma._
+import spire.util.Opt
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scalan.{TestUtils, TestContexts}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -24,7 +33,7 @@ trait SigmaTestingCommons extends PropSpec
   with Matchers with TestUtils with TestContexts {
 
 
-  val fakeSelf: ErgoBox = createBox(0, TrueLeaf)
+  val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
@@ -33,31 +42,48 @@ trait SigmaTestingCommons extends PropSpec
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
-  val compiler = new SigmaCompiler(TransformingSigmaBuilder)
+  val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
 
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code, TestnetNetworkPrefix)
+  def checkSerializationRoundTrip(v: SValue): Unit = {
+    val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
+    withClue(s"(De)Serialization roundtrip failed for the tree:") {
+      ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes) shouldEqual v
+    }
   }
 
-  def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    IR.buildTree(calcF)
+  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = compiler.compileWithoutCosting(env, code)
+
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val tree = compiler.compile(env, code)
+    checkSerializationRoundTrip(tree)
+    tree
   }
 
   def createBox(value: Int,
-                proposition: Value[SBoolean.type],
+                proposition: ErgoTree,
                 additionalTokens: Seq[(TokenId, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
-    = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
+  = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
   def createBox(value: Int,
-                proposition: Value[SBoolean.type],
+                proposition: ErgoTree,
                 creationHeight: Int)
-    = ErgoBox(value, proposition, creationHeight, Seq(), Map(), Array.fill[Byte](32)(0.toByte).toModifierId)
+  = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
+
+  /**
+    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
+    * Normally, this transaction will be invalid as far as it will break rule that sum of
+    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
+    * in our test cases
+    */
+  def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
+    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
+  }
+
+  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
 
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
         case Some(name: String) =>
           emit(name, res)
@@ -65,6 +91,104 @@ trait SigmaTestingCommons extends PropSpec
       }
     }
   }
+
+  private def fromPrimView[A](in: A) = {
+    in match {
+      case IsPrimView(v) => v
+      case _ => in
+    }
+  }
+
+  def func[A: RType, B: RType](func: String)(implicit IR: IRContext): A => B = {
+    import IR._
+    import IR.Context._;
+    val tA = RType[A]
+    val tB = RType[B]
+    val tpeA = Evaluation.rtypeToSType(tA)
+    val tpeB = Evaluation.rtypeToSType(tB)
+    val code =
+      s"""{
+         |  val func = $func
+         |  val res = func(getVar[${tA.name}](1).get)
+         |  res
+         |}
+      """.stripMargin
+    val env = Interpreter.emptyEnv
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
+    val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
+    val lA = calcF.elem.eDom.liftable.asLiftable[SContext, IR.Context]
+    val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+    val valueFun = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
+
+    (in: A) => {
+      implicit val cA = tA.classTag
+      val x = fromPrimView(in)
+      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
+        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val (res, _) = valueFun(calcCtx)
+      res.asInstanceOf[B]
+//      (TransformingSigmaBuilder.unliftAny(res) match {
+//        case Nullable(x) => // x is a value extracted from Constant
+//          tB match {
+//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
+//              View.mkPrimView(x) match {
+//                case Opt(pv) => pv
+//                case _ => x // cannot wrap, so just return as is
+//              }
+//            case _ => Evaluation.toDslData(x, tpeB, isCost = false) // don't need to wrap
+//          }
+//        case _ => Evaluation.toDslData(res, tpeB, isCost = false)
+//      }).asInstanceOf[B]
+    }
+  }
+
+//  def func2[A: RType, B: RType, R: RType](func: String)(implicit IR: IRContext): (A, B) => R = {
+//    val tA = RType[A]
+//    val tB = RType[B]
+//    val tR = RType[R]
+//    val tpeA = Evaluation.rtypeToSType(tA)
+//    val tpeB = Evaluation.rtypeToSType(tB)
+//    val tpeR = Evaluation.rtypeToSType(tR)
+//    val code =
+//      s"""{
+//         |  val func = $func
+//         |  val res = func(getVar[${tA.name}](1).get, getVar[${tB.name}](2).get)
+//         |  res
+//         |}
+//      """.stripMargin
+//    val env = Interpreter.emptyEnv
+//    val interProp = compiler.typecheck(env, code)
+//    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
+//    val valueFun = IR.compile[tpeR.type](IR.getDataEnv, IR.asRep[IR.Context => tpeR.WrappedType](calcF))
+//
+//    (in1: A, in2: B) => {
+//      implicit val cA = tA.classTag
+//      implicit val cB = tB.classTag
+//      val x = fromPrimView(in1)
+//      val y = fromPrimView(in2)
+//      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
+//        .withBindings(
+//          1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA),
+//          2.toByte -> Constant[SType](y.asInstanceOf[SType#WrappedType], tpeB))
+//      val calcCtx = context.toSigmaContext(IR, isCost = false)
+//      val res = valueFun(calcCtx)
+//      (TransformingSigmaBuilder.unliftAny(res) match {
+//        case Nullable(x) => // x is a value extracted from Constant
+//          tB match {
+//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
+//              View.mkPrimView(x) match {
+//                case Opt(pv) => pv
+//                case _ => x // cannot wrap, so just return as is
+//              }
+//            case _ => x // don't need to wrap
+//          }
+//        case _ => res
+//      }).asInstanceOf[R]
+//    }
+//  }
 
   def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
     try {
@@ -74,7 +198,7 @@ trait SigmaTestingCommons extends PropSpec
     catch {
       case e: Throwable =>
         if (!assertion(e))
-          fail(s"exception check failed on $e (caused by: ${e.getCause}")
+          fail(s"exception check failed on $e (root cause: ${rootCause(e)})")
     }
   }
 
@@ -82,4 +206,27 @@ trait SigmaTestingCommons extends PropSpec
   final def rootCause(t: Throwable): Throwable =
     if (t.getCause == null) t
     else rootCause(t.getCause)
+
+  protected def roundTripTest[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+    // using default sigma reader/writer
+    val bytes = serializer.toBytes(v)
+    bytes.nonEmpty shouldBe true
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+
+    // using ergo's(scorex) reader/writer
+    val w = new VLQByteStringWriter()
+    serializer.serializeWithGenericWriter(v, w)
+    val byteStr = w.result()
+    byteStr.nonEmpty shouldBe true
+    serializer.parseWithGenericReader(new VLQByteStringReader(byteStr)) shouldEqual v
+  }
+
+  protected def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
+    val randomBytesCount = Gen.chooseNum(1, 20).sample.get
+    val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
+    val bytes = serializer.toBytes(v)
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+  }
+
 }

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoLikeContext
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 
@@ -15,10 +15,10 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   property("basic threshold compilation/execution") {
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val skA = proverA.dlogSecrets.head
@@ -45,16 +45,16 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
 
     // Basic compilation
-    val compiledProp1 = compileWithCosting(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
+    val compiledProp1 = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""")
     val prop1 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp1 shouldBe prop1
 
     // this example is from the white paper
-    val compiledProp2 = compileWithCosting(env,
+    val compiledProp2 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(array.size, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
 
 
     val prop2 = AtLeast(IntConstant(3),
@@ -69,15 +69,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
       prover.prove(compiledProp2, ctx, fakeMessage).isFailure shouldBe true
     }
 
-    val prop2And = AND(pubkeyA, pubkeyB, pubkeyC)
+    val prop2And = CAND(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp2).get._1 shouldBe proverA.reduceToCrypto(ctx, prop2And).get._1
 
     // this example is from the white paper
-    val compiledProp3 = compileWithCosting(env,
+    val compiledProp3 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(1, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
     val prop3 = AtLeast(1, pubkeyA, pubkeyB, pubkeyC)
     compiledProp3 shouldBe prop3
 
@@ -88,14 +88,14 @@ class ThresholdSpecification extends SigmaTestingCommons {
     }
     proverD.prove(compiledProp3, ctx, fakeMessage).isFailure shouldBe true
 
-    val prop3Or = OR(pubkeyA, pubkeyB, pubkeyC)
+    val prop3Or = COR(Seq(pubkeyA, pubkeyB, pubkeyC)).toSigmaProp
     proverA.reduceToCrypto(ctx, compiledProp3).get._1 shouldBe proverA.reduceToCrypto(ctx, prop3Or).get._1
 
-    val compiledProp4 = compileWithCosting(env,
+    val compiledProp4 = compile(env,
       """{
         |    val array = Coll(pubkeyA, pubkeyB, pubkeyC)
         |    atLeast(2, array)
-        |}""".stripMargin).asBoolValue
+        |}""".stripMargin).asSigmaProp
     val prop4 = AtLeast(2, pubkeyA, pubkeyB, pubkeyC)
     compiledProp4 shouldBe prop4
 
@@ -112,7 +112,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("threshold reduce to crypto") {
     import TrivialProp._
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val ctx = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -235,15 +235,15 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
   property("3-out-of-6 threshold") {
     // This example is from the white paper
-    val proverA = new ErgoLikeTestProvingInterpreter
-    val proverB = new ErgoLikeTestProvingInterpreter
-    val proverC = new ErgoLikeTestProvingInterpreter
-    val proverD = new ErgoLikeTestProvingInterpreter
-    val proverE = new ErgoLikeTestProvingInterpreter
-    val proverF = new ErgoLikeTestProvingInterpreter
-    val proverG = new ErgoLikeTestProvingInterpreter
-    val proverH = new ErgoLikeTestProvingInterpreter
-    val proverI = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
+    val proverB = new ContextEnrichingTestProvingInterpreter
+    val proverC = new ContextEnrichingTestProvingInterpreter
+    val proverD = new ContextEnrichingTestProvingInterpreter
+    val proverE = new ContextEnrichingTestProvingInterpreter
+    val proverF = new ContextEnrichingTestProvingInterpreter
+    val proverG = new ContextEnrichingTestProvingInterpreter
+    val proverH = new ContextEnrichingTestProvingInterpreter
+    val proverI = new ContextEnrichingTestProvingInterpreter
 
     val skA = proverA.dlogSecrets.head
     val skB = proverB.dlogSecrets.head
@@ -269,8 +269,8 @@ class ThresholdSpecification extends SigmaTestingCommons {
     val env = Map("pkA" -> pkA, "pkB" -> pkB, "pkC" -> pkC,
       "pkD" -> pkD, "pkE" -> pkE, "pkF" -> pkF,
       "pkG" -> pkG, "pkH" -> pkH, "pkI" -> pkI)
-    val compiledProp = compileWithCosting(env,
-      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asBoolValue
+    val compiledProp = compile(env,
+      """atLeast(3, Coll (pkA, pkB, pkC, pkD && pkE, pkF && pkG, pkH && pkI))""").asSigmaProp
     val prop = AtLeast(3, pkA, pkB, pkC, SigmaAnd(pkD, pkE), SigmaAnd(pkF, pkG), SigmaAnd(pkH, pkI))
 
     compiledProp shouldBe prop
@@ -325,7 +325,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     // the integer indicates how many subpropositions the prover can prove
-    var provers = Seq[(Int, ErgoLikeTestProvingInterpreter)]((0, new ErgoLikeTestProvingInterpreter))
+    var provers = Seq[(Int, ContextEnrichingTestProvingInterpreter)]((0, new ContextEnrichingTestProvingInterpreter))
     // create 32 different provers
     for (i <- secrets.indices) {
       provers = provers ++ provers.map(p => (p._1 + 1, p._2.withSecrets(secrets(i))))
@@ -340,13 +340,13 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
     val verifier = new ErgoLikeTestInterpreter
 
-    def canProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      val proof = prover.prove(proposition.isProven, ctx, fakeMessage).get
-      verifier.verify(proposition.isProven, ctx, proof, fakeMessage).get._1 shouldBe true
+    def canProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+      val proof = prover.prove(proposition, ctx, fakeMessage).get
+      verifier.verify(proposition, ctx, proof, fakeMessage).get._1 shouldBe true
     }
 
-    def cannotProve(prover: ErgoLikeTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
-      prover.prove(proposition.isProven, ctx, fakeMessage).isFailure shouldBe true
+    def cannotProve(prover: ContextEnrichingTestProvingInterpreter, proposition: SigmaPropValue): Unit = {
+      prover.prove(proposition, ctx, fakeMessage).isFailure shouldBe true
     }
 
 
@@ -403,22 +403,22 @@ class ThresholdSpecification extends SigmaTestingCommons {
   }
 
   property("fail compilation when input limit exceeded") {
-    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverA = new ContextEnrichingTestProvingInterpreter
     val skA = proverA.dlogSecrets.head
     val pubkeyA = skA.publicImage
     val keyName = "pubkeyA"
     val env = Map(keyName -> pubkeyA)
     val pubKeysStrExceeding = Array.fill[String](AtLeast.MaxChildrenCount + 1)(keyName).mkString(",")
-    an[CosterException] should be thrownBy compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
+    an[CosterException] should be thrownBy compile(env, s"""atLeast(2, Coll($pubKeysStrExceeding))""")
     an[CosterException] should be thrownBy
-      compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
+      compile(env, s"""{ val arr = Coll($pubKeysStrExceeding); atLeast(2, arr) }""")
 
     // max children should work fine
     val pubKeysStrMax = Array.fill[String](AtLeast.MaxChildrenCount)(keyName).mkString(",")
-    compileWithCosting(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
-    compileWithCosting(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
+    compile(env, s"""atLeast(2, Coll($pubKeysStrMax))""")
+    compile(env, s"""{ val arr = Coll($pubKeysStrMax); atLeast(2, arr) }""")
 
     // collection with unknown items should pass
-    compileWithCosting(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
+    compile(env, s"""atLeast(2, getVar[Coll[SigmaProp]](1).get)""")
   }
 }

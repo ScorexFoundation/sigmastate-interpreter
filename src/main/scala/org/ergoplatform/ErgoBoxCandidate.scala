@@ -10,13 +10,27 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
-import sigmastate.serialization.{ErgoTreeSerializer, Serializer, ValueSerializer}
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utils.Extensions._
 
+import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime
 
+/**
+  * Contains the same fields as `org.ergoplatform.ErgoBox`, except if transaction id and index,
+  * that will be calculated after full transaction formation.
+  *
+  * @see org.ergoplatform.ErgoBox for more details
+  *
+  * @param value               - amount of money associated with the box
+  * @param ergoTree            - guarding script, which should be evaluated to true in order to open this box
+  * @param creationHeight      - height when a transaction containing the box was created.
+  *                            This height is declared by user and should not exceed height of the block,
+  *                            containing the transaction with this box.
+  * @param additionalTokens    - secondary tokens the box contains
+  * @param additionalRegisters - additional registers the box can carry over
+  */
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
@@ -29,12 +43,12 @@ class ErgoBoxCandidate(val value: Long,
 
   lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
-  val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(ergoTree.proposition)
+  lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
-  def toBox(txId: ModifierId, boxId: Short) =
-    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxId)
+  def toBox(txId: ModifierId, boxIndex: Short) =
+    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxIndex)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -64,26 +78,26 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1)+":"+t._2).mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
 object ErgoBoxCandidate {
 
-  object serializer extends Serializer[ErgoBoxCandidate, ErgoBoxCandidate] {
+  object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
-                                        digestsInTx: Option[Array[Digest32]],
+                                        tokensInTx: Option[Array[ofByte]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
-        if (digestsInTx.isDefined) {
-          val digestIndex = digestsInTx.get.indexOf(id)
-          if (digestIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
-          w.putUInt(digestIndex)
+        if (tokensInTx.isDefined) {
+          val tokenIndex = tokensInTx.get.indexOf(new ofByte(id))
+          if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
+          w.putUInt(tokenIndex)
         } else {
           w.putBytes(id)
         }
@@ -109,7 +123,7 @@ object ErgoBoxCandidate {
       }
     }
 
-    override def serializeBody(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {
+    override def serialize(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
@@ -139,8 +153,9 @@ object ErgoBoxCandidate {
       new ErgoBoxCandidate(value, tree, creationHeight, addTokens, regs)
     }
 
-    override def parseBody(r: SigmaByteReader): ErgoBoxCandidate = {
+    override def parse(r: SigmaByteReader): ErgoBoxCandidate = {
       parseBodyWithIndexedDigests(None, r)
     }
   }
+
 }

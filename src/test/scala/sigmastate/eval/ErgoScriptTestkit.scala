@@ -1,17 +1,20 @@
 package sigmastate.eval
 
+import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+
 import scala.util.Success
-import sigmastate.{AvlTreeData, SInt, SLong, SType}
-import sigmastate.Values.{BigIntArrayConstant, Constant, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import sigmastate.{SInt, AvlTreeData, SLong, SType}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
 import sigmastate.utxo.CostTable
-import special.sigma.{ContractsTestkit, Box => DBox, Context => DContext, SigmaContract => DContract, TestBox => DTestBox, TestContext => DTestContext}
 import scalan.BaseCtxTests
-import sigmastate.lang.LangTests
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.lang.{LangTests, SigmaCompiler}
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.serialization.{ConstantStore, ErgoTreeSerializer}
+import sigmastate.serialization.ErgoTreeSerializer
+import special.sigma.{ContractsTestkit, Context => DContext, _}
+import special.sigma.Extensions._
 
 import scala.language.implicitConversions
 
@@ -23,12 +26,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   import IR._
   import Liftables._
   import Context._
-  import WBigInteger._
+  import Size._
+//  import WBigInteger._
+  import BigInt._
 
-
+  lazy val compiler = new SigmaCompiler(TestnetNetworkPrefix, IR.builder)
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
-    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
+    val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))
     val ergoCtx = ErgoLikeContext(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -47,28 +52,29 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
   lazy val dsl = sigmaDslBuilder
-  lazy val bigSym = liftConst(big)
-  lazy val n1Sym = liftConst(n1)
+  lazy val dslValue = sigmaDslBuilderValue
+  lazy val bigSym = liftConst(dslValue.BigInt(big))
+  lazy val n1Sym = liftConst(dslValue.BigInt(n1))
 
   val timeout = 100
   val minToRaise = 1000L
   val backerPubKeyId = 1.toByte
   val projectPubKeyId = 2.toByte
-  lazy val backerProver = new ErgoLikeTestProvingInterpreter
-  lazy val projectProver = new ErgoLikeTestProvingInterpreter
+  lazy val backerProver = new ContextEnrichingTestProvingInterpreter
+  lazy val projectProver = new ContextEnrichingTestProvingInterpreter
   lazy val backerPubKey = backerProver.dlogSecrets.head.publicImage
   lazy val projectPubKey = projectProver.dlogSecrets.head.publicImage
   lazy val ctxVars = contextVars(Map(
-    backerPubKeyId -> backerPubKey,
-    projectPubKeyId -> projectPubKey,
-    3.toByte -> bigIntArr1
-  )).arr
+    backerPubKeyId -> backerPubKey.toAnyValue,
+    projectPubKeyId -> projectPubKey.toAnyValue,
+    3.toByte -> toAnyValue(bigIntegerArr1)
+  )).toArray
 
-  val boxToSpend = ErgoBox(10, TrueLeaf, 0,
-    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntArr1)))
+  val boxToSpend = ErgoBox(10, ErgoScriptPredef.TrueProp, 0,
+    additionalRegisters = Map(ErgoBox.R4 -> BigIntArrayConstant(bigIntegerArr1)))
   lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
-  lazy val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+  lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
   lazy val ergoCtx = ErgoLikeContext(
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -79,7 +85,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     extension = ContextExtension(Map(
       backerPubKeyId -> SigmaPropConstant(backerPubKey),
       projectPubKeyId -> SigmaPropConstant(projectPubKey),
-      3.toByte -> BigIntArrayConstant(bigIntArr1)
+      3.toByte -> BigIntArrayConstant(bigIntegerArr1)
     )))
 
   case class Result(calc: Option[Any], cost: Option[Int], size: Option[Long])
@@ -108,6 +114,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       printGraphs: Boolean = true,
       measureTime: Boolean = false)
   {
+    lazy val tree = script match {
+      case Code(code) => compiler.typecheck(env, code)
+      case Tree(t) => t
+    }
     lazy val expectedCalcF = expectedCalc.map(f => fun(removeIsProven(f)))
     lazy val expectedCostF = expectedCost.map(fun(_))
     lazy val expectedSizeF = expectedSize.map(fun(_))
@@ -126,12 +136,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       case _ => Pair(xs.head, pairify(xs.tail))
     }
 
-    def doCosting: Rep[(Context => Any, (Context => Int, Context => Long))] = {
-      val costed = script match {
-        case Code(code) => cost(env, code)
-        case Tree(tree) => cost(env, tree)
-      }
-      val res @ Tuple(calcF, costF, sizeF) = split3(costed.asRep[Context => Costed[Any]])
+    def doCosting: Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] = {
+      val costed = cost[Any](env, tree)
+      val calcF = costed.sliceCalc
+      val costF = fun { sCtx: RSize[Context] => costed.sliceCost(Pair(0, sCtx)) }
+      val sizeF = fun { sCtx: RSize[Context] => costed.sliceSize(sCtx).dataSize }
+      val res = Tuple(calcF, costF, sizeF)
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
@@ -153,8 +163,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     }
 
     def doReduce(): Unit = {
-      val Tuple(calcF, costF, sizeF) = doCosting
-      verifyCostFunc(costF) shouldBe Success(())
+      val Pair(calcF, Pair(costF, sizeF)) = doCosting
+      verifyCostFunc(asRep[Any => Int](costF)) shouldBe Success(())
       verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
@@ -175,25 +185,23 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
 
         // check cost
         val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
-        val costFun = IR.compile[SInt.type](getDataEnv, costF)
-        val IntConstant(estimatedCost) = costFun(costCtx)
-        checkExpected(estimatedCost, expectedResult.cost,
-          "Cost evaluation: estimatedCost = %s, expectedResult.cost = %s")
-        (estimatedCost < CostTable.ScriptLimit) shouldBe true
+        val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
 
         // check size
-        val sizeFun = IR.compile[SLong.type](getDataEnv, sizeF)
-        val LongConstant(estimatedSize) = sizeFun(costCtx)
-        checkExpected(estimatedSize, expectedResult.size,
-          "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
-        )
+        {
+          val lA = sizeF.elem.eDom.liftable.asLiftable[SSize[SContext], Size[Context]]
+          val sizeFun = IR.compile[SSize[SContext], Long, Size[Context], Long](getDataEnv, sizeF)(lA, liftable[Long, Long])
+          val estimatedSize = sizeFun(Sized.sizeOf(costCtx))
+          checkExpected(estimatedSize, expectedResult.size,
+            "Size evaluation: estimatedSize = %s, expectedResult.size: %s"
+          )
+        }
 
         // check calc
-        val valueFun = IR.compile[SType](getDataEnv, calcF.asRep[Context => SType#WrappedType])
-        val res = valueFun(calcCtx) match {
-          case Constant(res: Any, _) => res
-          case v => v
-        }
+        val lA = calcF.elem.eDom.liftable.asLiftable[SContext, Context]
+        val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+        val valueFun = IR.compile(getDataEnv, calcF)(lA, lB)
+        val (res, _) = valueFun(calcCtx)
         checkExpected(res, expectedResult.calc,
           "Calc evaluation:\n value = %s,\n expectedResult.calc: %s\n")
       }
@@ -224,13 +232,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def checkInEnv(env: ScriptEnv, name: String, script: String,
                  expectedCalc: Rep[Context] => Rep[Any],
                  expectedCost: Rep[Context] => Rep[Int] = null,
-                 expectedSize: Rep[Context] => Rep[Long] = null
-                ): Rep[(Context => Any, (Context => Int, Context => Long))] =
+                 expectedSize: Rep[Context] => Rep[Long] = null,
+                 printGraphs: Boolean = true
+                ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
     val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
       Option(expectedCost),
-      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs = true )
+      Option(expectedSize), expectedTree = None, expectedResult = NoResult, printGraphs)
     val res = tc.doCosting
     res
   }
@@ -238,10 +247,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   def check(name: String, script: String,
       expectedCalc: Rep[Context] => Rep[Any],
       expectedCost: Rep[Context] => Rep[Int] = null,
-      expectedSize: Rep[Context] => Rep[Long] = null
-      ): Rep[(Context => Any, (Context => Int, Context => Long))] =
+      expectedSize: Rep[Context] => Rep[Long] = null,
+      printGraphs: Boolean = true
+      ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
-    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize)
+    checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
   }
 
   def reduce(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext, expectedResult: Any): Unit = {
@@ -254,11 +264,19 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
     tcase.doReduce()
   }
 
+  def compileAndCost[T](env: ScriptEnv, code: String): Rep[Costed[Context] => Costed[T]] = {
+    val typed = compiler.typecheck(env, code)
+    cost[T](env, typed)
+  }
+
   def build(env: ScriptEnv, name: String, script: String, expected: SValue): Unit = {
-    val costed = cost(env, script)
-    val Tuple(valueF, costF, sizeF) = split3(costed)
+    val costed = compileAndCost[Any](env, script)
+    val valueF = costed.sliceCalc(true)
+    val costF  = costed.sliceCost
+    val sizeF  = costed.sliceSize
+    
     emit(name, valueF, costF, sizeF)
-    verifyCostFunc(costF) shouldBe(Success(()))
+    verifyCostFunc(asRep[Any => Int](costF)) shouldBe(Success(()))
     verifyIsProven(valueF) shouldBe(Success(()))
     IR.buildTree(valueF) shouldBe expected
   }

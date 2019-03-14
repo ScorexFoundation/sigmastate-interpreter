@@ -6,27 +6,27 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.annotation.tailrec
 
-class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends Serializer[Operation, Operation] {
+class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends SigmaSerializer[Operation, Operation] {
 
   def parseSeq(r: SigmaByteReader): Seq[Operation] = {
     @tailrec
-    def parse(r: SigmaByteReader, acc: Seq[Operation]): Seq[Operation] = if (r.remaining > 0) {
-      val op = parseBody(r)
-      parse(r, op +: acc)
+    def parseOps(r: SigmaByteReader, acc: Seq[Operation]): Seq[Operation] = if (r.remaining > 0) {
+      val op = parse(r)
+      parseOps(r, op +: acc)
     } else {
       acc.reverse
     }
 
-    parse(r, Seq())
+    parseOps(r, Seq())
   }
 
   def serializeSeq(ops: Seq[Operation]): Array[Byte] = {
-    val w = Serializer.startWriter()
-    ops.foreach(o => serializeBody(o, w))
+    val w = SigmaSerializer.startWriter()
+    ops.foreach(o => serialize(o, w))
     w.toBytes
   }
 
-  override def parseBody(r: SigmaByteReader): Operation = {
+  override def parse(r: SigmaByteReader): Operation = {
     def parseValue(): ADValue = {
       val vl: Int = valueLengthOpt.getOrElse(r.getShort())
       ADValue @@ r.getBytes(vl)
@@ -43,7 +43,7 @@ class OperationSerializer(keyLength: Int, valueLengthOpt: Option[Int]) extends S
     }
   }
 
-  override def serializeBody(o: Operation, w: SigmaByteWriter): Unit = {
+  override def serialize(o: Operation, w: SigmaByteWriter): Unit = {
     def serializeKey(tp: Byte, key: Array[Byte]): Unit = {
       w.put(tp)
       w.putBytes(key)

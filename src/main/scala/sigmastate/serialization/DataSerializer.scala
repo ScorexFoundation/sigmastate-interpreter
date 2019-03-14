@@ -6,8 +6,9 @@ import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utils.Extensions._
+import scorex.util.Extensions._
 import sigmastate._
+import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.collection.mutable
@@ -31,28 +32,28 @@ object DataSerializer {
       w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
-      GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
+      GroupElementSerializer.serialize(v.asInstanceOf[EcPointType], w)
     case SSigmaProp =>
       val p = v.asInstanceOf[SigmaBoolean]
-      w.putValue(p)
+      SigmaBoolean.serializer.serialize(p, w)
     case SBox =>
-      ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
+      ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
-      AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
-    case tCol: SCollectionType[a] =>
-      val arr = v.asInstanceOf[tCol.WrappedType]
+      AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTreeData], w)
+    case tColl: SCollectionType[a] =>
+      val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
-      tCol.elemType match {
+      tColl.elemType match {
         case SBoolean =>
           w.putBits(arr.asInstanceOf[Array[Boolean]])
         case SByte =>
           w.putBytes(arr.asInstanceOf[Array[Byte]])
         case _ =>
-          arr.foreach(x => serialize(x, tCol.elemType, w))
+          arr.foreach(x => serialize(x, tColl.elemType, w))
       }
 
     case t: STuple =>
-      val arr = v.asInstanceOf[t.WrappedType]
+      val arr = Evaluation.fromDslTuple(v, t).asInstanceOf[t.WrappedType]
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
@@ -82,20 +83,19 @@ object DataSerializer {
       val valueBytes = r.getBytes(size)
       new BigInteger(valueBytes)
     case SGroupElement =>
-      GroupElementSerializer.parseBody(r)
+      GroupElementSerializer.parse(r)
     case SSigmaProp =>
-      val p = r.getValue().asInstanceOf[SigmaBoolean]
-      p
+      SigmaBoolean.serializer.parse(r)
     case SBox =>
-      ErgoBox.serializer.parseBody(r)
+      ErgoBox.sigmaSerializer.parse(r)
     case SAvlTree =>
-      AvlTreeData.serializer.parseBody(r)
-    case tCol: SCollectionType[a] =>
+      AvlTreeData.serializer.parse(r)
+    case tColl: SCollectionType[a] =>
       val len = r.getUShort()
-      if (tCol.elemType == SByte)
+      if (tColl.elemType == SByte)
         r.getBytes(len)
       else
-        deserializeArray(len, tCol.elemType, r)
+        deserializeArray(len, tColl.elemType, r)
     case tuple: STuple =>
       val arr =  tuple.items.map { t =>
         deserialize(t, r)

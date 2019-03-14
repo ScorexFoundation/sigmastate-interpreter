@@ -1,63 +1,61 @@
 package sigmastate
 
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Matchers}
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
 import Interpreter._
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.utxo.CostTable
 import sigmastate.lang.Terms._
-import sigmastate.eval.{IRContext, CostingDataContext, Evaluation, CostingBox}
-import special.sigma
-import org.ergoplatform.{Height, ErgoBox, ErgoLikeContext}
+import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.serialization.ValueSerializer
-import special.sigma.{AnyValue, Box, TestAvlTree}
 import TrivialProp._
 
 import scala.util.Random
 
-
-
 class TestingInterpreterSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-
-  lazy val TestingInterpreter = new TestingInterpreter
-  import TestingInterpreter._
+  lazy val prover = new ErgoLikeTestProvingInterpreter()
+  lazy val verifier = new ErgoLikeTestInterpreter
 
   implicit val soundness = CryptoConstants.soundnessBits
+  
+  def testingContext(h: Int) =
+    ErgoLikeContext(h,
+      AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
+      ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty),
+      fakeSelf)
 
   property("Reduction to crypto #1") {
     forAll() { (h: Int) =>
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
-        val ctx = TestingContext(h)
-        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
+        val ctx = testingContext(h)
+        prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
           matchPattern { case sb: SigmaBoolean => })
-        reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
+        prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
           matchPattern { case sb: SigmaBoolean => })
 
         {
-          val res = reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
           res should matchPattern { case FalseProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
 
         {
-          val res = reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
-        reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1 should(
-          matchPattern { case sb: SigmaBoolean => })
+        {
+          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
+          res should matchPattern { case sb: SigmaBoolean => }
+        }
       }
     }
   }
@@ -70,25 +68,25 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         val dk1 = DLogProverInput.random().publicImage.isProven
         val dk2 = DLogProverInput.random().publicImage.isProven
 
-        val ctx = TestingContext(h)
+        val ctx = testingContext(h)
 
-        assert(reduceToCrypto(ctx, OR(
+        assert(prover.reduceToCrypto(ctx, OR(
                   AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[CAND])
 
 
-        assert(reduceToCrypto(ctx, OR(
+        assert(prover.reduceToCrypto(ctx, OR(
                   AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
                   AND(GT(Height, IntConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
-        reduceToCrypto(ctx, OR(
+        prover.reduceToCrypto(ctx, OR(
           AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
           AND(GT(Height, IntConstant(h + 1)), dk1)
         )).get._1 shouldBe FalseProp
 
-        reduceToCrypto(ctx,
+        prover.reduceToCrypto(ctx,
           OR(
             OR(
               AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
@@ -106,23 +104,23 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val reg1 = ErgoBox.nonMandatoryRegisters.head
     val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
-    val dk1 = ProveDlog(secrets(0).publicImage.h)
-    val dk2 = ProveDlog(secrets(1).publicImage.h)
-    val ctx = TestingContext(99)
+    val dk1 = prover.dlogSecrets(0).publicImage
+    val dk2 = prover.dlogSecrets(1).publicImage
+    val ctx = testingContext(99)
     val env = Map(
       "dk1" -> dk1,
       "dk2" -> dk2,
       "bytes1" -> Array[Byte](1, 2, 3),
       "bytes2" -> Array[Byte](4, 5, 6),
-      "box1" -> ErgoBox(10, TrueLeaf, 0, Seq(), Map(
+      "box1" -> ErgoBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compileWithCosting(env, code).asBoolValue
+    val prop = compile(env, code).asBoolValue.toSigmaProp
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
-    val proof1 = TestingInterpreter.prove(prop, ctx, challenge).get.proof
-    verify(Interpreter.emptyEnv, prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    val proof1 = prover.prove(prop, ctx, challenge).get.proof
+    verifier.verify(Interpreter.emptyEnv, prop, ctx, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
   }
 
   property("Evaluate array ops") {
@@ -203,10 +201,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
-      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
+      testEval(s"OUTPUTS.size.toByte.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toShort.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toInt.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toLong.$castSuffix == 0.$castSuffix")
     }
     testWithCasting("toByte")
     testWithCasting("toShort")
@@ -252,83 +250,83 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluation example #1") {
-    val dk1 = ProveDlog(secrets(0).publicImage.h).isProven
-    val dk2 = ProveDlog(secrets(1).publicImage.h).isProven
+    val dk1 = prover.dlogSecrets(0).publicImage.isProven
+    val dk2 = prover.dlogSecrets(1).publicImage.isProven
 
-    val env1 = TestingContext(99)
-    val env2 = TestingContext(101)
+    val env1 = testingContext(99)
+    val env2 = testingContext(101)
 
     val prop = OR(
       AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
       AND(GT(Height, IntConstant(100)), dk1)
-    )
+    ).toSigmaProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
-    val proof1 = TestingInterpreter.prove(prop, env1, challenge).get.proof
+    val proof1 = prover.prove(prop, env1, challenge).get.proof
 
-    verify(emptyEnv, prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
+    verifier.verify(emptyEnv, prop, env1, proof1, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    verify(emptyEnv, prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
+    verifier.verify(emptyEnv, prop, env2, proof1, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("Evaluation - no real proving - true case") {
-    val prop1 = TrueLeaf
+    val prop1 = ErgoScriptPredef.TrueProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
-    val env = TestingContext(99)
+    val env = testingContext(99)
 
-    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verifier.verify(prop1, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
-    val prop2 = OR(TrueLeaf, FalseLeaf)
-    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    val prop2 = OR(TrueLeaf, FalseLeaf).toSigmaProp
+    verifier.verify(prop2, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
-    val prop3 = AND(TrueLeaf, TrueLeaf)
-    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    val prop3 = AND(TrueLeaf, TrueLeaf).toSigmaProp
+    verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
 
-    val prop4 = GT(Height, IntConstant(90))
-    verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    val prop4 = GT(Height, IntConstant(90)).toSigmaProp
+    verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe true
   }
 
   property("Evaluation - no real proving - false case") {
-    val prop1 = FalseLeaf
+    val prop1 = ErgoScriptPredef.FalseProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
-    val env = TestingContext(99)
+    val env = testingContext(99)
 
-    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    verifier.verify(prop1, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop2 = OR(FalseLeaf, FalseLeaf)
-    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    val prop2 = OR(FalseLeaf, FalseLeaf).toSigmaProp
+    verifier.verify(prop2, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop3 = AND(FalseLeaf, TrueLeaf)
-    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
+    verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop4 = GT(Height, LongConstant(100))
-    verify(prop4, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    val prop4 = GT(Height, LongConstant(100)).toSigmaProp
+    verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
   }
 
   property("Evaluation - hash function") {
     val bytes = "hello world".getBytes
     val hash = Blake2b256(bytes)
 
-    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop1 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
     val proof = NoProof
-    val env = TestingContext(99)
+    val env = testingContext(99)
 
-    verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
+    verifier.verify(prop1, env, proof, challenge).map(_._1).getOrElse(false) shouldBe true
 
-    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash))
+    val prop2 = NEQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(hash)).toSigmaProp
 
-    verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    verifier.verify(prop2, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
 
-    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes))
+    val prop3 = EQ(CalcBlake2b256(ByteArrayConstant(bytes)), ByteArrayConstant(bytes)).toSigmaProp
 
-    verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
+    verifier.verify(prop3, env, proof, challenge).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("passing a lambda argument") {
@@ -355,7 +353,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     // block with nested lambda (assigned to a val)
     testEval(
       """ Coll[Int](1,2,3).exists { (a: Int) =>
-        |   val g = { (c: Int) => c == 1 }
+        |   def g(c: Int) = c == 1
         |   Coll[Int](1).exists(g)
         | } == true """.stripMargin)
   }
@@ -366,31 +364,3 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 }
 
-
-case class TestingContext(height: Int,
-                          override val extension: ContextExtension = ContextExtension(values = Map())
-                         ) extends Context {
-  override def withExtension(newExtension: ContextExtension): TestingContext = this.copy(extension = newExtension)
-
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean): sigma.Context = {
-    val inputs = Array[Box]()
-    val outputs = Array[Box]()
-    val vars = Array[AnyValue]()
-    val noBytes = IR.sigmaDslBuilderValue.Cols.fromArray[Byte](Array[Byte]())
-    val emptyAvlTree = TestAvlTree(noBytes, 0, None, None, None)
-    new CostingDataContext(IR, inputs, outputs, height, selfBox = null,
-      lastBlockUtxoRootHash = emptyAvlTree, minerPubKey = ErgoLikeContext.dummyPubkey,
-      vars = vars, isCost = isCost)
-  }
-
-}
-
-/** An interpreter for tests with 2 random secrets*/
-class TestingInterpreter(implicit val IR: IRContext) extends Interpreter with ProverInterpreter {
-  override type CTX = TestingContext
-
-  override val maxCost = CostTable.ScriptLimit
-
-  override lazy val secrets: Seq[DLogProverInput] =
-    Seq(DLogProverInput.random(), DLogProverInput.random())
-}

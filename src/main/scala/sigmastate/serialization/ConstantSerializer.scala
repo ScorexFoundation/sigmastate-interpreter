@@ -5,7 +5,6 @@ import sigmastate.Values._
 import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utils.Extensions._
 import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate.utxo.CostTable.Cost
 
@@ -15,11 +14,9 @@ case class ConstantSerializer(builder: SigmaBuilder)
 
   val opCode: OpCode = OpCodes.ConstantCode
 
-  override def opCost(opId: OperationId) = Cost.ConstantNode
+  override def opCost(opId: OperationId): Int = Cost.ConstantNode
 
-  def parseBody(r: SigmaByteReader): Value[SType] = deserialize(r)
-
-  def serializeBody(obj: Constant[SType], w: SigmaByteWriter): Unit = serialize(obj, w)
+  override def parse(r: SigmaByteReader): Value[SType] = deserialize(r)
 
   override def serialize(c: Constant[SType], w: SigmaByteWriter): Unit = {
     w.putType(c.tpe)
@@ -31,5 +28,6 @@ case class ConstantSerializer(builder: SigmaBuilder)
     val obj = DataSerializer.deserialize(tpe, r)
     builder.mkConstant(obj, tpe)
   }
+
 }
 

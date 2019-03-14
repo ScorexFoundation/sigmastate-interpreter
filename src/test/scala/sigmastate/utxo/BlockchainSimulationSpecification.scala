@@ -3,8 +3,6 @@ package sigmastate.utxo
 import java.io.{FileWriter, File}
 
 import org.ergoplatform
-import org.ergoplatform.ErgoLikeContext.Metadata
-import org.ergoplatform.ErgoLikeContext.Metadata._
 import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
@@ -14,12 +12,11 @@ import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.helpers.{SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoTransactionValidator}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.{GE, AvlTreeData}
+import sigmastate.{GE, AvlTreeData, AvlTreeFlags}
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
@@ -48,7 +45,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         box,
         ContextExtension.empty)
       val env = emptyEnv + (ScriptNameProp -> s"height_${state.state.currentHeight}_prove")
-      val proverResult = miner.prove(env, box.proposition, context, tx.messageToSign).get
+      val proverResult = miner.prove(env, box.ergoTree, context, tx.messageToSign).get
 
       tx.toSigned(IndexedSeq(proverResult))
     }.toIndexedSeq.ensuring(_.nonEmpty, s"Failed to create txs from boxes $boxesToSpend at height $height")
@@ -205,7 +202,7 @@ object BlockchainSimulationSpecification {
       assert(blockCost <= maxCost, s"Block cost $blockCost exceeds limit $maxCost")
 
       boxesReader.applyBlock(block)
-      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(startingDigest = boxesReader.digest))
+      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = boxesReader.digest))
       ValidationState(newState, boxesReader)
     }
   }
@@ -216,7 +213,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)), 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey
@@ -227,7 +224,7 @@ object BlockchainSimulationSpecification {
       val prover = new BatchProver(keySize, None)
 
       val digest = prover.digest
-      val utxoRoot = AvlTreeData(digest, keySize)
+      val utxoRoot = AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, keySize)
 
       val bs = BlockchainState(currentHeight = -2, utxoRoot)
 

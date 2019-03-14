@@ -25,10 +25,10 @@ class BlockSerializerSpecification extends SerializationSpecification {
       val store = new ConstantStore(IndexedSeq())
       val placeholder = store.put(v.asInstanceOf[Constant[SType]])
       val s = ConstantPlaceholderSerializer(DeserializationSigmaBuilder.mkConstantPlaceholder)
-      val w = Serializer.startWriter()
-      s.serializeBody(placeholder, w)
-      val r = Serializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false)
-      s.parseBody(r) shouldEqual placeholder
+      val w = SigmaSerializer.startWriter()
+      s.serialize(placeholder, w)
+      val r = SigmaSerializer.startReader(w.toBytes, store, resolvePlaceholdersToConstants = false)
+      s.parse(r) shouldEqual placeholder
     }
   }
 

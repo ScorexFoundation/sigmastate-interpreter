@@ -1,9 +1,10 @@
 package sigmastate
 
-import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import sigmastate.SCollection.{SIntArray, SByteArray}
+import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer
@@ -15,7 +16,8 @@ import scala.collection.mutable.ArrayBuffer
   * AND conjunction for sigma propositions
   */
 case class CAND(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is used for AND operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.AndCode
 }
 object CAND {
   import TrivialProp._
@@ -39,7 +41,8 @@ object CAND {
   * OR disjunction for sigma propositions
   */
 case class COR(sigmaBooleans: Seq[SigmaBoolean]) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.Undefined
+  /** The same code is also used for OR operation, but they belong to different type hierarchies. */
+  override val opCode: OpCode = OpCodes.OrCode
 }
 object COR {
   import TrivialProp._
@@ -75,12 +78,26 @@ trait SigmaProofOfKnowledgeTree[SP <: SigmaProtocol[SP], S <: SigmaProtocolPriva
 /** Represents boolean values (true/false) in SigmaBoolean tree.
   * Participates in evaluation of CAND, COR, THRESHOLD connectives over SigmaBoolean values.
   * See CAND.normalized, COR.normalized and AtLeast.reduce. */
-case class TrivialProp(condition: Boolean) extends SigmaBoolean {
-  override val opCode: OpCode = OpCodes.TrivialProofCode
+abstract class TrivialProp(val condition: Boolean) extends SigmaBoolean with Product1[Boolean] {
+  override def _1: Boolean = condition
+  override def canEqual(that: Any): Boolean = that != null && that.isInstanceOf[TrivialProp]
 }
 object TrivialProp {
-  val TrueProp = TrivialProp(true)
-  val FalseProp = TrivialProp(false)
+  // NOTE: the corresponding unapply is missing because any implementation (even using Nullable)
+  // will lead to Boolean boxing, which we want to avoid
+  // So, instead of `case TrivialProp(b) => ... b ...` use more efficient
+  // `case p: TrivialProp => ... p.condition ...
+
+  def apply(b: Boolean): TrivialProp = if (b) TrueProp else FalseProp
+
+  val FalseProp = new TrivialProp(false) {
+    override val opCode: OpCode = OpCodes.TrivialPropFalseCode
+    override def toString = "FalseProp"
+  }
+  val TrueProp = new TrivialProp(true) {
+    override val opCode: OpCode = OpCodes.TrivialPropTrueCode
+    override def toString = "TrueProp"
+  }
 }
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
@@ -91,6 +108,40 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
+}
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of discrete logarithm signature protocol. */
+case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDlogCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(SGroupElement, SSigmaProp)
+}
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of discrete logarithm signature protocol. */
+case class CreateAvlTree(operationFlags: ByteValue,
+    digest: Value[SByteArray],
+    keyLength: IntValue,
+    valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
+  override val opCode: OpCode = OpCodes.AvlTreeCode
+  override def tpe = SAvlTree
+  override def opType = CreateAvlTree.opType
+}
+object CreateAvlTree {
+  val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
+}
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of Diffie Hellman signature protocol.
+  * Common input: (g,h,u,v)*/
+case class CreateProveDHTuple(gv: Value[SGroupElement.type],
+    hv: Value[SGroupElement.type],
+    uv: Value[SGroupElement.type],
+    vv: Value[SGroupElement.type]) extends SigmaPropValue {
+  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override def tpe = SSigmaProp
+  override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -138,6 +189,21 @@ object OR {
     OR(ConcreteCollection(children.toIndexedSeq))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
+}
+
+/** Similar to allOf, but performing logical XOR operation instead of `&&`
+  */
+case class XorOf(input: Value[SCollection[SBoolean.type]])
+  extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
+  override val opCode: OpCode = XorOfCode
+  override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+}
+
+object XorOf {
+  def apply(children: Seq[Value[SBoolean.type]]): XorOf =
+    XorOf(ConcreteCollection(children.toIndexedSeq))
+
+  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): XorOf = apply(head +: tail)
 }
 
 /**
@@ -352,6 +418,11 @@ sealed trait Triple[LIV <: SType, RIV <: SType, OV <: SType] extends NotReadyVal
   override def opType = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
 
+sealed trait OneArgumentOperation[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
+  val input: Value[IV]
+  override def opType = SFunc(input.tpe, tpe)
+}
+
 // TwoArgumentsOperation
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
@@ -385,16 +456,14 @@ object ArithOp {
   }
 }
 
-case class Negation[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override val opCode: OpCode = OpCodes.NegationCode
   override def tpe: T = input.tpe
-  override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
-case class BitInversion[T <: SNumericType](input: Value[T]) extends NotReadyValue[T] {
+case class BitInversion[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override val opCode: OpCode = OpCodes.BitInversionCode
   override def tpe: T = input.tpe
-  override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 
 case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
@@ -440,13 +509,6 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
     with NotReadyValueGroupElement {
 
   override val opCode: OpCode = MultiplyGroupCode
-}
-
-case class StringConcat(left: Value[SString.type], right: Value[SString.type])
-  extends TwoArgumentsOperation[SString.type, SString.type, SString.type] with NotReadyValue[SString.type] {
-  override def tpe: SString.type = left.tpe
-
-  override val opCode: OpCode = StringConcatCode
 }
 
 // Relation
@@ -559,34 +621,15 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
   * Return None if leaf with provided key does not exist.
   */
 case class TreeLookup(tree: Value[SAvlTree.type],
-                      key: Value[SByteArray],
-                      proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+    key: Value[SByteArray],
+    proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
 
   override def tpe = SOption[SByteArray]
 
-  override val opCode: OpCode = OpCodes.TreeLookupCode
+  override val opCode: OpCode = OpCodes.AvlTreeGetCode
 
   override lazy val first = tree
   override lazy val second = key
-  override lazy val third = proof
-}
-
-/**
-  * Perform modification of in the tree with root `tree` using proof `proof`.
-  * Throws exception if proof is incorrect
-  * Return Some(newTree) if successfull
-  * Return None if operations were not performed.
-  */
-case class TreeModifications(tree: Value[SAvlTree.type],
-                             operations: Value[SByteArray],
-                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
-
-  override def tpe = SOption[SByteArray]
-
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
-
-  override lazy val first = tree
-  override lazy val second = operations
   override lazy val third = proof
 }
 

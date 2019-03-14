@@ -41,8 +41,8 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   override val opCode: OpCode = OpCodes.SliceCode
   override val tpe = input.tpe
   override def opType = {
-    val tpeCol = SCollection(input.tpe.typeParams.head.ident)
-    SFunc(Vector(tpeCol, SInt, SInt), tpeCol)
+    val tpeColl = SCollection(input.tpe.typeParams.head.ident)
+    SFunc(Vector(tpeColl, SInt, SInt), tpeColl)
   }
 }
 
@@ -96,10 +96,10 @@ object Fold {
     )
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
-    val tCol = SCollection(tT)
+    val tColl = SCollection(tT)
     Fold[SCollection[T], T](input,
       ConcreteCollection()(tT).asValue[T],
-      FuncValue(Vector((1, tCol), (2, tCol)), Append(ValUse(1, tCol), ValUse(2, tCol)))
+      FuncValue(Vector((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
     )
   }
 }
@@ -204,7 +204,7 @@ trait Deserialize[V <: SType] extends NotReadyValue[V]
 /** Extracts context variable as Coll[Byte], deserializes it to script and then executes this script in the current context.
   * The original `Coll[Byte]` of the script is available as `getVar[Coll[Byte]](id)`
   * @param id identifier of the context variable
-  * @tparam T result type of the deserialized script.
+  * @tparam V result type of the deserialized script.
   * @throws InterpreterException if the actual script type doesn't conform to T
   * @return result of the script execution in the current context
   * @since 2.0

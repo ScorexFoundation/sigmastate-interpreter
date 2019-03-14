@@ -28,6 +28,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SUnit => w.put(SUnit.typeCode)
     case SBox => w.put(SBox.typeCode)
     case SAvlTree => w.put(SAvlTree.typeCode)
+    case SContext => w.put(SContext.typeCode)
+    case SHeader => w.put(SHeader.typeCode)
+    case SPreHeader => w.put(SPreHeader.typeCode)
     case c: SCollectionType[a] => c.elemType match {
       case p: SEmbeddable =>
         val code = p.embedIn(CollectionTypeCode)
@@ -111,8 +114,8 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
   private def deserialize(r: SigmaByteReader, depth: Int): SType = {
-    if (depth > Serializer.MaxTreeDepth)
-      throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${Serializer.MaxTreeDepth}")
+    if (depth > SigmaSerializer.MaxTreeDepth)
+      throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${SigmaSerializer.MaxTreeDepth}")
     val c = r.getUByte()
     if (c <= 0)
       throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
@@ -178,6 +181,9 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SUnit.typeCode => SUnit
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
+        case SContext.typeCode => SContext
+        case SHeader.typeCode => SHeader
+        case SPreHeader.typeCode => SPreHeader
         case STypeIdent.TypeCode => {
           val nameLength = r.getUByte()
           val name = new String(r.getBytes(nameLength), StandardCharsets.UTF_8)

@@ -1,12 +1,13 @@
 package sigmastate.lang
 
-import fastparse.core.{ParseError, Parsed}
-import org.scalatest.exceptions.TestFailedException
+import fastparse.core.Parsed
+import org.ergoplatform.{ErgoAddressEncoder, ErgoBox}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
-import sigmastate.SCollection.SByteArray
+import org.scalatest.{PropSpec, Matchers}
+import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.syntax.ParserException
 import sigmastate.serialization.OpCodes
@@ -14,9 +15,15 @@ import sigmastate.serialization.OpCodes
 class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
 
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+  import predefFuncRegistry._
+
   def parse(x: String): SValue = {
     SigmaParser(x, TransformingSigmaBuilder) match {
-      case Parsed.Success(v, _) => v
+      case Parsed.Success(v, _) =>
+        v.sourceContext.isDefined shouldBe true
+        assertSrcCtxForAllNodes(v)
+        v
       case f@Parsed.Failure(_, _, extra) =>
         val traced = extra.traced
         println(s"\nTRACE: ${traced.trace}")
@@ -28,17 +35,13 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     SigmaParser.parseType(x)
   }
 
-  def fail(x: String, index: Int): Unit = {
-    try {
-      val res = SigmaParser(x, TransformingSigmaBuilder).get.value
-      assert(false, s"Error expected")
-    } catch {
-      case e: TestFailedException =>
-        throw e
-      case pe: ParseError[_,_] =>
-        val l = pe.failure.index
-        l shouldBe index
-    }
+  def fail(x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val compiler = SigmaCompiler(ErgoAddressEncoder.TestnetNetworkPrefix)
+    val exception = the[ParserException] thrownBy compiler.parse(x)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
   }
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
@@ -115,7 +118,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple operations") {
-    parse("()") shouldBe UnitConstant
+    parse("()") shouldBe UnitConstant()
     parse("(1)") shouldBe IntConstant(1)
     parse("(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     parse("(1, X - 1)") shouldBe Tuple(IntConstant(1), mkMinus(IntIdent("X"), 1))
@@ -228,11 +231,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("array literals") {
-    val emptyCol = Apply(Ident("Coll"), IndexedSeq.empty)
-    parse("Coll()") shouldBe emptyCol
-    val emptyCol2 = Apply(Ident("Coll"), IndexedSeq(emptyCol))
-    parse("Coll(Coll())") shouldBe emptyCol2
-    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyCol2))
+    val emptyColl = Apply(Ident("Coll"), IndexedSeq.empty)
+    parse("Coll()") shouldBe emptyColl
+    val emptyColl2 = Apply(Ident("Coll"), IndexedSeq(emptyColl))
+    parse("Coll(Coll())") shouldBe emptyColl2
+    parse("Coll(Coll(Coll()))") shouldBe Apply(Ident("Coll"), IndexedSeq(emptyColl2))
 
     parse("Coll(1)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1)))
     parse("Coll(1, X)") shouldBe Apply(Ident("Coll"), IndexedSeq(IntConstant(1), Ident("X")))
@@ -401,7 +404,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     // nested lambda
     parse(
       """f { (a: Int) =>
-        |val g = { (c: Int) => c - 1 }
+        |def g(c: Int) = c - 1
         |a - g(a)
         |}""".stripMargin) shouldBe Apply(Ident("f"), IndexedSeq(
       Lambda(IndexedSeq("a" -> SInt),
@@ -412,7 +415,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
       )))
   }
 
-  property("function definitions") {
+  property("function definitions via val") {
     parse("{val f = { (x: Int) => x - 1 }; f}") shouldBe
       Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
     parse(
@@ -420,6 +423,97 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
        |f}
       """.stripMargin) shouldBe
         Block(Val("f", Lambda(IndexedSeq("x" -> SInt), mkMinus(IntIdent("x"), 1))), Ident("f"))
+  }
+
+  property("function (one arg) definition expr body") {
+    parse("{ def f(x: Int): Int = x - 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition with no res type, expr body") {
+    parse("{ def f(x: Int) = x - 1 }") shouldBe Block(List(),
+      Val("f", NoType, Lambda(IndexedSeq("x" -> SInt), NoType, mkMinus(IntIdent("x"), 1))))
+  }
+
+  property("function (one arg) definition brackets body") {
+    val expectedTree = Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))))
+    parse("{ def f(x: Int): Int = { x - 1 } }") shouldBe expectedTree
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+        }
+      """.stripMargin) shouldBe expectedTree
+  }
+
+  property("function(two arg) definition expr body") {
+    parse("{ def f(x: Int, y: Int): Int = x - y }") shouldBe Block(List(),
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt, "y" -> SInt), SInt, mkMinus(IntIdent("x"), IntIdent("y")))))
+  }
+
+  property("function definition and application") {
+    parse(
+      """{
+         def f(x: Int): Int = {
+           x - 1
+         }
+         f(5)
+        }
+      """.stripMargin) shouldBe Block(
+      Val("f", SInt,
+        Lambda(IndexedSeq("x" -> SInt), SInt, Block(List(), mkMinus(IntIdent("x"), 1)))),
+      Apply(Ident("f"), Vector(IntConstant(5)))
+    )
+  }
+
+  property("function with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def f[A, B](x: A, y: B): (A, B) = (x, y) }") shouldBe Block(List(),
+      Val("f",
+        STuple(tA, tB),
+        Lambda(IndexedSeq("x" -> tA, "y" -> tB),
+          STuple(tA, tB),
+          Tuple(Ident("x"), Ident("y"))
+        )
+      )
+    )
+  }
+
+  property("function (no args) definition expr body") {
+    parse("{ def f: Int = 1 }") shouldBe Block(List(),
+      Val("f", SInt, Lambda(IndexedSeq(), SInt, IntConstant(1))))
+  }
+
+  property("method extension(dotty)(no args) with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def (pairs: Coll[(A,B)]) f[A, B]: Coll[(B, A)] = pairs.magicSwap }") shouldBe Block(List(),
+      Val("f",
+        SCollection(STuple(tB, tA)),
+        Lambda(IndexedSeq("pairs" -> SCollection(STuple(tA, tB))),
+          SCollection(STuple(tB, tA)),
+          Select(Ident("pairs"), "magicSwap")
+        )
+      )
+    )
+  }
+
+  property("method extension(dotty)(one arg) with type args") {
+    val tA = STypeIdent("A")
+    val tB = STypeIdent("B")
+    parse("{ def (pairs: Coll[(A,B)]) take[A, B](i: Int): Coll[(A, B)] = pairs.drop(i) }") shouldBe Block(List(),
+      Val("take",
+        SCollection(STuple(tA, tB)),
+        Lambda(IndexedSeq("pairs" -> SCollection(STuple(tA, tB)), "i" -> SInt),
+          SCollection(STuple(tA, tB)),
+          Apply(Select(Ident("pairs"), "drop"), Vector(Ident("i")))
+        )
+      )
+    )
   }
 
   property("get field of ref") {
@@ -456,24 +550,24 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parseType("Int") shouldBe SInt
     parseType("(Int, Long)") shouldBe STuple(SInt, SLong)
     parseType("Coll[(Int, Long)]") shouldBe SCollection(STuple(SInt, SLong))
-    parseType("Coll[(Coll[Byte], Long)]") shouldBe SCollection(STuple(SCollection(SByte), SLong))
-    parseType("Coll[(Coll[Byte], Coll[Long])]") shouldBe SCollection(STuple(SCollection(SByte), SCollection(SLong)))
-    parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SCollection(SByte), STuple(SCollection(SLong), SLong)))
+    parseType("Coll[(Coll[Byte], Long)]") shouldBe ErgoBox.STokensRegType
+    parseType("Coll[(Coll[Byte], Coll[Long])]") shouldBe SCollection(STuple(SByteArray, SLongArray))
+    parseType("Coll[(Coll[Byte], (Coll[Long], Long))]") shouldBe SCollection(STuple(SByteArray, STuple(SLongArray, SLong)))
   }
 
   property("negative tests") {
-    fail("(10", 3)
-    fail("10)", 2)
-    fail("X)", 1)
-    fail("(X", 2)
-    fail("{ X", 3)
-    fail("{ val X", 7)
-    fail("\"str", 4)
+    fail("(10", 1, 4)
+    fail("10)", 1, 3)
+    fail("X)", 1, 2)
+    fail("(X", 1, 3)
+    fail("{ X", 1, 4)
+    fail("{ val X", 1, 8)
+    fail("\"str", 1, 5)
   }
 
   property("not(yet) supported lambda syntax") {
     // passing a lambda without curly braces is not supported yet :)
-    fail("arr.exists ( (a: Int) => a >= 1 )", 15)
+    fail("arr.exists ( (a: Int) => a >= 1 )", 1, 16)
     // no argument type
     an[ParserException] should be thrownBy parse("arr.exists ( a => a >= 1 )")
     an[ParserException] should be thrownBy parse("arr.exists { a => a >= 1 }")
@@ -503,8 +597,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("fromBaseX string decoding") {
-    parse("""fromBase58("111")""") shouldBe Apply(Ident("fromBase58"), IndexedSeq(StringConstant("111")))
-    parse("""fromBase64("111")""") shouldBe Apply(Ident("fromBase64"), IndexedSeq(StringConstant("111")))
+    parse("""fromBase58("111")""") shouldBe Apply(FromBase58Func.symNoType, IndexedSeq(StringConstant("111")))
+    parse("""fromBase64("111")""") shouldBe Apply(FromBase64Func.symNoType, IndexedSeq(StringConstant("111")))
   }
 
   property("PK") {
@@ -513,24 +607,25 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("deserialize") {
     parse("""deserialize[GroupElement]("12345")""") shouldBe
-      Apply(ApplyTypes(Ident("deserialize"), Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
+      Apply(ApplyTypes(DeserializeFunc.symNoType, Seq(SGroupElement)), IndexedSeq(StringConstant("12345")))
     parse("""deserialize[(GroupElement, Coll[(Int, Byte)])]("12345")""") shouldBe
-      Apply(ApplyTypes(Ident("deserialize"), Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
+      Apply(ApplyTypes(DeserializeFunc.symNoType, Seq(STuple(SGroupElement, SCollection(STuple(SInt, SByte))))), IndexedSeq(StringConstant("12345")))
   }
 
   property("ZKProof") {
-    parse("ZKProof { condition }") shouldBe Apply(SigmaPredef.ZKProofSym, IndexedSeq(Ident("condition")))
+    parse("ZKProof { condition }") shouldBe Apply(ZKProofFunc.sym, IndexedSeq(Ident("condition")))
     parse("ZKProof { sigmaProp(HEIGHT > 1000) }") shouldBe
-      Apply(SigmaPredef.ZKProofSym,
-        IndexedSeq(Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
+      Apply(ZKProofFunc.sym,
+        IndexedSeq(Apply(SigmaPropFunc.symNoType, IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))))
   }
 
   property("invalid ZKProof (non block parameter)") {
-    an[ParserException] should be thrownBy  parse("ZKProof HEIGHT > 1000 ")
+    fail("ZKProof 1 > 1", 1, 9)
   }
 
   property("sigmaProp") {
-    parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(Ident("sigmaProp"), IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
+    parse("sigmaProp(HEIGHT > 1000)") shouldBe Apply(SigmaPropFunc.symNoType,
+      IndexedSeq(GT(Ident("HEIGHT"), IntConstant(1000))))
   }
 
   property("SBigInt.toBytes") {
@@ -558,7 +653,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("byteArrayToLong") {
     parse("byteArrayToLong(Coll[Byte](1.toByte))") shouldBe
-      Apply(Ident("byteArrayToLong"), Vector(
+      Apply(ByteArrayToLongFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
           Vector(Select(IntConstant(1), "toByte", None)))
@@ -567,7 +662,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("decodePoint") {
     parse("decodePoint(Coll[Byte](1.toByte))") shouldBe
-      Apply(Ident("decodePoint"), Vector(
+      Apply(DecodePointFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SByte)),
           Vector(Select(IntConstant(1), "toByte", None)))
@@ -576,7 +671,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   property("xorOf") {
     parse("xorOf(Coll[Boolean](true, false))") shouldBe
-      Apply(Ident("xorOf"), Vector(
+      Apply(XorOfFunc.symNoType, Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(SBoolean)),
           Vector(TrueLeaf, FalseLeaf))
@@ -724,7 +819,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
         | { (b, i) => (b + i).toLong },
         | { (b, s, i) => (b + s + i).toLong }
         | )""".stripMargin) shouldBe Apply(
-      ApplyTypes(Ident("outerJoin", NoType), Vector(SByte, SShort, SInt, SLong)),
+      ApplyTypes(OuterJoinFunc.symNoType, Vector(SByte, SShort, SInt, SLong)),
       Vector(
         Apply(
           ApplyTypes(Ident("Coll", NoType), Vector(STuple(SByte, SShort))),
@@ -761,4 +856,52 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     )
   }
 
+  property("substConstants") {
+    parse("substConstants[Long](Coll[Byte](1.toByte), Coll[Int](1), Coll[Long](1L))") shouldBe Apply(
+      ApplyTypes(SubstConstantsFunc.symNoType, Vector(SLong)),
+      Vector(
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SByte)), Vector(Select(IntConstant(1), "toByte", None))),
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SInt)), Vector(IntConstant(1))),
+        Apply(ApplyTypes(Ident("Coll", NoType), Vector(SLong)), Vector(LongConstant(1)))
+      )
+    )
+  }
+
+  property("executeFromVar") {
+    parse("executeFromVar[Boolean](1)") shouldBe Apply(
+      ApplyTypes(ExecuteFromVarFunc.symNoType, Vector(SBoolean)), Vector(IntConstant(1))
+    )
+  }
+
+  property("single name pattern fail") {
+    fail("{val (a,b) = (1,2)}", 1, 6)
+  }
+
+  property("unknown prefix in unary op") {
+    fail("+1", 1, 2)
+  }
+
+  property("empty lines before invalid op") {
+    fail(
+      """
+        |
+        |
+        |+1""".stripMargin, 4, 2)
+  }
+
+  property("unknown binary op") {
+    fail("1**1", 1, 1)
+  }
+
+  property("compound types not supported") {
+    fail("Coll[Int with Sortable](1)", 1, 6)
+  }
+
+  property("path types not supported") {
+    fail("Coll[Int.A](1)", 1, 10)
+  }
+
+  property("block contains non-Val binding before expression") {
+    fail("{1 ; 1 == 1}", 1, 2)
+  }
 }

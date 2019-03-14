@@ -4,13 +4,12 @@ import java.util
 
 import org.ergoplatform.ErgoLikeContext
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import sigmastate.Values.{TrueLeaf, Value}
+import org.scalatest.Assertion
+import sigmastate.Values.{Value, SigmaPropConstant, SigmaBoolean, SigmaPropValue}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.Transformer
 
@@ -18,9 +17,9 @@ import scala.util.Random
 
 class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerators {
   implicit lazy val IR = new TestingIRContext
-  private lazy implicit val arbExprGen: Arbitrary[Value[SBoolean.type]] = Arbitrary(exprTreeGen)
+  private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
-  private lazy val prover = new ErgoLikeTestProvingInterpreter()
+  private lazy val prover = new ContextEnrichingTestProvingInterpreter()
 
   private lazy val interpreterProveDlogGen: Gen[ProveDlog] =
     Gen.oneOf(prover.dlogSecrets.map(secret => ProveDlog(secret.publicImage.h)))
@@ -31,20 +30,19 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
         .map(_.commonInput)
         .map(ci => ProveDHTuple(ci.g, ci.h, ci.u, ci.v)))
 
-  private def exprTreeNodeGen: Gen[Transformer[SCollection[SBoolean.type], SBoolean.type]] = for {
+  private def exprTreeNodeGen: Gen[SigmaBoolean] = for {
     left <- exprTreeGen
     right <- exprTreeGen
     node <- Gen.oneOf(
-      OR(left, right),
-      AND(left, right)
+      COR(Seq(left, right)),
+      CAND(Seq(left, right))
     )
   } yield node
 
-  private def exprTreeGen: Gen[Value[SBoolean.type]] =
+  private def exprTreeGen: Gen[SigmaBoolean] =
     Gen.oneOf(interpreterProveDlogGen, interpreterProveDHTGen, Gen.delay(exprTreeNodeGen))
 
-  private def isEquivalent(expected: ProofTree,
-                           actual: ProofTree): Boolean = (expected, actual) match {
+  private def isEquivalent(expected: ProofTree, actual: ProofTree): Boolean = (expected, actual) match {
     case (NoProof, NoProof) => true
     case (dht1: UncheckedDiffieHellmanTuple, dht2: UncheckedDiffieHellmanTuple) =>
       // `firstMessageOpt` is not serialized
@@ -59,18 +57,19 @@ class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerator
   }
 
 
-  private def roundTrip(uncheckedTree: UncheckedTree, exp: Value[SBoolean.type]): Assertion = {
+  private def roundTrip(uncheckedTree: UncheckedTree, exp: SigmaBoolean): Assertion = {
     val bytes = SigSerializer.toBytes(uncheckedTree)
     val parsedUncheckedTree = SigSerializer.parseAndComputeChallenges(exp, bytes)
     isEquivalent(uncheckedTree, parsedUncheckedTree) shouldBe true
   }
 
   property("SigSerializer no proof round trip") {
-    roundTrip(NoProof, TrueLeaf)
+    roundTrip(NoProof, TrivialProp.TrueProp)
   }
 
   property("SigSerializer round trip") {
-    forAll { expr: Value[SBoolean.type] =>
+    forAll { sb: SigmaBoolean =>
+      val expr = sb.toSigmaProp
       val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
       val ctx = ErgoLikeContext(

@@ -5,7 +5,7 @@ import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.Values.{BlockValue, FalseLeaf, FuncValue, GroupElementConstant, IntConstant, LongConstant, SigmaPropConstant, TaggedVariable, TrueLeaf, ValDef, ValUse}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.serialization.OpCodes._
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
@@ -16,6 +16,10 @@ import sigmastate.utxo._
 
 class ErgoTreeBuildingTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
+
+  implicit override lazy val IR = new TestContext with IRContext with CompiletimeCosting {
+    beginPass(noConstPropagationPass)
+  }
 
   test("constants") {
     build(emptyEnv, "oneInt", "1", IntConstant(1))
@@ -76,12 +80,13 @@ class ErgoTreeBuildingTest extends BaseCtxTests
         ValDef(1,List(),FuncValue(Vector((1,SLong)), Plus(Upcast(Height, SLong), ValUse(1,SLong))))),
         Plus(Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(10))).asNumValue,
              Apply(ValUse(1,SFunc(SLong, SLong)),Vector(LongConstant(20))).asNumValue)))
+    build(emptyEnv, "lam7", "{ def f(x: Long) = HEIGHT + x; f }", FuncValue(Vector((1,SLong)), mkPlus(Height, ValUse(1,SLong))))
   }
 
   test("Crowd Funding") {
-    val prover = new ErgoLikeTestProvingInterpreter()
-    val backerPK  @ DLogProtocol.ProveDlog(GroupElementConstant(backer: ECPoint)) = prover.dlogSecrets(0).publicImage
-    val projectPK @ DLogProtocol.ProveDlog(GroupElementConstant(project: ECPoint)) = prover.dlogSecrets(1).publicImage
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val backerPK  = prover.dlogSecrets(0).publicImage
+    val projectPK = prover.dlogSecrets(1).publicImage
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     build(env, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(

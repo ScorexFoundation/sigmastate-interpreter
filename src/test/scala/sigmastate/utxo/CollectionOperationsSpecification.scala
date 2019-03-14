@@ -1,40 +1,45 @@
 package sigmastate.utxo
 
 import org.ergoplatform
+import org.ergoplatform.ErgoScriptPredef.TrueProp
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform._
-import sigmastate.interpreter.Interpreter.{emptyEnv, ScriptNameProp}
+import sigmastate.SCollection._
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
-    ergoplatform.ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = boxesToSpend,
-      spendingTransaction = ErgoLikeTransaction(IndexedSeq(), outputs),
-      self = null)
+    {
+      // TODO this means the context is not totally correct
+      val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
+      ergoplatform.ErgoLikeContext(
+        currentHeight = 50,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = toSpend,
+        spendingTransaction = createTransaction(outputs),
+        self = selfBox)
+    }
 
   private def assertProof(code: String,
-                          expectedComp: Value[SType],
+                          expectedComp: SigmaPropValue,
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
-    val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues,
-      boxesToSpendValues)
+    val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   private def assertProverFail(code: String,
-                               expectedComp: Value[SType],
+                               expectedComp: SigmaPropValue,
                                outputBoxValues: IndexedSeq[Long],
                                boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, _, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
@@ -45,11 +50,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
                        expectedComp: Value[SType],
                        outputBoxValues: IndexedSeq[Long],
                        boxesToSpendValues: IndexedSeq[Long]) = {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), code).asBoolValue
+    val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
     prop shouldBe expectedComp
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
@@ -58,24 +63,24 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("exists") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isProven
+    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.exists({ (box: Box) => box.value + 5 > 10 })").asBoolValue.toSigmaProp
 
     val expProp = Exists(Outputs,
       FuncValue(Vector((1, SBox)),
         GT(Plus(ExtractAmount(ValUse(1, SBox)), LongConstant(5)), LongConstant(10)))
-    )
+    ).toSigmaProp
     prop shouldBe expProp
 
     val newBox1 = ErgoBox(16, pubkey, 0)
     val newBox2 = ErgoBox(15, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -91,22 +96,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("forall") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
 
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
-      )
+      ).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -123,21 +128,21 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
 
   property("forall - fail") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue
+    val prop = compile(Map(), "OUTPUTS.forall({ (box: Box) => box.value == 10 })").asBoolValue.toSigmaProp
     val propTree = ForAll(Outputs,
         FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
-      )
+      ).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBox2 = ErgoBox(11, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -151,15 +156,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
-    val pubkey = prover.dlogSecrets.head.publicImage.isProven
+    val pubkey = prover.dlogSecrets.head.publicImage.toSigmaProp
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].get == SELF.R4[Long].get + 1
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val propTree = Exists(Outputs,
       FuncValue(
@@ -168,16 +173,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           ExtractRegisterAs[SLong.type](ValUse(1, SBox), reg1).get,
           Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1)))
       )
-    )
+    ).toSigmaProp
     prop shouldBe propTree
 
     val newBox1 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(3)))
     val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -192,15 +197,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("counter - no register in outputs") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """OUTPUTS.exists { (box: Box) =>
         |  box.R4[Long].getOrElse(0L) == SELF.R4[Long].get + 1
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val propTree = Exists(Outputs,
       FuncValue(
@@ -210,7 +215,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           Plus(ExtractRegisterAs[SLong.type](Self, reg1).get, LongConstant(1))
         )
       )
-    )
+    ).toSigmaProp
 
     prop shouldBe propTree
 
@@ -218,9 +223,9 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0, Seq(), Map(reg1 -> LongConstant(6)))
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
-    val s = ErgoBox(20, TrueLeaf, 0, Seq(), Map(reg1 -> LongConstant(5)))
+    val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -235,13 +240,13 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("sizeof - num of outputs = num of inputs + 1") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val env = Map("pubkey" -> pubkey)
-    val prop = compileWithCosting(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asBoolValue
+    val prop = compile(env, """pubkey && OUTPUTS.size == INPUTS.size + 1""").asSigmaProp
     val propTree = SigmaAnd(pubkey, BoolToSigmaProp(EQ(SizeOf(Outputs), Plus(SizeOf(Inputs), IntConstant(1)))))
     prop shouldBe propTree
 
@@ -249,7 +254,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val newBox2 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1, newBox2)
 
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val s = ErgoBox(21, pubkey, 0)
 
@@ -265,7 +270,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, pr, fakeMessage)
 
 
-    val fProp = AND(pubkey, EQ(SizeOf(Outputs), SizeOf(Inputs)))
+    val fProp = SigmaAnd(pubkey, EQ(SizeOf(Outputs), SizeOf(Inputs)))
     prover.prove(fProp, ctx, fakeMessage).isSuccess shouldBe false
   }
 
@@ -275,7 +280,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val expectedPropTree = ForAll(
       Slice(Outputs, IntConstant(1), SizeOf(Outputs)),
       FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(10)))
-    )
+    ).toSigmaProp
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -350,15 +355,15 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map({ (box: Box) => box.value })
         |.fold(true, { (acc: Boolean, val: Long) => acc && (val < 0) }) == false""".stripMargin
-    val expectedPropTree = EQ(
+    val expectedPropTree = LogicalNot(
       Fold(
         MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
         TrueLeaf,
         FuncValue(Vector((1, STuple(SBoolean, SLong))),
           BinAnd(
             SelectField(ValUse(1, STuple(SBoolean, SLong)), 1).asBoolValue,
-            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0))))),
-      FalseLeaf)
+            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0)))))
+    )
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
@@ -379,7 +384,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     val code =
       """{
         |  val indexCollection = Coll(0, 1, 2, 3, 4, 5)
-        |  val elementRule = {(index: Int) =>
+        |  def elementRule(index: Int) = {
         |    val boundaryIndex = if (index == 0) 5 else (index - 1)
         |    boundaryIndex >= 0 && boundaryIndex <= 5
         |  }
@@ -433,5 +438,162 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     )
 
     assertProof(code, expectedPropTree, outputBoxValues)
+  }
+
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/423
+  // TODO costing rule in CollCoster
+  ignore("flatMap") {
+    assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
+      EQ(
+        ByIndex(
+          MethodCall(Outputs,
+            FlatMapMethod.withConcreteTypes(Map(tIV -> SBox, tOV -> SByte)),
+            Vector(FuncValue(1, SBox,
+              ExtractScriptBytes(ValUse(1, SBox))
+            )),
+            Map()
+          ).asCollection[SByte.type],
+          IntConstant(0)
+        ),
+        ByteConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("indexOf") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
+      EQ(
+        MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+          IndexOfMethod.withConcreteTypes(Map(tIV -> SLong)),
+          Vector(LongConstant(1), IntConstant(0)),
+          Map()),
+        IntConstant(0)
+      ),
+      IndexedSeq(1L, 1L))
+  }
+
+  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/421
+  property("indices") {
+    assertProof("OUTPUTS.indices == Coll(0, 1)",
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),
+      IndexedSeq(1L, 1L))
+  }
+
+  property("segmentLength") {
+    assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
+      EQ(
+        MethodCall(Outputs,
+          SegmentLengthMethod.withConcreteTypes(Map(tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          ),
+          Map()),
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("indexWhere") {
+    assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
+      EQ(
+        MethodCall(Outputs,
+          IndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(0)
+          ),
+          Map()),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("lastIndexWhere") {
+    assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
+      EQ(
+        MethodCall(Outputs,
+          LastIndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
+          Vector(
+            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
+            IntConstant(1)
+          ),
+          Map()),
+        IntConstant(0)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("zip") {
+    assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
+      EQ(
+        SizeOf(MethodCall(Outputs,
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SInt)),
+          Vector(
+            ConcreteCollection(IntConstant(1), IntConstant(2))
+          ),
+          Map()).asCollection[STuple]),
+        IntConstant(2)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("partition") {
+    assertProof("OUTPUTS.partition({ (box: Box) => box.value < 2L})._1.size == 1",
+      EQ(
+        SizeOf(
+          SelectField(
+            MethodCall(Outputs,
+              PartitionMethod.withConcreteTypes(Map(tIV -> SBox)),
+              Vector(
+                FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
+              ),
+              Map()).asValue[STuple],
+            1
+          ).asCollection[SType]
+        ),
+        IntConstant(1)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("patch") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).patch(0, Coll(3L), 1)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
+            Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
+            Map()).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updated") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updated(0, 3L)(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            UpdatedMethod.withConcreteTypes(Map(tIV -> SLong)),
+            Vector(IntConstant(0), LongConstant(3)),
+            Map()).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
+  }
+
+  property("updateMany") {
+    assertProof("OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L",
+      EQ(
+        ByIndex(
+          MethodCall(
+            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
+            UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
+            Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
+            Map()).asCollection[SType],
+          IntConstant(0)
+        ),
+        LongConstant(3)),
+      IndexedSeq(1L, 2L))
   }
 }

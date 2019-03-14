@@ -3,20 +3,20 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, IntConstant, LongConstant, GetVarByteArray, TrueLeaf, Value}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 
 /**
   * Wolfram's Rule110 implementations
   *
   */
 class Rule110Specification extends SigmaTestingCommons {
-  import BlockchainSimulationSpecification.{Block, ValidationState}
   implicit lazy val IR = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -32,12 +32,12 @@ class Rule110Specification extends SigmaTestingCommons {
     * - first output contains the same protecting script, allowing to calculate further layers
     */
   property("rule110 - one layer in register") {
-    val prover = new ErgoLikeTestProvingInterpreter {
+    val prover = new ContextEnrichingTestProvingInterpreter {
       override val maxCost: Long = 2000000
     }
     val verifier = new ErgoLikeTestInterpreter
 
-    val prop = compileWithCosting(Map(),
+    val prop = compile(Map(),
       """{
         |  val indices: Coll[Int] = Coll(0, 1, 2, 3, 4, 5)
         |  val inLayer: Coll[Byte] = SELF.R4[Coll[Byte]].get
@@ -49,7 +49,7 @@ class Rule110Specification extends SigmaTestingCommons {
         |  }
         |  (OUTPUTS(0).R4[Coll[Byte]].get == indices.map(procCell)) &&
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
-         }""".stripMargin).asBoolValue
+         }""".stripMargin).asBoolValue.toSigmaProp
 
     val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
     val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
@@ -203,7 +203,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val leftmostConditions = AND(EQ(SizeOf(Inputs), 1), EQ(in0X, in0Y), EQ(scriptHash, leftmostHash))
 
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
-    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions))
+    val prop = AND(scriptIsCorrect, OR(normalCaseConditions, rightmostConditions, nLeftmostConditions, leftmostConditions)).toSigmaProp
 
     // test normal case
     val nIn0 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-2), YReg -> ByteConstant(0), ValReg -> t))
@@ -214,7 +214,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val nOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
     val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
-    val nProver = new ErgoLikeTestProvingInterpreter()
+    val nProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
     val nCtx = ErgoLikeContext(
@@ -236,7 +236,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val rOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
     val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
-    val rProver = new ErgoLikeTestProvingInterpreter()
+    val rProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
     val rCtx = ErgoLikeContext(
@@ -258,7 +258,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
-    val lnProver = new ErgoLikeTestProvingInterpreter()
+    val lnProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
     val lnCtx = ErgoLikeContext(
@@ -279,7 +279,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
     val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
-    val lProver = new ErgoLikeTestProvingInterpreter()
+    val lProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
     val lCtx = ErgoLikeContext(
@@ -306,7 +306,7 @@ class Rule110Specification extends SigmaTestingCommons {
     * new layer of rule 110
     */
   property("rule110 - one bit per output (old version)") {
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
 
     val RowReg = reg1
     val ColumnReg = reg2
@@ -387,7 +387,7 @@ class Rule110Specification extends SigmaTestingCommons {
       row1,
       row2,
       rule110
-    ))
+    )).toSigmaProp
 
 
     val hash = Blake2b256
@@ -403,8 +403,8 @@ class Rule110Specification extends SigmaTestingCommons {
       ErgoBox(0L, prop, 0, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
-    val initBlock = BlockchainSimulationSpecification.Block(
-      IndexedSeq(ErgoLikeTransaction(IndexedSeq(), coins)),
+    val initBlock = FullBlock(
+      IndexedSeq(createTransaction(coins)),
       ErgoLikeContext.dummyPubkey
     )
 
@@ -417,13 +417,13 @@ class Rule110Specification extends SigmaTestingCommons {
       require(row >= 1)
 
       (0 until bitsInString).map { col =>
-        val leftCol = if (col == 0) lastBitIndex else col - 1
-        val centerCol = col
-        val rightCol = if (col == lastBitIndex) 0 else col + 1
+        val leftColl = if (col == 0) lastBitIndex else col - 1
+        val centerColl = col
+        val rightColl = if (col == lastBitIndex) 0 else col + 1
 
-        val left = byPos(state, row - 1, leftCol)
-        val center = byPos(state, row - 1, centerCol)
-        val right = byPos(state, row - 1, rightCol)
+        val left = byPos(state, row - 1, leftColl)
+        val center = byPos(state, row - 1, centerColl)
+        val right = byPos(state, row - 1, rightColl)
 
         val lv = left.get(ValueReg).get.asInstanceOf[BooleanConstant].value
         val cv = center.get(ValueReg).get.asInstanceOf[BooleanConstant].value
@@ -445,7 +445,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           left,
           ContextExtension.empty)
-        val proverResultLeft = prover.prove(left.proposition, contextLeft, ut.messageToSign).get
+        val proverResultLeft = prover.prove(left.ergoTree, contextLeft, ut.messageToSign).get
 
         val contextCenter = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
@@ -454,7 +454,7 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           center,
           ContextExtension.empty)
-        val proverResultCenter = prover.prove(center.proposition, contextCenter, ut.messageToSign).get
+        val proverResultCenter = prover.prove(center.ergoTree, contextCenter, ut.messageToSign).get
 
         val contextRight = ErgoLikeContext(row,
           state.state.lastBlockUtxoRoot,
@@ -463,12 +463,12 @@ class Rule110Specification extends SigmaTestingCommons {
           ut,
           right,
           ContextExtension.empty)
-        val proverResultRight = prover.prove(right.proposition, contextRight, ut.messageToSign).get
+        val proverResultRight = prover.prove(right.ergoTree, contextRight, ut.messageToSign).get
         ut.toSigned(IndexedSeq(proverResultLeft, proverResultCenter, proverResultRight))
       }
     }
 
-    val firstRowBlock = Block(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
+    val firstRowBlock = FullBlock(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
 
     val t0 = System.currentTimeMillis()
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get

@@ -1,14 +1,16 @@
 package sigmastate.lang
 
-import org.ergoplatform.{Height, Outputs, Self, Inputs}
+import org.ergoplatform.{Height, Inputs, Outputs, Self}
+import org.ergoplatform.ErgoAddressEncoder._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{BinderException, InvalidTypeArguments, InvalidArguments}
+import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -18,8 +20,24 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   def bind(env: ScriptEnv, x: String): SValue = {
     val builder = TransformingSigmaBuilder
     val ast = SigmaParser(x, builder).get.value
-    val binder = new SigmaBinder(env, builder)
-    binder.bind(ast)
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
+      new PredefinedFuncRegistry(builder))
+    val res = binder.bind(ast)
+    res.sourceContext.isDefined shouldBe true
+    assertSrcCtxForAllNodes(res)
+    res
+  }
+
+  private def fail(env: ScriptEnv, x: String, expectedLine: Int, expectedCol: Int): Unit = {
+    val builder = TransformingSigmaBuilder
+    val ast = SigmaParser(x, builder).get.value
+    val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix,
+      new PredefinedFuncRegistry(builder))
+    val exception = the[BinderException] thrownBy binder.bind(ast)
+    withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
+    val sourceContext = exception.source.get
+    sourceContext.line shouldBe expectedLine
+    sourceContext.column shouldBe expectedCol
   }
 
   property("simple expressions") {
@@ -42,18 +60,19 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     // todo should be g1.exp(n1)
     //  ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
 //    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
-    bind(env, "g1 * g2") shouldBe MethodCallLike(g1, "*", IndexedSeq(g2))
+    bind(env, "g1 * g2") shouldBe MethodCallLike(ecp1, "*", IndexedSeq(ecp2))
   }
 
   property("predefined functions") {
-    bind(env, "getVar[Byte](10)") shouldBe GetVar(10.toByte, SByte)
-    bind(env, "getVar[Byte](10L)") shouldBe GetVar(10.toByte, SByte)
-    an[BinderException] should be thrownBy bind(env, "getVar[Byte](\"ha\")")
     bind(env, "min(1, 2)") shouldBe Min(IntConstant(1), IntConstant(2))
     bind(env, "max(1, 2)") shouldBe Max(IntConstant(1), IntConstant(2))
     bind(env, "min(1, 2L)") shouldBe Min(Upcast(IntConstant(1), SLong), LongConstant(2))
-    an[InvalidArguments] should be thrownBy bind(env, "min(1, 2, 3)")
-    an[InvalidArguments] should be thrownBy bind(env, "max(1)")
+    bind(env, "max(1, 2L)") shouldBe Max(Upcast(IntConstant(1), SLong), LongConstant(2))
+  }
+
+  property("min/max fail (invalid arguments)") {
+    fail(env, "min(1, 2, 3)", 1, 1)
+    fail(env, "max(1)", 1, 1)
   }
 
   property("val constructs") {
@@ -91,7 +110,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("tuple constructor") {
-    bind(env, "()") shouldBe UnitConstant
+    bind(env, "()") shouldBe UnitConstant()
     bind(env, "(1)") shouldBe IntConstant(1)
     bind(env, "(1, 2)") shouldBe Tuple(IntConstant(1), IntConstant(2))
     bind(env, "(1, x - 1)") shouldBe Tuple(IntConstant(1), Minus(10, 1))
@@ -178,24 +197,24 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "Coll[Int]()") shouldBe ConcreteCollection()(SInt)
   }
 
-  property("deserialize") {
-    def roundtrip[T <: SType](c: EvaluatedValue[T], typeSig: String) = {
-      val bytes = ValueSerializer.serialize(c)
-      val str = Base58.encode(bytes)
-      bind(env, s"deserialize[$typeSig](" + "\"" + str + "\")") shouldBe c
-    }
-    roundtrip(ByteArrayConstant(Array[Byte](2)), "Coll[Byte]")
-    roundtrip(Tuple(ByteArrayConstant(Array[Byte](2)), LongConstant(4)), "(Coll[Byte], Long)")
+  property("val fails (already defined in env)") {
+    val script= "{ val x = 10; x > 2 }"
+    (the[BinderException] thrownBy bind(env, script)).source shouldBe
+      Some(SourceContext(1, 7, script))
   }
 
-  property("deserialize fails") {
-    // more than one type
-    an[InvalidTypeArguments] should be thrownBy bind(env, """deserialize[Int, Byte]("test")""")
-    // more then one argument
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("test", "extra argument")""")
-    // not a string constant
-    an[InvalidArguments] should be thrownBy bind(env, """deserialize[Int]("a" + "b")""")
-    // invalid chat in Base58 string
-    an[AssertionError] should be thrownBy bind(env, """deserialize[Int]("0")""")
+  property("val fails (already defined in env) multiline") {
+    val script= """{
+                  |val x = 10
+                  |x > 2
+                  |
+                  |}""".stripMargin
+    val e = the[BinderException] thrownBy bind(env, script)
+    e.source shouldBe Some(SourceContext(2, 5, "val x = 10"))
+  }
+
+  property("fail Some (invalid arguments)") {
+    fail(env, "Some(1, 2)", 1, 1)
+    fail(env, "Some()", 1, 1)
   }
 }

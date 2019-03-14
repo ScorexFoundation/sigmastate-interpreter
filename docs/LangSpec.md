@@ -19,7 +19,7 @@
 - predefined primitives: `blake2b256`, `byteArrayToBigInt`, `proveDlog` etc. 
 - val declarations: `val h = blake2b256(pubkey)`
 - if-then-else clause: `if (x > 0) 1 else 0`
-- collection literals: `Col(1, 2, 3, 4)`
+- collection literals: `Coll(1, 2, 3, 4)`
 - generic high-order collection operations: `map`, `fold`, `exists`, `forall`, etc.
 - accessing fields of any predefined structured objects: `box.value`
 - function invocations (predefined and user defined): `proveDlog(pubkey)` 
@@ -47,7 +47,7 @@ Type Name        |   Description
 `SigmaProp`      | a type which represent a logical value which can be be obtained by executing a Sigma protocol with zero-knowledge proof of knowledge
 `AvlTree`        | authenticated dynamic dictionary
 `GroupElement`   | elliptic curve points
-`Box`            | a box containing a value, tokens and registers along with a guarding proposition
+`Box`            | a box containing a monetary value (in NanoErgs), tokens and registers along with a guarding proposition
 `Option[T]`      | a container which either have some value of type `T` or none.
 `Coll[T]`        | a collection of arbitrary length with all values of type `T` 
 `(T1,...,Tn)`    | tuples, a collection of element where T1, ..., Tn can be different types
@@ -120,12 +120,22 @@ class Numeric {
    /** Absolute value of this numeric value. 
     * @since 2.0
     */  
-  def abs: Numeric 
+  def toAbs: Numeric 
   
   /** Compares this numeric with that numeric for order.  Returns a negative integer, zero, or a positive integer as the
    * `this` is less than, equal to, or greater than `that`.
    */
-  def compare(that: SNumeric): Int 
+  def compareTo(that: Numeric): Int 
+  
+  /** Returns least of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def min(that: Numeric): Numeric
+  
+  /** Returns max of the two (`this` or `that`). 
+   * @since 2.0
+   */
+  def max(that: Numeric): Numeric
 }
 
 class Short extends Numeric
@@ -445,6 +455,7 @@ class Coll[A] {
    *  @tparam B     the element type of the returned collection.
    *  @return       a new collection of type `Coll[B]` resulting from applying the given function
    *                `f` to each element of this collection and collecting the results.
+   */
   def map[B](f: A => B): Coll[B]
 
   /** For this collection (x0, ..., xN) and other collection (y0, ..., yM)
@@ -488,7 +499,7 @@ class Coll[A] {
    *           where `x,,1,,, ..., x,,n,,` are the elements of this collection.
    *           Returns `z` if this collection is empty.
    */
-  def fold[B](z: B)(op: (B, A) => B): B
+  def foldLeft[B](z: B)(op: (B, A) => B): B
 
   /** Produces the range of all indices of this collection [0 .. size-1] 
    *  @since 2.0
@@ -499,6 +510,9 @@ class Coll[A] {
     * Builds a new collection by applying a function to all elements of this collection
     * and using the elements of the resulting collections.
     *
+    * Function `f` is constrained to be of the form `x => x.someProperty`, otherwise
+    * it is illegal.
+    * 
     * @param f the function to apply to each element.
     * @tparam B the element type of the returned collection.
     * @return a new collection of type `Coll[B]` resulting from applying the given collection-valued function
@@ -517,6 +531,14 @@ class Coll[A] {
     */
   def segmentLength(p: A => Boolean, from: Int): Int
 
+  /** Finds the first element of the $coll satisfying a predicate, if any.
+    *
+    *  @param p       the predicate used to test elements.
+    *  @return        an option value containing the first element in the $coll
+    *                 that satisfies `p`, or `None` if none exists.
+    */
+  def find(p: A => Boolean): Option[A]
+  
   /** Finds index of the first element satisfying some predicate after or at some start index.
     *
     *  @param   p     the predicate used to test elements.
@@ -579,10 +601,39 @@ class Coll[A] {
    */
   def mapReduce[K, V](m: A => (K,V), r: (V,V) => V): Coll[(K,V)]
 
+  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
+    *
+    *  @param key   the discriminator function.
+    *  @tparam K    the type of keys returned by the discriminator function.
+    *  @return      A map from keys to ${coll}s such that the following invariant holds:
+    *               {{{
+    *                 (xs groupBy key)(k) = xs filter (x => key(x) == k)
+    *               }}}
+    *               That is, every key `k` is bound to a $coll of those elements `x`
+    *               for which `key(x)` equals `k`.
+    */
+  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])]
+
+  /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
+    * Additionally projecting each element to a new value.
+    *
+    *  @param key   the discriminator function.
+    *  @param proj  projection function to produce new value for each element of this $coll
+    *  @tparam K    the type of keys returned by the discriminator function.
+    *  @tparam V    the type of values returned by the projection function.
+    *  @return      A map from keys to ${coll}s such that the following invariant holds:
+    *               {{{
+    *                 (xs groupByProjecting (key, proj))(k) = xs filter (x => key(x) == k).map(proj)
+    *               }}}
+    *               That is, every key `k` is bound to projections of those elements `x`
+    *               for which `key(x)` equals `k`.
+    */
+  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])]
+
   /** Produces a new collection which contains all distinct elements of this collection and also all elements of
    *  a given collection that are not in this collection.
    *  This is order preserving operation considering only first occurrences of each distinct elements.
-   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Col()).
+   *  Any collection `xs` can be transformed to a sequence with distinct elements by using xs.unionSet(Coll()).
    *
    *  NOTE: Use append if you don't need set semantics.
    *
@@ -615,6 +666,15 @@ class Coll[A] {
    */
   def intersect(that: Coll[A]): Coll[A]
 
+  /** Folding through all elements of this $coll starting from m.zero and applying m.plus to accumulate
+    * resulting value.
+    *
+    * @param m monoid object to use for summation
+    * @return  result of the following operations (m.zero `m.plus` x1 `m.plus` x2 `m.plus` ... xN)
+    * @since 2.0
+    */
+  def sum(m: Monoid[A]): A
+  
   /** Selects an interval of elements.  The returned collection is made up
    *  of all elements `x` which satisfy the invariant:
    *  {{{
@@ -668,7 +728,7 @@ class Coll[A] {
    *  @return  A new collection which contains the first occurrence of every element of this collection.
    *  @since 2.0
    */
-  def distinct: Col[A]
+  def distinct: Coll[A]
 
   /** Tests whether this collection contains the given sequence at a given index.
    *
@@ -681,14 +741,14 @@ class Coll[A] {
    *         index `offset`, otherwise `false`.
    * @since 2.0
    */
-  def startsWith[B](that: GenSeq[B], offset: Int): Boolean
+  def startsWith(that: Coll[A], offset: Int): Boolean
 
   /** Tests whether this collection ends with the given collection.
     *  @param  that   the collection to test
     *  @return `true` if this collection has `that` as a suffix, `false` otherwise.
     *  @since 2.0
     */
-  def endsWith(that: Col[A]): Boolean
+  def endsWith(that: Coll[A]): Boolean
 
 }
 ```
@@ -727,7 +787,7 @@ def allOf(conditions: Coll[Boolean]): Boolean
 /** Returns true if at least on element of the conditions is true */
 def anyOf(conditions: Coll[Boolean]): Boolean
 
-/** Similar to allOf, but performing logical XOR operation instead of `||` 
+/** Similar to allOf, but performing logical XOR operation instead of `&&` 
   * @since 2.0
   */
 def xorOf(conditions: Coll[Boolean]): Boolean 
@@ -830,7 +890,7 @@ def fromBase64(input: String): Coll[Byte]
 
 /**
   * It is executed in compile time.
-  * The compiler takes Base64 encoding of public key as String literal and create GroupElement constant. 
+  * The compiler takes Base58 encoding of public key as String literal and create GroupElement constant. 
   * Then the compiler used this constant to construct proveDlog public key out of it.
   * @since 1.9
   */
