@@ -596,6 +596,10 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, Some {
       case (builder, obj, method, Seq(arg), tparamSubst) =>
         builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
+    }),
+    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 5, Some {
+      case (builder, obj, method, Seq(arg), tparamSubst) =>
+        builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
     })
   )
   override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)

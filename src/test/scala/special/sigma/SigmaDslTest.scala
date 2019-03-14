@@ -113,16 +113,24 @@ class SigmaDslTest extends PropSpec
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
     val n = SigmaDsl.BigInt(BigInteger.TEN)
+    val g2 = ge.exp(n)
 
     {
       val eq = EqualityChecker(ge)
+//      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
       eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
+//      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
     }
 
     {
       val eq = EqualityChecker((ge, n))
       eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
+    }
+
+    {
+      val eq = EqualityChecker((ge, g2))
+      eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
     }
   }
 
