@@ -49,7 +49,7 @@ object OpCodes extends ValueCodes {
   val ByteArrayToLongCode  : OpCode = (LastConstantCode + 12).toByte
   val DowncastCode         : OpCode = (LastConstantCode + 13).toByte
   val UpcastCode           : OpCode = (LastConstantCode + 14).toByte
-
+  
   // EvaluatedValue descendants
   val TrueCode              : OpCode = (LastConstantCode + 15).toByte
   val FalseCode             : OpCode = (LastConstantCode + 16).toByte
@@ -64,7 +64,7 @@ object OpCodes extends ValueCodes {
   val Select3Code    : OpCode = (LastConstantCode + 25).toByte
   val Select4Code    : OpCode = (LastConstantCode + 26).toByte
   val Select5Code    : OpCode = (LastConstantCode + 27).toByte
-  val SelectFieldCode: OpCode = (LastConstantCode + 28).toByte // reserved 29 (1)
+  val SelectFieldCode: OpCode = (LastConstantCode + 28).toByte // reserved 29-30 (2)
 
   // Relation descendants
   val LtCode     : OpCode = (LastConstantCode + 31).toByte
@@ -95,7 +95,8 @@ object OpCodes extends ValueCodes {
   val InputsCode               : OpCode = (LastConstantCode + 52).toByte
   val OutputsCode              : OpCode = (LastConstantCode + 53).toByte
   val LastBlockUtxoRootHashCode: OpCode = (LastConstantCode + 54).toByte
-  val SelfCode                 : OpCode = (LastConstantCode + 55).toByte
+  val SelfCode                 : OpCode = (LastConstantCode + 55).toByte  // reserved 56 - 59 (4)
+
   val MinerPubkeyCode          : OpCode = (LastConstantCode + 60).toByte
 
   // Collection and tree operations codes
@@ -109,13 +110,7 @@ object OpCodes extends ValueCodes {
   val SliceCode            : OpCode = (LastConstantCode + 68).toByte
   val FilterCode           : OpCode = (LastConstantCode + 69).toByte
   val AvlTreeCode          : OpCode = (LastConstantCode + 70).toByte
-  val AvlTreeGetCode       : OpCode = (LastConstantCode + 71).toByte
-//  val TreeUpdatesCode      : OpCode = (LastConstantCode + 71).toByte
-//  val TreeInsertsCode      : OpCode = (LastConstantCode + 72).toByte
-//  val TreeRemovalsCode     : OpCode = (LastConstantCode + 73).toByte
-//  val TreeGetManyCode      : OpCode = (LastConstantCode + 74).toByte
-//  val TreeContainsCode     : OpCode = (LastConstantCode + 75).toByte
-  // reserved 72 - 80 (9)
+  val AvlTreeGetCode       : OpCode = (LastConstantCode + 71).toByte  // reserved 72 - 80 (9)
 
   // Type casts codes
   val ExtractAmountCode        : OpCode = (LastConstantCode + 81).toByte
@@ -148,10 +143,10 @@ object OpCodes extends ValueCodes {
   val FuncApplyCode: OpCode = (LastConstantCode + 106).toByte
   val PropertyCallCode: OpCode = (LastConstantCode + 107).toByte
   val MethodCallCode: OpCode = (LastConstantCode + 108).toByte
-  // reserved 109 (1)
+  val GlobalCode    : OpCode = (LastConstantCode + 109).toByte
 
   val SomeValueCode: OpCode = (LastConstantCode + 110).toByte
-  val NoneValueCode: OpCode = (LastConstantCode + 111).toByte
+  val NoneValueCode: OpCode = (LastConstantCode + 111).toByte  // reserved 112 - 114 (3)
 
   val GetVarCode         : OpCode = (LastConstantCode + 115).toByte
   val OptionGetCode      : OpCode = (LastConstantCode + 116).toByte
@@ -191,5 +186,11 @@ object OpCodes extends ValueCodes {
   val CollRotateRightCode     : OpCode = (LastConstantCode + 141).toByte
 
   val ContextCode             : OpCode = (LastConstantCode + 142).toByte
-  val XorOfCode               : OpCode = (LastConstantCode + 143).toByte
+  val XorOfCode               : OpCode = (LastConstantCode + 143).toByte // equals to 255
+
+  
+  /** This is the maximum valid opcode in the current version.
+    * It is used by soft-forkability checks.
+    */
+  val MaxOpCode             : OpCode = XorOfCode
 }

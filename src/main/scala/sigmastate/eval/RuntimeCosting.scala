@@ -759,6 +759,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   private var _intPlusMonoid: Rep[Monoid[Int]] = _
   private var _longPlusMonoid: Rep[Monoid[Long]] = _
   private var _sigmaDslBuilder: Rep[SigmaDslBuilder] = _
+  private var _costedGlobal: RCosted[SigmaDslBuilder] = _
 
   init() // initialize global context state
 
@@ -768,6 +769,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid
   def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid
   def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder
+  def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal
 
   protected def init(): Unit = {
     _colBuilder = RCollOverArrayBuilder()
@@ -776,6 +778,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
     _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
     _sigmaDslBuilder = RTestSigmaDslBuilder()
+    _costedGlobal = RCCostedPrim(sigmaDslBuilder, 0, _costedBuilder.mkSizePrim(1L, sigmaDslBuilderElement))
   }
 
   protected override def onReset(): Unit = {
@@ -876,6 +879,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case SBigInt => bigIntElement
     case SBox => boxElement
     case SContext => contextElement
+    case SGlobal => sigmaDslBuilderElement
     case SHeader => headerElement
     case SPreHeader => preHeaderElement
     case SGroupElement => groupElementElement
@@ -903,6 +907,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case oe: WOptionElem[_, _] => sigmastate.SOption(elemToSType(oe.eItem))
     case _: BoxElem[_] => SBox
     case _: ContextElem[_] => SContext
+    case _: SigmaDslBuilderElem[_] => SGlobal
     case _: HeaderElem[_] => SHeader
     case _: PreHeaderElem[_] => SPreHeader
     case _: SigmaPropElem[_] => SSigmaProp
@@ -1221,7 +1226,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           withConstantSize(resV, costOf(c))
       }
 
-      case org.ergoplatform.Context  => ctx
+      case org.ergoplatform.Context => ctx
+      case Global => costedGlobal
       case Height  => ContextCoster(ctx, SContext.heightMethod, Nil)
       case Inputs  => ContextCoster(ctx, SContext.inputsMethod, Nil)
       case Outputs => ContextCoster(ctx, SContext.outputsMethod, Nil)
@@ -1289,8 +1295,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         RCCostedPrim(value, cost, SizeGroupElement)
 
       case Values.GroupGenerator =>
-        val value = sigmaDslBuilder.groupGenerator
-        RCCostedPrim(value, opCost(Nil, costOf(node)), SizeGroupElement)
+        SigmaDslBuilderCoster(costedGlobal, SGlobal.groupGeneratorMethod, Nil)
 
       case sigmastate.ByteArrayToBigInt(In(_arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](_arr)

@@ -27,10 +27,9 @@ import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
-import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, PreHeader}
+import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
-import special.sigma.{AvlTree, Box, SigmaProp, wrapperType}
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval.SigmaDsl
@@ -111,14 +110,14 @@ object SType {
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
     * Should be in sync with sigmastate.lang.Types.predefTypes. */
-  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
+  val allPredefTypes = Seq(SBoolean, SByte, SShort, SInt, SLong, SBigInt, SContext, SGlobal, SHeader, SPreHeader, SAvlTree, SGroupElement, SSigmaProp, SString, SBox, SUnit, SAny)
   val typeCodeToType = allPredefTypes.map(t => t.typeCode -> t).toMap
 
   /** A mapping of object types supporting MethodCall operations. For each serialized typeId this map contains
     * a companion object which can be used to access the list of corresponding methods.
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
-    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SHeader, SPreHeader,
+    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
 
@@ -1323,3 +1322,27 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   )
   override val coster = Some(Coster(_.PreHeaderCoster))
 }
+
+case object SGlobal extends SProduct with SPredefType with SMonoType {
+  override type WrappedType = SigmaDslBuilder
+  override val typeCode: TypeCode = 106: Byte
+  override def typeId = typeCode
+  override def mkConstant(v: SigmaDslBuilder): Value[SGlobal.type] = {
+    sys.error(s"Constants of SGlobal type cannot be created.")
+  }
+  /** Approximate data size of the given context without ContextExtension. */
+  override def dataSize(v: SType#WrappedType): Long = {
+    sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
+  }
+  override def isConstantSize = true  // only fixed amount of global information is allowed
+  def ancestors = Nil
+
+  val tT = STypeIdent("T")
+  val groupGeneratorMethod = property("groupGenerator", SGroupElement, 1)
+
+  protected override def getMethods() = super.getMethods() ++ Seq(
+    groupGeneratorMethod
+  )
+  override val coster = Some(Coster(_.SigmaDslBuilderCoster))
+}
+

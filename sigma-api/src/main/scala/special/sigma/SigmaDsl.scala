@@ -537,7 +537,7 @@ trait Context {
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
   def LastBlockUtxoRootHash: AvlTree
 
-  /**
+  /** A fixed number of last block headers in descending order (first header is the newest one)
     * @since 2.0
     */
   def headers: Coll[Header]
@@ -588,7 +588,7 @@ trait SigmaContract {
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
     this.builder.proveDHTuple(g, h, u, v)
 
-  def groupGenerator: GroupElement = this.builder.groupGenerator
+  def groupGenerator(): GroupElement = this.builder.groupGenerator()
 
   def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
 
@@ -636,7 +636,7 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-  def groupGenerator: GroupElement
+  def groupGenerator(): GroupElement
 
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]

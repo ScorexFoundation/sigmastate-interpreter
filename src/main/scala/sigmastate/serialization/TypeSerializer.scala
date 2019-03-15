@@ -29,6 +29,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SBox => w.put(SBox.typeCode)
     case SAvlTree => w.put(SAvlTree.typeCode)
     case SContext => w.put(SContext.typeCode)
+    case SGlobal => w.put(SGlobal.typeCode)
     case SHeader => w.put(SHeader.typeCode)
     case SPreHeader => w.put(SPreHeader.typeCode)
     case c: SCollectionType[a] => c.elemType match {
@@ -182,6 +183,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
         case SContext.typeCode => SContext
+        case SGlobal.typeCode => SGlobal
         case SHeader.typeCode => SHeader
         case SPreHeader.typeCode => SPreHeader
         case STypeIdent.TypeCode => {

@@ -393,7 +393,7 @@ case class CHeader(
                     version: Byte,
                     parentId: Coll[Byte],
                     ADProofsRoot: Coll[Byte],
-                    stateRoot: CAvlTree,
+                    stateRoot: AvlTree,
                     transactionsRoot: Coll[Byte],
                     timestamp: Long,
                     nBits: Long,
@@ -547,7 +547,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
     CSigmaProp(dht)
   }
 
-  override def groupGenerator: GroupElement = {
+  override def groupGenerator(): GroupElement = {
     this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 

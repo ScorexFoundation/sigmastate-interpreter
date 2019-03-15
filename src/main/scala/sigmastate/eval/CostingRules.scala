@@ -567,4 +567,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))
+
+  class SigmaDslBuilderCoster(obj: RCosted[SigmaDslBuilder], method: SMethod, args: Seq[RCosted[_]]) extends Coster[SigmaDslBuilder](obj, method, args){
+    import PreHeader._
+
+    def groupGenerator() = groupElementProperyAccess(_.groupGenerator)
+  }
+
+  object SigmaDslBuilderCoster extends CostingHandler[SigmaDslBuilder]((obj, m, args) => new SigmaDslBuilderCoster(obj, m, args))
+
 }
