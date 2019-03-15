@@ -252,10 +252,11 @@ Compute \texttt{hash = Blake2b256(withdrawScript)}. Hardcode \texttt{alice}, \te
 
 \begin{alltt}
 	val depositScript = compile(depositEnv, """ \Hi{\{}
-  \Hi{alice && OUTPUTS.forall( \{(out:Box) =>}
-    \Hi{(out.R5[Int].get >= HEIGHT + blocksIn24h && }
-    \Hi{ blake2b256(out.propositionBytes) == hash) ||}
-    \Hi{out.propositionBytes == SELF.propositionBytes\} ) \}} """)
+  \Hi{val validChange = \{(out:Box) => out.propositionBytes == SELF.propositionBytes\}}
+  \Hi{val validWithdraw = \{(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h && }
+                                    \Hi{blake2b256(out.propositionBytes) == hash\}}
+  \Hi{val validOut = \{(out:Box) => validChange(out) || validWithdraw(out)\}}
+  \Hi{alice && OUTPUTS.forall(validOut) \}} """)
 \end{alltt}
 
 Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
@@ -501,14 +502,13 @@ Assume that fee will be paid in tokens\footnote{Tokens are additional assets sto
 	\item \textbf{Fee accumulation:} Fee can be accumulated rather than paid upfront. %For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
 	Additionally, fee can keep accumulating as long as the mixed outputs are spent within the system (i.e., sent back to the H-pool or used in another mix operation). The accumulated fee is paid when the coin exits the system.
 		The accumulated fee of the mix transaction is the sum of accumulated fee of the inputs plus mining fee. This accumulated fee is equally shared by the two mixed outputs. 
-	
-%	as long as the spending transaction either performs a pool or mix operation and the accumulated fee is paid at the time the coin leaves the mixing system. 
-%	The accumulated fee for the mix transaction is the sum of accumulated fee of the inputs plus the mining fee for the mix transaction. To ensure privacy, this accumulated fee is equally shared by the two outputs. 
 	\item \textbf{First spender pays:} Instead of sharing the (accumulated) fee equally in the mixed outputs, the first party to spend the mixed output should pay the entire (accumulated) fee, while the second party gets a free ride. This can be achieved using additional tokens as follows: 
 	
-	A transaction creating Alice's box for the H-pool must generate exactly 4 tokens and those should be present in Alice's box. Let $x$ be the token-ID of this token. A mix transaction must generate four boxes each with 1 quantity of token $x$ as follows:
+%	A transaction creating Alice's box for the H-pool must generate exactly 4 quantities of a new token stored in her box. Let $x$ be the token-ID of this token. Alice requires that a transaction spending her box must generate four boxes each with 1 quantity of token $x$ as follows:
+	
+	A mix transaction must generate exactly 4 quantities of a new token (with some id $x$) distributed equally among 4 output boxes as follows:
 	\begin{enumerate}
-		\item Two standard mixed boxes $O_0, O_1$ with the additional spending condition that the sum of quantities of token $x$ in the inputs is $\geq 3$.
+		\item The two standard mix outputs $O_0, O_1$ having the additional spending condition that the sum of quantities of token $x$ in the inputs is $\geq 3$.
 		\item Two new boxes $O_2, O_3$ with the following identical spending conditions:
 		\begin{enumerate}
 			\item The spending transaction must have one output box containing 2 quantities of token $x$ and protected by the same script as this box. 
@@ -518,7 +518,7 @@ Assume that fee will be paid in tokens\footnote{Tokens are additional assets sto
 	\end{enumerate}
 	
 	The first spender will spend both $O_2$ and $O_3$ to generate a new box with 2 quantities of token $x$ and spendable only by the second spender. 
-	Thus, a transaction spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. %, otherwise it is the first spender.
+	Thus, a transaction spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. This condition can be checked in the script when computing the (accumulated) fee.%, otherwise it is the first spender.
 	
 \end{enumerate}
 
