@@ -88,18 +88,28 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
         |}""".stripMargin).asSigmaProp
 
+    val blocksIn24h = 500
+    val feeProposition = ErgoScriptPredef.feeProposition()
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
       "alice" -> alicePubKey,
+      "blocksIn24h" -> blocksIn24h,
+      "feePropositionBytes" -> feeProposition.bytes,
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
     val depositScript = compile(depositEnv,
       """{
-        |  alice && OUTPUTS.forall({(out:Box) =>
-        |    out.R5[Int].get >= HEIGHT + 30 &&
-        |    blake2b256(out.propositionBytes) == withdrawScriptHash
-        |  })
+        |  val isChange = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
+        |  val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
+        |                               blake2b256(b.propositionBytes) == withdrawScriptHash}
+        |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
+        |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
+        |
+        |  val sumInts = {(xs: Coll[Int]) => xs.fold(0, { (acc: Int, amt: Int) => acc + amt }) }
+        |  val fees = OUTPUTS.map{(b:Box) => if (isFee(b)) 1 else 0}
+        |
+        |  alice && OUTPUTS.forall(isValidOut) && sumInts(fees) <= 1
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
@@ -121,7 +131,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     val withdrawAmount = 10
     val withdrawHeight = 101
-    val bobDeadline = 150
+    val bobDeadline = withdrawHeight+blocksIn24h
 
     val reversibleWithdrawOutput = ErgoBox(withdrawAmount, withdrawScript, withdrawHeight, Nil,
       Map(
@@ -155,7 +165,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val davePubKey = dave.dlogSecrets.head.publicImage
 
     val bobSpendAmount = 10
-    val bobSpendHeight = 151
+    val bobSpendHeight = bobDeadline+1
 
     val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
@@ -181,7 +191,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     // carol spends before bobDeadline
 
     val carolSpendAmount = 10
-    val carolSpendHeight = 131
+    val carolSpendHeight = bobDeadline - 1
 
     // Carol sends to Dave
     val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
