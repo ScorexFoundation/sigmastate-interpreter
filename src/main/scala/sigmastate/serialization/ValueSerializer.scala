@@ -146,37 +146,37 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case c: Constant[SType] =>
       w.constantExtractionStore match {
         case Some(constantStore) =>
-          SerializeLog.logPrintf(true, true, false, "Constant with store");
+          SerializeLog.logPrintf(true, true, false, "[Constant with store]");
           val ph = constantStore.put(c)(DeserializationSigmaBuilder)
 
-          SerializeLog.logPrintf(true, true, false, "OpCode");
+          SerializeLog.logPrintf(true, true, false, "placeholder.opCode");
           w.put(ph.opCode)
-          SerializeLog.logPrintf(false, true, false, "OpCode");
+          SerializeLog.logPrintf(false, true, false, "placeholder.opCode");
 
-          SerializeLog.logPrintf(true, true, false, "Placeholders");
+          SerializeLog.logPrintf(true, true, false, "constantPlaceholder");
 
           constantPlaceholderSerializer.serializeBody(ph, w)
 
-          SerializeLog.logPrintf(false, true, false, "Placeholders");
+          SerializeLog.logPrintf(false, true, false, "constantPlaceholder");
 
-          SerializeLog.logPrintf(false, true, false, "Constant with store");
+          SerializeLog.logPrintf(false, true, false, "[Constant with store]");
         case None =>
-          SerializeLog.logPrintf(true, true, false, "Constant without store");
+          SerializeLog.logPrintf(true, true, false, "[Constant without store]");
 
           constantSerializer.serialize(c, w)
 
-          SerializeLog.logPrintf(false, true, false, "Constant without store");
+          SerializeLog.logPrintf(false, true, false, "[Constant without store]");
       }
     case _ =>
-      SerializeLog.logPrintf(true, true, false, "Non-constant");
+      SerializeLog.logPrintf(true, true, false, "[Non-constant]");
 
       val opCode = v.opCode
 
-      SerializeLog.logPrintf(true, true, false, "OpCode");
+      SerializeLog.logPrintf(true, true, false, "opCode");
 
       w.put(opCode)
 
-      SerializeLog.logPrintf(false, true, false, "OpCode");
+      SerializeLog.logPrintf(false, true, false, "opCode");
 
       val s = "0x%02X".format(opCode).mkString("")
       val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
@@ -190,7 +190,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
       SerializeLog.logPrintf(false, true, false, "Body [opCode=" + s + "; Serializer=" + t+ "]");
 
-      SerializeLog.logPrintf(false, true, false, "Non-constant");
+      SerializeLog.logPrintf(false, true, false, "[Non-constant]");
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {

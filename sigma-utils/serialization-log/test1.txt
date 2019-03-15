@@ -1,0 +1,6 @@
+[Start][Serialize]Tag1
+a
+c
+b
+g
+[End][Serialize]Tag1

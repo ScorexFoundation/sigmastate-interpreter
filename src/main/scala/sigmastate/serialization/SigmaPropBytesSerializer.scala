@@ -11,11 +11,11 @@ object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
 
   def serializeBody(obj: SigmaPropBytes, w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false, "SigmaPropBytes")
+
     SerializeLog.logPrintf(true, true, false, "input")
-
     w.putValue(obj.input)
-
     SerializeLog.logPrintf(false, true, false, "input")
+
     SerializeLog.logPrintf(false, true, false, "SigmaPropBytes")
   }
 

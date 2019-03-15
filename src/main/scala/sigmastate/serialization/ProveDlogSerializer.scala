@@ -16,7 +16,9 @@ case class ProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaBoolean)
   override def serializeBody(obj: ProveDlog, w: SigmaByteWriter): Unit = {
     SerializeLog.logPrintf(true, true, false,"ProveDlog")
 
+    SerializeLog.logPrintf(true, true, false,"value")
     w.putValue(obj.value)
+    SerializeLog.logPrintf(false, true, false,"value")
 
     SerializeLog.logPrintf(false, true, false,"ProveDlog")
   }

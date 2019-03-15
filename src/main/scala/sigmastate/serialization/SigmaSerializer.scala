@@ -61,7 +61,7 @@ object Serializer {
     w
   }*/
 
-  def startWriter(constantExtractionStore: Option [ConstantStore] = None, bWithLog: Boolean = false): SigmaByteWriter = {
+  def startWriter(constantExtractionStore: Option [ConstantStore] = None, bWithLog: Boolean = true): SigmaByteWriter = {
     val b = new ByteArrayBuilder()
     val w = if (bWithLog) new SigmaByteWriterWithLog(b, constantExtractionStore)
                      else new SigmaByteWriterC(b, constantExtractionStore)

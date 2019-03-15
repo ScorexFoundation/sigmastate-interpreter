@@ -30,7 +30,7 @@ case class ConstantSerializer(builder: SigmaBuilder)
 
     SerializeLog.logPrintf(true, true, false,"value")
     DataSerializer.serialize(c.value, c.tpe, w)
-    SerializeLog.logPrintf(false, true, false,"values")
+    SerializeLog.logPrintf(false, true, false,"value")
 
     SerializeLog.logPrintf(false, true, false, "Constant")
   }

@@ -5,7 +5,6 @@ import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
-import sigma.util.Extensions._
 import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Transformer
 

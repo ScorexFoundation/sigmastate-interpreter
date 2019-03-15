@@ -27,13 +27,13 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
     if (opCode == OpCodes.MethodCallCode) {
       assert(mc.args.nonEmpty)
 
-      SerializeLog.logPrintf(true, true, false, "opCode == OpCodes.MethodCallCode")
+      SerializeLog.logPrintf(true, true, false, "[opCode == OpCodes.MethodCallCode]")
 
       SerializeLog.logPrintf(true, true, false, "args")
       w.putValues(mc.args)
       SerializeLog.logPrintf(false, true, false, "args")
 
-      SerializeLog.logPrintf(false, true, false, "opCode == OpCodes.MethodCallCode")
+      SerializeLog.logPrintf(false, true, false, "[opCode == OpCodes.MethodCallCode]")
     }
 
     SerializeLog.logPrintf(false, true, false, "MethodCall")

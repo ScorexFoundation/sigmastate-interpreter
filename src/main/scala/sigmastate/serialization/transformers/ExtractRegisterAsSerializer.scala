@@ -5,7 +5,6 @@ import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.Values.Value
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{OpCodes, ValueSerializer}
-import sigma.util.Extensions._
 import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SOption, SType}

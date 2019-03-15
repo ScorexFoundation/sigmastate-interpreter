@@ -19,24 +19,18 @@ case class DeserializeRegisterSerializer(cons: (RegisterId, SType, Option[Value[
 
     SerializeLog.logPrintf(true, true, false, "DeserializeRegisterSerializer")
 
-    SerializeLog.logPrintf(true, true, false, "Register number")
-
+    SerializeLog.logPrintf(true, true, false, "reg.number")
     w.put(obj.reg.number)
+    SerializeLog.logPrintf(false, true, false, "reg.number")
 
-    SerializeLog.logPrintf(false, true, false, "Register number")
-
-    SerializeLog.logPrintf(true, true, false, "Object type")
-
+    SerializeLog.logPrintf(true, true, false, "tpe")
     w.putType(obj.tpe)
+    SerializeLog.logPrintf(false, true, false, "tpe")
 
-    SerializeLog.logPrintf(false, true, false, "Object type")
-
-    SerializeLog.logPrintf(true, true, false, "Object.default")
-
+    SerializeLog.logPrintf(true, true, false, "default")
     //andruiman: why obj.default?, also changed from _.putValue(_).
     w.putOption(obj.default)((_,x) => w.putValue(x))
-
-    SerializeLog.logPrintf(false, true, false, "Object.default")
+    SerializeLog.logPrintf(false, true, false, "default")
 
     SerializeLog.logPrintf(false, true, false, "DeserializeRegisterSerializer")
   }

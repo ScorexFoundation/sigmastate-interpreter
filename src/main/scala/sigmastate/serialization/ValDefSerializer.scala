@@ -21,7 +21,7 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
       require(!obj.isValDef, s"expected FunDef, got $obj")
       require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
 
-      SerializeLog.logPrintf(true, true, false, "opCode==FunDefCode")
+      SerializeLog.logPrintf(true, true, false, "[opCode==FunDefCode]")
 
       SerializeLog.logPrintf(true, true, false, "tpeArgs.length.toByteExact")
       w.put(obj.tpeArgs.length.toByteExact)
@@ -31,7 +31,7 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
       obj.tpeArgs.foreach(w.putType)
       SerializeLog.logPrintf(false, true, false, "tpeArgs*")
 
-      SerializeLog.logPrintf(false, true, false, "opCode==FunDefCode")
+      SerializeLog.logPrintf(false, true, false, "[opCode==FunDefCode]")
     }
 
     SerializeLog.logPrintf(true, true, false, "rhs")
