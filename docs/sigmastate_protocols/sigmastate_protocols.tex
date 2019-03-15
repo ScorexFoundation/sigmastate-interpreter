@@ -248,15 +248,40 @@ val withdrawScript = compile(withdrawEnv, """ \Hi{\{}
   \Hi{(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline) \}} """)
 \end{alltt}
 
-Compute \texttt{hash = Blake2b256(withdrawScript)}. Hardcode \texttt{alice}, \texttt{blocksIn24h} and \texttt{hash} inside \texttt{depositEnv} to create a compiled script called \texttt{depositScript}:
+Let \texttt{feePropositionBytes} be the script for a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. 
+Compute \texttt{hash = Blake2b256(withdrawScript)}. Set these values along with \texttt{alice} and \texttt{blocksIn24h} in \texttt{depositEnv} to create a compiled script: % called \texttt{depositScript}:
+
+%\begin{alltt}
+%	val depositScript = compile(depositEnv, """ \Hi{\{}
+%  \Hi{val validChange = \{(out:Box) => out.propositionBytes == SELF.propositionBytes\}}
+%  \Hi{val validWithdraw = \{(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h && }
+%                                    \Hi{blake2b256(out.propositionBytes) == hash\}}
+%  \Hi{val validOut = \{(out:Box) => validChange(out) || validWithdraw(out)\}}
+%  \Hi{alice && OUTPUTS.forall(validOut) \}} """)
+%\end{alltt}
+%
+%
+%val isChange = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
+%val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
+%	blake2b256(b.propositionBytes) == withdrawScriptHash}
+%val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
+%val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
+%
+%val totalFee = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (b.propositionBytes == feePropositionBytes) acc + b.value else acc })
+%val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
+%
+%// alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
+%alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
 
 \begin{alltt}
-	val depositScript = compile(depositEnv, """ \Hi{\{}
-  \Hi{val validChange = \{(out:Box) => out.propositionBytes == SELF.propositionBytes\}}
-  \Hi{val validWithdraw = \{(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h && }
-                                    \Hi{blake2b256(out.propositionBytes) == hash\}}
-  \Hi{val validOut = \{(out:Box) => validChange(out) || validWithdraw(out)\}}
-  \Hi{alice && OUTPUTS.forall(validOut) \}} """)
+val depositScript = compile(depositEnv, """ \Hi{\{}
+  \Hi{val isChange = \{(out:Box) => out.propositionBytes == SELF.propositionBytes\}}
+  \Hi{val isWithdraw = \{(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h &&}
+                                 \Hi{blake2b256(out.propositionBytes) == hash\}}
+  \Hi{val isFee = \{(out:Box) => out.propositionBytes == feePropositionBytes\}}
+  \Hi{val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}}
+  \Hi{val fee = OUTPUTS.fold(0L, \{(x:Long, b:Box) => if (isFee(b)) x + b.value else x \})}
+  \Hi{alice && OUTPUTS.forall(isValid) && totalFee <= maxFee \}} """)
 \end{alltt}
 
 Finally, the reversible address is computed as: \texttt{Pay2SHAddress(depositScript)}.
@@ -486,43 +511,35 @@ Alice's Half-Mix box is protected by the following \langname code:
 
 \textbf{Comparing with ZeroCash:} Both \mixname and ZeroCash (ZC) are based on zero-knowledge proofs and use an anonymizing pool. The difference is that the size of our pool depends on the number of unspent outputs, while that of ZC depends on the number of deposits, which is monotonously increasing. Additionally, the size of proofs in \mixname is constant, unlike ZC, where the proof size is logarithmic to the pool size. Finally, unlike ZC, the proofs in \mixname do not rely on expensive NP-reductions and are instead based on a number theoretic problem. This makes \mixname far more scalable than ZC. 
 
-\textbf{Offchain Pool:} Alice's Half-Mix box can be stored off-chain till the mixing step. Alice can either hand her unbroadcasted transaction directly to Bob or store it with a 3rd party service. Bob (or the 3rd party) will broadcast both Half and Full mix transactions after the mix step. It will be interesting to have an offchain variant of the protocol where both Alice and Bob add their Half-Mix coins to the H-Pool and a 3rd party can combine them without interacting with Alice or Bob. 
-
-%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
+\textbf{Offchain Pool:} As mentioned earlier, Alice's Half-Mix box can be stored off-chain till the mixing step. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both Half and Full mix transactions after the mix step. It will be interesting to have a variant of the protocol where both Alice and Bob add their Half-Mix coins to an offchain H-Pool and a 3rd party combines them without interacting with Alice or Bob. 
 
 \textbf{Handling Fee:} To ensure perfect privacy and fairness, each output must have a fixed value and zero fee. However, zero-fee transactions are not practical. We describe below a few approaches to deduct fee. 
 %a combination of which may be used. 
-Assume that fee will be paid in tokens\footnote{Tokens are additional assets stored in register R3 of a box as a collection of (token-ID, quantity) pairs. Every transaction may generate at most one token-ID of arbitrary quantity, where token-ID is the box-ID of the first input. For any other token-ID, the sum of quantities in outputs must be less or equal to the sum of quantities in inputs.} and mined by some 3rd party.
+Assume that fee is paid in tokens\footnote{Tokens are additional assets stored in register R3 of a box as a collection of (token-ID, quantity) pairs. Every transaction may generate at most one token-ID of arbitrary quantity, where token-ID is the box-ID of the first input. For any other token-ID, the sum of quantities in outputs must be less or equal to the sum of quantities in inputs.} for transactions mined by some 3rd party. 
 
- A straightforward method of handling fee is as follows. Alice's Half-Mix box contains $i$ such tokens and requires each output box of the mix to contain exactly $i-1$ tokens. This allows Alice to mix her coin $i$ times, which is optimal and fair. However, this has two drawbacks. Firstly, it has weakened privacy because it restricts which coins can be mixed. Secondly, it impacts usability because there may not be any available boxes with the desired number of tokens. The following tweaks to the basic protocol can be used to overcome these drawbacks. 
+ A straightforward method of handling fee is as follows. Alice's Half-Mix box contains $i$ such tokens and requires each output box of the mix to contain exactly $i-1$ tokens. This allows Alice to mix her coin $i$ times, which is optimal and fair. However, this has two drawbacks. Firstly, it has weakened privacy because it restricts which coins can be mixed. Secondly, it impacts usability because there may not be any available boxes with the desired number of tokens. %The following tweaks to the basic protocol can be used to overcome these drawbacks. 
  
-\begin{enumerate}
-	\item \textbf{Approximate Fairness:} Bob will mix by picking from the H-pool a box with token quantity ``closer'' to that of his own non-H-pool box. He will generate two outputs with equal quantity of tokens after deducting fee. Alice's script could encode the maximum allowed difference in quantities. In the worst case, to mix $i$ times, Alice will have to start with a box of $2^i$ tokens.
-		
-	\item \textbf{Fee accumulation:} Fee can be accumulated rather than paid upfront. %For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
-	Additionally, fee can keep accumulating as long as the mixed outputs are spent within the system (i.e., sent back to the H-pool or used in another mix operation). The accumulated fee is paid when the coin exits the system.
-		The accumulated fee of the mix transaction is the sum of accumulated fee of the inputs plus mining fee. This accumulated fee is equally shared by the two mixed outputs. 
-	\item \textbf{First spender pays:} Instead of sharing the (accumulated) fee equally in the mixed outputs, the first party to spend the mixed output should pay the entire (accumulated) fee, while the second party gets a free ride. This can be achieved using additional tokens as follows: 
-	
-%	A transaction creating Alice's box for the H-pool must generate exactly 4 quantities of a new token stored in her box. Let $x$ be the token-ID of this token. Alice requires that a transaction spending her box must generate four boxes each with 1 quantity of token $x$ as follows:
-	
-	A mix transaction must generate exactly 4 quantities of a new token (with some id $x$) distributed equally among 4 output boxes as follows:
-	\begin{enumerate}
-		\item The two standard mix outputs $O_0, O_1$ having the additional spending condition that the sum of quantities of token $x$ in the inputs is $\geq 3$.
-		\item Two new boxes $O_2, O_3$ with the following identical spending conditions:
-		\begin{enumerate}
-			\item The spending transaction must have one output box containing 2 quantities of token $x$ and protected by the same script as this box. 
-			\item Exactly one output box in the spending transaction can contain token $x$.
-		\end{enumerate}
-%		\item A mixed box can only be spent if the sum of quantities of token $x$ in the inputs is $\geq 3$.
-	\end{enumerate}
-	
-	The first spender will spend both $O_2$ and $O_3$ to generate a new box with 2 quantities of token $x$ and spendable only by the second spender. 
-	Thus, a transaction spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. This condition can be checked in the script when computing the (accumulated) fee.%, otherwise it is the first spender.
-	
-\end{enumerate}
+ In the {\em approximate fairness} strategy, Bob mixes by picking from the H-pool a box with token quantity ``closer'' to that of his own non-H-pool box. He will generate two outputs with equal amount of tokens after deducting fee. Alice's script could encode the maximum allowed difference in tokens. In the worst case, Alice will have to start with $2^i$ tokens to mix $i$ times.
+ 
+ Starting with a fixed number of tokens restricts the number of mixes. To allow arbitrary number of mixes, we suggest a {\em fee accumulation} strategy, where the fee is accumulated rather than paid upfront. %For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
+The fee keeps accumulating as long as the coin is circulated within the system (i.e., sent back to the H-pool or used in another mix operation) and is paid when the coin exits the system.
 
-%For simplicity, we can assume an intermediary providing the protocol as a service. This involves handling handling tokens and mining.
+ The accumulated fee of a mix transaction is the sum of accumulated fee of the inputs plus mining fee, and in the most basic variant, is equally shared between the two mixed outputs.
+ We can enhance this with the {\em first spender pays} strategy, where the first party to spend a mixed output takes the entire burden of the accumulated fee. 
+ Below we describe how to identify the first spender.
+ % This is achieved as follows:
+ 
+ \textbf{Identifying the first spender:} A mix transaction must generate exactly 4 quantities of a new token (with some id $x$) distributed equally among 4 output boxes. Of these, two are the standard mix outputs $O_0, O_1$ with the additional spending condition that one output must contain some amount of token $x$. The other two boxes, $O_2, O_3$, have the following identical spending conditions:
+		\begin{enumerate}
+			\item The sum of quantities of token $x$ in the inputs and outputs is 3 and 2 respectively.
+			\item One output contains 2 quantities of token $x$ and is protected by the same script as this box. 
+		\end{enumerate}
+	
+Clearly, the first spender must spend both $O_2, O_3$ and generate a new box with 2 quantities of token $x$ that is spendable only by the second spender. 
+Thus, anyone spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. 
+%This condition can be checked in the script when computing the (accumulated) fee.%, otherwise it is the first spender.
+
+%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
