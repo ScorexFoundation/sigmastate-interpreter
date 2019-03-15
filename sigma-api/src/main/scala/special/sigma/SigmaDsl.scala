@@ -588,7 +588,7 @@ trait SigmaContract {
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
     this.builder.proveDHTuple(g, h, u, v)
 
-  def groupGenerator(): GroupElement = this.builder.groupGenerator()
+  def groupGenerator: GroupElement = this.builder.groupGenerator
 
   def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
 
@@ -636,7 +636,12 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-  def groupGenerator(): GroupElement
+  /**
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
+    * @return the generator of this Dlog group
+    */
+  def groupGenerator: GroupElement
 
   @Reified("T")
   def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]

@@ -496,17 +496,18 @@ class SigmaDslTest extends PropSpec
 
   property("global functions equivalence") {
     val n = SigmaDsl.BigInt(BigInteger.TEN)
+    val Global = SigmaDsl
 
     {
       val eq = EqualityChecker(1)
-      //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
-      eq({ (x: Int) => groupGenerator() })("{ (x: Int) => groupGenerator() }")
+      eq({ (x: Int) => groupGenerator })("{ (x: Int) => groupGenerator }")
+      eq({ (x: Int) => Global.groupGenerator })("{ (x: Int) => Global.groupGenerator }")
     }
 
     {
       val eq = EqualityChecker(n)
       //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
-      eq({ (n: BigInt) => groupGenerator().exp(n) })("{ (n: BigInt) => groupGenerator().exp(n) }")
+      eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 
   }

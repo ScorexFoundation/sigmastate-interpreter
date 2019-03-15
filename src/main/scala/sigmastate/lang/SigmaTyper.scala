@@ -31,6 +31,14 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   private val predefinedEnv: Map[String, SType] =
       predefFuncRegistry.funcs.map(f => f.name -> f.declaration.tpe).toMap
 
+  private def processGlobalMethod(srcCtx: Nullable[SourceContext], method: SMethod) = {
+    val global = Global.withPropagatedSrcCtx(srcCtx)
+    val node = for {
+      pf <- method.irBuilder
+      res <- pf.lift((builder, global, method, IndexedSeq(), emptySubst))
+    } yield res
+    node.getOrElse(mkMethodCall(global, method, IndexedSeq(), emptySubst).withPropagatedSrcCtx(srcCtx))
+  }
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
     * the env map to resolve bound variables and their types.
@@ -59,11 +67,17 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       val newItems = items.map(assignType(env, _))
       assignConcreteCollection(c, newItems)
 
-    case Ident(n, _) =>
+    case i @ Ident(n, _) =>
       env.get(n) match {
         case Some(t) => mkIdent(n, t)
         case None =>
-          error(s"Cannot assign type for variable '$n' because it is not found in env $env", bound.sourceContext)
+          SGlobal.method(n) match {
+            case Some(method) if method.stype.tDom.length == 1 => // this is like  `groupGenerator` without parentheses
+              val srcCtx = i.sourceContext
+              processGlobalMethod(srcCtx, method)
+            case _ =>
+              error(s"Cannot assign type for variable '$n' because it is not found in env $env", bound.sourceContext)
+          }
       }
 
     case sel @ Select(obj, n, None) =>
@@ -172,6 +186,11 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         case _ =>
           mkApply(newSel, newArgs)
       }
+
+    case a @ Apply(ident: Ident, args) if SGlobal.hasMethod(ident.name) => // example: groupGenerator()
+      val method = SGlobal.method(ident.name).get
+      val srcCtx = a.sourceContext
+      processGlobalMethod(srcCtx, method)
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
@@ -453,6 +472,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case SomeValue(x) => SomeValue(assignType(env, x))
     case v: NoneValue[_] => v
 
+    case Global => Global
     case Context => Context
     case Height => Height
     case MinerPubkey => MinerPubkey

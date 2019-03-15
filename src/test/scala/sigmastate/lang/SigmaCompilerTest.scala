@@ -7,11 +7,11 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
+import sigmastate.lang.Terms.{Lambda, MethodCall, ZKProofBlock, Apply, Ident}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
+import sigmastate.utxo.{GetVar, ExtractAmount, ByIndex, SelectField}
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
@@ -81,6 +81,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
+  }
+
+  property("global methods") {
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
   }
 
   property("user-defined functions") {

@@ -1338,7 +1338,9 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   def ancestors = Nil
 
   val tT = STypeIdent("T")
-  val groupGeneratorMethod = property("groupGenerator", SGroupElement, 1)
+  val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1, Some {
+    case (builder, obj, method, args, tparamSubst) => GroupGenerator
+  })
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod

@@ -547,7 +547,7 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
     CSigmaProp(dht)
   }
 
-  override def groupGenerator(): GroupElement = {
+  override def groupGenerator: GroupElement = {
     this.GroupElement(CryptoConstants.dlogGroup.generator)
   }
 

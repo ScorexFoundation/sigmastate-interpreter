@@ -76,7 +76,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]
 
   @NeverInline
-  def groupGenerator(): GroupElement = this.GroupElement(__g__)
+  def groupGenerator: GroupElement = this.GroupElement(__g__)
 
   @Reified("T")
   @NeverInline

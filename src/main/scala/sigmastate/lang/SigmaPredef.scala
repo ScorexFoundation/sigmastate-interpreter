@@ -175,11 +175,6 @@ object SigmaPredef {
       }
     )
 
-    val GroupGeneratorFunc = PredefinedFunc("groupGenerator",
-      Lambda(Vector(), SGroupElement, None),
-      { case (_, Seq()) => GroupGenerator }
-    )
-
     val LongToByteArrayFunc = PredefinedFunc("longToByteArray",
       Lambda(Vector("input" -> SLong), SByteArray, None),
       { case (_, Seq(arg: Value[SLong.type]@unchecked)) =>
@@ -241,7 +236,6 @@ object SigmaPredef {
       ByteArrayToBigIntFunc,
       ByteArrayToLongFunc,
       DecodePointFunc,
-      GroupGeneratorFunc,
       LongToByteArrayFunc,
       ProveDHTupleFunc,
       ProveDlogFunc,
