@@ -64,6 +64,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */
+
   property("Evaluation - Reversible Tx Example") {
 
     val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
@@ -94,6 +95,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       ScriptNameProp -> "depositEnv",
       "alice" -> alicePubKey,
       "blocksIn24h" -> blocksIn24h,
+      "maxFee" -> 10L,
       "feePropositionBytes" -> feeProposition.bytes,
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
@@ -106,10 +108,11 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
         |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
         |
-        |  val sumInts = {(xs: Coll[Int]) => xs.fold(0, { (acc: Int, amt: Int) => acc + amt }) }
-        |  val fees = OUTPUTS.map{(b:Box) => if (isFee(b)) 1 else 0}
+        |  val totalFee = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (b.propositionBytes == feePropositionBytes) acc + b.value else acc })
+        |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
         |
-        |  alice && OUTPUTS.forall(isValidOut) && sumInts(fees) <= 1
+        |  // alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
+        |  alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
