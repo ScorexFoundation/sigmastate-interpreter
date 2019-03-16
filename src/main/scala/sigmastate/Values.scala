@@ -15,7 +15,7 @@ import scalan.util.CollectionUtil._
 import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{Context, CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.{InterpreterContext, CryptoConstants, CryptoFunctions}
 import sigmastate.serialization._
 import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._

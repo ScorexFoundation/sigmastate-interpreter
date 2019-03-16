@@ -24,7 +24,7 @@ trait Interpreter extends ScorexLogging {
 
   import Interpreter.ReductionResult
 
-  type CTX <: Context
+  type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 

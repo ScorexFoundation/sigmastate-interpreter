@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
+import sigmastate.interpreter.{ContextExtension, InterpreterContext => ErgoContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
