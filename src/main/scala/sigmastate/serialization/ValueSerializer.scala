@@ -154,17 +154,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
           SerializeLog.logPrintf(false, true, false, "placeholder.opCode");
 
           SerializeLog.logPrintf(true, true, false, "constantPlaceholder");
-
           constantPlaceholderSerializer.serializeBody(ph, w)
-
           SerializeLog.logPrintf(false, true, false, "constantPlaceholder");
 
           SerializeLog.logPrintf(false, true, false, "[Constant with store]");
         case None =>
           SerializeLog.logPrintf(true, true, false, "[Constant without store]");
-
           constantSerializer.serialize(c, w)
-
           SerializeLog.logPrintf(false, true, false, "[Constant without store]");
       }
     case _ =>
@@ -173,9 +169,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = v.opCode
 
       SerializeLog.logPrintf(true, true, false, "opCode");
-
       w.put(opCode)
-
       SerializeLog.logPrintf(false, true, false, "opCode");
 
       val s = "0x%02X".format(opCode).mkString("")
@@ -183,11 +177,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val t = ser.toString()
 
       SerializeLog.logPrintf(true, true, false, "Body [opCode=" + s + "; Serializer=" + t+ "]");
-
       // help compiler recognize the type
-
       ser.serializeBody(v, w)
-
       SerializeLog.logPrintf(false, true, false, "Body [opCode=" + s + "; Serializer=" + t+ "]");
 
       SerializeLog.logPrintf(false, true, false, "[Non-constant]");

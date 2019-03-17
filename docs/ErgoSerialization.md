@@ -1,93 +1,104 @@
-# Native types serialization
-1. Nothing =>
-2. Byte => *append*
+# Native
+1. Nothing => {}
+2. Byte => APPEND
 2. UInt => ULong
-3. Boolean => *append*
-4. Array [Byte] => *append*
-5. Array [Boolean] => (toBytes >>= Array [Byte]) // *toBytes xs = if (xs.isEmpty) **Nothing** else
-    val bitSet = new BitSet(xs.length)
-    xs.zipWithIndex.foreach { case (bool, i) => bitSet.set(i, bool)}
-    val bytes = Arrays.copyOf(bitSet.toByteArray, (xs.length + 7) / 8)*
+3. Boolean => APPEND
+4. Array [Byte] => APPEND
+5. Array [Boolean] => (toBytes >> Array [Byte])
 5. UShort => UInt
-6. Long => ZigZagLong >>= ULong
-7. Int => ZigZagInt >>= ULong
-8. ULong => VLQ encoding >>= *append*
-9. Short => *append*
-10. Option X => (None => Byte (0)) | (Some v => Byte (1) >> v)
+6. Long => (ZigZagLong >> ULong)
+7. Int => (ZigZagInt >> ULong)
+8. ULong => (VLQEnc >> APPEND)
+9. Short => APPEND
+10. [None] | Option => {header: Byte (0)}
+    [Some v] | Option => {header: Byte (1); v: Serializer}
 
-# S-types serialization (data)
+# Data
 1. SUnit => Nothing
 2. SBoolean => Boolean
 3. SByte => Byte
 4. SShort => Short
 5. SInt => Int
 6. SLong => Long
-7. SString => (*length* >>= UInt) >> (*encode* >>= Array [Byte]) //*encode = getBytes(StandardCharsets.UTF_8)*
-8. SBigInt => (*array length* >>= UShort) >> (*BigInteger.toByteArray* >>= Array [Byte])
-9. SGroupElement => (*EcPointType.toByteArray* >>= Array [Byte]) //*toByteArray = if (point.isInfinity) {
-      identityPointEncoding
-    } else {
-      val normed = point.normalize()
-      val ySign = normed.getAffineYCoord.testBitZero()
-      val X = normed.getXCoord.getEncoded
-      val PO = new Array[Byte](X.length + 1)
-      PO(0) = (if (ySign) 0x03 else 0x02).toByte
-      System.arraycopy(X, 0, PO, 1, X.length)
-      PO
-    }*
-10. SSigmaProp => (SigmaBoolean => ???)
-11. SBox => (*this* >>= ErgoBoxCandidate body) >>
-            (*txIdBytes* >>= Array [Bytes]) >>
-            (*index* >> UShort) //*val txIdBytes = obj.transactionId.toBytes
-12. ErgoBoxCandidate => serializeBodyWithIndexedDigests ??
-13. SAvlTree => (*length* *startingDigest* >>= UByte) >>
-        (*startingDigest* >>= Array[Byte]) >>
-        (*keyLength* >>= UInt) >>
-        (*valueLengthOpt* >>= Option UInt) >>
-        (*maxNumOperations* >>= Option UInt) >>
-        (*maxDeletes* >>= Option UInt)
-13. SCollectionType => (*length* >>= UShort) >> ((*of* SBoolean => Array [Boolean]) | (*of* SByte => Array [Byte]) | (_ => *map* serialize_data))
-14. STuple => (toArray >>= *map* serialize_data) //*toArray=v.asInstanceOf[t.WrappedType] (SAny?)*
+7. SString => {length: UInt; bytes: encode >> Array [Byte]}
+8. SBigInt => {length: UShort; bytes: toByteArray >> Array [Byte]}
+9. SGroupElement => (Body (GroupElement))
+10. SSigmaProp => (Value (SigmaBoolean))
+11. SBox => (Body (ErgoBox))
+12. SAvlTree => (Body (AvlTreeData))
+13. [SBoolean] | SCollectionType => {length: UShort; bits: toBits >> Array [Boolean]}
+    [SByte] | SCollectionType => {length: UShort; bytes: toBytes >> Array [Byte]}
+    [_]     | SCollectionType => {length: UShort; elems: Data*}
+14. STuple => (toArray >> Data*)
 
-# Type (self)
-1. (p: SEmbeddable) => (*p.typeCode* >>= Byte) //?? what are embeddable types
-2. SString => (102 >>= Byte)
-3. SAny => (97 >>= Byte)
-4. SUnit => (98 >>= Byte)
-5. SBox => (99 >>= Byte)
-6. SAvlTree => (100 >>= Byte)
-7. SCollectionType [a] =>
-    7.1. a of (p: Embeddable) => (*CollectionTypeCode* + *p.typeCode*) >>= Byte
-    7.2. a of (cn: SCollectionType [b]) => 
-        7.2.1. b of (r:Embeddable) => (*NestedCollectionTypeCode* + r.typeCode) >>= Byte
-        7.2.2. b of _ => (*CollectionTypeCode* >>= Byte) >> (cn >>= *serialize_type*)
-    7.3. a of t => (*CollectionTypeCode* >>= Byte) >> (t >>= *serialize_type*)
-8. SOption [a] => 
-    8.1. a of (p: Embeddable) => (*OptionTypeCode* + *p.typeCode*) >>= Byte
-    8.2. a of (c: SCollectionType [b]) => 
-        8.2.1. b of (r:Embeddable) => (*OptionCollectionTypeCode* + r.typeCode) >>= Byte
-        8.2.2. b of _ => (*OptionTypeCode* >>= Byte) >> (c >>= *serialize_type*)
-    8.3. a of t => (*OptionTypeCode* >>= Byte) >> (t >>= *serialize_type*)
-9. STuple => 
-    9.1. (p: Embeddable, p) => (*PairSymmetricTypeCode* + *p.typeCode*) >>= Byte
-    9.2. (p: Embeddable, r) => ((*Pair1TypeCode* + *p.typeCode*) >>= Byte) >> (r >>= *serialize_type*)
-    9.3. (p, r: Embeddable) => ((*Pair2TypeCode* + *r.typeCode*) >>= Byte) >> (p >>= *serialize_type*)
-    9.4. (p, r) => (*Pair1TypeCode* >>= Byte) >> (p >>= *serialize_type*) >> (r >>= *serialize_type*)
-    9.5. (p,r,q) => (*TripleTypeCode* >>= Byte) >> (p >>= *serialize_type*) >> (r >>= *serialize_type*) >> (q >>= *serialize_type*)
-    9.6. (p,r,q,s) => (*QuadrupleTypeCode* >>= Byte) >> (p >>= *serialize_type*) >> (r >>= *serialize_type*) >> (q >>= *serialize_type*) >> (s >>= *serialize_type*)
-    9.7. (,..,) => (*TupleTypeCode* >>= Byte) >> (*length* >>= UByte) >> (*map* *serialize_type*)
-10. STypeIdent => (103 >>= Byte) >> (*name* >>= SString as data)
+#Type
 
-# Other constructions
-1. **Constant** => (*Constant Type* >>= **Type**) >> **Data**
-2. **OpCode** => Byte
-3. **Value** of **Non-constant** => (*OpCode* >>= **OpCode**) >> (*Body* >>= ?)
-4. **DeserializeRegisterSerializer** => (*Register number* >>= Byte) >> (*Object Type* >>= **Type**) >> (*Object default* >>= Option)
-5. **SigmaPropIsProvenSerializer** => (*Object.input* >>= **Value** of **Non-constant**)
-6. 
+# Value
+1. Values = {length: UInt; values: Value*}
+2. [Non-constant] | Value = {opCode: Byte; body: Body}
+   [Constant with store] | Value = {placeholder.opCode: Byte; constantPlaceholder: Body(ConstantPlaceholder)}
+   [Constant without store] | Value = {const: Body(Constant)}
 
-
-
-
-
-
+# Body
+1. Constant => {tpe: Type; value: Data}
+2. ConstantPlaceholder => {id: UInt}
+3. Tuple => {length: UByte; items: Value*}
+4. SelectField => {input: Value; fieldIndex: Byte}
+5. [Not BooleanConstants] | Relation2 => {left: Value; right: Value}
+   [BooleanConstants] | Relation2 => {ConcreteCollectionBooleanConstantCode: Byte; LeftRightBits: Bits}
+6. Quadruple => {first: Value; second: Value; third: Value}
+7. TwoArguments => {left: Value; right: Value}
+8. [SGroupElementConstants] | ProveDHTuple => {constCodePrefix: Byte; SGroupElementType: Type;
+                                            gv_data: Data(SGroupElement); hv_data: Data(SGroupElement);
+					    uv_data: Data(SGroupElement); vv_data: Data(SGroupElement)}
+   [Not SGroupElementConstants] | ProveDHTuple => {gv: Value(SGroupElement); hv: Value(SGroupElement);
+					        uv: Value(SGroupElement); vv: Value(SGroupElement)} //no data for this
+9. ProveDlog => {value: Value(SGroupElement)}
+10. CaseObject => Nothing
+11. SigmaPropIsProven => {input: Value(SSigmaProp)}
+12. SigmaPropBytes => {input: Value(SSigmaProp)}
+13. ConcreteCollectionBooleanConstant => {items.size: UShort; items: toArray >> Bits}
+14. ConcreteCollection => {items.size: UShort; tpe.elemType: Type; items: Value*}
+15. LogicalTransformer => {input: Value(Coll[SBoolean])}
+16. TaggedVariable => {varId: Byte; tpe: Type}
+17. GetVar => {varId: Byte; tpe.elemType: Type}
+18. MapCollection => {input: Value(SCollection[?]); mapper: Value(SFunc)}
+19. BooleanTransformer => {input: Value(SCollection[?]); condition: Value(SFunc)}
+20. Fold => {input: SCollection[?]; zero: Value; foldOp: Value(SFunc)}
+21. SimpleTransformer => {input: Value}
+22. OptionGetOrElse => {input: Value(SOption[?]); default: Value}
+23. DeserializeContext => {tpe: Type; id: Byte}
+24. DeserializeRegister => {reg.number: Byte; tpe: Type; default: Option(Value)} //no data for this
+25. ExtractRegisterAs => {input: Value(SBox); registerId.number: Byte; tpe.elemType: Type}
+26. Filter => {id: Byte; input: Value(SCollection[?]); condition: Value(SBoolean)}
+27. Slice => {input: Value(SCollection[?]); from: Value(SInt); until: Value(SInt)}
+28. AtLeast => {bound: Value(SInt); input: Value(SCollection[SSigmaProp])}
+29. ByIndex => {input: SCollection[?]; index: Value(SInt); default: Option}
+30. Append => {input: Value(SCollection[?]); col2: Value(SCollection[?])}
+31. NumericCast => {input: Value(SNumericType); tpe: Type}
+32. [opCode != FunDefCode] | ValDef = {id: UInt; rhs: Value}
+    [opCode == FunDefCode] | ValDef = {id: UInt; tpeArgs.length.toByteExact: Byte; tpeArgs: Type*; rhs: Value}
+33. BlockValue => {items.length: UInt; items: Value*; result: Value}
+34. ValUse = {valId: UInt}
+35. FuncValue => {args.length: UInt; (args.idx, args.tpe): (UInt, Type)*; body: Value}
+36. Apply => {func: Value; args: Values}
+37. [opCode != OpCodes.MethodCallCode] | MethodCall = {method.objType.typeId: Byte; method.methodId: Byte; obj: Value}
+    [opCode == OpCodes.MethodCallCode] | MethodCall = {method.objType.typeId: Byte; method.methodId: Byte; obj: Value; args: Values}
+38. SigmaTransformer => {items.length: UInt; items: Value(SigmaPropValue)*}
+39. BoolToSigmaProp => {value: Value(BoolValue)}
+40. ModQ => {input: SBigInt}
+41. ModQArithOp => {left: Value(SBigInt); right: Value(SBigInt)}
+42. SubstConstants => {scriptBytes: Value(SByteArray); positions: Value(SIntArray); newValues: Value(SCollection[?])}
+43. ErgoBox => {box: Body (ErgoBoxCandidate); transactionId.toBytes: Array [Bytes]; index: UShort}
+44. ErgoBoxCandidate => {value: ULong; ergoTree: ErgoTree >> Array[Byte]; creationHeight: UInt;
+                         additionalTokens.size: UByte;
+			 additionalTokens: [digestsInTx.isDefined] | (UInt, ULong)*
+			                   [_] | (Array [Byte], ULong)*;
+			 nRegs: UByte; regs: Value*}
+45. GroupElement => (toByteArray >> Array [Byte])
+46. AvlTreeData => {startingDigest.length: UByte; startingDigest: Array[Byte]; keyLength: UInt;
+                   valueLengthOpt: Option (UInt); maxNumOperations: Option (UInt); maxDeletes: Option (UInt)}
+47. [with segregation] | ErgoTree => {header: ErgoTreeHeader with segregation; tree: Value(Constant with store) >> toBytes >> Array[Byte]}
+    [without segregation] | ErgoTree => {header: ErgoTreeHeader; root: Value}
+48. [with segregation] | ErgoTreeHeader => {header: Byte; constants.length: UInt; constants: Constant*}
+    [without segregation] | ErgoTreeHeader => {header: Byte}

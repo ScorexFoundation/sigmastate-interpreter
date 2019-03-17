@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, Serializer}
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 
 import scala.runtime.ScalaRunTime
@@ -74,10 +74,25 @@ object ErgoBoxCandidate {
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
                                         digestsInTx: Option[Array[Digest32]],
                                         w: SigmaByteWriter): Unit = {
+      SerializeLog.logPrintf(true, true, false, "ErgoBoxCandidate")
+
+      SerializeLog.logPrintf(true, true, false, "value")
       w.putULong(obj.value)
+      SerializeLog.logPrintf(false, true, false, "value")
+
+      SerializeLog.logPrintf(true, true, false, "ergoTree")
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
+      SerializeLog.logPrintf(false, true, false, "ergoTree")
+
+      SerializeLog.logPrintf(true, true, false, "creationHeight")
       w.putUInt(obj.creationHeight)
+      SerializeLog.logPrintf(false, true, false, "creationHeight")
+
+      SerializeLog.logPrintf(true, true, false, "additionalTokens.size")
       w.putUByte(obj.additionalTokens.size)
+      SerializeLog.logPrintf(false, true, false, "additionalTokens.size")
+
+      SerializeLog.logPrintf(true, true, false, "additionalTokens")
       obj.additionalTokens.foreach { case (id, amount) =>
         if (digestsInTx.isDefined) {
           val digestIndex = digestsInTx.get.indexOf(id)
@@ -88,14 +103,23 @@ object ErgoBoxCandidate {
         }
         w.putULong(amount)
       }
+      SerializeLog.logPrintf(false, true, false, "additionalTokens")
+
+
       val nRegs = obj.additionalRegisters.keys.size
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
+
+      SerializeLog.logPrintf(true, true, false, "nRegs")
       w.putUByte(nRegs)
+      SerializeLog.logPrintf(false, true, false, "nRegs")
+
       // we assume non-mandatory indexes are densely packed from startingNonMandatoryIndex
       // this convention allows to save 1 bite for each register
       val startReg = ErgoBox.startingNonMandatoryIndex
       val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
+
+      SerializeLog.logPrintf(true, true, false, "regs")
       for (regId <- startReg to endReg) {
         val reg = ErgoBox.findRegisterByIndex(regId.toByte).get
         obj.get(reg) match {
@@ -106,6 +130,10 @@ object ErgoBoxCandidate {
               s"register R$regId is missing in the range [$startReg .. $endReg]")
         }
       }
+      SerializeLog.logPrintf(false, true, false, "regs")
+
+
+      SerializeLog.logPrintf(false, true, false, "ErgoBoxCandidate")
     }
 
     override def serializeBody(obj: ErgoBoxCandidate, w: SigmaByteWriter): Unit = {

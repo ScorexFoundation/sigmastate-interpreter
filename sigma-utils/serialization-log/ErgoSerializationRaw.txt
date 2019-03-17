@@ -40,3 +40,7 @@ BoolToSigmaProp
 ModQ
 ModQArithOp
 SubstConstants
+ErgoBox
+ErgoBoxCandidate
+GroupElement
+AvlTreeData

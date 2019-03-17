@@ -23,9 +23,7 @@ class ErgoTreeSerializer {
     serializeHeader(ergoTree, w)
 
     SerializeLog.logPrintf(true, true, false, "Root")
-
     ValueSerializer.serialize(ergoTree.root, w)
-
     SerializeLog.logPrintf(false, true, false, "Root")
 
     SerializeLog.logPrintf(false, true, false, "ErgoTree")
@@ -55,22 +53,20 @@ class ErgoTreeSerializer {
 
     SerializeLog.logPrintf(true, true, false,"Header")
 
+    SerializeLog.logPrintf(true, true, false,"header")
     w.put(ergoTree.header)
+    SerializeLog.logPrintf(false, true, false,"header")
 
     if (ergoTree.isConstantSegregation) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-      SerializeLog.logPrintf(true, true, false, "Constants length")
-
+      SerializeLog.logPrintf(true, true, false, "constants.length")
       w.putUInt(ergoTree.constants.length)
+      SerializeLog.logPrintf(false, true, false, "constants.length")
 
-      SerializeLog.logPrintf(false, true, false, "Constants length")
-
-      SerializeLog.logPrintf(true, true, false, "Constants")
-
+      SerializeLog.logPrintf(true, true, false, "constants")
       ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
-
-      SerializeLog.logPrintf(false, true, false, "Constants")
+      SerializeLog.logPrintf(false, true, false, "constants")
     }
 
     SerializeLog.logPrintf(false, true, false, "Header")
@@ -114,9 +110,7 @@ class ErgoTreeSerializer {
     // serialize tree and segregate constants into constantStore
 
     SerializeLog.logPrintf(true, true, false, ">Treewriter")
-
     ValueSerializer.serialize(tree, treeWriter)
-
     SerializeLog.logPrintf(false, true, false, "<Treewriter")
 
     val extractedConstants = constantStore.getAll
@@ -126,12 +120,9 @@ class ErgoTreeSerializer {
     serializeHeader(ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, null), w)
 
     SerializeLog.logPrintf(true, true, false, "Treewriter bytes")
-
     // write tree bytes with ConstantsPlaceholders (which were injected during serialization)
     w.putBytes(treeWriter.toBytes)
-
     SerializeLog.logPrintf(false, true, false, "Treewriter bytes")
-
 
     SerializeLog.logPrintf(false, true, false, "ErgoTree with segregation")
 

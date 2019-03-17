@@ -1,0 +1,30 @@
+[Start][Serialize]Tag1 bla
+a1
+c1
+b1
+g1
+[End][Serialize]Tag1 bla
+[Start][Serialize]Tag2
+a2
+c2
+b2
+g2
+[End][Serialize]Tag2
+[Start][Serialize]Tag1
+a3
+c3
+b3
+g3
+[End][Serialize]Tag1
+[Start][Serialize]Tag3
+a4
+c4
+b4
+g4
+[End][Serialize]Tag3
+[Start][Serialize]Tag1
+a3
+c3
+b3
+g3
+[End][Serialize]Tag1
