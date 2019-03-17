@@ -10,7 +10,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext => ErgoContext}
+import sigmastate.interpreter.{ContextExtension, InterpreterContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.{Coll, CollType}
@@ -50,7 +50,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map())
-                 ) extends ErgoContext {
+                 ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")

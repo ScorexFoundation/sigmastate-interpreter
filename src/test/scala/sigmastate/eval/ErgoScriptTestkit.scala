@@ -14,7 +14,7 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.ErgoTreeSerializer
 import special.sigma.{ContractsTestkit, Context => DContext, _}
-import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
 
 import scala.language.implicitConversions
 
@@ -46,8 +46,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   }
 
 
-  val boxA1 = newAliceBox(1, 100)
-  val boxA2 = newAliceBox(2, 200)
+  lazy val boxA1 = newAliceBox(1, 100)
+  lazy val boxA2 = newAliceBox(2, 200)
 
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 

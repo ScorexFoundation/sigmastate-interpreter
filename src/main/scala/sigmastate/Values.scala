@@ -27,6 +27,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
 import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -706,7 +707,7 @@ object Values {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
-    def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
+    def toAnyValue: AnyValue = eval.Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${showECPoint(v)})"

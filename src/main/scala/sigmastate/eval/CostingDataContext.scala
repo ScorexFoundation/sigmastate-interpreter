@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.math.BigInteger
+import java.util
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
@@ -12,8 +13,9 @@ import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, Er
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{CSizePrim, Builder, Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
-import special.sigma._
+import special.sigma.{Box, _}
 import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
 
 import scala.util.{Success, Failure}
 import scalan.{NeverInline, RType}
@@ -23,7 +25,7 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 
 import scala.reflect.ClassTag
 
@@ -242,16 +244,15 @@ class EvalSizeBuilder extends CSizeBuilder {
 }
 case class CostingBox(val IR: Evaluation,
                       isCost: Boolean,
-                      val ebox: ErgoBox)
-  extends TestBox(
-    colBytes(ebox.id)(IR),
-    ebox.value,
-    colBytes(ebox.bytes)(IR),
-    colBytes(ebox.bytesWithNoRef)(IR),
-    colBytes(ebox.propositionBytes)(IR),
-    regs(ebox, isCost)(IR)
-  ) with WrapperOf[ErgoBox] {
-  override val builder = new CostingSigmaDslBuilder()
+                      val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+  val builder = new CostingSigmaDslBuilder()
+
+  val id: Coll[Byte] = Colls.fromArray(ebox.id)
+  val value = ebox.value
+  val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
+  val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
+  val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
+  val registers: Coll[AnyValue] = regs(ebox, isCost)(IR)
 
   override def wrappedValue: ErgoBox = ebox
 
@@ -277,8 +278,20 @@ case class CostingBox(val IR: Evaluation,
         val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
         Some(Constant[SType](default, tpe).asInstanceOf[T])
       }
-    } else
-      super.getReg(i)(tT)
+    } else {
+      if (i < 0 || i >= registers.length) return None
+      val value = registers(i)
+      if (value != null ) {
+        // once the value is not null it should be of the right type
+        value match {
+          case value: TestValue[_] if value.value != null && value.tA == tT =>
+            Some(value.value.asInstanceOf[T])
+          case _ =>
+            throw new InvalidType(s"Cannot getReg[${tT.name}]($i): invalid type of value $value at id=$i")
+        }
+      } else None
+    }
+
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
@@ -288,8 +301,19 @@ case class CostingBox(val IR: Evaluation,
       case v =>
         sys.error(s"Invalid value $v of creationInfo register R3")
     }
-
   }
+
+  override def tokens: Coll[(Coll[Byte], Long)] = {
+    this.getReg[Coll[(Coll[Byte], Long)]](2).get
+  }
+
+  override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ???
+
+  override def hashCode(): Int = id.toArray.hashCode()
+
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
+    case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)
+  }))
 }
 
 object CostingBox {

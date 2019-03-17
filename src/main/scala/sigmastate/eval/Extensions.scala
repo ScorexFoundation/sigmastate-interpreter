@@ -35,5 +35,5 @@ object Extensions {
     }
   }
 
-
+  def toAnyValue[A:RType](x: A) = new TestValue(x, RType[A].asInstanceOf[RType[Any]])
 }
