@@ -242,16 +242,17 @@ class EvalSizeBuilder extends CSizeBuilder {
     new EvalSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
   }
 }
+
 case class CostingBox(val IR: Evaluation,
                       isCost: Boolean,
                       val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = new CostingSigmaDslBuilder()
 
-  val id: Coll[Byte] = Colls.fromArray(ebox.id)
+  lazy val id: Coll[Byte] = Colls.fromArray(ebox.id)
   val value = ebox.value
-  val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
-  val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
-  val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
+  lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
+  lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
+  lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
   val registers: Coll[AnyValue] = regs(ebox, isCost)(IR)
 
   override def wrappedValue: ErgoBox = ebox

@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.ErgoBox.R4
+import org.ergoplatform.ErgoBox.{R4, TokenId}
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
@@ -9,13 +9,14 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
 import sigmastate.Values.{SigmaPropConstant, CollectionConstant, Value, ByteArrayConstant, SigmaPropValue, IntConstant}
 import sigmastate._
+import eval.Extensions._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField, CostTable}
+import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -44,7 +45,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputBox = ErgoBox(1, prop, nextHeight, Seq(), Map())
     val inputBoxes = IndexedSeq(inputBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight, Seq(), Map())
+    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
 
@@ -204,12 +205,12 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val tokenId: Digest32 = Blake2b256("id")
-    val wrongId: Digest32 = Blake2b256(tokenId)
-    val wrongId2: Digest32 = Blake2b256(wrongId)
+    val tokenId: TokenId = Blake2b256("id").toColl
+    val wrongId: TokenId = Blake2b256(tokenId.toArray).toColl
+    val wrongId2: TokenId = Blake2b256(wrongId.toArray).toColl
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix)
+    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId.toArray, tokenAmount, TestnetNetworkPrefix)
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
@@ -288,8 +289,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
     val pkBytes = minerPk.pkBytes
 
-    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight, Seq(), Map())
-    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
+    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight)
+    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
 

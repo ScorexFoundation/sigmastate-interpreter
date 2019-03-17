@@ -4,12 +4,13 @@ import java.math.BigInteger
 
 import scalan.RType
 import scalan.RType._
-import sigmastate.{SHeader, SType, SByte, SPreHeader}
+import sigmastate.{SHeader, SPreHeader, SType, SByte}
 import sigmastate.Values.Constant
 import sigmastate.lang.DefaultSigmaBuilder
 import special.collection.{CSizePrim, Size, CSizeOption, Coll, CSizeColl}
 import special.sigma._
 import SType.AnyOps
+import spire.syntax.all._
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -25,6 +26,29 @@ object Extensions {
 
   implicit class ArrayOps[T: RType](arr: Array[T]) {
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
+  }
+
+  implicit class IndexedSeqOps[T: RType](seq: IndexedSeq[T]) {
+    @inline def toColl: Coll[T] = Colls.fromArray(seq.toArray(RType[T].classTag))
+  }
+
+  implicit class EvalCollOps[T](val coll: Coll[T]) extends AnyVal {
+    def foreach(f: T => Unit) = {
+      val limit = coll.length
+      cfor(0)(_ < limit, _ + 1) { i =>
+        f(coll(i))
+      }
+    }
+  }
+
+  implicit class PairCollOps[@specialized A, @specialized B](val coll: Coll[(A,B)]) {
+    def foreach(f: (A, B) => Unit) = {
+      val (as, bs) = Colls.unzip(coll)
+      val limit = coll.length
+      cfor(0)(_ < limit, _ + 1) { i =>
+        f(as(i), bs(i))
+      }
+    }
   }
 
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {

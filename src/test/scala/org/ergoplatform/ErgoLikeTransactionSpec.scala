@@ -8,6 +8,8 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.eval.Extensions._
+import sigmastate.SType._
 
 class ErgoLikeTransactionSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
@@ -35,9 +37,9 @@ class ErgoLikeTransactionSpec extends PropSpec
         ErgoLikeTransaction.serializer.serialize(tx, w)
         val bytes = w.toBytes
 
-        tx.outputCandidates.flatMap(_.additionalTokens).foreach { token =>
-          bytes.indexOfSlice(token._1) should not be -1
-          bytes.indexOfSlice(token._1) shouldBe bytes.lastIndexOfSlice(token._1)
+        tx.outputCandidates.toColl.flatMap(_.additionalTokens).foreach { (tokenId, value) =>
+          bytes.indexOfSlice(tokenId.toArray) should not be -1
+          bytes.indexOfSlice(tokenId.toArray) shouldBe bytes.lastIndexOfSlice(tokenId.toArray)
         }
       }
     }

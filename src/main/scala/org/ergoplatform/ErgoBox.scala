@@ -13,7 +13,9 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import sigmastate.utxo.ExtractCreationInfo
-
+import special.collection._
+import supertagged.TaggedType
+import sigmastate.eval._
 import scala.runtime.ScalaRunTime
 
 /**
@@ -44,12 +46,12 @@ import scala.runtime.ScalaRunTime
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
   */
-class ErgoBox private(
+class ErgoBox private[ergoplatform](
                        override val value: Long,
                        override val ergoTree: ErgoTree,
-                       override val additionalTokens: Seq[(TokenId, Long)] = Seq(),
+                       override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(Coll[Byte], Long)],
                        override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-                       val transactionId: ModifierId,
+                       val transactionId: Coll[Byte],
                        val index: Short,
                        override val creationHeight: Int
                      ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
@@ -63,7 +65,7 @@ class ErgoBox private(
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        val tupleVal = Array(creationHeight, Helpers.concatArrays(Seq(transactionId.toBytes, Shorts.toByteArray(index))))
+        val tupleVal = Array(creationHeight, Helpers.concatArrays(transactionId.toArray, Shorts.toByteArray(index)))
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
@@ -83,7 +85,7 @@ class ErgoBox private(
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2)}), $transactionId, " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
@@ -93,7 +95,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  type TokenId = Digest32
+  type TokenId = Coll[Byte]
   object TokenId {
     val size: Short = 32
   }
@@ -158,13 +160,16 @@ object ErgoBox {
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
-    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, transactionId, boxIndex, creationHeight)
+    new ErgoBox(value, ergoTree,
+      Colls.fromItems(additionalTokens:_*),
+      additionalRegisters,
+      Colls.fromArray(transactionId.toBytes), boxIndex, creationHeight)
 
   object sigmaSerializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 
     override def serialize(obj: ErgoBox, w: SigmaByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serialize(obj, w)
-      val txIdBytes = obj.transactionId.toBytes
+      val txIdBytes = obj.transactionId.toArray
       val txIdBytesSize = txIdBytes.length
       assert(txIdBytesSize == ErgoLikeTransaction.TransactionIdBytesSize,
         s"Invalid transaction id size: $txIdBytesSize (expected ${ErgoLikeTransaction.TransactionIdBytesSize})")
