@@ -482,8 +482,12 @@ To mix an arbitrary non-H-pool coin $B$ (which could itself be the output of a p
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
 		
 	\end{enumerate}
-	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
+%	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
+	After the mix, Alice and Bob can spent their respective boxes using their secrets. 
+%	Bob already knows which box belongs to him. For each output, 
+	Alice will parse the data of both boxes as $(g, h, u, v)$ and select the one with $v = h^x$. 
+
 \textbf{\langname Code:} First define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{gX} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
 
 \begin{alltt}
@@ -537,7 +541,6 @@ The fee keeps accumulating as long as the coin is circulated within the system (
 	
 Clearly, the first spender must spend both $O_2, O_3$ and generate a new box with 2 quantities of token $x$ that is spendable only by the second spender. 
 Thus, anyone spending $O_0$ or $O_1$ is the second spender if and only if there exists an input box with two quantities of token $x$. 
-%This condition can be checked in the script when computing the (accumulated) fee.%, otherwise it is the first spender.
 
 %further improvements. Can we reduce offchain data size, do multiple mixes offchain?
 

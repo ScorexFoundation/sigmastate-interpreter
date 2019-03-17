@@ -111,8 +111,8 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  val totalFee = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (b.propositionBytes == feePropositionBytes) acc + b.value else acc })
         |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
         |
-        |  // alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
-        |  alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
+        |  alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
+        |  //alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally

@@ -10,7 +10,7 @@ import sigmastate.utxo.DeserializeContext
 import special.collection.Coll
 import special.sigma.Context
 
-class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
+class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
@@ -36,6 +36,10 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
       val inReg = INPUTS(0).R4[Long].get
       val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
+      val script = DeserializeContext(0x01, SSigmaProp)
+
+//      script.p
+
       okInputs && inToken && okContractLogic
 
     },
@@ -45,6 +49,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
      |      val inReg = INPUTS(0).R4[Long].get
      |      val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
      |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
+     |      val script = executeFromVar(0x01)
      |      okInputs && inToken && okContractLogic
      |}
     """.stripMargin)
@@ -59,7 +64,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
   lazy val alice = spec.ProvingParty("Alice")
   lazy val bob = spec.ProvingParty("Bob")
 
-  property("lightweight oracle token example (ErgoDsl)") {
+  property("Execute from var example (ErgoDsl)") {
     val temperature: Long = 18
     val contract = OracleContract[spec.type](temperature, tokenId, alice, bob)(spec)
     import contract.spec._
