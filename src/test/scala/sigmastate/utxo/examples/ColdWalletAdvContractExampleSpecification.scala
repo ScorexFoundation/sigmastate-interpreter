@@ -4,10 +4,9 @@ import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import sigmastate.AvlTreeData
 import sigmastate.Values.{IntConstant, LongConstant}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 
 
 class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
@@ -18,13 +17,13 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
   property("Evaluation - ColdWallet Advanced Contract Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val bob = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val carol = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val carol = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val blocksIn24h = 500
@@ -51,7 +50,7 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     //           3. make start of output box as max of all starts of the inputs
     //           4. output must contain at least one box of same type with min bal based on avbl1Key/avbl2Key
 
-    val script = compileWithCosting(env,
+    val script = compile(env,
       """{
         |  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
         |  val start = min(depth, SELF.R4[Int].get) // height at which period started

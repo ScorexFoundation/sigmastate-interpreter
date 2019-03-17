@@ -4,86 +4,64 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SSigmaProp
+import sigmastate.{SSigmaProp, SigmaAnd}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.utxo.DeserializeContext
 import special.collection.Coll
 import special.sigma.Context
+import special.sigma.Extensions._
 
 class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
 
-  private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
-
   case class OracleContract[Spec <: ContractSpec]
-      ( temperature: Long,
-        tokenID: Coll[Byte],
-        alice: Spec#ProvingParty, bob: Spec#ProvingParty)
+      (alice: Spec#ProvingParty)
       (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
     import syntax._
     def pkA = alice.pubKey
-    def pkB = bob.pubKey
-    def inRegId = reg1.asIndex
 
-    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "tokenId" -> tokenId)
+    lazy val contractEnv = Env("pkA" -> pkA)
 
-    lazy val prop = proposition("buyer", { ctx: Context =>
+    lazy val prop = proposition("test_deserialize", { ctx: Context =>
       import ctx._
-      val okInputs = INPUTS.length == 3
-      val inReg = INPUTS(0).R4[Long].get
-      val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
-      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
-      val script = DeserializeContext(0x01, SSigmaProp)
-
-//      script.p
-
-      okInputs && inToken && okContractLogic
-
+      // trying to map the following code here (taken from ErgoLikeInterpreterSpecification.scala
+      //val scriptIsCorrect = DeserializeContext(1, SSigmaProp)
+      //SigmaAnd(scriptIsCorrect, scriptIsCorrect)
+      pkA
     },
-    env,
     """{
-     |      val okInputs = INPUTS.size == 3
-     |      val inReg = INPUTS(0).R4[Long].get
-     |      val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
-     |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
-     |      val script = executeFromVar(0x01)
-     |      okInputs && inToken && okContractLogic
+     |      val script = executeFromVar[Boolean](1) // gives error
+     |      // also how to use script in code?
+     |      pkA
      |}
     """.stripMargin)
 
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, env, "pkA")
-
-    lazy val dummySignature  = proposition("dummySignature", _ => pkA, env, "pkA")
+    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
   }
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
 
   lazy val alice = spec.ProvingParty("Alice")
-  lazy val bob = spec.ProvingParty("Bob")
 
   property("Execute from var example (ErgoDsl)") {
-    val temperature: Long = 18
-    val contract = OracleContract[spec.type](temperature, tokenId, alice, bob)(spec)
+    val contract = OracleContract[spec.type](alice)(spec)
     import contract.spec._
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
-    val sOracle = mockTx
-        .outBox(value = 1L, contract.dummySignature)
-        .withRegs(reg1 -> temperature)
-        .withTokens(Token(tokenId, 1))
+    val mockTx = candidateBlock(0).newTransaction()
+    val sAlice = mockTx.outBox(10, contract.prop).withTokens()
 
-    val sAlice = mockTx.outBox(10, contract.prop)
-    val sBob   = mockTx.outBox(10, contract.prop)
+    val tx = candidateBlock(50).newTransaction().spending(sAlice)
 
-    val tx = block(50).newTransaction().spending(sOracle, sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
-    val in = tx.inputs(1)
-    val res = in.runDsl()
+
+    val in = tx.inputs(0)
+    val vars = Map(1.toByte -> toAnyValue(alice.pubKey.propBytes))
+    val res = in.runDsl(vars)
     res shouldBe alice.pubKey
 
     val pr = alice.prove(in).get

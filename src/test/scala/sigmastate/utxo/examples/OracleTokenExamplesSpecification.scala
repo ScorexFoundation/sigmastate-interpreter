@@ -28,7 +28,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
     def pkB = bob.pubKey
     def inRegId = reg1.asIndex
 
-    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "tokenId" -> tokenId)
+    lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "tokenId" -> tokenId)
 
     lazy val prop = proposition("buyer", { ctx: Context =>
       import ctx._
@@ -39,7 +39,6 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
       okInputs && inToken && okContractLogic
 
     },
-    env,
     """{
      |      val okInputs = INPUTS.size == 3
      |      val inReg = INPUTS(0).R4[Long].get
@@ -49,9 +48,9 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
      |}
     """.stripMargin)
 
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, env, "pkA")
+    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
 
-    lazy val dummySignature  = proposition("dummySignature", _ => pkA, env, "pkA")
+    lazy val dummySignature  = proposition("dummySignature", _ => pkA, "pkA")
   }
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
@@ -66,7 +65,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val sOracle = mockTx
         .outBox(value = 1L, contract.dummySignature)
         .withRegs(reg1 -> temperature)
@@ -75,7 +74,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
     val sAlice = mockTx.outBox(10, contract.prop)
     val sBob   = mockTx.outBox(10, contract.prop)
 
-    val tx = block(50).newTransaction().spending(sOracle, sAlice, sBob)
+    val tx = candidateBlock(50).newTransaction().spending(sOracle, sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
     val in = tx.inputs(1)
     val res = in.runDsl()
