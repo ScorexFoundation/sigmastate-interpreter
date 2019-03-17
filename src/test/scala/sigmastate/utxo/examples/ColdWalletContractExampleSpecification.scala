@@ -82,7 +82,6 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     )
 
     val carol = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
-    //val carol = new ErgoLikeTestProvingInterpreter // paying to carol, some arbitrary user
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val firstWithdrawHeight = depositHeight + 1 // quickly withdraw (before expiry)

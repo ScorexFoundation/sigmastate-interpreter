@@ -37,7 +37,6 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
       val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
       okInputs && inToken && okContractLogic
-
     },
     """{
      |      val okInputs = INPUTS.size == 3

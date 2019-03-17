@@ -177,6 +177,7 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 
 The most fundamental primitive in \langname is a \emph{box}, which is roughly like a UTXO of Bitcoin. Each transaction spends (destroys) some boxes by using them as inputs and creates new boxes as outputs. A box is a data structure made of upto ten {\em registers} labelled $R_0, R_1,\ldots R_9$, four of which are mandatory. 
 $R_0$ contains the monetary value of the box. $R_1$ contains the script protecting the box, $R_2$ contains assets 
+<<<<<<< HEAD
 
 In the following sections, we give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository~\cite{langrepo}. 
 Although \langname syntax looks similar to Scala, it is not Scala. To avoid confusion, \langname code is highlighted like \Hi{\texttt{this}}. 
@@ -184,6 +185,15 @@ Although \langname syntax looks similar to Scala, it is not Scala. To avoid conf
 %To do: add appendix explaining box structure, how a tx is formed, etc. For now refer to yellow paper
 \section{Basic Examples: Addressing Bitcoin's Limitations}
 
+=======
+
+In the following sections, we give some examples of \langname to illustrate its usage. The full code corresponding to the snippets below is available at the \langname code repository~\cite{langrepo}. 
+Although \langname syntax looks similar to Scala, it is not Scala. To avoid confusion, \langname code is highlighted like \Hi{\texttt{this}}. 
+%The examples use the protocol concepts defined in Appendix~\ref{ergo:internals}. 
+%To do: add appendix explaining box structure, how a tx is formed, etc. For now refer to yellow paper
+\section{Basic Examples: Addressing Bitcoin's Limitations}
+
+>>>>>>> 4ad028223524d2624a33aa4bfa63194f5f95a85f
 We present some examples showing how \langname is superior to Bitcoin's script. The examples use P2SH address and each example highlights a limitation of Bitcoin. 
 
 \subsection{Short-lived Unconfirmed Transactions: Paying for Coffee}
@@ -482,12 +492,17 @@ To mix an arbitrary non-H-pool coin $B$ (which could itself be the output of a p
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
 		
 	\end{enumerate}
+<<<<<<< HEAD
 %	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
 	After the mix, Alice and Bob can spent their respective boxes using their secrets. 
 %	Bob already knows which box belongs to him. For each output, 
 	Alice will parse the data of both boxes as $(g, h, u, v)$ and select the one with $v = h^x$. 
 
+=======
+	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
+\end{enumerate}
+>>>>>>> 4ad028223524d2624a33aa4bfa63194f5f95a85f
 \textbf{\langname Code:} First define two variables representing $g$ and $g^x$. Lets call them \texttt{g} and \texttt{gX} respectively. Then pass them to the compiler via an environment variable, say \texttt{env}:
 
 \begin{alltt}
