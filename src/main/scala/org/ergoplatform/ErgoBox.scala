@@ -16,6 +16,7 @@ import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
 import supertagged.TaggedType
 import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import scala.runtime.ScalaRunTime
 
 /**
@@ -46,15 +47,15 @@ import scala.runtime.ScalaRunTime
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
   */
-class ErgoBox private[ergoplatform](
-                       override val value: Long,
-                       override val ergoTree: ErgoTree,
-                       override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(Coll[Byte], Long)],
-                       override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-                       val transactionId: Coll[Byte],
-                       val index: Short,
-                       override val creationHeight: Int
-                     ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
+class ErgoBox(
+         override val value: Long,
+         override val ergoTree: ErgoTree,
+         override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(Coll[Byte], Long)],
+         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+         val transactionId: Coll[Byte],
+         val index: Short,
+         override val creationHeight: Int
+       ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
@@ -156,12 +157,12 @@ object ErgoBox {
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
-            additionalTokens: Seq[(TokenId, Long)] = Seq(),
+            additionalTokens: Seq[(Digest32, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      Colls.fromItems(additionalTokens:_*),
+      Colls.fromItems(additionalTokens.map { case (id, v) => (id.toColl, v) }:_*),
       additionalRegisters,
       Colls.fromArray(transactionId.toBytes), boxIndex, creationHeight)
 

@@ -11,6 +11,7 @@ import special.collection.{CSizePrim, Size, CSizeOption, Coll, CSizeColl}
 import special.sigma._
 import SType.AnyOps
 import spire.syntax.all._
+import supertagged.{Tagged}
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls
@@ -28,8 +29,16 @@ object Extensions {
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
   }
 
-  implicit class IndexedSeqOps[T: RType](seq: IndexedSeq[T]) {
-    @inline def toColl: Coll[T] = Colls.fromArray(seq.toArray(RType[T].classTag))
+//  implicit class TaggedArrayOps[T: RType, U](arr: Tagged[Array[T], U]) {
+//    @inline def toColl: Coll[T] = Colls.fromArray(arr)
+//  }
+
+  implicit class IterableOfTaggedOps[T: RType, U](seq: Iterable[Tagged[T, U]]) {
+    @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
+  }
+
+  implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
+    @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
   }
 
   implicit class EvalCollOps[T](val coll: Coll[T]) extends AnyVal {

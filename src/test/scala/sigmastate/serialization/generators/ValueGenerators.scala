@@ -3,7 +3,7 @@ package sigmastate.serialization.generators
 import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoScriptPredef.{TrueProp, FalseProp}
+import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -15,6 +15,8 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
+import sigmastate.eval.Extensions._
+import special.collection.Coll
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -121,7 +123,7 @@ trait ValueGenerators extends TypeGenerators {
       }
   }
 
-  def additionalTokensGen(cnt: Byte): Seq[Gen[(TokenId, Long)]] =
+  def additionalTokensGen(cnt: Byte): Seq[Gen[(Digest32, Long)]] =
     (0 until cnt).map { _ =>
       for {
         id <- Digest32 @@ boxIdGen
@@ -243,25 +245,25 @@ trait ValueGenerators extends TypeGenerators {
     creationHeight <- Gen.choose(-1, Int.MaxValue)
   } yield ergoplatform.ErgoBox(l, b, creationHeight, tokens.asScala, ar.asScala.toMap, tId.toArray.toModifierId, boxId)
 
-  def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
+  def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
-    tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
+    tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens.map(_.toColl)))
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- Gen.chooseNum(0, 100000)
-  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.zip(tokenAmounts), ar.asScala.toMap)
+  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
 
-  val tokenIdGen: Gen[TokenId] = for {
+  val tokenIdGen: Gen[Digest32] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
   } yield Digest32 @@ bytes
 
-  val tokensGen: Gen[Seq[TokenId]] = for {
+  val tokensGen: Gen[Seq[Digest32]] = for {
     count <- Gen.chooseNum(10, 50)
     tokens <- Gen.listOfN(count, tokenIdGen)
   } yield tokens

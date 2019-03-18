@@ -205,12 +205,12 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
-    val tokenId: TokenId = Blake2b256("id").toColl
-    val wrongId: TokenId = Blake2b256(tokenId.toArray).toColl
-    val wrongId2: TokenId = Blake2b256(wrongId.toArray).toColl
+    val tokenId: Digest32 = Blake2b256("id")
+    val wrongId: Digest32 = Blake2b256(tokenId)
+    val wrongId2: Digest32 = Blake2b256(wrongId)
     val tokenAmount: Int = 50
 
-    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId.toArray, tokenAmount, TestnetNetworkPrefix)
+    val prop = ErgoScriptPredef.tokenThresholdScript(tokenId, tokenAmount, TestnetNetworkPrefix)
 
     def check(inputBoxes: IndexedSeq[ErgoBox]): Try[Unit] = Try {
       val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))

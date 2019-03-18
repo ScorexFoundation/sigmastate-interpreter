@@ -5,20 +5,20 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoBoxCandidate}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{Nullable, RType, TestContexts, TestUtils}
-import scorex.crypto.hash.Blake2b256
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import scalan.{TestUtils, TestContexts, Nullable, RType}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
-import sigma.types.{IsPrimView, PrimViewType, View}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigma.types.{PrimViewType, IsPrimView, View}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import special.sigma._
@@ -61,7 +61,7 @@ trait SigmaTestingCommons extends PropSpec
 
   def createBox(value: Int,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(TokenId, Long)] = Seq(),
+                additionalTokens: Seq[(Digest32, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
