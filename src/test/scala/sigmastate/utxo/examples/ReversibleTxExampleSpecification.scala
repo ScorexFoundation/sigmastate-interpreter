@@ -64,6 +64,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */
+
   property("Evaluation - Reversible Tx Example") {
 
     val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
@@ -88,18 +89,30 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
         |}""".stripMargin).asSigmaProp
 
+    val blocksIn24h = 500
+    val feeProposition = ErgoScriptPredef.feeProposition()
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
       "alice" -> alicePubKey,
+      "blocksIn24h" -> blocksIn24h,
+      "maxFee" -> 10L,
+      "feePropositionBytes" -> feeProposition.bytes,
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
     val depositScript = compile(depositEnv,
       """{
-        |  alice && OUTPUTS.forall({(out:Box) =>
-        |    out.R5[Int].get >= HEIGHT + 30 &&
-        |    blake2b256(out.propositionBytes) == withdrawScriptHash
-        |  })
+        |  val isChange = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
+        |  val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
+        |                               blake2b256(b.propositionBytes) == withdrawScriptHash}
+        |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
+        |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
+        |
+        |  val totalFee = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (b.propositionBytes == feePropositionBytes) acc + b.value else acc })
+        |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
+        |
+        |  alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
+        |  //alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
@@ -121,7 +134,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     val withdrawAmount = 10
     val withdrawHeight = 101
-    val bobDeadline = 150
+    val bobDeadline = withdrawHeight+blocksIn24h
 
     val reversibleWithdrawOutput = ErgoBox(withdrawAmount, withdrawScript, withdrawHeight, Nil,
       Map(
@@ -155,7 +168,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     val davePubKey = dave.dlogSecrets.head.publicImage
 
     val bobSpendAmount = 10
-    val bobSpendHeight = 151
+    val bobSpendHeight = bobDeadline+1
 
     val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
@@ -171,15 +184,17 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofBobSpend = bob.prove(withdrawEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+    val spendEnv = Map(ScriptNameProp -> "spendEnv")
 
-    verifier.verify(withdrawEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
+    val proofBobSpend = bob.prove(spendEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+
+    verifier.verify(spendEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
 
     // Possibility 2: Abort scenario
     // carol spends before bobDeadline
 
     val carolSpendAmount = 10
-    val carolSpendHeight = 131
+    val carolSpendHeight = bobDeadline - 1
 
     // Carol sends to Dave
     val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
@@ -196,9 +211,9 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofCarolSpend = carol.prove(withdrawEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
+    val proofCarolSpend = carol.prove(spendEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
 
-    verifier.verify(withdrawEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
+    verifier.verify(spendEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
 
   }
 }
