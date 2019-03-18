@@ -98,7 +98,7 @@
 45. GroupElement => (toByteArray >> Array [Byte])
 46. AvlTreeData => {startingDigest.length: UByte; startingDigest: Array[Byte]; keyLength: UInt;
                    valueLengthOpt: Option (UInt); maxNumOperations: Option (UInt); maxDeletes: Option (UInt)}
-47. [with segregation] | ErgoTree => {header: ErgoTreeHeader with segregation; tree: Value(Constant with store) >> toBytes >> Array[Byte]}
+47. [with segregation] | ErgoTree => {header: [with segregation] ErgoTreeHeader; tree: Value >> toBytes >> Array[Byte]}
     [without segregation] | ErgoTree => {header: ErgoTreeHeader; root: Value}
 48. [with segregation] | ErgoTreeHeader => {header: Byte; constants.length: UInt; constants: Constant*}
     [without segregation] | ErgoTreeHeader => {header: Byte}

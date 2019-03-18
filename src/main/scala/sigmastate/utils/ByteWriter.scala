@@ -295,7 +295,7 @@ class ByteArrayWriterWithLog (b: ByteArrayBuilder) extends ByteArrayWriter(b) {
 
   }
 
-  @inline override def putOption[T](x: Option[T])(putValue: (this.type, T) => Unit): this.type = {
+  override def putOption[T](x: Option[T])(putValue: (this.type, T) => Unit): this.type = {
     SerializeLog.logPrintf(true, true, true, "Put Option")
 
     super.putOption(x) (putValue);
