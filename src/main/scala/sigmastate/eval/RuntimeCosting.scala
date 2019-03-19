@@ -1510,7 +1510,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         mkCostedColl(res, Sha256.DigestSize, cost)
 
       case utxo.SizeOf(In(xs)) =>
-        xs.elem.eVal match {
+        xs.elem.eVal.asInstanceOf[Any] match {
           case ce: CollElem[a,_] =>
             val xsC = asRep[Costed[Coll[a]]](xs)
             val v = xsC.value.length
@@ -1518,6 +1518,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           case se: StructElem[_] =>
             val xsC = asRep[Costed[Struct]](xs)
             RCCostedPrim(se.fields.length, opCost(Seq(xsC.cost), costOf(node)), SizeInt)
+          case pe: PairElem[a,b] =>
+            val xsC = asRep[Costed[(a,b)]](xs)
+            RCCostedPrim(2, opCost(Seq(xsC.cost), costOf(node)), SizeInt)
         }
 
       case ByIndex(xs, i, default) =>

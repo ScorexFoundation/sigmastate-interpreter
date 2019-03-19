@@ -244,18 +244,18 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("Tuple as Collection operations") {
-//    test("TupColl1", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p.size == 2 }""".stripMargin,
-//    {
-//      TrueLeaf
-//    }, true)
-//    test("TupColl2", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p(0) == 1 }""".stripMargin,
-//    {
-//      EQ(GetVarInt(intVar1).get, IntConstant(1))
-//    })
+    test("TupColl1", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p.size == 2 }""".stripMargin,
+    {
+      TrueLeaf.toSigmaProp
+    }, true)
+    test("TupColl2", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p(0) == 1 }""".stripMargin,
+    {
+      EQ(GetVarInt(intVar1).get, IntConstant(1)).toSigmaProp
+    })
 
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
@@ -263,30 +263,30 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SByteArray, SLong))
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
-//    test("TupColl3", env1, ext1,
-//      """{
-//        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
-//        |  data.size == 1
-//        |}""".stripMargin,
-//      {
-//        val data = GetVar(dataVar, dataType).get
-//        EQ(SizeOf(data), IntConstant(1))
-//      }
-//    )
-//    test("TupColl4", env1, ext1,
-//      """{
-//        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
-//        |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
-//        |}""".stripMargin,
-//      {
-//        val data = GetVar(dataVar, dataType).get
-//        Exists(data,
-//          FuncValue(
-//            Vector((1, STuple(SByteArray, SLong))),
-//            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
-//        )
-//      }
-//    )
+    test("TupColl3", env1, ext1,
+      """{
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.size == 1
+        |}""".stripMargin,
+      {
+        val data = GetVar(dataVar, dataType).get
+        EQ(SizeOf(data), IntConstant(1)).toSigmaProp
+      }
+    )
+    test("TupColl4", env1, ext1,
+      """{
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
+        |}""".stripMargin,
+      {
+        val data = GetVar(dataVar, dataType).get
+        Exists(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+        ).toSigmaProp
+      }
+    )
     test("TupColl5", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
