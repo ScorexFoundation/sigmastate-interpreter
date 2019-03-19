@@ -125,7 +125,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       val tokens = _tokens.map { t => (Digest32 @@ t.id.toArray, t.value) }
       ErgoBox(value, propSpec.ergoTree, tx.block.height, tokens, _regs)
     }
-    def id = ergoBox.id
+    def id = ergoBox.idBytes
   }
 
   case class MockTransaction(block: BlockCandidate) extends TransactionCandidate {

@@ -248,7 +248,7 @@ case class CostingBox(val IR: Evaluation,
                       val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = new CostingSigmaDslBuilder()
 
-  lazy val id: Coll[Byte] = Colls.fromArray(ebox.id)
+  lazy val id: Coll[Byte] = Colls.fromArray(ebox.idBytes)
   val value = ebox.value
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)

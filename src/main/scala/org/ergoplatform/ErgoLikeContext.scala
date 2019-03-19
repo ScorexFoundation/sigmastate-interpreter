@@ -52,7 +52,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       override val extension: ContextExtension = ContextExtension(Map())
                  ) extends InterpreterContext {
 
-  assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
+  assert(self == null || boxesToSpend.exists(box => box.idBytes == self.idBytes), s"Self box if defined should be among boxesToSpend")
   assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
   assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")

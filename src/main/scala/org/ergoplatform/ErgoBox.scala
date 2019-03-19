@@ -17,6 +17,8 @@ import special.collection._
 import supertagged.TaggedType
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import special.sigma.Box
+
 import scala.runtime.ScalaRunTime
 
 /**
@@ -59,9 +61,9 @@ class ErgoBox(
 
   import ErgoBox._
 
-  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
+  lazy val idBytes: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
-  override def dataSize: Long = bytes.length
+//  override def dataSize: Long = bytes.length
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -75,7 +77,7 @@ class ErgoBox(
   lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBox => java.util.Arrays.equals(id, x.id)
+    case x: ErgoBox => java.util.Arrays.equals(idBytes, x.idBytes)
     case _ => false
   }
 
@@ -85,7 +87,7 @@ class ErgoBox(
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
+  override def toString: Idn = s"ErgoBox(${Base16.encode(idBytes)},$value,$ergoTree," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }

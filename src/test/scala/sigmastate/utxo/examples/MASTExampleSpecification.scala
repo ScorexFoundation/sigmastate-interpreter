@@ -45,7 +45,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
 
 
     val input1 = ErgoBox(20, prop, 0)
-    val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.id)),
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(input1).map(i => new UnsignedInput(i.idBytes)),
       IndexedSeq(ErgoBox(1, ErgoScriptPredef.TrueProp, 0)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,

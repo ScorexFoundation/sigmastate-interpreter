@@ -36,7 +36,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
         new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl, Map(heightReg -> LongConstant(height + windowSize)))
-      val unsignedInput = new UnsignedInput(box.id)
+      val unsignedInput = new UnsignedInput(box.idBytes)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
         state.state.lastBlockUtxoRoot,
@@ -176,8 +176,8 @@ object BlockchainSimulationSpecification {
       toRemove.foreach(k => boxes.remove(getKey(k)))
 
       val toAdd = block.txs.flatMap(_.outputs)
-      toAdd.foreach(b => prover.performOneOperation(Insert(b.id, ADValue @@ b.bytes)))
-      toAdd.foreach(b => boxes.put(getKey(b.id), b))
+      toAdd.foreach(b => prover.performOneOperation(Insert(b.idBytes, ADValue @@ b.bytes)))
+      toAdd.foreach(b => boxes.put(getKey(b.idBytes), b))
 
       prover.generateProof()
     }

@@ -130,14 +130,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
-          IndexedSeq(new UnsignedInput(emissionBox.id)),
+          IndexedSeq(new UnsignedInput(emissionBox.idBytes)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
         val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
         val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
         UnsignedErgoLikeTransaction(
-          IndexedSeq(new UnsignedInput(emissionBox.id)),
+          IndexedSeq(new UnsignedInput(emissionBox.idBytes)),
           IndexedSeq(minerBox1, minerBox2)
         )
       }
@@ -167,7 +167,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       val block = FullBlock(IndexedSeq(tx), minerPubkey)
       val newState = state.applyBlock(block).get
       if (tx.outputs.last.value > 1) {
-        val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
+        val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.idBytes).get
         chainGen(newState, newEmissionBox, height + 1, hLimit)
       } else {
         log.debug(s"Emission box is consumed at height $height")
