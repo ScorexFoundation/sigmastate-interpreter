@@ -499,7 +499,7 @@ val fullMixScript = compile(env, """ \Hi{\{}
 \end{alltt}
 
 Compute a hash of the above script: \texttt{val fullMixScriptHash = Blake2b256(fullMixScript)}
-Alice's Half-Mix box is protected by the following \langname code:
+Alice's Half-Mix box is protected \texttt{halfMixScript} containing the following code:
 
 \begin{alltt}
 	\Hi{val c1 = OUTPUTS(0).R4[GroupElement].get}
@@ -547,54 +547,103 @@ Thus, anyone spending $O_0$ or $O_1$ is the second spender if and only if there 
 
 \subsection{Identifying Protocol Transactions}
 
-Consider the \mixname example, where we want to accumulate fee as long as the coin does not leave the system, In particular, we need to identify the mixed outputs that are either sent back to the H-pool or used as an input in another Full-Mix transaction.
-
-This problem can be formulated more generally for any arbitrary two-round two-party protocol with the first round box protected by script \texttt{firstRoundScript} and the second round box protected by \texttt{secondRoundScript}, such that $Hash(\texttt{secondRoundScript})$ is used to create \texttt{firstRoundScript}. When running \texttt{secondRoundScript}, that is, when spending the second round box, we want to
-determine if at least one the following cases is true: 
+Consider the approximate fairness strategy of \mixname encoded in \texttt{halfMixScript} as follows:
 \begin{enumerate}
-	\item The output is a first round box (i.e., protected by \texttt{firstRoundScript})
-	\item The output is a second round box, and another input is a first round box. 
+	\item The current input and at least one other input have at least one mixing token each.
+	\item A mix transaction uses two tokens and the balance is equally distributed in the two outputs.
+	
 \end{enumerate}
 
-Clearly, such a requirement is non-trivial because the second round script references the first round script and the first round script needs $Hash(\texttt{secondRoundScript})$. However, \langname allows us to achieve this by giving us the ability to run arbitrary code not known at compile time using the \texttt{executeFromVar} and \texttt{executeFromReg} instructions.
-We describe how do this for \mixname. However, the ideas are general enough to be applied to any protocol. 
 
-Firstly, we require that the scripts not hardcode any keys. Thus, \texttt{gX} must be read from a register in both \texttt{fullMixScript} and the code in Alice's Half-Mix box, which we call \texttt{halfMixScript}. Additionally, \texttt{halfMixScript} must have code ensuring that the correct value of \texttt{gX} is copied in corresponding register of the mixed output boxes. 
+Assume that each party joins the protocol by purchasing 1000 mixing tokens. This will give about 10 sequential mixes in the worst case. In the ideal world, however, if Alice and Bob join by contributing 1000 tokens each and slowly use them up in subsequent mixes with other people, we expect that they should be able to do substantially higher number of mixes. To achieve this in the real world, we would like to ensure that if a party is contributing, say, 50 mixing tokens, the they actually got there `the hard way', by performing several sequential mixes and not just by starting out with 50. 
+%Thus, coins with lower number of mixing tokens should have a higher {\em mix value}. 
+One way to achieve this would via tokens with the following two properties. 
 
-Secondly, we require that one register of both the Half-Mix box and the two mixed output boxes will store the hash of another script called the \texttt{protocolCheck} script defined below. Additionally, \texttt{halfMixScript} must have code ensuring that the corresponding register of both mixed outputs contains the same hash. Now add the following code in \texttt{fullMixScript}:
+\textbf{Restricted transfer:} The tokens are transferrable only within the system as a whole (after deducting fee). 
+%Thus, the tokens of a fully mixed output are transferrable only if the coin is either sent back to the H-pool or used as an input in another mix transaction. 
+In particular, we need to identify the following cases within \texttt{fullMixScript} code: 
+	\begin{enumerate}
+		\item The output is a Half-Mix box (i.e., a single output protected by \texttt{halfMixScript})
+		\item This is a mix transaction (i.e., the first input is protected by \texttt{halfMixScript}). 
+	\end{enumerate}
+%Otherwise the tokens are destroyed. 
+
+This requires that nothing be hardcoded in the scripts. Thus, \texttt{gX} must be read from a register in both \texttt{fullMixScript} and \texttt{halfMixScript}. Using the first available register, this is R6 in \texttt{fullMixScript} and R4 in \texttt{halfMixScript}. Additionally, \texttt{halfMixScript} must ensure that the correct \texttt{gX} is copied in the corresponding register (i.e., R6) of a mixed output. 
+
+Secondly, one register of every box must store a 32 byte sequence. This is R7 in \texttt{fullMixScript} and R5 in \texttt{halfMixScript}. Additionally, \texttt{halfMixScript} must ensure that the appropriate register (i.e., R7) of each mixed output also contains the same value. We now extend \texttt{fullMixScript}:
 
 \begin{alltt}
-	\Hi{val protocolScriptHash = SELF.R7[Coll[Byte]].get}
-	\Hi{val protocolScript = getVar[Coll[Byte]](1).get}
-	\Hi{val protocolScriptMatches = blake2b256(protocolScript) == protocolScriptHash}
-	\Hi{val protocolScriptAccepts = executeFromVar(1)}	
-	\Hi{val spentWithinSystem = protocolScriptAccepts && protocolScriptMatches}
+\Hi{val hash = SELF.R7[Coll[Byte]].get // hash of halfMixScript} 
+\Hi{val isHalf = blake2b256(OUTPUTS(0).propositionBytes) == hash &&}
+             \Hi{INPUTS.size == 1 && OUTPUTS(0).tokens(0) == SELF.tokens(0)}
+\Hi{val isFull = blake2b256(INPUTS(0).propositionBytes) == hash && INPUTS.size == 2} 
+\Hi{val isInternal = full || half} 
 \end{alltt}
 
-Finally, compute the hash: \texttt{val halfMixScriptHash = blake2b256(halfMixScript)}. Add both \texttt{halfMixScriptHash} and \texttt{fullMixScriptHash} to environment \texttt{env} and compute \texttt{protocolScript} as follows:
+Finally, we compute \texttt{val hash = blake2b256(halfMixScript)} and create a Half-Mix box with \texttt{hash} stored in its register R4. 
+
+\textbf{Restricted entry:} The issuer only sells tokens in batches of 1000. The tokens are stored at the first index of a box protected by a script requiring they must be transferred as a whole, and only if the transaction is either a Full-Mix transaction or creates a Half-Mix box. 
 
 \begin{alltt}
-val protocolScript = compile(env, """\Hi{\{}
-  \Hi{val protocolScriptHash = SELF(0).R7[Coll[Byte]].get}
-  \Hi{val isFullTx = OUTPUTS.size == 2 && INPUTS.size == 2 &&}
-                 \Hi{blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&}
-                 \Hi{blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&}
-                 \Hi{blake2b256(INPUTS(0).propositionBytes) == halfMixScriptHash &&}
-                 \Hi{OUTPUTS(0).R7[Coll[Byte]].get == protocolScriptHash &&}
-                 \Hi{OUTPUTS(1).R7[Coll[Byte]].get == protocolScriptHash &&}
-                 \Hi{INPUTS(0).R5[Coll[Byte]].get == protocolScriptHash}
-	              
-  \Hi{val isHalfTx = OUTPUTS.size == 1 && INPUTS.size == 1 &&}
-                 \Hi{blake2b256(OUTPUTS(0).propositionBytes) == halfMixScriptHash &&}
-                 \Hi{OUTPUTS(0).R5[Coll[Byte]].get == protocolScriptHash}
-	
-  \Hi{isHalfTx || isFullTx \}} """)
+\Hi{val isHalfMixBox = \{(b:Box) =>}
+  \Hi{b.R5[Coll[Byte]].get == halfMixScriptHash &&}
+  \Hi{blake2b256(OUTPUTS(0).propositionBytes) == halfMixScriptHash \}}
   
-val protocolScriptHash = blake2b256(protocolScript)
+\Hi{isHalfMixBox(INPUTS(0)) || (isHalfMoxBox(OUTPUTS(0)) &&}
+ \Hi{OUTPUTS.size == 1 && OUTPUTS(0).tokens(0) == SELF.tokens(0))}
 \end{alltt}
 
-The Half-Mix box is created with \texttt{protocolScriptHash} stored in its register R4. 
+
 %The spending condition of a fully mixed box is as follows:
+
+%In any two-round two-party protocol, we may want to identify which box(es) of the second round are spent in creating reused in the protocol. need to identify which boxes are part of the  stay within the protocol , for example, in \mixname in practice, we mayidentify where we want to accumulate fee as long as the coin does not leave the system, In particular, we need to identify the mixed outputs that are either sent back to the H-pool or used as an input in another Full-Mix transaction.
+%
+%This problem can be formulated more generally for any arbitrary two-round two-party protocol with the first round box protected by script \texttt{firstRoundScript} and the second round box protected by \texttt{secondRoundScript}, such that $Hash(\texttt{secondRoundScript})$ is used to create \texttt{firstRoundScript}. When running \texttt{secondRoundScript}, that is, when spending the second round box, we want to
+%determine if at least one the following cases is true: 
+%\begin{enumerate}
+%	\item The output is a first round box (i.e., protected by \texttt{firstRoundScript})
+%	\item The output is a second round box, and another input is a first round box. 
+%\end{enumerate}
+%
+%Clearly, such a requirement is non-trivial because the second round script references the first round script and the first round script needs $Hash(\texttt{secondRoundScript})$. However, \langname allows us to achieve this by giving us the ability to run arbitrary code not known at compile time using the \texttt{executeFromVar} and \texttt{executeFromReg} instructions.
+%We describe how do this for \mixname. However, the ideas are general enough to be applied to any protocol. 
+%
+%The scripts cannot have keys hardcoded. Thus, \texttt{gX} must be read from a register in both \texttt{fullMixScript} and the code in Alice's Half-Mix box, which we call \texttt{halfMixScript}. Let it be R6 in \texttt{fullMixScript} and R4 in \texttt{halfMixScript}
+%Additionally, \texttt{halfMixScript} should ensure that the correct \texttt{gX} is copied in the corresponding register (i.e., R6) of each mixed output. Compute the hash: \texttt{val halfMixScriptHash = blake2b256(halfMixScript)} for use below. 
+%
+%One register of each box stores \texttt{scriptHash}, the hash of some script to be supplied later. Let it be R7 in \texttt{fullMixScript} and R5 in \texttt{halfMixScript}. Additionally, \texttt{halfMixScript} must ensure that the appropriate register (i.e., R7) of each mixed output also contains this hash. 
+%
+%We now extend \texttt{fullMixScript} with the code:
+%
+%\begin{alltt}
+%	\Hi{val scriptHash = SELF.R7[Coll[Byte]].get}
+%	\Hi{val script = getVar[Coll[Byte]](1).get}
+%	\Hi{val protocolTx = blake2b256(script) == scriptHash && executeFromVar(1)}
+%\end{alltt}
+%
+%The instruction \texttt{executeFromVar(1)} reads the first context variable as a script, executes it in the current context and returns the result. We will use \texttt{protocolTx} to identify if a mixed output is spent in a pool or another mix transaction. Add both \texttt{halfMixScriptHash} and \texttt{fullMixScriptHash} to environment \texttt{env} and compute: \texttt{val scriptHash = blake2b256(script)}, where \texttt{script} is:
+%
+%\begin{alltt}
+%val script = compile(env, """ \Hi{\{ val scriptHash = SELF(0).R7[Coll[Byte]].get}
+%
+%  \Hi{val isFullTx = OUTPUTS.size == 2 && INPUTS.size == 2 &&}
+%                 \Hi{blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&}
+%                 \Hi{blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&}
+%                 \Hi{blake2b256(INPUTS(0).propositionBytes) == halfMixScriptHash &&}
+%                 \Hi{OUTPUTS(0).R7[Coll[Byte]].get == scriptHash &&}
+%                 \Hi{OUTPUTS(1).R7[Coll[Byte]].get == scriptHash &&}
+%                 \Hi{INPUTS(0).R5[Coll[Byte]].get == scriptHash}
+%
+%  \Hi{val isHalfTx = OUTPUTS.size == 1 && INPUTS.size == 1 &&}
+%                 \Hi{blake2b256(OUTPUTS(0).propositionBytes) == halfMixScriptHash &&}
+%                 \Hi{OUTPUTS(0).R5[Coll[Byte]].get == scriptHash}
+%	
+%  \Hi{isHalfTx || isFullTx \}} """)
+%  
+%\end{alltt}
+%
+%The Half-Mix box is created with \texttt{scriptHash} stored in its register R4. 
+%%The spending condition of a fully mixed box is as follows:
 
  
 \bibliographystyle{unsrt}
