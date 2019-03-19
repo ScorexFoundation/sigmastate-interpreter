@@ -218,7 +218,7 @@ trait Evaluation extends RuntimeCosting { IR =>
   def msgCostLimitError(cost: Int, limit: Long) = s"Estimated expression complexity $cost exceeds the limit $limit"
 
   /** Incapsulate simple monotonic (add only) counter with reset. */
-  class CostCounter(initialCost: Int) {
+  class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
 
     @inline def += (n: Int) = {
@@ -243,7 +243,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     class Scope(visitiedOnEntry: Set[Sym], initialCost: Int) extends CostCounter(initialCost) {
       private var _visited: Set[Sym] = visitiedOnEntry
       @inline def visited = _visited
-      @inline def add(op: OpCost, opCost: Int, dataEnv: DataEnv) = {
+      @inline def add(s: Sym, op: OpCost, opCost: Int, dataEnv: DataEnv) = {
         for (arg <- op.args) {
           if (!_visited.contains(arg)) {
             val argCost = getCostFromEnv(dataEnv, arg)
@@ -252,16 +252,16 @@ trait Evaluation extends RuntimeCosting { IR =>
           }
         }
         this += opCost
-        _visited += op.opCost
+        _visited += s
       }
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
       * if isCosting then delegate to the currentScope */
-    def add(op: OpCost, dataEnv: DataEnv) = {
+    def add(s: Sym, op: OpCost, dataEnv: DataEnv) = {
       val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
       if (costLimit.isDefined) {
-        currentScope.add(op, opCost, dataEnv)
+        currentScope.add(s, op, opCost, dataEnv)
         // check that we are still withing the limit
         val cost = currentScope.currentCost
         val limit = costLimit.get
@@ -278,9 +278,9 @@ trait Evaluation extends RuntimeCosting { IR =>
 
     /** Called after all operations of a scope are executed (lambda or thunk)*/
     def endScope() = {
-      val cost = currentScope.currentCost
+      val deltaCost = currentScope.currentCost - currentScope.initialCost
       _scopeStack = _scopeStack.tail
-      _scopeStack.head += cost
+      _scopeStack.head += deltaCost
     }
 
     /** Resets this accumulator into initial state to be ready for new graph execution. */
@@ -492,7 +492,7 @@ trait Evaluation extends RuntimeCosting { IR =>
           case costOp: CostOf =>
             out(costOp.eval)
           case op: OpCost =>
-            val c = costAccumulator.add(op, dataEnv)
+            val c = costAccumulator.add(te.sym, op, dataEnv)
             out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
