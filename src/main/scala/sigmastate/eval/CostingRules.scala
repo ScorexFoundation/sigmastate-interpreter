@@ -356,21 +356,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
       RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), sigmaDslBuilder.CostModel.GetRegister))
     }
-
-//    def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
-//    def valueCosted: Costed[Long] = {
-//      val cost = dsl.CostModel.SelectField
-//      new CCostedPrim(box.value, cost, 8L)
-//    }
-//    def bytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytes, box.bytes.length, 1)
-//    def bytesWithoutRef: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytesWithoutRef, box.bytesWithoutRef.length, 1)
-//    def propositionBytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.propositionBytes, box.propositionBytes.length, 1)
-//    def registers: CostedColl[AnyValue] = {
-//      val len = box.registers.length
-//      val costs = dsl.Colls.replicate(len, dsl.CostModel.AccessBox)
-//      val sizes = box.registers.map(o => o.dataSize)
-//      new CCostedColl(box.registers, costs, sizes, dsl.CostModel.CollectionConst)
-//    }
   }
 
   object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))

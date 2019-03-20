@@ -1169,8 +1169,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val c = source.cost  // this is a current cost of the value
         val v = source.value
         RCCostedPrim(v, newCost(v, c), source.size)
-//      case e =>
-//        !!!(s"Don't know how to attach cost $cost to costed value $source: $e")
     }
   }
 

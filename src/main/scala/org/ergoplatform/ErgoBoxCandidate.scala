@@ -4,7 +4,6 @@ import java.util
 
 import org.ergoplatform.ErgoBox._
 import scorex.util.encode.Base16
-import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -12,11 +11,10 @@ import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.CostTable.Cost
 import special.collection.Coll
 import sigmastate.eval._
-import Extensions._
-import scala.collection.mutable.WrappedArray.ofByte
+import sigmastate.eval.Extensions._
+
 import scala.runtime.ScalaRunTime
 
 /**
@@ -40,10 +38,6 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
   def proposition: BoolValue = ergoTree.proposition.asBoolValue
-
-//  def dataSize: Long = bytesWithNoRef.length.toLong
-
-//  lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
 
   lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 

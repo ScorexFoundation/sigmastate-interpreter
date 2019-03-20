@@ -308,9 +308,9 @@ case class CostingBox(val IR: Evaluation,
     this.getReg[Coll[(Coll[Byte], Long)]](2).get
   }
 
-  override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ???
+  override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ??? // TODO implement
 
-  override def hashCode(): Int = id.toArray.hashCode()
+  override def hashCode(): Int = id.toArray.hashCode()  // TODO optimize using just 4 bytes of id (since it is already hash)
 
   override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj != null && ( obj match {
     case obj: Box => util.Arrays.equals(id.toArray, obj.id.toArray)

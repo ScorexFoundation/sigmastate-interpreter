@@ -14,10 +14,8 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
-import supertagged.TaggedType
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import special.sigma.Box
 
 import scala.runtime.ScalaRunTime
 
@@ -62,8 +60,6 @@ class ErgoBox(
   import ErgoBox._
 
   lazy val idBytes: BoxId = ADKey @@ Blake2b256.hash(bytes)
-
-//  override def dataSize: Long = bytes.length
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {

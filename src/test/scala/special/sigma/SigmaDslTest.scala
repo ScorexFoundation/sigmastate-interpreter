@@ -409,16 +409,16 @@ class SigmaDslTest extends PropSpec
 
   property("Context properties equivalence") {
     val eq = EqualityChecker(ctx)
-//    eq({ (x: Context) => x.dataInputs })("{ (x: Context) => x.dataInputs }")
-//    eq({ (x: Context) => x.dataInputs(0) })("{ (x: Context) => x.dataInputs(0) }")
-//    eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
-//    eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
-//    eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
-//    eq({ (x: Context) => x.OUTPUTS })("{ (x: Context) => x.OUTPUTS }")
-//    eq({ (x: Context) => x.INPUTS })("{ (x: Context) => x.INPUTS }")
-//    eq({ (x: Context) => x.HEIGHT })("{ (x: Context) => x.HEIGHT }")
-//    eq({ (x: Context) => x.SELF })("{ (x: Context) => x.SELF }")
-//    eq({ (x: Context) => x.INPUTS.map { (b: Box) => b.value } })("{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }")
+    eq({ (x: Context) => x.dataInputs })("{ (x: Context) => x.dataInputs }")
+    eq({ (x: Context) => x.dataInputs(0) })("{ (x: Context) => x.dataInputs(0) }")
+    eq({ (x: Context) => x.dataInputs(0).id })("{ (x: Context) => x.dataInputs(0).id }")
+    eq({ (x: Context) => x.preHeader })("{ (x: Context) => x.preHeader }")
+    eq({ (x: Context) => x.headers })("{ (x: Context) => x.headers }")
+    eq({ (x: Context) => x.OUTPUTS })("{ (x: Context) => x.OUTPUTS }")
+    eq({ (x: Context) => x.INPUTS })("{ (x: Context) => x.INPUTS }")
+    eq({ (x: Context) => x.HEIGHT })("{ (x: Context) => x.HEIGHT }")
+    eq({ (x: Context) => x.SELF })("{ (x: Context) => x.SELF }")
+    eq({ (x: Context) => x.INPUTS.map { (b: Box) => b.value } })("{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }")
     eq({ (x: Context) =>
       x.INPUTS.map { (b: Box) => (b.value, b.value) }
     })(
@@ -427,20 +427,20 @@ class SigmaDslTest extends PropSpec
        |}""".stripMargin
     )
 
-//    eq({ (x: Context) =>
-//      x.INPUTS.map { (b: Box) =>
-//        val pk = b.R4[Int].get
-//        val value = longToByteArray(b.value)
-//        (pk, value)
-//      }
-//    })(
-//    """{ (x: Context) =>
-//     |  x.INPUTS.map { (b: Box) =>
-//     |    val pk = b.R4[Int].get
-//     |    val value = longToByteArray(b.value)
-//     |    (pk, value)
-//     |  }
-//     |}""".stripMargin)
+    eq({ (x: Context) =>
+      x.INPUTS.map { (b: Box) =>
+        val pk = b.R4[Int].get
+        val value = longToByteArray(b.value)
+        (pk, value)
+      }
+    })(
+    """{ (x: Context) =>
+     |  x.INPUTS.map { (b: Box) =>
+     |    val pk = b.R4[Int].get
+     |    val value = longToByteArray(b.value)
+     |    (pk, value)
+     |  }
+     |}""".stripMargin)
 
 // TODO
 //    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)
