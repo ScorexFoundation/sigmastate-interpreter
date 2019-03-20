@@ -9,7 +9,7 @@ import special.collection.Coll
 import special.sigma.Context
 
 class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
 
