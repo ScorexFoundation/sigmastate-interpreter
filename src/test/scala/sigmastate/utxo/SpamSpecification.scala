@@ -31,7 +31,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 3000000).foreach(_ => hf(block))
+    (1 to 10000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }

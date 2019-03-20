@@ -1153,15 +1153,24 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   /** Build a new costed value with the given cost in a dependency list.
     * This is required to correctly handle tuple field accesses like `v._1`
     * and not to lose the cost of `v` in the cost of resulting value. */
-  def attachCost[T](source: RCosted[T], accCost: Rep[Int], cost: Rep[Int]): RCosted[T] = {
-    val c = source.cost  // this is a current cost of the value
-    def newCost(v: Sym) = opCost(v, Seq(accCost, c), cost) // put cost in dependency list
-    source.elem match {
-      case e: CostedPrimElem[_,_] =>
-        val v = source.value
-        RCCostedPrim(v, newCost(v), source.size)
+  def attachCost[T](source: RCosted[T], accCost: Rep[Int], cost: Rep[Int]): RCosted[T] = asRep[Costed[T]] {
+    def newCost(v: Sym, c: Rep[Int]) = opCost(v, Seq(accCost, c), cost) // put cost in dependency list
+
+    source.elem.eVal match {
+      case e: CollElem[a, _] =>
+        val xsC = asCostedColl[a](asCosted[Coll[a]](source))
+        val v = xsC.values
+        val c = xsC.cost
+        RCCostedColl(v, xsC.costs, xsC.sizes, newCost(v, c))
+      case e: PairElem[a,b] =>
+        val pC = asCostedPair[a,b](asCosted[(a,b)](source))
+        RCCostedPair(pC.l, pC.r, newCost(pC, pC.cost))
       case e =>
-        !!!(s"Don't know how to attach cost $cost to costed value $source: $e")
+        val c = source.cost  // this is a current cost of the value
+        val v = source.value
+        RCCostedPrim(v, newCost(v, c), source.size)
+//      case e =>
+//        !!!(s"Don't know how to attach cost $cost to costed value $source: $e")
     }
   }
 

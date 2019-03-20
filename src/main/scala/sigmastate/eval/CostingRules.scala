@@ -28,6 +28,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import SizeBox._
   import SizeContext._
   import CCostedPrim._
+  import CostedPair._
   import CCostedPair._
   import CCostedOption._
   import CostedFunc._
@@ -89,6 +90,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   def asCostedColl[T](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = {
     implicit val eT = collC.elem.eVal.eItem
     tryCast[CostedColl[T]](collC)
+  }
+  def asCostedPair[A,B](pC: RCosted[(A,B)]): Rep[CostedPair[A,B]] = {
+    implicit val eA = pC.elem.eVal.eFst
+    implicit val eB = pC.elem.eVal.eSnd
+    tryCast[CostedPair[A,B]](pC)
   }
   def asCostedFunc[A,B](fC: RCosted[A => B]): Rep[CostedFunc[Unit,A,B]] = {
     implicit val eA = fC.elem.eVal.eDom
