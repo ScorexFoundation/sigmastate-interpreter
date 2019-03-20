@@ -53,6 +53,7 @@ object CostTable {
   val hashPerKb = 100
 
   val collAccess = 5
+  val collLength = 5
 
   val collToColl = 20
 
@@ -67,7 +68,11 @@ object CostTable {
 
   val treeOp = 1000
 
-  val extractCost = 10
+  val extractCost      = 10
+  val selectField      = 10
+  val accessContextVar = 10
+  val accessBox        = 10
+  val accessRegister   = 10
 
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
@@ -91,12 +96,12 @@ object CostTable {
     ("Self$", "Context => Box", constCost),
     ("AccessAvlTree", "Context => AvlTree", constCost),
 
-    ("SelectField", "() => Unit", extractCost),
+    ("SelectField", "() => Unit", selectField),
     ("AccessKiloByteOfData", "() => Unit", extractCost),
-    ("AccessBox", "Context => Box", extractCost),
+    ("AccessBox", "Context => Box", accessBox),
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
-    ("GetRegister", "(Box, Byte) => Option[T]", extractCost),
-    ("AccessRegister", "Box => Option[T]", extractCost),
+    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
+    ("AccessRegister", "Box => Option[T]", accessRegister),
     ("ExtractAmount", "(Box) => Long", extractCost),
     ("ExtractId", "(Box) => Coll[Byte]", extractCost),
     ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
@@ -113,7 +118,7 @@ object CostTable {
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
-    ("SizeOf", "(Coll[IV]) => Int", collAccess),
+    ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
     ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),

@@ -1239,7 +1239,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         stypeToElem(optTpe.elemType) match { case e: Elem[t] =>
           val v = ctx.value.getVar[t](id)(e)
           val s = tryCast[SizeContext](ctx.size).getVar(id)(e)
-          RCCostedPrim(v, sigmaDslBuilder.CostModel.GetVar, s)
+          RCCostedPrim(v, opCost(v, Nil, sigmaDslBuilder.CostModel.GetVar), s)
         }
 
       case Terms.Block(binds, res) =>
@@ -1574,12 +1574,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case utxo.ExtractCreationInfo(In(box)) =>
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
-        val boxC = asRep[Costed[Box]](box)
-        val sBox = asSizeBox(boxC.size)
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
-        val valueOpt = boxC.value.getReg(regId.number.toInt)(elem)
-        val sReg = asSizeOption(sBox.getReg(regId.number)(elem))
-        RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(Seq(boxC.cost), sigmaDslBuilder.CostModel.GetRegister))
+        val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, 0, SizeInt)
+        BoxCoster(box, SBox.getRegMethod, Seq(i, asCosted[Int](liftElem(elem))))
 
       case BoolToSigmaProp(bool) =>
         val boolC = eval(bool)
@@ -1649,12 +1646,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
           val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
-          val cost = opCost(costs, perItemCostOf(node, costs.length))
+          val nOps = costs.length - 1
+          val cost = opCost(costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = asRep[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.anyOf(inputC.value)
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, inputC.sizes.length))
+          val nOps = inputC.sizes.length - 1
+          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 
@@ -1663,12 +1662,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))
           val res = sigmaDslBuilder.allOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
-          val cost = opCost(costs, perItemCostOf(node, costs.length))
+          val nOps = costs.length - 1
+          val cost = opCost(costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = tryCast[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.allOf(inputC.value)
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, inputC.sizes.length))
+          val nOps = inputC.sizes.length - 1
+          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 
@@ -1677,12 +1678,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val itemsC = items.map(item => eval(item))
           val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
-          val cost = opCost(costs, perItemCostOf(node, costs.length))
+          val nOps = costs.length - 1
+          val cost = opCost(costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = tryCast[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.xorOf(inputC.value)
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, inputC.sizes.length))
+          val nOps = inputC.sizes.length - 1
+          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 

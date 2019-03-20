@@ -51,29 +51,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
   }
 
-  /** Special graph node to represent accumulation of the operation costs.
-    * In general, due to node sharing it is incorrect to just sum up all the `args` costs
-    * and add `resCost` to that value.
-    * Example: <br>
-    * <code>
-    * val x = ..
-    * val y = op1(x)
-    * val z = op2(x)
-    * val res = op3(y, z)
-    * </code>
-    * The naive summation will lead to the cost of x` is accumulated both into `cost of y`
-    * and into `cost of z`, so in the `cost of res` it is accumulated twice.
-    * To avoid this problem OpCost nodes require special handling in during evaluation.
-    *
-    * @param  args    costs of the arguments, which are here represent dependency information.
-    * @param  opCost operation cost, which should be added to the currently accumulated cost
-    * @see `Evaluation`
-    */
-  case class OpCost(args: Seq[Rep[Int]], opCost: Rep[Int]) extends BaseDef[Int] {
-    override def transform(t: Transformer) = OpCost(t(args), t(opCost))
-  }
-  def opCost(args: Seq[Rep[Int]], opCost: Rep[Int]): Rep[Int] = OpCost(args, opCost)
-
   def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
 
   // TODO move initialization to init() to support resetContext
@@ -366,6 +343,14 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(tokens, costs, sizes, opCost(Seq(obj.cost), costOf(method)))
     }
 
+    def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
+      val sBox = asSizeBox(obj.size)
+      implicit val elem = tT.eA
+      val valueOpt = obj.value.getReg(i.value)(elem)
+      val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
+      RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), sigmaDslBuilder.CostModel.GetRegister))
+    }
+
 //    def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
 //    def valueCosted: Costed[Long] = {
 //      val cost = dsl.CostModel.SelectField
@@ -380,13 +365,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 //      val sizes = box.registers.map(o => o.dataSize)
 //      new CCostedColl(box.registers, costs, sizes, dsl.CostModel.CollectionConst)
 //    }
-//    def getReg[@Reified T](id: Int)(implicit cT:RType[T]): CostedOption[T] = {
-//      val opt = box.getReg(id)(cT)
-//      dsl.costOption(opt, dsl.CostModel.GetRegister)
-//    }
-//
-//    @NeverInline
-//    def creationInfo: Costed[(Int, Coll[Byte])] = SpecialPredef.rewritableMethod
   }
 
   object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))
