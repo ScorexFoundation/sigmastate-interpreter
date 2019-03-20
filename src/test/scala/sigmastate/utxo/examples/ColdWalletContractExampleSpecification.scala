@@ -2,21 +2,19 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.AvlTreeData
-import sigmastate.Values.{IntConstant, LongConstant, SigmaPropConstant}
+import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
-
-import scala.util.Failure
 
 
 class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   import ErgoAddressEncoder._
-
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
+
   property("Evaluation - ColdWallet Contract Example") {
 
     val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
@@ -48,8 +46,8 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
         |
         |  val toKeep = max(SELF.value - max(SELF.value * percent / 100, minSpend), 0L)
         |
-        |  val newStart:Int = if (notExpired) lastStart else HEIGHT
-        |  val newMinBal:Long = if (notExpired) lastMinBal else toKeep
+        |  val newStart: Int = if (notExpired) lastStart else HEIGHT
+        |  val newMinBal: Long = if (notExpired) lastMinBal else toKeep
         |
         |  // to avoid the case of spending multiple boxes and creating only one output, we ensure INPUTS.size == 1
         |  val isValidOut = INPUTS.size == 1 && OUTPUTS.exists({(out:Box) =>
@@ -204,4 +202,5 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     verifier.verify(env, script, secondWithdrawContext, proofBobSecondWithdraw, fakeMessage).get._1 shouldBe true
 
   }
+  
 }
