@@ -70,7 +70,9 @@ class CostingSpecification extends SigmaTestingCommons {
     cost("{ SELF.value > 0 }") shouldBe (accessBox + extractCost + GTConstCost)
     cost("{ SELF.id.size > 0 }") shouldBe (accessBox + extractCost + collLength + GTConstCost)
     cost("{ SELF.tokens.size > 0 }") shouldBe (accessBox + extractCost + collLength + GTConstCost)
-//    cost("{ SELF.R0[Long].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+    cost("{ SELF.creationInfo._1 > 0 }") shouldBe (accessBox + accessRegister + selectField + GTConstCost)
+    cost("{ SELF.R5[Int].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+
 //    cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
   }
 

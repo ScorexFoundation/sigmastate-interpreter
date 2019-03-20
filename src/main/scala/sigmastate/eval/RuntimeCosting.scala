@@ -1150,6 +1150,21 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       liftConst(Sized.sizeOf(x.asInstanceOf[(a,b)]))
   })
 
+  /** Build a new costed value with the given cost in a dependency list.
+    * This is required to correctly handle tuple field accesses like `v._1`
+    * and not to lose the cost of `v` in the cost of resulting value. */
+  def attachCost[T](source: RCosted[T], accCost: Rep[Int], cost: Rep[Int]): RCosted[T] = {
+    val c = source.cost  // this is a current cost of the value
+    def newCost(v: Sym) = opCost(v, Seq(accCost, c), cost) // put cost in dependency list
+    source.elem match {
+      case e: CostedPrimElem[_,_] =>
+        val v = source.value
+        RCCostedPrim(v, newCost(v), source.size)
+      case e =>
+        !!!(s"Don't know how to attach cost $cost to costed value $source: $e")
+    }
+  }
+
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1331,14 +1346,17 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val fn = STuple.componentNameByIndex(fieldIndex - 1)
             val v = tup.value.getUntyped(fn)
             val c = opCost(Seq(tup.cost), costedBuilder.SelectFieldCost)
-            val s: RSize[Any] = ??? //asRep[SizeStruct](tup.size).sizeFi.getUntyped(fn)
+            val s: RSize[Any] = ??? // TODO implement similar to Pair case
             RCCostedPrim(v, c, s)
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
             implicit val ea = pe.eFst
             implicit val eb = pe.eSnd
             val pair = tryCast[CostedPair[a,b]](_tup)
-            val res = if (fieldIndex == 1) pair.l else pair.r
+            val res = if (fieldIndex == 1)
+              attachCost(pair.l, pair.accCost, selectFieldCost)
+            else
+              attachCost(pair.r, pair.accCost, selectFieldCost)
             res
         }
 
