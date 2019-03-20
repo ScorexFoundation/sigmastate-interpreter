@@ -4,13 +4,11 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash.Blake2b256
-import sigmastate.SSigmaProp
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.utxo.DeserializeContext
 import special.collection.Coll
 import special.sigma.Context
 
-class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
+class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
@@ -30,20 +28,22 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
 
     lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "tokenId" -> tokenId)
 
-    lazy val prop = proposition("tokenContract", { ctx: Context =>
-      import ctx._
-      val inReg = INPUTS(0).R4[Long].get
-      val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
+    lazy val prop = proposition("dataInputContract", { CONTEXT: Context =>
+      import CONTEXT._
+      val dataInput = CONTEXT.dataInputs(0)
+      val inReg = dataInput.R4[Long].get
+      val inToken = dataInput.R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
       inToken && okContractLogic
     },
-    """{
-     |      val inReg = INPUTS(0).R4[Long].get
-     |      val inToken = INPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
-     |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
-     |      inToken && okContractLogic
-     |}
-    """.stripMargin)
+      """{
+        |      val dataInput = CONTEXT.dataInputs(0)
+        |      val inReg = dataInput.R4[Long].get
+        |      val inToken = dataInput.R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
+        |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
+        |      inToken && okContractLogic
+        |}
+      """.stripMargin)
 
     lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
 
@@ -63,7 +63,10 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
     // ARRANGE
     // block, tx, and output boxes which we will spend
     val mockTx = candidateBlock(0).newTransaction()
-    val sOracle = mockTx
+
+    val dBox = mockTx.outBox(1, contract.prop).withRegs(reg1 -> temperature)
+
+    val sOracle = mockTx // in real world, this must be protected by pkOracle
         .outBox(value = 1L, contract.dummySignature)
         .withRegs(reg1 -> temperature)
         .withTokens(Token(tokenId, 1))
@@ -71,7 +74,7 @@ class OracleTokenExamplesSpecification extends SigmaTestingCommons { suite =>
     val sAlice = mockTx.outBox(10, contract.prop)
     val sBob   = mockTx.outBox(10, contract.prop)
 
-    val tx = candidateBlock(50).newTransaction().spending(sOracle, sAlice, sBob)
+    val tx = candidateBlock(50).newTransaction().withDataInputs(sOracle).spending(sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
     val in = tx.inputs(1)
     val res = in.runDsl()
