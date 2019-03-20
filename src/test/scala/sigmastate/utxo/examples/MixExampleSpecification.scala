@@ -1,23 +1,21 @@
-
 package sigmastate.utxo.examples
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.AvlTreeData
-import sigmastate.Values.{ByteConstant, GroupElementConstant, IntConstant, SigmaPropConstant}
+import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 
 class MixExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {
     import CryptoConstants.dlogGroup
