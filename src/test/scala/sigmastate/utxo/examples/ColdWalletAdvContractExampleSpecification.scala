@@ -70,22 +70,16 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
         |                else
         |                  max(SELF.value * percent2Key / 100, minSpend)
         |
-        |  // to do: double check if negatives values of avbl1Key create any problem
-        |  val isValid1Key = INPUTS.size == 1 && OUTPUTS.exists({(out:Box) =>
-        |    out.propositionBytes == SELF.propositionBytes &&
-        |    out.R4[Int].get >= newStart &&
-        |    out.value >= SELF.value - avbl1Key &&
-        |    out.value - out.R5[Long].get == SELF.value - avbl1Key &&
-        |    out.R6[Long].get == SELF.R6[Long].get
-        |  })
+        |  val out = OUTPUTS(0) // change output
         |
-        |  val isValid2Key = INPUTS.size == 1 && OUTPUTS.exists({(out:Box) =>
-        |    out.propositionBytes == SELF.propositionBytes &&
-        |    out.R4[Int].get >= newStart &&
-        |    out.value >= SELF.value - avbl2Key &&
-        |    out.value - out.R6[Long].get == SELF.value - avbl2Key &&
-        |    out.R5[Long].get == SELF.R5[Long].get
-        |  })
+        |  // to do: double check if negatives values of avbl1Key create any problem
+        |  val isValid1Key = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
+        |    out.R4[Int].get >= newStart && out.value >= SELF.value - avbl1Key &&
+        |    out.value - out.R5[Long].get == SELF.value - avbl1Key && out.R6[Long].get == SELF.R6[Long].get
+        |
+        |  val isValid2Key = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
+        |    out.R4[Int].get >= newStart && out.value >= SELF.value - avbl2Key &&
+        |    out.value - out.R6[Long].get == SELF.value - avbl2Key && out.R5[Long].get == SELF.R5[Long].get
         |
         |  allOf(Coll(user1, user2, user3)) || (
         |    (anyOf(Coll(user1, user2, user3)) && (SELF.value <= avbl1Key || isValid1Key)) ||

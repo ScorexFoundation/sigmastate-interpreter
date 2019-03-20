@@ -557,7 +557,18 @@ Consider the approximate fairness strategy of \mixname encoded in \texttt{halfMi
 
 Assume that each party joins the protocol by purchasing 1000 mixing tokens. This will give about 10 sequential mixes in the worst case. In the ideal world, however, if Alice and Bob join by contributing 1000 tokens each and slowly use them up in subsequent mixes with other people, we expect that they should be able to do substantially higher number of mixes. To achieve this in the real world, we would like to ensure that if a party is contributing, say, 50 mixing tokens, then they actually got there `the hard way', by performing several sequential mixes and not just by starting out with 50. 
 %Thus, coins with lower number of mixing tokens should have a higher {\em mix value}. 
-One way to achieve this would via tokens with the following two properties. 
+One way to achieve this is via tokens with the following two properties. 
+
+
+\textbf{Restricted entry:} The issuer only sells tokens in batches of 1000. The tokens are stored at the first index of a box protected by below script requiring they must be transferred as a whole, and only if the transaction is either a Full-Mix transaction or creates a Half-Mix box. 
+
+\begin{alltt}
+\Hi{val isHalfMixBox = \{(b:Box) => }
+ \Hi{blake2b256(OUTPUTS(0).propositionBytes) == halfMixScriptHash\}}
+	
+\Hi{isHalfMixBox(INPUTS(0)) || (isHalfMixBox(OUTPUTS(0)) && OUTPUTS.size == 1 &&}
+                            \Hi{OUTPUTS(0).tokens(0) == SELF.tokens(0))}
+\end{alltt}
 
 \textbf{Restricted transfer:} The tokens are transferrable only within the system as a whole. % (after deducting fee). 
 This is enforced as follows. 
@@ -581,16 +592,6 @@ Secondly, modify \texttt{halfMixScript} to contain the following code for checki
 \Hi{val isNone = OUTPUTS.forall\{(b:Box) => }
   \Hi{b.tokens.forall\{(t:(Coll[Byte], Long)) => t._1 != SELF.tokens(0)._1\}\}} 
 \Hi{(isFull || isHalf || isNone) && ... // existing condition} 
-\end{alltt}
-
-\textbf{Restricted entry:} The issuer only sells tokens in batches of 1000. The tokens are stored at the first index of a box protected by a script requiring they must be transferred as a whole, and only if the transaction is either a Full-Mix transaction or creates a Half-Mix box. 
-
-\begin{alltt}
-\Hi{val isHalfMixBox = \{(b:Box) => }
-  \Hi{blake2b256(OUTPUTS(0).propositionBytes) == halfMixScriptHash\}}
-  
-\Hi{isHalfMixBox(INPUTS(0)) || (isHalfMixBox(OUTPUTS(0)) &&}
- \Hi{OUTPUTS.size == 1 && OUTPUTS(0).tokens(0) == SELF.tokens(0))}
 \end{alltt}
 
 
