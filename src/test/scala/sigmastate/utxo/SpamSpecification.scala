@@ -171,7 +171,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
   property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
-      this.useAlphaEquality = true
+//      this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
       override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
         if (okPrintEvaluatedEntries)

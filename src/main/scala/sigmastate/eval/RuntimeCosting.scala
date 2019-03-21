@@ -92,7 +92,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
-//  this.useAlphaEquality = false
+  this.useAlphaEquality = false
 //  unfoldWithOriginalFunc = unfoldWithOrig
 
   /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
@@ -143,16 +143,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     case _ =>
       super.createAllMarking(e)
   }
-
-  def zeroSize[V](eVal: Elem[V]): RSize[V] = asRep[Size[V]](eVal match {
-    case pe: PairElem[a,b] => costedBuilder.mkSizePair(zeroSize[a](pe.eFst), zeroSize[b](pe.eSnd))
-    case ce: CollElem[_,_] =>
-      implicit val eItem = ce.eItem
-      costedBuilder.mkSizeColl(colBuilder.fromItems(zeroSize(eItem)))
-    case oe: WOptionElem[_,_] => costedBuilder.mkSizeOption(RWSpecialPredef.some(zeroSize(oe.eItem)))
-    case _: BaseElem[_] | _: EntityElem[_] => costedBuilder.mkSizePrim(0L, eVal)
-    case _ => error(s"Cannot create zeroSize($eVal)")
-  })
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
     override def transform(t: Transformer): Def[IntPlusMonoidData] = this
@@ -756,11 +746,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
-  type LazyRep[T] = MutableLazy[Rep[T]]
-
-  private val _specialPredef: LazyRep[WSpecialPredefCompanionCtor] = MutableLazy(RWSpecialPredef)
-  def specialPredef: Rep[WSpecialPredefCompanionCtor] = _specialPredef.value
-
   private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(RTestSigmaDslBuilder())
   def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
 
@@ -788,7 +773,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   
   protected override def onReset(): Unit = {
     super.onReset()
-    Seq(_specialPredef, _sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
+    Seq(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
         _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
         .foreach(_.reset())
   }
@@ -1486,7 +1471,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //            val sizes: Rep[WOption[Long]]= Apply(sizeF, Pair(value, xC.dataSize), false)
 //            RCCostedOption(values, costRes._1, sizes, costRes._2)
           case _ =>
-            val (calcF, costF, sizeF) = splitCostedFunc(fC.func)
+            val calcF = fC.sliceCalc
+            val costF = fC.sliceCost
+            val sizeF = fC.sliceSize
             val value = xC.value
             val y: Rep[Any] = Apply(calcF, value, false)
             val c: Rep[Int] = opCost(Seq(fC.cost, xC.cost), Apply(costF, Pair(xC.cost, xC.size), false))

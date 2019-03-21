@@ -127,7 +127,13 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         val x = block
         x shouldBe expected.get
       }
-//          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
+    }
+
+    def checkExpectedFunc[A,B](block: => Rep[A => B], expected: Option[Rep[A => B]], messageFmt: String) = {
+      if (expected.isDefined) {
+        val x = block
+        assert(alphaEqual(x, expected.get), messageFmt)
+      }
     }
 
     def pairify(xs: Seq[Sym]): Sym = xs match {
@@ -156,9 +162,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }
-      checkExpected(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
-      checkExpected(costF, expectedCostF, "Cost function actual: %s, expected: %s")
-      checkExpected(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
+      checkExpectedFunc(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
+      checkExpectedFunc(costF, expectedCostF, "Cost function actual: %s, expected: %s")
+      checkExpectedFunc(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
       res
     }
 

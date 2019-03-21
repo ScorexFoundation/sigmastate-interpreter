@@ -141,7 +141,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   def asSizeBox(ctx: RSize[Box]): Rep[SizeBox] = tryCast[SizeBox](ctx)
   def asSizeContext(ctx: RSize[Context]): Rep[SizeContext] = tryCast[SizeContext](ctx)
 
-  def SOME[A](x: Rep[A]): Rep[WOption[A]] = RWSpecialPredef.some(x)
+  def SOME[A](x: Rep[A]): Rep[WOption[A]] = specialPredef.some(x)
 
   def mkSizeColl[T:Elem](len: Rep[Int]): Rep[Size[Coll[T]]] = {
     val sizes = colBuilder.replicate(len, costedBuilder.mkSizePrim(typeSize[T], element[T]): RSize[T])
@@ -262,8 +262,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val size = sizeOfArgs
       val c = opCost(costOfArgs, perKbCostOf(method, size))
       val res = RCCostedOption(value,
-        RWSpecialPredef.some(0),
-        RWSpecialPredef.some(proof.size),
+        specialPredef.some(0),
+        specialPredef.some(proof.size),
         c)
       res
     }
@@ -288,7 +288,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val value = meth(obj.value)
       val size = sizeOfArgs
       RCCostedOption(value,
-        RWSpecialPredef.some(0),
+        specialPredef.some(0),
         SOME(obj.size), opCost(costOfArgs, perKbCostOf(method, size)))
     }
 
