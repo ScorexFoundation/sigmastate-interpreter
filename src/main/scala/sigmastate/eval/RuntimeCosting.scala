@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, SigmaLibrary, Nullable, RType}
+import scalan.{Lazy, MutableLazy, SigmaLibrary, Nullable, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -98,6 +98,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
     * true - substitute; false - create CostOf nodes */
   var substFromCostTable: Boolean = true
+
+  /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
+  var saveGraphsInFile: Boolean = true
 
 //  /** Pass configuration which is used by default in IRContext. */
 //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
@@ -753,71 +756,42 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
-  private var _colBuilder: Rep[CollBuilder] = _
-  private var _sizeBuilder: Rep[SizeBuilder] = _
-  private var _costedBuilder: Rep[CostedBuilder] = _
-  private var _intPlusMonoid: Rep[Monoid[Int]] = _
-  private var _longPlusMonoid: Rep[Monoid[Long]] = _
-  private var _sigmaDslBuilder: Rep[SigmaDslBuilder] = _
-  private var _costedGlobal: RCosted[SigmaDslBuilder] = _
+  type LazyRep[T] = MutableLazy[Rep[T]]
 
-  init() // initialize global context state
+  private val _specialPredef: LazyRep[WSpecialPredefCompanionCtor] = MutableLazy(RWSpecialPredef)
+  def specialPredef: Rep[WSpecialPredefCompanionCtor] = _specialPredef.value
 
-  def colBuilder: Rep[CollBuilder] = _colBuilder
-  def sizeBuilder: Rep[SizeBuilder] = _sizeBuilder
-  def costedBuilder: Rep[CostedBuilder] = _costedBuilder
-  def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid
-  def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid
-  def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder
-  def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal
+  private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(RTestSigmaDslBuilder())
+  def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
 
-  protected def init(): Unit = {
-    _colBuilder = RCollOverArrayBuilder()
-    _sizeBuilder = RCSizeBuilder()
-    _costedBuilder = RCCostedBuilder()
-    _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
-    _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
-    _sigmaDslBuilder = RTestSigmaDslBuilder()
-    _costedGlobal = RCCostedPrim(sigmaDslBuilder, 0, _costedBuilder.mkSizePrim(1L, sigmaDslBuilderElement))
-  }
+  private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(sigmaDslBuilder.Colls)
+  def colBuilder: Rep[CollBuilder] = _colBuilder.value
 
+  private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
+  def sizeBuilder: Rep[SizeBuilder] = _sizeBuilder.value
+
+  private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
+  def costedBuilder: Rep[CostedBuilder] = _costedBuilder.value
+
+  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(costedBuilder.monoidBuilder)
+  def monoidBuilder: Rep[MonoidBuilder] = _monoidBuilder.value
+
+  private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)
+  def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid.value
+
+  private val _longPlusMonoid: LazyRep[Monoid[Long]] = MutableLazy(monoidBuilder.longPlusMonoid)
+  def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid.value
+
+  private val _costedGlobal: LazyRep[Costed[SigmaDslBuilder]] =
+    MutableLazy(RCCostedPrim(sigmaDslBuilder, 0, costedBuilder.mkSizePrim(1L, sigmaDslBuilderElement)))
+  def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal.value
+  
   protected override def onReset(): Unit = {
     super.onReset()
-    init()
+    Seq(_specialPredef, _sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
+        _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
+        .foreach(_.reset())
   }
-
-// TODO This is experimental alternative which is 10x faster in MeasureIRContext benchmark
-// However it is not fully correct.
-// It can be used if current implementation is not fast enough.
-//  def colBuilder: Rep[CollBuilder] = {
-//    if (_colBuilder == null) _colBuilder = RCollOverArrayBuilder()
-//    _colBuilder
-//  }
-//  def costedBuilder: Rep[CostedBuilder] = {
-//    if (_costedBuilder == null) _costedBuilder = RCCostedBuilder()
-//    _costedBuilder
-//  }
-//  def intPlusMonoid: Rep[Monoid[Int]] = {
-//    if (_intPlusMonoid == null) _intPlusMonoid = costedBuilder.monoidBuilder.intPlusMonoid
-//    _intPlusMonoid
-//  }
-//  def longPlusMonoid: Rep[Monoid[Long]] = {
-//    if (_longPlusMonoid == null) _longPlusMonoid = costedBuilder.monoidBuilder.longPlusMonoid
-//    _longPlusMonoid
-//  }
-//  def sigmaDslBuilder: Rep[SigmaDslBuilder] = {
-//    if (_sigmaDslBuilder == null) _sigmaDslBuilder = RTestSigmaDslBuilder()
-//    _sigmaDslBuilder
-//  }
-//
-//  protected override def onReset(): Unit = {
-//    super.onReset()
-//    _colBuilder = null
-//    _costedBuilder = null
-//    _intPlusMonoid = null
-//    _longPlusMonoid = null
-//    _sigmaDslBuilder = null
-//  }
 
   import Cost._
 

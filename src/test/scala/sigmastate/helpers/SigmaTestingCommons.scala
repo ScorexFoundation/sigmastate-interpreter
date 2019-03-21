@@ -86,7 +86,7 @@ trait SigmaTestingCommons extends PropSpec
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
-        case Some(name: String) =>
+        case Some(name: String) if saveGraphsInFile =>
           emit(name, res)
         case _ =>
       }

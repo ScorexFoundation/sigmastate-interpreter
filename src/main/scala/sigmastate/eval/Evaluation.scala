@@ -173,13 +173,13 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   def getDataEnv: DataEnv = {
     val env = Map[Sym, AnyRef](
-      RWSpecialPredef -> SpecialPredef,
+      specialPredef   -> SpecialPredef,
       sigmaDslBuilder -> sigmaDslBuilderValue,
-      sigmaDslBuilder.Colls -> sigmaDslBuilderValue.Colls,
-      costedBuilder -> costedBuilderValue,
-      costedBuilder.monoidBuilder -> monoidBuilderValue,
-      costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid,
-      costedBuilder.monoidBuilder.longPlusMonoid -> monoidBuilderValue.longPlusMonoid
+      colBuilder      -> sigmaDslBuilderValue.Colls,
+      costedBuilder   -> costedBuilderValue,
+      monoidBuilder   -> monoidBuilderValue,
+      intPlusMonoid   -> monoidBuilderValue.intPlusMonoid,
+      longPlusMonoid  -> monoidBuilderValue.longPlusMonoid
     )
     env
   }

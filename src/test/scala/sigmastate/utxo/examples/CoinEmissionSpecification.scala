@@ -24,6 +24,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     // override val okPrintEvaluatedEntries = true
+    saveGraphsInFile = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

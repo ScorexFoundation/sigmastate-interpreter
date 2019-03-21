@@ -1,13 +1,12 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import scalan.{SigmaLibrary, RType}
+import org.ergoplatform.ErgoLikeContext
+import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.CostTable
-import special.collection.Coll
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -16,11 +15,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import AvlTree._
   import GroupElement._
   import CollBuilder._
-  import SizeBuilder._
   import CostedBuilder._
   import Costed._
   import Size._
-  import SizePrim._
   import SizeColl._
   import SizeOption._
   import SizePair._
@@ -52,24 +49,51 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
   }
 
-  def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
+  private val _selectFieldCost = MutableLazy(sigmaDslBuilder.CostModel.SelectField)
+  @inline def selectFieldCost = _selectFieldCost.value
 
-  // TODO move initialization to init() to support resetContext
-  lazy val SizeUnit: RSize[Unit] = costedBuilder.mkSizePrim(0L, UnitElement)
-  lazy val SizeBoolean: RSize[Boolean] = costedBuilder.mkSizePrim(1L, BooleanElement)
-  lazy val SizeByte: RSize[Byte] = costedBuilder.mkSizePrim(1L, ByteElement)
-  lazy val SizeShort: RSize[Short] = costedBuilder.mkSizePrim(2L, ShortElement)
-  lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
-  lazy val SizeLong: RSize[Long] = costedBuilder.mkSizePrim(8L, LongElement)
-  lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
-  lazy val SizeString: RSize[String] = costedBuilder.mkSizePrim(256L, StringElement)
-  lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
-  lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])
+  private val _sizeUnit: LazyRep[Size[Unit]] = MutableLazy(costedBuilder.mkSizePrim(0L, UnitElement))
+  @inline def SizeUnit: RSize[Unit] = _sizeUnit.value
+  
+  private val _sizeBoolean: LazyRep[Size[Boolean]] = MutableLazy(costedBuilder.mkSizePrim(1L, BooleanElement))
+  @inline def SizeBoolean: RSize[Boolean] = _sizeBoolean.value
 
-  lazy val SizeHashBytes: RSize[Coll[Byte]] = {
+  private val _sizeByte: LazyRep[Size[Byte]] = MutableLazy(costedBuilder.mkSizePrim(1L, ByteElement))
+  @inline def SizeByte: RSize[Byte] = _sizeByte.value
+
+  private val _sizeShort: LazyRep[Size[Short]] = MutableLazy(costedBuilder.mkSizePrim(2L, ShortElement))
+  @inline def SizeShort: RSize[Short] = _sizeShort.value
+
+  private val _sizeInt: LazyRep[Size[Int]] = MutableLazy(costedBuilder.mkSizePrim(4L, IntElement))
+  @inline def SizeInt: RSize[Int] = _sizeInt.value
+
+  private val _sizeLong: LazyRep[Size[Long]] = MutableLazy(costedBuilder.mkSizePrim(8L, LongElement))
+  @inline def SizeLong: RSize[Long] = _sizeLong.value
+
+  private val _sizeBigInt: LazyRep[Size[BigInt]] = MutableLazy(costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt]))
+  @inline def SizeBigInt: RSize[BigInt] = _sizeBigInt.value
+
+  private val _sizeString: LazyRep[Size[String]] = MutableLazy(costedBuilder.mkSizePrim(256L, StringElement))
+  @inline def SizeString: RSize[String] = _sizeString.value
+
+  private val _sizeAvlTree: LazyRep[Size[AvlTree]] = MutableLazy(costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree]))
+  @inline def SizeAvlTree: RSize[AvlTree] = _sizeAvlTree.value
+
+  private val _sizeGroupElement: LazyRep[Size[GroupElement]] = MutableLazy(costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement]))
+  @inline def SizeGroupElement: RSize[GroupElement] = _sizeGroupElement.value
+
+  private val _sizeHashBytes: LazyRep[Size[Coll[Byte]]] = MutableLazy {
     val len: Rep[Int] = CryptoConstants.hashLength
     val sizes = colBuilder.replicate(len, SizeByte)
     costedBuilder.mkSizeColl(sizes)
+  }
+  @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
+
+  protected override def onReset(): Unit = {
+    super.onReset()
+    Seq(_selectFieldCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _sizeHashBytes)
+        .foreach(_.reset())
   }
 
   def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
@@ -327,7 +351,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   class BoxCoster(obj: RCosted[Box], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Box](obj, method, args){
     import Box._
-    import ErgoBox._
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
@@ -538,7 +561,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))
 
   class SigmaDslBuilderCoster(obj: RCosted[SigmaDslBuilder], method: SMethod, args: Seq[RCosted[_]]) extends Coster[SigmaDslBuilder](obj, method, args){
-    import PreHeader._
 
     def groupGenerator() = groupElementProperyAccess(_.groupGenerator)
   }
