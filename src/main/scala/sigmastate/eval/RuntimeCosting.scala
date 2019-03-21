@@ -593,21 +593,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
       case SDBM.sigmaProp(_, SigmaM.isValid(p)) => p
 
-      case CCM.mapCosted(xs: RCostedColl[a], _f: RFuncCosted[_, b]) =>
-        val f = asRep[Costed[a] => Costed[b]](_f)
-        val (calcF, costF, sizeF) = splitCostedFunc[a, b](f)
-        val vals = xs.values.map(calcF)
-        implicit val eA = xs.elem.eItem
-        implicit val eB = f.elem.eRange.eVal
-
-        val costs = xs.costs.zip(xs.sizes).map(costF)
-        val sizes = if (eB.isConstantSize) {
-          colBuilder.replicate(xs.sizes.length, constantTypeSize(eB): RSize[b])
-        } else {
-          xs.sizes.map(sizeF)
-        }
-        RCCostedColl(vals, costs, sizes, xs.valuesCost) // TODO add cost of map node
-
       case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
         val f = asRep[Costed[(b,a)] => Costed[b]](_f)
         val (calcF/*: Rep[((b,a)) => b]*/,
@@ -1379,12 +1364,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         res
 
       case MapCollection(input, sfunc) =>
-        val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = asRep[CostedColl[Any]](evalNode(ctx, env, input))
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Coll[Any], _]].eVal.eA
-        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val mapperC = asRep[CostedFunc[Unit, Any, SType#WrappedType]](evalNode(ctx, env, sfunc)).func
-        val res = inputC.mapCosted(mapperC)
+        val inputC = evalNode(ctx, env, input)
+        val mapper = evalNode(ctx, env, sfunc)
+        val res = CollCoster(inputC, SCollection.MapMethod, Seq(mapper))
         res
 
       case Fold(input, zero, sfunc) =>

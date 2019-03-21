@@ -465,6 +465,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def indices(): RCostedColl[Int] =
       knownLengthCollProperyAccess(_.indices, asSizeColl(obj.size).sizes.length)
 
+    def map[B](_f: RCosted[T => B]): RCosted[Coll[B]] = {
+      val xs = asCostedColl(obj)
+      val f = asCostedFunc[T,B](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val sizeF = f.sliceSize
+      val vals = xs.values.map(calcF)
+      implicit val eT = xs.elem.eItem
+      implicit val eB = f.elem.eVal.eRange
+      val costs = xs.costs.zip(xs.sizes).map(costF)
+      val sizes = if (eB.isConstantSize) {
+        colBuilder.replicate(xs.sizes.length, constantTypeSize(eB): RSize[B])
+      } else {
+        xs.sizes.map(sizeF)
+      }
+      RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
+    }
+
     def getSizePropertyMethod[B](mc: MethodCall): RSize[T] => RColl[Size[B]] = {
       ???
     }

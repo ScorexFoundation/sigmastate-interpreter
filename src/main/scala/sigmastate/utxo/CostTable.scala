@@ -120,6 +120,7 @@ object CostTable {
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
+    ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
     ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
     ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
