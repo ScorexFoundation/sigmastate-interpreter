@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -33,8 +33,14 @@ object DataSerializer {
     case SGroupElement =>
       GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
     case SSigmaProp =>
+      SerializeLog.logPrintf(true, true, false, "SSigmaProp");
+
       val p = v.asInstanceOf[SigmaBoolean]
+      SerializeLog.logPrintf(true, true, false, "toSigmaBoolean");
       w.putValue(p)
+      SerializeLog.logPrintf(false, true, false, "toSigmaBoolean");
+
+      SerializeLog.logPrintf(false, true, false, "SSigmaProp");
     case SBox =>
       ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
