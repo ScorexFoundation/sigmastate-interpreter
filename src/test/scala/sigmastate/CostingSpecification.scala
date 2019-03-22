@@ -58,6 +58,8 @@ class CostingSpecification extends SigmaTestingData {
   val ContextVarAccess = accessContextVar + selectField  // `getVar(id)` + `.get`
   val RegisterAccess = accessRegister + selectField  // `getReg(id)` + `.get`
   val GTConstCost = comparisonCost + constCost
+  val LengthGTConstCost = collLength + GTConstCost
+  val LengthGTCost = collLength + comparisonCost  // can be used when constCost is already accumulated
 
   property("basic (smoke) tests") {
 
@@ -88,8 +90,8 @@ class CostingSpecification extends SigmaTestingData {
 
   property("SELF box operations cost") {
     cost("{ SELF.value > 0 }") shouldBe (accessBox + extractCost + GTConstCost)
-    cost("{ SELF.id.size > 0 }") shouldBe (accessBox + extractCost + collLength + GTConstCost)
-    cost("{ SELF.tokens.size > 0 }") shouldBe (accessBox + extractCost + collLength + GTConstCost)
+    cost("{ SELF.id.size > 0 }") shouldBe (accessBox + extractCost + LengthGTConstCost)
+    cost("{ SELF.tokens.size > 0 }") shouldBe (accessBox + extractCost + LengthGTConstCost)
     cost("{ SELF.creationInfo._1 > 0 }") shouldBe (accessBox + accessRegister + selectField + GTConstCost)
     cost("{ SELF.R5[Int].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
 
@@ -101,20 +103,59 @@ class CostingSpecification extends SigmaTestingData {
   lazy val DataInputsCost = selectField + accessBox * context.dataBoxes.length
   lazy val HeadersCost = selectField
   lazy val PreHeaderCost = selectField
+  lazy val AccessHeaderCost = selectField + collByIndex + constCost
+
+  property("Global operations cost") {
+    // TODO cost("{ groupGenerator.isIdentity > 0 }") shouldBe (selectField + selectField + GTConstCost)
+  }
 
   property("Context operations cost") {
     cost("{ HEIGHT > 0 }") shouldBe (selectField + GTConstCost)
-    cost("{ OUTPUTS.size > 0 }") shouldBe (OutputsCost + collLength + GTConstCost)
-    cost("{ INPUTS.size > 0 }") shouldBe (InputsCost + collLength + GTConstCost)
-    cost("{ CONTEXT.dataInputs.size > 0 }") shouldBe (DataInputsCost + collLength + GTConstCost)
+    cost("{ OUTPUTS.size > 0 }") shouldBe (OutputsCost + LengthGTConstCost)
+    cost("{ INPUTS.size > 0 }") shouldBe (InputsCost + LengthGTConstCost)
+    cost("{ CONTEXT.dataInputs.size > 0 }") shouldBe (DataInputsCost + LengthGTConstCost)
     cost("{ LastBlockUtxoRootHash.isUpdateAllowed }") shouldBe (selectField + selectField)
-    cost("{ MinerPubkey.size > 0 }") shouldBe (selectField + collLength + GTConstCost)
-    cost("{ CONTEXT.headers.size > 0 }") shouldBe (HeadersCost + collLength + GTConstCost)
+    cost("{ MinerPubkey.size > 0 }") shouldBe (selectField + LengthGTConstCost)
+    cost("{ CONTEXT.headers.size > 0 }") shouldBe (HeadersCost + LengthGTConstCost)
     cost("{ CONTEXT.preHeader.height > 0 }") shouldBe (PreHeaderCost + selectField + GTConstCost)
   }
 
-//  property("PreHeader operations cost") {
-//    cost("{ CONTEXT.preHeader.version > 0 }") shouldBe (PreHeaderCost + selectField + castOp + GTConstCost)
-//    cost("{ CONTEXT.preHeader.parentId.size > 0 }") shouldBe (PreHeaderCost + selectField + collLength + GTConstCost)
-//  }
+  property("PreHeader operations cost") {
+    cost("{ CONTEXT.preHeader.version > 0 }") shouldBe (PreHeaderCost + selectField + castOp + GTConstCost)
+    cost("{ CONTEXT.preHeader.parentId.size > 0 }") shouldBe (PreHeaderCost + selectField + LengthGTConstCost)
+    cost("{ CONTEXT.preHeader.timestamp > 0L }") shouldBe (PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.preHeader.nBits > 0L }") shouldBe (PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.preHeader.height > 0 }") shouldBe (PreHeaderCost + selectField + GTConstCost)
+
+    cost("{ CONTEXT.preHeader.minerPk == groupGenerator }") shouldBe
+      (PreHeaderCost + selectField + comparisonCost + selectField)
+
+    cost("{ CONTEXT.preHeader.votes.size > 0 }") shouldBe
+      (PreHeaderCost + selectField + LengthGTConstCost)
+  }
+
+  property("Header operations cost") {
+    val header = "CONTEXT.headers(0)"
+    cost(s"{ $header.id.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.version > 0 }") shouldBe (AccessHeaderCost + selectField + castOp + comparisonCost)
+    cost(s"{ $header.parentId.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.ADProofsRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.stateRoot.isUpdateAllowed }") shouldBe (AccessHeaderCost + selectField + selectField)
+    cost(s"{ $header.transactionsRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.timestamp > 0L }") shouldBe (AccessHeaderCost + selectField + GTConstCost)
+    cost(s"{ $header.nBits > 0L }") shouldBe (AccessHeaderCost + selectField + GTConstCost)
+    cost(s"{ $header.height > 0 }") shouldBe (AccessHeaderCost + selectField + comparisonCost)
+    cost(s"{ $header.extensionRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+
+    cost(s"{ $header.minerPk == groupGenerator }") shouldBe
+        (AccessHeaderCost + selectField + comparisonCost + selectField)
+
+    cost(s"{ $header.powOnetimePk == groupGenerator }") shouldBe
+        (AccessHeaderCost + selectField + comparisonCost + selectField)
+
+    cost(s"{ $header.powNonce.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+
+    cost(s"{ $header.powDistance > 0 }") shouldBe (AccessHeaderCost + selectField + comparisonBigInt + constCost)
+    cost(s"{ $header.votes.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+  }
 }

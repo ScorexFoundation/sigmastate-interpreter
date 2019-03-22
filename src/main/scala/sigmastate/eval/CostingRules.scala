@@ -386,6 +386,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
     import Header._
 
+    def id() = digest32ProperyAccess(_.id)
+
     def version() = constantSizeProperyAccess(_.version)
 
     def parentId() = digest32ProperyAccess(_.parentId)

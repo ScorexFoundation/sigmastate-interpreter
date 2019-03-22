@@ -48,12 +48,14 @@ object CostTable {
   val multiply = 10
 
   val plusMinusBigInt = 10
+  val comparisonBigInt = 10
   val multiplyBigInt = 50
 
   val hashPerKb = 100
 
   val collAccess = 5
-  val collLength = 5 // TODO should be >= selectField
+  val collLength  = 5 // TODO should be >= selectField
+  val collByIndex = 5 // TODO should be >= selectField
 
   val collToColl = 20
 
@@ -119,7 +121,7 @@ object CostTable {
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collLength),
-    ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
+    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
     ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
@@ -162,12 +164,12 @@ object CostTable {
     ("EQ_per_kb", "(T,T) => Boolean", comparisonCost),
     ("NEQ_per_kb", "(T,T) => Boolean", comparisonCost),
 
-    ("GT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("GE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("LE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("LT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("EQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("NEQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("EQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("+", "(Byte, Byte) => Byte", plusMinus),
