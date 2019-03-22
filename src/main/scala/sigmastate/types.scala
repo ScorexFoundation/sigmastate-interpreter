@@ -197,7 +197,12 @@ object SType {
   })
 }
 
-/** Basic interface for all type companions */
+/** Basic interface for all type companions.
+  * This is necessary to make distinction between concrete type descriptor of a type like Coll[Int]
+  * and generic descriptor of Coll[T] type constructor.
+  * Some simple types like Int, GroupElement inherit from both SType and STypeCompanion.
+  * @see SInt, SGroupElement, SType
+  */
 trait STypeCompanion {
 
   /** Type identifier to use in method serialization */
@@ -268,10 +273,17 @@ trait SGenericType {
 
 }
 
+/** Special interface to access CostingHandler.
+  * Each `STypeCompanion.coster` property optionally defines an instance of this interface to provide
+  * access to Coster for its methods. If not specified (which is default) then generic costing mechanism
+  * is not used for methods of the corresponding type. (e.g. SInt, SLong)*/
 trait CosterFactory {
   def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler[_]
 }
 
+/** An instance of this class is created in each `STypeCompaion.coster` property implementation.
+  * @see SBox, SContext
+  */
 case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) extends CosterFactory {
    def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler[_] = selector(IR).asInstanceOf[IR.CostingHandler[_]]
 }
@@ -1323,6 +1335,20 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.PreHeaderCoster))
 }
 
+/** This type is intgroduced to unify hangling of global and non-global (i.e. methods) operations.
+  * It unifies implementation of global operation with implementation of methods and avoids code
+  * duplication (following DRY principle https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+  * The WrappedType is `special.sigma.SigmaDslBuilder`, which is an interface implemented by
+  * the singleton sigmastate.eval.CostingSigmaDslBuilder
+  *
+  * The Constant(...) tree node of this type are not allowed, as well as using it in register and
+  * context variables (aka ContextExtension)
+  *
+  * When new methods are added to this type via soft-forkability, they will be serialized as part
+  * of ErgoTree using MethodCallSerializer, where SGlobal.typeCode will be used.
+  *
+  * @see sigmastate.lang.SigmaPredef
+  * */
 case object SGlobal extends SProduct with SPredefType with SMonoType {
   override type WrappedType = SigmaDslBuilder
   override val typeCode: TypeCode = 106: Byte

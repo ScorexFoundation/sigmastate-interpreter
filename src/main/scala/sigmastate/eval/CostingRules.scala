@@ -41,6 +41,18 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import WOption._
   import Box._
 
+  /** Implements basic costing rule invocation mechanism.
+    * Each MethodCall node of ErgoTree is costed using the same mechanism.
+    * When MethodCall is matched during traverse of ErgoTree in `RuntimeCosting.evalNode`:
+    * 1) the type of the receiver object is used to lookup the corresponding CostingHandler
+    * 2) The apply method of CostingHandler is called to create the Coster
+    * 3) When Coster is created, the costing-rule-method is looked up using reflection and then invoked.
+    * 4) The result of costing-rule-method is returned as the result of MethodCall node costing.
+    *
+    * Instances of this class are typically singleton objects (see below).
+    * Iach
+    * @see Coster
+    */
   abstract class CostingHandler[T](createCoster: (RCosted[T], SMethod, Seq[RCosted[_]]) => Coster[T]) {
     def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
       val coster = createCoster(asCosted[T](obj), method, args)
@@ -161,6 +173,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     RCCostedFunc(envC, f, cost, sFunc)
   }
 
+  /** For each Sigma type there should be one Coster class (derived from this).
+    * Each coster object implements a set of costing rules, one rule for each method of the corresponding Sigma type.
+    * For example, BoxCoster is coster for Box type, it contains rules for all methods registered in SBox type descriptor.
+    * This class defines generic costing helpers, to unify and simplify costing rules of individual methods.
+    */
   abstract class Coster[T](obj: RCosted[T], method: SMethod, args: Seq[RCosted[_]]) {
     def costOfArgs = (obj +: args).map(_.cost)
     def sizeOfArgs = args.foldLeft(obj.size.dataSize)({ case (s, e) => s + e.size.dataSize })
@@ -207,21 +224,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedPrim(v, c, s)
     }
 
-//    /** Cost of collection with static size elements. */
-//    def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T] = {
-//      val perItemCost = (len.toLong * itemSize / 1024L + 1L) * this.CostModel.AccessKiloByteOfData.toLong
-//      val costs = this.Colls.replicate(len, perItemCost.toInt)
-//      val sizes = this.Colls.replicate(len, itemSize)
-//      val valueCost = this.CostModel.CollectionConst
-//      this.Costing.mkCostedColl(xs, costs, sizes, valueCost)
-//    }
-//
-//    def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T] = {
-//      val none = this.Costing.mkCostedNone[T](opCost)
-//      opt.fold[CostedOption[T]](none)(x => this.Costing.mkCostedSome(this.Costing.costedValue(x, SpecialPredef.some(opCost))))
-//    }
   }
 
+  /** Costing rules for SGroupElement methods */
   class GroupElementCoster(obj: RCosted[GroupElement], method: SMethod, args: Seq[RCosted[_]]) extends Coster[GroupElement](obj, method, args){
     import GroupElement._
     def getEncoded: RCosted[Coll[Byte]] =
@@ -232,8 +237,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
   }
 
+  /** CostingHandler for SGroupElement, see SGroupElement.coster */
   object GroupElementCoster extends CostingHandler[GroupElement]((obj, m, args) => new GroupElementCoster(obj, m, args))
 
+  /** Costing rules for SAvlTree methods */
   class AvlTreeCoster(obj: RCosted[AvlTree], method: SMethod, args: Seq[RCosted[_]]) extends Coster[AvlTree](obj, method, args){
     import AvlTree._
     def digest() = knownLengthCollProperyAccess(_.digest, AvlTreeData.DigestSize)
@@ -298,6 +305,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object AvlTreeCoster extends CostingHandler[AvlTree]((obj, m, args) => new AvlTreeCoster(obj, m, args))
 
+  /** Costing rules for SContext methods */
   class ContextCoster(obj: RCosted[Context], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Context](obj, method, args){
     import Context._
     def boxCollProperty(prop: Rep[Context] => Rep[Coll[Box]], propSize: Rep[SizeContext] => RSize[Coll[Box]]) = {
@@ -342,6 +350,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object ContextCoster extends CostingHandler[Context]((obj, m, args) => new ContextCoster(obj, m, args))
 
+  /** Costing rules for SBox methods */
   class BoxCoster(obj: RCosted[Box], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Box](obj, method, args){
     import Box._
     import ErgoBox._
@@ -391,6 +400,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))
 
+  /** Costing rules for SHeader methods */
   class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
     import Header._
 
@@ -425,10 +435,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object HeaderCoster extends CostingHandler[Header]((obj, m, args) => new HeaderCoster(obj, m, args))
 
+  /** Costing rules for SPreHeader methods */
   class PreHeaderCoster(obj: RCosted[PreHeader], method: SMethod, args: Seq[RCosted[_]]) extends Coster[PreHeader](obj, method, args){
     import PreHeader._
-
-//    def id() = digest32ProperyAccess(_.id)
 
     def version() = constantSizeProperyAccess(_.version)
 
@@ -447,6 +456,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object PreHeaderCoster extends CostingHandler[PreHeader]((obj, m, args) => new PreHeaderCoster(obj, m, args))
 
+  /** Costing rules for SOption methods (see object SOption) */
   class OptionCoster[T](obj: RCosted[WOption[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[WOption[T]](obj, method, args){
     import WOption._
     implicit val eT = obj.elem.eVal.eItem
@@ -465,7 +475,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object OptionCoster extends CostingHandler[WOption[Any]]((obj, m, args) => new OptionCoster[Any](obj, m, args))
 
-
+  /** Costing rules for SCollection methods (see object SCollection) */
   class CollCoster[T](obj: RCosted[Coll[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Coll[T]](obj, method, args) {
     import Coll._
     implicit val eT = obj.elem.eVal.eItem
@@ -568,6 +578,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))
 
+  /** Costing rules for SGlobal methods */
   class SigmaDslBuilderCoster(obj: RCosted[SigmaDslBuilder], method: SMethod, args: Seq[RCosted[_]]) extends Coster[SigmaDslBuilder](obj, method, args){
     import PreHeader._
 

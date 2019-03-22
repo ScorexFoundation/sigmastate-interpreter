@@ -187,10 +187,4 @@ object OpCodes extends ValueCodes {
 
   val ContextCode             : OpCode = (LastConstantCode + 142).toByte
   val XorOfCode               : OpCode = (LastConstantCode + 143).toByte // equals to 255
-
-  
-  /** This is the maximum valid opcode in the current version.
-    * It is used by soft-forkability checks.
-    */
-  val MaxOpCode             : OpCode = XorOfCode
 }
