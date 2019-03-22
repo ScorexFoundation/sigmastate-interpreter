@@ -1,3 +1,5 @@
+(NB: outdated - current version went to Google Sheets)
+
 # Native
 1. Nothing => {}
 2. Byte => APPEND

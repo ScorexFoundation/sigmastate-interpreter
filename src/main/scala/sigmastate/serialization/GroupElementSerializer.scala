@@ -21,7 +21,7 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
 
   override def serializeBody(point: EcPointType, w: SigmaByteWriter): Unit = {
 
-    SerializeLog.logPrintf(true, true, false, "GroupElement")
+    SerializeLog.logPrintf(true, true, false, "EcPointType")
 
     val bytes = if (point.isInfinity) {
       identityPointEncoding
@@ -36,7 +36,7 @@ object GroupElementSerializer extends Serializer[EcPointType, EcPointType] {
     }
     w.putBytes(bytes)
 
-    SerializeLog.logPrintf(false, true, false, "GroupElement")
+    SerializeLog.logPrintf(false, true, false, "EcPointType")
   }
 
   override def parseBody(r: SigmaByteReader): EcPointType = {

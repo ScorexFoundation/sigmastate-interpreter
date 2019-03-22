@@ -8,7 +8,7 @@ import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.Serializer
 
 import scala.util.Try
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
@@ -120,19 +120,41 @@ object ErgoLikeTransaction {
       bytesToSign(tx.inputs.map(_.boxId), tx.outputCandidates)
 
     override def serializeBody(ftx: FlattenedTransaction, w: SigmaByteWriter): Unit = {
+      SerializeLog.logPrintf(true, true, false, "FlattenedTransaction")
+
+      SerializeLog.logPrintf(true, true, false, "inputs.length")
       w.putUShort(ftx.inputs.length)
+      SerializeLog.logPrintf(false, true, false, "inputs.length")
+
+      SerializeLog.logPrintf(true, true, false, "inputs*")
       for (input <- ftx.inputs) {
         Input.serializer.serializeBody(input, w)
       }
+      SerializeLog.logPrintf(false, true, false, "inputs*")
+
       val digests = ftx.outputCandidates.flatMap(_.additionalTokens.map(_._1)).distinct
+
+      SerializeLog.logPrintf(true, true, false, "digests.length")
       w.putUInt(digests.length)
+      SerializeLog.logPrintf(false, true, false, "digests.length")
+
+      SerializeLog.logPrintf(true, true, false, "digests*")
       digests.foreach { digest =>
         w.putBytes(digest)
       }
+      SerializeLog.logPrintf(false, true, false, "digests*")
+
+      SerializeLog.logPrintf(true, true, false, "outputCandidates.length")
       w.putUShort(ftx.outputCandidates.length)
+      SerializeLog.logPrintf(false, true, false, "outputCandidates.length")
+
+      SerializeLog.logPrintf(true, true, false, "outputCandidates*")
       for (out <- ftx.outputCandidates) {
         ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(digests), w)
       }
+      SerializeLog.logPrintf(false, true, false, "outputCandidates*")
+
+      SerializeLog.logPrintf(false, true, false, "FlattenedTransaction")
     }
 
     override def parseBody(r: SigmaByteReader): FlattenedTransaction = {
@@ -158,8 +180,13 @@ object ErgoLikeTransaction {
 
   object serializer extends Serializer[ErgoLikeTransaction, ErgoLikeTransaction] {
 
-    override def serializeBody(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit =
+    override def serializeBody(tx: ErgoLikeTransaction, w: SigmaByteWriter): Unit = {
+      SerializeLog.logPrintf(true, true, false, "ErgoLikeTransaction")
+
       flattenedTxSerializer.serializeBody(FlattenedTransaction(tx), w)
+
+      SerializeLog.logPrintf(false, true, false, "ErgoLikeTransaction")
+    }
 
     override def parseBody(r: SigmaByteReader): ErgoLikeTransaction =
       ErgoLikeTransaction(flattenedTxSerializer.parseBody(r))

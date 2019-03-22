@@ -4,7 +4,7 @@ import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
 import sigmastate.serialization.Serializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SerializeLog, SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import special.sigma
 import special.sigma.AnyValue
@@ -23,8 +23,17 @@ object ContextExtension {
   object serializer extends Serializer[ContextExtension, ContextExtension] {
 
     override def serializeBody(obj: ContextExtension, w: SigmaByteWriter): Unit = {
+      SerializeLog.logPrintf(true, true, false, "ContextExtension")
+
+      SerializeLog.logPrintf(true, true, false, "values.size")
       w.putUByte(obj.values.size)
+      SerializeLog.logPrintf(false, true, false, "values.size")
+
+      SerializeLog.logPrintf(true, true, false, "values*")
       obj.values.foreach{ case (id, v) => w.put(id).putValue(v) }
+      SerializeLog.logPrintf(false, true, false, "Values*")
+
+      SerializeLog.logPrintf(false, true, false, "ContextExtension")
     }
 
     override def parseBody(r: SigmaByteReader): ContextExtension = {

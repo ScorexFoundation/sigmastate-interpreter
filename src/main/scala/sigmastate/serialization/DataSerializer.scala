@@ -23,15 +23,42 @@ object DataSerializer {
     case SInt => w.putInt(v.asInstanceOf[Int])
     case SLong => w.putLong(v.asInstanceOf[Long])
     case SString =>
+      SerializeLog.logPrintf(true, true, false, "SString");
+
       val bytes = v.asInstanceOf[String].getBytes(StandardCharsets.UTF_8)
+
+      SerializeLog.logPrintf(true, true, false, "bytes.length");
       w.putUInt(bytes.length)
+      SerializeLog.logPrintf(false, true, false, "bytes.length");
+
+      SerializeLog.logPrintf(true, true, false, "bytes");
       w.putBytes(bytes)
+      SerializeLog.logPrintf(false, true, false, "bytes");
+
+      SerializeLog.logPrintf(false, true, false, "SString");
     case SBigInt =>
+      SerializeLog.logPrintf(true, true, false, "SBigInt");
+
       val data = v.asInstanceOf[BigInteger].toByteArray
+
+      SerializeLog.logPrintf(true, true, false, "data.length");
       w.putUShort(data.length)
+      SerializeLog.logPrintf(false, true, false, "data.length");
+
+      SerializeLog.logPrintf(true, true, false, "data");
       w.putBytes(data)
+      SerializeLog.logPrintf(false, true, false, "data");
+
+      SerializeLog.logPrintf(false, true, false, "SBigInt");
     case SGroupElement =>
-      GroupElementSerializer.serializeBody(v.asInstanceOf[EcPointType], w)
+      SerializeLog.logPrintf(true, true, false, "SGroupElement");
+
+      val p = v.asInstanceOf[EcPointType]
+      SerializeLog.logPrintf(true, true, false, "toEcPointType");
+      GroupElementSerializer.serializeBody(p, w)
+      SerializeLog.logPrintf(false, true, false, "toEcPointType");
+
+      SerializeLog.logPrintf(false, true, false, "SGroupElement");
     case SSigmaProp =>
       SerializeLog.logPrintf(true, true, false, "SSigmaProp");
 
@@ -42,34 +69,68 @@ object DataSerializer {
 
       SerializeLog.logPrintf(false, true, false, "SSigmaProp");
     case SBox =>
-      ErgoBox.serializer.serializeBody(v.asInstanceOf[ErgoBox], w)
+      SerializeLog.logPrintf(true, true, false, "SBox");
+
+      val p = v.asInstanceOf[ErgoBox]
+      SerializeLog.logPrintf(true, true, false, "toErgoBox");
+      ErgoBox.serializer.serializeBody(p, w)
+      SerializeLog.logPrintf(false, true, false, "toErgoBox");
+
+      SerializeLog.logPrintf(false, true, false, "SBox");
     case SAvlTree =>
-      AvlTreeData.serializer.serializeBody(v.asInstanceOf[AvlTreeData], w)
+      SerializeLog.logPrintf(true, true, false, "SAvlTree");
+
+      val p = v.asInstanceOf[AvlTreeData]
+      SerializeLog.logPrintf(true, true, false, "toAvlTreeData");
+      AvlTreeData.serializer.serializeBody(p, w)
+      SerializeLog.logPrintf(false, true, false, "toAvlTreeData");
+
+      SerializeLog.logPrintf(false, true, false, "SAvlTree");
     //andruiman: what is the difference between SCollection and SCollectionType?
     case tColl: SCollectionType[a] =>
+      SerializeLog.logPrintf(true, true, false, "SCollectionType");
+
       val arr = v.asInstanceOf[tColl.WrappedType]
+      SerializeLog.logPrintf(true, true, false, "arr.length");
       w.putUShort(arr.length)
+      SerializeLog.logPrintf(false, true, false, "arr.length");
+
       tColl.elemType match {
         case SBoolean =>
+          SerializeLog.logPrintf(true, true, false, "[SBoolean]");
           w.putBits(arr.asInstanceOf[Array[Boolean]])
+          SerializeLog.logPrintf(false, true, false, "[SBoolean]");
         case SByte =>
+          SerializeLog.logPrintf(true, true, false, "[SByte]");
           w.putBytes(arr.asInstanceOf[Array[Byte]])
+          SerializeLog.logPrintf(false, true, false, "[SByte]");
         case _ =>
-          arr.foreach(x => serialize(x, tColl.elemType, w))
+          SerializeLog.logPrintf(true, true, false, "[_]");
+          arr.foreach(serialize(_, tColl.elemType, w))
+          SerializeLog.logPrintf(false, true, false, "[_]");
       }
+
+      SerializeLog.logPrintf(false, true, false, "SCollectionType");
     //andruiman: why not serialize array length?
     //maybe because the tuple type is stored before?
     case t: STuple =>
+      SerializeLog.logPrintf(true, true, false, "STuple");
+
       val arr = v.asInstanceOf[t.WrappedType]
       val len = arr.length
       assert(arr.length == t.items.length, s"Type $t doesn't correspond to value $arr")
       if (len > 0xFFFF)
         sys.error(s"Length of tuple $arr exceeds ${0xFFFF} limit.")
       var i = 0
+
+      SerializeLog.logPrintf(true, true, false, "arr");
       while (i < arr.length) {
         serialize[SType](arr(i), t.items(i), w)
         i += 1
       }
+      SerializeLog.logPrintf(false, true, false, "arr");
+
+      SerializeLog.logPrintf(false, true, false, "STuple");
 
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }

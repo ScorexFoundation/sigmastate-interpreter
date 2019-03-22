@@ -42,5 +42,14 @@ ModQArithOp
 SubstConstants
 ErgoBox
 ErgoBoxCandidate
-GroupElement
+EcPointType
 AvlTreeData
+FlattenedTransaction
+ErgoTree
+Operation
+ContextExtension
+ProverResult
+Input
+UnsignedInput
+Relation3
+

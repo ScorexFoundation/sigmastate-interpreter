@@ -5,9 +5,10 @@ import java.util
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{Helpers, SerializeLog, SigmaByteReader, SigmaByteWriter}
 import Values._
 import scalan.util.CollectionUtil._
+
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -39,9 +40,21 @@ object ProverResult {
   object serializer extends Serializer[ProverResult, ProverResult] {
 
     override def serializeBody(obj: ProverResult, w: SigmaByteWriter): Unit = {
+      SerializeLog.logPrintf(true, true, false, "ProverResult")
+
+      SerializeLog.logPrintf(true, true, false, "proof.length")
       w.putUShort(obj.proof.length)
+      SerializeLog.logPrintf(false, true, false, "proof.length")
+
+      SerializeLog.logPrintf(true, true, false, "proof")
       w.putBytes(obj.proof)
+      SerializeLog.logPrintf(false, true, false, "proof")
+
+      SerializeLog.logPrintf(true, true, false, "extension")
       ContextExtension.serializer.serializeBody(obj.extension, w)
+      SerializeLog.logPrintf(false, true, false, "extension")
+
+      SerializeLog.logPrintf(false, true, false, "ProverResult")
     }
 
     override def parseBody(r: SigmaByteReader): ProverResult = {
