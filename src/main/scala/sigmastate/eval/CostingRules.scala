@@ -251,6 +251,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def isUpdateAllowed() = constantSizeProperyAccess(_.isUpdateAllowed)
     def isRemoveAllowed() = constantSizeProperyAccess(_.isRemoveAllowed)
 
+    def updateDigest(newDigest: RCosted[Coll[Byte]]) = {
+      RCCostedPrim(obj.value.updateDigest(newDigest.value), opCost(costOfArgs, costOf(method)), obj.size)
+    }
     def updateOperations(flags: RCosted[Byte]) = {
       RCCostedPrim(obj.value.updateOperations(flags.value), opCost(costOfArgs, costOf(method)), obj.size)
     }

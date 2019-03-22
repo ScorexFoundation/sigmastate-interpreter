@@ -158,4 +158,17 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $header.powDistance > 0 }") shouldBe (AccessHeaderCost + selectField + comparisonBigInt + constCost)
     cost(s"{ $header.votes.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
   }
+
+  val AccessRootHash = selectField
+  property("AvlTree operations cost") {
+    val tree = "LastBlockUtxoRootHash"
+    cost(s"{ $tree.digest.size > 0 }") shouldBe (AccessRootHash + selectField + LengthGTConstCost)
+    cost(s"{ $tree.enabledOperations > 0 }") shouldBe (AccessRootHash + selectField + castOp + GTConstCost)
+    cost(s"{ $tree.keyLength > 0 }") shouldBe (AccessRootHash + selectField + GTConstCost)
+    cost(s"{ $tree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $tree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $tree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $tree.updateDigest($tree.digest) == $tree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonCost)
+    cost(s"{ $tree.updateOperations(1.toByte) == $tree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonCost + constCost)
+  }
 }

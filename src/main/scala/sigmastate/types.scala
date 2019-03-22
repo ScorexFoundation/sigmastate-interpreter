@@ -1168,7 +1168,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7, MethodCallIrBuilder)
 
   val updateOperationsMethod  = SMethod(this, "updateOperations",
-    SFunc(IndexedSeq(SAvlTree, SByte), SAvlTreeOption),                        8, MethodCallIrBuilder)
+    SFunc(IndexedSeq(SAvlTree, SByte), SAvlTree),                        8, MethodCallIrBuilder)
 
   val containsMethod          = SMethod(this, "contains",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SBoolean),             9, MethodCallIrBuilder)
@@ -1188,6 +1188,9 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   val removeMethod            = SMethod(this, "remove",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14, MethodCallIrBuilder)
 
+  val updateDigestMethod  = SMethod(this, "updateDigest",
+    SFunc(IndexedSeq(SAvlTree, SByteArray), SAvlTree),                       15, MethodCallIrBuilder)
+
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
     enabledOperationsMethod,
@@ -1202,7 +1205,8 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
     getManyMethod,
     insertMethod,
     updateMethod,
-    removeMethod
+    removeMethod,
+    updateDigestMethod
   )
   override val coster = Some(Coster(_.AvlTreeCoster))
 }

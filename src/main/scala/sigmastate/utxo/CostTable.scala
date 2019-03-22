@@ -43,6 +43,7 @@ object CostTable {
   val newCollValueCost = 1
   val newPairValueCost = 1
   val newOptionValueCost = 1
+  val newAvlTreeCost = 10
 
   val plusMinus = 2
   val multiply = 10
@@ -243,6 +244,8 @@ object CostTable {
     ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", hashPerKb * 2),
     ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
     ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", hashPerKb * 2),
+    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
+    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
     ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
