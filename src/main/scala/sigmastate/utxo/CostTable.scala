@@ -53,7 +53,7 @@ object CostTable {
   val hashPerKb = 100
 
   val collAccess = 5
-  val collLength = 5
+  val collLength = 5 // TODO should be >= selectField
 
   val collToColl = 20
 
@@ -64,7 +64,7 @@ object CostTable {
   val sigmaAndCost = 10
   val sigmaOrCost = 40
 
-  val castOp = 5
+  val castOp = 5  // TODO should be >= selectField
 
   val treeOp = 1000
 
