@@ -272,16 +272,16 @@ So we define the following serialization cases:
 ```scala
 x: Value[T]; T <: SType
 1.1 [Non-constant] | Value => {opCode: Native (Byte);
-							   body: Body}
+                               body: Body}
 1.2 [Constant with store] | Value => {ConstantPlaceholderIndexCode >> Native (Byte);
-									  constantPlaceholder: Body (ConstantPlaceholder)}
+                                      constantPlaceholder: Body (ConstantPlaceholder)}
 1.3 [Constant without store] | Value => Body (Constant)
 ```
 2. Values
 ```scala
 xs: Seq[Value[T]]; T <: SType
 Values = {length: UInt;
-		  values: Value*}
+          values: Value*}
 ```
 This serialization is used to store multiple ``Value`` objects with ``length = values.length()`` and ``Value`` is mapped to each member of the serialized ``Seq [Value [T]]``.
 
@@ -357,7 +357,7 @@ The field names correspond to the names of correspondent serialized object prope
 ```scala
 obj: Constant[SType]
 Constant => {tpe: Type;
-		     value: Data}
+             value: Data}
 ```
 2.  ConstantPlaceholder
 ```scala
@@ -369,7 +369,7 @@ ConstantPlaceholder => {id: Native (UInt)}
 ```scala
 obj: Tuple
 Tuple => {length: Native (UByte); 
-		  items: Value*}
+          items: Value*}
 ```
 where length is the tuple length and each item is serialized as separate ``Value`` object.
 
@@ -386,15 +386,16 @@ There are two cases when serializing ``Relation2`` object, first - for serializi
 ```scala
 obj: Relation[S1, S2]; S1 <: SType; S2 <: SType
 5.1 [BooleanConstants] | Relation2 => {ConcreteCollectionBooleanConstantCode >> Native (Byte); 
-                                       LeftRightBits: toBits >> Native (Bits)}
+                                       toBits >> Native (Bits)}
 5.2 [_] | Relation2 => {left: Value; 
-                    right: Value}
+                        right: Value}
  ```
 where 
 ```scala
 toBits = Array [Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean])
 ConcreteCollectionBooleanConstantCode = LastConstantCode + 21
-```  
+``` 
+ 
 6.  Quadruple
 ```scala
 obj: Quadruple[S1, S2, S3, S4]
@@ -416,15 +417,15 @@ There are two cases when serializing ``ProveDHTuple`` object, first - for serial
 ```scala
 obj: ProveDHTuple
 8.1 [SGroupElementConstants] | ProveDHTuple => {constCodePrefix >> Native (Byte); 
-												SGroupElementType >> Type;
-	                                            gv_data: Data (SGroupElement); 
-	                                            hv_data: Data (SGroupElement);
-	                                            uv_data: Data (SGroupElement); 
-	                                            vv_data: Data (SGroupElement)}
+                                                SGroupElementType >> Type;
+                                                gv_data: Data (SGroupElement); 
+                                                hv_data: Data (SGroupElement);
+                                                uv_data: Data (SGroupElement); 
+                                                vv_data: Data (SGroupElement)}
 8.2 [_] | ProveDHTuple => {gv: Value; 
-						   hv: Value;
-						   uv: Value; 
-						   vv: Value}
+                           hv: Value;
+                           uv: Value; 
+                           vv: Value}
 ```
 where ``constCodePrefix = 0; SGroupElementType = SGroupElement``. 
 
@@ -528,7 +529,7 @@ SimpleTransformer => {input: Value}
 ```scala
 obj: OptionGetOrElse[_ <: SType]
 OptionGetOrElse => {input: Value; 
-					default: Value}
+                    default: Value}
 ```
 
 23. DeserializeContext
@@ -567,15 +568,15 @@ Filter => {id: Natve (Byte);
 ```scala
 obj: Slice[SType]
 Slice => {input: Value; 
-		  from: Value; 
-		  until: Value}
+          from: Value; 
+          until: Value}
 ```
 
 28. AtLeast
 ```scala
 obj: AtLeast
 AtLeast => {bound: Value; 
-			input: Value}
+            input: Value}
 ```
 
 29. ByIndex
@@ -591,14 +592,14 @@ where ``default`` is serialized as ``Native (Option)`` with ``Value`` as passed 
 ```scala
 obj: Append[SType]
 Append => {input: Value; 
-		   col2: Value}
+           col2: Value}
 ```
 
 31. NumericCast
 ```scala
 obj: Transformer[SNumericType, SNumericType]
 NumericCast => {input: Value; 
-				tpe: Type}
+                tpe: Type}
 ```
 
 32. ValDef
@@ -607,14 +608,14 @@ There are two cases when serializing ``ValUse`` object - for ``FunDefCode`` ``op
 ```scala
 obj: ValDef
 32.1 [opCode == FunDefCode] | ValDef => {id: Native (UInt); 
-										 tpeArgs.length.toByteExact: Native (Byte); 
-										 tpeArgs: Type*; 
-										 rhs: Value}
+                                         tpeArgs.length.toByteExact: Native (Byte); 
+                                         tpeArgs: Type*; 
+                                         rhs: Value}
 [assert] (!obj.isValDef), isValDef = tpeArgs.isEmpty
 [assert] (obj.tpeArgs.nonEmpty), nonEmpty = !isEmpty
 TODO: seems that those are equal assertions?
 32.2 [_] | ValDef => {id: Native (UInt); 
-				 rhs: Value}
+                      rhs: Value}
 ```
 
 33. BlockValue
@@ -654,13 +655,13 @@ There are two cases when serializing ``MethodCall`` object - for ``MethodCallCod
 ```scala
 obj: MethodCall
 37.1 [opCode == MethodCallCode] | MethodCall => {method.objType.typeId: Native (Byte); 
-                                            method.methodId: Native (Byte); 
-                                            obj: Value; 
-                                            args: Values}
+                                                 method.methodId: Native (Byte); 
+                                                 obj: Value; //this is obj.obj
+                                                 args: Values}
 [assert] (args.nonEmpty)
 37.2 [_] | MethodCall => {method.objType.typeId: Native (Byte); 
-					 method.methodId: Native (Byte); 
-					 obj: Value}
+                          method.methodId: Native (Byte); 
+                          obj: Value}
 ```
 
 38. SigmaTransformer
@@ -668,7 +669,7 @@ obj: MethodCall
 obj: SigmaTransformer[I, O]; I <: SigmaPropValue, O <: SigmaPropValue; 
 SigmaPropValue = Value[SSigmaProp.type]
 SigmaTransformer => {items.length: Native (UInt); 
-					 items: Value*}
+                     items: Value*}
 ```
 ``items``  are serialized using ``foreach`` iterator.
 
@@ -688,21 +689,21 @@ ModQ => {input: Value}
 ```scala
 obj: ModQArithOp
 ModQArithOp => {left: Value; 
-				right: Value}
+                right: Value}
 ```
 42. SubstConstants
 ```scala 
 obj: SubstConstants[SType]
 SubstConstants => {scriptBytes: Value; 
-				   positions: Value; 
-				   newValues: Value}
+                   positions: Value; 
+                   newValues: Value}
 ```
 43. Relation3 (unused)
 ```scala
 obj: Relation3[S1, S2, S3]; S1 <: SType; S2 <: SType; S3 <: SType
 Relation3 => {left: Value;  
-			  right: Value;  
-			  third: Value}
+              right: Value;  
+              third: Value}
 ```
 
 ### Other ``Body`` serializers
@@ -712,7 +713,7 @@ There are also a number of body serializers not using to store the tree nodes bu
 1. ErgoBox
 ```scala
 obj: ErgoBox
-ErgoBox => {obj: Body (ErgoBoxCandidate); 
+ErgoBox => {obj: Body (ErgoBoxCandidate); //this is obj itself, not obj.obj
             transactionId.toBytes: Native (Bytes); 
             index: Native (UShort)}
 [assert] (transactionId.toBytes.length == ErgoLikeTransaction.TransactionIdBytesSize)
@@ -725,24 +726,24 @@ There are two cases to serialize ``serializeBodyWithIndexedDigests``. The defaul
 obj: ErgoBoxCandidate
 ErgoBoxCandidate => serializeBodyWithIndexedDigests (digestsInTx = None)
 2.1 [digestsInTx.isDefined] | serializeBodyWithIndexedDigests => {value: Native (ULong); 
-									ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
-									creationHeight: Native (UInt);
-									additionalTokens.size: Native (UByte);
-									additionalTokens@(id, amount): 
-									   (digestsInTx.get.indexOf(id) >> Native (UInt), Native (ULong))*;
-									nRegs: Native (UByte); 
-									regs: Value*}
+                                    ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
+                                    creationHeight: Native (UInt);
+                                    additionalTokens.size: Native (UByte);
+                                    additionalTokens@(id, amount): 
+                                       (digestsInTx.get.indexOf(id) >> Native (UInt), Native (ULong))*;
+                                    nRegs: Native (UByte); 
+                                    regs: Value*}
 [assert] (forall (id) from additionalTokens, digestsInTx.get.indexOf(id) != -1)
 2.2 [_] | serializeBodyWithIndexedDigests => {value: Native (ULong); 
-									ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
-									creationHeight: Native (UInt);
-									additionalTokens.size: Native (UByte);
-									additionalTokens@(id, amount): (Native (Bytes), Native (ULong))*;
-									nRegs: Native (UByte); 
-									regs: Value*}
+                                    ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
+                                    creationHeight: Native (UInt);
+                                    additionalTokens.size: Native (UByte);
+                                    additionalTokens@(id, amount): (Native (Bytes), Native (ULong))*;
+                                    nRegs: Native (UByte); 
+                                    regs: Value*}
 [assert, both cases] (nRegs + ErgoBox.startingNonMandatoryIndex < 255)
 [assert, both cases] (forall (regId) from startReg to endReg, 
-                      ErgoBox.findRegisterByIndex(regId.toByte).get != None)
+                              ErgoBox.findRegisterByIndex(regId.toByte).get != None)
 ```
 where ``isDefined = !isEmpty`` for ``Option`` class,
 ``nRegs = obj.additionalRegisters.keys.size``, 
@@ -778,11 +779,11 @@ toByteArray = if (point.isInfinity) {
 ```scala
 obj: AvlTreeData
 AvlTreeData => {startingDigest.length: Native (UByte); 
-				startingDigest: Native (Bytes); 
-				keyLength: Native (UInt);
-				valueLengthOpt: Native (Option (Native (UInt))); 
-				maxNumOperations: Native (Option (Native (UInt))); 
-				maxDeletes: Native (Option (Native (UInt)))}
+                startingDigest: Native (Bytes); 
+                keyLength: Native (UInt);
+                valueLengthOpt: Native (Option (Native (UInt))); 
+                maxNumOperations: Native (Option (Native (UInt))); 
+                maxDeletes: Native (Option (Native (UInt)))}
 ```
 
 5. ErgoTree
@@ -790,11 +791,11 @@ There are two different procedures to serialize ``ErgoTree`` - with constants se
 ```scala
 tree: Value[SType]
 5.1 [with segregation] | ErgoTree => {header: [with segregation] ErgoTreeHeader; 
-	                                  tree: Value >> toBytes >> Native (Bytes)}
+                                      tree: Value >> toBytes >> Native (Bytes)}
 
 obj: ErgoTree
 5.2 [without segregation, default] | ErgoTree => {header: ErgoTreeHeader; 
-											      root: Value}
+                                                  root: Value}
 ```
 6.  ErgoTreeHeader
 Unlike the ``ErgoTree`` the header has one serialize procedure and the segregation flag is calculated inside it as 
@@ -804,8 +805,8 @@ Unlike the ``ErgoTree`` the header has one serialize procedure and the segregati
 ```scala
 obj: ErgoTree
 6.1 [with segregation] | ErgoTreeHeader => {header: Native (Byte); 
-											constants.length: Native (UInt); 
-											constants: Constant*}
+                                            constants.length: Native (UInt); 
+                                            constants: Constant*}
 6.2 [without segregation] | ErgoTreeHeader => {header: Native (Byte)}
 ```
 
@@ -825,15 +826,15 @@ Please see the definitions for helper serializers ``OperationKey`` and ``Operati
 ```scala
 7.2 tp: Byte, key: Array [Byte]
 OperationKey => {tp: Native (Byte);  
-				 key: Native (Bytes)}
+                 key: Native (Bytes)}
 ```
 ```scala
 7.3 tp: Byte, key: Array [Byte], value: Array [Byte]
 7.3.1 [valueLengthOpt.isEmpty] | OperationKeyValue => {(tp, key) >> OperationKey;  
-													   value.length.toShort: Native (Short);  
-												       value: Native (Bytes)}
+                                                       value.length.toShort: Native (Short);  
+                                                       value: Native (Bytes)}
 7.3.2 [_] | OperationKeyValue => {(tp, key) >> OperationKey;  
-							      value: Native (Bytes)}
+                                  value: Native (Bytes)}
 ```
 where ``tp, key`` arguments are passed from the ``Operation`` serializer.
 
@@ -851,11 +852,11 @@ def apply(tx: ErgoLikeTransaction): FlattenedTransaction =
 ```scala
 ftx: FlattenedTransaction 
 FlattenedTransaction => {inputs.length: Native (UShort);  
-						 inputs: Body (Input)*;  
-						 digests.length: Native (UInt);  
-						 digests: Native (Bytes)*;  
-						 outputCandidates.length: Native (UShort);  
-						 outputCandidates: [digestsInTx.isDefined] | Body (ErgoBoxCandidate)*}
+                         inputs: Body (Input)*;  
+                         digests.length: Native (UInt);  
+                         digests: Native (Bytes)*;  
+                         outputCandidates.length: Native (UShort);  
+                         outputCandidates: [digestsInTx.isDefined] | Body (ErgoBoxCandidate)*}
 ```
 Please see ``Body`` serializer for ``ErgoBoxCandidate`` for ``[digestsInTx.isDefined]`` case. When performing  ``FlattenedTransaction`` serialization the ``Some (digests)`` param is passed, so the case is implied.
 
@@ -863,20 +864,20 @@ Please see ``Body`` serializer for ``ErgoBoxCandidate`` for ``[digestsInTx.isDef
 ```scala
 obj: ContextExtension
 ContextExtension => {values.size: Native (UByte);  
-					 values@(id, v): (Native (Byte), v: Value)*}
+                     values@(id, v): (Native (Byte), v: Value)*}
 ```
 11. ProverResult
 ```scala
 obj: ProverResult
 ProverResult => {proof.length: Native (UShort);  
-				 proof: Native (Bytes);  
-				 extension: Body (ContextExtension)}
+                 proof: Native (Bytes);  
+                 extension: Body (ContextExtension)}
 ```
 12. Input
 ```scala
 obj: Input
 Input => {boxId: Native (Bytes);  
-		  spendingProof: Body (ProverResult)}
+          spendingProof: Body (ProverResult)}
 ```
 13. UnsignedInput
 ```scala
