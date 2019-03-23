@@ -1,9 +1,7 @@
 ﻿# Ergo serialization format specification
 
 ## Goal and structure
-The goal of this paper is to summarize and formalize the serialization procedure of the ``ErgoTree`` object. During the serialization objects of different types appear. All the type kinds can be considered separately and therefore the document contains correspondent sections  dedicated to particular kinds. Further in each section for each type (or serialization case) the particular format is given. 
-
-It can be a case when serializing compound object that it contains structures of undetermined length. So we need the specification format which support this case.
+The goal of this paper is to summarize and formalize the serialization procedure of the ``ErgoTree`` and depended objects. During the serialization objects of different types appear. All the type kinds can be considered separately and therefore the document contains correspondent sections  dedicated to the particular kinds. Further in each section for each type (or serialization case) the particular format is given. 
 
 ## Format
 We use the following format to describe a particular serialization case:
@@ -11,107 +9,245 @@ We use the following format to describe a particular serialization case:
 
 Each ``Field(i)`` has its own format ``Field = name: tr(1) >> tr(2) >> ... >> S``, where ``name`` is the both the field name and some property of the serialized object (some exceptions here may occur, we will note it). `tr(i)` is the transformer to be used on the ``name`` property before piping further. ``S`` is already defined serializer or serializers family (if cannot be determined). Note that ``S`` can be recursively defined. 
 
-TODO: describe * pattern
+When we need to store a particular constant we also use ``>>`` notation like ``const >> S`` (e.g. ``0 >> Byte``) meaning that we serialize exactly this value, but not something associated with the name ``const``. 
 
-Each serializer is included in some family as written before. When we need to use the particular serializer from the family    
-we use the notation ``F(S)`` with ``F`` standing for family name, and ``S`` for particular serializer inside the family.
+It can be a case when serializing compound object that it contains structures of undetermined length. So we need the specification format which support this case. When serializing structures like arrays or tuples we meet the iteration over their elements, in this case we use pattern ``objects: S*`` meaning that each ``object`` from a collection is serialized by the ``S`` serializer. 
 
-Serializer can potentially have some cases when depending on the property values the object is stored differently. We denote this as ``[condition] | S => ...`` where ``condition`` presents the case when ``S`` is used as written after ``=>`` sign.  ``[_]`` condition pattern stands for all other cases and is used as the last one.
+Each serializer is included in some family as mentioned before. When we need to use the particular serializer from a family    
+we use the notation ``F(S)`` with ``F`` standing for the family name, and ``S`` for particular serializer inside the family.
 
-When serializer has exceptional behavior and requires some constrains we denote it in ``[assert]`` block below the main definition.
+Serializer can potentially have several cases when depending on the object property or intentionally being serialized in different way. We denote this as ``[condition] | S => ...`` where ``condition`` presents the case when ``S`` is used as written after ``=>`` sign.  ``[_]`` condition pattern stands for all other cases and is used as the last one.
 
-In some cases we provide the particular Scala code for transformers or conditions below the serializer definition.
+When serializer has exceptional behavior and requires some constrains to be hold we denote it in ``[assert]`` block below the main definition.
+
+In some cases we provide the particular Scala code for transformers or conditions below the serializer definition. Also we provide the type of serialized object before the definition.
 
 Concluding, the final format is:
-``[condition] | S => {name1: tr(1,1) >> tr(1,2) >> ... >> [condition] S(1); ...} ``. 
+```scala
+obj: Type
+[condition] | S => {name1: tr(1,1) >> tr(1,2) >> ... >> [condition] S(1); ...} 
+[assertions...]
+```
 
 In some cases we omit the ``name`` part, then the transformers are applied to the whole serialized object. We can also omit the braces in the case when only one (unnamed) field is being serialized. 
 
-Further each section name also corresponds to serializers family.
+Further each section name also corresponds to serializers family. 
 
 ## Basic
 The serialization is performed by storing the correspondent bytes in ``ByteWriter`` object inherited from ``ByteArrayBuilder`` java class which has besides others the following basic operations:
-``append (x: Byte)``
-``append (x: Short)``  
-``append (x: Array [Byte])``
-``append (x: Boolean)``
-which append the correspondent to internal storage in polymorphic way. All of these operations we note as ``APPEND`` serializer. The appending procedure is developed inside the standard library and is beyond the scope of this document. 
+```scala
+append (x: Byte)
+append (x: Short)
+append (x: Array [Byte])
+append (x: Boolean)
+```
+which append the correspondent value to the internal storage in polymorphic way. All of these operations we denote as basic ``APPEND`` serializer. The appending procedure is developed inside the standard library and is beyond the scope of this document. 
+
 We also use the ``NOTHING`` serializer which does nothing for notation convenience.
 
 ## Native
 Native types are types given by the Scala standard library and are serialized as follows:
-1. ``Byte => APPEND``
-2. ``UByte => Byte``
-``[assert] (_ >= 0 && _ <= 0xFF)``
-4. ``UInt => ULong``
-``[assert] (_ >= 0 && _ <= 0xFFFFFFFFL)``
-5. ``Boolean => APPEND``
-6. ``Array [Byte] => APPEND``
-7. ``Array [Boolean] => (toBytes >> Array [Byte])``
+1.  Byte
+```scala
+x: Byte
+Byte => APPEND
+```
+
+2. UByte
+```scala
+x: Int 
+UByte => Byte
+[assert] (x >= 0 && x <= 0xFF)
+```
+
+3. UInt
+```scala
+x: Long
+UInt => ULong
+[assert] (x >= 0 && x <= 0xFFFFFFFFL)
+```
+
+4. Boolean
+```scala
+x: Boolean
+Boolean => APPEND
+```
+
+5. Bytes
+```scala
+x: Array [Byte]
+Bytes => APPEND
+```
+
+6.  Bits
+```scala
+xs: Array [Boolean] 
+Bits => (toBytes >> Bytes)
+```
 where ``toBytes`` is defined as 
 ```scala
-	def putBits(xs: Array[Boolean]): this.type = { 
-	  if (xs.isEmpty) return this
+	{ 
+	  if (xs.isEmpty) Empty //empty array
 	  val bitSet = new BitSet(xs.length)  
 	  xs.zipWithIndex.foreach { case (bool, i) => bitSet.set(i, bool)}  
 	  val bytes = Arrays.copyOf(bitSet.toByteArray, (xs.length + 7) / 8)  
-	  b.append(bytes)  
-	  this  
+	  bytes
 	}
 ```
-8. ``UShort => UInt``
-``[assert] (_ >= 0 && _ <= 0xFFFF)``
-9. ``Long => (ZigZagLong >> ULong)``
+
+7. UShort
+```scala
+x: Int
+UShort => UInt
+[assert] (x >= 0 && x <= 0xFFFF)
+```
+
+8. Long
+```scala
+x: Long
+Long => (ZigZagLong >> ULong)
+```
 where ``ZigZagLong (x: Long) : Long`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L949). 
-10. ``Int => (ZigZagInt >> ULong)``
+
+9. Int
+```scala
+x: Int
+Int => (ZigZagInt >> ULong)
+```
 where ``ZigZagInt (x: Int) : Int`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L934). 
-11. ``ULong => (VLQEnc >> APPEND)``
-where ``VLQEnc (x: Long): Array[Byte]`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387). 
-12. ``Short => APPEND``
-13. ``Option [X]``
-11.1 ``[None] | Option X => {header: 0 >> Byte}``
-11.2 ``[Some v] | Option X => {header: 1 >> Byte; v: Serializer}``
-with arbitrary externally given serializer for ``v``.
+
+10. ULong
+```scala
+x: Long
+ULong => (encodeVLQ >> Bytes)
+```
+where ``encodeVLQ (x: Long): Array[Byte]`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387). 
+
+11. Short
+```scala
+x: Short
+Short => APPEND
+```
+
+12. Option
+There are two cases for serializing ``Option`` typed value - for ``None`` and ``Some`` pattern matching results.
+```scala
+x: Option X
+12.1 [None] | Option => {header: 0 >> Byte}
+12.2 [Some v] | Option => {header: 1 >> Byte; 
+                           v: Serializer}
+```
+with arbitrary externally passed ``Serializer`` for ``v``.
 
 ## Data
 The current section is dedicated for S-typed objects data serialization. Some S-types have implicit coercion to correspondent native types performed by ``v.asInstanceOf[T]`` call with ``v`` of some S-type and ``T`` is coercible (nested) native type.   The implicit conversion transformation is omitted in notation.
-1. ``SUnit => NOTHING``
-2. ``SBoolean => Native (Boolean)``
-3. ``SByte => Native (Byte)``
-4. ``SShort => Native (Short)``
-5. ``SInt => Native (Int)``
-6. ``SLong => Native (Long)``
-7.  ``SString => {length: Native (UInt);``
-	 $\qquad$$\qquad$$\quad$``bytes: encode >> Native (Array [Byte])}``
-	 where ``length`` stands for the ``Array.length()`` return value for the array produced by ``encode`` transformer which is defined as ``String.getBytes(StandardCharsets.UTF_8)`` for serialized string.
-8. ``SBigInt => {length: Native (UShort);`` 
-$\qquad$$\qquad$$\quad$``bytes: toByteArray >> Array [Byte]}``
-where ``length`` stands for the ``Array.length()`` return value for the array produced by ``toByteArray`` transformer which is defined as ``BigInteger.toByteArray()`` for serialized string.
-9. ``SGroupElement => Body (GroupElement)``
-Here we refer to the ``Body`` serializers family defined below and the coercion ``SGroupElement -> EcPointType``.
-10. ``SSigmaProp => Value``
-Here we refer to the ``Value`` serializers family defined below and the coercion ``SSigmaProp -> SigmaBoolean``.
-11. ``SBox => Body (ErgoBox)``
-Here we refer to the ``Body`` serializers family defined below and the coercion ``SBox -> ErgoBox``.
-12. ``SAvlTree => Body (AvlTreeData)``
-Here we refer to the ``Body`` serializers family defined below and the coercion ``SAvlTree -> AvlTreeData``.
-13. ``SCollectionType [X]``
-13.1 ``[X == SBoolean] |`` with coercion ``SCollectionType[X] -> Array[T#WrappedType]``.
-$\qquad$``SCollectionType X => {length: Native (UShort);`` 
-$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\quad$``bits: Native (Array [Boolean])}``
+1. SUnit
+```scala
+x: SUnit
+SUnit => NOTHING
+```
+2. SBoolean
+```scala
+x: SBoolean
+SBoolean => Native (Boolean)
+```
+
+3. SByte
+```scala
+x: SByte
+SByte => Native (Byte)
+```
+
+4. SShort
+```scala
+x: SShort
+SShort => Native (Short)
+```
+
+5. SInt
+```scala
+x: SInt
+SInt => Native (Int)
+```
+
+6. SLong
+```scala
+x: SLong
+SLong => Native (Long)
+```
+
+7.  SString
+```scala
+x: SString
+SString => {length: Native (UInt);
+			bytes: encodeUTF8 >> Native (Bytes)}
+```
+where ``length`` stands for the ``Array.length()`` return value for the array produced by ``encodeUTF8`` transformer which is defined as ``String.getBytes(StandardCharsets.UTF_8)`` for serialized string.
+
+8. SBigInt
+```scala
+x: SBigInt
+SBigInt => {length: Native (UShort);
+			bytes: toByteArray >> Bytes}
+```
+where ``length`` stands for the ``Array.length()`` return value for the array produced by ``toByteArray`` transformer which is defined as ``BigInteger.toByteArray()`` for serialized object.
+
+9. SGroupElement
+```scala
+x: SGroupElement
+SGroupElement => Body (GroupElement)
+```
+Here we refer to the ``Body`` serializers family defined below and the used coercion is ``SGroupElement -> EcPointType``.
+
+10. SSigmaProp
+```scala
+x: SSigmaProp
+SSigmaProp => Value
+```
+Here we refer to the ``Value`` serializers family defined below and the used coercion is ``SSigmaProp -> SigmaBoolean``.
+
+11. SBox
+```scala
+x: SBox
+SBox => Body (ErgoBox)
+```
+Here we refer to the ``Body`` serializers family defined below and the used coercion is ``SBox -> ErgoBox``.
+
+12. SAvlTree
+```scala
+x: SAvlTree
+SAvlTree => Body (AvlTreeData)
+```
+Here we refer to the ``Body`` serializers family defined below and the used coercion is ``SAvlTree -> AvlTreeData``.
+
+13. SCollectionType
+```scala
+x: SCollectionType [X]
+13.1 [X == SBoolean] | SCollectionType => {length: Native (UShort);
+										   bits: Native (Bits)}
+```
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SBoolean] -> Array[Boolean]`` to get ``bits``.
-13.2 ``[X == SByte] |`` 
-$\qquad$``SCollectionType X => {length: Native (UShort); ``
-$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\quad$``bytes: Native (Array [Byte])}``
+
+```scala
+13.2 [X == SByte] | SCollectionType => {length: Native (UShort); 
+										bytes: Native (Bytes)}
+```
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SByte] -> Array[Byte]`` to get ``bytes``.
-13.3 ``[_] |``
-$\qquad$`` SCollectionType => {length: Native (UShort); ``
-$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$``elems: Data*}``
-Here ``length`` is the collection length defined by ``Array.length()`` for the object produced by the general coercion. The serialization for  ``elems`` is given by mapping each element with correspondent ``Data`` family serializer.
-14. ``STuple => Data*`` with coercion  ``STuple -> Array[Any]``
-``[assert] (arr.length == items.length)``
-``[assert] (arr.length <= 0xFFFF)``  
-where ``arr`` is the coerced array and ``items`` is the array of the serialized tuple types.
+
+```scala
+13.3 [_] | SCollectionType => {length: Native (UShort); 
+							   elems: Data*}
+```
+Here ``length`` is the collection length defined by ``Array.length()`` for the object produced by the general coercion ``SCollectionType[X] -> Array[X#WrappedType]``. The serialization for  ``elems`` is produced by mapping each element with correspondent ``Data`` family serializer.
+
+14.  STuple
+```scala
+x: STuple
+STuple => Data*
+[assert] (arr.length == items.length)
+[assert] (arr.length <= 0xFFFF)
+```
+with coercion  ``STuple -> Array[Any]`` , where ``arr`` is the coerced array and ``items`` is the array of the serialized tuple types.
 
 ## Type
 Type serialization is given in another [document](https://github.com/ScorexFoundation/sigmastate-interpreter/blob/master/docs/TypeSerialization.md).
@@ -131,14 +267,21 @@ Then if the result is of ``Constant [SType]`` type we see if we have the ``const
 
 So we define the following serialization cases:
 
-1.  ``Value``
-1.1 ``[Non-constant] | Value => {opCode: Native (Byte);`` 
-$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\quad$``body: Body}``
-1.2 ``[Constant with store] | Value => {ConstantPlaceholderIndexCode: Native (Byte);``
-$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\qquad$$\quad$$\quad$``constantPlaceholder: Body (ConstantPlaceholder)}``
-1.3 ``[Constant without store] | Value => Body (Constant)``
-2. ``Values = {length: UInt;`` 
-$\qquad$$\qquad$``values: Value*}``
+1.  Value
+```scala
+x: Value[T]; T <: SType
+1.1 [Non-constant] | Value => {opCode: Native (Byte);
+							   body: Body}
+1.2 [Constant with store] | Value => {ConstantPlaceholderIndexCode >> Native (Byte);
+									  constantPlaceholder: Body (ConstantPlaceholder)}
+1.3 [Constant without store] | Value => Body (Constant)
+```
+2. Values
+```scala
+xs: Seq[Value[T]]; T <: SType
+Values = {length: UInt;
+		  values: Value*}
+```
 This serialization is used to store multiple ``Value`` objects with ``length = values.length()`` and ``Value`` is mapped to each member of the serialized ``Seq [Value [T]]``.
 
 To serialize ``Body`` we need to choose  the correspondent serializer from the table based on its ``opCode`` which is given by the following reference code:
@@ -201,7 +344,7 @@ with ``serializers`` hash-table in essential defined as pairs ``(opCode, Seriali
 ##### <a name="shifted"> </a> * All the numeric values  presented in the table should be added to constant ``LastConstantCode`` to get the final ``opCode`` value
 ##### <a name="notShifted">  </a> ** Besides of this, the ``ConstantCode=0`` literally
 
-The constant ``LastConstantCode`` is defined in turn as ``LastDataType + 1``,  with ``LastDataType=111``.
+The constant ``LastConstantCode`` is defined in turn as ``LastDataType + 1``,  with ``LastDataType = 111``.
 
 ## Body
 The ``Body`` for ``Value`` serializers do the main job to store the body of the correspondent operations in the tree and are given below. 
