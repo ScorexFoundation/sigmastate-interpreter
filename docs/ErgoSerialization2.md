@@ -230,13 +230,13 @@ x: SCollectionType [X]
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SBoolean] -> Array [Boolean]`` to get ``bits``.
 
 ```scala
-13.2 [X == SByte] | SCollectionType => {length: Native (UShort); 
+13.2 [X == SByte] | SCollectionType => {length: Native (UShort);
 										bytes: Native (Bytes)}
 ```
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SByte] -> Array [Byte]`` to get ``bytes``.
 
 ```scala
-13.3 [_] | SCollectionType => {length: Native (UShort); 
+13.3 [_] | SCollectionType => {length: Native (UShort);
 							   elems: Data*}
 ```
 Here ``length`` is the collection length defined by ``Array.length()`` for the object produced by the general coercion ``SCollectionType[X] -> Array[X#WrappedType]``. The serialization for  ``elems`` is produced by mapping each element with correspondent ``Data`` family serializer.
