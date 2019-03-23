@@ -1180,8 +1180,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val box = ergoBox.toTestBox(false)(IR)
           val boxV = liftConst(box)
           RCCostedPrim(boxV, costOf(c), sizeOfData(box))
-        case treeData: AvlTreeData =>
-          val tree: special.sigma.AvlTree = CAvlTree(treeData)
+        case tree: special.sigma.AvlTree =>
           val treeV = liftConst(tree)
           RCCostedPrim(treeV, costOf(c), SizeAvlTree)
         case s: String =>

@@ -15,8 +15,10 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
+import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.collection.Coll
+import special.sigma.AvlTree
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -51,6 +53,7 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
   implicit val arbBox = Arbitrary(ergoBoxGen)
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
+  implicit val arbAvlTree = Arbitrary(avlTreeGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
   implicit val arbTransaction = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
@@ -192,7 +195,9 @@ trait ValueGenerators extends TypeGenerators {
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
   } yield AvlTreeData(ADDigest @@ digest, flags, keyLength, vl)
 
-  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
+  def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
+
+  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeGen.map { v => AvlTreeConstant(v) }
 
   implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
@@ -209,7 +214,7 @@ trait ValueGenerators extends TypeGenerators {
     case SGroupElement => arbGroupElement
     case SSigmaProp => arbSigmaBoolean
     case SBox => arbBox
-    case SAvlTree => arbAvlTreeData
+    case SAvlTree => arbAvlTree
     case SAny => arbAnyVal
     case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary

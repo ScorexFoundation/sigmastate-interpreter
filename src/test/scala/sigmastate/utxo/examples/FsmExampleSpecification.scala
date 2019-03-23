@@ -8,6 +8,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.lang.Terms._
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
@@ -74,7 +75,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.generateProof()
 
     val digest = avlProver.digest
-    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 34, Some(0))
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 34, Some(0)))
 
     val fsmDescRegister = ErgoBox.nonMandatoryRegisters.head
     val currentStateRegister = ErgoBox.nonMandatoryRegisters(1)
@@ -101,7 +102,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
 
     val treePreservation = EQ(
       ExtractRegisterAs[SAvlTree.type](ByIndex(Outputs, IntConstant.Zero),
-        fsmDescRegister).getOrElse(AvlTreeConstant(AvlTreeData.dummy)),
+        fsmDescRegister).getOrElse(AvlTreeConstant(SigmaDsl.avlTree(AvlTreeData.dummy))),
       ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister).get)
 
     val preservation = AND(scriptPreservation, treePreservation)

@@ -154,7 +154,7 @@ object SType {
       case SInt => reflect.classTag[Int]
       case SLong => reflect.classTag[Long]
       case SBigInt => reflect.classTag[BigInteger]
-      case SAvlTree => reflect.classTag[AvlTreeData]
+      case SAvlTree => reflect.classTag[AvlTree]
       case SGroupElement => reflect.classTag[EcPointType]
       case SSigmaProp => reflect.classTag[SigmaBoolean]
       case SUnit => reflect.classTag[Unit]
@@ -1141,10 +1141,10 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 }
 
 case object SAvlTree extends SProduct with SPredefType with SMonoType {
-  override type WrappedType = AvlTreeData
+  override type WrappedType = AvlTree
   override val typeCode: TypeCode = 100: Byte
   override def typeId = typeCode
-  override def mkConstant(v: AvlTreeData): Value[SAvlTree.type] = AvlTreeConstant(v)
+  override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = {
     val tree = v.asInstanceOf[AvlTreeData]
     AvlTreeData.DigestSize + // digest

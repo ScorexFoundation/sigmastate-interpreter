@@ -12,6 +12,7 @@ import sigmastate.{AvlTreeData, AvlTreeFlags, SByte}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
+import sigmastate.eval._
 
 class IcoExample extends SigmaTestingCommons {
   suite =>
@@ -51,7 +52,7 @@ class IcoExample extends SigmaTestingCommons {
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+    val initTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(16)(0: Byte) ++ Array.fill(16)(1: Byte)), R5 -> AvlTreeConstant(initTreeData)))
@@ -65,7 +66,7 @@ class IcoExample extends SigmaTestingCommons {
     }
 
     val proof = avlProver.generateProof()
-    val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+    val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val projectBoxAfter = ErgoBox(10, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(32)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
@@ -110,12 +111,12 @@ class IcoExample extends SigmaTestingCommons {
     val projectProver = new ErgoLikeTestProvingInterpreter
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
-    val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+    val openTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
     val projectBoxBeforeClosing = ErgoBox(10, fixingProp, 0, Seq(),
       Map(R4 -> AvlTreeConstant(openTreeData)))
 
-    val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+    val closedTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
 
     val projectBoxAfterClosing = ErgoBox(10, fixingProp, 0, Seq(),
       Map(R4 -> AvlTreeConstant(closedTreeData)))

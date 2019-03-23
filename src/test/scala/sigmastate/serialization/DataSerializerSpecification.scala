@@ -8,6 +8,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.AvlTree
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -60,7 +61,7 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
     forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
-    forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
+    forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }

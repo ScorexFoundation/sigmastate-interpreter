@@ -5,10 +5,11 @@ import java.math.BigInteger
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, ByteArrayConstant, LongConstant}
+import sigmastate.Values.{LongConstant, FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, ByteArrayConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
 import sigmastate.Values._
+import special.sigma.AvlTree
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
@@ -48,7 +49,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: EcPointType => roundTripTest(Constant[SGroupElement.type](x, SGroupElement)) }
     forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x, SSigmaProp)) }
     forAll { x: ErgoBox => roundTripTest(Constant[SBox.type](x, SBox)) }
-    forAll { x: AvlTreeData => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
+    forAll { x: AvlTree => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
     forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x, SByteArray)) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }

@@ -520,6 +520,10 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
     CAvlTree(treeData)
   }
 
+  def avlTree(treeData: AvlTreeData): AvlTree = {
+    CAvlTree(treeData)
+  }
+
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     props.map {
       case csp: CSigmaProp => csp.sigmaTree

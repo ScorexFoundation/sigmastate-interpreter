@@ -11,6 +11,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.lang.exceptions.CosterException
@@ -257,7 +258,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println("proof size: " + proof.length)
 
-    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
 
     val key1 = genKey("key1")
     val value1 = genValue("value1")

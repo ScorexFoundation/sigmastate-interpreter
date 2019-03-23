@@ -8,8 +8,9 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 import sigmastate._
-import sigmastate.eval.Evaluation
+import sigmastate.eval._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.AvlTree
 
 import scala.collection.mutable
 
@@ -39,7 +40,7 @@ object DataSerializer {
     case SBox =>
       ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
-      AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTreeData], w)
+      AvlTreeData.serializer.serialize(SigmaDsl.toAvlTreeData(v.asInstanceOf[AvlTree]), w)
     case tColl: SCollectionType[a] =>
       val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
@@ -89,7 +90,7 @@ object DataSerializer {
     case SBox =>
       ErgoBox.sigmaSerializer.parse(r)
     case SAvlTree =>
-      AvlTreeData.serializer.parse(r)
+      SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
     case tColl: SCollectionType[a] =>
       val len = r.getUShort()
       if (tColl.elemType == SByte)

@@ -12,6 +12,7 @@ import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.eval._
 
 import scala.util.Random
 
@@ -86,7 +87,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None))
 
     val merklePathToScript = OptionIsDefined(
       IR.builder.mkMethodCall(

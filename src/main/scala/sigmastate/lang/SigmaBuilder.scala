@@ -242,8 +242,8 @@ trait SigmaBuilder {
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
 
-    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
-    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](CostingSigmaDslBuilder.toAvlTreeData(avl), SAvlTree))
+//    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
 
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
     case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))

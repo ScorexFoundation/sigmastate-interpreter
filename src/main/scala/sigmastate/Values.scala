@@ -8,14 +8,14 @@ import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import scalan.Nullable
-import scorex.crypto.authds.SerializedAdProof
+import scorex.crypto.authds.{SerializedAdProof, ADDigest}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{InterpreterContext, CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.{CryptoConstants, InterpreterContext, CryptoFunctions}
 import sigmastate.serialization._
 import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
@@ -35,7 +35,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Header, Extensions, AnyValue, TestValue, PreHeader}
+import special.sigma.{Header, Extensions, AnyValue, AvlTree, TestValue, PreHeader}
 import sigmastate.lang.SourceContext
 
 
@@ -313,9 +313,9 @@ object Values {
   }
 
   object AvlTreeConstant {
-    def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
-    def unapply(v: SValue): Option[AvlTreeData] = v match {
-      case Constant(value: AvlTreeData, SAvlTree) => Some(value)
+    def apply(value: AvlTree): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
+    def unapply(v: SValue): Option[AvlTree] = v match {
+      case Constant(value: AvlTree, SAvlTree) => Some(value)
       case _ => None
     }
   }
@@ -323,7 +323,7 @@ object Values {
   implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
-        c.value.digest,
+        ADDigest @@ c.value.digest.toArray,
         proof,
         c.value.keyLength,
         c.value.valueLengthOpt)
