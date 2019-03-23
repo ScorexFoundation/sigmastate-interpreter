@@ -121,7 +121,7 @@ where ``ZigZagInt (x: Int) : Int`` is defined following the [code](http://github
 x: Long
 ULong => (encodeVLQ >> Bytes)
 ```
-where ``encodeVLQ (x: Long): Array[Byte]`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387). 
+where ``encodeVLQ (x: Long): Array [Byte]`` is defined following the [code](http://github.com/google/protobuf/blob/a7252bf42df8f0841cf3a0c85fdbf1a5172adecb/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L1387). 
 
 11. Short
 ```scala
@@ -130,6 +130,7 @@ Short => APPEND
 ```
 
 12. Option
+
 There are two cases for serializing ``Option`` typed value - for ``None`` and ``Some`` pattern matching results.
 ```scala
 x: Option X
@@ -226,13 +227,13 @@ x: SCollectionType [X]
 13.1 [X == SBoolean] | SCollectionType => {length: Native (UShort);
 										   bits: Native (Bits)}
 ```
-Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SBoolean] -> Array[Boolean]`` to get ``bits``.
+Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SBoolean] -> Array [Boolean]`` to get ``bits``.
 
 ```scala
 13.2 [X == SByte] | SCollectionType => {length: Native (UShort); 
 										bytes: Native (Bytes)}
 ```
-Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SByte] -> Array[Byte]`` to get ``bytes``.
+Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SByte] -> Array [Byte]`` to get ``bytes``.
 
 ```scala
 13.3 [_] | SCollectionType => {length: Native (UShort); 
@@ -363,6 +364,7 @@ Constant => {tpe: Type;
 obj: ConstantPlaceholder[SType]
 ConstantPlaceholder => {id: Native (UInt)}
 ```
+
 3.  Tuple
 ```scala
 obj: Tuple
@@ -377,18 +379,20 @@ obj: SelectField
 SelectField => {input: Value; 
                 fieldIndex: Native (Byte)}
 ```
+
 5.  Relation2
+
 There are two cases when serializing ``Relation2`` object, first - for serializing ``Boolean`` constants and otherwise.
 ```scala
 obj: Relation[S1, S2]; S1 <: SType; S2 <: SType
 5.1 [BooleanConstants] | Relation2 => {ConcreteCollectionBooleanConstantCode >> Native (Byte); 
-                                   LeftRightBits: toBits >> Native (Array [Boolean])}
+                                       LeftRightBits: toBits >> Native (Bits)}
 5.2 [_] | Relation2 => {left: Value; 
                     right: Value}
  ```
 where 
 ```scala
-toBits = Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean])
+toBits = Array [Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean])
 ConcreteCollectionBooleanConstantCode = LastConstantCode + 21
 ```  
 6.  Quadruple
@@ -398,26 +402,29 @@ Quadruple => {first: Value;
               second: Value; 
               third: Value}
 ```
+
 7.  TwoArguments
 ```scala
 obj: TwoArgumentsOperation[LIV, RIV, LIV]
 TwoArguments => {left: Value; 
                  right: Value}
 ```
+
 8.  ProveDHTuple
+
 There are two cases when serializing ``ProveDHTuple`` object, first - for serializing ``SGroupElement`` constants and otherwise.
 ```scala
 obj: ProveDHTuple
 8.1 [SGroupElementConstants] | ProveDHTuple => {constCodePrefix >> Native (Byte); 
-											SGroupElementType >> Type;
-                                            gv_data: Data (SGroupElement); 
-                                            hv_data: Data (SGroupElement);
-                                            uv_data: Data (SGroupElement); 
-                                            vv_data: Data (SGroupElement)}
+												SGroupElementType >> Type;
+	                                            gv_data: Data (SGroupElement); 
+	                                            hv_data: Data (SGroupElement);
+	                                            uv_data: Data (SGroupElement); 
+	                                            vv_data: Data (SGroupElement)}
 8.2 [_] | ProveDHTuple => {gv: Value; 
-					   hv: Value;
-					   uv: Value; 
-					   vv: Value}
+						   hv: Value;
+						   uv: Value; 
+						   vv: Value}
 ```
 where ``constCodePrefix = 0; SGroupElementType = SGroupElement``. 
 
@@ -449,7 +456,7 @@ SigmaPropBytes => {input: Value}
  ```scala
 obj: ConcreteCollection[SBoolean.type]
 ConcreteCollectionBooleanConstant => {items.size: Native (UShort); 
-                                      items: toArray >> Native (Array [Boolean])}
+                                      items: toArray >> Native (Bits)}
 ```
 where 
 ```scala
@@ -595,13 +602,14 @@ NumericCast => {input: Value;
 ```
 
 32. ValDef
+
 There are two cases when serializing ``ValUse`` object - for ``FunDefCode`` ``opCode`` and otherwise. In the first case the additional information is to be stored.
 ```scala
 obj: ValDef
 32.1 [opCode == FunDefCode] | ValDef => {id: Native (UInt); 
-									tpeArgs.length.toByteExact: Native (Byte); 
-									tpeArgs: Type*; 
-									rhs: Value}
+										 tpeArgs.length.toByteExact: Native (Byte); 
+										 tpeArgs: Type*; 
+										 rhs: Value}
 [assert] (!obj.isValDef), isValDef = tpeArgs.isEmpty
 [assert] (obj.tpeArgs.nonEmpty), nonEmpty = !isEmpty
 TODO: seems that those are equal assertions?
@@ -628,8 +636,8 @@ ValUse = {valId: Native (UInt)}
 ```scala
 obj: FuncValue
 FuncValue => {args.length: Native (UInt); 
-             args@(idx, tpe): (Native (UInt), Type)*; 
-             body: Value}
+              args@(idx, tpe): (Native (UInt), Type)*; 
+              body: Value}
 ```
 where we use ``lhs@rhs`` to synonymize ``lhs`` and ``rhs``, ``args``  are serialized using ``foreach`` iterator.
 
@@ -641,6 +649,7 @@ Apply => {func: Value;
 ```
 
 37. MethodCall
+
 There are two cases when serializing ``MethodCall`` object - for ``MethodCallCode`` ``opCode`` and otherwise. In the first case the additional information is stored.
 ```scala
 obj: MethodCall
@@ -669,7 +678,7 @@ obj: BoolToSigmaProp
 BoolToSigmaProp => {value: Value}
 ```
 
-40.
+40. ModQ
 ```scala
 obj: ModQ 
 ModQ => {input: Value}
@@ -704,7 +713,7 @@ There are also a number of body serializers not using to store the tree nodes bu
 ```scala
 obj: ErgoBox
 ErgoBox => {obj: Body (ErgoBoxCandidate); 
-            transactionId.toBytes: Native (Array [Byte]); 
+            transactionId.toBytes: Native (Bytes); 
             index: Native (UShort)}
 [assert] (transactionId.toBytes.length == ErgoLikeTransaction.TransactionIdBytesSize)
 ```
@@ -716,7 +725,7 @@ There are two cases to serialize ``serializeBodyWithIndexedDigests``. The defaul
 obj: ErgoBoxCandidate
 ErgoBoxCandidate => serializeBodyWithIndexedDigests (digestsInTx = None)
 2.1 [digestsInTx.isDefined] | serializeBodyWithIndexedDigests => {value: Native (ULong); 
-									ergoTree: [without segregation] ErgoTree >> Array[Byte]; 
+									ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
 									creationHeight: Native (UInt);
 									additionalTokens.size: Native (UByte);
 									additionalTokens@(id, amount): 
@@ -725,10 +734,10 @@ ErgoBoxCandidate => serializeBodyWithIndexedDigests (digestsInTx = None)
 									regs: Value*}
 [assert] (forall (id) from additionalTokens, digestsInTx.get.indexOf(id) != -1)
 2.2 [_] | serializeBodyWithIndexedDigests => {value: Native (ULong); 
-									ergoTree: [without segregation] ErgoTree >> Array[Byte]; 
+									ergoTree: [without segregation] ErgoTree >> Native (Bytes); 
 									creationHeight: Native (UInt);
 									additionalTokens.size: Native (UByte);
-									additionalTokens@(id, amount): (Array [Byte], ULong)*;
+									additionalTokens@(id, amount): (Native (Bytes), Native (ULong))*;
 									nRegs: Native (UByte); 
 									regs: Value*}
 [assert, both cases] (nRegs + ErgoBox.startingNonMandatoryIndex < 255)
@@ -745,7 +754,7 @@ where ``isDefined = !isEmpty`` for ``Option`` class,
 3. GroupElement (also EcPointType)
 ```scala
 point: EcPointType
-GroupElement => (toByteArray >> Native (Array [Byte]))
+GroupElement => (toByteArray >> Native (Bytes))
 ```
 where
 ```scala
@@ -758,7 +767,7 @@ toByteArray = if (point.isInfinity) {
   val normed = point.normalize()  
   val ySign = normed.getAffineYCoord.testBitZero()  
   val X = normed.getXCoord.getEncoded  
-  val PO = new Array[Byte](X.length + 1)  
+  val PO = new Array [Byte](X.length + 1)  
   PO(0) = (if (ySign) 0x03 else 0x02).toByte  
   System.arraycopy(X, 0, PO, 1, X.length)  
   PO  
@@ -769,7 +778,7 @@ toByteArray = if (point.isInfinity) {
 ```scala
 obj: AvlTreeData
 AvlTreeData => {startingDigest.length: Native (UByte); 
-				startingDigest: Native (Array [Byte]); 
+				startingDigest: Native (Bytes); 
 				keyLength: Native (UInt);
 				valueLengthOpt: Native (Option (Native (UInt))); 
 				maxNumOperations: Native (Option (Native (UInt))); 
@@ -781,7 +790,7 @@ There are two different procedures to serialize ``ErgoTree`` - with constants se
 ```scala
 tree: Value[SType]
 5.1 [with segregation] | ErgoTree => {header: [with segregation] ErgoTreeHeader; 
-	                                  tree: Value >> toBytes >> Native (Array[Byte])}
+	                                  tree: Value >> toBytes >> Native (Bytes)}
 
 obj: ErgoTree
 5.2 [without segregation, default] | ErgoTree => {header: ErgoTreeHeader; 
@@ -814,17 +823,17 @@ There are a number of cases depending on the operation kind which is got by matc
 ```
 Please see the definitions for helper serializers ``OperationKey`` and ``OperationKeyValue`` below.
 ```scala
-7.2 tp: Byte, key: Array[Byte]
+7.2 tp: Byte, key: Array [Byte]
 OperationKey => {tp: Native (Byte);  
-				 key: Native (Array [Byte])}
+				 key: Native (Bytes)}
 ```
 ```scala
-7.3 tp: Byte, key: Array[Byte], value: Array[Byte]
+7.3 tp: Byte, key: Array [Byte], value: Array [Byte]
 7.3.1 [valueLengthOpt.isEmpty] | OperationKeyValue => {(tp, key) >> OperationKey;  
 													   value.length.toShort: Native (Short);  
-												       value: Native (Array [Byte])}
+												       value: Native (Bytes)}
 7.3.2 [_] | OperationKeyValue => {(tp, key) >> OperationKey;  
-							      value: Native (Array [Byte])}
+							      value: Native (Bytes)}
 ```
 where ``tp, key`` arguments are passed from the ``Operation`` serializer.
 
@@ -844,7 +853,7 @@ ftx: FlattenedTransaction
 FlattenedTransaction => {inputs.length: Native (UShort);  
 						 inputs: Body (Input)*;  
 						 digests.length: Native (UInt);  
-						 digests: Native (Array [Byte])*;  
+						 digests: Native (Bytes)*;  
 						 outputCandidates.length: Native (UShort);  
 						 outputCandidates: [digestsInTx.isDefined] | Body (ErgoBoxCandidate)*}
 ```
@@ -860,19 +869,19 @@ ContextExtension => {values.size: Native (UByte);
 ```scala
 obj: ProverResult
 ProverResult => {proof.length: Native (UShort);  
-				 proof: Native (Array [Byte]);  
+				 proof: Native (Bytes);  
 				 extension: Body (ContextExtension)}
 ```
 12. Input
 ```scala
 obj: Input
-Input => {boxId: Native (Array [Byte]);  
+Input => {boxId: Native (Bytes);  
 		  spendingProof: Body (ProverResult)}
 ```
 13. UnsignedInput
 ```scala
 obj: UnsignedInput
-UnsignedInput => {boxId: Native (Array [Byte])}
+UnsignedInput => {boxId: Native (Bytes)}
 ```
 
 
