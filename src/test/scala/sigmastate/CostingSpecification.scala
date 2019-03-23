@@ -3,15 +3,18 @@ package sigmastate
 import org.ergoplatform.ErgoLikeContext.{dummyPubkey, dummyPreHeader, noHeaders, noBoxes}
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
+import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, BooleanConstant, IntConstant}
+import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, BooleanConstant, IntConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.utxo.CostTable
 import sigmastate.utxo.CostTable._
 import sigmastate.eval._
-import special.sigma.SigmaTestingData
+import sigmastate.eval.Extensions._
+import special.sigma.{SigmaTestingData, AvlTree}
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -23,9 +26,22 @@ class CostingSpecification extends SigmaTestingData {
   lazy val pkB = interpreter.dlogSecrets(1).publicImage
 
   val printCosts = true
+
+  val (key1, _, avlProver) = sampleAvlProver
+  val keys = Colls.fromItems(key1)
+  avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
+  val digest = avlProver.digest.toColl
+  val lookupProof = avlProver.generateProof().toColl
+  val avlTreeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags.AllOperationsAllowed, 32, None)
+  val avlTree: AvlTree = CAvlTree(avlTreeData)
+
   val env: ScriptEnv = Map(
-    (ScriptNameProp -> s"filename_verify")
+    ScriptNameProp -> s"filename_verify",
+    "key1" -> key1,
+    "keys" -> keys,
+    "lookupProof" -> lookupProof
   )
+
   val extension: ContextExtension = ContextExtension(Map(
     1.toByte -> IntConstant(1),
     2.toByte -> BooleanConstant(true)
@@ -33,7 +49,8 @@ class CostingSpecification extends SigmaTestingData {
   val tokenId = Blake2b256("tokenA")
   val selfBox = createBox(0, TrueProp, Seq(tokenId -> 10L),
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
-          ErgoBox.R5 -> IntConstant(3)))
+          ErgoBox.R5 -> IntConstant(3),
+          ErgoBox.R6 -> AvlTreeConstant(avlTreeData)))
   lazy val outBoxA = ErgoBox(10, pkA, 0)
   lazy val outBoxB = ErgoBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
@@ -160,15 +177,29 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   val AccessRootHash = selectField
+  def perKbCostOf(dataSize: Long, opCost: Int) = {
+    ((dataSize / 1024L).toInt + 1) * opCost
+  }
+  import Sized._
+
   property("AvlTree operations cost") {
-    val tree = "LastBlockUtxoRootHash"
-    cost(s"{ $tree.digest.size > 0 }") shouldBe (AccessRootHash + selectField + LengthGTConstCost)
-    cost(s"{ $tree.enabledOperations > 0 }") shouldBe (AccessRootHash + selectField + castOp + GTConstCost)
-    cost(s"{ $tree.keyLength > 0 }") shouldBe (AccessRootHash + selectField + GTConstCost)
-    cost(s"{ $tree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
-    cost(s"{ $tree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
-    cost(s"{ $tree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
-    cost(s"{ $tree.updateDigest($tree.digest) == $tree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonCost)
-    cost(s"{ $tree.updateOperations(1.toByte) == $tree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonCost + constCost)
+    val rootTree = "LastBlockUtxoRootHash"
+    cost(s"{ $rootTree.digest.size > 0 }") shouldBe (AccessRootHash + selectField + LengthGTConstCost)
+    cost(s"{ $rootTree.enabledOperations > 0 }") shouldBe (AccessRootHash + selectField + castOp + GTConstCost)
+    cost(s"{ $rootTree.keyLength > 0 }") shouldBe (AccessRootHash + selectField + GTConstCost)
+    cost(s"{ $rootTree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $rootTree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $rootTree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
+    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonCost)
+    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonCost + constCost)
+
+    val AccessTree = accessBox + RegisterAccess
+    val selfTree = "SELF.R6[AvlTree].get"
+    val sizeOfArgs = Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize)
+    val containsCost = perKbCostOf(sizeOfArgs, avlTreeOp)
+    
+    cost(s"{ $selfTree.contains(key1, lookupProof) }") shouldBe (AccessTree + containsCost + constCost)
+    cost(s"{ $selfTree.get(key1, lookupProof).isDefined }") shouldBe (AccessTree + containsCost + constCost + selectField)
+    cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }") shouldBe (AccessTree + containsCost + constCost + LengthGTConstCost)
   }
 }

@@ -54,6 +54,8 @@ object CostTable {
 
   val hashPerKb = 100
 
+  val avlTreeOp = hashPerKb * 2
+
   val collAccess = 5
   val collLength  = 5 // TODO should be >= selectField
   val collByIndex = 5 // TODO should be >= selectField
@@ -238,12 +240,12 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", hashPerKb * 2),
-    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
-    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", hashPerKb * 2),
+    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", avlTreeOp),
+    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", avlTreeOp),
+    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
     ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
     ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
 
