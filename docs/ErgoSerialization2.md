@@ -181,7 +181,7 @@ SLong => Native (Long)
 ```scala
 x: SString
 SString => {length: Native (UInt);
-			bytes: encodeUTF8 >> Native (Bytes)}
+            bytes: encodeUTF8 >> Native (Bytes)}
 ```
 where ``length`` stands for the ``Array.length()`` return value for the array produced by ``encodeUTF8`` transformer which is defined as ``String.getBytes(StandardCharsets.UTF_8)`` for serialized string.
 
@@ -189,7 +189,7 @@ where ``length`` stands for the ``Array.length()`` return value for the array pr
 ```scala
 x: SBigInt
 SBigInt => {length: Native (UShort);
-			bytes: toByteArray >> Bytes}
+            bytes: toByteArray >> Bytes}
 ```
 where ``length`` stands for the ``Array.length()`` return value for the array produced by ``toByteArray`` transformer which is defined as ``BigInteger.toByteArray()`` for serialized object.
 
@@ -225,19 +225,19 @@ Here we refer to the ``Body`` serializers family defined below and the used coer
 ```scala
 x: SCollectionType [X]
 13.1 [X == SBoolean] | SCollectionType => {length: Native (UShort);
-										   bits: Native (Bits)}
+                                           bits: Native (Bits)}
 ```
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SBoolean] -> Array [Boolean]`` to get ``bits``.
 
 ```scala
 13.2 [X == SByte] | SCollectionType => {length: Native (UShort);
-										bytes: Native (Bytes)}
+                                        bytes: Native (Bytes)}
 ```
 Here ``length`` is the collection length defined by ``Array.length()`` for coerced object and the explicit coercion ``SCollectionType[SByte] -> Array [Byte]`` to get ``bytes``.
 
 ```scala
 13.3 [_] | SCollectionType => {length: Native (UShort);
-							   elems: Data*}
+                               elems: Data*}
 ```
 Here ``length`` is the collection length defined by ``Array.length()`` for the object produced by the general coercion ``SCollectionType[X] -> Array[X#WrappedType]``. The serialization for  ``elems`` is produced by mapping each element with correspondent ``Data`` family serializer.
 
