@@ -8,7 +8,6 @@ import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
 
 
 class ReversibleTxExampleSpecification extends SigmaTestingCommons {
@@ -27,7 +26,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     *  Consider the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet.
     *
-    *  Since its a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
+    *  Since this is a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
     *
     *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet by
     *  moving them to a secure address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
@@ -55,12 +54,12 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., she can reverse payments)
     *
     *  Once alicePubKey is compromised (i.e., a transaction spending from this key is found to be unauthorized), an "abort procedure"
-    *  is triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
+    *  is to be triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
     *
     *  A reversible address is created by Alice as follows:
     *
     *  1. Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
-    *  2. She then creates a script called depositScript which requires that all created boxes be protected by withdrawScript.
+    *  2. She then creates a script called depositScript which requires that all created boxes are to be protected by withdrawScript.
     *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */

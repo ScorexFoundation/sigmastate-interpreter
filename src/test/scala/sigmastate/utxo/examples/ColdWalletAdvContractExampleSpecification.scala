@@ -176,4 +176,5 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     verifier.verify(env, script, firstWithdrawContext2Key, proofAliceBobWithdraw, fakeMessage).get._1 shouldBe true
 
   }
+
 }
