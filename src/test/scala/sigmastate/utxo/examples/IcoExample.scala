@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform.dsl.TestContractSpec
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -24,8 +24,13 @@ class IcoExample extends SigmaTestingCommons {
     * Simplest ICO example
     */
   property("simple ico example - fundraising stage only") {
+    val miningRewardsDelay = 720
+    val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
+    val feeBytes = feeProp.bytes
+
     val fundingEnv = Map(
-      ScriptNameProp -> "fundingScriptEnv"
+      ScriptNameProp -> "fundingScriptEnv",
+      "feeBytes" -> feeBytes
     )
 
     val fundingScript = compile(fundingEnv,
@@ -49,7 +54,12 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val properTreeModification = modifiedTree == expectedTree
         |
-        |  selfIndexIsZero && properTreeModification
+        |  val outputsCount = OUTPUTS.size == 2
+        |  val feeOutputCorrect = (OUTPUTS(1).value <= 1) && (OUTPUTS(1).propositionBytes == feeBytes)
+        |
+        |  val outputsCorrect = outputsCount && feeOutputCorrect
+        |
+        |  selfIndexIsZero && outputsCorrect && properTreeModification
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
 
@@ -80,8 +90,9 @@ class IcoExample extends SigmaTestingCommons {
 
     val projectBoxAfter = ErgoBox(30, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
+    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
-    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter))
+    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, feeBox))
 
     val fundingContext = ErgoLikeContext(
       currentHeight = 1000,
