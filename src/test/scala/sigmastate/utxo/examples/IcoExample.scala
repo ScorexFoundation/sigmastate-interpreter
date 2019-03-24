@@ -154,4 +154,48 @@ class IcoExample extends SigmaTestingCommons {
 
     projectProver.prove(fixingEnv, fixingProp, fundingContext, fakeMessage).get
   }
+
+  property("simple ico example - withdrawal stage") {
+
+    val withdrawalEnv = Map(
+      ScriptNameProp -> "withdrawalScriptEnv"
+    )
+
+    val withdrawalScript = compile(withdrawalEnv,
+      """{
+        |
+        |  val selfIndexIsZero = INPUTS(0).id == SELF.id
+        |
+        |  val removeProof = getVar[Coll[Byte]](1).get
+        |  val lookupProof = getVar[Coll[Byte]](2).get
+        |
+        |  val toLookup: Coll[(Coll[Byte], Coll[Byte])] = OUTPUTS.slice(1, OUTPUTS.size - 1).map({ (b: Box) =>
+        |     val pk = b.propositionBytes
+        |     val value = longToByteArray(b.value)
+        |     (pk, value)
+        |  })
+        |
+        |  val withdrawValues = toLookup.map({(t: (Coll[Byte], Coll[Byte])) => t._2 })
+        |
+        |  val toRemove = toLookup.map({(t: (Coll[Byte], Coll[Byte])) => t._1 })
+        |
+        |  val initialTree = SELF.R5[AvlTree].get
+        |
+        |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => o.get })
+        |  val zipped = removedValues.zip(withdrawValues)
+        |
+        |  val valuesCorrect = zipped.forall({(t: (Coll[Byte], Coll[Byte])) => t._1 == t._2})
+        |
+        |  val modifiedTree = initialTree.remove(toRemove, removeProof).get
+        |
+        |  val expectedTree = OUTPUTS(0).R5[AvlTree].get
+        |
+        |  val properTreeModification = modifiedTree == expectedTree
+        |
+        |  properTreeModification && valuesCorrect
+        |
+        |}""".stripMargin
+    ).asBoolValue.toSigmaProp
+  }
+
 }
