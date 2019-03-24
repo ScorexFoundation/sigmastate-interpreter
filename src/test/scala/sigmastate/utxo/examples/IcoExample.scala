@@ -30,6 +30,9 @@ class IcoExample extends SigmaTestingCommons {
 
     val fundingScript = compile(fundingEnv,
       """{
+        |
+        |  val selfIndexIsZero = INPUTS(0).id == SELF.id
+        |
         |  val proof = getVar[Coll[Byte]](1).get
         |
         |  val inputsCount = INPUTS.size
@@ -44,8 +47,9 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val expectedTree = OUTPUTS(0).R5[AvlTree].get
         |
-        |  modifiedTree == expectedTree
+        |  val properTreeModification = modifiedTree == expectedTree
         |
+        |  selfIndexIsZero && properTreeModification
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
 
