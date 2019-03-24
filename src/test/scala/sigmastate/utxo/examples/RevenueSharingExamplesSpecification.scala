@@ -70,7 +70,8 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |      val nextSpenders = out.R4[Coll[(SigmaProp, Int)]].get
       |
       |      val validNextSpender = {(s:SigmaProp, i:Int) =>
-      |        nextSpenders.exists({s1:(SigmaProp, Int) =>
+      |        nextSpenders.exists({s1:(SigmaProp, Int) => // This line gives error
+      |        // nextSpenders.exists({(s1:SigmaProp, i1:Int) => // also gives error
       |          s1._1 == s && s1._2 == i
       |        })
       |      }
