@@ -221,7 +221,7 @@ class EvalSizeBox(
     val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
     val regSize = foundSize match {
       case Some(varSize: SizeAnyValue) =>
-        assert(varSize.tVal == tT, s"Unexpected register type found ${varSize.tVal}: expected $tT")
+        assert(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
         val regSize = varSize.valueSize.asInstanceOf[Size[T]]
         regSize
       case _ =>

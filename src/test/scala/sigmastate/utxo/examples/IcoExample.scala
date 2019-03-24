@@ -8,7 +8,7 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SByte}
+import sigmastate.{AvlTreeData, AvlTreeFlags, SByte, Values}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
@@ -32,9 +32,9 @@ class IcoExample extends SigmaTestingCommons {
       """{
         |  val proof = getVar[Coll[Byte]](1).get
         |
-        |  // val funders: Coll[Box] = INPUTS.filter({(b: Box) => b.R5[Int].isEmpty})
+        |  val inputsCount = INPUTS.size
         |
-        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.map({ (b: Box) =>
+        |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
         |     val pk = b.R4[Coll[Byte]].get
         |     val value = longToByteArray(b.value)
         |     (pk, value)
@@ -54,11 +54,18 @@ class IcoExample extends SigmaTestingCommons {
     val initTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
     val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(16)(0: Byte) ++ Array.fill(16)(1: Byte)), R5 -> AvlTreeConstant(initTreeData)))
+      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
-    val inputBoxes = IndexedSeq(projectBoxBefore)
+    val funderBoxes = Seq(
+      ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
+        Map(R4 -> ByteArrayConstant(Array.fill(16)(0: Byte) ++ Array.fill(16)(1: Byte)))),
+      ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
+        Map(R4 -> ByteArrayConstant(Array.fill(24)(0: Byte) ++ Array.fill(8)(1: Byte))))
+    )
 
-    inputBoxes.foreach { b =>
+    val inputBoxes = IndexedSeq(projectBoxBefore) ++ funderBoxes
+
+    inputBoxes.tail.foreach { b =>
       val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value
       val v = Longs.toByteArray(b.value)
       avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
@@ -67,8 +74,8 @@ class IcoExample extends SigmaTestingCommons {
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val projectBoxAfter = ErgoBox(10, fundingScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(32)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
+    val projectBoxAfter = ErgoBox(30, fundingScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
 
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter))
 
