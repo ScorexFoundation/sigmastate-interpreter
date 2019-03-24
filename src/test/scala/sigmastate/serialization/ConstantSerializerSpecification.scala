@@ -4,26 +4,32 @@ import java.math.BigInteger
 
 import org.ergoplatform._
 import org.scalacheck.Arbitrary._
+import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.{LongConstant, FalseLeaf, Constant, SValue, TrueLeaf, BigIntConstant, GroupGenerator, ByteArrayConstant}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate._
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.Values._
+import sigmastate.eval.Evaluation
 import special.sigma.AvlTree
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   private def testCollection[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tT = Evaluation.stypeToRType(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
     forAll { xs: Array[T#WrappedType] =>
-      roundTripTest(Constant[SCollection[T]](xs, SCollection(tpe)))
-      roundTripTest(Constant[SCollection[STuple]](xs.map(x => Array[Any](x, x)), SCollection(STuple(tpe, tpe))))
-      roundTripTest(Constant[SCollection[SCollection[T]]](xs.map(x => Array[T#WrappedType](x, x)), SCollection(SCollection(tpe))))
+      implicit val tAny = RType.AnyType
+      roundTripTest(Constant[SCollection[T]](xs.toColl, SCollection(tpe)))
+      roundTripTest(Constant[SCollection[STuple]](xs.toColl.map(x => Colls.fromItems[Any](x, x)), SCollection(STuple(tpe, tpe))))
+      roundTripTest(Constant[SCollection[SCollection[T]]](xs.toColl.map(x => Colls.fromItems(x, x)), SCollection(SCollection(tpe))))
       roundTripTest(Constant[SCollection[STuple]](
-        xs.map { x =>
-          val arr = Array[T#WrappedType](x, x)
-          Array[Any](arr, arr)
+        xs.toColl.map { x =>
+          val arr = Colls.fromItems(x, x)
+          Colls.fromItems(arr, arr)
         },
         SCollection(STuple(SCollection(tpe), SCollection(tpe)))
       ))
@@ -33,10 +39,11 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tAny = RType.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
-      roundTripTest(Constant[STuple](Array[Any](x, y), STuple(tpe, tpe)))
-      roundTripTest(Constant[STuple](Array[Any](x, y, Array[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
+      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y), STuple(tpe, tpe)))
+      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, Colls.fromItems[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
     }
   }
 
@@ -50,7 +57,7 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { x: SigmaBoolean => roundTripTest(Constant[SSigmaProp.type](x, SSigmaProp)) }
     forAll { x: ErgoBox => roundTripTest(Constant[SBox.type](x, SBox)) }
     forAll { x: AvlTree => roundTripTest(Constant[SAvlTree.type](x, SAvlTree)) }
-    forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x, SByteArray)) }
+    forAll { x: Array[Byte] => roundTripTest(Constant[SByteArray](x.toColl, SByteArray)) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }
   }

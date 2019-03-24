@@ -231,7 +231,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
                EQ(
                  Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
                  ByteArrayConstant(scriptHash))),
-             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => new Pay2SHAddress(scriptHash)
+             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => new Pay2SHAddress(scriptHash.toArray)
       case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case other =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: ${proposition}")

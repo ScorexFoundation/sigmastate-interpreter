@@ -10,6 +10,7 @@ import scorex.util.Extensions._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.collection.Coll
 import special.sigma.AvlTree
 
 import scala.collection.mutable
@@ -46,11 +47,11 @@ object DataSerializer {
       w.putUShort(arr.length)
       tColl.elemType match {
         case SBoolean =>
-          w.putBits(arr.asInstanceOf[Array[Boolean]])
+          w.putBits(arr.asInstanceOf[Coll[Boolean]].toArray)
         case SByte =>
-          w.putBytes(arr.asInstanceOf[Array[Byte]])
+          w.putBytes(arr.asInstanceOf[Coll[Byte]].toArray)
         case _ =>
-          arr.foreach(x => serialize(x, tColl.elemType, w))
+          arr.toArray.foreach(x => serialize(x, tColl.elemType, w))
       }
 
     case t: STuple =>
@@ -82,11 +83,11 @@ object DataSerializer {
     case SBigInt =>
       val size: Short = r.getUShort().toShort
       val valueBytes = r.getBytes(size)
-      new BigInteger(valueBytes)
+      SigmaDsl.BigInt(new BigInteger(valueBytes))
     case SGroupElement =>
-      GroupElementSerializer.parse(r)
+      SigmaDsl.GroupElement(GroupElementSerializer.parse(r))
     case SSigmaProp =>
-      SigmaBoolean.serializer.parse(r)
+      SigmaDsl.SigmaProp(SigmaBoolean.serializer.parse(r))
     case SBox =>
       ErgoBox.sigmaSerializer.parse(r)
     case SAvlTree =>
@@ -94,26 +95,29 @@ object DataSerializer {
     case tColl: SCollectionType[a] =>
       val len = r.getUShort()
       if (tColl.elemType == SByte)
-        r.getBytes(len)
+        Colls.fromArray(r.getBytes(len))
       else
         deserializeArray(len, tColl.elemType, r)
     case tuple: STuple =>
-      val arr =  tuple.items.map { t =>
+      val arr = tuple.items.map { t =>
         deserialize(t, r)
       }.toArray[Any]
       arr
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: SigmaByteReader): Array[T#WrappedType] =
+  def deserializeArray[T <: SType](len: Int, tpe: T, r: SigmaByteReader): Coll[T#WrappedType] =
     tpe match {
       case SBoolean =>
-        r.getBits(len).asInstanceOf[Array[T#WrappedType]]
+        Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
+      case SByte =>
+        Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
         val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
         for (i <- 0 until len) {
           b += deserialize(tpe, r)
         }
-        b.result()
+        implicit val tItem = Evaluation.stypeToRType(tpe)
+        Colls.fromArray(b.result())
     }
 }

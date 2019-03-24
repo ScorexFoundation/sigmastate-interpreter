@@ -13,6 +13,7 @@ import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments, InvalidTypeArguments}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.eval._
 
 class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with LangTests {
   import StdSigmaBuilder._
@@ -46,7 +47,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     bind(env, "x-y") shouldBe Minus(10, 11)
     bind(env, "x+y") shouldBe plus(10, 11)
     bind(env, "c1 && c2") shouldBe MethodCallLike(TrueLeaf, "&&", IndexedSeq(FalseLeaf))
-    bind(env, "arr1") shouldBe ByteArrayConstant(Array(1, 2))
+    bind(env, "arr1") shouldBe ByteArrayConstant(Array[Byte](1, 2))
     bind(env, "HEIGHT - 1") shouldBe mkMinus(Height, 1)
     bind(env, "HEIGHT + 1") shouldBe plus(Height, 1)
     bind(env, "INPUTS.size > 1") shouldBe GT(Select(Inputs, "size").asIntValue, 1)
@@ -60,7 +61,7 @@ class SigmaBinderTest extends PropSpec with PropertyChecks with Matchers with La
     // todo should be g1.exp(n1)
     //  ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
 //    bind(env, "g1 ^ n1") shouldBe Exponentiate(g1, n1)
-    bind(env, "g1 * g2") shouldBe MethodCallLike(ecp1, "*", IndexedSeq(ecp2))
+    bind(env, "g1 * g2") shouldBe MethodCallLike(SigmaDsl.GroupElement(ecp1), "*", IndexedSeq(ecp2))
   }
 
   property("predefined functions") {

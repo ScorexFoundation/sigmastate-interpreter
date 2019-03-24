@@ -129,8 +129,8 @@ class CompilerItTest extends BaseCtxTests
     Case(env, "bigIntArray_Map",
       "bigIntArr1.map { (i: BigInt) => i + n1 }", ergoCtx,
       calc = { ctx =>
-        val vals = liftConst(Colls.fromArray(bigIntegerArr1.map(dslValue.BigInt(_))))
-        vals.map(fun(n => n.add(liftConst(dslValue.BigInt(n1)))))
+        val vals = liftConst(Colls.fromArray(bigIntegerArr1))
+        vals.map(fun(n => n.add(liftConst(n1))))
       },
       cost = null,
 //      {_ =>

@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Lazy, MutableLazy, SigmaLibrary, Nullable, RType}
+import scalan.{Nullable, MutableLazy, Lazy, RType, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -29,6 +29,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import sigmastate.eval.Evaluation.rtypeToSType
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
 import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
@@ -1060,6 +1061,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   @inline def SigmaDsl = sigmaDslBuilderValue
   @inline def Colls = sigmaDslBuilderValue.Colls
+  
+  protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = SigmaDsl.toECPoint(g).asInstanceOf[EcPointType]
 
   def constantTypeSize[T](implicit eT: Elem[T]): RSize[T] = RCSizePrim(typeSize(eT), eT)
 

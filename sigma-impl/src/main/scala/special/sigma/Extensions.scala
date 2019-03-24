@@ -23,7 +23,7 @@ object Extensions {
     s"ECPoint($rawX,$rawY,...)"
   }
 
-  implicit class GroupElementOps(source: GroupElement) {
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
     def showToString: String = showECPoint(source.value)
   }
 

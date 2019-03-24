@@ -11,7 +11,7 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}
 import scalan.{TestUtils, TestContexts, Nullable, RType}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
 import sigma.types.{PrimViewType, IsPrimView, View}
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
@@ -23,6 +23,8 @@ import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import special.sigma._
 import spire.util.Opt
+import sigmastate.eval._
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -39,7 +41,8 @@ trait SigmaTestingCommons extends PropSpec
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
 
-  implicit def grElemConvert(leafConstant: GroupElementConstant): CryptoConstants.EcPointType = leafConstant.value
+  implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
+    SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 

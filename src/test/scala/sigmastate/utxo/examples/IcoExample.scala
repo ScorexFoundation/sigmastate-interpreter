@@ -60,7 +60,7 @@ class IcoExample extends SigmaTestingCommons {
     val inputBoxes = IndexedSeq(projectBoxBefore)
 
     inputBoxes.foreach { b =>
-      val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value
+      val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value.toArray
       val v = Longs.toByteArray(b.value)
       avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
     }

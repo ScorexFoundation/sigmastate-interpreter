@@ -13,6 +13,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestI
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
+import sigmastate.eval._
 
 class DHTupleExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext

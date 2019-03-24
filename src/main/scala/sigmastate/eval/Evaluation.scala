@@ -192,10 +192,10 @@ trait Evaluation extends RuntimeCosting { IR =>
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: SGroupElement => p.showToString
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${showECPoint(g)})"
+      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${g.showToString})"
       case ProveDHTuple(
               GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${showECPoint(g)},${showECPoint(h)},${showECPoint(u)},${showECPoint(v)})"
+        s"ProveDHT(${g.showToString},${h.showToString},${u.showToString},${v.showToString})"
       case _ => x.toString
     }
     sym match {
@@ -519,13 +519,13 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)
-              out(sigmaDslBuilderValue.BigInt(SBigInt.downcast(from.asInstanceOf[AnyVal])))
+              out(SBigInt.downcast(from.asInstanceOf[AnyVal]))
             else
               out(tpe.downcast(from.asInstanceOf[AnyVal]))
           case Upcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)
-              out(sigmaDslBuilderValue.BigInt(SBigInt.upcast(from.asInstanceOf[AnyVal])))
+              out(SBigInt.upcast(from.asInstanceOf[AnyVal]))
             else
               out(tpe.upcast(from.asInstanceOf[AnyVal]))
 

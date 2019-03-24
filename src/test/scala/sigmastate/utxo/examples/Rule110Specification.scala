@@ -52,8 +52,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue.toSigmaProp
 
-    val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
-    val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
+    val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
+    val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.idBytes)), IndexedSeq(output))
 
     val ctx = ErgoLikeContext(

@@ -80,7 +80,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
         costOf(c) + costOf(utxo.SizeOf(c))
       })
 
-    val n1Sym = liftConst(dslValue.BigInt(n1))
+    val n1Sym = liftConst(n1)
     checkInEnv(env, "bigint", "n1", {_ => n1Sym }, { _ => constCost[BigInt] })
 
     val g1Sym = liftConst(g1)
@@ -96,7 +96,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     import builder._
     check("one+one", "1 + 1", _ => toRep(1) + 1,
       {_ => val c1 = IntConstant(1); costOf(c1) + costOf(c1) + costOf(Plus(c1, c1)) })
-    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(dslValue.BigInt(big)).subtract(liftConst(dslValue.BigInt(n1)))})
+    checkInEnv(env, "one+one2", "big - n1", {_ => liftConst(dslValue.BigInt(big)).subtract(liftConst(n1))})
     check("one_gt_one", "1 > 1", {_ => toRep(1) > 1},
       { _ =>
         val c1 = IntConstant(1);

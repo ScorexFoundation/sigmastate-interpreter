@@ -15,6 +15,7 @@ import sigmastate.SCollection._
 import sigmastate.interpreter.CryptoConstants.{EcPointType, hashLength}
 import sigmastate.serialization.OpCodes
 import special.collection.Coll
+import special.sigma._
 import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
@@ -32,7 +33,7 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
 //import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
-import sigmastate.eval.SigmaDsl
+import sigmastate.eval._
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -526,10 +527,10 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 
 /** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
-  override type WrappedType = BigInteger
+  override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
   override def typeId = typeCode
-  override def mkConstant(v: BigInteger): Value[SBigInt.type] = BigIntConstant(v)
+  override def mkConstant(v: BigInt): Value[SBigInt.type] = BigIntConstant(v)
 
   /** Type of Relation binary op like GE, LE, etc. */
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
@@ -543,21 +544,27 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     * In sigma we limit the size by the fixed constant and thus BigInt is a constant size type. */
   override def isConstantSize = true
 
-  val Max: BigInteger = CryptoConstants.dlogGroup.order //todo: we use mod q, maybe mod p instead?
+  val Max: BigInt = SigmaDsl.BigInt(CryptoConstants.dlogGroup.order) //TODO kushti: we use mod q, maybe mod p instead?
 
-  override def upcast(v: AnyVal): BigInteger = v match {
-    case x: Byte => BigInteger.valueOf(x.toLong)
-    case x: Short => BigInteger.valueOf(x.toLong)
-    case x: Int => BigInteger.valueOf(x.toLong)
-    case x: Long => BigInteger.valueOf(x)
-    case _ => sys.error(s"Cannot upcast value $v to the type $this")
+  override def upcast(v: AnyVal): BigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot upcast value $v to the type $this")
+    }
+    SigmaDsl.BigInt(bi)
   }
-  override def downcast(v: AnyVal): BigInteger = v match {
-    case x: Byte => BigInteger.valueOf(x.toLong)
-    case x: Short => BigInteger.valueOf(x.toLong)
-    case x: Int => BigInteger.valueOf(x.toLong)
-    case x: Long => BigInteger.valueOf(x)
-    case _ => sys.error(s"Cannot downcast value $v to the type $this")
+  override def downcast(v: AnyVal): BigInt = {
+    val bi = v match {
+      case x: Byte => BigInteger.valueOf(x.toLong)
+      case x: Short => BigInteger.valueOf(x.toLong)
+      case x: Int => BigInteger.valueOf(x.toLong)
+      case x: Long => BigInteger.valueOf(x)
+      case _ => sys.error(s"Cannot downcast value $v to the type $this")
+    }
+    SigmaDsl.BigInt(bi)
   }
 
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1)
@@ -585,7 +592,7 @@ case object SString extends SProduct with SMonoType {
 
 /** NOTE: this descriptor both type and type companion */
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable with SMonoType {
-  override type WrappedType = EcPointType
+  override type WrappedType = GroupElement
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
@@ -603,7 +610,7 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     }),
     SMethod(this, "negate", SFunc(this, this), 6, MethodCallIrBuilder)
   )
-  override def mkConstant(v: EcPointType): Value[SGroupElement.type] = GroupElementConstant(v)
+  override def mkConstant(v: GroupElement): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
   override def isConstantSize = true
   def ancestors = Nil
@@ -611,11 +618,11 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
 
 case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical with SMonoType {
   import SType._
-  override type WrappedType = SigmaBoolean
+  override type WrappedType = SigmaProp
   override val typeCode: TypeCode = 8: Byte
   override def typeId = typeCode
-  override def mkConstant(v: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = v match {
+  override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
+  override def dataSize(v: SType#WrappedType): Long = SigmaDsl.toSigmaBoolean(v.asInstanceOf[SigmaProp]) match {
     case ProveDlog(g) =>
       SGroupElement.dataSize(g.asWrappedType) + 1
     case ProveDHTuple(gv, hv, uv, vv) =>
@@ -748,7 +755,7 @@ object SOption extends STypeCompanion {
 
 trait SCollection[T <: SType] extends SProduct with SGenericType {
   def elemType: T
-  override type WrappedType = Array[T#WrappedType]
+  override type WrappedType = Coll[T#WrappedType]
   def ancestors = Nil
   override def isConstantSize = false
 }
@@ -756,19 +763,19 @@ trait SCollection[T <: SType] extends SProduct with SGenericType {
 case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
   override val typeCode: TypeCode = SCollectionType.CollectionTypeCode
 
-  override def mkConstant(v: Array[T#WrappedType]): Value[this.type] =
+  override def mkConstant(v: Coll[T#WrappedType]): Value[this.type] =
     CollectionConstant(v, elemType).asValue[this.type]
 
   override def dataSize(v: SType#WrappedType): Long = {
-    val arr = (v match { case col: Coll[_] => col.toArray case _ => v}).asInstanceOf[Array[T#WrappedType]]
+    val coll = v.asInstanceOf[Coll[T#WrappedType]]
     val header = 2
     val res =
-      if (arr.isEmpty)
+      if (coll.isEmpty)
         header
       else if (elemType.isConstantSize)
-        header + elemType.dataSize(arr(0)) * arr.length
+        header + elemType.dataSize(coll(0)) * coll.length
       else
-        arr.map(x => elemType.dataSize(x)).sum
+        coll.map(x => elemType.dataSize(x)).sum(SigmaDsl.Monoids.longPlusMonoid)
     res
   }
   def typeParams: Seq[STypeParam] = SCollectionType.typeParams
@@ -993,7 +1000,7 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   }
 
   /** Construct tree node Constant for a given data object. */
-  override def mkConstant(v: Array[Any]): Value[this.type] =
+  override def mkConstant(v: Coll[Any]): Value[this.type] =
     Constant[STuple](v, this).asValue[this.type]
 
   val typeParams = Seq()

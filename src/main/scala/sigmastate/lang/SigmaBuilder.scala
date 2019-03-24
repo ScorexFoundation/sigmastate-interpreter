@@ -20,6 +20,7 @@ import scalan.Nullable
 import sigmastate.SOption.SIntOption
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
@@ -195,6 +196,8 @@ trait SigmaBuilder {
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
+  def mkCollectionConstant[T <: SType](values: Coll[T#WrappedType],
+      elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type]
 
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
@@ -225,18 +228,18 @@ trait SigmaBuilder {
     case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
     case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
     case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
-    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr, SBigInt))
+    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
     case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
     case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
     case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
     case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
     case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
 
-    case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
-    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](CostingSigmaDslBuilder.toBigInteger(n), SBigInt))
+    case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
+    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
 
-    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
-    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](CostingSigmaDslBuilder.toECPoint(ge).asInstanceOf[EcPointType], SGroupElement))
+    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](SigmaDsl.GroupElement(v), SGroupElement))
+    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
 
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
@@ -245,12 +248,13 @@ trait SigmaBuilder {
 //    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
     case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
 
-    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
-    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))
+    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](SigmaDsl.SigmaProp(sb), SSigmaProp))
+    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
 
     case coll: Coll[a] =>
-      implicit val tA = coll.tItem
-      Nullable(coll.toTreeData)
+      val tpe = SCollection(Evaluation.rtypeToSType(coll.tItem))
+      Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpe))
+
     case v: SValue => Nullable(v)
     case _ => Nullable.None
   }
@@ -575,9 +579,17 @@ class StdSigmaBuilder extends SigmaBuilder {
     ConstantPlaceholder[T](id, tpe).withSrcCtx(currentSrcCtx.value)
 
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
-                                                elementType: T): Constant[SCollection[T]] =
+                                                elementType: T): Constant[SCollection[T]] = {
+    implicit val tElement = Evaluation.stypeToRType(elementType)
+    ConstantNode[SCollection[T]](Colls.fromArray(values), SCollection(elementType))
+        .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+  }
+
+  override def mkCollectionConstant[T <: SType](values: Coll[T#WrappedType],
+                                                elementType: T): Constant[SCollection[T]] = {
     ConstantNode[SCollection[T]](values, SCollection(elementType))
-      .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+        .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+  }
 
   override def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type] =
     StringConstant(left.value + right.value).withSrcCtx(currentSrcCtx.value)

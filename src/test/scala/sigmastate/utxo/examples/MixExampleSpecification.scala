@@ -15,6 +15,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
+import sigmastate.eval._
 
 class MixExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext

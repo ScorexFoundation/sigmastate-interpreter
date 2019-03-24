@@ -54,7 +54,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   lazy val dsl = sigmaDslBuilder
   lazy val dslValue = sigmaDslBuilderValue
   lazy val bigSym = liftConst(dslValue.BigInt(big))
-  lazy val n1Sym = liftConst(dslValue.BigInt(n1))
+  lazy val n1Sym = liftConst(n1)
 
   val timeout = 100
   val minToRaise = 1000L

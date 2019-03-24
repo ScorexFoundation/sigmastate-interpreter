@@ -3,10 +3,13 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
+import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
@@ -259,7 +262,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
-    val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
+    implicit val eAny = RType.AnyType
+    val data = Colls.fromItems(TupleColl(Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SByteArray, SLong))
     val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
