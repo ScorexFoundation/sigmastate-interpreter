@@ -73,9 +73,9 @@ class IcoExample extends SigmaTestingCommons {
     val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
-    val funderBoxesCount = 20000
+    val funderBoxCount = 2000
 
-    val funderBoxes = (1 to funderBoxesCount).map {_ =>
+    val funderBoxes = (1 to funderBoxCount).map {_ =>
       ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
         Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
     }
@@ -91,7 +91,7 @@ class IcoExample extends SigmaTestingCommons {
     val proof = avlProver.generateProof()
     val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val projectBoxAfter = ErgoBox(30, fundingScript, 0, Seq(),
+    val projectBoxAfter = ErgoBox(funderBoxCount * 10 - 1, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
     val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
