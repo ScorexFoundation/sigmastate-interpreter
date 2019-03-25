@@ -1335,7 +1335,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override val coster = Some(Coster(_.PreHeaderCoster))
 }
 
-/** This type is intgroduced to unify hangling of global and non-global (i.e. methods) operations.
+/** This type is introduced to unify handling of global and non-global (i.e. methods) operations.
   * It unifies implementation of global operation with implementation of methods and avoids code
   * duplication (following DRY principle https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
   * The WrappedType is `special.sigma.SigmaDslBuilder`, which is an interface implemented by
@@ -1344,7 +1344,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   * The Constant(...) tree node of this type are not allowed, as well as using it in register and
   * context variables (aka ContextExtension)
   *
-  * When new methods are added to this type via soft-forkability, they will be serialized as part
+  * When new methods are added to this type via a soft-fork, they will be serialized as part
   * of ErgoTree using MethodCallSerializer, where SGlobal.typeCode will be used.
   *
   * @see sigmastate.lang.SigmaPredef
