@@ -195,7 +195,10 @@ object Values {
       case _: GroupElement => tpe.isGroupElement
       case _: SigmaProp => tpe.isSigmaProp
       case _: AvlTree => tpe.isAvlTree
-      case _: ErgoBox => tpe.isBox
+      case _: Box => tpe.isBox
+      case _: PreHeader => tpe == SPreHeader
+      case _: Header => tpe == SHeader
+      case _: Context => tpe == SContext
       case _: Function1[_,_] => tpe.isFunc
       case _ => false
     }
@@ -310,9 +313,9 @@ object Values {
   }
 
   object BoxConstant {
-    def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
-    def unapply(v: SValue): Option[ErgoBox] = v match {
-      case Constant(value: ErgoBox, SBox) => Some(value)
+    def apply(value: Box): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
+    def unapply(v: SValue): Option[Box] = v match {
+      case Constant(value: Box, SBox) => Some(value)
       case _ => None
     }
   }

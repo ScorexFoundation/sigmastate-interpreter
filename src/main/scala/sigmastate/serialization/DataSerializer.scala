@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
+import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
@@ -39,7 +40,8 @@ object DataSerializer {
       val p = v.asInstanceOf[SigmaProp]
       SigmaBoolean.serializer.serialize(p, w)
     case SBox =>
-      ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
+      val b = v.asInstanceOf[Box]
+      ErgoBox.sigmaSerializer.serialize(b, w)
     case SAvlTree =>
       AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTree], w)
     case tColl: SCollectionType[a] =>
@@ -89,7 +91,7 @@ object DataSerializer {
     case SSigmaProp =>
       SigmaDsl.SigmaProp(SigmaBoolean.serializer.parse(r))
     case SBox =>
-      ErgoBox.sigmaSerializer.parse(r)
+      SigmaDsl.Box(ErgoBox.sigmaSerializer.parse(r))
     case SAvlTree =>
       SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
     case tColl: SCollectionType[a] =>
@@ -102,7 +104,8 @@ object DataSerializer {
       val arr = tuple.items.map { t =>
         deserialize(t, r)
       }.toArray[Any]
-      arr
+      val coll = Colls.fromArray(arr)(RType.AnyType)
+      Evaluation.toDslTuple(coll, tuple)
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
@@ -113,11 +116,11 @@ object DataSerializer {
       case SByte =>
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
-        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
+        implicit val tItem = Evaluation.stypeToRType(tpe)
+        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
         for (i <- 0 until len) {
           b += deserialize(tpe, r)
         }
-        implicit val tItem = Evaluation.stypeToRType(tpe)
         Colls.fromArray(b.result())
     }
 }

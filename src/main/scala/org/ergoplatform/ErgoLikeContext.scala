@@ -163,9 +163,9 @@ object ErgoLikeContext {
   }
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
-    def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
+    def toTestBox(isCost: Boolean): Box = {
       if (ebox == null) return null
-      new CostingBox(IR, isCost, ebox)
+      new CostingBox(isCost, ebox)
     }
   }
 }

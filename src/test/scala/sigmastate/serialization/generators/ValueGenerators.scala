@@ -262,7 +262,7 @@ trait ValueGenerators extends TypeGenerators {
     creationHeight <- Gen.chooseNum(0, 100000)
   } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
 
-  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
+  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(false, v)) }
 
   val tokenIdGen: Gen[Digest32] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)

@@ -2,6 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoBox
 import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -27,4 +28,7 @@ package object eval {
 
   implicit def avlTreeDataToAvlTree(p: AvlTreeData): AvlTree = SigmaDsl.avlTree(p)
   implicit def avlTreeToAvlTreeData(p: AvlTree): AvlTreeData = SigmaDsl.toAvlTreeData(p)
+
+  implicit def ergoBoxToBox(p: ErgoBox): Box = SigmaDsl.Box(p)
+  implicit def boxToErgoBox(p: Box): ErgoBox = SigmaDsl.toErgoBox(p)
 }

@@ -313,7 +313,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
             val data = valueInCtx match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost))
               case opt @ Some(v) => opt
               case None => None
               case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
@@ -325,7 +325,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
             val data = valueInReg match {
               case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, false)(IR))
+                Some(Evaluation.toDslData(v, declaredTpe, false))
               case Some(v) =>
                 valueInReg
               case None => None
@@ -589,6 +589,7 @@ object Evaluation {
     case SLong => LongType
     case SString => StringType
     case SAny => AnyType
+    case SUnit => UnitType
     case SBigInt => BigIntRType
     case SBox => BoxRType
     case SContext => ContextRType
@@ -617,6 +618,7 @@ object Evaluation {
     case LongType => SLong
     case StringType => SString
     case AnyType => SAny
+    case UnitType => SUnit
 
     case BigIntegerRType => SBigInt
     case BigIntRType => SBigInt
@@ -729,7 +731,7 @@ object Evaluation {
     res.asInstanceOf[T]
   }
 
-  /** Convert SigmaDsl representation of tuple to ErgoTree representation. */
+  /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
     case t: Tuple2[_,_] => TupleColl(t._1, t._2)
     case a: Coll[Any]@unchecked if a.tItem == RType.AnyType => a
@@ -737,11 +739,16 @@ object Evaluation {
       sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }
 
+  /** Convert ErgoTree serializable representation of tuple to SigmaDsl representation. */
+  def toDslTuple(value: Coll[Any], tupleTpe: STuple): Any = tupleTpe match {
+    case t if t.items.length == 2 => (value(0), value(1))
+    case _ => value
+  }
+
   /** Generic converter from types used in ErgoTree values to types used in SigmaDsl. */
-  def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
-    val dsl = IR.sigmaDslBuilderValue
+  def toDslData(value: Any, tpe: SType, isCost: Boolean): Any = {
     (value, tpe) match {
-      case (c: Constant[_], tpe) => toDslData(c.value, c.tpe, isCost)
+      case (c: Constant[_], _) => toDslData(c.value, c.tpe, isCost)
       case (_, STuple(Seq(tpeA, tpeB))) =>
         value match {
           case tup: Tuple2[_,_] =>
@@ -759,7 +766,7 @@ object Evaluation {
         }
       case (arr: Coll[a], STuple(items)) =>
         val res = arr.toArray.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
-        dsl.Colls.fromArray(res)(RType.AnyType)
+        Colls.fromArray(res)(RType.AnyType)
       case (arr: Coll[a], SCollectionType(elemType)) =>
         implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
         elemRType.asInstanceOf[RType[_]] match {
@@ -770,10 +777,9 @@ object Evaluation {
             arr
         }
       case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-      case (n: BigInteger, SBigInt) =>
-        dsl.BigInt(n)
-      case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
-      case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
+      case (n: BigInteger, SBigInt) => SigmaDsl.BigInt(n)
+      case (p: ECPoint, SGroupElement) => SigmaDsl.GroupElement(p)
+      case (t: SigmaBoolean, SSigmaProp) => SigmaDsl.SigmaProp(t)
       case (t: AvlTreeData, SAvlTree) => CAvlTree(t)
       case (x, _) => x
     }

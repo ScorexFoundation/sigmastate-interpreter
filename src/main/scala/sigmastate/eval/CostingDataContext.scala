@@ -243,8 +243,7 @@ class EvalSizeBuilder extends CSizeBuilder {
   }
 }
 
-case class CostingBox(val IR: Evaluation,
-                      isCost: Boolean,
+case class CostingBox(isCost: Boolean,
                       val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
   val builder = new CostingSigmaDslBuilder()
 
@@ -253,7 +252,7 @@ case class CostingBox(val IR: Evaluation,
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
   lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
-  val registers: Coll[AnyValue] = regs(ebox, isCost)(IR)
+  val registers: Coll[AnyValue] = regs(ebox, isCost)
 
   override def wrappedValue: ErgoBox = ebox
 
@@ -324,7 +323,7 @@ object CostingBox {
 
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
-  def regs(ebox: ErgoBox, isCost: Boolean)(implicit IR: Evaluation): Coll[AnyValue] = {
+  def regs(ebox: ErgoBox, isCost: Boolean): Coll[AnyValue] = {
     val res = new Array[AnyValue](ErgoBox.maxRegisters)
 
     def checkNotYetDefined(id: Int, newValue: SValue) =
@@ -343,7 +342,7 @@ object CostingBox {
       val dslData = Evaluation.toDslData(v, v.tpe, isCost)
       res(regId) = toAnyValue(dslData.asWrappedType)(stypeToRType(v.tpe))
     }
-    IR.sigmaDslBuilderValue.Colls.fromArray(res)
+    Colls.fromArray(res)
   }
 
 }
@@ -523,6 +522,9 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   def avlTree(treeData: AvlTreeData): AvlTree = {
     CAvlTree(treeData)
   }
+
+  def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
+  def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
     props.map {

@@ -1103,18 +1103,13 @@ object STypeIdent {
 }
 
 case object SBox extends SProduct with SPredefType with SMonoType {
-  override type WrappedType = ErgoBox
+  override type WrappedType = Box
   override val typeCode: TypeCode = 99: Byte
   override def typeId = typeCode
-  override def mkConstant(v: ErgoBox): Value[SBox.type] = BoxConstant(v)
+  override def mkConstant(v: Box): Value[SBox.type] = BoxConstant(v)
   override def dataSize(v: SType#WrappedType): Long = {
     val box = v.asInstanceOf[this.WrappedType]
-    4 + // box.value
-        box.propositionBytes.length +
-        box.additionalTokens.length * (32 + 4) +
-        box.additionalRegisters.values.map(x => x.tpe.dataSize(x.value)).sum +
-        box.transactionId.length +
-        2 // box.index
+    Sized.sizeOf(box).dataSize
   }
   override def isConstantSize = false
   def ancestors = Nil
