@@ -13,6 +13,8 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestP
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
+import scala.util.Random
+
 class IcoExample extends SigmaTestingCommons {
   suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext()
@@ -55,9 +57,10 @@ class IcoExample extends SigmaTestingCommons {
         |  val properTreeModification = modifiedTree == expectedTree
         |
         |  val outputsCount = OUTPUTS.size == 2
+        |  val selfOutputCorrect = OUTPUTS(0).propositionBytes == SELF.propositionBytes
         |  val feeOutputCorrect = (OUTPUTS(1).value <= 1) && (OUTPUTS(1).propositionBytes == feeBytes)
         |
-        |  val outputsCorrect = outputsCount && feeOutputCorrect
+        |  val outputsCorrect = outputsCount && feeOutputCorrect && selfOutputCorrect
         |
         |  selfIndexIsZero && outputsCorrect && properTreeModification
         |}""".stripMargin
@@ -70,12 +73,12 @@ class IcoExample extends SigmaTestingCommons {
     val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
-    val funderBoxes = Seq(
+    val funderBoxesCount = 20000
+
+    val funderBoxes = (1 to funderBoxesCount).map {_ =>
       ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
-        Map(R4 -> ByteArrayConstant(Array.fill(16)(0: Byte) ++ Array.fill(16)(1: Byte)))),
-      ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
-        Map(R4 -> ByteArrayConstant(Array.fill(24)(0: Byte) ++ Array.fill(8)(1: Byte))))
-    )
+        Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
+    }
 
     val inputBoxes = IndexedSeq(projectBoxBefore) ++ funderBoxes
 
@@ -105,7 +108,8 @@ class IcoExample extends SigmaTestingCommons {
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    projectProver.prove(fundingEnv + (ScriptNameProp -> "fundingScriptEnv"), fundingScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
+    println("cost: " + res.cost)
   }
 
   property("simple ico example - fixing stage") {
@@ -156,7 +160,6 @@ class IcoExample extends SigmaTestingCommons {
   }
 
   property("simple ico example - withdrawal stage") {
-
     val withdrawalEnv = Map(
       ScriptNameProp -> "withdrawalScriptEnv"
     )
