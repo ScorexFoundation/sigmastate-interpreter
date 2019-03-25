@@ -125,7 +125,7 @@ class IcoExample extends SigmaTestingCommons {
         |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
         |  val treeIsClosed = closedTree.enabledOperations == 0
         |
-        |  sigmaProp(digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed)
+        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
         |}""".stripMargin
     ).asSigmaProp
 
@@ -161,7 +161,7 @@ class IcoExample extends SigmaTestingCommons {
       ScriptNameProp -> "withdrawalScriptEnv"
     )
 
-    val withdrawalScript = compile(withdrawalEnv,
+    val withdrawalScript = compiler.compile(withdrawalEnv,
       """{
         |
         |  val selfIndexIsZero = INPUTS(0).id == SELF.id
