@@ -148,15 +148,15 @@ object Values {
   trait Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
+    assert(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
-
     override val opCode: OpCode = ConstantCode
     override def opName: String = s"Const"
 
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
+    override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
+      case c: Constant[_] => tpe == c.tpe && Objects.deepEquals(value, c.value)
       case _ => false
-    }
+    }))
 
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
@@ -178,6 +178,26 @@ object Values {
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
       case _ => None
+    }
+
+    def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
+      case c: Coll[_] if c.tItem == RType.AnyType => tpe.isTuple
+      case c: Coll[_] => tpe.isCollection && Evaluation.rtypeToSType(c.tItem) == tpe.asCollection.elemType
+      case _: Option[_] => tpe.isOption
+      case _: Tuple2[_,_] => tpe.isTuple && tpe.asTuple.items.length == 2
+      case _: Boolean => tpe == SBoolean
+      case _: Byte => tpe == SByte
+      case _: Short => tpe == SShort
+      case _: Int => tpe == SInt
+      case _: Long => tpe == SLong
+      case _: BigInt => tpe == SBigInt
+      case _: String => tpe == SString
+      case _: GroupElement => tpe.isGroupElement
+      case _: SigmaProp => tpe.isSigmaProp
+      case _: AvlTree => tpe.isAvlTree
+      case _: ErgoBox => tpe.isBox
+      case _: Function1[_,_] => tpe.isFunc
+      case _ => false
     }
   }
 

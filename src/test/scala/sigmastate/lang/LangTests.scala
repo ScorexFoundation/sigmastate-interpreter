@@ -14,6 +14,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.sigma._
 import sigmastate.eval._
+import special.collection.Coll
 
 trait LangTests extends Matchers {
 
@@ -44,7 +45,7 @@ trait LangTests extends Matchers {
 
   protected val n1: BigInt = BigInt(10).underlying()
   protected val n2: BigInt = BigInt(20).underlying()
-  protected val bigIntegerArr1: Array[BigInt] = Array(n1, n2)
+  protected val bigIntegerArr1: Coll[BigInt] = Colls.fromItems(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(ecp1)
   protected val p2: SigmaBoolean = ProveDlog(ecp2)

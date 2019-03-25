@@ -10,7 +10,7 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
-import scala.util.Try
+import scala.util.{Try, Success}
 import sigmastate.SType._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.sigma.InvalidType
@@ -691,17 +691,17 @@ object Evaluation {
     case p: PrimitiveType[_] => p
     case w: WrapperType[_] =>
       w match {
-        case BigIntRType => BigIntegerRType
-        case GroupElementRType => ECPointRType
-        case SigmaPropRType => SigmaBooleanRType
+        case BigIntRType => BigIntRType
+        case GroupElementRType => GroupElementRType
+        case SigmaPropRType => SigmaPropRType
+        case AvlTreeRType => AvlTreeRType
         case BoxRType => ErgoBoxRType
-        case AvlTreeRType => AvlTreeDataRType
         case ContextRType => ErgoLikeContextRType
         case _ => sys.error(s"Unknown WrapperType: $w")
       }
-    case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
+    case p: ArrayType[_] => collRType(toErgoTreeType(p.tA))
     case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
-    case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
+    case p: CollType[_] => collRType(toErgoTreeType(p.tItem))
     case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
     case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tLeft), toErgoTreeType(p.tRight))
     case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
@@ -716,28 +716,28 @@ object Evaluation {
     * @param tRes should describe ErgoTree type (i.e. it can be obtained using toErgoTreeType method)*/
   def fromDslData[T](value: Any, tRes: RType[T]): T = {
     val res = (value, tRes) match {
-      case (w: WrapperOf[_], _) => w.wrappedValue
-      case (coll: Coll[a], tarr: ArrayType[a1]) =>
-        val tItem = tarr.tA
-        coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
+      case (w: CostingBox, _) => w.wrappedValue
+      case (coll: Coll[a], tarr: CollType[a1]) =>
+        val tItem = tarr.tItem
+        coll.map[a1](x => fromDslData(x, tItem))(tItem)
       case (tup: Tuple2[a,b], tTup: TupleType) =>
         val x = fromDslData(tup._1, tTup.items(0))
         val y = fromDslData(tup._2, tTup.items(1))
-        Array[Any](x, y)
+        TupleColl(x, y)
       case _ => value
     }
     res.asInstanceOf[T]
   }
 
   /** Convert SigmaDsl representation of tuple to ErgoTree representation. */
-  def fromDslTuple(value: Any, tupleTpe: STuple): Array[Any] = value match {
-    case t: Tuple2[_,_] => Array[Any](t._1, t._2)
-    case a: Array[Any] => a
+  def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
+    case t: Tuple2[_,_] => TupleColl(t._1, t._2)
+    case a: Coll[Any]@unchecked if a.tItem == RType.AnyType => a
     case _ =>
       sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }
 
-  /** Generic converter from types used in ErgoTree values to types used in ErgoDsl. */
+  /** Generic converter from types used in ErgoTree values to types used in SigmaDsl. */
   def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
     val dsl = IR.sigmaDslBuilderValue
     (value, tpe) match {
@@ -752,18 +752,22 @@ object Evaluation {
             val valA = toDslData(arr(0), tpeA, isCost)
             val valB = toDslData(arr(1), tpeB, isCost)
             (valA, valB)
+          case coll: Coll[Any]@unchecked if coll.tItem == RType.AnyType =>
+            val valA = toDslData(coll(0), tpeA, isCost)
+            val valB = toDslData(coll(1), tpeB, isCost)
+            (valA, valB)
         }
-      case (arr: Array[a], STuple(items)) =>
-        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
+      case (arr: Coll[a], STuple(items)) =>
+        val res = arr.toArray.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
         dsl.Colls.fromArray(res)(RType.AnyType)
-      case (arr: Array[a], SCollectionType(elemType)) =>
+      case (arr: Coll[a], SCollectionType(elemType)) =>
         implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
         elemRType.asInstanceOf[RType[_]] match {
           case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toDslData(x, elemType, isCost).asWrappedType).toArray(elemRType.classTag)
-            dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
+            val testArr = arr.map(x => toDslData(x, elemType, isCost).asWrappedType)
+            testArr
           case _ =>
-            dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
+            arr
         }
       case (b: ErgoBox, SBox) => b.toTestBox(isCost)
       case (n: BigInteger, SBigInt) =>

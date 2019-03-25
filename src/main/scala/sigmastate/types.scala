@@ -128,6 +128,7 @@ object SType {
     def isCollection: Boolean = tpe.isInstanceOf[SCollectionType[_]]
     def isOption: Boolean = tpe.isInstanceOf[SOption[_]]
     def isBox: Boolean = tpe.isInstanceOf[SBox.type]
+    def isGroupElement: Boolean = tpe.isInstanceOf[SGroupElement.type]
     def isSigmaProp: Boolean = tpe.isInstanceOf[SSigmaProp.type]
     def isAvlTree: Boolean = tpe.isInstanceOf[SAvlTree.type]
     def isFunc : Boolean = tpe.isInstanceOf[SFunc]
@@ -145,6 +146,7 @@ object SType {
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
     def asProduct: SProduct = tpe.asInstanceOf[SProduct]
+    def asTuple: STuple = tpe.asInstanceOf[STuple]
     def asOption[T <: SType]: SOption[T] = tpe.asInstanceOf[SOption[T]]
     def whenFunc[T](action: SFunc => Unit) = if(tpe.isInstanceOf[SFunc]) action(tpe.asFunc)
     def asCollection[T <: SType] = tpe.asInstanceOf[SCollection[T]]
@@ -1075,6 +1077,7 @@ object SFunc {
   val tR = STypeIdent("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
   def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
+  val identity = { x: Any => x }
 }
 
 

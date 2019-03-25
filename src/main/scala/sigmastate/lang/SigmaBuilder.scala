@@ -9,9 +9,9 @@ import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
+import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -26,7 +26,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma.{AvlTree, SigmaProp, GroupElement}
 import sigmastate.lang.SigmaTyper.STypeSubst
-import special.sigma.{GroupElement, SigmaProp}
+import special.sigma.{SigmaProp, GroupElement}
 
 import scala.util.DynamicVariable
 
@@ -245,18 +245,19 @@ trait SigmaBuilder {
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
 
-//    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
     case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
 
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](SigmaDsl.SigmaProp(sb), SSigmaProp))
     case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
 
     case coll: Coll[a] =>
-      val tpe = SCollection(Evaluation.rtypeToSType(coll.tItem))
-      Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpe))
+      val tpeItem = Evaluation.rtypeToSType(coll.tItem)
+      Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
 
     case v: SValue => Nullable(v)
-    case _ => Nullable.None
+    case _ =>
+      Nullable.None
   }
 
   def unliftAny(v: SValue): Nullable[Any] = v match {

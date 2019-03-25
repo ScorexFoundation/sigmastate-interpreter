@@ -82,6 +82,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _sizeGroupElement: LazyRep[Size[GroupElement]] = MutableLazy(costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement]))
   @inline def SizeGroupElement: RSize[GroupElement] = _sizeGroupElement.value
 
+  private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
+  @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
+
   private val _sizeHashBytes: LazyRep[Size[Coll[Byte]]] = MutableLazy {
     val len: Rep[Int] = CryptoConstants.hashLength
     val sizes = colBuilder.replicate(len, SizeByte)
@@ -91,14 +94,14 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   protected override def onReset(): Unit = {
     super.onReset()
-    Seq(_selectFieldCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
-      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _sizeHashBytes)
+    Array(_selectFieldCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp, _sizeHashBytes)
         .foreach(_.reset())
   }
 
-  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
+  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, WRTypeSigmaProp)
 
-  def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
+  def SizeOfSigmaProp(p: SSigmaProp): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(p.asWrappedType))
 
   case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
     override def transform(t: Transformer) = Cast(eTo, t(x))

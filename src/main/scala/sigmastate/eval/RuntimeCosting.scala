@@ -16,6 +16,7 @@ import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
+import sigmastate.eval._
 import sigma.util.Extensions._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
@@ -211,7 +212,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   def constCost(tpe: SType): Rep[Int] = tpe match {
     case f: SFunc =>
-      costOf(s"Lambda", Constant[SType](SType.DummyValue, tpe).opType)
+      costOf(s"Lambda", Constant[SType](SFunc.identity.asWrappedType, tpe).opType)
     case _ =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
   }
@@ -1148,22 +1149,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
 
       case c @ Constant(v, tpe) => v match {
-        case st: SigmaBoolean =>
+        case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
-          val p = SigmaDsl.SigmaProp(st)
           val resV = liftConst(p)
-          RCCostedPrim(resV, costOfSigmaTree(st), SizeOfSigmaBoolean(st))
-        case bi: BigInteger =>
+          RCCostedPrim(resV, costOfSigmaTree(p), SizeOfSigmaProp(p))
+        case bi: SBigInt =>
           assert(tpe == SBigInt)
-          val resV = liftConst(sigmaDslBuilderValue.BigInt(bi))
+          val resV = liftConst(bi)
           withConstantSize(resV, costOf(c))
-        case p: ECPoint =>
+        case p: SGroupElement =>
           assert(tpe == SGroupElement)
-          val resV = liftConst(sigmaDslBuilderValue.GroupElement(p): SGroupElement)
+          val resV = liftConst(p)
 //          val size = SGroupElement.dataSize(ge.asWrappedType)
           withConstantSize(resV, costOf(c))
-        case arr: Array[a] =>
-          val coll = Evaluation.toDslData(arr, tpe, false)(IR).asInstanceOf[SColl[a]]
+        case coll: SColl[a] =>
           val tpeA = tpe.asCollection[SType].elemType
           stypeToElem(tpeA) match {
             case eWA: Elem[wa] =>

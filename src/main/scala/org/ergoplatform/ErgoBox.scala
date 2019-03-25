@@ -64,7 +64,7 @@ class ErgoBox(
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        val tupleVal = Array(creationHeight, Helpers.concatArrays(transactionId.toArray, Shorts.toByteArray(index)))
+        val tupleVal = (creationHeight, Helpers.concatArrays(transactionId.toArray, Shorts.toByteArray(index)).toColl)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }

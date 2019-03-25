@@ -11,7 +11,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
-import special.sigma.AvlTree
+import special.sigma._
 
 import scala.collection.mutable
 
@@ -30,18 +30,18 @@ object DataSerializer {
       w.putUInt(bytes.length)
       w.putBytes(bytes)
     case SBigInt =>
-      val data = v.asInstanceOf[BigInteger].toByteArray
+      val data = SigmaDsl.toBigInteger(v.asInstanceOf[BigInt]).toByteArray
       w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
-      GroupElementSerializer.serialize(v.asInstanceOf[EcPointType], w)
+      GroupElementSerializer.serialize(v.asInstanceOf[GroupElement], w)
     case SSigmaProp =>
-      val p = v.asInstanceOf[SigmaBoolean]
+      val p = v.asInstanceOf[SigmaProp]
       SigmaBoolean.serializer.serialize(p, w)
     case SBox =>
       ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
     case SAvlTree =>
-      AvlTreeData.serializer.serialize(SigmaDsl.toAvlTreeData(v.asInstanceOf[AvlTree]), w)
+      AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTree], w)
     case tColl: SCollectionType[a] =>
       val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)

@@ -51,12 +51,9 @@ class ErgoBoxCandidate(val value: Long,
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
-        val tokenTuples = additionalTokens.toArray.map { case (id, amount) =>
-          Array(id, amount)
-        }.toArray
-        Some(Constant(tokenTuples.asWrappedType, STokensRegType))
+        Some(Constant(additionalTokens.asWrappedType, STokensRegType))
       case ReferenceRegId =>
-        val tupleVal = Array(creationHeight, Array.fill(34)(0: Byte))
+        val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case n: NonMandatoryRegisterId =>
         additionalRegisters.get(n)
@@ -79,7 +76,7 @@ class ErgoBoxCandidate(val value: Long,
 }
 
 object ErgoBoxCandidate {
-
+  val UndefinedBoxRef = Array.fill(34)(0: Byte).toColl
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
