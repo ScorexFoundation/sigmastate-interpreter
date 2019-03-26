@@ -18,7 +18,7 @@ import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.collection.Coll
-import special.sigma.AvlTree
+import special.sigma._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -47,11 +47,15 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
-  implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
-  implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
+  implicit val arbBigInteger = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
+  implicit val arbBigInt = Arbitrary(arbBigInteger.arbitrary.map(SigmaDsl.BigInt(_)))
+  implicit val arbEcPointType = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
+  implicit val arbGroupElement = Arbitrary(arbEcPointType.arbitrary.map(SigmaDsl.GroupElement(_)))
   implicit val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
-  implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
-  implicit val arbBox = Arbitrary(ergoBoxGen)
+  implicit val arbSigmaProp: Arbitrary[SigmaProp] = Arbitrary(sigmaPropGen)
+  implicit val arbSigmaPropValue: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropValueGen)
+  implicit val arbErgoBox = Arbitrary(ergoBoxGen)
+  implicit val arbBox = Arbitrary(ergoBoxGen.map(SigmaDsl.Box))
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbAvlTree = Arbitrary(avlTreeGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
@@ -73,7 +77,7 @@ trait ValueGenerators extends TypeGenerators {
   val stringConstGen: Gen[StringConstant] =
     arbString.arbitrary.map { v => mkConstant[SString.type](v, SString) }
   val bigIntConstGen: Gen[BigIntConstant] =
-    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt) }
+    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v, SBigInt) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
@@ -106,7 +110,8 @@ trait ValueGenerators extends TypeGenerators {
   } yield ProveDHTuple(gv, hv, uv, vv)
 
   val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
-  val sigmaPropGen: Gen[SigmaPropValue] =
+  val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
+  val sigmaPropValueGen: Gen[SigmaPropValue] =
     Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
@@ -210,9 +215,9 @@ trait ValueGenerators extends TypeGenerators {
     case SShort => arbShort
     case SInt => arbInt
     case SLong => arbLong
-    case SBigInt => arbBigInteger
+    case SBigInt => arbBigInt
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbSigmaBoolean
+    case SSigmaProp => arbSigmaProp
     case SBox => arbBox
     case SAvlTree => arbAvlTree
     case SAny => arbAnyVal

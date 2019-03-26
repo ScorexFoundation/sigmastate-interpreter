@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{ConcreteCollection, Constant, FalseLeaf, IntConstant, TaggedInt, TrueLeaf}
+import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, IntConstant, TaggedInt, ConcreteCollection}
 import sigmastate._
+import sigmastate.eval.Evaluation
 import sigmastate.lang.Terms._
 
 import scala.util.Random
@@ -10,7 +11,8 @@ class ConcreteCollectionSerializerSpecification extends TableSerializationSpecif
 
   private def testCollectionWithConstant[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tT = Evaluation.stypeToRType(tpe)
+    implicit val tag = tT.classTag
     forAll { x: Array[T#WrappedType] =>
       roundTripTest(ConcreteCollection[T](x.map(v => Constant(v, tpe)),
         tpe))

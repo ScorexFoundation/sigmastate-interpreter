@@ -14,23 +14,24 @@ import sigmastate.eval.Extensions._
 import sigmastate.Values._
 import sigmastate.eval.Evaluation
 import special.sigma.AvlTree
+import SType.AnyOps
 
 class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   private def testCollection[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tT = Evaluation.stypeToRType(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tag = tT.classTag
     forAll { xs: Array[T#WrappedType] =>
       implicit val tAny = RType.AnyType
       roundTripTest(Constant[SCollection[T]](xs.toColl, SCollection(tpe)))
-      roundTripTest(Constant[SCollection[STuple]](xs.toColl.map(x => Colls.fromItems[Any](x, x)), SCollection(STuple(tpe, tpe))))
+      roundTripTest(Constant[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe))))
       roundTripTest(Constant[SCollection[SCollection[T]]](xs.toColl.map(x => Colls.fromItems(x, x)), SCollection(SCollection(tpe))))
-      roundTripTest(Constant[SCollection[STuple]](
+      roundTripTest(Constant[SType](
         xs.toColl.map { x =>
           val arr = Colls.fromItems(x, x)
-          Colls.fromItems(arr, arr)
-        },
+          (arr, arr)
+        }.asWrappedType,
         SCollection(STuple(SCollection(tpe), SCollection(tpe)))
       ))
     }
@@ -38,12 +39,13 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
 
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tT = Evaluation.stypeToRType(tpe)
+    implicit val tag = tT.classTag
     implicit val tAny = RType.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
-      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y), STuple(tpe, tpe)))
-      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, Colls.fromItems[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
+      roundTripTest(Constant[SType]((x, y).asWrappedType, STuple(tpe, tpe)))
+      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
     }
   }
 

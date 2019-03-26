@@ -13,7 +13,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingC
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
-
+import SType.AnyOps
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -263,10 +263,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
     implicit val eAny = RType.AnyType
-    val data = Colls.fromItems(TupleColl(Array[Byte](1,2,3).toColl, 10L))
+    val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SByteArray, SLong))
-    val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
+    val ext1 = ext :+ ((dataVar, Constant[SType](data.asWrappedType, dataType)))
     test("TupColl3", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get

@@ -57,7 +57,7 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
     // the same serialization method is used in both cases
     val ergoTree = ErgoTree.fromSigmaBoolean(sigmaTree)
     val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-    Builder.DefaultCollBuilder.fromArray(bytes)
+    Colls.fromArray(bytes)
   }
 
   override def &&(other: SigmaProp): SigmaProp = other match {

@@ -15,8 +15,5 @@ trait SigmaTypeGens extends ValueGenerators {
 
   val genInt = Arbitrary.arbInt.arbitrary.map(CInt(_): Int)
   implicit val arbInt = Arbitrary(genInt)
-
-  val genBigInt = arbBigInteger.arbitrary.map(CBigInt(_): BigInt)
-  implicit val arbBigInt = Arbitrary(genBigInt)
 }
 

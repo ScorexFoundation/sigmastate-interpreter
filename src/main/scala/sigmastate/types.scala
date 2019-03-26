@@ -624,16 +624,8 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override val typeCode: TypeCode = 8: Byte
   override def typeId = typeCode
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = SigmaDsl.toSigmaBoolean(v.asInstanceOf[SigmaProp]) match {
-    case ProveDlog(g) =>
-      SGroupElement.dataSize(g.asWrappedType) + 1
-    case ProveDHTuple(gv, hv, uv, vv) =>
-      SGroupElement.dataSize(gv.asWrappedType) * 4 + 1
-    case CAND(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
-    case COR(inputs) => inputs.map(i => dataSize(i.asWrappedType)).sum + 1
-    case CTHRESHOLD(k, inputs) => 4 + inputs.map(i => dataSize(i.asWrappedType)).sum + 1
-    case t: TrivialProp => 1
-    case _ => sys.error(s"Cannot get SigmaProp.dataSize($v)")
+  override def dataSize(v: SType#WrappedType): Long = {
+    Sized.sizeOf(v.asInstanceOf[SigmaProp]).dataSize
   }
   override def isConstantSize = false
   def ancestors = Nil

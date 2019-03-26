@@ -61,11 +61,10 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     c1.append(c2).toArray shouldBe Array[Byte](1, 2, 3, 4)
   }
 
-//  test("box.creationInfo._1 is Int") {
-//    val box = newAliceBox(1, 100)
-//    box.creationInfo._1 shouldBe a [Integer]
-//  }
-
+  test("box.creationInfo._1 is Int") {
+    val box = newAliceBox(1, 100)
+    box.creationInfo._1 shouldBe a [Integer]
+  }
 
   case class Contract1(base64_pk1: String) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder

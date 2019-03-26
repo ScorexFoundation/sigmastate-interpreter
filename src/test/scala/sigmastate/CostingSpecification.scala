@@ -112,7 +112,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ SELF.creationInfo._1 > 0 }") shouldBe (accessBox + accessRegister + selectField + GTConstCost)
     cost("{ SELF.R5[Int].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
 
-//    cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+// TODO   cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
   }
 
   lazy val OutputsCost = selectField + accessBox * tx.outputs.length

@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.{ProveDlog, ProveDlogProp}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 
@@ -224,7 +224,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
-      case SigmaPropConstant(d: ProveDlog) => P2PKAddress(d)
+      case SigmaPropConstant(ProveDlogProp(d)) => P2PKAddress(d)
       //TODO move this pattern to PredefScripts
       case SigmaAnd(Seq(
              BoolToSigmaProp(

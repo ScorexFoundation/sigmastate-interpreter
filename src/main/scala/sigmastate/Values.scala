@@ -161,8 +161,8 @@ object Values {
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
-      case SGroupElement if value.isInstanceOf[ECPoint] =>
-        s"ConstantNode(${showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case SGroupElement if value.isInstanceOf[GroupElement] =>
+        s"ConstantNode(${showECPoint(value.asInstanceOf[GroupElement])},$tpe)"
       case SGroupElement  =>
         sys.error(s"Invalid value in Constant($value, $tpe)")
       case SInt => s"IntConstant($value)"
@@ -200,6 +200,7 @@ object Values {
       case _: Header => tpe == SHeader
       case _: Context => tpe == SContext
       case _: Function1[_,_] => tpe.isFunc
+      case _: Unit => tpe == SUnit
       case _ => false
     }
   }

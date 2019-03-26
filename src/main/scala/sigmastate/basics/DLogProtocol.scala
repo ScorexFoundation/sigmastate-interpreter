@@ -5,12 +5,15 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
+import scalan.Nullable
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.interpreter.CryptoConstants.{EcPointType, dlogGroup}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.{GroupElementSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
+import special.sigma.SigmaProp
 
 object DLogProtocol {
 
@@ -32,7 +35,12 @@ object DLogProtocol {
   object ProveDlog {
     val Code: PropositionCode = 102: Byte
   }
-
+  object ProveDlogProp {
+    def unapply(p: SigmaProp): Nullable[ProveDlog] = SigmaDsl.toSigmaBoolean(p) match {
+      case d: ProveDlog => Nullable(d)
+      case _ => Nullable.None
+    }
+  }
   case class DLogProverInput(w: BigInteger)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
 

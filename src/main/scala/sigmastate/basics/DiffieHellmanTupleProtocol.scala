@@ -3,14 +3,18 @@ package sigmastate.basics
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
+import scalan.Nullable
 import sigmastate.Values.Value.PropositionCode
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.{GroupElementSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
+import special.sigma.SigmaProp
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -69,7 +73,12 @@ case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: E
 object ProveDHTuple {
   val Code: PropositionCode = 103: Byte
 }
-
+object ProveDHTupleProp {
+  def unapply(p: SigmaProp): Nullable[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {
+    case d: ProveDHTuple => Nullable(d)
+    case _ => Nullable.None
+  }
+}
 
 class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple,
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])

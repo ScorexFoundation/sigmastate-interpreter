@@ -275,7 +275,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
-//    typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
+// TODO    typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
     typefail(env, "x[Int]", 1, 1)
     typefail(env, "arr1[Int]", 1, 1)
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))

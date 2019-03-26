@@ -697,7 +697,7 @@ object Evaluation {
         case GroupElementRType => GroupElementRType
         case SigmaPropRType => SigmaPropRType
         case AvlTreeRType => AvlTreeRType
-        case BoxRType => ErgoBoxRType
+        case BoxRType => BoxRType
         case ContextRType => ErgoLikeContextRType
         case _ => sys.error(s"Unknown WrapperType: $w")
       }
@@ -718,14 +718,13 @@ object Evaluation {
     * @param tRes should describe ErgoTree type (i.e. it can be obtained using toErgoTreeType method)*/
   def fromDslData[T](value: Any, tRes: RType[T]): T = {
     val res = (value, tRes) match {
-      case (w: CostingBox, _) => w.wrappedValue
-      case (coll: Coll[a], tarr: CollType[a1]) =>
-        val tItem = tarr.tItem
-        coll.map[a1](x => fromDslData(x, tItem))(tItem)
-      case (tup: Tuple2[a,b], tTup: TupleType) =>
-        val x = fromDslData(tup._1, tTup.items(0))
-        val y = fromDslData(tup._2, tTup.items(1))
-        TupleColl(x, y)
+//      case (coll: Coll[a], tarr: CollType[a1]) =>
+//        val tItem = tarr.tItem
+//        coll.map[a1](x => fromDslData(x, tItem))(tItem)
+//      case (tup: Tuple2[a,b], tTup: TupleType) =>
+//        val x = fromDslData(tup._1, tTup.items(0))
+//        val y = fromDslData(tup._2, tTup.items(1))
+//        TupleColl(x, y)
       case _ => value
     }
     res.asInstanceOf[T]
