@@ -58,9 +58,7 @@ object Extensions {
 
   implicit class DslDataOps[A](data: A)(implicit tA: RType[A]) {
     def toTreeData: Constant[SType] = {
-      val treeType = Evaluation.toErgoTreeType(tA)
-      val treeData = Evaluation.fromDslData(data, tRes = treeType)
-      DefaultSigmaBuilder.mkConstant(treeData.asWrappedType, Evaluation.rtypeToSType(tA))
+      DefaultSigmaBuilder.mkConstant(data.asWrappedType, Evaluation.rtypeToSType(tA))
     }
   }
 

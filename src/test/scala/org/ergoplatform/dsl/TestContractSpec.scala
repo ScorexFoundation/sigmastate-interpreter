@@ -45,10 +45,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       val boxToSpend = inBox.utxoBox
       val propSpec: PropositionSpec = boxToSpend.propSpec
       val bindings = extensions.mapValues { case v: TestValue[a] =>
-        implicit val tA = v.tA
-        val treeType = Evaluation.toErgoTreeType(tA)
-        val treeData = Evaluation.fromDslData(v.value, tRes = treeType)
-        IR.builder.mkConstant(treeData.asWrappedType, Evaluation.rtypeToSType(v.tA))
+        IR.builder.mkConstant(v.value.asWrappedType, Evaluation.rtypeToSType(v.tA))
       }
       val ctx = inBox.toErgoContext
 //      val newExtension = ContextExtension(ctx.extension.values ++ bindings)

@@ -714,22 +714,6 @@ object Evaluation {
       sys.error(s"Don't know how to toErgoTreeType($dslType)")
   }
 
-  /** Generic converter from types used in SigmaDsl to types used in ErgoTree values.
-    * @param tRes should describe ErgoTree type (i.e. it can be obtained using toErgoTreeType method)*/
-  def fromDslData[T](value: Any, tRes: RType[T]): T = {
-    val res = (value, tRes) match {
-//      case (coll: Coll[a], tarr: CollType[a1]) =>
-//        val tItem = tarr.tItem
-//        coll.map[a1](x => fromDslData(x, tItem))(tItem)
-//      case (tup: Tuple2[a,b], tTup: TupleType) =>
-//        val x = fromDslData(tup._1, tTup.items(0))
-//        val y = fromDslData(tup._2, tTup.items(1))
-//        TupleColl(x, y)
-      case _ => value
-    }
-    res.asInstanceOf[T]
-  }
-
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
     case t: Tuple2[_,_] => TupleColl(t._1, t._2)
