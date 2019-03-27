@@ -228,7 +228,7 @@ class SpamSpecification extends SigmaTestingCommons {
       limitlessProver.calcResult(calcCtx, calcF)
     }
     println(s"Full time to execute the script: ${calcTime / 1000.0} seconds")
-    assert(calcTime > Timeout)
+    // TODO this is no-longer valid after optimizations: assert(calcTime > Timeout)
   }
 
   property("too heavy avl tree lookup") {

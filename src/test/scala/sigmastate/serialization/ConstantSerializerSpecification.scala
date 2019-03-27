@@ -25,7 +25,9 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { xs: Array[T#WrappedType] =>
       implicit val tAny = RType.AnyType
       roundTripTest(Constant[SCollection[T]](xs.toColl, SCollection(tpe)))
-      roundTripTest(Constant[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe))))
+      roundTripTest(Constant[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))) // pairs are special case
+//      val tuples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
+//      roundTripTest(Constant[SType](tuples, SCollection(STuple(tpe, tpe, tpe))))
       roundTripTest(Constant[SCollection[SCollection[T]]](xs.toColl.map(x => Colls.fromItems(x, x)), SCollection(SCollection(tpe))))
       roundTripTest(Constant[SType](
         xs.toColl.map { x =>

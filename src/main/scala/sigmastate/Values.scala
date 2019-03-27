@@ -181,8 +181,11 @@ object Values {
     }
 
     def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
-      case c: Coll[_] if c.tItem == RType.AnyType => tpe.isTuple
-      case c: Coll[_] => tpe.isCollection && Evaluation.rtypeToSType(c.tItem) == tpe.asCollection.elemType
+      case c: Coll[_] => tpe match {
+        case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+        case tpeColl: SCollection[_] => true
+        case _ => sys.error(s"Collection value $c has unexpected type $tpe")
+      }
       case _: Option[_] => tpe.isOption
       case _: Tuple2[_,_] => tpe.isTuple && tpe.asTuple.items.length == 2
       case _: Boolean => tpe == SBoolean

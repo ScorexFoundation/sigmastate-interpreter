@@ -9,7 +9,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{CSizePrim, Builder, Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
@@ -329,18 +329,16 @@ object CostingBox {
     def checkNotYetDefined(id: Int, newValue: SValue) =
       require(res(id) == null, s"register $id is defined more then once: previous value ${res(id)}, new value $newValue")
 
-    for ((k, v: Value[t]) <- ebox.additionalRegisters) {
+    for ((k, v: EvaluatedValue[t]) <- ebox.additionalRegisters) {
       checkNotYetDefined(k.number, v)
-      val dslData = toDslData(v, v.tpe, isCost)
-      res(k.number) = toAnyValue(dslData.asWrappedType)(stypeToRType(v.tpe))
+      res(k.number) = toAnyValue(v.value)(stypeToRType(v.tpe))
     }
 
     for (r <- ErgoBox.mandatoryRegisters) {
       val regId = r.number
-      val v = ebox.get(r).get
+      val v = ebox.get(r).get.asInstanceOf[EvaluatedValue[SType]]
       checkNotYetDefined(regId, v)
-      val dslData = Evaluation.toDslData(v, v.tpe, isCost)
-      res(regId) = toAnyValue(dslData.asWrappedType)(stypeToRType(v.tpe))
+      res(regId) = toAnyValue(v.value)(stypeToRType(v.tpe))
     }
     Colls.fromArray(res)
   }
@@ -643,7 +641,6 @@ case class CostingDataContext(
 
   override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
     if (isCost) {
-      //      implicit val tag: ClassTag[T] = cT.classTag
       val optV =
         if (id < 0 || id >= vars.length) None
         else {

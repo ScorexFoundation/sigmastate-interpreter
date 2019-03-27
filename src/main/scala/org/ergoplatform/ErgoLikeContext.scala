@@ -84,8 +84,7 @@ class ErgoLikeContext(val currentHeight: Height,
         spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
-      val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
-      toAnyValue(dslData.asWrappedType)(tVal)
+      toAnyValue(v.value.asWrappedType)(tVal)
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)

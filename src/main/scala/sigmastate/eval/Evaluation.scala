@@ -305,34 +305,18 @@ trait Evaluation extends RuntimeCosting { IR =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
-        var startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
+        val startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
         val res: (DataEnv, Sym) = te.rhs match {
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
-            val data = valueInCtx match {
-              case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost))
-              case opt @ Some(v) => opt
-              case None => None
-              case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
-            }
-            out(data)
+            out(valueInCtx)
           case d @ BoxM.getReg(box, _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
-            val data = valueInReg match {
-              case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, false))
-              case Some(v) =>
-                valueInReg
-              case None => None
-              case _ => throw new InvalidType(
-                s"Expected Some(Constant($declaredTpe)) but found $valueInReg value of register: $d")
-            }
-            out(data)
+            out(valueInReg)
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
@@ -683,36 +667,10 @@ object Evaluation {
 
     case sb: SigmaBoolean => SigmaBooleanRType
     case p: SigmaProp => SigmaPropRType
-
+    case ctx: Context => ContextRType
     case _ =>
       sys.error(s"Don't know how to compute typeOf($value)")
   }}
-
-  /** Generic translation of any ErgoDsl type to the corresponding type used in ErgoTree. */
-  def toErgoTreeType(dslType: RType[_]): RType[_] = dslType match {
-    case p: PrimitiveType[_] => p
-    case w: WrapperType[_] =>
-      w match {
-        case BigIntRType => BigIntRType
-        case GroupElementRType => GroupElementRType
-        case SigmaPropRType => SigmaPropRType
-        case AvlTreeRType => AvlTreeRType
-        case BoxRType => BoxRType
-        case ContextRType => ErgoLikeContextRType
-        case _ => sys.error(s"Unknown WrapperType: $w")
-      }
-    case p: ArrayType[_] => collRType(toErgoTreeType(p.tA))
-    case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
-    case p: CollType[_] => collRType(toErgoTreeType(p.tItem))
-    case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
-    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tLeft), toErgoTreeType(p.tRight))
-    case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
-    case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
-    case HeaderRType | PreHeaderRType => dslType
-    case AnyType | AnyRefType | NothingType | StringType => dslType
-    case _ =>
-      sys.error(s"Don't know how to toErgoTreeType($dslType)")
-  }
 
   /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
   def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
@@ -726,46 +684,6 @@ object Evaluation {
   def toDslTuple(value: Coll[Any], tupleTpe: STuple): Any = tupleTpe match {
     case t if t.items.length == 2 => (value(0), value(1))
     case _ => value
-  }
-
-  /** Generic converter from types used in ErgoTree values to types used in SigmaDsl. */
-  def toDslData(value: Any, tpe: SType, isCost: Boolean): Any = {
-    (value, tpe) match {
-      case (c: Constant[_], _) => toDslData(c.value, c.tpe, isCost)
-      case (_, STuple(Seq(tpeA, tpeB))) =>
-        value match {
-          case tup: Tuple2[_,_] =>
-            val valA = toDslData(tup._1, tpeA, isCost)
-            val valB = toDslData(tup._2, tpeB, isCost)
-            (valA, valB)
-          case arr: Array[Any] =>
-            val valA = toDslData(arr(0), tpeA, isCost)
-            val valB = toDslData(arr(1), tpeB, isCost)
-            (valA, valB)
-          case coll: Coll[Any]@unchecked if coll.tItem == RType.AnyType =>
-            val valA = toDslData(coll(0), tpeA, isCost)
-            val valB = toDslData(coll(1), tpeB, isCost)
-            (valA, valB)
-        }
-      case (arr: Coll[a], STuple(items)) =>
-        val res = arr.toArray.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
-        Colls.fromArray(res)(RType.AnyType)
-      case (arr: Coll[a], SCollectionType(elemType)) =>
-        implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
-        elemRType.asInstanceOf[RType[_]] match {
-          case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toDslData(x, elemType, isCost).asWrappedType)
-            testArr
-          case _ =>
-            arr
-        }
-      case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-      case (n: BigInteger, SBigInt) => SigmaDsl.BigInt(n)
-      case (p: ECPoint, SGroupElement) => SigmaDsl.GroupElement(p)
-      case (t: SigmaBoolean, SSigmaProp) => SigmaDsl.SigmaProp(t)
-      case (t: AvlTreeData, SAvlTree) => CAvlTree(t)
-      case (x, _) => x
-    }
   }
 
 }
