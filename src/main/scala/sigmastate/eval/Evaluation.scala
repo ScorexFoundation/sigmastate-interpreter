@@ -10,20 +10,18 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
-import scala.util.{Try, Success}
+import scala.util.Try
 import sigmastate.SType._
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import scorex.util.Extensions._
 import sigmastate.lang.exceptions.CosterException
 import special.SpecialPredef
-import special.collection.Coll
+import special.Types._
 
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
@@ -36,8 +34,6 @@ trait Evaluation extends RuntimeCosting { IR =>
   import AvlTree._
   import CollBuilder._
   import SigmaDslBuilder._
-  import CostedBuilder._
-  import MonoidBuilder._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -563,7 +559,6 @@ trait Evaluation extends RuntimeCosting { IR =>
 object Evaluation {
   import special.sigma._
   import special.collection._
-  import ErgoLikeContext._
   
   def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
     case SBoolean => BooleanType

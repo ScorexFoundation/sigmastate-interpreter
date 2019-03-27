@@ -26,6 +26,7 @@ import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
+import special.Types.TupleType
 
 import scala.reflect.ClassTag
 

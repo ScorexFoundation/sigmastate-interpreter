@@ -26,8 +26,10 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
       implicit val tAny = RType.AnyType
       roundTripTest(Constant[SCollection[T]](xs.toColl, SCollection(tpe)))
       roundTripTest(Constant[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))) // pairs are special case
-//      val tuples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
-//      roundTripTest(Constant[SType](tuples, SCollection(STuple(tpe, tpe, tpe))))
+      val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
+      roundTripTest(Constant[SType](triples, SCollection(STuple(tpe, tpe, tpe))))
+      val quartets = xs.toColl.map(x => TupleColl(x, x, x, x)).asWrappedType
+      roundTripTest(Constant[SType](quartets, SCollection(STuple(tpe, tpe, tpe, tpe))))
       roundTripTest(Constant[SCollection[SCollection[T]]](xs.toColl.map(x => Colls.fromItems(x, x)), SCollection(SCollection(tpe))))
       roundTripTest(Constant[SType](
         xs.toColl.map { x =>
@@ -47,7 +49,11 @@ class ConstantSerializerSpecification extends TableSerializationSpecification {
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundTripTest(Constant[SType]((x, y).asWrappedType, STuple(tpe, tpe)))
+      roundTripTest(Constant[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe)))
+      roundTripTest(Constant[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe)))
       roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe))))
+      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe))))
+      roundTripTest(Constant[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe)))))
     }
   }
 

@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.SigmaBoolean
+import sigmastate.Values.{SigmaBoolean, Constant}
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._
@@ -38,7 +38,16 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { xs: Array[T#WrappedType] =>
       roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
       roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
-      roundtrip[SCollection[SCollection[T]]](xs.toColl.map(x => Colls.fromItems[T#WrappedType](x, x)), SCollection(SCollection(tpe)))
+
+      val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
+      roundtrip(triples, SCollection(STuple(tpe, tpe, tpe)))
+
+      val quartets = xs.toColl.map(x => TupleColl(x, x, x, x)).asWrappedType
+      roundtrip(quartets, SCollection(STuple(tpe, tpe, tpe, tpe)))
+
+      val nested = xs.toColl.map(x => Colls.fromItems[T#WrappedType](x, x))
+      roundtrip[SCollection[SCollection[T]]](nested, SCollection(SCollection(tpe)))
+
       roundtrip[SType](
         xs.toColl.map { x =>
           val arr = Colls.fromItems[T#WrappedType](x, x)
@@ -56,7 +65,11 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
+      roundtrip[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe))
+      roundtrip[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe))
       roundtrip[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe)))
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe))))
     }
   }
 

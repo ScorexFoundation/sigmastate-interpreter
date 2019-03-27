@@ -21,7 +21,7 @@ import sigma.util.Extensions._
 import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
-import scalan.RType.{StringType, AnyType, LongType, IntType, ArrayType, OptionType, TupleType, BooleanType, PairType, FuncType, ByteType, ShortType}
+import scalan.RType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
@@ -32,6 +32,7 @@ import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import sigmastate.eval.Evaluation.rtypeToSType
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
+import special.Types._
 import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 

@@ -1,11 +1,6 @@
 package org.ergoplatform
 
-import java.math.BigInteger
-
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoLikeContext.Height
-import scalan.RType
-import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
@@ -13,12 +8,11 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.{ContextExtension, InterpreterContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.collection.{Coll, CollType}
+import special.collection.Coll
 import special.sigma
-import special.sigma.{WrapperType, Header, Box, AnyValue, TestValue, PreHeader}
-import SType._
-import RType._
-import special.sigma.Extensions._
+import special.sigma.{AnyValue, Box, PreHeader, Header}
+import sigmastate.SType._
+import scalan.RType._
 
 import scala.util.Try
 
@@ -149,7 +143,6 @@ object ErgoLikeContext {
   val noOutputs: Array[Box] = Array[Box]()
 
   import special.sigma._
-  import sigmastate.SType._
 
   def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
