@@ -171,24 +171,25 @@ class IcoExample extends SigmaTestingCommons {
     val withdrawalScript = compiler.compile(withdrawalEnv,
       """{
         |
-        |  val selfIndexIsZero = INPUTS(0).id == SELF.id
+        |  // val selfIndexIsZero = INPUTS(0).id == SELF.id
         |
         |  val removeProof = getVar[Coll[Byte]](1).get
         |  val lookupProof = getVar[Coll[Byte]](2).get
         |
-        |  val toLookup: Coll[(Coll[Byte], Coll[Byte])] = OUTPUTS.slice(1, OUTPUTS.size - 1).map({ (b: Box) =>
+        |  val outs = OUTPUTS.slice(1, OUTPUTS.size - 1)
+        |
+        |  val toLookup: Coll[(Coll[Byte], Coll[Byte])] = outs.map({ (b: Box) =>
         |     val pk = blake2b256(b.propositionBytes)
-        |     val value = longToByteArray(b.value)
-        |     (pk, value)
+        |     (pk, b.value)
         |  })
         |
-        |  val withdrawValues = toLookup.map({(t: (Coll[Byte], Coll[Byte])) => t._2 })
+        |  val withdrawValues = toLookup.map({(t: (Coll[Byte], Long)) => t._2 })
         |
-        |  val toRemove = toLookup.map({(t: (Coll[Byte], Coll[Byte])) => t._1 })
+        |  val toRemove = toLookup.map({(t: (Coll[Byte], Long)) => t._1 })
         |
         |  val initialTree = SELF.R5[AvlTree].get
         |
-        |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => o.get})
+        |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => byteArrayToLong(o.get)})
         |  val valuesCorrect = removedValues == withdrawValues
         |
         |  val modifiedTree = initialTree.remove(toRemove, removeProof).get
@@ -197,7 +198,7 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val properTreeModification = modifiedTree == expectedTree
         |
-        |  properTreeModification && valuesCorrect
+        |  properTreeModification && valuesCorrect // selfIndexIsZero &&
         |
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
