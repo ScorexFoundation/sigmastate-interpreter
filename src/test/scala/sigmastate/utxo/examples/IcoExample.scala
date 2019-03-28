@@ -29,17 +29,14 @@ class IcoExample extends SigmaTestingCommons {
   private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
   private val feeBytes = feeProp.bytes
 
-  /**
-    * Simplest ICO example
-    */
+  val env = Map(
+    ScriptNameProp -> "withdrawalScriptEnv",
+    "feeBytes" -> feeBytes
+  )
+
   property("simple ico example - fundraising stage only") {
 
-    val fundingEnv = Map(
-      ScriptNameProp -> "fundingScriptEnv",
-      "feeBytes" -> feeBytes
-    )
-
-    val fundingScript = compile(fundingEnv,
+    val fundingScript = compile(env,
       """{
         |
         |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -112,17 +109,13 @@ class IcoExample extends SigmaTestingCommons {
     val projectProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(1, ByteArrayConstant(proof))
 
-    val res = projectProver.prove(fundingEnv, fundingScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
     println("cost: " + res.cost)
   }
 
   property("simple ico example - fixing stage") {
 
-    val fixingEnv = Map(
-      ScriptNameProp -> "fixingScriptEnv"
-    )
-
-    val fixingProp = compile(fixingEnv,
+    val fixingProp = compile(env,
       """{
         |  val openTree = SELF.R4[AvlTree].get
         |
@@ -162,16 +155,13 @@ class IcoExample extends SigmaTestingCommons {
       spendingTransaction = fixingTx,
       self = projectBoxBeforeClosing)
 
-    projectProver.prove(fixingEnv, fixingProp, fundingContext, fakeMessage).get
+    projectProver.prove(env, fixingProp, fundingContext, fakeMessage).get
   }
 
   property("simple ico example - withdrawal stage") {
-    val withdrawalEnv = Map(
-      ScriptNameProp -> "withdrawalScriptEnv",
-      "feeBytes" -> feeBytes
-    )
 
-    val withdrawalScript = compiler.compile(withdrawalEnv,
+
+    val withdrawalScript = compiler.compile(env,
       """{
         |  val removeProof = getVar[Coll[Byte]](1).get
         |  val lookupProof = getVar[Coll[Byte]](2).get
@@ -267,12 +257,14 @@ class IcoExample extends SigmaTestingCommons {
         .withContextExtender(2, ByteArrayConstant(lookupProof))
         .withContextExtender(3, IntConstant(10))
 
-    val res = projectProver.prove(withdrawalEnv, withdrawalScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, withdrawalScript, fundingContext, fakeMessage).get
     println("cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
   }
 
+  property("stages") {
 
+  }
 
 }
