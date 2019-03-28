@@ -5,13 +5,14 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup, Remove}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SByte, Values}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
+import sigmastate.serialization.ErgoTreeSerializer
 
 import scala.util.Random
 
@@ -22,13 +23,14 @@ class IcoExample extends SigmaTestingCommons {
   lazy val backer = spec.ProvingParty("Alice")
   lazy val project = spec.ProvingParty("Bob")
 
+  private val miningRewardsDelay = 720
+  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
+  private val feeBytes = feeProp.bytes
+
   /**
     * Simplest ICO example
     */
   property("simple ico example - fundraising stage only") {
-    val miningRewardsDelay = 720
-    val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
-    val feeBytes = feeProp.bytes
 
     val fundingEnv = Map(
       ScriptNameProp -> "fundingScriptEnv",
@@ -75,7 +77,7 @@ class IcoExample extends SigmaTestingCommons {
 
     val funderBoxCount = 2000
 
-    val funderBoxes = (1 to funderBoxCount).map {_ =>
+    val funderBoxes = (1 to funderBoxCount).map { _ =>
       ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
         Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
     }
@@ -186,7 +188,6 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => o.get })
         |  val zipped = removedValues.zip(withdrawValues)
-        |
         |  val valuesCorrect = zipped.forall({(t: (Coll[Byte], Coll[Byte])) => t._1 == t._2})
         |
         |  val modifiedTree = initialTree.remove(toRemove, removeProof).get
@@ -199,6 +200,64 @@ class IcoExample extends SigmaTestingCommons {
         |
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+
+    val funderBoxCount = 2000
+    val funderKvs = (1 to funderBoxCount).map { _ =>
+       Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte) -> Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong)
+    }
+
+    funderKvs.foreach { case (k, v) =>
+      avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+    }
+    val fundersTree = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+
+    val withdrawals = funderKvs.take(10)
+
+    avlProver.generateProof()
+
+    withdrawals.foreach { case (k, v) =>
+      avlProver.performOneOperation(Lookup(ADKey @@ k))
+    }
+    val lookupProof = avlProver.generateProof()
+
+    withdrawals.foreach { case (k, v) =>
+      avlProver.performOneOperation(Remove(ADKey @@ k))
+    }
+    val removalProof = avlProver.generateProof()
+
+    val finalTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
+
+
+    val withdrawBoxes = withdrawals.map { case (k, v) =>
+      ErgoBox(Longs.fromByteArray(v), ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(k), 0)
+    }
+
+    val projectBoxBefore = ErgoBox(2000, withdrawalScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(fundersTree)))
+    val projectBoxAfter = ErgoBox(1000, withdrawalScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(finalTree)))
+    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
+
+    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox))
+
+    val fundingContext = ErgoLikeContext(
+      currentHeight = 1000,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(projectBoxBefore),
+      spendingTransaction = fundingTx,
+      self = projectBoxBefore)
+
+    val projectProver =
+      new ContextEnrichingTestProvingInterpreter()
+        .withContextExtender(1, ByteArrayConstant(removalProof))
+        .withContextExtender(2, ByteArrayConstant(lookupProof))
+
+    val res = projectProver.prove(withdrawalEnv, withdrawalScript, fundingContext, fakeMessage).get
+    println("cost: " + res.cost)
   }
 
 }
