@@ -131,9 +131,11 @@ class IcoExample extends SigmaTestingCommons {
         |  val digestPreserved = openTree.digest == closedTree.digest
         |  val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
         |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
-        |  val treeIsClosed = closedTree.enabledOperations == 0
+        |  val treeIsClosed = closedTree.enabledOperations == 4
         |
-        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
+        |  val valuePreserved = SELF.value <= OUTPUTS(0).value
+        |
+        |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved
         |}""".stripMargin
     ).asSigmaProp
 
@@ -145,7 +147,7 @@ class IcoExample extends SigmaTestingCommons {
     val projectBoxBeforeClosing = ErgoBox(10, fixingProp, 0, Seq(),
       Map(R4 -> AvlTreeConstant(openTreeData)))
 
-    val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+    val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
 
     val projectBoxAfterClosing = ErgoBox(10, fixingProp, 0, Seq(),
       Map(R4 -> AvlTreeConstant(closedTreeData)))
@@ -198,7 +200,6 @@ class IcoExample extends SigmaTestingCommons {
         |  val feeOutputCorrect = (feeOut.value <= 1) && (feeOut.propositionBytes == feeBytes)
         |
         |  properTreeModification && valuesCorrect && selfOutputCorrect && feeOutputCorrect
-        |
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
 
@@ -250,7 +251,6 @@ class IcoExample extends SigmaTestingCommons {
     val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
     val outputs = IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox)
-    println("Outputs count: " + outputs.size)
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), outputs)
 
     val fundingContext = ErgoLikeContext(
@@ -271,7 +271,8 @@ class IcoExample extends SigmaTestingCommons {
     println("cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
-
   }
+
+
 
 }
