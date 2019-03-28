@@ -44,7 +44,7 @@ class ErgoBoxCandidate(val value: Long,
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxIndex: Short) =
-    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, txId.toBytes.toColl, boxIndex, creationHeight)
+    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, txId, boxIndex, creationHeight)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
@@ -135,7 +135,7 @@ object ErgoBoxCandidate {
           r.getBytes(TokenId.size).toColl
         }
         val amount = r.getULong()
-        tokenId -> amount
+        Digest32Coll @@ tokenId -> amount
       }
       val regsCount = r.getByte()
       val regs = (0 until regsCount).map { iReg =>

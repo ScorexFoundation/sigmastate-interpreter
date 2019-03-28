@@ -50,21 +50,21 @@ import scala.runtime.ScalaRunTime
 class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
-         override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(Coll[Byte], Long)],
+         override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
          override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
-         val transactionId: Coll[Byte],
+         val transactionId: ModifierId,
          val index: Short,
          override val creationHeight: Int
        ) extends ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters) {
 
   import ErgoBox._
 
-  lazy val idBytes: BoxId = ADKey @@ Blake2b256.hash(bytes)
+  lazy val id: BoxId = ADKey @@ Blake2b256.hash(bytes)
 
   override def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ReferenceRegId =>
-        val tupleVal = (creationHeight, Helpers.concatArrays(transactionId.toArray, Shorts.toByteArray(index)).toColl)
+        val tupleVal = (creationHeight, Helpers.concatArrays(transactionId.toBytes, Shorts.toByteArray(index)).toColl)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case _ => super.get(identifier)
     }
@@ -73,7 +73,7 @@ class ErgoBox(
   lazy val bytes: Array[Byte] = ErgoBox.sigmaSerializer.toBytes(this)
 
   override def equals(arg: Any): Boolean = arg match {
-    case x: ErgoBox => java.util.Arrays.equals(idBytes, x.idBytes)
+    case x: ErgoBox => java.util.Arrays.equals(id, x.id)
     case _ => false
   }
 
@@ -83,7 +83,7 @@ class ErgoBox(
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(idBytes)},$value,$ergoTree," +
+  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
     s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
@@ -94,7 +94,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  type TokenId = Coll[Byte]
+  type TokenId = Digest32Coll
   object TokenId {
     val size: Short = 32
   }
@@ -160,15 +160,15 @@ object ErgoBox {
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      Colls.fromItems(additionalTokens.map { case (id, v) => (id.toColl, v) }:_*),
+      Colls.fromItems(additionalTokens.map { case (id, v) => (Digest32Coll @@ id.toColl, v) }:_*),
       additionalRegisters,
-      Colls.fromArray(transactionId.toBytes), boxIndex, creationHeight)
+      transactionId, boxIndex, creationHeight)
 
   object sigmaSerializer extends SigmaSerializer[ErgoBox, ErgoBox] {
 
     override def serialize(obj: ErgoBox, w: SigmaByteWriter): Unit = {
       ErgoBoxCandidate.serializer.serialize(obj, w)
-      val txIdBytes = obj.transactionId.toArray
+      val txIdBytes = obj.transactionId.toBytes
       val txIdBytesSize = txIdBytes.length
       assert(txIdBytesSize == ErgoLikeTransaction.TransactionIdBytesSize,
         s"Invalid transaction id size: $txIdBytesSize (expected ${ErgoLikeTransaction.TransactionIdBytesSize})")

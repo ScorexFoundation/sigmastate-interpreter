@@ -112,7 +112,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
 
-    avlProver.performOneOperation(Insert(ADKey @@ oracleBox.idBytes, ADValue @@ oracleBox.bytes))
+    avlProver.performOneOperation(Insert(ADKey @@ oracleBox.id, ADValue @@ oracleBox.bytes))
     avlProver.generateProof()
 
     val lastBlockUtxoDigest = avlProver.digest
@@ -151,7 +151,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       ),
       contractLogic)
 
-    avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.idBytes))
+    avlProver.performOneOperation(Lookup(ADKey @@ oracleBox.id))
     val proof = avlProver.generateProof()
 
     val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
@@ -168,7 +168,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     //"along with a brother" script
     val propAlong = AND(
       EQ(SizeOf(Inputs), IntConstant(2)),
-      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.idBytes)))
+      EQ(ExtractId(ByIndex(Inputs, 0)), ByteArrayConstant(sAlice.id)))
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 

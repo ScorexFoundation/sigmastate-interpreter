@@ -8,6 +8,7 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.SType._
 
@@ -83,7 +84,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         }
 
         // transaction with modified input boxId
-        val headInput6 = headInput.copy(boxId = txIn.outputs.head.idBytes)
+        val headInput6 = headInput.copy(boxId = txIn.outputs.head.id)
         val itx6 = new ErgoLikeTransaction(headInput6 +: tailInputs, di, txIn.outputCandidates)
         (itx6.messageToSign sameElements initialMessage) shouldBe false
 
@@ -110,7 +111,7 @@ class ErgoLikeTransactionSpec extends PropSpec
         }
 
         // transaction with increased number of data inputs
-        val di4 = DataInput(txIn.outputs.head.idBytes)
+        val di4 = DataInput(txIn.outputs.head.id)
         val dtx4 = new ErgoLikeTransaction(txIn.inputs, di4 +: di, txIn.outputCandidates)
         (dtx4.messageToSign sameElements initialMessage) shouldBe false
 
@@ -122,7 +123,7 @@ class ErgoLikeTransactionSpec extends PropSpec
 
         // transaction with modified data input boxId
         if (di.nonEmpty) {
-          val di6 = DataInput(txIn.outputs.head.idBytes)
+          val di6 = DataInput(txIn.outputs.head.id)
           val dtx6 = new ErgoLikeTransaction(txIn.inputs, di6 +: di.tail, txIn.outputCandidates)
           (dtx6.messageToSign sameElements initialMessage) shouldBe false
         }

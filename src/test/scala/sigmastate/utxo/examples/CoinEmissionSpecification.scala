@@ -118,7 +118,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
     val initialBox = new ErgoBox(initialBoxCandidate.value, initialBoxCandidate.ergoTree,
       initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters,
-      initBlock.txs.head.id.toBytes.toColl, 0, 0)
+      initBlock.txs.head.id, 0, 0)
     initialBox shouldBe fromState
 
     def genCoinbaseLikeTransaction(state: ValidationState,
@@ -131,14 +131,14 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
           new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
-          IndexedSeq(new UnsignedInput(emissionBox.idBytes)),
+          IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
         val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
         val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
         UnsignedErgoLikeTransaction(
-          IndexedSeq(new UnsignedInput(emissionBox.idBytes)),
+          IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox1, minerBox2)
         )
       }
@@ -168,7 +168,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       val block = FullBlock(IndexedSeq(tx), minerPubkey)
       val newState = state.applyBlock(block).get
       if (tx.outputs.last.value > 1) {
-        val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.idBytes).get
+        val newEmissionBox = newState.boxesReader.byId(tx.outputs.head.id).get
         chainGen(newState, newEmissionBox, height + 1, hLimit)
       } else {
         log.debug(s"Emission box is consumed at height $height")

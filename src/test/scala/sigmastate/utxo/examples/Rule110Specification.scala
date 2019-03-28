@@ -54,7 +54,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
     val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
-    val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.idBytes)), IndexedSeq(output))
+    val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContext(
       currentHeight = 1,
@@ -214,7 +214,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val nOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
     val nOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-1), YReg -> ByteConstant(-1), ValReg -> t))
 
-    val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.idBytes)), IndexedSeq(nOut0, nOut1, nOut2))
+    val nTx = UnsignedErgoLikeTransaction(IndexedSeq(nIn0, nIn1, nIn2).map(i => new UnsignedInput(i.id)), IndexedSeq(nOut0, nOut1, nOut2))
     val nProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
@@ -236,7 +236,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val rOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
     val rOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(0), YReg -> ByteConstant(-1), ValReg -> t))
 
-    val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.idBytes)), IndexedSeq(rOut0, rOut1, rOut2))
+    val rTx = UnsignedErgoLikeTransaction(IndexedSeq(rIn0, rIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(rOut0, rOut1, rOut2))
     val rProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
@@ -258,7 +258,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
     val lnOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-6), YReg -> ByteConstant(-7), ValReg -> t))
 
-    val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.idBytes)), IndexedSeq(lnOut0, lnOut1, lnOut2))
+    val lnTx = UnsignedErgoLikeTransaction(IndexedSeq(lnIn0, lnIn1).map(i => new UnsignedInput(i.id)), IndexedSeq(lnOut0, lnOut1, lnOut2))
     val lnProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
@@ -279,7 +279,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val lOut1 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> t, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
     val lOut2 = ErgoBox(1, prop, 0, Seq(), Map(MidReg -> f, XReg -> ByteConstant(-7), YReg -> ByteConstant(-7), ValReg -> t))
 
-    val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.idBytes)), IndexedSeq(lOut0, lOut1, lOut2))
+    val lTx = UnsignedErgoLikeTransaction(IndexedSeq(lIn0).map(i => new UnsignedInput(i.id)), IndexedSeq(lOut0, lOut1, lOut2))
     val lProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
@@ -435,7 +435,7 @@ class Rule110Specification extends SigmaTestingCommons {
         val c = new ErgoBoxCandidate(0L, prop, row, Colls.emptyColl, Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
-          IndexedSeq(new UnsignedInput(left.idBytes), new UnsignedInput(center.idBytes), new UnsignedInput(right.idBytes)),
+          IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),
           IndexedSeq(c, left.toCandidate, center.toCandidate, right.toCandidate)
         )
 
