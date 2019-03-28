@@ -3,11 +3,8 @@ package sigmastate.basics
 import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
-import scalan.Nullable
 import sigmastate.Values.Value.PropositionCode
-import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -73,10 +70,12 @@ case class ProveDHTuple(gv: EcPointType, hv: EcPointType, uv: EcPointType, vv: E
 object ProveDHTuple {
   val Code: PropositionCode = 103: Byte
 }
+
+/** Helper extractor to match SigmaProp values and extract ProveDHTuple out of it. */
 object ProveDHTupleProp {
-  def unapply(p: SigmaProp): Nullable[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {
-    case d: ProveDHTuple => Nullable(d)
-    case _ => Nullable.None
+  def unapply(p: SigmaProp): Option[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {
+    case d: ProveDHTuple => Some(d)
+    case _ => None
   }
 }
 

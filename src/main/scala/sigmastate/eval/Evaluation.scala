@@ -23,6 +23,8 @@ import sigmastate.lang.exceptions.CosterException
 import special.SpecialPredef
 import special.Types._
 
+/** This is a slice in IRContext cake which implements evaluation of graphs.
+  */
 trait Evaluation extends RuntimeCosting { IR =>
   import Context._
   import SigmaProp._
@@ -82,6 +84,9 @@ trait Evaluation extends RuntimeCosting { IR =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
+  /** Checks is the operation is among the allowed in costF graph, created by costing.
+    * @throws StagingException if the given graph node `d` is not matched.
+    */
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
     case _: OpCost | _: Cast[_] =>
@@ -107,14 +112,13 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
          _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor =>
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
+         ContextM.getVar(_,_,_)  =>
     case SigmaM.propBytes(_) =>
     case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] =>
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) |
          CollM.append(_,_) | CollM.foldLeft(_,_,_) =>
     case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) /*| BoxM.cost(_) | BoxM.dataSize(_)*/ | BoxM.getReg(_,_,_) =>
-//    case AvlM.dataSize(_) =>
+    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_,_,_) =>
     case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
     case _: CostOf | _: SizeOf[_] =>
     case _: Upcast[_,_] =>
@@ -123,25 +127,25 @@ trait Evaluation extends RuntimeCosting { IR =>
     case _ => !!!(s"Invalid primitive in Cost function: $d")
   }
 
-  def verifyCalcFunc[A](f: Rep[Context => A], eA: Elem[A]) = {
-    if (f.elem.eRange != eA)
-      !!!(s"Expected function of type ${f.elem.eDom.name} => ${eA.name}, but was $f: ${f.elem.name}")
-  }
-
+  /** Checks if the function (Lambda node) given by the simbol `costF` contains only allowed operations
+    * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
   }
 
+  /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val ok = lam.scheduleAll.find(te => te.rhs match {
+    val s = lam.scheduleAll.find(te => te.rhs match {
       case SigmaM.isValid(_) => true
       case _ => false
     }).map(_.sym)
-    ok
+    s
   }
 
+  /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
+    * then it is the last operation. */
   def verifyIsProven[T](f: Rep[Context => T]): Try[Unit] = {
     val isProvenOpt = findIsProven(f)
     Try {
@@ -152,12 +156,14 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
   }
+
   object IsTupleFN {
     def unapply(fn: String): Nullable[Byte] = {
       if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
       else Nullable.None.asInstanceOf[Nullable[Byte]]
     }
   }
+
   import sigmastate._
   import special.sigma.{Context => SigmaContext}
 
@@ -167,6 +173,8 @@ trait Evaluation extends RuntimeCosting { IR =>
   val costedBuilderValue: special.collection.CostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
 
+  /** Constructs a new data environment for evaluation of graphs using `compile` method.
+    * This environment contains global variables. */
   def getDataEnv: DataEnv = {
     val env = Map[Sym, AnyRef](
       specialPredef   -> SpecialPredef,
@@ -182,7 +190,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
   case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
-  def printEnvEntry(sym: Sym, value: AnyRef) = {
+  protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
@@ -224,7 +232,8 @@ trait Evaluation extends RuntimeCosting { IR =>
     @inline def resetCost() = { _currentCost = initialCost }
   }
 
-  /** Implements finite state machine with stack of graph blocks (lambdas and thunks).
+  /** Implements finite state machine with stack of graph blocks (scopes),
+    * which correspond to lambdas and thunks.
     * It accepts messages: startScope(), endScope(), add(), reset()
     * At any time `totalCost` is the currently accumulated cost. */
   class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
@@ -236,6 +245,11 @@ trait Evaluation extends RuntimeCosting { IR =>
     @inline def currentScope: Scope = _scopeStack.head
     @inline private def getCostFromEnv(dataEnv: DataEnv, s: Sym): Int = getFromEnv(dataEnv, s).asInstanceOf[Int]
 
+    /** Represents a single scope during execution of the graph.
+      * The lifetime of each instance is bound to scope execution.
+      * When the evaluation enters a new scope (e.g. calling a lambda) a new Scope instance is created and pushed
+      * to _scopeStack, then is starts receiving `add` method calls.
+      * When the evaluation leaves the scope, the top is popped off the stack. */
     class Scope(visitiedOnEntry: Set[Sym], initialCost: Int) extends CostCounter(initialCost) {
       private var _visited: Set[Sym] = visitiedOnEntry
       @inline def visited = _visited
@@ -253,7 +267,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
-      * if isCosting then delegate to the currentScope */
+      * if costLimit is defined then delegates to currentScope. */
     def add(s: Sym, op: OpCost, dataEnv: DataEnv) = {
       val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
       if (costLimit.isDefined) {

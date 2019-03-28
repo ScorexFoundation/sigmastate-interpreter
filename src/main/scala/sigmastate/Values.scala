@@ -180,6 +180,11 @@ object Values {
       case _ => None
     }
 
+    /** Checks that the type of the value corresponds to the descriptor `tpe`.
+      * If the value has complex structure only root type constructor is checked.
+      * NOTE, this is surface check with possible false positives, but it is ok
+      * when used in assertions, like `assert(isCorrestType(...))`, see `ConstantNode`.
+      */
     def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
       case c: Coll[_] => tpe match {
         case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
@@ -298,9 +303,9 @@ object Values {
     }
   }
   object BigIntConstant {
-    def apply(value: BigInt): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
-    def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](SigmaDsl.BigInt(value), SBigInt)
-    def apply(value: Long): Constant[SBigInt.type]  = Constant[SBigInt.type](SigmaDsl.BigInt(BigInteger.valueOf(value)), SBigInt)
+    def apply(value: BigInt): Constant[SBigInt.type] = Constant[SBigInt.type](value, SBigInt)
+    def apply(value: BigInteger): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(value), SBigInt)
+    def apply(value: Long): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(BigInteger.valueOf(value)), SBigInt)
     def unapply(v: SValue): Option[BigInt] = v match {
       case Constant(value: BigInt, SBigInt) => Some(value)
       case _ => None
@@ -317,7 +322,7 @@ object Values {
   }
 
   object BoxConstant {
-    def apply(value: Box): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
+    def apply(value: Box): Constant[SBox.type] = Constant[SBox.type](value, SBox)
     def unapply(v: SValue): Option[Box] = v match {
       case Constant(value: Box, SBox) => Some(value)
       case _ => None
@@ -325,7 +330,7 @@ object Values {
   }
 
   object GroupElementConstant {
-    def apply(value: GroupElement): Constant[SGroupElement.type]  = Constant[SGroupElement.type](value, SGroupElement)
+    def apply(value: GroupElement): Constant[SGroupElement.type] = Constant[SGroupElement.type](value, SGroupElement)
     def unapply(v: SValue): Option[GroupElement] = v match {
       case Constant(value: GroupElement, SGroupElement) => Some(value)
       case _ => None
@@ -347,7 +352,7 @@ object Values {
   }
 
   object AvlTreeConstant {
-    def apply(value: AvlTree): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
+    def apply(value: AvlTree): Constant[SAvlTree.type] = Constant[SAvlTree.type](value, SAvlTree)
     def unapply(v: SValue): Option[AvlTree] = v match {
       case Constant(value: AvlTree, SAvlTree) => Some(value)
       case _ => None
@@ -476,7 +481,7 @@ object Values {
 
   object ByteArrayConstant {
     def apply(value: Coll[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
-    def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](Colls.fromArray(value), SByte)
+    def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value.toColl, SByte)
     def unapply(node: SValue): Option[Coll[Byte]] = node match {
       case coll: CollectionConstant[SByte.type] @unchecked => coll match {
         case CollectionConstant(arr, SByte) => Some(arr)
@@ -488,7 +493,7 @@ object Values {
 
   object ShortArrayConstant {
     def apply(value: Coll[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value, SShort)
-    def apply(value: Array[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](Colls.fromArray(value), SShort)
+    def apply(value: Array[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value.toColl, SShort)
     def unapply(node: SValue): Option[Coll[Short]] = node match {
       case coll: CollectionConstant[SShort.type] @unchecked => coll match {
         case CollectionConstant(arr, SShort) => Some(arr)
@@ -500,7 +505,7 @@ object Values {
 
   object IntArrayConstant {
     def apply(value: Coll[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
-    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](Colls.fromArray(value), SInt)
+    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value.toColl, SInt)
     def unapply(node: SValue): Option[Coll[Int]] = node match {
       case coll: CollectionConstant[SInt.type] @unchecked => coll match {
         case CollectionConstant(arr, SInt) => Some(arr)
@@ -512,7 +517,7 @@ object Values {
 
   object LongArrayConstant {
     def apply(value: Coll[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
-    def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](Colls.fromArray(value), SLong)
+    def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value.toColl, SLong)
     def unapply(node: SValue): Option[Coll[Long]] = node match {
       case coll: CollectionConstant[SLong.type] @unchecked => coll match {
         case CollectionConstant(arr, SLong) => Some(arr)
@@ -524,7 +529,7 @@ object Values {
 
   object BigIntArrayConstant {
     def apply(value: Coll[BigInt]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value, SBigInt)
-    def apply(value: Array[BigInt]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](Colls.fromArray(value), SBigInt)
+    def apply(value: Array[BigInt]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value.toColl, SBigInt)
     def unapply(node: SValue): Option[Coll[BigInt]] = node match {
       case coll: CollectionConstant[SBigInt.type] @unchecked => coll match {
         case CollectionConstant(arr, SBigInt) => Some(arr)
@@ -538,7 +543,7 @@ object Values {
 
   object BoolArrayConstant {
     def apply(value: Coll[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
-    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](Colls.fromArray(value), SBoolean)
+    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value.toColl, SBoolean)
     def unapply(node: SValue): Option[Coll[Boolean]] = node match {
       case coll: CollectionConstant[SBoolean.type] @unchecked => coll match {
         case CollectionConstant(arr, SBoolean) => Some(arr)
@@ -592,9 +597,7 @@ object Values {
   /** Algebraic data type of sigma proposition expressions.
     * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean /*extends NotReadyValue[SBoolean.type]*/ {
-    def tpe = SBoolean
-
+  trait SigmaBoolean {
     /** Unique id of the node class used in serialization of SigmaBoolean. */
     val opCode: OpCode
   }
@@ -699,8 +702,8 @@ object Values {
 
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      implicit val tElement = Evaluation.stypeToRType(elementType)
-      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
+      val tElement = Evaluation.stypeToRType(elementType)
+      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
     }
   }
   object ConcreteCollection {

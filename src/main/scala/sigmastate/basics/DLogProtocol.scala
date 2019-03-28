@@ -5,7 +5,6 @@ import java.math.BigInteger
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values._
 import Value.PropositionCode
-import scalan.Nullable
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.basics.VerifierMessage.Challenge
@@ -35,12 +34,15 @@ object DLogProtocol {
   object ProveDlog {
     val Code: PropositionCode = 102: Byte
   }
+
+  /** Helper extractor to match SigmaProp values and extract ProveDlog out of it. */
   object ProveDlogProp {
-    def unapply(p: SigmaProp): Nullable[ProveDlog] = SigmaDsl.toSigmaBoolean(p) match {
-      case d: ProveDlog => Nullable(d)
-      case _ => Nullable.None
+    def unapply(p: SigmaProp): Option[ProveDlog] = SigmaDsl.toSigmaBoolean(p) match {
+      case d: ProveDlog => Some(d)
+      case _ => None
     }
   }
+
   case class DLogProverInput(w: BigInteger)
     extends SigmaProtocolPrivateInput[DLogSigmaProtocol, ProveDlog] {
 

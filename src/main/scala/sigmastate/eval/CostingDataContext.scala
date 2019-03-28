@@ -244,16 +244,15 @@ class EvalSizeBuilder extends CSizeBuilder {
   }
 }
 
-case class CostingBox(isCost: Boolean,
-                      val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
-  val builder = new CostingSigmaDslBuilder()
+case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with WrapperOf[ErgoBox] {
+  val builder = CostingSigmaDslBuilder
 
-  lazy val id: Coll[Byte] = Colls.fromArray(ebox.id)
   val value = ebox.value
+  lazy val id: Coll[Byte] = Colls.fromArray(ebox.id)
   lazy val bytes: Coll[Byte] = Colls.fromArray(ebox.bytes)
   lazy val bytesWithoutRef: Coll[Byte] = Colls.fromArray(ebox.bytesWithNoRef)
   lazy val propositionBytes: Coll[Byte] = Colls.fromArray(ebox.propositionBytes)
-  val registers: Coll[AnyValue] = regs(ebox, isCost)
+  lazy val registers: Coll[AnyValue] = regs(ebox, isCost)
 
   override def wrappedValue: ErgoBox = ebox
 
@@ -305,7 +304,7 @@ case class CostingBox(isCost: Boolean,
   }
 
   override def tokens: Coll[(Coll[Byte], Long)] = {
-    this.getReg[Coll[(Coll[Byte], Long)]](2).get
+    this.getReg[Coll[(Coll[Byte], Long)]](ErgoBox.R2.asIndex).get
   }
 
   override def executeFromRegister[T](regId: Byte)(implicit cT: RType[T]): T = ??? // TODO implement
