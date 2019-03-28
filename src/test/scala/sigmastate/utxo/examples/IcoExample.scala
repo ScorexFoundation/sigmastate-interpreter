@@ -5,14 +5,16 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup, Remove}
+import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant}
-import sigmastate.{AvlTreeData, AvlTreeFlags, SByte, Values}
+import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
+import ErgoTreeSerializer.DefaultSerializer
+import sigmastate.interpreter.CryptoConstants
 
 import scala.util.Random
 
@@ -175,7 +177,7 @@ class IcoExample extends SigmaTestingCommons {
         |  val lookupProof = getVar[Coll[Byte]](2).get
         |
         |  val toLookup: Coll[(Coll[Byte], Coll[Byte])] = OUTPUTS.slice(1, OUTPUTS.size - 1).map({ (b: Box) =>
-        |     val pk = b.propositionBytes
+        |     val pk = blake2b256(b.propositionBytes)
         |     val value = longToByteArray(b.value)
         |     (pk, value)
         |  })
@@ -186,9 +188,8 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val initialTree = SELF.R5[AvlTree].get
         |
-        |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => o.get })
-        |  val zipped = removedValues.zip(withdrawValues)
-        |  val valuesCorrect = zipped.forall({(t: (Coll[Byte], Coll[Byte])) => t._1 == t._2})
+        |  val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => o.get})
+        |  val valuesCorrect = removedValues == withdrawValues
         |
         |  val modifiedTree = initialTree.remove(toRemove, removeProof).get
         |
@@ -202,37 +203,44 @@ class IcoExample extends SigmaTestingCommons {
     ).asBoolValue.toSigmaProp
 
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    val digest = avlProver.digest
 
     val funderBoxCount = 2000
-    val funderKvs = (1 to funderBoxCount).map { _ =>
-       Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte) -> Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong)
+    val funderProps = (1 to funderBoxCount).map { _ =>
+      val keyPoint = CryptoConstants.dlogGroup.createRandomElement()
+      val prop = CreateProveDlog(SGroupElement.mkConstant(keyPoint)).asSigmaProp
+      val propBytes = DefaultSerializer.serializeErgoTree(prop)
+      propBytes -> Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong)
+    }
+    val funderKvs = funderProps.map { case (prop, v) =>
+      val k = Blake2b256(prop)
+      k -> v
     }
 
     funderKvs.foreach { case (k, v) =>
       avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
     }
+    val digest = avlProver.digest
     val fundersTree = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val withdrawals = funderKvs.take(10)
+    val withdrawalsCount = 10
+    val withdrawals = funderKvs.take(withdrawalsCount)
 
     avlProver.generateProof()
 
-    withdrawals.foreach { case (k, v) =>
+    withdrawals.foreach { case (k, _) =>
       avlProver.performOneOperation(Lookup(ADKey @@ k))
     }
     val lookupProof = avlProver.generateProof()
 
-    withdrawals.foreach { case (k, v) =>
+    withdrawals.foreach { case (k, _) =>
       avlProver.performOneOperation(Remove(ADKey @@ k))
     }
     val removalProof = avlProver.generateProof()
 
     val finalTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-
-    val withdrawBoxes = withdrawals.map { case (k, v) =>
-      ErgoBox(Longs.fromByteArray(v), ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(k), 0)
+    val withdrawBoxes = funderProps.take(withdrawalsCount).map { case (prop, v) =>
+      ErgoBox(Longs.fromByteArray(v), DefaultSerializer.deserializeErgoTree(prop), 0)
     }
 
     val projectBoxBefore = ErgoBox(2000, withdrawalScript, 0, Seq(),
@@ -252,12 +260,14 @@ class IcoExample extends SigmaTestingCommons {
       self = projectBoxBefore)
 
     val projectProver =
-      new ContextEnrichingTestProvingInterpreter()
+      new ContextEnrichingTestProvingInterpreter(2000000)
         .withContextExtender(1, ByteArrayConstant(removalProof))
         .withContextExtender(2, ByteArrayConstant(lookupProof))
 
     val res = projectProver.prove(withdrawalEnv, withdrawalScript, fundingContext, fakeMessage).get
     println("cost: " + res.cost)
+    println("remove proof size: " + removalProof.length)
+    println("lookup proof size: " + lookupProof.length)
   }
 
 }
