@@ -16,7 +16,6 @@ import sigmastate.serialization.ErgoTreeSerializer
 import ErgoTreeSerializer.DefaultSerializer
 import sigmastate.eval.{CompiletimeCosting, IRContext}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.SigmaCompiler
 
 import scala.util.Random
 
@@ -67,8 +66,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asBoolValue.toSigmaProp
 
+  val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-  val fixingProp = compile(env,
+
+  val fixingProp = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R4[AvlTree].get
       |
@@ -80,8 +81,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val treeIsClosed = closedTree.enabledOperations == 4
       |
       |  val valuePreserved = SELF.value <= OUTPUTS(0).value
+      |  val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
       |
-      |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved
+      |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
       |}""".stripMargin
   ).asSigmaProp
 
@@ -115,6 +117,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  selfIndexIsZero && outputsCorrect && properTreeModification
       |}""".stripMargin
   ).asBoolValue.toSigmaProp
+
+
 
   property("simple ico example - fundraising stage only") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
@@ -174,7 +178,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
 
-    val projectBoxAfterClosing = ErgoBox(10, fixingProp, 0, Seq(),
+    val projectBoxAfterClosing = ErgoBox(10, withdrawalScript, 0, Seq(),
       Map(R4 -> AvlTreeConstant(closedTreeData)))
 
     val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing))
