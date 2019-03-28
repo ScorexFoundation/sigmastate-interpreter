@@ -50,6 +50,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
         case "SELF" => Some(Self)
         case "CONTEXT" => Some(Context)
+        case "Global" => Some(Global)
         case "None" => Some(mkNoneValue(NoType))
         case _ => None
       }

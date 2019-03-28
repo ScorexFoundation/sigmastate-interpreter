@@ -592,6 +592,7 @@ object Evaluation {
     case SBigInt => BigIntRType
     case SBox => BoxRType
     case SContext => ContextRType
+    case SGlobal => SigmaDslBuilderRType
     case SHeader => HeaderRType
     case SPreHeader => PreHeaderRType
     case SGroupElement => GroupElementRType
@@ -627,6 +628,7 @@ object Evaluation {
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case ContextRType => SContext
+    case SigmaDslBuilderRType => SGlobal
     case HeaderRType => SHeader
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp

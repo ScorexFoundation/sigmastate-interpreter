@@ -167,7 +167,7 @@ class SigmaDslTest extends PropSpec
     (key, value, avlProver)
   }
 
-  private def sampleAvlTree:CAvlTree = {
+  private def sampleAvlTree: AvlTree = {
     val (key, _, avlProver) = sampleAvlProver
     val digest = avlProver.digest.toColl
     val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
@@ -492,5 +492,23 @@ class SigmaDslTest extends PropSpec
     // TODO implement in SigmaDsl (interpreter test passes in BasicOpsSpec.Box.getReg test)
 //    val eq = checkEq(func[Box, Int]("{ (x: Box) => x.getReg[Int](1).get }")) { x => x.getReg(1).get }
 //    forAll { x: Box => eq(x) }
+  }
+
+  property("global functions equivalence") {
+    val n = SigmaDsl.BigInt(BigInteger.TEN)
+    val Global = SigmaDsl
+
+    {
+      val eq = EqualityChecker(1)
+      eq({ (x: Int) => groupGenerator })("{ (x: Int) => groupGenerator }")
+      eq({ (x: Int) => Global.groupGenerator })("{ (x: Int) => Global.groupGenerator }")
+    }
+
+    {
+      val eq = EqualityChecker(n)
+      //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+      eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
+    }
+
   }
 }

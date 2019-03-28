@@ -214,3 +214,9 @@ case object Context extends NotReadyValue[SContext.type] {
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
 }
+
+case object Global extends NotReadyValue[SGlobal.type] {
+  override val opCode: OpCode = OpCodes.GlobalCode
+  override def tpe: SGlobal.type = SGlobal
+  override def opType: SFunc = SFunc(SUnit, SGlobal)
+}

@@ -393,7 +393,7 @@ case class CHeader(
                     version: Byte,
                     parentId: Coll[Byte],
                     ADProofsRoot: Coll[Byte],
-                    stateRoot: CAvlTree,
+                    stateRoot: AvlTree,
                     transactionsRoot: Coll[Byte],
                     timestamp: Long,
                     nBits: Long,

@@ -141,6 +141,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                  defId: Int,
                  constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
+    import TestSigmaDslBuilder._
     def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
@@ -178,6 +179,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
 
       case Def(IsContextProperty(v)) => v
+      case Def(TestSigmaDslBuilderCtor()) => Global
 
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
