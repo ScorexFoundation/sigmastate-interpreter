@@ -7,7 +7,7 @@ import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScri
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntConstant}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -165,27 +165,21 @@ class IcoExample extends SigmaTestingCommons {
 
   property("simple ico example - withdrawal stage") {
     val withdrawalEnv = Map(
-      ScriptNameProp -> "withdrawalScriptEnv"
+      ScriptNameProp -> "withdrawalScriptEnv",
+      "feeBytes" -> feeBytes
     )
 
     val withdrawalScript = compiler.compile(withdrawalEnv,
       """{
-        |
-        |  // val selfIndexIsZero = INPUTS(0).id == SELF.id
-        |
         |  val removeProof = getVar[Coll[Byte]](1).get
         |  val lookupProof = getVar[Coll[Byte]](2).get
         |
-        |  val outs = OUTPUTS.slice(1, OUTPUTS.size - 1)
+        |  val outsCount = OUTPUTS.size
+        |  val outs = OUTPUTS.slice(1, outsCount - 1)
         |
-        |  val toLookup: Coll[(Coll[Byte], Coll[Byte])] = outs.map({ (b: Box) =>
-        |     val pk = blake2b256(b.propositionBytes)
-        |     (pk, b.value)
-        |  })
+        |  val withdrawValues = outs.map({(b: Box) => b.value })
         |
-        |  val withdrawValues = toLookup.map({(t: (Coll[Byte], Long)) => t._2 })
-        |
-        |  val toRemove = toLookup.map({(t: (Coll[Byte], Long)) => t._1 })
+        |  val toRemove = outs.map({(b: Box) => blake2b256(b.propositionBytes)})
         |
         |  val initialTree = SELF.R5[AvlTree].get
         |
@@ -198,7 +192,12 @@ class IcoExample extends SigmaTestingCommons {
         |
         |  val properTreeModification = modifiedTree == expectedTree
         |
-        |  properTreeModification && valuesCorrect // selfIndexIsZero &&
+        |  val selfOutputCorrect = OUTPUTS(0).propositionBytes == SELF.propositionBytes
+        |  val lastIndex = getVar[Int](3).get
+        |  val feeOut = OUTPUTS(lastIndex)
+        |  val feeOutputCorrect = (feeOut.value <= 1) && (feeOut.propositionBytes == feeBytes)
+        |
+        |  properTreeModification && valuesCorrect && selfOutputCorrect && feeOutputCorrect
         |
         |}""".stripMargin
     ).asBoolValue.toSigmaProp
@@ -223,7 +222,7 @@ class IcoExample extends SigmaTestingCommons {
     val digest = avlProver.digest
     val fundersTree = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val withdrawalsCount = 10
+    val withdrawalsCount = 9
     val withdrawals = funderKvs.take(withdrawalsCount)
 
     avlProver.generateProof()
@@ -250,7 +249,9 @@ class IcoExample extends SigmaTestingCommons {
       Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(finalTree)))
     val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
-    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox))
+    val outputs = IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox)
+    println("Outputs count: " + outputs.size)
+    val fundingTx = ErgoLikeTransaction(IndexedSeq(), outputs)
 
     val fundingContext = ErgoLikeContext(
       currentHeight = 1000,
@@ -261,14 +262,16 @@ class IcoExample extends SigmaTestingCommons {
       self = projectBoxBefore)
 
     val projectProver =
-      new ContextEnrichingTestProvingInterpreter(2000000)
+      new ContextEnrichingTestProvingInterpreter()
         .withContextExtender(1, ByteArrayConstant(removalProof))
         .withContextExtender(2, ByteArrayConstant(lookupProof))
+        .withContextExtender(3, IntConstant(10))
 
     val res = projectProver.prove(withdrawalEnv, withdrawalScript, fundingContext, fakeMessage).get
     println("cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
+
   }
 
 }
