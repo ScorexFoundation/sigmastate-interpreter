@@ -23,35 +23,19 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       val spender:(SigmaProp, Int) = spenders(index)
       val pubKey:SigmaProp = spender._1
       val ratio:Int = spender._2
-      // below syntax can be simplified but does not work
       // val total = spenders.foldLeft(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
       val total = spenders.foldLeft(0, {accum:(Int, (SigmaProp, Int)) => accum._1+accum._2._2})
       val balance = SELF.value - SELF.value / total * ratio
 
-      val thisSpender = {(s:SigmaProp, i:Int) => s == pubKey }
+      val remainingSpenders = spenders.filter(_._1 != pubKey)
 
       val out = OUTPUTS(0)
-
-      val nextSpenders = out.R4[Coll[(SigmaProp, Int)]].get
-
-      val validNextSpender = {(s:SigmaProp, i:Int) =>
-        nextSpenders.exists({s1:(SigmaProp, Int) =>
-          s1._1 == s && s1._2 == i
-        })
-      }
-
-      val validNextSpenders =
-        spenders.forall({s1:(SigmaProp, Int) =>
-          validNextSpender(s1._1, s1._2) || thisSpender(s1._1, s1._2)
-        }) && nextSpenders.size == spenders.size - 1
+      val outSpenders = out.R4[Coll[(SigmaProp, Int)]].get
 
       val validOut = out.propositionBytes == SELF.propositionBytes &&
-                     out.value >= balance &&
-                     validNextSpenders
-      pubKey && (nextSpenders.size == 0 || validOut)
+                     out.value >= balance && remainingSpenders == outSpenders
+      pubKey && (outSpenders.size == 0 || validOut)
     },
-      //spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
-      //
     """{
       |      val spenders: Coll[(SigmaProp, Int)] = SELF.R4[Coll[(SigmaProp, Int)]].get
       |      val index = getVar[Int](1).get
@@ -59,31 +43,22 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |      val pubKey:SigmaProp = spender._1
       |      val ratio:Int = spender._2
       |      // below syntax can be simplified but does not work
-      |      val total = spenders.foldLeft(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
+      |      val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
       |      //val total = spenders.foldLeft(0, {accum:(Int, (SigmaProp, Int)) => accum._1+accum._2._2})
       |      val balance = SELF.value - SELF.value / total * ratio
       |
-      |      val thisSpender = {(s:SigmaProp, i:Int) => s == pubKey }
+      |      val getNew = {(s:(SigmaProp, Int)) => if (s._1 == pubKey) (s._1, 0) else (s._1, s._2)}
       |
       |      val out = OUTPUTS(0)
       |
-      |      val nextSpenders = out.R4[Coll[(SigmaProp, Int)]].get
-      |
-      |      val validNextSpender = {(s:SigmaProp, i:Int) =>
-      |        nextSpenders.exists({s1:(SigmaProp, Int) =>
-      |          s1._1 == s && s1._2 == i
-      |        })
-      |      }
-      |
-      |      val validNextSpenders =
-      |        spenders.forall({s1:(SigmaProp, Int) =>
-      |          validNextSpender(s1._1, s1._2) || thisSpender(s1._1, s1._2)
-      |        }) && nextSpenders.size == spenders.size - 1
+      |      //val leftSpenders = spenders.map({(s:(SigmaProp, Int)) => getNew(s)})
+      |      val leftSpenders = spenders
+      |      val validNextSpenders = out.R4[Coll[(SigmaProp, Int)]].get == leftSpenders
       |
       |      val validOut = out.propositionBytes == SELF.propositionBytes &&
-      |                     out.value >= balance &&
-      |                     validNextSpenders
-      |      pubKey && (nextSpenders.size == 0 || validOut)
+      |                     out.value >= balance && validNextSpenders
+      |
+      |      pubKey && (total == ratio || validOut)
       |}
     """.stripMargin)
   }
@@ -119,16 +94,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       pubKey && validOut
     },
     """{
-      |      val index = getVar[Int](1).get
-      |      val spender = spenders(index)
-      |      val pubKey:SigmaProp = spender._1
-      |      val ratio = spender._2
-      |      val balance = SELF.value - SELF.value / 100 * ratio
-      |      val remainingSpenders = spenders.filter(_._1 != pubKey)
-      |      val validOut = blake2b256(OUTPUTS(0).propositionBytes) == outPropBytesHash &&
-      |                     OUTPUTS(0).value >= balance &&
-      |                     OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get == remainingSpenders
-      |      pubKey && validOut
+      |      pkDummy
       |}
     """.stripMargin)
 
