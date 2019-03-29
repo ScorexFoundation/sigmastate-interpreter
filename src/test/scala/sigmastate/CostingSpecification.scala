@@ -190,8 +190,8 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $rootTree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
     cost(s"{ $rootTree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
     cost(s"{ $rootTree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
-    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonCost)
-    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonCost + constCost)
+    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonPerKbCost)
+    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonPerKbCost + constCost)
 
     val AccessTree = accessBox + RegisterAccess
     val selfTree = "SELF.R6[AvlTree].get"

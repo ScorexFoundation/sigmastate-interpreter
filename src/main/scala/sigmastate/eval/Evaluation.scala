@@ -485,7 +485,7 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case costOp: CostOf =>
             out(costOp.eval)
-          case op @ PerKbCostOf(_,_,In(size: Long)) =>
+          case op @ PerKbCostOf(_,In(size: Long)) =>
             out(op.eval(size))
           case op: OpCost =>
             val c = costAccumulator.add(te.sym, op, dataEnv)
