@@ -32,7 +32,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 10000000).foreach(_ => hf(block))
+    (1 to 5000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -172,7 +172,6 @@ class SpamSpecification extends SigmaTestingCommons {
 
   property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
-//      this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
       override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
         if (okPrintEvaluatedEntries)

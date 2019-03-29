@@ -23,6 +23,7 @@ import sigmastate.eval.Extensions._
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
+    // uncomment if you want to log script evaluation
     // override val okPrintEvaluatedEntries = true
     saveGraphsInFile = false
   }
