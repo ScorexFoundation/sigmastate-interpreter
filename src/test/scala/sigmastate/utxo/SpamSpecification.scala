@@ -220,7 +220,7 @@ class SpamSpecification extends SigmaTestingCommons {
     // measure time required to execute the script itself and it is more then timeout
     val (_, calcTime) = BenchmarkUtil.measureTime {
       import limitlessProver.IR._
-      val _ @ Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
+      val Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }

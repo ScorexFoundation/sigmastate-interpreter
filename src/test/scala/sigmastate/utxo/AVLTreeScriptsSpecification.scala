@@ -12,9 +12,8 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import special.collection.Coll
 import special.sigma.{Context, AvlTree}

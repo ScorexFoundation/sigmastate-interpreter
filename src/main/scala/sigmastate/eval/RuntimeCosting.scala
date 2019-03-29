@@ -187,11 +187,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   def costOfDHTuple: Rep[Int] = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
 
   def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
-    case dlog: ProveDlog => CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)).eval
-    case dlog: ProveDHTuple => CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)).eval * 2
+    case _: ProveDlog => CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)).eval
+    case _: ProveDHTuple => CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)).eval * 2
     case CAND(children) => children.map(costOfSigmaTree(_)).sum
     case COR(children)  => children.map(costOfSigmaTree(_)).sum
-    case CTHRESHOLD(k, children)  => children.map(costOfSigmaTree(_)).sum
+    case CTHRESHOLD(_, children)  => children.map(costOfSigmaTree(_)).sum
     case _ => CostTable.MinimalCost
   }
 
@@ -216,7 +216,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def constCost(tpe: SType): Rep[Int] = tpe match {
-    case f: SFunc =>
+    case _: SFunc =>
       costOf(s"Lambda", Constant[SType](SType.DummyValue, tpe).opType)
     case _ =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
@@ -523,7 +523,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     def unapply(d: Def[_]): Nullable[Rep[Costed[(A, B)]] forSome {type A; type B}] = d.selfType match {
       case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedPairElem[_, _, _]] =>
         ce.eVal match {
-          case pE: PairElem[a,b]  =>
+          case _: PairElem[a,b]  =>
             val res = d.self.asInstanceOf[Rep[Costed[(A, B)]] forSome {type A; type B}]
             Nullable(res)
           case _ => Nullable.None
