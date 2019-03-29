@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import org.ergoplatform.ErgoBox
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.interpreter.CryptoConstants.EcPointType
@@ -110,7 +109,7 @@ object DataSerializer {
         r.getBits(len).asInstanceOf[Array[T#WrappedType]]
       case _ =>
         val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
-        for (i <- 0 until len) {
+        for (_ <- 0 until len) {
           b += deserialize(tpe, r)
         }
         b.result()

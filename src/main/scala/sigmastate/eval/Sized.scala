@@ -30,14 +30,14 @@ object Sized extends SizedLowPriority {
   val SizeGroupElement: Size[GroupElement] = new CSizePrim(CryptoConstants.EncodedGroupElementLength, GroupElementRType)
   val SizeAvlTree: Size[AvlTree] = new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
 
-  implicit val BooleanIsSized: Sized[Boolean] = (x: Boolean) => SizeBoolean
-  implicit val ByteIsSized: Sized[Byte] = (x: Byte) => SizeByte
-  implicit val ShortIsSized: Sized[Short] = (x: Short) => SizeShort
-  implicit val IntIsSized: Sized[Int] = (x: Int) => SizeInt
-  implicit val LongIsSized: Sized[Long] = (x: Long) => SizeLong
-  implicit val BigIntIsSized: Sized[BigInt] = (x: BigInt) => SizeBigInt
-  implicit val GroupElementIsSized: Sized[GroupElement] = (x: GroupElement) => SizeGroupElement
-  implicit val AvlTreeIsSized: Sized[AvlTree] = (x: AvlTree) => SizeAvlTree
+  implicit val BooleanIsSized: Sized[Boolean] = (_: Boolean) => SizeBoolean
+  implicit val ByteIsSized: Sized[Byte] = (_: Byte) => SizeByte
+  implicit val ShortIsSized: Sized[Short] = (_: Short) => SizeShort
+  implicit val IntIsSized: Sized[Int] = (_: Int) => SizeInt
+  implicit val LongIsSized: Sized[Long] = (_: Long) => SizeLong
+  implicit val BigIntIsSized: Sized[BigInt] = (_: BigInt) => SizeBigInt
+  implicit val GroupElementIsSized: Sized[GroupElement] = (_: GroupElement) => SizeGroupElement
+  implicit val AvlTreeIsSized: Sized[AvlTree] = (_: AvlTree) => SizeAvlTree
 
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
     case BooleanType => Sized[Boolean]
@@ -104,8 +104,8 @@ object Sized extends SizedLowPriority {
       sizeOfTokens(b)
       )
   }
-  implicit val headerIsSized: Sized[Header] = (b: Header) => new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
-  implicit val preHeaderIsSized: Sized[PreHeader] = (b: PreHeader) => new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+  implicit val headerIsSized: Sized[Header] = (_: Header) => new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
+  implicit val preHeaderIsSized: Sized[PreHeader] = (_: PreHeader) => new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
   implicit val contextIsSized: Sized[Context] = (ctx: Context) => {
     val outputs = sizeOf(ctx.OUTPUTS)
     val inputs = sizeOf(ctx.INPUTS)

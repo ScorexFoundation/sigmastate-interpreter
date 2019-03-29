@@ -42,7 +42,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
 
       val (ok, time) = measureTime {
         var res = true
-        for (i <- 1 to nIters) {
+        for (_ <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true
@@ -65,7 +65,7 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
 
       val (ok, time) = measureTime {
         var res = true
-        for (i <- 1 to nIters) {
+        for (_ <- 1 to nIters) {
           val proof = contract.prove(ctx, fakeMessage)
           res = contract.verify(proof, ctx, fakeMessage).get._1
           res shouldBe true

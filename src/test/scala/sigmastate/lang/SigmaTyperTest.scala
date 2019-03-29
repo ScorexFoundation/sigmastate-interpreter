@@ -28,7 +28,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
@@ -45,7 +44,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val st = new SigmaTree(bound)
     val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val exception = the[TyperException] thrownBy typer.typecheck(bound)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }

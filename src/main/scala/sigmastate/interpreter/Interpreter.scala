@@ -80,7 +80,7 @@ trait Interpreter extends ScorexLogging {
   def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
     import IR._; import Context._; import SigmaProp._
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case sp: SigmaPropElem[_] =>
+      case _: SigmaPropElem[_] =>
         val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
         val (sp, _) = valueFun(context)
         sp
