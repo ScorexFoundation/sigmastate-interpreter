@@ -319,7 +319,8 @@ val revenueAddress = P2SHAddress(proposition{
   pubKey && validOut})
 \end{verbatim}
 
-Any funds sent to \texttt{revenueAddress} are subject to the conditions mentioned above.
+Any funds sent to \texttt{revenueAddress} are subject to the revenue share discussed between the parties. 
+Each party can spend only its share and must create another box with the balance amount, the remaining spenders and protected by a script that enforces the same spending condition for any of the remaining spenders.
 
 \section{Two-party Protocols}
 
