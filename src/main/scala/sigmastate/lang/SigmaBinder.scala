@@ -56,7 +56,8 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
     }
 
     // Rule: Coll[Int](...) -->
-    case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
+    case _ @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
+      //todo: morphic: do we need the commented out code below?
 //      args.foreach{ e =>
 //        if (e.tpe != tpe)
 //          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",
