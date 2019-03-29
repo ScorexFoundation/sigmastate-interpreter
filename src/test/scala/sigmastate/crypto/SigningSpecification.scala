@@ -10,8 +10,6 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 class SigningSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
 
-  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
-
   property("simple signature test vector") {
 
     val msg = Base16.decode("1dc01772ee0171f5f614c673e3c7fa1107a8cf727bdf5a6dadb379e93c0d1d00").get
