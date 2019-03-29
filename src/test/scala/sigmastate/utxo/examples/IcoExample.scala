@@ -25,7 +25,6 @@ class IcoExample extends SigmaTestingCommons { suite =>
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
 
   lazy val spec = TestContractSpec(suite)
-  lazy val backer = spec.ProvingParty("Alice")
   lazy val project = spec.ProvingParty("Bob")
 
   private val miningRewardsDelay = 720
@@ -68,10 +67,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
   val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-
-  val fixingProp = compile(env.updated("nextStageScriptHash", wsHash),
+  val fixingScript = compile(env.updated("nextStageScriptHash", wsHash),
     """{
-      |  val openTree = SELF.R4[AvlTree].get
+      |  val openTree = SELF.R5[AvlTree].get
       |
       |  val closedTree = OUTPUTS(0).R4[AvlTree].get
       |
@@ -87,7 +85,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val fundingScript = compile(env,
+  val fixingHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(fixingScript))
+
+  val fundingScript = compile(env.updated("nextStageScriptHash", fixingHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -109,7 +109,13 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val properTreeModification = modifiedTree == expectedTree
       |
       |  val outputsCount = OUTPUTS.size == 2
-      |  val selfOutputCorrect = OUTPUTS(0).propositionBytes == SELF.propositionBytes
+      |
+      |  val selfOutputCorrect = if(HEIGHT < 2000) {
+      |    OUTPUTS(0).propositionBytes == SELF.propositionBytes
+      |  } else {
+      |    blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
+      |  }
+      |
       |  val feeOutputCorrect = (OUTPUTS(1).value <= 1) && (OUTPUTS(1).propositionBytes == feeBytes)
       |
       |  val outputsCorrect = outputsCount && feeOutputCorrect && selfOutputCorrect
@@ -153,7 +159,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, feeBox))
 
     val fundingContext = ErgoLikeContext(
-      currentHeight = 3000,
+      currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = inputBoxes,
@@ -165,6 +171,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
     println("cost: " + res.cost)
+    println("lookup proof size: " + proof.length)
+
+    //todo: test switching to fixing stage
   }
 
   property("simple ico example - fixing stage") {
@@ -173,8 +182,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val digest = avlProver.digest
     val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val projectBoxBeforeClosing = ErgoBox(10, fixingProp, 0, Seq(),
-      Map(R4 -> AvlTreeConstant(openTreeData)))
+    val projectBoxBeforeClosing = ErgoBox(10, fixingScript, 0, Seq(),
+      Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
     val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
 
@@ -191,7 +200,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       spendingTransaction = fixingTx,
       self = projectBoxBeforeClosing)
 
-    projectProver.prove(env, fixingProp, fundingContext, fakeMessage).get
+    projectProver.prove(env, fixingScript, fundingContext, fakeMessage).get
   }
 
   property("simple ico example - withdrawal stage") {
