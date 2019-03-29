@@ -29,10 +29,6 @@ object Extensions {
     @inline def toColl: Coll[T] = Colls.fromArray(arr)
   }
 
-  implicit class IterableOfTaggedOps[T: RType, U](seq: Iterable[Tagged[T, U]]) {
-    @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
-  }
-
   implicit class EvalIterableOps[T: RType](seq: Iterable[T]) {
     @inline def toColl: Coll[T] = Colls.fromArray[T](seq.toArray(RType[T].classTag))
   }

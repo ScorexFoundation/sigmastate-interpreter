@@ -2,16 +2,18 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import sigmastate.eval.Extensions._
+
 import scala.collection.mutable
 import scala.util.Try
 import sigmastate.SType._
+import sigmastate.eval._
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
@@ -142,7 +144,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokensCount = r.getUInt().toInt
     val tokensBuilder = mutable.ArrayBuilder.make[TokenId]()
     for (_ <- 0 until tokensCount) {
-      tokensBuilder += r.getBytes(TokenId.size).toColl
+      tokensBuilder += Digest32Coll @@ r.getBytes(TokenId.size).toColl
     }
     val tokens = tokensBuilder.result().toColl
     // parse outputs

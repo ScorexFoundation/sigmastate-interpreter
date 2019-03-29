@@ -23,7 +23,6 @@ import sigmastate.lang.Terms.ValueOps
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   implicit override lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting {
-//      this.useAlphaEquality = true
     }
   import IR._
   import WArray._

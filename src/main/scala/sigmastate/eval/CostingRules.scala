@@ -48,21 +48,27 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     * 4) The result of costing-rule-method is returned as the result of MethodCall node costing.
     *
     * Instances of this class are typically singleton objects (see below).
-    * Iach
+    * @param createCoster  constructor of Coster for given parameters of MethodCall: obj, method, costedArgs, args.
     * @see Coster
     */
   abstract class CostingHandler[T](createCoster: (RCosted[T], SMethod, Seq[RCosted[_]]) => Coster[T]) {
-    def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
-      val coster = createCoster(asCosted[T](obj), method, args)
+    def apply(obj: RCosted[_], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym] = Nil): RCosted[_] = {
+      val coster = createCoster(asCosted[T](obj), method, costedArgs)  // TODO use also args to create Coster
       val costerClass = coster.getClass
-      val costerMethod = costerClass.getMethod(method.name, Array.fill(args.length)(classOf[Sym]):_*)
-      val res = costerMethod.invoke(coster, args:_*)
+      val parameterTypes = Array.fill(costedArgs.length + args.length)(classOf[Sym])
+      val costerMethod = costerClass.getMethod(method.name, parameterTypes:_*)
+      val res = costerMethod.invoke(coster, costedArgs ++ args:_*)
       res.asInstanceOf[RCosted[_]]
     }
   }
 
+  /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
+    * the expression is re-evaluated. Each value should be reset in onReset() method. */
   private val _selectFieldCost = MutableLazy(sigmaDslBuilder.CostModel.SelectField)
   @inline def selectFieldCost = _selectFieldCost.value
+
+  private val _getRegisterCost = MutableLazy(sigmaDslBuilder.CostModel.GetRegister)
+  @inline def getRegisterCost = _getRegisterCost.value
 
   private val _sizeUnit: LazyRep[Size[Unit]] = MutableLazy(costedBuilder.mkSizePrim(0L, UnitElement))
   @inline def SizeUnit: RSize[Unit] = _sizeUnit.value
@@ -104,9 +110,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
   @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
 
+  /** */
   protected override def onReset(): Unit = {
     super.onReset()
-    Array(_selectFieldCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
+    // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
+    Array(_selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
       _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp, _sizeHashBytes)
         .foreach(_.reset())
   }
@@ -369,7 +377,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
-      val cost = opCost(info, Seq(obj.cost), sigmaDslBuilder.CostModel.GetRegister)
+      val cost = opCost(info, Seq(obj.cost), getRegisterCost)
       val l = RCCostedPrim(info._1, 0, SizeInt)
       val r = mkCostedColl(info._2, CryptoConstants.hashLength, 0)
       RCCostedPair(l, r, cost)
@@ -392,7 +400,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       implicit val elem = tT.eA
       val valueOpt = obj.value.getReg(i.value)(elem)
       val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
-      RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), sigmaDslBuilder.CostModel.GetRegister))
+      RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), getRegisterCost))
     }
   }
 

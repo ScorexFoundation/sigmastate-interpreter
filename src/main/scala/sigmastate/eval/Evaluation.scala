@@ -573,8 +573,11 @@ trait Evaluation extends RuntimeCosting { IR =>
 object Evaluation {
   import special.sigma._
   import special.collection._
-  
-  def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
+
+  /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
+    * which is used during evaluation.
+    */
+  def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {  // TODO optimize using memoization
     case SBoolean => BooleanType
     case SByte => ByteType
     case SShort => ShortType
@@ -603,7 +606,10 @@ object Evaluation {
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 
-  def rtypeToSType[T](t: RType[T]): SType = t match {
+  /** Transforms RType descriptor of SigmaDsl, which is used during evaluation,
+    * to the corresponding serializable ErgoTree type descriptor,
+    */
+  def rtypeToSType[T](t: RType[T]): SType = t match { // TODO optimize using memoization
     case BooleanType => SBoolean
     case ByteType => SByte
     case ShortType => SShort

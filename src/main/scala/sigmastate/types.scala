@@ -774,15 +774,8 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
 
   override def dataSize(v: SType#WrappedType): Long = {
     val coll = v.asInstanceOf[Coll[T#WrappedType]]
-    val header = 2
-    val res =
-      if (coll.isEmpty)
-        header
-      else if (elemType.isConstantSize)
-        header + elemType.dataSize(coll(0)) * coll.length
-      else
-        coll.map(x => elemType.dataSize(x)).sum(SigmaDsl.Monoids.longPlusMonoid)
-    res
+    implicit val sT = Sized.typeToSized(Evaluation.stypeToRType(elemType))
+    Sized.sizeOf(coll).dataSize
   }
   def typeParams: Seq[STypeParam] = SCollectionType.typeParams
   def tparamSubst: Map[STypeIdent, SType] = Map(tIV -> elemType)
@@ -1154,13 +1147,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override val typeCode: TypeCode = 100: Byte
   override def typeId = typeCode
   override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    val tree = v.asInstanceOf[AvlTreeData]
-    AvlTreeData.DigestSize + // digest
-        1 + // flags
-        4 + // keyLength
-        tree.valueLengthOpt.fold(0)(_ => 4)
-  }
+  override def dataSize(v: SType#WrappedType): Long = AvlTreeData.TreeDataSize
   override def isConstantSize = false
   def ancestors = Nil
 

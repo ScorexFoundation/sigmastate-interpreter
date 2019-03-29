@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import scalan.{Nullable, RType}
-import special.collection.{CSizePrim, CSizePair, Size, CSizeOption, CollType, Coll, CSizeColl}
+import special.collection._
 import scalan.RType._
 import sigmastate._
 import sigmastate.SBigInt.MaxSizeInBytes
@@ -9,11 +9,27 @@ import special.sigma._
 import SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 
+/** Type-class to give types a capability to build a Size structure. */
 trait Sized[T] {
+    /** Given data value `x` returns it's size descriptor `Size[T]` */
     def size(x: T): Size[T]
 }
+
 trait SizedLowPriority {
-  implicit def collIsSized[T: Sized: RType]: Sized[Coll[T]] = (xs: Coll[T]) => new CSizeColl(xs.map(Sized[T].size))
+  /** Sized instance for Coll[T].
+    * Takes advantage of RType.isConstantSize to use ReplColl representation of Coll when all items are the same.
+    * When all elements of T are of the same size, then only single Size[T] value is created and replicated
+    * to the length of source collection `xs`. */
+  implicit def collIsSized[T: Sized]: Sized[Coll[T]] = (xs: Coll[T]) => {
+    implicit val tT = xs.tItem
+    val sizes =
+      if (xs.isEmpty) Colls.emptyColl[Size[T]]
+      else if (xs.tItem.isConstantSize)
+        Colls.replicate(xs.length, Sized.sizeOf(xs(0)))
+      else
+        xs.map(Sized[T].size)
+    new CSizeColl(sizes)
+  }
   implicit def optionIsSized[T: Sized]: Sized[Option[T]] = (xs: Option[T]) => new CSizeOption(xs.map(Sized[T].size))
   implicit def pairIsSized[A: Sized, B: Sized]: Sized[(A,B)] = (in: (A,B)) => new CSizePair(Sized[A].size(in._1), Sized[B].size(in._2))
 }
@@ -54,7 +70,7 @@ object Sized extends SizedLowPriority {
     case HeaderRType => headerIsSized
     case PreHeaderRType => preHeaderIsSized
     case ContextRType => contextIsSized
-    case ct: CollType[a] => collIsSized(typeToSized(ct.tItem), ct.tItem)
+    case ct: CollType[a] => collIsSized(typeToSized(ct.tItem))
     case ct: OptionType[a] => optionIsSized(typeToSized(ct.tA))
     case ct: PairType[a, b] => pairIsSized(typeToSized(ct.tFst), typeToSized(ct.tSnd))
     case _ => sys.error(s"Don't know how to compute Sized for type $t")

@@ -69,6 +69,9 @@ object CostTable {
   val sigmaAndCost = 10
   val sigmaOrCost = 40
 
+  val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
+  val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
+
   val castOp = 5  // TODO should be >= selectField
 
   val treeOp = 1000
@@ -252,10 +255,8 @@ object CostTable {
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
     ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
 
-    ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
-
-    //cost if of twice prove dlog
-    ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
+    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
+    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),
 
     ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
     ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),

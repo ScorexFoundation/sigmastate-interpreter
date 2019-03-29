@@ -222,7 +222,12 @@ trait SigmaBuilder {
 
   def mkUnitConstant: Value[SUnit.type]
 
-  def liftAny(v: Any): Nullable[SValue] = v match {
+  /** Created a new Value instance with an appropriate type derived from the given data `obj`.
+    * If `obj` is already Value, then it is returned as result.
+    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    */
+  def liftAny(obj: Any): Nullable[SValue] = obj match {
+    case v: SValue => Nullable(v)
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
     case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
@@ -255,7 +260,6 @@ trait SigmaBuilder {
       val tpeItem = Evaluation.rtypeToSType(coll.tItem)
       Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
 
-    case v: SValue => Nullable(v)
     case _ =>
       Nullable.None
   }

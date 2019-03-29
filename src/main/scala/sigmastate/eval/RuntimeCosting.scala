@@ -156,11 +156,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
-  def costOf(opName: String, opType: SFunc, doEval: Boolean): Rep[Int] = {
-    val costOp = CostOf(opName, opType)
+  def costOf(costOp: CostOf, doEval: Boolean): Rep[Int] = {
     val res = if (doEval) toRep(costOp.eval)
     else (costOp: Rep[Int])
     res
+  }
+
+  def costOf(opName: String, opType: SFunc, doEval: Boolean): Rep[Int] = {
+    val costOp = CostOf(opName, opType)
+    costOf(costOp, doEval)
   }
 
   def costOf(opName: String, opType: SFunc): Rep[Int] = {
@@ -179,12 +183,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     perKbCostOf(opId.name, opId.opType.copy(tpeParams = Nil), dataSize)
   }
 
-  def costOfProveDlog: Rep[Int] = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
-  def costOfDHTuple: Rep[Int] = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)) * 2  // cost ???
+  val _costOfProveDlogEval = CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
+  val _costOfProveDHTuple = CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp))
+
+  def costOfProveDlog: Rep[Int] = costOf(_costOfProveDlogEval, substFromCostTable)
+  def costOfDHTuple: Rep[Int] = costOf(_costOfProveDHTuple, substFromCostTable)  // see CostTable for how it relate to ProveDlogEval
 
   def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
-    case dlog: ProveDlog => CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp)).eval
-    case dlog: ProveDHTuple => CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp)).eval * 2
+    case dlog: ProveDlog => _costOfProveDlogEval.eval
+    case dlog: ProveDHTuple => _costOfProveDHTuple.eval
     case CAND(children) => children.map(costOfSigmaTree(_)).sum
     case COR(children)  => children.map(costOfSigmaTree(_)).sum
     case CTHRESHOLD(k, children)  => children.map(costOfSigmaTree(_)).sum
@@ -734,6 +741,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   val builder: sigmastate.lang.SigmaBuilder
   import builder._
 
+  /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
+    * the expression is re-evaluated. Each value should be reset in onReset() method. */
   private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(RTestSigmaDslBuilder())
   def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
 
@@ -761,6 +770,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   
   protected override def onReset(): Unit = {
     super.onReset()
+    // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
     Seq(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
         _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
         .foreach(_.reset())
@@ -1545,7 +1555,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
         implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
         val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, 0, SizeInt)
-        BoxCoster(box, SBox.getRegMethod, Seq(i, asCosted[Int](liftElem(elem))))
+        BoxCoster(box, SBox.getRegMethod, Seq(i), Seq(liftElem(elem)))
 
       case BoolToSigmaProp(bool) =>
         val boolC = eval(bool)
