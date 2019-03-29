@@ -163,7 +163,7 @@ object SType {
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
-      case t: STuple => reflect.classTag[Array[Any]]
+      case _: STuple => reflect.classTag[Array[Any]]
       case tColl: SCollection[a] =>
         val elemType = tColl.elemType
         implicit val ca = elemType.classTag[elemType.WrappedType]
@@ -615,11 +615,11 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
     SMethod(this, "nonce",      SFunc(this, SByteArray), 2),
     SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 3, MethodCallIrBuilder),
     SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, Some {
-      case (builder, obj, method, Seq(arg), tparamSubst) =>
+      case (builder, obj, _, Seq(arg), _) =>
         builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
     }),
     SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 5, Some {
-      case (builder, obj, method, Seq(arg), tparamSubst) =>
+      case (builder, obj, _, Seq(arg), _) =>
         builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
     }),
     SMethod(this, "negate", SFunc(this, this), 6, MethodCallIrBuilder)
@@ -807,7 +807,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val SizeMethod = SMethod(this, "size", SFunc(ThisType, SInt), 1)
   val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(ThisType, SInt, tIV), tIV, Seq(paramIV)), 2, Some {
-    case (builder, obj, method, Seq(index, defaultValue), _) =>
+    case (builder, obj, _, Seq(index, defaultValue), _) =>
       val index1 = index.asValue[SInt.type]
       val defaultValue1 = defaultValue.asValue[SType]
       builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
@@ -1062,7 +1062,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
 
   def getGenericType: SFunc = {
     val typeParams: Seq[STypeParam] = tDom.zipWithIndex
-      .map { case (t, i) => STypeParam(tD.name + (i + 1)) } :+ STypeParam(tR.name)
+      .map { case (_, i) => STypeParam(tD.name + (i + 1)) } :+ STypeParam(tR.name)
     val ts = typeParams.map(_.ident)
     SFunc(ts.init.toIndexedSeq, ts.last, Nil)
   }

@@ -1,30 +1,20 @@
 package sigmastate.eval
 
-import scala.collection.mutable.ArrayBuffer
-import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, EvaluatedCollection, FalseLeaf, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
-import sigmastate.serialization.OpCodes._
+
+import sigmastate.Values.{BlockValue, BoolValue, Constant, ConstantNode, EvaluatedCollection, SValue, SigmaPropConstant, ValDef, ValUse, Value}
 import org.ergoplatform._
-import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
-import sigmastate.lang.Terms.{OperationId, ValueOps}
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ConstantStore, ValueSerializer}
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
-import ErgoLikeContext._
+import sigmastate.serialization.ConstantStore
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.{ClassTag, classTag}
-import scala.util.Try
 import SType._
-import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.lang.{SigmaBuilder, SigmaTyper}
+import sigmastate.lang.SigmaTyper
 
 trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   import Liftables._

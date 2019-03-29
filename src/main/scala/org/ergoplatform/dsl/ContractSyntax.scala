@@ -1,20 +1,14 @@
 package org.ergoplatform.dsl
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 import scalan.RType
 import sigmastate.SType
 import sigmastate.SType.AnyOps
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
-import sigmastate.Values.{ErgoTree, Constant}
-import sigmastate.eval.{IRContext, CSigmaProp, CostingSigmaDslBuilder, Evaluation}
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
+import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.collection.Coll
-import special.sigma.{SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder}
-
+import special.sigma.{SigmaProp, SigmaContract, Context, DslSyntaxExtensions, SigmaDslBuilder}
 import scala.language.implicitConversions
-import scala.util.Try
 
 trait ContractSyntax { contract: SigmaContract =>
   override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder

@@ -42,10 +42,10 @@ class SigmaSpecializer(val builder: SigmaBuilder) {
       val res1 = eval(curEnv, res)
       Some(res1)
 
-    case Upcast(Constant(value, tpe), toTpe: SNumericType) =>
+    case Upcast(Constant(value, _), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.upcast(value.asInstanceOf[AnyVal]), toTpe))
 
-    case Downcast(Constant(value, tpe), toTpe: SNumericType) =>
+    case Downcast(Constant(value, _), toTpe: SNumericType) =>
       Some(mkConstant(toTpe.downcast(value.asInstanceOf[AnyVal]), toTpe))
 
     // Rule: numeric.to* casts

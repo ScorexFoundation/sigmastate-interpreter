@@ -13,9 +13,8 @@ import sigmastate._
 import sigmastate.eval.{IRContext, CSigmaProp}
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import special.collection.Coll
 import special.sigma.{Context, AvlTree}
@@ -76,7 +75,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         .withRegs(reg1 -> tree, reg2 -> endTree)
 
     val spendingTx = candidateBlock(50).newTransaction().spending(s)
-    val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
     val res = in1.runDsl()
@@ -126,7 +124,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         .withRegs(reg1 -> tree, reg2 -> endTree)
 
     val spendingTx = candidateBlock(50).newTransaction().spending(s)
-    val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
     val res = in1.runDsl()
@@ -159,7 +156,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
 
     val key = genKey("key")
     val value = genValue("value")
-    val (tree, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, key -> value, genKey("key2") -> genValue("value2"))
+    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, key -> value, genKey("key2") -> genValue("value2"))
     avlProver.performOneOperation(Lookup(genKey("key")))
 
     val digest = avlProver.digest
@@ -175,7 +172,6 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
         .withRegs(reg1 -> treeData)
 
     val spendingTx = candidateBlock(50).newTransaction().spending(s)
-    val newBox1 = spendingTx.outBox(10, contract.proverSig)
 
     val in1 = spendingTx.inputs(0)
     val res = in1.runDsl()

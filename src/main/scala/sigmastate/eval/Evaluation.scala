@@ -659,32 +659,32 @@ object Evaluation {
     case coll: Coll[_] => collRType(coll.tItem)
     
     // all primitive types
-    case v: Boolean => BooleanType
-    case v: Byte  => ByteType
-    case v: Short => ShortType
-    case v: Int   => IntType
-    case v: Long  => LongType
-    case v: Char  => CharType
-    case v: Float  => FloatType
-    case v: Double  => DoubleType
-    case v: String  => StringType
-    case v: Unit  => UnitType
+    case _: Boolean => BooleanType
+    case _: Byte  => ByteType
+    case _: Short => ShortType
+    case _: Int   => IntType
+    case _: Long  => LongType
+    case _: Char  => CharType
+    case _: Float  => FloatType
+    case _: Double  => DoubleType
+    case _: String  => StringType
+    case _: Unit  => UnitType
 
-    case v: BigInteger => BigIntegerRType
-    case n: special.sigma.BigInt => BigIntRType
+    case _: BigInteger => BigIntegerRType
+    case _: special.sigma.BigInt => BigIntRType
 
-    case v: ECPoint => ECPointRType
-    case ge: GroupElement => GroupElementRType
+    case _: ECPoint => ECPointRType
+    case _: GroupElement => GroupElementRType
 
-    case b: ErgoBox => ErgoBoxRType
-    case b: Box => BoxRType
+    case _: ErgoBox => ErgoBoxRType
+    case _: Box => BoxRType
 
-    case avl: AvlTreeData => AvlTreeDataRType
-    case avl: AvlTree => AvlTreeRType
+    case _: AvlTreeData => AvlTreeDataRType
+    case _: AvlTree => AvlTreeRType
 
-    case sb: SigmaBoolean => SigmaBooleanRType
-    case p: SigmaProp => SigmaPropRType
-    case ctx: Context => ContextRType
+    case _: SigmaBoolean => SigmaBooleanRType
+    case _: SigmaProp => SigmaPropRType
+    case _: Context => ContextRType
     case _ =>
       sys.error(s"Don't know how to compute typeOf($value)")
   }}

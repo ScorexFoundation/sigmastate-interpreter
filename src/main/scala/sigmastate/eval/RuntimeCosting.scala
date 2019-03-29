@@ -205,11 +205,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   def costOfDHTuple: Rep[Int] = costOf(_costOfProveDHTuple, substFromCostTable)  // see CostTable for how it relate to ProveDlogEval
 
   def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
-    case dlog: ProveDlog => _costOfProveDlogEval.eval
-    case dlog: ProveDHTuple => _costOfProveDHTuple.eval
+    case _: ProveDlog => _costOfProveDlogEval.eval
+    case _: ProveDHTuple => _costOfProveDHTuple.eval
     case CAND(children) => children.map(costOfSigmaTree(_)).sum
     case COR(children)  => children.map(costOfSigmaTree(_)).sum
-    case CTHRESHOLD(k, children)  => children.map(costOfSigmaTree(_)).sum
+    case CTHRESHOLD(_, children)  => children.map(costOfSigmaTree(_)).sum
     case _ => CostTable.MinimalCost
   }
 
@@ -234,7 +234,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def constCost(tpe: SType): Rep[Int] = tpe match {
-    case f: SFunc =>
+    case _: SFunc =>
       costOf(s"Lambda", Constant[SType](SFunc.identity.asWrappedType, tpe).opType)
     case _ =>
       costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
@@ -541,7 +541,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     def unapply(d: Def[_]): Nullable[Rep[Costed[(A, B)]] forSome {type A; type B}] = d.selfType match {
       case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedPairElem[_, _, _]] =>
         ce.eVal match {
-          case pE: PairElem[a,b]  =>
+          case _: PairElem[a,b]  =>
             val res = d.self.asInstanceOf[Rep[Costed[(A, B)]] forSome {type A; type B}]
             Nullable(res)
           case _ => Nullable.None
@@ -782,7 +782,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   private val _costedGlobal: LazyRep[Costed[SigmaDslBuilder]] =
     MutableLazy(RCCostedPrim(sigmaDslBuilder, 0, costedBuilder.mkSizePrim(1L, sigmaDslBuilderElement)))
   def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal.value
-  
+
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
@@ -1088,7 +1088,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   @inline def SigmaDsl = sigmaDslBuilderValue
   @inline def Colls = sigmaDslBuilderValue.Colls
-  
+
   protected implicit def groupElementToECPoint(g: special.sigma.GroupElement): EcPointType = SigmaDsl.toECPoint(g).asInstanceOf[EcPointType]
 
   def constantTypeSize[T](implicit eT: Elem[T]): RSize[T] = RCSizePrim(typeSize(eT), eT)

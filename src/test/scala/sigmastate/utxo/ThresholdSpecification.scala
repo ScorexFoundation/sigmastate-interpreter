@@ -169,7 +169,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     for (t <- testCaseSeq) {
       for (bound <- 0 to testCaseSeq.length + 1) {
         val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
-        pReduced.fold(t => throw t, x => true) shouldBe true
+        pReduced.fold(t => throw t, _ => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
             pReduced.get._1 shouldBe TrueProp

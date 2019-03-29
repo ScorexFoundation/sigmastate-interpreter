@@ -120,9 +120,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven)).toSigmaProp
 
-    val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    val pt = System.currentTimeMillis()
 
     val (_, terminated) = termination(() =>
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage)
@@ -222,7 +220,7 @@ class SpamSpecification extends SigmaTestingCommons {
     // measure time required to execute the script itself and it is more then timeout
     val (_, calcTime) = BenchmarkUtil.measureTime {
       import limitlessProver.IR._
-      val costingRes @ Pair(calcF, costF) = doCostingEx(emptyEnv, prop, true)
+      val Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }

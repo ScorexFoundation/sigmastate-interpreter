@@ -121,7 +121,7 @@ object DataSerializer {
       case _ =>
         implicit val tItem = Evaluation.stypeToRType(tpe)
         val b = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
-        for (i <- 0 until len) {
+        for (_ <- 0 until len) {
           b += deserialize(tpe, r)
         }
         Colls.fromArray(b.result())

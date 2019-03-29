@@ -264,8 +264,8 @@ trait SigmaBuilder {
       Nullable.None
   }
 
-  def unliftAny(v: SValue): Nullable[Any] = v match {
-    case Constant(v, t) => Nullable(v)
+  def unliftAny(value: SValue): Nullable[Any] = value match {
+    case Constant(v, _) => Nullable(v)
     case _ => Nullable.None
   }
 }

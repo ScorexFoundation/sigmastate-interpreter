@@ -34,9 +34,9 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         val ctx = testingContext(h)
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
 
         {
           val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
@@ -54,7 +54,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         }
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case sb: SigmaBoolean => }
+          res should matchPattern { case _: SigmaBoolean => }
         }
       }
     }

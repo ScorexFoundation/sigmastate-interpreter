@@ -137,7 +137,7 @@ object Values {
       val resType = tpe match {
         case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
-        case ft @ SFunc(tD, tR, _) =>
+        case ft @ SFunc(_, _, _) =>
           ft.getGenericType
         case _ => tpe
       }
