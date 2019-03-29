@@ -89,7 +89,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     */
   def isValidCostPrimitive(d: Def[_]): Unit = d match {
     case _: Const[_] =>
-    case _: OpCost | _: Cast[_] =>
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] =>
     case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
     case _: FieldApply[_] =>
     case _: IntPlusMonoid =>
@@ -485,6 +485,8 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case costOp: CostOf =>
             out(costOp.eval)
+          case op @ PerKbCostOf(_,_,In(size: Long)) =>
+            out(op.eval(size))
           case op: OpCost =>
             val c = costAccumulator.add(te.sym, op, dataEnv)
             out(c)

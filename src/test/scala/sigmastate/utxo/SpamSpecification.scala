@@ -32,7 +32,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 5000000).foreach(_ => hf(block))
+    (1 to 4000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -227,7 +227,7 @@ class SpamSpecification extends SigmaTestingCommons {
       limitlessProver.calcResult(calcCtx, calcF)
     }
     println(s"Full time to execute the script: ${calcTime / 1000.0} seconds")
-    // TODO this is no-longer valid after optimizations: assert(calcTime > Timeout)
+    assert(calcTime > Timeout)
   }
 
   property("too heavy avl tree lookup") {

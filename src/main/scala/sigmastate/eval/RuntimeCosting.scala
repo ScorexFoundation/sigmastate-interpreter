@@ -156,6 +156,21 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
+  /** Graph node which represents cost of operation, which depends on size of the data.
+    * @param operId   id of the operation in CostTable
+    * @param size     size of the data which is used to compute operation cost
+    */
+  case class PerKbCostOf(operId: OperationId, size: Rep[Long]) extends BaseDef[Int] {
+    override def transform(t: Transformer): Def[IntPlusMonoidData] = PerKbCostOf(operId, t(size))
+    /** Cost rule which is used to compute operation cost, depending on dataSize.
+      * Per kilobite cost of the oparation is obtained from CostTable and multiplied on
+      * the data size in Kb. */
+    def eval(dataSize: Long): Int = {
+      val cost = CostTable.DefaultCosts(operId)
+      ((dataSize / 1024L).toInt + 1) * cost
+    }
+  }
+
   def costOf(costOp: CostOf, doEval: Boolean): Rep[Int] = {
     val res = if (doEval) toRep(costOp.eval)
     else (costOp: Rep[Int])
@@ -206,7 +221,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
   def perKbCostOf(opName: String, opType: SFunc, dataSize: Rep[Long]): Rep[Int] = {
     val opNamePerKb = s"${opName}_per_kb"
-    (dataSize.div(1024L).toInt + 1) * costOf(opNamePerKb, opType)
+    PerKbCostOf(OperationId(opNamePerKb, opType), dataSize)
   }
 
   def perKbCostOf(node: SValue, dataSize: Rep[Long]): Rep[Int] = {

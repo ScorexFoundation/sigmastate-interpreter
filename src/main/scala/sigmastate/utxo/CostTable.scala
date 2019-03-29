@@ -63,6 +63,7 @@ object CostTable {
   val collToColl = 20
 
   val comparisonCost = 3
+  val comparisonPerKbCost = 10
 
   val logicCost = 2
 
@@ -163,12 +164,12 @@ object CostTable {
     ("EQ", "(T,T) => Boolean", comparisonCost),
     ("NEQ", "(T,T) => Boolean", comparisonCost),
 
-    ("GT_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("GE_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("LE_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("LT_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("EQ_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("NEQ_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("EQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 
     ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
     ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
