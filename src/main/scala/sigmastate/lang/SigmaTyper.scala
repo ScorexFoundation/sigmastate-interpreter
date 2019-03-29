@@ -146,7 +146,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       val newSel = assignType(env, sel)
       val newArgs = args.map(assignType(env, _))
       newSel.tpe match {
-        case genFunTpe @ SFunc(argTypes, tRes, _) =>
+        case genFunTpe @ SFunc(argTypes, _, _) =>
           // If it's a function then the application has type of that function's return type.
           val newObj = assignType(env, obj)
           val newArgTypes = newArgs.map(_.tpe)
@@ -176,7 +176,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
       (new_f.tpe match {
-        case SFunc(argTypes, tRes, _) =>
+        case SFunc(argTypes, _, _) =>
           // If it's a pre-defined function application
           if (args.length != argTypes.length)
             error(s"Invalid argument type of application $app: invalid number of arguments", app.sourceContext)
@@ -604,13 +604,13 @@ object SigmaTyper {
 
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
-    case (id1 @ STypeIdent(n1), id2 @ STypeIdent(n2)) =>
+    case (_ @ STypeIdent(n1), _ @ STypeIdent(n2)) =>
       if (n1 == n2) unifiedWithoutSubst else None
-    case (id1 @ STypeIdent(n), _) =>
+    case (id1 @ STypeIdent(_), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
-    case (e1: SCollectionType[_], e2: STuple) =>
+    case (e1: SCollectionType[_], _: STuple) =>
       unifyTypes(e1.elemType, SAny)
     case (e1: SOption[_], e2: SOption[_]) =>
       unifyTypes(e1.elemType, e2.elemType)

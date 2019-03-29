@@ -110,7 +110,7 @@ object DataSerializer {
         r.getBits(len).asInstanceOf[Array[T#WrappedType]]
       case _ =>
         val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
-        for (i <- 0 until len) {
+        for (_ <- 0 until len) {
           b += deserialize(tpe, r)
         }
         b.result()

@@ -39,7 +39,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case p: SEmbeddable =>
           val code = p.embedIn(NestedCollectionTypeCode)
           w.put(code)
-        case t =>
+        case _ =>
           w.put(CollectionTypeCode)
           serialize(cn, w)
       }
@@ -55,7 +55,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case p: SEmbeddable =>
           val code = p.embedIn(SOption.OptionCollectionTypeCode)
           w.put(code)
-        case t =>
+        case _ =>
           w.put(SOption.OptionTypeCode)
           serialize(c, w)
       }
@@ -63,7 +63,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         w.put(SOption.OptionTypeCode)
         serialize(t, w)
     }
-    case tup @ STuple(Seq(t1, t2)) => (t1, t2) match {
+    case _ @ STuple(Seq(t1, t2)) => (t1, t2) match {
       case (p: SEmbeddable, _) =>
         if (p == t2) {
           // Symmetric pair of primitive types (`(Int, Int)`, `(Byte,Byte)`, etc.)
