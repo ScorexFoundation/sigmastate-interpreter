@@ -5,6 +5,7 @@ import java.math.BigInteger
 import scala.math.{LowPriorityOrderingImplicits,Integral, Ordering}
 import special.sigma._
 import sigma.util.Extensions._
+import sigmastate.eval.Extensions._
 
 object OrderingOps extends LowPriorityOrderingImplicits {
   def apply[T](implicit ord: Ordering[T]) = ord
@@ -46,7 +47,7 @@ object NumericOps {
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
     def negate(x: BigInt): BigInt = x.negate()
-    def fromInt(x: Int): BigInt = CostingSigmaDslBuilder.BigInt(x.toBigInt)
+    def fromInt(x: Int): BigInt = x.toBigInt
     def toInt(x: BigInt): Int = x.toInt
     def toLong(x: BigInt): Long = x.toLong
     def toFloat(x: BigInt): Float = CostingSigmaDslBuilder.toBigInteger(x).floatValue()

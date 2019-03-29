@@ -80,7 +80,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "carol" -> carolPubKey // this pub key can reverse payments
     )
 
-    val withdrawScript = compileWithCosting(withdrawEnv,
+    val withdrawScript = compile(withdrawEnv,
       """{
         |  val bob         = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
@@ -94,7 +94,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
     )
 
-    val depositScript = compileWithCosting(depositEnv,
+    val depositScript = compile(depositEnv,
       """{
         |  alice && OUTPUTS.forall({(out:Box) =>
         |    out.R5[Int].get >= HEIGHT + 30 &&

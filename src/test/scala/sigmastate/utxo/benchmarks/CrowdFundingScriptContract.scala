@@ -24,7 +24,7 @@ class CrowdFundingScriptContract(
       "backerPubKey" -> backerPubKey,
       "projectPubKey" -> projectPubKey
     )
-    val compiledScript = compiler.compile(env,
+    val compiledScript = compiler.compileWithoutCosting(env,
       """{
        | val c1 = HEIGHT >= timeout && backerPubKey
        | val c2 = allOf(Coll(

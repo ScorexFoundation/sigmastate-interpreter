@@ -1,2 +1,0 @@
-package special.contracts
-

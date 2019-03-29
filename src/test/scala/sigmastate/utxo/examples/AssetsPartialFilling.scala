@@ -20,7 +20,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
   def pkA = tokenBuyer.pubKey
   def pkB = tokenSeller.pubKey
   
-  lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "token1" -> token1)
+  lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "deadline" -> deadline, "token1" -> token1)
 
   lazy val buyerProp = proposition("buyer", { ctx: Context =>
     import ctx._
@@ -43,7 +43,6 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
       ))
     }
   },
-  env,
   """(HEIGHT > deadline && pkA) || {
    |
    |  val outIdx = getVar[Short](127).get
@@ -94,7 +93,6 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
       ))
     }
   },
-  env,
   """ (HEIGHT > deadline && pkB) || {
    |   val outIdx = getVar[Short](127).get
    |   val out = OUTPUTS(outIdx)
@@ -123,8 +121,8 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
    | }
   """.stripMargin)
 
-  lazy val buyerSignature  = proposition("buyerSignature", _ => pkA, env, "pkA")
-  lazy val sellerSignature = proposition("sellerSignature", _ => pkB, env, "pkB")
+  lazy val buyerSignature  = proposition("buyerSignature", _ => pkA, "pkA")
+  lazy val sellerSignature = proposition("sellerSignature", _ => pkB, "pkB")
 
   import spec._
 
@@ -133,7 +131,7 @@ case class AssetsPartialFilling[Spec <: ContractSpec]
     * It creates a transaction in the target block with two holder boxes and two change boxes.
     * @return a pair of holder boxes
     */
-  def startExchange(targetBlock: Block, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
+  def startExchange(targetBlock: BlockCandidate, buyerErgBox: OutBox, sellerTokenBox: OutBox, ergAmt: Long, tokenAmt: Token): (OutBox, OutBox) = {
     require(buyerErgBox.propSpec == buyerSignature && sellerTokenBox.propSpec == sellerSignature)
 
     val tx = targetBlock.newTransaction().spending(buyerErgBox, sellerTokenBox)

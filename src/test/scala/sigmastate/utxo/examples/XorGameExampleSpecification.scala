@@ -55,7 +55,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
       "h" -> h
     )
 
-    val fullGameScript = compileWithCosting(fullGameEnv,
+    val fullGameScript = compile(fullGameEnv,
       """{
         |  val s           = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a           = getVar[Byte](1).get        // Alice's secret bit a (represented as a byte)
@@ -80,7 +80,7 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
     // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
     // before some minimum height.
-    val halfGameScript = compileWithCosting(halfGameEnv,
+    val halfGameScript = compile(halfGameEnv,
       """{
         |  alice || {
         |    val out           = OUTPUTS(0)

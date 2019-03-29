@@ -2,10 +2,10 @@ package sigma.util
 
 import java.math.BigInteger
 import java.nio.ByteBuffer
+
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
-
-import scalan.Nullable
+import scalan.{Nullable, RType}
 
 import scala.language.higherKinds
 
@@ -43,7 +43,6 @@ object Extensions {
     def toShort: Short = b.toShort
     def toInt: Int = b.toInt
     def toLong: Long = b.toLong
-    def toBigInt: BigInteger = BigInteger.valueOf(b.toLong)
 
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
@@ -110,9 +109,6 @@ object Extensions {
         throw new ArithmeticException("Short overflow")
       x.toShort
     }
-
-    /** Convert this value to BigInt. */
-    def toBigInt: BigInteger = BigInteger.valueOf(x.toLong)
 
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the

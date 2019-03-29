@@ -5,17 +5,17 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, Value, ByteArrayConstant, SigmaPropValue, IntConstant}
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ByIndex, ExtractCreationInfo, SelectField}
+import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField, CostTable}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -199,8 +199,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ContextEnrichingTestProvingInterpreter
-    val verifier = new ErgoLikeTestInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 2)
+    val verifier = new ErgoLikeTestInterpreter(CostTable.ScriptLimit * 2)
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -256,7 +256,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         ErgoBox(20, prop, 0, Seq((wrongId, 1)), Map()),
         ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
-      check(inputs3) shouldBe 'success
+      check(inputs3).fold(t => throw t, identity)
 
       // A transaction which contains input with no tokens
       val inputs4 = IndexedSeq(

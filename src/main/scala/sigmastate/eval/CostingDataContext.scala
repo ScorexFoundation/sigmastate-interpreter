@@ -4,39 +4,47 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
-import scorex.crypto.authds.{ADKey, SerializedAdProof}
+import scorex.crypto.authds.avltree.batch._
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, SValue, AvlTreeConstant, ConstantNode, SigmaPropConstant, Value, ErgoTree, SigmaBoolean, GroupElementConstant}
+import sigmastate.Values.{Constant, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.serialization.{SigmaSerializer, OperationSerializer}
-import special.collection.{Builder, CCostedBuilder, CollType, CostedBuilder, Coll}
+import special.collection.{CSizePrim, Builder, Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma._
 import special.sigma.Extensions._
 
 import scala.util.{Success, Failure}
-import scalan.RType
-import scorex.crypto.hash.{Sha256, Blake2b256}
+import scalan.{NeverInline, RType}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
+import sigmastate.interpreter.Interpreter.emptyEnv
+import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+
+import scala.reflect.ClassTag
 
 trait WrapperOf[T] {
   def wrappedValue: T
 }
 
 case class CBigInt(override val wrappedValue: BigInteger) extends TestBigInt(wrappedValue) with WrapperOf[BigInteger] {
-  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+  override val dsl = CostingSigmaDslBuilder
 }
 
-case class CGroupElement(override val wrappedValue: ECPoint) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
-  override val dsl: TestSigmaDslBuilder = CostingSigmaDslBuilder
+case class CGroupElement(override val wrappedValue: EcPointType) extends TestGroupElement(wrappedValue) with WrapperOf[ECPoint] {
+  override val dsl = CostingSigmaDslBuilder
+
+  override def getEncoded: Coll[Byte] = dsl.Colls.fromArray(GroupElementSerializer.toBytes(wrappedValue))
+
 }
 
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
+
   override def isValid: Boolean = sigmaTree match {
     case p: TrivialProp => p.condition
     case _ => sys.error(s"Method CostingSigmaProp.isValid is not defined for $sigmaTree")
@@ -70,32 +78,171 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
 }
 
 case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTreeData] {
-  val builder = new CostingSigmaDslBuilder()
+  val builder = CostingSigmaDslBuilder
+  val Colls = builder.Colls
 
   override def wrappedValue: AvlTreeData = treeData
 
-  def startingDigest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
+  def startingDigest: Coll[Byte] = Colls.fromArray(treeData.digest)
 
   def keyLength: Int = treeData.keyLength
 
+  def enabledOperations = treeData.treeFlags.serializeToByte
+
+  override def isInsertAllowed: Boolean = treeData.treeFlags.insertAllowed
+
+  override def isUpdateAllowed: Boolean = treeData.treeFlags.updateAllowed
+
+  override def isRemoveAllowed: Boolean = treeData.treeFlags.removeAllowed
+
+  override def updateOperations(newOperations: Byte): AvlTree = {
+    val td = treeData.copy(treeFlags = AvlTreeFlags(newOperations))
+    this.copy(treeData = td)
+  }
+
   def valueLengthOpt: Option[Int] = treeData.valueLengthOpt
-
-  def maxNumOperations: Option[Int] = treeData.maxNumOperations
-
-  def maxDeletes: Option[Int] = treeData.maxDeletes
 
   def cost: Int = 1
 
   def dataSize: Long = SAvlTree.dataSize(treeData.asInstanceOf[SType#WrappedType])
 
-  override def digest: Coll[Byte] = builder.Colls.fromArray(treeData.startingDigest)
+  override def digest: Coll[Byte] = Colls.fromArray(treeData.digest)
+
+  def updateDigest(newDigest: Coll[Byte]): AvlTree = {
+    val td = treeData.copy(digest = ADDigest @@ newDigest.toArray)
+    this.copy(treeData = td)
+  }
+
+  private def createVerifier(proof: Coll[Byte]): BatchAVLVerifier[Digest32, Blake2b256.type] = {
+    val adProof = SerializedAdProof @@ proof.toArray
+    val bv = new BatchAVLVerifier[Digest32, Blake2b256.type](
+      treeData.digest, adProof,
+      treeData.keyLength, treeData.valueLengthOpt)
+    bv
+  }
+
+  override def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean = {
+    val keyBytes = key.toArray
+    val bv = createVerifier(proof)
+    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+      case Failure(_) => false
+      case Success(r) => r match {
+        case Some(_) => true
+        case _ => false
+      }
+    }
+  }
+
+  override def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = {
+    val keyBytes = key.toArray
+    val bv = createVerifier(proof)
+    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
+      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
+      case Success(r) => r match {
+        case Some(v) => Some(Colls.fromArray(v))
+        case _ => None
+      }
+    }
+  }
+
+  override def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]] = {
+    val bv = createVerifier(proof)
+    keys.map { key =>
+      bv.performOneOperation(Lookup(ADKey @@ key.toArray)) match {
+        case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
+        case Success(r) => r match {
+          case Some(v) => Some(Colls.fromArray(v))
+          case _ => None
+        }
+      }
+    }
+  }
+
+  override def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isInsertAllowed) {
+      None
+    } else {
+      val bv = createVerifier(proof)
+      operations.forall { case (key, value) =>
+        val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
+        if (insertRes.isFailure) {
+          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest)")
+        }
+        insertRes.isSuccess
+      }
+      bv.digest match {
+        case Some(d) => Some(updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isUpdateAllowed) {
+      None
+    } else {
+      val bv = createVerifier(proof)
+      operations.forall { case (key, value) =>
+        bv.performOneOperation(Update(ADKey @@ key.toArray, ADValue @@ value.toArray)).isSuccess
+      }
+      bv.digest match {
+        case Some(d) => Some(updateDigest(Colls.fromArray(d)))
+        case _ => None
+      }
+    }
+  }
+
+  override def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = {
+    if (!isRemoveAllowed) {
+      None
+    } else {
+      val keysToRemove = operations.toArray.map(_.toArray)
+      val bv = createVerifier(proof)
+      keysToRemove.foreach(key => bv.performOneOperation(Remove(ADKey @@ key)))
+      bv.digest match {
+        case Some(v) => Some(updateDigest(Colls.fromArray(v)))
+        case _ => None
+      }
+    }
+  }
 }
 
 import sigmastate.eval.CostingBox._
 
-class CostingBox(val IR: Evaluation,
-                 isCost: Boolean,
-                 val ebox: ErgoBox)
+class EvalSizeBox(
+    propositionBytes: Size[Coll[Byte]],
+    bytes: Size[Coll[Byte]],
+    bytesWithoutRef: Size[Coll[Byte]],
+    registers: Size[Coll[Option[AnyValue]]],
+    tokens: Size[Coll[(Coll[Byte], Long)]]
+) extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) {
+  override def getReg[T](id: Byte)(implicit tT: RType[T]): Size[Option[T]] = {
+    val varSize = registers.asInstanceOf[SizeColl[Option[AnyValue]]].sizes(id.toInt)
+    val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
+    val regSize = foundSize match {
+      case Some(varSize: SizeAnyValue) =>
+        assert(varSize.tVal == tT, s"Unexpected register type found ${varSize.tVal}: expected $tT")
+        val regSize = varSize.valueSize.asInstanceOf[Size[T]]
+        regSize
+      case _ =>
+        val z = Zero.typeToZero(tT)
+        val zeroVal = z.zero
+        val sized = Sized.typeToSized(tT)
+        sized.size(zeroVal)
+    }
+    new CSizeOption[T](Some(regSize))
+  }
+}
+class EvalSizeBuilder extends CSizeBuilder {
+  override def mkSizeBox(propositionBytes: Size[Coll[Byte]], bytes: Size[Coll[Byte]],
+      bytesWithoutRef: Size[Coll[Byte]], registers: Size[Coll[Option[AnyValue]]],
+      tokens: Size[Coll[(Coll[Byte], Long)]]): SizeBox = {
+    new EvalSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
+  }
+}
+case class CostingBox(val IR: Evaluation,
+                      isCost: Boolean,
+                      val ebox: ErgoBox)
   extends TestBox(
     colBytes(ebox.id)(IR),
     ebox.value,
@@ -103,8 +250,7 @@ class CostingBox(val IR: Evaluation,
     colBytes(ebox.bytesWithNoRef)(IR),
     colBytes(ebox.propositionBytes)(IR),
     regs(ebox, isCost)(IR)
-  ) with WrapperOf[ErgoBox]
-{
+  ) with WrapperOf[ErgoBox] {
   override val builder = new CostingSigmaDslBuilder()
 
   override def wrappedValue: ErgoBox = ebox
@@ -115,7 +261,7 @@ class CostingBox(val IR: Evaluation,
         if (i < 0 || i >= registers.length) None
         else {
           val value = registers(i)
-          if (value != null ) {
+          if (value != null) {
             // once the value is not null it should be of the right type
             value match {
               case value: TestValue[_] if value.value != null =>
@@ -136,7 +282,7 @@ class CostingBox(val IR: Evaluation,
 
   override def creationInfo: (Int, Coll[Byte]) = {
     this.getReg[(Int, Coll[Byte])](3).get.asInstanceOf[Any] match {
-      case info: Tuple2[Int, Coll[Byte]] @unchecked => info
+      case info: Tuple2[Int, Coll[Byte]]@unchecked => info
       case ConstantNode(arr: Array[Any], STuple(IndexedSeq(SInt, SByteArray))) if arr.length == 2 =>
         (arr(0).asInstanceOf[Int], builder.Colls.fromArray(arr(1).asInstanceOf[Array[Byte]]))
       case v =>
@@ -147,8 +293,10 @@ class CostingBox(val IR: Evaluation,
 }
 
 object CostingBox {
+
   import Evaluation._
   import sigmastate.SType._
+
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 
   def regs(ebox: ErgoBox, isCost: Boolean)(implicit IR: Evaluation): Coll[AnyValue] = {
@@ -175,14 +323,135 @@ object CostingBox {
 
 }
 
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
+/** This class represents context variable and register value of a functional type A => B.
+  * When variable or register is accessed using `getVar[A => B](id).get` or
+  * `box.getReg[A => B].get an instance of this class is returned.
+  *
+  * It internally transforms a given `tree` into executable function.
+  * This it similar to what happens during validation of propositions in the input boxes:
+  * - size check of underlying ErgoTree against limits
+  * - construction of `calcF` and `costF` graphs, both are stored together with resulting function.
+  * - check the types of `calcF` graph to be compatible with expected types A and B
+  * If anything goes wrong, this operation fails and if it is used in the script, the script also fails.
+  *
+  * When f is obtained as `val f = getVar[Int => Int](id).get` then any application `f(x)` involves size estimation
+  * using underlying `costF(x)`.
+  * */
+//case class CFunc[A,B](context: sigmastate.interpreter.Context, tree: SValue)
+//    (implicit tDom: RType[A], tRange: RType[B], IR: IRContext) extends (A => B) {
+//  import CFunc._
+//
+//  private val compiled = {
+//    import IR._
+//    val IR.Pair(calcF, costF) = IR.doCosting(emptyEnv, tree)
+//
+//    val eDom = asElem[Any](IR.rtypeToElem(tDom))
+//    val eRange = asElem[Any](IR.rtypeToElem(tRange))
+//
+//    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
+////    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
+////    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+//
+//    // check cost
+////    val costingCtx = context.toSigmaContext(IR, isCost = true)
+////    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
+////    val IntConstant(estimatedCost) = costFun(costingCtx)
+////    if (estimatedCost > maxCost) {
+////      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+////    }
+//    // check calc
+//    val calcCtx = context.toSigmaContext(IR, isCost = false)
+//    val valueFun = IR.compile[SFunc](IR.getDataEnv, asRep[Context => SFunc#WrappedType](calcF))
+//    val res = valueFun(calcCtx) match {
+//      case Constant(f, fTpe: SFunc) => f
+//      case v => v
+//    }
+//    res.asInstanceOf[A => B]
+//  }
+//
+//  override def apply(x: A): B = compiled(x)
+//}
+object CFunc {
+  /** The cost of creating resulting function but not its execution.
+    * Thus it is expected to be small. It can be increased if useful cases are found
+    * such that `tree` should contains heavy operations. */
+  val maxCost = 1000
+}
+
+case class CPreHeader(
+                       version: Byte,
+                       parentId: Coll[Byte],
+                       timestamp: Long,
+                       nBits: Long,
+                       height: Int,
+                       minerPk: GroupElement,
+                       votes: Coll[Byte],
+                     ) extends PreHeader {}
+
+case class CHeader(
+                    id: Coll[Byte],
+                    version: Byte,
+                    parentId: Coll[Byte],
+                    ADProofsRoot: Coll[Byte],
+                    stateRoot: CAvlTree,
+                    transactionsRoot: Coll[Byte],
+                    timestamp: Long,
+                    nBits: Long,
+                    height: Int,
+                    extensionRoot: Coll[Byte],
+                    minerPk: GroupElement,
+                    powOnetimePk: GroupElement,
+                    powNonce: Coll[Byte],
+                    powDistance: BigInt,
+                    votes: Coll[Byte],
+                  ) extends Header {
+}
+
+class CCostModel extends CostModel {
+  private def costOf(opName: String, opType: SFunc): Int = {
+    val operId = OperationId(opName, opType)
+    costOf(operId)
+  }
+
+  @inline private def costOf(operId: OperationId): Int = {
+    val cost = sigmastate.utxo.CostTable.DefaultCosts(operId)
+    cost
+  }
+
+  def AccessBox: Int = costOf("AccessBox", SFunc(SContext, SBox))
+
+  def AccessAvlTree: Int = costOf("AccessAvlTree", SFunc(SContext, SAvlTree))
+
+  def GetVar: Int = costOf("GetVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+
+  def DeserializeVar: Int = costOf("DeserializeVar", SFunc(IndexedSeq(SContext, SByte), SOption(SOption.tT)))
+
+  def GetRegister: Int = costOf("GetRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+
+  def DeserializeRegister: Int = costOf("DeserializeRegister", SFunc(IndexedSeq(SBox, SByte), SOption(SOption.tT)))
+
+  def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
+
+  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+
+  def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
+
+  def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
+
+  def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
+}
+
+class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
+  dsl =>
   override val Costing: CostedBuilder = new CCostedBuilder {
+
     import RType._
+
     override def defaultValue[T](valueType: RType[T]): T = (valueType match {
-      case BooleanType  => false
+      case BooleanType => false
       case ByteType => 0.toByte
       case ShortType => 0.toShort
-      case IntType  => 0
+      case IntType => 0
       case LongType => 0L
       case StringType => ""
       case CharType => 0.toChar
@@ -204,51 +473,41 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
     }).asInstanceOf[T]
   }
 
+  override def CostModel: CostModel = new CCostModel
+
   override def BigInt(n: BigInteger): BigInt = new CBigInt(n)
 
-  override def GroupElement(p: ECPoint): GroupElement = new CGroupElement(p)
+  override def GroupElement(p: ECPoint): GroupElement = p match {
+    case ept: EcPointType => CGroupElement(ept)
+    case m => sys.error(s"Point of type ${m.getClass} is not supported")
+  }
 
   def SigmaProp(sigmaTree: SigmaBoolean): SigmaProp = new CSigmaProp(sigmaTree)
 
   /** Extract `sigmastate.Values.SigmaBoolean` from DSL's `SigmaProp` type. */
   def toSigmaBoolean(p: SigmaProp): SigmaBoolean = p.asInstanceOf[CSigmaProp].sigmaTree
 
-  override def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]) = {
-    val keyBytes = key.toArray
-    val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CAvlTree].treeData
-    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-    bv.performOneOperation(Lookup(ADKey @@ keyBytes)) match {
-      case Failure(_) => Interpreter.error(s"Tree proof is incorrect $treeData")
-      case Success(r) => r match {
-        case Some(v) => Some(Colls.fromArray(v))
-        case _ => None
-      }
-    }
-  }
+  /** Extract `sigmastate.AvlTreeData` from DSL's `AvlTree` type. */
+  def toAvlTreeData(p: AvlTree): AvlTreeData = p.asInstanceOf[CAvlTree].treeData
 
-  override def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]) = {
-    val operationsBytes = operations.toArray
-    val proofBytes = proof.toArray
-    val treeData = tree.asInstanceOf[CAvlTree].treeData
-    val bv = AvlTreeConstant(treeData).createVerifier(SerializedAdProof @@ proofBytes)
-    val opSerializer = new OperationSerializer(bv.keyLength, bv.valueLengthOpt)
-    val ops: Seq[Operation] = opSerializer.parseSeq(SigmaSerializer.startReader(operationsBytes, 0))
-    ops.foreach(o => bv.performOneOperation(o))
-    bv.digest match {
-      case Some(v) => Some(Colls.fromArray(v))
-      case _ => None
-    }
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): CAvlTree = {
+    val treeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags(operationFlags), keyLength, valueLengthOpt)
+    CAvlTree(treeData)
   }
 
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
-    props.map { case csp: CSigmaProp => csp.sigmaTree }
+    props.map {
+      case csp: CSigmaProp => csp.sigmaTree
+      case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
+    }
   }
 
   @inline private def toEcPointType(ge: GroupElement): EcPointType =
     toECPoint(ge).asInstanceOf[EcPointType]
 
   override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = {
+    if (props.length > AtLeast.MaxChildrenCount)
+      throw new IllegalArgumentException(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: ${props.length}")
     val sigmaTrees = toSigmaTrees(props.toArray)
     val tree = AtLeast.reduce(bound, sigmaTrees)
     CSigmaProp(tree)
@@ -293,43 +552,72 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   }
 
   override def substConstants[T](scriptBytes: Coll[Byte],
-      positions: Coll[Int],
-      newValues: Coll[T])
-      (implicit cT: RType[T]): Coll[Byte] = {
+                                 positions: Coll[Int],
+                                 newValues: Coll[T])
+                                (implicit cT: RType[T]): Coll[Byte] = {
     val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
     val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
     Colls.fromArray(res)
   }
 
   override def decodePoint(encoded: Coll[Byte]): GroupElement = {
-    this.GroupElement(CryptoConstants.dlogGroup.curve.decodePoint(encoded.toArray))
+    val r = SigmaSerializer.startReader(encoded.toArray)
+    val p = GroupElementSerializer.parse(r)
+    this.GroupElement(p)
   }
 }
 
 object CostingSigmaDslBuilder extends CostingSigmaDslBuilder
 
-class CostingDataContext(
-    val IR: Evaluation,
-    inputs: Array[Box],
-    outputs: Array[Box],
-    height: Int,
-    selfBox: Box,
-    lastBlockUtxoRootHash: AvlTree,
-    minerPubKey: Array[Byte],
-    vars: Array[AnyValue],
-    var isCost: Boolean)
-    extends TestContext(inputs, outputs, height, selfBox, lastBlockUtxoRootHash, minerPubKey, vars)
-{
-  override val builder = new CostingSigmaDslBuilder()
+case class CostingDataContext(
+                               _dataInputs: Coll[Box],
+                               override val headers: Coll[Header],
+                               override val preHeader: PreHeader,
+                               inputs: Coll[Box],
+                               outputs: Coll[Box],
+                               height: Int,
+                               selfBox: Box,
+                               lastBlockUtxoRootHash: AvlTree,
+                               _minerPubKey: Coll[Byte],
+                               vars: Coll[AnyValue],
+                               var isCost: Boolean)
+  extends Context {
+  @inline def builder: SigmaDslBuilder = CostingSigmaDslBuilder
 
-  override def getVar[T](id: Byte)(implicit tT: RType[T]) =
+  @inline def HEIGHT: Int = height
+
+  @inline def SELF: Box = selfBox
+
+  @inline def dataInputs: Coll[Box] = _dataInputs
+
+  @inline def INPUTS = inputs
+
+  @inline def OUTPUTS = outputs
+
+  @inline def LastBlockUtxoRootHash = lastBlockUtxoRootHash
+
+  @inline def minerPubKey = _minerPubKey
+
+
+  def findSelfBoxIndex: Int = {
+    var i = 0
+    while (i < inputs.length) {
+      if (inputs(i) eq selfBox) return i
+      i += 1
+    }
+    -1
+  }
+
+  override val selfBoxIndex: Int = findSelfBoxIndex
+
+  override def getVar[T](id: Byte)(implicit tT: RType[T]): Option[T] = {
     if (isCost) {
-//      implicit val tag: ClassTag[T] = cT.classTag
+      //      implicit val tag: ClassTag[T] = cT.classTag
       val optV =
         if (id < 0 || id >= vars.length) None
         else {
           val value = vars(id)
-          if (value != null ) {
+          if (value != null) {
             // once the value is not null it should be of the right type
             value match {
               case value: TestValue[_] if value.value != null =>
@@ -343,6 +631,19 @@ class CostingDataContext(
         val default = builder.Costing.defaultValue(tT).asInstanceOf[SType#WrappedType]
         Some(Constant[SType](default, tpe).asInstanceOf[T])
       }
-    } else
-      super.getVar(id)(tT)
+    } else {
+      implicit val tag: ClassTag[T] = tT.classTag
+      if (id < 0 || id >= vars.length) return None
+      val value = vars(id)
+      if (value != null) {
+        // once the value is not null it should be of the right type
+        value match {
+          case value: TestValue[_] if value.value != null && value.tA == tT =>
+            Some(value.value.asInstanceOf[T])
+          case _ =>
+            throw new InvalidType(s"Cannot getVar[${tT.name}]($id): invalid type of value $value at id=$id")
+        }
+      } else None
+    }
+  }
 }

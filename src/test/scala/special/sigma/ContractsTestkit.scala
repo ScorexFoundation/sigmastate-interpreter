@@ -1,9 +1,11 @@
 package special.sigma
 
-import special.collection.{Coll, CollOverArrayBuilder}
 import scalan._
-
-import scala.reflect.ClassTag
+import special.collection.{Coll, CollOverArrayBuilder}
+import scalan.RType
+import sigmastate.AvlTreeData
+import sigmastate.eval.{CAvlTree, CostingDataContext, CostingSigmaDslBuilder}
+import sigmastate.eval.Extensions._
 
 trait ContractsTestkit {
   val R0 = 0.toByte;
@@ -25,7 +27,10 @@ trait ContractsTestkit {
   val noInputs = Array[Box]()
   val noOutputs = Array[Box]()
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
-  val emptyAvlTree = new TestAvlTree(noBytes, 0, None, None, None)
+  val dummyADDigest: Coll[Byte] = Colls.fromArray(Array.fill(33)(0: Byte))
+  val emptyAvlTree = new CAvlTree(AvlTreeData.dummy)
+  val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
+  val dummyPreHeader: PreHeader = null
 
   def collection[T:RType](items: T*) = Colls.fromArray(items.toArray)
 
@@ -56,18 +61,21 @@ trait ContractsTestkit {
     regs(registers.map { case (k, v) => (k.toByte, v) })
   )
 
-  def newContext(height: Int, self: Box, vars: AnyValue*): TestContext = {
-    new TestContext(noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey, vars.toArray)
+  def testContext(inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
+                  tree: AvlTree, minerPk: Array[Byte], vars: Array[AnyValue]) =
+    new CostingDataContext(
+      noInputs.toColl, noHeaders, dummyPreHeader,
+      inputs.toColl, outputs.toColl, height, self, tree, minerPk.toColl, vars.toColl, false)
+
+  def newContext(height: Int, self: Box, vars: AnyValue*): CostingDataContext = {
+    testContext(noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey, vars.toArray)
   }
 
-  implicit class TestContextOps(ctx: TestContext) {
-    def withInputs(inputs: Box*) =
-      new TestContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
-    def withOutputs(outputs: Box*) =
-      new TestContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
+  implicit class TestContextOps(ctx: CostingDataContext) {
+    def withInputs(inputs: Box*) = ctx.copy(inputs = inputs.toArray.toColl)
+    def withOutputs(outputs: Box*) = ctx.copy(outputs = outputs.toArray.toColl)
     def withVariables(vars: Map[Int, AnyValue]) =
-      new TestContext(ctx.inputs, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey,
-        contextVars(vars.map { case (k, v) => (k.toByte, v) }).toArray)
+      ctx.copy(vars = contextVars(vars.map { case (k, v) => (k.toByte, v) }))
   }
 
   case class NoEnvContract(condition: Context => Boolean) extends SigmaContract {

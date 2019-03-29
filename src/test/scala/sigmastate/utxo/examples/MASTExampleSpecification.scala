@@ -3,7 +3,8 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
@@ -85,11 +86,16 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, 32, None)
+    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
 
-    val merklePathToScript = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      CalcBlake2b256(GetVarByteArray(scriptId).get),
-      GetVarByteArray(proofId).get))
+    val merklePathToScript = OptionIsDefined(
+      IR.builder.mkMethodCall(
+        ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+        SAvlTree.getMethod,
+        IndexedSeq(
+          CalcBlake2b256(GetVarByteArray(scriptId).get),
+          GetVarByteArray(proofId).get)).asOption[SByteArray]
+    )
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 

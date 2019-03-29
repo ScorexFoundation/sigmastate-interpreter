@@ -2,12 +2,9 @@ package sigmastate
 
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.{SIntArray, SByteArray}
-import sigmastate.Values.Value.PropositionCode
+import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.DLogProtocol.{DLogProverInput, DLogSigmaProtocol}
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.Transformer
@@ -120,6 +117,21 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
 }
+
+/** ErgoTree operation to create a new SigmaProp value representing public key
+  * of discrete logarithm signature protocol. */
+case class CreateAvlTree(operationFlags: ByteValue,
+    digest: Value[SByteArray],
+    keyLength: IntValue,
+    valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
+  override val opCode: OpCode = OpCodes.AvlTreeCode
+  override def tpe = SAvlTree
+  override def opType = CreateAvlTree.opType
+}
+object CreateAvlTree {
+  val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
+}
+
 /** ErgoTree operation to create a new SigmaProp value representing public key
   * of Diffie Hellman signature protocol.
   * Common input: (g,h,u,v)*/
@@ -609,34 +621,15 @@ sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
   * Return None if leaf with provided key does not exist.
   */
 case class TreeLookup(tree: Value[SAvlTree.type],
-                      key: Value[SByteArray],
-                      proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
+    key: Value[SByteArray],
+    proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
 
   override def tpe = SOption[SByteArray]
 
-  override val opCode: OpCode = OpCodes.TreeLookupCode
+  override val opCode: OpCode = OpCodes.AvlTreeGetCode
 
   override lazy val first = tree
   override lazy val second = key
-  override lazy val third = proof
-}
-
-/**
-  * Perform modification of in the tree with root `tree` using proof `proof`.
-  * Throws exception if proof is incorrect
-  * Return Some(newTree) if successfull
-  * Return None if operations were not performed.
-  */
-case class TreeModifications(tree: Value[SAvlTree.type],
-                             operations: Value[SByteArray],
-                             proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
-
-  override def tpe = SOption[SByteArray]
-
-  override val opCode: OpCode = OpCodes.TreeModificationsCode
-
-  override lazy val first = tree
-  override lazy val second = operations
   override lazy val third = proof
 }
 

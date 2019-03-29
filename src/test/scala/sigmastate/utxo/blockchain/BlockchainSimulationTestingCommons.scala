@@ -3,19 +3,19 @@ package sigmastate.utxo.blockchain
 import org.ergoplatform
 import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.{AvlTreeData, GE, Values}
-import sigmastate.Values.{ErgoTree, LongConstant}
+import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.{GE, AvlTreeData, Values, AvlTreeFlags}
+import sigmastate.Values.{LongConstant, ErgoTree}
 import sigmastate.eval.IRContext
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoTransactionValidator}
 
 import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{ValidationState, FullBlock}
 
 import scala.annotation.tailrec
 
@@ -136,7 +136,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
       assert(blockCost <= maxCost, s"Block cost $blockCost exceeds limit $maxCost")
 
       boxesReader.applyBlock(block)
-      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(startingDigest = boxesReader.digest))
+      val newState = BlockchainState(height, state.lastBlockUtxoRoot.copy(digest = boxesReader.digest))
       ValidationState(newState, boxesReader)
     }
   }
@@ -158,7 +158,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
       val prover = new BatchProver(keySize, None)
 
       val digest = prover.digest
-      val utxoRoot = AvlTreeData(digest, keySize)
+      val utxoRoot = AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, keySize)
 
       val bs = BlockchainState(currentHeight = -2, utxoRoot)
 

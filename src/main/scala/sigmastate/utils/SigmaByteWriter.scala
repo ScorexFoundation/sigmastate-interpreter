@@ -61,4 +61,5 @@ class SigmaByteWriter(val w: Writer,
     xs.foreach(putValue(_))
     this
   }
+
 }

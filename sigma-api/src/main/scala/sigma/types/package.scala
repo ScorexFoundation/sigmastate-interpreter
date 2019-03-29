@@ -13,6 +13,7 @@ package types {
 
   case class PrimViewType[T, Val](classTag: ClassTag[T], tVal: RType[Val]) extends ViewType[T, Val] {
     override def name: String = tVal.name
+    override def isConstantSize: scala.Boolean = tVal.isConstantSize
   }
 
   object IsPrimView {

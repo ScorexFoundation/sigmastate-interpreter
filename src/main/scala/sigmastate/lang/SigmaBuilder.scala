@@ -5,7 +5,8 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, UnitConstant, ValUse, Value}
+import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
@@ -16,9 +17,13 @@ import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
+import sigmastate.SOption.SIntOption
 import sigmastate.basics.ProveDHTuple
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.collection.Coll
+import special.sigma.{AvlTree, SigmaProp, GroupElement}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import special.sigma.{GroupElement, SigmaProp}
 
@@ -63,17 +68,9 @@ trait SigmaBuilder {
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
-  def mkTreeModifications(tree: Value[SAvlTree.type],
-                          operations: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SOption[SByteArray]]
-
   def mkTreeLookup(tree: Value[SAvlTree.type],
-                   key: Value[SByteArray],
-                   proof: Value[SByteArray]): Value[SOption[SByteArray]]
-
-  def mkIsMember(tree: Value[SAvlTree.type],
-                 key: Value[SByteArray],
-                 proof: Value[SByteArray]): Value[SBoolean.type]
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]]
 
   def mkIf[T <: SType](condition: Value[SBoolean.type],
                        trueBranch: Value[T],
@@ -109,15 +106,15 @@ trait SigmaBuilder {
   def mkForAll[IV <: SType](input: Value[SCollection[IV]],
                             condition: Value[SFunc]): Value[SBoolean.type]
 
-  def mkFuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]): Value[SFunc]
+  def mkFuncValue(args: IndexedSeq[(Int, SType)], body: Value[SType]): Value[SFunc]
 
   def mkFold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
-                          zero: Value[OV],
-                          foldOp: Value[SFunc]): Value[OV]
+                                       zero: Value[OV],
+                                       foldOp: Value[SFunc]): Value[OV]
 
   def mkByIndex[IV <: SType](input: Value[SCollection[IV]],
-                               index: Value[SInt.type],
-                               default: Option[Value[IV]] = None): Value[IV]
+                             index: Value[SInt.type],
+                             default: Option[Value[IV]] = None): Value[IV]
 
   def mkSelectField(input: Value[STuple], fieldIndex: Byte): Value[SType]
   def mkSizeOf[IV <: SType](input: Value[SCollection[IV]]): Value[SInt.type]
@@ -129,8 +126,8 @@ trait SigmaBuilder {
   def mkExtractCreationInfo(input: Value[SBox.type]): Value[STuple]
 
   def mkExtractRegisterAs[IV <: SType](input: Value[SBox.type],
-                                      registerId: RegisterId,
-                                      tpe: SOption[IV]): Value[SType]
+                                       registerId: RegisterId,
+                                       tpe: SOption[IV]): Value[SType]
 
   def mkDeserializeContext[T <: SType](id: Byte, tpe: T): Value[T]
   def mkDeserializeRegister[T <: SType](reg: RegisterId,
@@ -145,6 +142,11 @@ trait SigmaBuilder {
                            vv: Value[SGroupElement.type]): SigmaPropValue
 
   def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
+
+  def mkCreateAvlTree(operationFlags: ByteValue,
+                      digest: Value[SByteArray],
+                      keyLength: IntValue,
+                      valueLengthOpt: Value[SIntOption]): AvlTreeValue
 
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
@@ -173,19 +175,21 @@ trait SigmaBuilder {
   def mkApply(func: Value[SType], args: IndexedSeq[Value[SType]]): Value[SType]
   def mkApplyTypes(input: Value[SType], tpeArgs: Seq[SType]): Value[SType]
   def mkMethodCallLike(obj: Value[SType],
-                   name: String,
-                   args: IndexedSeq[Value[SType]],
-                   tpe: SType = NoType): Value[SType]
+                       name: String,
+                       args: IndexedSeq[Value[SType]],
+                       tpe: SType = NoType): Value[SType]
+
   def mkMethodCall(obj: Value[SType],
                    method: SMethod,
                    args: IndexedSeq[Value[SType]],
                    typeSubst: STypeSubst): Value[SType]
-  def mkLambda(args: IndexedSeq[(String,SType)],
+  def mkLambda(args: IndexedSeq[(String, SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
-  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String,SType)],
-               givenResType: SType,
-               body: Option[Value[SType]]): Value[SFunc]
+
+  def mkGenLambda(tpeParams: Seq[STypeParam], args: IndexedSeq[(String, SType)],
+                  givenResType: SType,
+                  body: Option[Value[SType]]): Value[SFunc]
 
   def mkConstant[T <: SType](value: T#WrappedType, tpe: T): Constant[T]
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
@@ -237,11 +241,16 @@ trait SigmaBuilder {
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
+
     case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
+    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](CostingSigmaDslBuilder.toAvlTreeData(avl), SAvlTree))
 
     case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
     case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))
 
+    case coll: Coll[a] =>
+      implicit val tA = coll.tItem
+      Nullable(coll.toTreeData)
     case v: SValue => Nullable(v)
     case _ => Nullable.None
   }
@@ -255,16 +264,16 @@ trait SigmaBuilder {
 class StdSigmaBuilder extends SigmaBuilder {
 
   protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = cons(left, right)
-
-  protected def comparisonOp[T <: SType, R](left: Value[T],
                                           right: Value[T],
                                           cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
-  protected def arithOp[T <: SNumericType, R](left: Value[T],
+  protected def comparisonOp[T <: SType, R](left: Value[T],
                                             right: Value[T],
                                             cons: (Value[T], Value[T]) => R): R = cons(left, right)
+
+  protected def arithOp[T <: SNumericType, R](left: Value[T],
+                                              right: Value[T],
+                                              cons: (Value[T], Value[T]) => R): R = cons(left, right)
 
   override def mkEQ[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     equalityOp(left, right, EQ.apply[T]).withSrcCtx(currentSrcCtx.value)
@@ -345,19 +354,9 @@ class StdSigmaBuilder extends SigmaBuilder {
     Xor(left, right).withSrcCtx(currentSrcCtx.value)
 
   override def mkTreeLookup(tree: Value[SAvlTree.type],
-                            key: Value[SByteArray],
-                            proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]] =
     TreeLookup(tree, key, proof).withSrcCtx(currentSrcCtx.value)
-
-  override def mkTreeModifications(tree: Value[SAvlTree.type],
-                                   operations: Value[SByteArray],
-                                   proof: Value[SByteArray]): Value[SOption[SByteArray]] =
-    TreeModifications(tree, operations, proof).withSrcCtx(currentSrcCtx.value)
-
-  override def mkIsMember(tree: Value[SAvlTree.type],
-                          key: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SBoolean.type] =
-    OptionIsDefined(TreeLookup(tree, key, proof)).withSrcCtx(currentSrcCtx.value)
 
   override def mkIf[T <: SType](condition: Value[SBoolean.type],
                                 trueBranch: Value[T],
@@ -478,6 +477,13 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
     CreateProveDlog(value)
+
+  override def mkCreateAvlTree(operationFlags: ByteValue,
+      digest: Value[SByteArray],
+      keyLength: IntValue,
+      valueLengthOpt: Value[SIntOption]): AvlTreeValue = {
+    CreateAvlTree(operationFlags, digest, keyLength, valueLengthOpt)
+  }
 
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)
@@ -630,8 +636,8 @@ class StdSigmaBuilder extends SigmaBuilder {
 trait TypeConstraintCheck {
 
   def check2[T <: SType](left: Value[T],
-                                 right: Value[T],
-                                 constraints: Seq[TypeConstraint2]): Unit =
+                         right: Value[T],
+                         constraints: Seq[TypeConstraint2]): Unit =
     constraints.foreach { c =>
       if (!c(left.tpe, right.tpe))
         throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
@@ -640,7 +646,7 @@ trait TypeConstraintCheck {
 
 trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
-  private def applyUpcast[T <: SType](left: Value[T], right: Value[T]):(Value[T], Value[T]) =
+  private def applyUpcast[T <: SType](left: Value[T], right: Value[T]): (Value[T], Value[T]) =
     (left.tpe, right.tpe) match {
       case (t1: SNumericType, t2: SNumericType) if t1 != t2 =>
         val tmax = t1 max t2
@@ -652,16 +658,16 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
     }
 
   override protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = {
+                                                   right: Value[T],
+                                                   cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
     cons(l, r)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
-                                          right: Value[T],
-                                          cons: (Value[T], Value[T]) => R): R = {
+                                                     right: Value[T],
+                                                     cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2))
     val (l, r) = applyUpcast(left, right)
     check2(l, r, Seq(sameType2))
@@ -669,8 +675,8 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
-                                            right: Value[T],
-                                            cons: (Value[T], Value[T]) => R): R = {
+                                                       right: Value[T],
+                                                       cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
     cons(l, r)
   }
@@ -679,22 +685,22 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
 trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
 
   override protected def equalityOp[T <: SType, R](left: Value[T],
-                                        right: Value[T],
-                                        cons: (Value[T], Value[T]) => R): R = {
+                                                   right: Value[T],
+                                                   cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
-                                          right: Value[T],
-                                          cons: (Value[T], Value[T]) => R): R = {
+                                                     right: Value[T],
+                                                     cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(onlyNumeric2, sameType2))
     cons(left, right)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
-                                            right: Value[T],
-                                            cons: (Value[T], Value[T]) => R): R = {
+                                                       right: Value[T],
+                                                       cons: (Value[T], Value[T]) => R): R = {
     check2(left, right, Seq(sameType2))
     cons(left, right)
   }

@@ -10,6 +10,8 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.lang.Terms._
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
@@ -119,7 +121,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val lastBlockUtxoDigest = avlProver.digest
 
-    val treeData = new AvlTreeData(lastBlockUtxoDigest, 32, None)
+    val treeData = new AvlTreeData(lastBlockUtxoDigest, AvlTreeFlags.ReadOnly, 32, None)
 
     def extract[T <: SType](Rn: RegisterId)(implicit tT: T) =
       ExtractRegisterAs[T](GetVarBox(22: Byte).get, Rn)(tT).get
@@ -133,7 +135,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey.isProven),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey.isProven))
 
-    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)),
+    val oracleProp = AND(
+      OptionIsDefined(IR.builder.mkMethodCall(
+        LastBlockUtxoRootHash, SAvlTree.getMethod,
+        IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
@@ -177,7 +182,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
-      self = null)
+      self = sAlice)
 
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
@@ -254,7 +259,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
-      self = null)
+      self = sOracle)
 
     val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -271,7 +276,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     def pkB = bob.pubKey
     def inRegId = reg1.asIndex
 
-    lazy val env = Env("pkA" -> pkA, "pkB" -> pkB, "pkOracle" -> pkOracle, "inRegId" -> inRegId)
+    lazy val contractEnv = Env("pkA" -> pkA, "pkB" -> pkB, "pkOracle" -> pkOracle, "inRegId" -> inRegId)
 
     lazy val prop = proposition("buyer", { ctx: Context =>
       import ctx._
@@ -281,7 +286,6 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
       okInputs && okInput0 && okContractLogic
     },
-    env,
     """{
      |      val okInputs = INPUTS.size == 3
      |      val okInput0 = INPUTS(0).propositionBytes == pkOracle.propBytes
@@ -291,8 +295,8 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
      |}
     """.stripMargin)
 
-    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, env, "pkOracle")
-    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, env, "pkA")
+    lazy val oracleSignature = proposition("oracleSignature", _ => pkOracle, "pkOracle")
+    lazy val aliceSignature  = proposition("aliceSignature", _ => pkA, "pkA")
   }
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
@@ -307,7 +311,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val sOracle = mockTx
         .outBox(value = 1L, contract.oracleSignature)
         .withRegs(reg1 -> temperature)
@@ -315,7 +319,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val sAlice = mockTx.outBox(10, contract.prop)
     val sBob   = mockTx.outBox(10, contract.prop)
 
-    val tx = block(50).newTransaction().spending(sOracle, sAlice, sBob)
+    val tx = candidateBlock(50).newTransaction().spending(sOracle, sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
     val in = tx.inputs(1)
     val res = in.runDsl()
