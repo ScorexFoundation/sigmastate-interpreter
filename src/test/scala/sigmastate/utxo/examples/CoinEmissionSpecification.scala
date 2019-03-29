@@ -81,7 +81,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
     val prop = BinOr(
-      AND(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect),
+      AND(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed),
       BinAnd(heightIncreased, lastCoins)
     ).toSigmaProp
 
