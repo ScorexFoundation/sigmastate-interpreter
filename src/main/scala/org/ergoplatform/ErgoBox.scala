@@ -94,7 +94,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  type TokenId = Digest32Coll
+  type TokenId = Digest32
   object TokenId {
     val size: Short = 32
   }
@@ -155,12 +155,12 @@ object ErgoBox {
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
-            additionalTokens: Seq[(Digest32, Long)] = Seq(),
+            additionalTokens: Seq[(TokenId, Long)] = Seq(),
             additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
-      Colls.fromItems(additionalTokens.map { case (id, v) => (Digest32Coll @@ id.toColl, v) }:_*),
+      Colls.fromArray(additionalTokens.toArray[(TokenId, Long)]),
       additionalRegisters,
       transactionId, boxIndex, creationHeight)
 

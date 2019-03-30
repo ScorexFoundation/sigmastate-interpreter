@@ -38,9 +38,9 @@ class ErgoLikeTransactionSpec extends PropSpec
         ErgoLikeTransaction.serializer.serialize(tx, w)
         val bytes = w.toBytes
 
-        tx.outputCandidates.toColl.flatMap(_.additionalTokens).foreach { (tokenId, value) =>
-          bytes.indexOfSlice(tokenId.toArray) should not be -1
-          bytes.indexOfSlice(tokenId.toArray) shouldBe bytes.lastIndexOfSlice(tokenId.toArray)
+        tx.outputCandidates.toColl.flatMap(_.additionalTokens).foreach { (tokenId, _) =>
+          bytes.indexOfSlice(tokenId) should not be -1
+          bytes.indexOfSlice(tokenId) shouldBe bytes.lastIndexOfSlice(tokenId)
         }
       }
     }

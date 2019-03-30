@@ -4,6 +4,7 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import scalan.RType
+import scorex.crypto.hash.Digest32
 import sigmastate.Values.SigmaBoolean
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.{Coll, CollBuilder}
@@ -40,6 +41,7 @@ package object eval {
 
   type Digest32Coll = Digest32Coll.Type
   implicit val Digest32CollRType: RType[Digest32Coll] = RType[Coll[Byte]].asInstanceOf[RType[Digest32Coll] ]
+  implicit val Digest32RType: RType[Digest32] = RType[Array[Byte]].asInstanceOf[RType[Digest32] ]
 
   /** Implicit conversions between Dsl type and the type wrapped by the corresponding type Dsl type.
     * Here BigInt is Dsl type and BigInteger is wrapped type.

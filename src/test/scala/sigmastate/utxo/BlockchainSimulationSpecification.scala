@@ -3,6 +3,7 @@ package sigmastate.utxo
 import java.io.{FileWriter, File}
 
 import org.ergoplatform
+import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform._
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
@@ -14,8 +15,7 @@ import scorex.util._
 import sigmastate.Values.LongConstant
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoTransactionValidator}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.eval.IRContext
-import sigmastate.eval.Colls
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.{GE, AvlTreeData, AvlTreeFlags}
 
@@ -35,7 +35,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl, Map(heightReg -> LongConstant(height + windowSize)))
+        new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl[(TokenId, Long)], Map(heightReg -> LongConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,

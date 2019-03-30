@@ -5,7 +5,7 @@ import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, GetVarByteArray, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant}
 import sigmastate._
-import sigmastate.eval.Colls
+import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._

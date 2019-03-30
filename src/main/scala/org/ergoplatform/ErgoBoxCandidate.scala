@@ -3,6 +3,7 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox._
+import scorex.crypto.hash.Digest32
 import scorex.util.encode.Base16
 import scorex.util.ModifierId
 import sigmastate.Values._
@@ -51,7 +52,7 @@ class ErgoBoxCandidate(val value: Long,
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
-        Some(Constant(additionalTokens.asWrappedType, STokensRegType))
+        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))  // TODO optimize using mapFirst
       case ReferenceRegId =>
         val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
@@ -132,10 +133,10 @@ object ErgoBoxCandidate {
           if (!digests.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
           digests(digestIndex)
         } else {
-          r.getBytes(TokenId.size).toColl
+          r.getBytes(TokenId.size)
         }
         val amount = r.getULong()
-        Digest32Coll @@ tokenId -> amount
+        Digest32 @@ tokenId -> amount
       }
       val regsCount = r.getByte()
       val regs = (0 until regsCount).map { iReg =>

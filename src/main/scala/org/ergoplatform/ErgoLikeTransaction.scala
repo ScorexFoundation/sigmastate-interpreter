@@ -144,7 +144,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokensCount = r.getUInt().toInt
     val tokensBuilder = mutable.ArrayBuilder.make[TokenId]()
     for (_ <- 0 until tokensCount) {
-      tokensBuilder += Digest32Coll @@ r.getBytes(TokenId.size).toColl
+      tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
     }
     val tokens = tokensBuilder.result().toColl
     // parse outputs
