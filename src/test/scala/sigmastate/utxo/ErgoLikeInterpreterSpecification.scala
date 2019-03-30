@@ -15,6 +15,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
@@ -631,6 +632,25 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     an[RuntimeException] should be thrownBy
       prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
   }
+
+  property("DeserializeContext value(script) type mismatch") {
+    val scriptId = 21.toByte
+    val prover0 = new ContextEnrichingTestProvingInterpreter()
+    val script = SigmaPropConstant(prover0.dlogSecrets.head.publicImage)
+    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(ValueSerializer.serialize(script)))
+    val prop = SigmaAnd(DeserializeContext(scriptId, SBoolean))
+
+    val box = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
+    val ctx = ErgoLikeContext(
+      currentHeight = 50,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(box),
+      createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
+      self = box)
+
+    an[InterpreterException] should be thrownBy prover.prove(prop, ctx, fakeMessage).get
+ }
 
   property("non-const ProveDHT") {
     import sigmastate.interpreter.CryptoConstants.dlogGroup
