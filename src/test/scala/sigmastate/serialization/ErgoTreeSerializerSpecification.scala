@@ -8,6 +8,7 @@ import sigmastate.Values.{BlockValue, Constant, ConstantPlaceholder, ErgoTree, I
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.ExtractAmount
 
@@ -50,11 +51,17 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
   }
 
   property("Constant extraction via compiler pass: (de)serialization round trip") {
-    val prop = Plus(10, 20)
+    val prop = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
     val ergoTree = extractConstants(prop)
     val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
     val deserializedTree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
     deserializedTree shouldEqual ergoTree
+  }
+
+  property("failed type check on tree deserialization") {
+    val prop = IntConstant(1)
+    val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(extractConstants(prop))
+    an[SerializerException] should be thrownBy ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
   }
 
   property("Constant extraction during serialization: (de)serialization round trip") {
@@ -89,7 +96,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
 
   property("AND expr gen: (de)serializer round trip") {
     forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { tree =>
-      val processedTree = passThroughTreeBuilder(tree)
+      val processedTree = passThroughTreeBuilder(tree.toSigmaProp)
       val ergoTree = extractConstants(processedTree)
       val bytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
       val deserializedTree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)
