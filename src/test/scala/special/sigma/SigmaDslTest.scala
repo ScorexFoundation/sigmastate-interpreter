@@ -41,7 +41,6 @@ class SigmaDslTest extends PropSpec
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
     val b1 = f(x); val b2 = g(x)
-//    assert(b1.getClass == b2.getClass)
     assert(b1 == b2)
   }
 
@@ -117,7 +116,7 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(ge)
-//      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+// TODO uncomment when isIdentity implemented  eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
       eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
       eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
@@ -134,6 +133,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+// TODO uncomment when switch to sigma.types will be finished
 //  property("sigma.types.Byte methods equivalence") {
 //    import sigma.types._
 //    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
@@ -141,7 +141,6 @@ class SigmaDslTest extends PropSpec
 //      Seq(toInt).foreach(_(x))
 //    }
 //  }
-//
 //  property("sigma.types.Int methods equivalence") {
 //    import sigma.types._
 //    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
@@ -309,7 +308,7 @@ class SigmaDslTest extends PropSpec
   property("Header properties equivalence") {
     val h = ctx.headers(0)
     val eq = EqualityChecker(h)
-// TODO costing for  eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
+    eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
     eq({ (x: Header) => x.version })("{ (x: Header) => x.version }")
     eq({ (x: Header) => x.parentId })("{ (x: Header) => x.parentId }")
     eq({ (x: Header) => x.ADProofsRoot})("{ (x: Header) => x.ADProofsRoot}")
@@ -360,9 +359,6 @@ class SigmaDslTest extends PropSpec
      |    (pk, value)
      |  }
      |}""".stripMargin)
-
-// TODO
-//    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)
   }
 
   property("xorOf equivalence") {
@@ -382,19 +378,19 @@ class SigmaDslTest extends PropSpec
 
   property("Negation equivalence") {
     // TODO make a prefix method
-    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { x => (-x).toByte }
+    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { (x: Byte) => (-x).toByte }
     forAll { x: Byte => negByte(x) }
-    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { x => (-x).toShort }
+    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { (x: Short) => (-x).toShort }
     forAll { x: Short => negShort(x) }
-    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { x => -x }
+    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { (x: Int) => -x }
     forAll { x: Int => negInt(x) }
-    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { x => -x }
+    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { (x: Long) => -x }
     forAll { x: Long => negLong(x) }
   }
 
   property("special.sigma.BigInt Negation equivalence") {
     // TODO make negate() into a prefix method
-    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { x => x.negate() }
+    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { (x: BigInt) => x.negate() }
     forAll { x: BigInt => negBigInteger(x) }
   }
 
@@ -425,7 +421,7 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(n)
-      //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+      // TODO      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 
