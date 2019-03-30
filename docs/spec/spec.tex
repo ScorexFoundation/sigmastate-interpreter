@@ -4,6 +4,8 @@
 
 \usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace}
 
+\newcommand{\authnote}[2]{\textsf{#1 \textcolor{blue}{: #2}}}
+
 \newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
 \newcommand{\mnote}[1]{{\authnote{\textcolor{red}{Morphic}}{#1}}}
 \newcommand{\dnote}[1]{{\authnote{\textcolor{brown}{Dima notes}}{#1}}}
@@ -40,6 +42,7 @@
 \newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 
+\newcommand{\asdag}{ErgoTree}
 
 \begin{document}
 
@@ -51,13 +54,38 @@
 \maketitle
 
 \begin{abstract}
-In this document we consider typed abstract syntax directed acyclic graph
+In this document we consider typed abstract syntax directed acyclic graph called \asdag which defines semantics of a
+condition which protects a closed box in the Ergo Platform blockchain. Serialized graph is written into a box.
+Most of Ergo users are unaware of the graph since they are developing contracts in higher-level languages, such as
+ErgoScript. However, for developers of alternative higher-level languages, client libraries and clients knowledge of
+internals would be highly useful. This document is providing the internals, namely, the following data structures and
+algorithms:
+\begin{itemize}
+\item{} Serialization to a binary format and graph deserialization from the binary form.
+\item{} When a graph is considered to be well-formed and when not.
+\item{} Type system and typing rules.
+\item{} How graph is transformed into an execution trace.
+\item{} How execution trace is costed.
+\item{} How execution trace is reduced into a Sigma-expression.
+\item{} How Sigma-expression is proven and verified.
+\end{itemize}
 \end{abstract}
 
+\knote{Please note that the document is intended for general high-skilled tech audience, so avoid describing Scala
+classes etc.}
 
 \section{Introduction}
-\subsection{Background}
+\label{sec:intro}
 
+\include{serialization}
+
+\include{graph}
+
+\include{types}
+
+\include{reduction}
+
+\include{costing}
 
 
 \bibliographystyle{alpha}
