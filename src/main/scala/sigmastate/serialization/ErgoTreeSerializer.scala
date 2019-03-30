@@ -127,23 +127,6 @@ class ErgoTreeSerializer {
     tree
   }
 
-  def serializedPubkeyPropValue(pubkey: Value[SByteArray]): Value[SByteArray] =
-    Append(
-      Append(
-        ConcreteCollection(
-          0.toByte, // header
-          1.toByte, // const count
-          SGroupElement.typeCode // const type
-        ),
-        pubkey // const value
-      ),
-      ConcreteCollection(
-        OpCodes.ProveDlogCode,
-        OpCodes.ConstantPlaceholderIndexCode,
-        0.toByte // constant index in the store
-      )
-    )
-
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
                           newVals: Array[Value[SType]]): Array[Byte] = {
