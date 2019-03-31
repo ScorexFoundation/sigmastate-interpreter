@@ -15,7 +15,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.lang.Terms.SigmaPropValueOps
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 

@@ -740,6 +740,7 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
+    def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {

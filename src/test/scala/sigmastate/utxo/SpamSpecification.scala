@@ -10,7 +10,6 @@ import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
-import sigmastate.lang.Terms.SigmaPropValueOps
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._

@@ -235,8 +235,4 @@ object Terms {
     }
 
   }
-
-  implicit class SigmaPropValueOps(val v: SigmaPropValue) extends AnyVal {
-    def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
-  }
 }
