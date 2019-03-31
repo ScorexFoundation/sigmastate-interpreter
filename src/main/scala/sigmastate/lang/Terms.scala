@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
 import sigmastate.lang.SigmaTyper.STypeSubst
-import sigmastate.serialization.OpCodes
+import sigmastate.serialization.{ErgoTreeSerializer, OpCodes}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
 import sigmastate.utxo.CostTable.Cost
@@ -234,5 +234,9 @@ object Terms {
       }))(v).asValue[T]
     }
 
+  }
+
+  implicit class SigmaPropValueOps(val v: SigmaPropValue) extends AnyVal {
+    def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
   }
 }

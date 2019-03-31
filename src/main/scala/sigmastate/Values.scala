@@ -59,8 +59,6 @@ object Values {
       * the type of operation result. */
     def tpe: S
 
-    lazy val bytes = DefaultSerializer.serializeWithSegregation(this)
-
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
       * Thus we can obtain global operation identifiers by combining Value.opName with Value.opType,

@@ -8,6 +8,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, DLogProverInput, F
 import sigmastate.basics.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
+import sigmastate.lang.Terms._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers

@@ -2,8 +2,8 @@ package org.ergoplatform.settings
 
 import org.ergoplatform.ErgoScriptPredef
 import org.ergoplatform.mining.emission.EmissionRules
-import sigmastate.Values.{Value, SigmaPropValue}
-import sigmastate.{SBoolean, Values}
+import sigmastate.Values.SigmaPropValue
+import sigmastate.lang.Terms._
 
 /**
   * Configuration file for monetary settings of Ergo chain
