@@ -71,14 +71,25 @@ class IcoExample extends SigmaTestingCommons { suite =>
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
-      |  val closedTree = OUTPUTS(0).R4[AvlTree].get
+      |  val closedTree = OUTPUTS(0).R5[AvlTree].get
       |
       |  val digestPreserved = openTree.digest == closedTree.digest
       |  val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
       |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
       |  val treeIsClosed = closedTree.enabledOperations == 4
       |
-      |  val valuePreserved = SELF.value <= OUTPUTS(0).value
+      |  val tokenId: Coll[Byte] = OUTPUTS(0).R4[Coll[Byte]].get
+      |
+      |  val tokensIssued = OUTPUTS(0).tokens.fold(0L, {(acc: Long, token: (Coll[Byte], Long)) =>
+      |     val tid: Coll[Byte] = token._1
+      |     val properToken = tid == tokenId
+      |     if(properToken) acc + token._2 else acc
+      |  })
+      |
+      |  val outputsCountCorrect = OUTPUTS.size == 2
+      |  val secondOutputNoTokens = OUTPUTS(1).tokens.size == 0
+      |
+      |  val valuePreserved = SELF.value == tokensIssued
       |  val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
       |
       |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
@@ -170,7 +181,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       .withContextExtender(1, ByteArrayConstant(proof))
 
     val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
-    println("cost: " + res.cost)
+    println("funding script cost: " + res.cost)
     println("lookup proof size: " + proof.length)
 
     //todo: test switching to fixing stage
@@ -182,13 +193,15 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val digest = avlProver.digest
     val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
+    val tokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+
     val projectBoxBeforeClosing = ErgoBox(10, fixingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
     val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
 
-    val projectBoxAfterClosing = ErgoBox(10, withdrawalScript, 0, Seq(),
-      Map(R4 -> AvlTreeConstant(closedTreeData)))
+    val projectBoxAfterClosing = ErgoBox(10, withdrawalScript, 0, Seq(tokenId -> projectBoxBeforeClosing.value),
+      Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(closedTreeData)))
 
     val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing))
 
@@ -200,7 +213,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
       spendingTransaction = fixingTx,
       self = projectBoxBeforeClosing)
 
-    projectProver.prove(env, fixingScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, fixingScript, fundingContext, fakeMessage).get
+    println("token issuance script cost: " + res.cost)
   }
 
   property("simple ico example - withdrawal stage") {
@@ -269,7 +283,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
         .withContextExtender(4, IntConstant(10))
 
     val res = projectProver.prove(env, withdrawalScript, fundingContext, fakeMessage).get
-    println("cost: " + res.cost)
+    println("withdrawal script cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
   }
