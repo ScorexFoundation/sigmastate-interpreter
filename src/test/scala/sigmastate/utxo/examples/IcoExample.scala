@@ -41,7 +41,13 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val outsCount = OUTPUTS.size
       |  val outs = OUTPUTS.slice(1, outsCount - 1)
       |
-      |  val withdrawValues = outs.map({(b: Box) => b.value })
+      |  val tokenId: Coll[Byte] = SELF.R4[Coll[Byte]].get
+      |
+      |  val withdrawValues = outs.map({(b: Box) =>
+      |     val tid: Coll[Byte] = b.tokens(0)._1
+      |     val tAmt = b.tokens(0)._2
+      |     if(tid == tokenId) tAmt else 0L
+      |  })
       |
       |  val toRemove = outs.map({(b: Box) => blake2b256(b.propositionBytes)})
       |
@@ -89,7 +95,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val outputsCountCorrect = OUTPUTS.size == 2
       |  val secondOutputNoTokens = OUTPUTS(1).tokens.size == 0
       |
-      |  val valuePreserved = SELF.value == tokensIssued
+      |  val valuePreserved = outputsCountCorrect && secondOutputNoTokens && SELF.value == tokensIssued
       |  val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
       |
       |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
@@ -255,15 +261,24 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val finalTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val withdrawBoxes = funderProps.take(withdrawalsCount).map { case (prop, v) =>
-      ErgoBox(Longs.fromByteArray(v), DefaultSerializer.deserializeErgoTree(prop), 0)
+    val tokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+
+    val withdrawalAmounts = funderProps.take(withdrawalsCount).map { case (prop, v) =>
+      val tv = Longs.fromByteArray(v)
+      prop -> tv
     }
 
-    val projectBoxBefore = ErgoBox(2000, withdrawalScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(fundersTree)))
-    val projectBoxAfter = ErgoBox(1000, withdrawalScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(finalTree)))
-    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
+    val withdrawBoxes = withdrawalAmounts.map { case (prop, tv) =>
+      ErgoBox(1, DefaultSerializer.deserializeErgoTree(prop), 0, Seq(tokenId -> tv))
+    }
+
+    val totalTokenAmount = withdrawalAmounts.map(_._2).sum + 2
+
+    val projectBoxBefore = ErgoBox(11, withdrawalScript, 0, Seq(tokenId -> totalTokenAmount),
+      Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(fundersTree)))
+    val projectBoxAfter = ErgoBox(1, withdrawalScript, 0, Seq(tokenId -> 1),
+      Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(finalTree)))
+    val feeBox = ErgoBox(1, feeProp, 0, Seq(tokenId -> 1), Map())
 
     val outputs = IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox)
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), outputs)
@@ -277,7 +292,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       self = projectBoxBefore)
 
     val projectProver =
-      new ContextEnrichingTestProvingInterpreter()
+      new ContextEnrichingTestProvingInterpreter(2000000000)
         .withContextExtender(2, ByteArrayConstant(removalProof))
         .withContextExtender(3, ByteArrayConstant(lookupProof))
         .withContextExtender(4, IntConstant(10))
