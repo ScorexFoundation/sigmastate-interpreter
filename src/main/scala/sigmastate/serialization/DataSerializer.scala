@@ -8,9 +8,10 @@ import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
-import sigmastate.eval._
-import special.collection.Coll
+import sigmastate.eval.{Evaluation, _}
+import special.collection._
 import special.sigma._
+
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
@@ -112,17 +113,24 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeColl[T <: SType](len: Int, tpe: T, r: SigmaByteReader): Coll[T#WrappedType] =
-    tpe match {
+  def deserializeColl[T <: SType](len: Int, tpeElem: T, r: SigmaByteReader): Coll[T#WrappedType] =
+    tpeElem match {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
       case SByte =>
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
-        implicit val tItem = Evaluation.stypeToRType(tpe)
+        implicit val tItem = (tpeElem match {
+          case tTup: STuple if tTup.items.length == 2 =>
+            Evaluation.stypeToRType(tpeElem)
+          case tTup: STuple =>
+            collRType(RType.AnyType)
+          case _ =>
+            Evaluation.stypeToRType(tpeElem)
+        }).asInstanceOf[RType[T#WrappedType]]
         val b = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
         for (_ <- 0 until len) {
-          b += deserialize(tpe, r)
+          b += deserialize(tpeElem, r)
         }
         Colls.fromArray(b.result())
     }
