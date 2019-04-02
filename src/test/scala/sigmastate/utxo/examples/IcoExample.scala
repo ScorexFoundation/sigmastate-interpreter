@@ -95,7 +95,11 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val outputsCountCorrect = OUTPUTS.size == 2
       |  val secondOutputNoTokens = OUTPUTS(1).tokens.size == 0
       |
-      |  val valuePreserved = outputsCountCorrect && secondOutputNoTokens && SELF.value == tokensIssued
+      |  val correctTokensIssued = SELF.value == tokensIssued
+      |
+      |  val correctTokenId = OUTPUTS(0).R4[Coll[Byte]].get == tokenId
+      |
+      |  val valuePreserved = outputsCountCorrect && secondOutputNoTokens && correctTokensIssued && correctTokenId
       |  val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
       |
       |  digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
