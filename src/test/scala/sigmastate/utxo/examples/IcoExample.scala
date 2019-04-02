@@ -101,8 +101,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |
       |  val tokensIssued = OUTPUTS(0).tokens.fold(0L, {(acc: Long, token: (Coll[Byte], Long)) =>
       |     val tid: Coll[Byte] = token._1
-      |     val properToken = tid == tokenId
-      |     if (properToken) acc + token._2 else acc
+      |     if (tid == tokenId) acc + token._2 else acc
       |  })
       |
       |  val outputsCountCorrect = OUTPUTS.size == 2

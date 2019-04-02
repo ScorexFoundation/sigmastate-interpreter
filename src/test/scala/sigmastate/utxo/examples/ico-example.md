@@ -32,10 +32,114 @@ This three stages should be linked together, and form logical order. To fulfill 
 
 ### The funding stage
 
+    val selfIndexIsZero = INPUTS(0).id == SELF.id
+
+    val proof = getVar[Coll[Byte]](1).get
+
+    val inputsCount = INPUTS.size
+
+    val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
+        val pk = b.R4[Coll[Byte]].get
+        val value = longToByteArray(b.value)
+        (pk, value)
+    })
+
+    val modifiedTree = SELF.R5[AvlTree].get.insert(toAdd, proof).get
+
+    val expectedTree = OUTPUTS(0).R5[AvlTree].get
+
+    val properTreeModification = modifiedTree == expectedTree
+
+    val outputsCount = OUTPUTS.size == 2
+
+    val selfOutputCorrect = if(HEIGHT < 2000) {
+        OUTPUTS(0).propositionBytes == SELF.propositionBytes
+    } else {
+        blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
+    }
+
+    val feeOutputCorrect = (OUTPUTS(1).value <= 1) && (OUTPUTS(1).propositionBytes == feeBytes)
+
+    val outputsCorrect = outputsCount && feeOutputCorrect && selfOutputCorrect
+
+    selfIndexIsZero && outputsCorrect && properTreeModification
+
 ### The issuance stage
 
+    val openTree = SELF.R5[AvlTree].get
+    val closedTree = OUTPUTS(0).R5[AvlTree].get
 
+    val digestPreserved = openTree.digest == closedTree.digest
+    val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
+    val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
+    val treeIsClosed = closedTree.enabledOperations == 4
+
+    val tokenId: Coll[Byte] = INPUTS(0).id
+
+    val tokensIssued = OUTPUTS(0).tokens.fold(0L, {(acc: Long, token: (Coll[Byte], Long)) =>
+        val tid: Coll[Byte] = token._1
+        if (tid == tokenId) acc + token._2 else acc
+    })
+
+    val outputsCountCorrect = OUTPUTS.size == 2
+    val secondOutputNoTokens = OUTPUTS(1).tokens.size == 0
+
+    val correctTokensIssued = SELF.value == tokensIssued
+
+    val correctTokenId = OUTPUTS(0).R4[Coll[Byte]].get == tokenId
+
+    val valuePreserved = outputsCountCorrect && secondOutputNoTokens && correctTokensIssued && correctTokenId
+    val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
+
+    digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
 
 ### The withdrawal stage 
 
+    val removeProof = getVar[Coll[Byte]](2).get
+    val lookupProof = getVar[Coll[Byte]](3).get
+    val withdrawIndexes = getVar[Coll[Int]](4).get
+
+    val out0 = OUTPUTS(0)
+
+    val tokenId: Coll[Byte] = SELF.R4[Coll[Byte]].get
+
+    val withdrawals = withdrawIndexes.map({(idx: Int) =>
+        val b = OUTPUTS(idx)
+        if(b.tokens(0)._1 == tokenId) {
+            (blake2b256(b.propositionBytes), b.tokens(0)._2)
+        } else {
+            (blake2b256(b.propositionBytes), 0L)
+        }
+    })
+
+    val withdrawValues = withdrawals.map({(t: (Coll[Byte], Long)) => t._2})
+
+    val withdrawTotal = withdrawValues.fold(0L, { (l1: Long, l2: Long) => l1 + l2 })
+
+    val toRemove = withdrawals.map({(t: (Coll[Byte], Long)) => t._1})
+
+    val initialTree = SELF.R5[AvlTree].get
+
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({(o: Option[Coll[Byte]]) => byteArrayToLong(o.get)})
+    val valuesCorrect = removedValues == withdrawValues
+
+    val modifiedTree = initialTree.remove(toRemove, removeProof).get
+
+    val expectedTree = out0.R5[AvlTree].get
+
+    val selfTokensCorrect = SELF.tokens(0)._1 == tokenId
+    val selfOutTokensAmount = SELF.tokens(0)._2
+    val soutTokensCorrect = out0.tokens(0)._1 == tokenId
+    val soutTokensAmount = out0.tokens(0)._2
+
+    val tokensPreserved = selfTokensCorrect && soutTokensCorrect && (soutTokensAmount + withdrawTotal == selfOutTokensAmount)
+
+    val properTreeModification = modifiedTree == expectedTree
+
+    val selfOutputCorrect = out0.propositionBytes == SELF.propositionBytes
+
+    properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
+   
 ## Part 4. Contractual Money 
+
+
