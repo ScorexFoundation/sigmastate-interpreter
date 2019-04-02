@@ -2,7 +2,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu}
 
 \newcommand{\authnote}[2]{\textsf{#1 \textcolor{blue}{: #2}}}
 
@@ -44,6 +44,93 @@
 
 \newcommand{\asdag}{ErgoTree}
 
+\newcommand{\I}[1]{\mathit{#1}}
+\newcommand{\B}[1]{\mathbf{#1}}
+\newcommand{\PA}[1]{\I{PA}\langle\I{#1}\rangle}
+\newcommand{\NA}[1]{\I{NA}\langle\I{#1}\rangle}
+\newcommand{\nlindent}[1][0.2cm]{\newline\hangindent=#1}
+\newcommand{\MU}[1]{\mu\B{\alpha}.\B{#1}}
+\newcommand{\Monoid}[1]{\I{Monoid}\TY{#1}}
+%\newcommand{\indentline}{\hangindent=0.7cm}
+\newcommand{\tick}{\checkmark}
+\newcommand{\Left}[3]{\text{\lst{l}}[#1,#2]\cdot #3}
+\newcommand{\Right}[3]{\text{\lst{r}}[#1,#2]\cdot #3}
+\newcommand{\Fst}[1]{\text{\lst{fst}}~#1}
+\newcommand{\Snd}[1]{\text{\lst{snd}}~#1} 
+% \newcommand{\Fst}[1]{$#1$\lst{.fst}}
+% \newcommand{\Snd}[1]{$#1$\lst{.snd}}
+\newcommand{\Ctx}{\mathcal{E}}
+\newcommand{\RCtx}{\mathcal{R}}
+\newcommand{\RMatch}[1]{(#1 :: \mathcal{R})}
+\newcommand{\RCtxEmpty}{\epsilon}
+\newcommand{\Frame}{\mathcal{F}}
+\newcommand{\Prim}{\delta}
+\newcommand{\Sp}{\mathcal{S}}
+\newcommand{\Spec}[1]{\mathcal{S}|[#1|]}
+\newcommand{\Build}[1]{\mathcal{B}|[#1|]}
+\newcommand{\Hole}{\diamondsuit{}}
+\newcommand{\Trait}[2]{\text{\lst{trait}}~#1~\{ #2 \}}
+\newcommand{\Class}[3]{\text{\lst{class}}~#1~\text{\lst{extends}}~#2 \{ #3 \}}
+\newcommand{\MSig}[3]{\text{\lst{def}}~#1(#2): #3}
+\newcommand{\CaseOfxxx}[3]{\lst{case} $#1$ \lst{of} \{ $#2 \to #3$ \}}
+\newcommand{\LetXXX}[3]{\lst{let} $#1$ \lst{=} $#2$ \lst{in} $#3$}
+\newcommand{\LetrecXXX}[3]{\lst{letrec} $#1$ \lst{=} $#2$ \lst{in} $#3$}
+\newcommand{\CaseOfXX}[2]{\text{\lst{case}}~#1~\text{\lst{of}}~\{ #2 \}}
+\newcommand{\CaseOf}[3]{\text{\lst{case}}~#1~\text{\lst{of}}~\{ #2 \to #3 \}}
+\newcommand{\Let}[3]{\text{\lst{let}}~#1~\text{\lst{=}}~#2~\text{\lst{in}}~#3}
+\newcommand{\Field}[2]{#1.\text{\lst{#2}}}
+\newcommand{\FDecl}[2]{\text{\lst{val}}~#1 : #2}
+\newcommand{\New}[1]{\text{\lst{new}}~#1}
+\newcommand{\Meth}[2]{\text{\lst{#1.#2}}}
+
+\newcommand{\KSet}{\mathcal{K}}  
+\newcommand{\VSet}{\mathcal{V}}  
+\newcommand{\LSet}{\mathcal{L}}  
+\newcommand{\PSet}{\mathcal{P}}  
+\newcommand{\DSet}{\mathcal{D}}  
+\newcommand{\CSet}{\mathcal{CLS}}  
+\newcommand{\ISet}{\mathcal{ABS}}  
+
+\newcommand{\Ov}[1]{\overline{#1}}
+\newcommand{\Tup}[1]{(#1)}
+\newcommand{\Def}[1]{\llparenthesis#1\rrparenthesis}
+\newcommand{\ByDef}{\overset{def}{=}}
+\newcommand{\Dag}{\Delta}
+\newcommand{\Dom}[1]{\mathcal{D}om~#1}
+\newcommand{\TAddr}{Addr}
+\newcommand{\TDef}{Def}
+\newcommand{\TNode}{Node}
+\newcommand{\TDag}{Dag}
+\newcommand{\TPair}[2]{#1\times#2}
+\newcommand{\TList}[1]{List~#1}
+\newcommand{\TMDag}{\TDag * \TAddr}
+\newcommand{\Focus}[1]{\langle#1\rangle}
+\newcommand{\MDag}[1]{\Delta\Focus{#1}}
+\newcommand{\MDagPr}[1]{\Delta'\Focus{#1}}
+\newcommand{\Map}[2]{#1  \mapsto #2}
+\newcommand{\AddMap}[3]{#1 \cup \{#2  \mapsto #3\}}
+\newcommand{\To}{$\mapsto$}
+\newcommand{\TP}[2]{#1 \to #2}
+\newcommand{\Set}[1]{\{ #1 \}}
+\newcommand{\DHole}[2]{d~#1\Hole#2}
+\newcommand{\PrimPat}{\Prim~\overline{\beta}}
+\newcommand{\DefPat}{d~(\Ov{\beta})}
+\newcommand{\Lam}[2]{\lambda#1.#2}
+\newcommand{\TyLam}[3]{\lambda(\Ov{#1:#2}).#3}
+\newcommand{\LamPat}[2]{\lambda#1.#2}
+\newcommand{\DagPat}[2]{\{ \TP{#1}{#2} \}}
+\newcommand{\MDagPat}[4]{\{ \TP{#1}{#2} \}^#3\Focus{#4}}
+\newcommand{\Inj}[3]{#1\xleftarrow{}#3}
+\newcommand{\SE}[3]{SE'|[#1|]~#2~#3}
+\newcommand{\SEtop}[2]{SE|[#1|]~#2}
+\newcommand{\TEnv}{\Gamma}
+\newcommand{\Der}[2]{#1\vdash#2}
+\newcommand{\DerEnv}[1]{\Der{\TEnv}{#1}}
+\newcommand{\Dif}[1]{\partial#1}
+\newcommand{\View}[2]{#1\sphericalangle #2}
+\newcommand{\This}{\text{\lst{this}}}
+\newcommand{\Section}[1]{Section~\ref{section:#1}}
+
 \begin{document}
 
 \title{ErgoTree Specification}
@@ -54,8 +141,9 @@
 \maketitle
 
 \begin{abstract}
-In this document we consider typed abstract syntax directed acyclic graph called \asdag which defines semantics of a
-condition which protects a closed box in the Ergo Platform blockchain. Serialized graph is written into a box.
+In this document we consider typed abstract syntax directed acyclic graph
+called \asdag which defines semantics of a condition which protects a closed
+box in the Ergo Platform blockchain. Serialized graph is written into a box.
 Most of Ergo users are unaware of the graph since they are developing contracts in higher-level languages, such as
 ErgoScript. However, for developers of alternative higher-level languages, client libraries and clients knowledge of
 internals would be highly useful. This document is providing the internals, namely, the following data structures and
@@ -77,13 +165,15 @@ classes etc.}
 \section{Introduction}
 \label{sec:intro}
 
-\include{serialization}
-
-\include{graph}
+\include{language}
 
 \include{types}
 
-\include{reduction}
+\include{evaluation}
+
+\include{serialization}
+
+\include{graph}
 
 \include{costing}
 
@@ -93,6 +183,7 @@ classes etc.}
 
 \appendix
 
-\section{Do we need an appendix?}
+\include{appendix_predeftypes}
+\include{appendix_primops}
 
 \end{document}

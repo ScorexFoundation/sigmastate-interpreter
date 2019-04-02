@@ -1,0 +1,69 @@
+
+\begin{center}
+% var and consts
+\(\begin{array}{c c c}
+\frac{}{\Der{\Gamma,x : \tau}{x : \tau}}
+ 	 & 
+\frac{}{\Der{\Gamma}{l : \text{\lst{Int}}}}
+     &
+\frac{}{\Der{\Gamma}{() : \text{\lst{Unit}}}}
+	 \\
+	 & & \\
+\end{array}\) 
+
+% primitive
+\(
+\frac{\oplus : (\tau_1\times\tau_2) \to \tau_3~~~\DerEnv{e_1 : \tau_1}~~~\DerEnv{e_2 : \tau_2}}{\DerEnv{e_1 \oplus e_2 : \tau_3}}
+\)
+
+% pairs
+\(\begin{array}{c c c}
+ & \\
+\frac{\DerEnv{e : \TPair{\tau_1}{\tau_2}}}{\DerEnv{\Fst{e} : \tau_1}}
+     &
+\frac{\DerEnv{e : \TPair{\tau_1}{\tau_2}}}{\DerEnv{\Snd{e} : \tau_2}}
+     &
+\frac{\DerEnv{e_1 : \tau_1}~~~\DerEnv{e_2 : \tau_2}}{\DerEnv{\Tup{e_1,e_2} : \TPair{\tau_1}{\tau_2}}}
+	 \\
+\end{array}\) 
+
+% sums
+\(\begin{array}{c c}
+ & \\
+\frac{\DerEnv{e : \tau_1}}{\DerEnv{\Left{\tau_1}{\tau_2}{e} : \tau_1 + \tau_2}}
+     &
+\frac{\DerEnv{e : \tau_2}}{\DerEnv{\Right{\tau_1}{\tau_2}{e} : \tau_1 + \tau_2}}
+	 \\
+	& \\ 
+\end{array}\) 
+
+% case
+\(\begin{array}{c}
+\frac{\DerEnv{e : \tau_1 + \tau_2}~~~\Der{\Gamma,x_1 : \tau_1}{e_1 : \tau}~~~\Der{\Gamma,x_2 : \tau_2}{e_2 : \tau}}
+     {\DerEnv{\CaseOfXX{e}{\Left{\tau_1}{\tau_2}{x_1} \to e_1;~~\Right{\tau_1}{\tau_2}{x_2} \to e_2} : \tau}} \\
+  \\
+\end{array}\) 
+
+% case
+\(\begin{array}{c}
+\frac{\DerEnv{e : \text{\lst{Int}}}~~~\DerEnv{e_i : \tau}}
+     {\DerEnv{\CaseOf{e}{l_i}{e_i} : \tau}} \\
+  \\
+\end{array}\)
+
+% let
+% \(
+% \frac{\Der{\TEnv,x : \tau_1}{e_2 : \tau_2}}{\Der{\Gamma}{\Let{x}{e_1}{e_2} : \tau_2}}
+% \)
+
+% functions
+\(\begin{array}{c c}
+\frac{\Der{\TEnv,x:\tau_1}{e:\tau_2}}{\Der{\Gamma}{\TyLam{x}{\tau_1}{e} : \tau_1 \to \tau_2}}
+ 	 & 
+\frac{\Der{\TEnv}{e_1 : \tau_2 \to \tau}~~~\Der{\TEnv}{e_2 : \tau_2}}{\Der{\Gamma}{e_1~e_2 : \tau}}
+	 \\
+\end{array}\) 
+
+\end{center}
+
+

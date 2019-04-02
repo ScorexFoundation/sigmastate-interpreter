@@ -1,2 +1,14 @@
-\section{Type System}
+\section{Typing}
 \label{sec:typing}
+
+\langname is a strictly typed language, in which every term should have a type in order to be evaluated.
+
+\begin{figure}[h]
+\footnotesize
+\input{figures/fig_typing.tex}
+\caption{Typing judgments of \langname}
+\label{fig:typing}
+\end{figure}
+
+Note that each well-typed term has exactly one type. This allows us to reify
+types as part of all terms.

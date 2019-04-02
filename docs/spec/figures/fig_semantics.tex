@@ -1,0 +1,25 @@
+\(\begin{array}{c}
+\multicolumn{1}{l}{\text{Call-by-value reduction contexts}}\\
+\\
+\begin{tabular}{@{}l c l}
+$\Ctx$ 	& ::= 	& 	$\Hole \mid k~\Ov{v}~\Ctx~\Ov{e} \mid \delta~\Ov{v}~\Ctx~\Ov{e} \mid \Ctx~e \mid (\Lam{x}{e})\Ctx  $ \\
+		& $\mid$ &	\lst{case} $\Ctx$ \lst{of} \{ $p_i \rightarrow e_i$ \}				\\
+% 		& $\mid$ &	\lst{let} $x = \Ctx$ \lst{in} $e$ 									\\
+		& & \\
+\end{tabular} \\
+\multicolumn{1}{l}{\text{Call-by-value evaluation relation}}\\
+\\
+\begin{tabular}{@{}l c l r}
+$[(\Lam{x}{e})~v]\Ctx$   & $\mapsto$ 	& 	$[[v/x]e]\Ctx$					    & (1)     \\
+% $[$ \lst{let} $x = v$ \lst{in} $e]\Ctx$   & $\mapsto$ 	& 	$[[v/x]e]\Ctx$					    & (2)     \\
+$[$\lst{case} $k~\Ov{v}$ \lst{of} \{ $k_i~\overline{x_i}$ $\rightarrow$ $e_i$  \}$]\Ctx$   & $\mapsto$ 	& 	$[[\overline{v}/\overline{x_j}]e_j]\Ctx$, if $k = k_j$	& (2)    \\
+$[$\lst{case} $l$ \lst{of} \{ $l_i \rightarrow e_i$ \}$]\Ctx$   & $\mapsto$ 	& 	$[e_j]\Ctx$, if $l = l_j$	& (3)    \\
+$[\delta~\overline{v}]\Ctx$   & $\mapsto$ 	& 	$[l]\Ctx$, if $l = |[\Prim|]\overline{v}$					    & (4)     \\
+
+\end{tabular}
+\end{array}\)
+
+% \begin{center}
+% \small{Here $\mu\B{\alpha}.\B{T}$ stands for isorecursive type \cite{wiki_recursive_data_type}. 
+% Note that types are described using \emph{phantom types} notation~\cite{JamesCheney2003,wiki_phantom_types}}
+% \end{center} 
