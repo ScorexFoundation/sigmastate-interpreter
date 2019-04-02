@@ -7,7 +7,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant, ShortArrayConstant}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
