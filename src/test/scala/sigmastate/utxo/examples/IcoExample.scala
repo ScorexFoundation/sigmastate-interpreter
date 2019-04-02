@@ -52,6 +52,8 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |     }
       |  })
       |
+      |  //val withdrawals = OUTPUTS.slice(1, OUTPUTS.size-1).map(...)
+      |
       |  val withdrawValues = withdrawals.map({(t: (Coll[Byte], Long)) => t._2})
       |
       |  val withdrawTotal = withdrawValues.fold(0L, { (l1: Long, l2: Long) => l1 + l2 })
@@ -308,7 +310,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       self = projectBoxBefore)
 
     val projectProver =
-      new ContextEnrichingTestProvingInterpreter(2000000000)
+      new ContextEnrichingTestProvingInterpreter()
         .withContextExtender(2, ByteArrayConstant(removalProof))
         .withContextExtender(3, ByteArrayConstant(lookupProof))
         .withContextExtender(4, IntArrayConstant((1 to withdrawalsCount).toArray))
