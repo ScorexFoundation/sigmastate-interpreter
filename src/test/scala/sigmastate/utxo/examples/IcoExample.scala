@@ -84,12 +84,12 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
       |  val treeIsClosed = closedTree.enabledOperations == 4
       |
-      |  val tokenId: Coll[Byte] = OUTPUTS(0).R4[Coll[Byte]].get
+      |  val tokenId: Coll[Byte] = INPUTS(0).id
       |
       |  val tokensIssued = OUTPUTS(0).tokens.fold(0L, {(acc: Long, token: (Coll[Byte], Long)) =>
       |     val tid: Coll[Byte] = token._1
       |     val properToken = tid == tokenId
-      |     if(properToken) acc + token._2 else acc
+      |     if (properToken) acc + token._2 else acc
       |  })
       |
       |  val outputsCountCorrect = OUTPUTS.size == 2
@@ -199,17 +199,18 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val digest = avlProver.digest
     val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val tokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
-
     val projectBoxBeforeClosing = ErgoBox(10, fixingScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
+    val tokenId = Digest32 @@ projectBoxBeforeClosing.id
+
     val closedTreeData = new AvlTreeData(digest, AvlTreeFlags.RemoveOnly, 32, None)
 
-    val projectBoxAfterClosing = ErgoBox(10, withdrawalScript, 0, Seq(tokenId -> projectBoxBeforeClosing.value),
+    val projectBoxAfterClosing = ErgoBox(9, withdrawalScript, 0, Seq(tokenId -> projectBoxBeforeClosing.value),
       Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(closedTreeData)))
+    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
-    val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing))
+    val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing, feeBox))
 
     val fundingContext = ErgoLikeContext(
       currentHeight = 1000,
