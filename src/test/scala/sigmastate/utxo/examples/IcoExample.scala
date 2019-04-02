@@ -86,7 +86,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
   val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-  val fixingScript = compile(env.updated("nextStageScriptHash", wsHash),
+  val issuanceScript = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
@@ -119,9 +119,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val fixingHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(fixingScript))
+  val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
 
-  val fundingScript = compile(env.updated("nextStageScriptHash", fixingHash),
+  val fundingScript = compile(env.updated("nextStageScriptHash", issuanceHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -210,13 +210,13 @@ class IcoExample extends SigmaTestingCommons { suite =>
     //todo: test switching to fixing stage
   }
 
-  property("simple ico example - fixing stage") {
+  property("simple ico example - issuance stage") {
     val projectProver = new ErgoLikeTestProvingInterpreter
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
     val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
 
-    val projectBoxBeforeClosing = ErgoBox(10, fixingScript, 0, Seq(),
+    val projectBoxBeforeClosing = ErgoBox(10, issuanceScript, 0, Seq(),
       Map(R4 -> ByteArrayConstant(Array.emptyByteArray), R5 -> AvlTreeConstant(openTreeData)))
 
     val tokenId = Digest32 @@ projectBoxBeforeClosing.id
@@ -227,17 +227,17 @@ class IcoExample extends SigmaTestingCommons { suite =>
       Map(R4 -> ByteArrayConstant(tokenId), R5 -> AvlTreeConstant(closedTreeData)))
     val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
 
-    val fixingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing, feeBox))
+    val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing, feeBox))
 
     val fundingContext = ErgoLikeContext(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
-      spendingTransaction = fixingTx,
+      spendingTransaction = issuanceTx,
       self = projectBoxBeforeClosing)
 
-    val res = projectProver.prove(env, fixingScript, fundingContext, fakeMessage).get
+    val res = projectProver.prove(env, issuanceScript, fundingContext, fakeMessage).get
     println("token issuance script cost: " + res.cost)
   }
 
