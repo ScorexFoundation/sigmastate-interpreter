@@ -7,7 +7,7 @@ import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -33,7 +33,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
   val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "feeBytes" -> feeBytes)
 
-  val withdrawalScript = compiler.compile(env,
+  val withdrawalScript: SigmaPropValue = compiler.compile(env,
     """{
       |  val removeProof = getVar[Coll[Byte]](2).get
       |  val lookupProof = getVar[Coll[Byte]](3).get
@@ -82,11 +82,11 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |
       |  properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
       |}""".stripMargin
-  ).asBoolValue.toSigmaProp
+  ).asSigmaProp
 
   val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-  val issuanceScript = compile(env.updated("nextStageScriptHash", wsHash),
+  val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
@@ -120,7 +120,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
   val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
 
-  val fundingScript = compile(env.updated("nextStageScriptHash", issuanceHash),
+  val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -155,7 +155,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |
       |  selfIndexIsZero && outputsCorrect && properTreeModification
       |}""".stripMargin
-  ).asBoolValue.toSigmaProp
+  ).asSigmaProp
 
 
 
