@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoBox.TokenId
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.util.Random
@@ -27,8 +28,10 @@ class ErgoLikeTransactionSpec extends PropSpec
     forAll { txIn: ErgoLikeTransaction =>
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
+        // clone tokenIds so that same id have different references
+        val tokens = out.additionalTokens.map(v => (v._1.clone().asInstanceOf[TokenId], v._2))
         val outputs = (0 until 10).map { i =>
-          new ErgoBoxCandidate(out.value, out.ergoTree, i, out.additionalTokens, out.additionalRegisters)
+          new ErgoBoxCandidate(out.value, out.ergoTree, i, tokens, out.additionalRegisters)
         }
         val tx = new ErgoLikeTransaction(txIn.inputs, txIn.dataInputs, txIn.outputCandidates ++ outputs)
         roundTripTestWithPos(tx)(ErgoLikeTransaction.serializer)
