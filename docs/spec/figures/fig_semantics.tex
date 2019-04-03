@@ -2,9 +2,11 @@
 \(\begin{array}{c}
 \multicolumn{1}{l}{\text{Reduction contexts of \langname}}\\
 \\
-\begin{tabular}{@{}l c l}
-$\Ctx$ 	& ::= 	& 	$\Hole \mid k~\Ov{v}~\Ctx~\Ov{e} \mid \delta~\Ov{v}~\Ctx~\Ov{e} \mid \Ctx~e \mid (\Lam{x}{e})\Ctx  $ \\
-		& $\mid$ &	\lst{case} $\Ctx$ \lst{of} \{ $p_i \rightarrow e_i$ \}				\\
+\begin{tabular}{@{}l c l l}
+$\Ctx$ 	& ::= 		&	$\Hole$ 	&  hole \\
+		& $\mid$ 	&	$\delta~\Ov{v}~\Ctx~\Ov{e}$	&  \\
+		& $\mid$ 	&	$\Ctx~e$				&  \\
+		& $\mid$ 	&	$(\Lam{x}{e})\Ctx$ 	&  \\
 		& & \\
 \end{tabular} \\
 \multicolumn{1}{l}{\text{Call-by-value evaluation relation}}\\
