@@ -2,7 +2,7 @@
 \label{sec:language}
 
 Here we define abstract syntax for \langname language. It is a simply typed
-lambda calculus enriched with tuples, collections and let binding
+lambda calculus enriched with tuples, collections and \lst{val} binding
 expressions.
 
 \begin{figure}[h]
@@ -12,5 +12,37 @@ expressions.
     \label{fig:language}
 \end{figure}
     
-We assign types to the terms in a standard way following typing judgments
-shown in Figure~\ref{fig:typing}.
+We assign types to the terms in a standard way following typing rules shown
+in Figure~\ref{fig:typing}.
+
+Constants keep both the type and the data value of that type. To be
+well-formed the type of the constant should correspond to its value.
+
+Variables are always typed and identified by unique $id$, which refers to
+either lambda bound variable of \lst{val} bound variable. The encoding of
+variables and their resolution is described in Section~\ref{sec:blocks}.
+
+Lambda expressions can take a list of lambda-bound variables which can be
+used in the body expression, which can be \emph{block expression}. 
+
+Function application takes an expression of functional type (e.g. $\tau_1 \to
+\tau_n$) and a list of arguments.
+
+Method invocation allows to apply functions defined as methods of
+\emph{interface types}. If expression $e$ has interface type $I$ and and
+method $m$ is declared in the interface $I$ then method invocation
+$e.m(args)$ is defines for the appropriate $args$.
+
+Conditional expressions are strict in condition and lazy in both of the
+branches. Each branch is an expression which is executed depending on the
+result of condition.
+
+Block expression contains a list of \lst{val} definitions of variables. Each
+subsequent definition can refer to the previously defined variables. Result
+of block execution is the result of the resulting expression $e$, which can
+use any variable of the block.
+
+Each type may be associated with a list of method declarations, in which case
+we say that \emph{the type has methods}. The semantics of the methods is the
+same as in Java. Having an instance of some type with methods it is possible
+to call methods on the instance with some additional arguments.
