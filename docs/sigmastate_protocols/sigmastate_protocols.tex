@@ -73,11 +73,11 @@
 
 \begin{document}
 
-\title{Advanced Tutorial of \langname}
+\title{Advanced \langname Tutorial}
 
 %\title{Protocols in \langname: From Games to Mixers}
 
-\author{authors}
+\author{Ergo Developers}
 
 
 \maketitle
@@ -168,12 +168,12 @@ The examples below use P2SH address and highlight some limitation of Bitcoin.
 Suppose you are paying for coffee using cryptocurrency. You make a payment but it is taking a long time for the transaction to confirm. You decide to pay using cash and leave. However, you are worried that your original payment will eventually confirm and then you will either lose it or have to ask for a refund. In Bitcoin, you can try to double spend the transaction, which is not always guaranteed, even if using {\em replace-by-fee}. \langname has a better solution using {\em timed-payments} so that if the transaction is not confirmed before a certain height, it is no longer valid. Timed-payments require that funds be stored in a {\em timed address}, which is created as follows. 
 
 %Assume \texttt{bob} is the coffee shop public key and Alice is the customer paying for coffee.
-Alice uses her public key \texttt{alice} (which is of type \texttt{proveDLog}) to create \texttt{aliceScript}:
+Alice uses her public key \texttt{alice} (of type \texttt{proveDLog}) as a named constant to create the script:
 \begin{verbatim}
-	val aliceScript = proposition{alice && HEIGHT <= getVar[Int](1).get}
+alice && HEIGHT <= getVar[Int](1).get
 \end{verbatim}
 
-Alice's address is computed as: \texttt{val aliceAddress = Pay2SHAddress(aliceScript)}. Any funds deposited to \texttt{aliceAddress} can only be spent if the spending transaction satisfies following:
+Alice's address is computed as a P2SH address of this script. Any funds deposited to this address can only be spent if the spending transaction satisfies following:
 \begin{enumerate}
 	\item Context variable with id 1 of the box being spent must contain an integer, say $i$.
 	\item The height at mining should be less than or equal to $i$. 
@@ -193,8 +193,8 @@ To motivate this feature, consider managing the hot-wallet of a mining pool or a
 We would like that in the event of such a compromise, we are able to save all funds stored in this wallet and move them to another address, provided that the breach is discovered within a specified time (such as 24 hours) of the first unauthorized withdraw. 
 
 To achieve this, we require that all coins sent from the hot-wallet (both legitimate and by the attacker)
-have a 24 hour cooling-off period, during which the created UTXOs are ``locked'' and can only be spent by a trusted private key that is was selected {\em before} the compromise occurred. This trusted key must be different from the hot-wallet private key and should ideally be in cold storage. 
-After 24 hours, these UTXOs become `normal' and can only be spent by the receiver.
+have a 24 hour cooling-off period, during which the created boxes can only be spent by a trusted private key that is was selected {\em before} the compromise occurred. This trusted key must be different from the hot-wallet private key and should ideally be in cold storage. 
+After 24 hours, these boxes become `normal' and can only be spent by the receiver.
 
 This is done by storing the hot-wallet funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party. Note that the trusted party must be decided at the time of address generation and cannot be changed later. To use a different trusted party, a new address has to be generated. Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. A reversible address is a P2SH
 %\footnote{As in Bitcoin, a P2SH (Pay to Script Hash) address is created from the hash of a script encoding spending conditions for any UTXOs controlled by that address.} 
@@ -204,10 +204,10 @@ address whose script encodes the following conditions:
 	\item Any output box created by spending this input box must have in its register $R_5$ a number at least \texttt{blocksIn24h} more than the current height. 
 	\item Any output box created by spending this input box must be protected by a script requring the following: 	
 	\begin{enumerate}
-		\item Its register $R_4$ must have an arbitrary public key called \texttt{bob}.'' 
-		\item Its register $R_5$ must have an arbitrary integer called \texttt{bobDeadline}.'' 
-		\item It can only be spent spent by \texttt{carol} if \texttt{HEIGHT $\leq$ bobDeadline}.''
-		\item It can only be spent by \texttt{bob} if \texttt{HEIGHT $>$ bobDeadline}.''	
+		\item Its register $R_4$ must have an arbitrary public key called \texttt{bob}.
+		\item Its register $R_5$ must have an arbitrary integer called \texttt{bobDeadline}.
+		\item It can only be spent spent by \texttt{carol} if \texttt{HEIGHT $\leq$ bobDeadline}.
+		\item It can only be spent by \texttt{bob} if \texttt{HEIGHT $>$ bobDeadline}.
 	\end{enumerate}  
 \end{enumerate}
 
@@ -216,30 +216,28 @@ Let \texttt{bob} be the public key of a customer who is withdrawing. The sender 
 
 If an unauthorized transaction from \texttt{alice} is detected, an ``abort procedure'' is triggered via \texttt{carol}: all funds sent from \texttt{alice} and in the locked state are suspect and need to diverted elsewhere. %Additionally, boxes currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
-Note that reversible addresses are designed for storing large amount of funds for automated withdraws (such as hot-wallets). 
+%Such addresses are designed for storing large amount of funds for automated withdraws (such as hot-wallets). 
 %They are not designed for daily spending (such as paying for a coffee). 
-The following code creates a reversible address:
+To create a reversible address, first create a script, \texttt{withdrawScript}, with the following code:
 \begin{verbatim}
-val withdrawScript = proposition{
-  val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
-  val bobDeadline = SELF.R5[Int].get       // max locking height
-  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)}
+val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
+val bobDeadline = SELF.R5[Int].get       // max locking height
+(bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
 \end{verbatim}
 
-Let \texttt{feePropositionBytes} be the script for a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. 
-Create the following address based on the above script:
+Let \texttt{feeProposition} be the script of a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. 
+Next create a script, \texttt{reversibleScript}, with the following code:
 \begin{verbatim}
-val reversibleAddress = Pay2SHAddress(proposition{
-  val isChange = {(out:Box) => out.propositionBytes == SELF.propositionBytes}
-  val isWithdraw = {(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h &&
-                                 out.propositionBytes == withdrawScript}
-  val isFee = {out:Box) => out.propositionBytes == feePropositionBytes}
-  val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}
-  val fee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
-  alice && OUTPUTS.forall(isValid) && totalFee <= maxFee})
+val isChange = {(out:Box) => out.propositionBytes == SELF.propositionBytes}
+val isWithdraw = {(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h &&
+                               out.propositionBytes == withdrawScript}
+val isFee = {out:Box) => out.propositionBytes == feeProposition}
+val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}
+val fee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
+alice && OUTPUTS.forall(isValid) && totalFee <= maxFee
 \end{verbatim}
 
-Any funds sent to \texttt{reversibleAddress} have to be spent in a reversible way. 
+The reversible address is the P2SH address of \texttt{reversibleScript}. 
 
 \subsection{Cold-Wallet Contracts}
 
@@ -250,28 +248,28 @@ Assume an address is protected by 2 private keys, corresponding to the public ke
 	\item If both keys are spending then there are no restrictions. 
 \end{enumerate}
 
-Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the variables \texttt{percent} and \texttt{minSpend} respectively. The address is created as follows:
+Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the variables \texttt{percent} and \texttt{minSpend} respectively. Create a script with the code:
 %Set all these parameters in environment \texttt{env} along with the public keys \texttt{alice} and \texttt{bob} to get a compiled script:
 \begin{verbatim}
-val address = Pay2SHAddress(proposition{
-  val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
-  val start = min(depth, SELF.R4[Int].get) // block at which the period started
-  val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed
-  val min = SELF.R5[Long].get // min Balance needed in this period
+val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
+val start = min(depth, SELF.R4[Int].get) // block at which the period started
+val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed
+val min = SELF.R5[Long].get // min Balance needed in this period
 
-  val ours:Long = SELF.value - SELF.value * percent / 100
-  val keep = if (ours > minSpend) ours else 0L // topup should keep min >= keep
-  val nStart:Int = if (notExpired) start else HEIGHT
-  val nMin:Long = if (notExpired) min else keep
+val ours:Long = SELF.value - SELF.value * percent / 100
+val keep = if (ours > minSpend) ours else 0L // topup should keep min >= keep
+val nStart:Int = if (notExpired) start else HEIGHT
+val nMin:Long = if (notExpired) min else keep
 
-  val out = OUTPUTS(0)  
-  val valid = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
-    out.value >= nMin && out.R4[Int].get >= nStart && out.R5[Long].get == nMin})
+val out = OUTPUTS(0)  
+val valid = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
+  out.value >= nMin && out.R4[Int].get >= nStart && out.R5[Long].get == nMin})
     
-  (alice && bob) || ((alice || bob) && min >= keep && (nMin == 0 || valid))})
+(alice && bob) || ((alice || bob) && min >= keep && (nMin == 0 || valid))
 \end{verbatim}
 
-Spending from this address is done in periods of 24 hours or more (but never less) such that in any one period, the maximum spendable is a fixed fraction of the amount at the beginning of the period. We do this by requiring the spending transaction to have an output with value greater than the minumum (which is stored in $R_5$) and paying back to the same address. The start of the current period is stored in $R_4$. Both registers are copied to the new output within the same period and get new values for if the current period has expired.
+The cold-wallet address is the P2SH address of the above script. 
+Spending from this address is done in periods of 24 hours or more such that the maximum spendable is a fixed fraction of the amount at the beginning of the period. We do this by requiring the spending transaction to have an output with value greater than the minumum (which is stored in $R_5$) and paying back to the same address. The start of the current period is stored in $R_4$. Both registers are copied to the new output within the same period and get new values for if the current period has expired.
 
 
 %\subsection{Advanced Cold-Wallet Contracts}
@@ -286,7 +284,8 @@ Spending from this address is done in periods of 24 hours or more (but never les
 
 \subsection{Revenue Sharing Contracts}
 
-Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20\% ratio respectively. The following is a contract that automatically enforces this for any coins sent to it:
+Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20\% ratio respectively. The following describes a contract that automatically enforces this for any coins sent to it. Let \texttt{outputScriptHash} be the hash of the following script:
+		
 %First create a script and compute its hash:
 % There may be advantages of storing the public keys in a register rather than hardwiring them to address
 %First add the public keys \texttt{alice}, \texttt{bob}  and \texttt{carol} of type \texttt{proveDLog} into the environment \texttt{env}. First create a script. 
@@ -294,28 +293,29 @@ Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20
 %First create an outputScript = 
 
 \begin{verbatim}
-val outputScriptHash = blake2b256(proposition{
-  val spenders = SELF.R4[Coll[(SigmaProp, Int)]].get
-  val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
-  val ratio:Int = spenders(getVar[Int](1).get)._2
-  val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
-  val balance = SELF.value - SELF.value / total * ratio
-  val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
-  val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
-  val validOut = OUTPUTS(0).propositionBytes == SELF.propositionBytes &&
-                 OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
-  pubKey && (outSpenders.size == 0 || validOut)})
+val spenders = SELF.R4[Coll[(SigmaProp, Int)]].get
+val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
+val ratio:Int = spenders(getVar[Int](1).get)._2
+val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
+val balance = SELF.value - SELF.value / total * ratio
+val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
+val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
+val validOut = OUTPUTS(0).propositionBytes == SELF.propositionBytes &&
+               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
+pubKey && (outSpenders.size == 0 || validOut)
+\end{verbatim}
 
-val revenueAddress = P2SHAddress(proposition{
-  val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
-  val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
-  val ratio:Int = spenders(getVar[Int](1).get)._2
-  val balance = SELF.value - SELF.value / 100 * ratio
-  val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
-  val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
-  val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
-                 OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
-  pubKey && validOut})
+Define \texttt{revenueAddress} as the P2SH address of the following script: 
+\begin{verbatim}
+val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
+val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
+val ratio:Int = spenders(getVar[Int](1).get)._2
+val balance = SELF.value - SELF.value / 100 * ratio
+val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
+val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
+val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
+               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
+pubKey && validOut
 \end{verbatim}
 
 Any funds sent to \texttt{revenueAddress} are subject to the revenue share discussed between the parties. 
@@ -323,6 +323,7 @@ Each party can spend only its share and must create another box with the balance
 
 %\subsection{Automated Salary Contracts}
 %further improvements. Can we reduce offchain data size, do multiple mixes offchain?
+\ignore{
 \subsection{Storing Data in \langname}
 
 We describe a data store using \langname. Let $H:\{0, 1\}^* \mapsto \{0, 1\}^{256}$ be a hash function. We store data in a variant of Merkle tree called {\em Commutative Merkle Tree} (CMT). A CMT is a perfectly balanced binary tree, where each node is computed as $H(left) \oplus H(right)$, which makes the tree commutative. This is different from an ordinary Merkle tree, where each node is $H(left \lVert right)$
@@ -350,6 +351,7 @@ validOld && validNew && validOut
 \end{verbatim}
 
 A valid Merkle root is the one contained in an unspent box with the given token. Anyone with the correct box can verify that some data indeed exists by checking the path. The example can be extended by requiring that only a fixed public key can update the tree.
+}
 \section{Two-party Protocols}
 
 We focus on two-round, two-party protocols. %That is, protocols with two parties that can be performed in two transactions. 
@@ -362,7 +364,7 @@ We describe a simple game called ``Same or Different'' or the XOR game. Alice an
 \begin{enumerate}
 	\item Alice commits to a secret bit $a$ as follows. She selects a random bit-string $s$ and computes her commitment $k = H(s\|a)$ (i.e., hash after concatenating $s$ with $a$).
 	
-	She creates an unspent box called the {\em half-game output} containing her coin and commitment $k$. This box is protected by a script called the {\em half-game script}  given below. Alice waits for another player to join her game, who will do so by spending her half-game output and creating another box that satisfies the conditions given in the half-game script. Alice can also spend the half-game output herself before anyone joins, effectively aborting the game. 
+	She creates an unspent box called the {\em half-game output} containing her coin and commitment $k$. This box is protected by a script called the {\em half-game script}  given below. Alice waits for another player to join her game, who will do so by spending her half-game output and creating another box that satisfies the conditions given in the half-game script. %Alice can also spend the half-game output herself before anyone joins, effectively aborting the game. 
 	
 	\item Bob joins Alice's game by picking a random bit $b$ and spending Alice's half-game output to create a new box called the {\em full-game output}. This new box  holds two coins and contains $b$ (in the clear) alongwith Bob's public key in the registers. 
 	Note that the full-game output must satisfy the conditions given by the half-game script. In particular, one of the conditions requires that the full-game output must be protected by the {\em full-game script} (given below).
@@ -371,28 +373,26 @@ We describe a simple game called ``Same or Different'' or the XOR game. Alice an
 	If Alice fails to open $k$ within a specified deadline then Bob automatically wins. 
 \end{enumerate}
 
-The full-game script encodes the following conditions: The registers $R_4$, $R_5$ and $R_6$ are expected to store Bob's bit $b$, Bob's public key (stored as a \texttt{proveDLog} proposition) and the deadline for Bob's automatic win respectively. The context variables with id 0 and 1 (provided at the time of spending the full-game box) contain $s$ and $a$ required to open Alice's commitnent $k$, which is hardwired alongwith Alice's public key \texttt{alice} into the code to compute \texttt{fullGameScriptHash} 
+The full-game script encodes the following conditions: The registers $R_4$, $R_5$ and $R_6$ are expected to store Bob's bit $b$, Bob's public key (stored as a \texttt{proveDLog} proposition) and the deadline for Bob's automatic win respectively. The context variables with id 0 and 1 (provided at the time of spending the full-game box) contain $s$ and $a$ required to open Alice's commitnent $k$, which alongwith Alice's public key \texttt{alice} is used to compute \texttt{fullGameScriptHash}, the hash of the below script: 
 %Alice compiles the full-game script to get a binary representation of its \langname code: 
 
 \begin{verbatim}
-val fullGameScriptHash = blake2b256(proposition{
-  val s     = getVar[Coll[Byte]](0).get // bit string s
-  val a     = getVar[Byte](1).get       // bit a (represented as a byte)
-  val b     = SELF.R4[Byte].get         // bit b (represented as a byte)
-  val bob   = SELF.R5[SigmaProp].get    // Bob's public key
-  val bobDeadline = SELF.R6[Int].get
-   
-  (bob && HEIGHT > bobDeadline) || 
-  (blake2b256(s ++ Coll(a)) == k && (alice && a == b || bob && a != b))})
-
-val halfGameScript = proposition{
-  val out           = OUTPUTS(0)
-  val b             = out.R4[Byte].get
-  val bobDeadline   = out.R6[Int].get
-  val validBobInput = b == 0 || b == 1
-
-  validBobInput && blake2b256(out.propositionBytes) == fullGameScriptHash &&
-  OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value * 2 }
+val s     = getVar[Coll[Byte]](0).get // bit string s
+val a     = getVar[Byte](1).get       // bit a (represented as a byte)
+val b     = SELF.R4[Byte].get         // bit b (represented as a byte)
+val bob   = SELF.R5[SigmaProp].get    // Bob's public key
+val bobDeadline = SELF.R6[Int].get
+(bob && HEIGHT > bobDeadline) || 
+(blake2b256(s ++ Coll(a)) == k && (alice && a == b || bob && a != b))
+\end{verbatim}
+The above constants are used to create \texttt{halfGameScript} with the following code:
+\begin{verbatim}
+val out           = OUTPUTS(0)
+val b             = out.R4[Byte].get
+val bobDeadline   = out.R6[Int].get
+val validBobInput = b == 0 || b == 1
+validBobInput && blake2b256(out.propositionBytes) == fullGameScriptHash &&
+OUTPUTS.size == 1 && bobDeadline >= HEIGHT+30 && out.value >= SELF.value * 2 
 \end{verbatim}
 
 Alice creates her half-game box protected by \texttt{halfGameScript}, which requires that the transaction spending the half-game box must generate exactly one output box with the following properties:
@@ -404,46 +404,41 @@ Alice creates her half-game box protected by \texttt{halfGameScript}, which requ
 	\item It must be protected by a script whose hash equals \texttt{fullGameScriptHash}.
 \end{enumerate}
  
-The game ensure security and fairness as follows. Since Alice's choice is hidden from Bob when he creates the full-game output, he does not have any advantage in selecting $b$. Secondly, Alice is sure to lose if she commits to a value other than 0 or 1. Finally, if Alice refuses to open her commitment, then Bob is sure to win after the deadline expires. 
+The game ensure security and fairness as follows. Since Alice's choice is hidden from Bob when he creates the full-game output, he does not have any advantage in selecting $b$. Secondly, Alice is guaranteed to lose if she commits to a value other than 0 or 1 because she can win only if $a = b$. 
+Thus, the rational strategy for Alice is to commit to a correct value. Finally, if Alice refuses to open her commitment, then Bob is sure to win after the deadline expires. 
+
 \subsection{Rock-Paper-Scissors Game}
 
 Compared to Rock-Paper-Scissors (RPS), the XOR game is simpler (and efficient) because there is no draw condition and for this reason should be prefered in practice. However, it is useful to consider the RPS game as an example of more complex protocols.
 
-Let $a, b\in \mathbb{Z}_3$ be the choices of Alice and Bob, with the understanding that 0, 1 and 2 represent rock, paper and scissors respectively. If $a = b$ then the game is a draw, otherwise Alice wins if $a-b \in \{1, -2\}$ else Bob wins. The game is similar to XOR, except that Bob must now generate two outputs. In the draw case each player gets one output, otherwise the winner gets both. 
-Alice's commitment $k=H(a||s)$ and public key \texttt{alice} is hardwired to get \texttt{fullGameScriptHash}:
+Let $a, b\in \mathbb{Z}_3$ be the choices of Alice and Bob, with the understanding that 0, 1 and 2 represent rock, paper and scissors respectively. If $a = b$ then the game is a draw, otherwise Alice wins if $a-b \in \{1, -2\}$ else Bob wins. The game is similar to XOR, except that Bob generates two outputs to handle the draw case (where each player gets one output). 
+Alice's commitment $k=H(a||s)$ and public key \texttt{alice} is used in generating \texttt{fullGameScriptHash}, the hash of the following script:
 
 \begin{verbatim}
-val fullGameScriptHash = blake2b256(
-  proposition{
-    val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
-    val a = getVar[Byte](1).get  // Alice's secret choice a (represented as a byte)
-    val b = SELF.R4[Byte].get    // Bob's public choice b (represented as a byte)
-    val bob = SELF.R5[SigmaProp].get
-    val bobDeadline = SELF.R6[Int].get // after this, it becomes Bob's coin
-    val drawPubKey = SELF.R7[SigmaProp].get
-    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
+val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
+val a = getVar[Byte](1).get  // Alice's secret choice a (represented as a byte)
+val b = SELF.R4[Byte].get    // Bob's public choice b (represented as a byte)
+val bob = SELF.R5[SigmaProp].get
+val bobDeadline = SELF.R6[Int].get // after this, it becomes Bob's coin
+val drawPubKey = SELF.R7[SigmaProp].get
+val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
 
-    (bob && HEIGHT > bobDeadline) || { valid_a &&
-      if (a == b) drawPubKey
-      else { if ((a - b) == 1 || (a - b) == -2) alice else bob }
-    }
-  }
-)
+(bob && HEIGHT > bobDeadline) || { valid_a &&
+  if (a == b) drawPubKey
+  else { if ((a - b) == 1 || (a - b) == -2) alice else bob }
+}
 \end{verbatim}
 
-To start the game, Alice creates a box protected by \texttt{halfGameScript} given below
+To start the game, Alice creates a box protected by \texttt{halfGameScript} given below:
 
 \begin{verbatim}
-val halfGameScript = proposition{
-  OUTPUTS.forall{(out:Box) =>
-    val b             = out.R4[Byte].get
-    val bobDeadline   = out.R6[Int].get
-
-    bobDeadline >= HEIGHT+30 && out.value >= SELF.value &&
-    (b == 0 || b == 1 || b == 2) && 
-    blake2b256(out.propositionBytes) == fullGameScriptHash
-  } && OUTPUTS.size == 2 && OUTPUTS(0).R7[SigmaProp].get == alice 
-}
+OUTPUTS.forall{(out:Box) =>
+  val b             = out.R4[Byte].get
+  val bobDeadline   = out.R6[Int].get
+  bobDeadline >= HEIGHT+30 && out.value >= SELF.value &&
+  (b == 0 || b == 1 || b == 2) && 
+  blake2b256(out.propositionBytes) == fullGameScriptHash
+} && OUTPUTS.size == 2 && OUTPUTS(0).R7[SigmaProp].get == alice 
 \end{verbatim}
 
 % // Bob needs to ensure that out.R5 contains bobPubKey
@@ -531,32 +526,29 @@ Let $g$ be the generator of \texttt{proveDLog}.
 	To identify her box, Alice will parse the data of both boxes as $(h, u, v)$ and select the one with $v = h^x$. 
 
 %\subsubsection{Implementing \mixname In \langname}
-\paragraph{\langname Code:} The following code defines the protocol:
+\paragraph{\langname Code:} First compute \texttt{fullMixScriptHash}, the hash of the following script:
 \begin{verbatim}
-val fullMixScriptHash = blake2b256(
-  proposition{
-    val u = SELF.R4[GroupElement].get
-    val c1 = SELF.R5[GroupElement].get
-    val c2 = SELF.R6[GroupElement].get
-    proveDlog(c2) || proveDHTuple(g, c1, u, c2)
-  }
-)
+val u = SELF.R4[GroupElement].get
+val c1 = SELF.R5[GroupElement].get
+val c2 = SELF.R6[GroupElement].get
+proveDlog(c2) || proveDHTuple(g, c1, u, c2)
+\end{verbatim}
 
-val halfMixScript = proposition{
-  val r4 = {(b:Box) => b.R4[GroupElement].get}
-  val r5 = {(b:Box) => b.R5[GroupElement].get}
-  val r6 = {(b:Box) => b.R6[GroupElement].get}
-  val fullBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
-  val u = r4(SELF)
-  
-  OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
-  fullBox(OUTPUT(0)) && fullBox(OUTPUT(1)) && 
-  r4(OUTPUT(0)) == u && r4(OUTPUT(1)) == u && 
-  r5(OUTPUT(0)) == r6(OUTPUT(1)) && r6(OUTPUT(0)) == r5(OUTPUT(1)) && (
-    proveDHTuple(g, u, r5(OUTPUT(0)), r6(OUTPUT(0))) || 
-    proveDHTuple(g, u, r6(OUTPUT(0)), r5(OUTPUT(0)))
-  )
-}
+Next create a script, \texttt{halfMixScript}, having the following code:
+\begin{verbatim}
+val r4 = {(b:Box) => b.R4[GroupElement].get}
+val r5 = {(b:Box) => b.R5[GroupElement].get}
+val r6 = {(b:Box) => b.R6[GroupElement].get}
+val fullBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
+val u = r4(SELF)
+
+OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
+fullBox(OUTPUT(0)) && fullBox(OUTPUT(1)) && 
+r4(OUTPUT(0)) == u && r4(OUTPUT(1)) == u && 
+r5(OUTPUT(0)) == r6(OUTPUT(1)) && r6(OUTPUT(0)) == r5(OUTPUT(1)) && (
+  proveDHTuple(g, u, r5(OUTPUT(0)), r6(OUTPUT(0))) || 
+  proveDHTuple(g, u, r6(OUTPUT(0)), r5(OUTPUT(0)))
+)
 \end{verbatim}
 
 Alice's Half-Mix box is protected by \texttt{halfMixScript} given above. In the basic variant, Alice has to wait for Bob to join the protocol. This can be resolved by adding  \texttt{proveDLog(u) || ...} to \texttt{halfMixScript}, allowing Alice to spend the box if no one joins for a long time.  
@@ -564,7 +556,7 @@ Alice's Half-Mix box is protected by \texttt{halfMixScript} given above. In the 
 \subsubsection{Analysis Of The Protocol}
 \paragraph{Security:} Note that $O_b$ and $O_{1-b}$ satisfy $(h, v) = (g^y, g^{xy})$ and $(h, v) = (g^{xy}, g^y)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDHTuple}(g, g^y, g^x, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^y) \lor \texttt{proveDHTuple}(g, g^{xy}, g^x, g^y)$. Thus, while Alice can spend $O_b$ using \texttt{proveDHTuple} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
 
-For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that any algorithm that distinguishes $(g, g^x, g^y, g^{xy})$ from $(g, g^x, g^{xy}, g^y)$ can be used to solve the DDH problem. It follows that our boxes, which are of this form, are also indistingushable.
+For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that any algorithm that, given $(g, g^x)$, distinguishes $(g^y, g^{xy})$ from $(g^{xy}, g^y)$ can be used to solve the DDH problem. It follows that our boxes, which are of this form, are also indistingushable.
 
 \paragraph{Offchain Pool:} The H-Pool can be offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both Half and Full mix transactions at some later time. 
 
@@ -636,6 +628,10 @@ The mix step will create an additional box with two tokens spendable by the seco
 % The fee keeps accumulating as long as the coin is circulated within the system (i.e., sent back to the H-pool or used in another mix operation) and is paid when the coin exits the system.
 
 %\section{Finite-State Machine in \langname}
+\section{Conclusion}
+
+This article described smart contracts written in \langname. The examples build upon the basic concepts described in the white-paper~\cite{whitepaper}. More advanced contracts for applications such as ICO, direct debit and salaries will be discussed in another tutorial.
+
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
 \end{document}
