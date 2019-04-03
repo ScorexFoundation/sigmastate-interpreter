@@ -6,9 +6,10 @@
 \begin{figure}[h]
 \footnotesize
 \input{figures/fig_typing.tex}
-\caption{Typing judgments of \langname}
+\caption{Typing rules of \langname}
 \label{fig:typing}
 \end{figure}
 
-Note that each well-typed term has exactly one type. This allows us to reify
-types as part of all terms.
+Note that each well-typed term has exactly one type hence we assume there
+exists a funcion $termType: Term \to \mathcal{T}$ which relates each well-typed
+term with the corresponding type.
