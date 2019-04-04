@@ -201,15 +201,6 @@ a trusted arbiter could be needed.
 Also, there is no self-destruction case considered in the withdrawal contract, so it will live before being destroyed 
 by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be 
 reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
-   
-   
-## Part 4. Contractual Money 
-
-We are discussing term "contractual money" internally and will announce details soon. Briefly, contractual money is 
-kind of money (in form of a contour in a big money system or a separate asset) which usage (i.e. medium-of-exchange 
-money function) is being explicitly defined by a contract (in opposite to money clear of a contract. It would be 
-attractive to use the "free money" term for the latter, but the term is already taken by Gesell's money). In our ICO case,
-the project is cre
 
 
 
