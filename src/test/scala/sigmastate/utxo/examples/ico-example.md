@@ -107,7 +107,8 @@ guarding script corresponding to the next stage, the withdrawal stage.
 
 At this stage a project can withdraw collected Ergs. And, of course, the spending transaction should pay a fee. Thus
 the sub-contract is checking that the spending transaction has indeed 3 outputs (for the contract itself, for the 
-project withdrawal, and for the fee), and that the only first output is carrying the tokens issued. 
+project withdrawal, and for the fee), and that the only first output is carrying the tokens issued. As we do not 
+specify project money withdrawal details, we require a project signature on the spending transaction.
 
     val openTree = SELF.R5[AvlTree].get
     
@@ -134,7 +135,7 @@ project withdrawal, and for the fee), and that the only first output is carrying
     
     val treeIsCorrect = digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
     
-    treeIsCorrect && valuePreserved && stateChanged
+    projectPubKey && treeIsCorrect && valuePreserved && stateChanged
 
 ### The Withdrawal Stage
 
@@ -195,12 +196,20 @@ dictionary is free of the withdrawn values. The sub-contract is below.
 
 Please note that there are many nuances our example contract is ignoring. For example, it is allowed to execute the 
 contract to anyone who is able to construct proper spending transactions (in out example, anyone listening to the 
-blockchain). In the real-world cases, additional signature from the project or a trusted arbiter could be needed.
+blockchain) during funding and withdrawal stages. In the real-world cases, additional signature from the project or 
+a trusted arbiter could be needed.
 Also, there is no self-destruction case considered in the withdrawal contract, so it will live before being destroyed 
 by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be 
 reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
    
+   
 ## Part 4. Contractual Money 
+
+We are discussing term "contractual money" internally and will announce details soon. Briefly, contractual money is 
+kind of money (in form of a contour in a big money system or a separate asset) which usage (i.e. medium-of-exchange 
+money function) is being explicitly defined by a contract (in opposite to money clear of a contract. It would be 
+attractive to use the "free money" term for the latter, but the term is already taken by Gesell's money). In our ICO case,
+the project is cre
 
 
 

@@ -25,13 +25,17 @@ class IcoExample extends SigmaTestingCommons { suite =>
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
 
   lazy val spec = TestContractSpec(suite)
-  lazy val project = spec.ProvingParty("Bob")
+  lazy val project = new ErgoLikeTestProvingInterpreter()
 
   private val miningRewardsDelay = 720
   private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
   private val feeBytes = feeProp.bytes
 
-  val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "feeBytes" -> feeBytes)
+  val env = Map(
+    ScriptNameProp -> "withdrawalScriptEnv",
+    "feeBytes" -> feeBytes,
+    "projectPubKey" -> project.secrets.head.publicImage
+  )
 
   val withdrawalScript: SigmaPropValue = compiler.compile(env,
     """{
@@ -113,7 +117,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |
       |  val treeIsCorrect = digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
       |
-      |  treeIsCorrect && valuePreserved && stateChanged
+      |  projectPubKey && treeIsCorrect && valuePreserved && stateChanged
       |}""".stripMargin
   ).asSigmaProp
 
@@ -209,7 +213,6 @@ class IcoExample extends SigmaTestingCommons { suite =>
   }
 
   property("simple ico example - issuance stage") {
-    val projectProver = new ErgoLikeTestProvingInterpreter
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     val digest = avlProver.digest
     val openTreeData = new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None)
@@ -236,7 +239,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       spendingTransaction = issuanceTx,
       self = projectBoxBeforeClosing)
 
-    val res = projectProver.prove(env, issuanceScript, fundingContext, fakeMessage).get
+    val res = project.prove(env, issuanceScript, fundingContext, fakeMessage).get
     println("token issuance script cost: " + res.cost)
   }
 
