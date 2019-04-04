@@ -46,7 +46,7 @@ class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
 
   lazy val alice = spec.ProvingParty("Alice")
 
-  property("Execute from var example (ErgoDsl)") {
+  ignore("Execute from var example (ErgoDsl)") {
     val contract = OracleContract[spec.type](alice)(spec)
     import contract.spec._
 
