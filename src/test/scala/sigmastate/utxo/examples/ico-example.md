@@ -136,7 +136,15 @@ project withdrawal, and for the fee), and that the only first output is carrying
     
     treeIsCorrect && valuePreserved && stateChanged
 
-### The Withdrawal Stage 
+### The Withdrawal Stage
+
+At this stage, it is allowed for an investor to withdraw money to predefined guarding script (which hash is written down 
+into the dictionary). A withdrawal transaction thus is having N + 2 outputs, where the first output should carry over the
+withdrawal sub-contract, the following N outputs have guarding scripts and token values according to the dictionary, 
+and for the the last output there are no any conditions, aside of that it is not allowed to carry away tokens with it 
+(supposedly, this output pays a fee). The contract is requiring for two proofs for the dictionary elements: one proof
+is showing that values to be withdrawn are indeed in the dictionary, and the second proof is proving that a resulting
+dictionary is free of the withdrawn values. The sub-contract is below.  
 
     val removeProof = getVar[Coll[Byte]](2).get
     val lookupProof = getVar[Coll[Byte]](3).get
@@ -183,8 +191,17 @@ project withdrawal, and for the fee), and that the only first output is carrying
 
     properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
    
-## Possible Enhancements And Further Steps
+## Possible Enhancements
+
+Please note that there are many nuances our example contract is ignoring. For example, it is allowed to execute the 
+contract to anyone who is able to construct proper spending transactions (in out example, anyone listening to the 
+blockchain). In the real-world cases, additional signature from the project or a trusted arbiter could be needed.
+Also, there is no self-destruction case considered in the withdrawal contract, so it will live before being destroyed 
+by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be 
+reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
    
 ## Part 4. Contractual Money 
+
+
 
 
