@@ -30,7 +30,19 @@ This three stages should be linked together, and form logical order. To fulfill 
 
 ## Part 3. The ICO Contract Details
 
+Now it is the time to provide details and ErgoScript code on the ICO contract stages.
+
 ### The funding stage
+
+First, the funding stage. We assume that initially a project creates a coin which is committing to an empty dictionary 
+(stored in the register R5) and also the scripts. This stage is lasts for height 2,000 at least, more concretely, the 
+first transaction with height of 2,000 at least should change the coin's script.
+
+The project coin is considering and checking that it is always input number zero, and also output number zero. The 
+other inputs are considered investors' inputs. An investor's input contains hash of a withdrawal coin guarding script 
+in the register R4. This hash as well as 
+
+The code below is basically checks all that described above, in the form of compilable code.  
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
 
