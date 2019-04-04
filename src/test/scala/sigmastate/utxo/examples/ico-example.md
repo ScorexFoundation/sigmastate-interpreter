@@ -79,31 +79,31 @@ The code below is basically checks all that described above, in the form of comp
 ### The issuance stage
 
     val openTree = SELF.R5[AvlTree].get
+    
     val closedTree = OUTPUTS(0).R5[AvlTree].get
-
+    
     val digestPreserved = openTree.digest == closedTree.digest
     val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
     val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
     val treeIsClosed = closedTree.enabledOperations == 4
-
+    
     val tokenId: Coll[Byte] = INPUTS(0).id
-
-    val tokensIssued = OUTPUTS(0).tokens.fold(0L, {(acc: Long, token: (Coll[Byte], Long)) =>
-        val tid: Coll[Byte] = token._1
-        if (tid == tokenId) acc + token._2 else acc
-    })
-
-    val outputsCountCorrect = OUTPUTS.size == 2
-    val secondOutputNoTokens = OUTPUTS(1).tokens.size == 0
-
+    
+    val tokensIssued = OUTPUTS(0).tokens(0)._2
+    
+    val outputsCountCorrect = OUTPUTS.size == 3
+    val secondOutputNoTokens = OUTPUTS(0).tokens.size == 1 && OUTPUTS(1).tokens.size == 0 && OUTPUTS(2).tokens.size == 0
+    
     val correctTokensIssued = SELF.value == tokensIssued
-
-    val correctTokenId = OUTPUTS(0).R4[Coll[Byte]].get == tokenId
-
+    
+    val correctTokenId = OUTPUTS(0).R4[Coll[Byte]].get == tokenId && OUTPUTS(0).tokens(0)._1 == tokenId
+    
     val valuePreserved = outputsCountCorrect && secondOutputNoTokens && correctTokensIssued && correctTokenId
     val stateChanged = blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
-
-    digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed && valuePreserved && stateChanged
+    
+    val treeIsCorrect = digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
+    
+    treeIsCorrect && valuePreserved && stateChanged
 
 ### The withdrawal stage 
 
