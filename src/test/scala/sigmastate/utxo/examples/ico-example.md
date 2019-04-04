@@ -40,7 +40,19 @@ first transaction with height of 2,000 at least should change the coin's script.
 
 The project coin is considering and checking that it is always input number zero, and also output number zero. The 
 other inputs are considered investors' inputs. An investor's input contains hash of a withdrawal coin guarding script 
-in the register R4. This hash as well as 
+in the register R4. The hashes as well as a monetary values of investing inputs should be added to the dictionary. The 
+spending transaction should provide a proof that investor data are indeed added to the dictionary, 
+and the proof is checked in the contract. 
+
+It is not checked in the funding sub-contract, rather, investors should check that the dictionary allows insertions 
+only, not updating existing values or removals (it is not hard to add an explicit check though). 
+
+The spending transaction should pay a fee, otherwise, it it unlikely that it would be included in a block. Thus the 
+funding contract is checking that the spending transaction has two outputs (one for itself, another to pay a fee), 
+the fee is to be no more than a certain limit (just one nanoErg in our example), and the guarding proposition should 
+be such that only a miner can spend the output (we use just a variable "feeProp" from compilation environment in our 
+example without providing any details, but this "feeProp" is corresponding to standard though not required by 
+consensus guarding script). 
 
 The code below is basically checks all that described above, in the form of compilable code.  
 
