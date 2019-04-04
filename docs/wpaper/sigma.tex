@@ -87,12 +87,12 @@ A variety of cryptocurrency languages have appeared. We do not survey them here,
 Simplicity~\cite{o2017simplicity}, Marlowe~\cite{seijas2018marlowe}, TypeCoin~\cite{crary2015peer}, and many other languages.
 
 \subsection{Our Contribution: \langname}
-In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time. However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see also Section \ref{sec:self-replicating}).
+In this paper we introduce a new language called \langname that is specifically designed to be friendly to cryptographic protocols and applications. \langname is considerably more powerful than Bitcoin Script. As \langname contains no unbounded looping or recursive constructs, individual scripts in \langname are not Turing-complete.  In fact, given a program in \langname, it is easy to obtain an estimate of its running time. However, because \langname allows for self-replication, \langname can be used to create Turing-complete processes in a blockchain, as shown in \cite{CKM18} (see also Section \ref{sec:self-replicating}).
 
 
 \paragraph{Built-in $\Sigma$-protocols}
 
-Our new language incorporates proving and verifying as first-class primitives, giving developers access to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, a script protecting a transaction output can contain statements ($\Sigma$-statements) that need to proven (by producing $\Sigma$-proofs) in order to spend the output.
+Our new language incorporates proving and verifying as first-class primitives, giving developers access to a subclass of cryptographic proof systems known as non-interactive $\Sigma$-protocols (pronounced ``sigma-protocols'').   Thus, a script protecting a transaction output can contain statements ($\Sigma$-statements) that need to be proven (by producing $\Sigma$-proofs) in order to spend the output.
 
 Conceptually, $\Sigma$-proofs \cite{Cra96} are generalizations~\cite{CL06} of digital signatures.
 In fact, Schnorr signature scheme~\cite{Sch91} (whose more recent version is popularly known as EdDSA \cite{BDLSY12,rfc8032}) is the canonical example of a $\Sigma$-proof: it proves that the recipient knows the discrete logarithm of the public key (the proof is attached to a specific message, such as a particular transaction, and thus becomes a signature on the message; all $\Sigma$-proofs described here are attached to specific messages). $\Sigma$-protocols exist for proving a variety of properties and, importantly for \langname, elementary $\Sigma$-protocols can be combined into more sophisticated ones using the techniques of \cite{CDS94}. For an introduction to $\Sigma$-protocols, we refer the reader to \cite{Dam10} and \cite[Chapter 6]{HL10}.
@@ -112,7 +112,10 @@ Our implementation of these protocols is in Scala \cite{scala} and Java \cite{ja
 \paragraph{Rich context, enabling self-replication}
 In addition to $\Sigma$-protocols, \langname allows for predicates over the state of the blockchain and the current transaction. These predicates can be combined, via Boolean connectives, with $\Sigma$-statements, and are used during transaction validation. The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
 
-\langname is statically typed (with compile-time type checking) and allows the usual operations, such as integer arithmetic.
+\langname is statically typed (with compile-time type checking) functional
+language with first-class lambda expressions, collection, tuple and optional
+type values, it allows standard operations, such as integer arithmetic,
+logical and comparison operations as well as operations on group elements and authenticated dictionaries.
 
 \ignore{
     \paragraph{Running time estimation and safety checks}
@@ -123,7 +126,7 @@ In addition to $\Sigma$-protocols, \langname allows for predicates over the stat
 
 \section{\langname Language Description}
 
-The language syntax is similar to Scala, and therefore many of the constructs are easy to read for those familiar with Scala. 
+The language syntax is a subset of Scala with the same meaning, and therefore many of the constructs are easy to read for those familiar with Scala. 
 
 Before we describe the language, let us fix some terminology. A \emph{box} (often called a ``coin'' in other literature) contains some amount (\emph{value}, measured in Ergo tokens) and is protected by a \emph{script} (boxes also contain additional information, such as other tokens; this information is described in detail in Section \ref{sec:box-registers}). A \emph{transaction} spends the value of boxes that are its \emph{inputs} (which are outputs of some earlier transaction) and produces boxes that are its \emph{outputs}. In a given transaction, the sum of the values of the inputs must equal the sum of the values of the outputs (as we describe below, the scripting language is rich enough to allow for payment transactions fees and for minting of new coins without violating this rule).
 
@@ -131,6 +134,7 @@ Before we describe the language, let us fix some terminology. A \emph{box} (ofte
 All the unspent transaction outputs (\emph{UTXO}) at a given time represent the value stored in the blockchain. A script for a box must evaluate to ``true'' when this box is used as an input to a transaction. This evaluation is helped by a \emph{proof} (for $\Sigma$-statements) and a \emph{context}, which are part of the transaction. The proof is produced by someone who knows the relevant secrets, such as secret keys; the context contains information about the spending transaction, such as details of its inputs and outputs, and the current state of the blockchain, such as the current height of the blockchain and last 10 block headers from the blockchain.
 
 \subsection{$\Sigma$-Statements}
+\label{sec:sigma-statements}
 
 The simplest script allows the owner of a public key to spend an output box in a future transaction by issuing a signature with the corresponding secret key. If the variable \texttt{pk} holds the public key, then this script is specified simply as a string
 \begin{verbatim}
@@ -138,7 +142,11 @@ The simplest script allows the owner of a public key to spend an output box in a
 \end{verbatim}
 
 In order for the compiler to know what value the variable \texttt{pk} is referring to, the compiler needs to be supplied with an \emph{environment}, which, in this case, is a single-element map, mapping the string \texttt{"pk"} to the object holding the public key.\footnote{This map is an object in Scala, and is passed to the compiler as a parameter together with the script (which is passed in as a string) when the compiler is invoked from within Scala code. We defer the discussion of how to invoke the compiler outside of Scala code to another article.}
-Thus, the constant public key is hardwired into the script at compile time. When the script is later evaluated (i.e., when the box is used as a transaction input), a $\Sigma$-proof of knowledge of the corresponding secret key must be supplied by the prover. 
+The value of public key is hardwired into the script at compile time, thus
+\texttt{"pk"} can also be called \emph{named constant} to reflect the fact
+that it cannot change. When the script is later evaluated (i.e., when the box
+is used as a transaction input), a $\Sigma$-proof of knowledge of the
+corresponding secret key must be supplied by the prover.
 
 A slightly more complex script may allow either one of two people to spend an box. If Alice owns public key \texttt{pkA}  and Bob owns public key \texttt{pkB} (with corresponding secret key \texttt{skA} and \texttt{skB}), then the script that would allow either one of them to spend the box is
 \begin{verbatim}
@@ -193,8 +201,21 @@ This script allows Alice or Bob to spend the box before \texttt{HEIGHT} reaches 
 
 In general, script evaluation reduces the script to a $\Sigma$-statement by first evaluating all the Boolean predicates that are not $\Sigma$-statements. As we saw in the above example, the resulting $\Sigma$-statement will, in general, depend on the values of the Boolean predicates (such as whether \texttt{HEIGHT > 500}).
 
-We emphasize that this evaluation is not the same as the usual left-to-right lazy evaluation of logical expressions, because expressions involving $\Sigma$-statements are not treated the same way as usual boolean expressions: they are evaluated last and in zero-knowledge. In fact, $\texttt{pkA}$ is not of type \texttt{Boolean}. It is of type \texttt{GroupElement}; the compiler automatically converts it to \texttt{proveDlog(\texttt{pkA})}, which is of type \texttt{ProveDlog} inherited from basic type \texttt{SigmaBoolean}. Type   \texttt{SigmaBoolean} is special because it is used differently by the prover (who constructs the proof) and the verifier (who checks it); moreover, variables of this type cannot be stored in boxes (Section \ref{sec:context}) or context extensions (Section \ref{sec:extension}).
+We emphasize that this evaluation is not the same as the usual left-to-right
+lazy evaluation of logical expressions, because expressions involving
+$\Sigma$-statements are not treated the same way as usual boolean
+expressions: they are evaluated last and in zero-knowledge. 
 
+In fact, $\texttt{pkA}$ is not of type \texttt{Boolean}. It is a constant of
+type \texttt{SigmaProp} with the concrete value
+\texttt{ProveDlog(\texttt{ge})}, for some public key \texttt{ge} of
+\texttt{GroupElement} type. The type \texttt{SigmaProp} is special in
+\langname because it is used differently by the prover (who constructs the
+proof) and the verifier (who checks it). In this case \texttt{ProveDlog}
+require: 1) the prover (when the transaction is created) to provide a proof
+of knowledge of the discrete logarithm corresponing to the value \texttt{ge};
+2) the verifier (when the transaction is added to a block) to check that the
+proof was indeed provided.
 
 \subsection{Accessing the Context and Box Contents}
 \label{sec:context}
@@ -214,7 +235,7 @@ Note that the script does not prevent the \texttt{friend} box from being spent o
 We can be more permissive and allow for other inputs in addition to the friend box. To do so, we will examine the input collection using the \texttt{exists} operator, which applies a boolean function to each collection element until it finds one that satisfies the function or finds that none exists. To define a function, we use lambda syntax; the argument type (in this case \texttt{Box}) is specified with a colon after the argument name \texttt{inputBox}. We name the function using the \texttt{val} keyword.
 \begin{verbatim}
         {
-                def isFriend = { (inputBox: Box) => inputBox.id == friend.id }
+                def isFriend(inputBox: Box) = inputBox.id == friend.id 
                 INPUTS.exists (isFriend)
         }
 \end{verbatim}
@@ -229,7 +250,7 @@ It can also be written in one statement, as follows:
 \paragraph{Example: crowdfunding}
 Access to the context allows us to create a script for the following crowdfunding situation: a project backer (with key  \texttt{backerPubKey}) wishes to give money to a project (with key \texttt{projectPubKey}), but only if the project raises enough money (at least \texttt{minToRaise}) from other sources by a deadline (expressed in terms of \texttt{HEIGHT}). 
 
-To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output collection for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script corresponding to \texttt{proveDlog(projectPubKey)}; this script can be obtained by \texttt{projectPubKey.propBytes}.
+To give money to the project, the backer will create an output box protected by the following script. The script contains two conditions: one for the case the deadline has passed (enabling the backer to get the money back) and one for the case it succeeded (enabling the project to spend the money if the amount is at least \texttt{minToRaise} before the deadline).  In order to ensure enough money has been raised, the script will search the output collection for a box with a sufficient value going to the \texttt{projectPubKey}. To check where the value of the output box is going, the script will read the script protecting the output box and compare it to the script \texttt{"projectPubKey"} (that is the simple script described in Section~\ref{sec:sigma-statements}); bytes of this script can be obtained by \texttt{projectPubKey.propBytes}.
 
 \begin{verbatim}
         {
@@ -260,7 +281,7 @@ Such context enxtensions can be useful, for example, for requiring a spending tr
 says that spending can be done only using the signature of Alice, and only if the preimage of \texttt{hashOutput} is written in the context. Specifically, the script requires that the context extension should contain a variable (with id \texttt{1}), which is a collection of bytes that hashes to the value of \texttt{hashOutput} (the value of \texttt{hashOutput}, like \texttt{pkA}, is defined in the environment and is hardwired into the script at compile time).  Note that although the script requires both the secret key corresponding to \texttt{pkA} and the hash preimage corresponding to \texttt{hashOutput}, there is the stark difference between how these two values are used: the secret key is not revealed in the proof (by the zero-knowledge property of $\Sigma$-proofs), while the hash preimage is explicitly written into the context extension and can be seen by anyone once the transaction takes place.
 
 \paragraph{Example: atomic transactions and cross-chain trading}
-Suppose there are two separate blockchains, for two different asset types. Alice wants to receive some assets in her blockchain in exchange for giving some assets to Bob in his blockchain. \langname allows to accomplish in a simpler way than proposed for Bitcoin, for example, in \cite{Nol13}.
+Suppose there are two separate blockchains, for two different asset types. Alice wants to receive some assets in her blockchain in exchange for giving some assets to Bob in his blockchain. \langname allows to accomplish it in a simpler way than proposed for Bitcoin, for example, in \cite{Nol13}.
 
 Alice creates a random secret \texttt{x} of 256 bits (32 bytes), hashes it to obtain the value \texttt{hx}, and creates a transaction in Bob's blockchain with the output box protected by the following script:
 \begin{verbatim}
@@ -273,12 +294,13 @@ Bob can receive the value of this box only upon presentation of a hash preimage 
 
 From this output, Bob learns \texttt{hx}. He creates a transaction in Alice's blockchain with an output box protected by the following script:
 \begin{verbatim}
+        val x = getVar[Coll[Byte]](1).get 
         anyOf( Coll(
                 HEIGHT > deadlineAlice && pkB,
                 allOf( Coll(
                         pkA,
-                        getVar[Coll[Byte]](1).get.size < 33,
-                        blake2b256(getVar[Coll[Byte]](1).get) == hx
+                        x.size < 33,
+                        blake2b256(x) == hx
                 ))
         ))
 \end{verbatim}
