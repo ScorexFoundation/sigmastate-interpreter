@@ -107,7 +107,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   lazy val bob = spec.ProvingParty("Bob")
   lazy val carol = spec.ProvingParty("Carol")
 
-  property("Revenue sharing contract") {
+  ignore("Revenue sharing contract") {
     val contract = RevenueContract[spec.type](alice, bob, carol)(spec)
 
     import contract.spec._

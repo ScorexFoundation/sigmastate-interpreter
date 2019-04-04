@@ -8,7 +8,7 @@ import scorex.crypto.hash
 import scorex.crypto.hash.Blake2b256
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Context, Extensions, SigmaProp}
+import special.sigma.{Box, Context, Extensions, SigmaProp}
 
 class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -34,6 +34,15 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
 
       def getRoot(item: Coll[Byte]):Coll[Byte] = path.foldLeft(item, xor)
       pkA && getRoot(oldItem) == oldRoot && getRoot(newItem) == newRoot
+
+      val dummy = Coll[Byte]()
+      val isValid = {(b:Box) => b.propositionBytes == dummy}
+      val x = OUTPUTS.foldLeft(0L, {(x:(Long, Box)) => if (isValid(x._2)) x._1 + x._2.value else x._1 }) // works
+
+      val f = {(x:(Long, Box)) => if (isValid(x._2)) x._1 + x._2.value else x._1 }
+      OUTPUTS.foldLeft(0L, f) // error
+      //OUTPUTS.foldLeft(0L, f) // error
+      ???
     },
       """{
         |      val oldRoot = SELF.R4[Coll[Byte]].get
@@ -42,11 +51,25 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
         |      val newRoot = OUTPUTS(0).R4[Coll[Byte]].get
         |      val path = getVar[Coll[Coll[Byte]]](0).get
         |
-        |      val getRoot = {(item: Coll[Byte]) => path.fold(item, {
-        |        (a: (Coll[Byte], Coll[Byte])) =>
-        |        a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
-        |      })}
-        |      pkA && getRoot(oldItem) == oldRoot && getRoot(newItem) == newRoot
+        |      val isFee = {(out:Box) => out.propositionBytes == pkA.propBytes}
+        |
+        |      //val accumulate = {(x:Long, b:Box) => if (isFee(b)) x + b.value else x }
+        |      val totalFee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
+        |
+        |      val dummy = Coll[Byte]()
+        |      val isValid = {(b:Box) => b.propositionBytes == dummy}
+        |      val x = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isValid(b)) x + b.value else x }) // works
+        |      //val f1 = {(x:(Long, Box)) => if (isValid(x._2)) x._1 + x._2.value else x._1 }
+        |      val f2 = {(x:Long, b:Box) => if (isValid(b)) x + b.value else x } // error
+        |      val y = OUTPUTS.fold(0L, f2) // error
+        |
+        |      //val totalFee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
+        |
+        |      //val getRoot = {(item: Coll[Byte]) => path.fold(item, {
+        |        //(a: (Coll[Byte], Coll[Byte])) =>
+        |        //a._1.zip(a._2).map({ (c: (Byte, Byte)) => (c._1 ^ c._2).toByte })
+        |      // })}
+        |      pkA && totalFee < 100 //&& getRoot(oldItem) == oldRoot && getRoot(newItem) == newRoot
         |}
       """.stripMargin)
 
@@ -54,7 +77,7 @@ class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
   lazy val alice = spec.ProvingParty("Alice")
 
-  property("Dummy contract") {
+  ignore("Dummy contract") {
     val contract = DummyContract[spec.type](alice)(spec)
     import contract.spec._
 

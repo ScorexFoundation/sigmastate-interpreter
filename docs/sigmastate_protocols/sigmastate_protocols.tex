@@ -144,7 +144,7 @@ Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal 
 
 A key feature of \langname is the use of {\em Sigma-Protocols} (written $\Sigma$-protocols)\cite{Dam10} interleaved with predicates on the transaction and the blockchain state. \langname currently supports two such-Protocols defined on a group $G$ of prime order $q$, written here in multiplicative form. 
 %This group is exactly the one defined by the secp256k1 curve of Bitcoin. 
-The first, denoted as \texttt{proveDLog(u)}, is a {\em proof of knowledge of Discrete Logarithm} of some arbitrary group element $u$ with respect to a fixed generator $g$, where the spender proves knowledge of $x$ such that $u = g^x$.
+The first, denoted as \texttt{proveDlog(u)}, is a {\em proof of knowledge of Discrete Logarithm} of some arbitrary group element $u$ with respect to a fixed generator $g$, where the spender proves knowledge of $x$ such that $u = g^x$.
 This is derived from Schnorr signatures~\cite{Sch91}. The second, denoted as \texttt{proveDHTuple}, is a {\em proof of knowledge of Diffie-Hellman Tuple} and is explained in Section~\ref{mix}.
 
 
@@ -165,15 +165,15 @@ The examples below use P2SH address and highlight some limitation of Bitcoin.
 
 \subsection{Short-lived Unconfirmed Transactions: Paying for Coffee}
 
-Suppose you are paying for coffee using cryptocurrency. You make a payment but it is taking a long time for the transaction to confirm. You decide to pay using cash and leave. However, you are worried that your original payment will eventually confirm and then you will either lose it or have to ask for a refund. In Bitcoin, you can try to double spend the transaction, which is not always guaranteed, even if using {\em replace-by-fee}. \langname has a better solution using {\em timed-payments} so that if the transaction is not confirmed before a certain height, it is no longer valid. Timed-payments require that funds be stored in a {\em timed address}, which is created as follows. 
+Alice is paying for coffee using cryptocurrency. She makes a payment but it is taking a long time for the transaction to confirm. She decides to pay using cash and leave. However, she is worried that her original payment will eventually confirm and then she will either lose it or have to ask for a refund. In Bitcoin, she can try to double spend the transaction, which is not always guaranteed, even if using {\em replace-by-fee}. \langname has a better solution using {\em timed-payments} so that if the transaction is not confirmed before a certain height, it is no longer valid. Timed-payments require Alice's funds be stored in a {\em timed address}, which is the P2SH of the following script: 
 
 %Assume \texttt{bob} is the coffee shop public key and Alice is the customer paying for coffee.
-Alice uses her public key \texttt{alice} (of type \texttt{proveDLog}) as a named constant to create the script:
 \begin{verbatim}
 alice && HEIGHT <= getVar[Int](1).get
 \end{verbatim}
 
-Alice's address is computed as a P2SH address of this script. Any funds deposited to this address can only be spent if the spending transaction satisfies following:
+Here \texttt{alice} is a {\em named constant} representing her public key.
+Any funds deposited to this address can only be spent if the spending transaction satisfies following:
 \begin{enumerate}
 	\item Context variable with id 1 of the box being spent must contain an integer, say $i$.
 	\item The height at mining should be less than or equal to $i$. 
@@ -187,7 +187,7 @@ Alice can still send non-timed payments by making $i$ very large. Since the cont
 We create a useful primitives called {\em reversible addresses}, which have anti-theft features in the following sense:
 any funds sent to a reversible address can only be spent using a {\em reversible transaction}. That is, transactions spending funds from such an address must create outputs that allow funds to be reversed for a certain time. The idea was proposed for Bitcoin~\cite{raddress} (using the moniker {\em R-addresses}) and requires a hardfork. In \langname, however, this can be done natively.
 
-To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. 
+To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private key is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. 
 %The irreversibility of fund transfers, usually considered a feature, has now become a bug.
 
 We would like that in the event of such a compromise, we are able to save all funds stored in this wallet and move them to another address, provided that the breach is discovered within a specified time (such as 24 hours) of the first unauthorized withdraw. 
@@ -225,19 +225,22 @@ val bobDeadline = SELF.R5[Int].get       // max locking height
 (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
 \end{verbatim}
 
-Let \texttt{feeProposition} be the script of a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. 
-Next create a script, \texttt{reversibleScript}, with the following code:
+Let \texttt{feeProposition} be the script of a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. The reversible address is the P2SH address of the following script:
 \begin{verbatim}
 val isChange = {(out:Box) => out.propositionBytes == SELF.propositionBytes}
-val isWithdraw = {(out:Box) => out.R5[Int].get >= HEIGHT + blocksIn24h &&
-                               out.propositionBytes == withdrawScript}
-val isFee = {out:Box) => out.propositionBytes == feeProposition}
+val isWithdraw = {(out:Box) => 
+  out.R5[Int].get >= HEIGHT + blocksIn24h && 
+  out.propositionBytes == withdrawScript
+}
+val isFee = {(out:Box) => out.propositionBytes == feeProposition}
 val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}
-val fee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
+
+val totalFee = OUTPUTS.fold(0L, {
+    (x:Long, b:Box) => if (isFee(b)) x + b.value else x 
+  }
+)
 alice && OUTPUTS.forall(isValid) && totalFee <= maxFee
 \end{verbatim}
-
-The reversible address is the P2SH address of \texttt{reversibleScript}. 
 
 \subsection{Cold-Wallet Contracts}
 
@@ -248,12 +251,12 @@ Assume an address is protected by 2 private keys, corresponding to the public ke
 	\item If both keys are spending then there are no restrictions. 
 \end{enumerate}
 
-Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the variables \texttt{percent} and \texttt{minSpend} respectively. Create a script with the code:
-%Set all these parameters in environment \texttt{env} along with the public keys \texttt{alice} and \texttt{bob} to get a compiled script:
+Let \texttt{blocksIn24h} be the number of blocks in 24 hours. Instead of hardwiring 1\% and 100 Ergs, we will use the named constants \texttt{percent} and \texttt{minSpend} respectively. The cold-wallet address is the P2SH address of the following script:
 \begin{verbatim}
-val depth = HEIGHT - SELF.creationInfo._1 // number of confirmations
-val start = min(depth, SELF.R4[Int].get) // block at which the period started
-val notExpired = HEIGHT - start <= blocksIn24h // expired if 24 hrs passed
+val storedStartHeight = SELF.R4[Int].get // block at which the period started
+val creationHeight = SELF.creationInfo._1 // creation height
+val startHeight = min(creationHeight, storedStartHeight) 
+val notExpired = HEIGHT - startHeight <= blocksIn24h // expired if 24 hrs passed
 val min = SELF.R5[Long].get // min Balance needed in this period
 
 val ours:Long = SELF.value - SELF.value * percent / 100
@@ -268,7 +271,6 @@ val valid = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
 (alice && bob) || ((alice || bob) && min >= keep && (nMin == 0 || valid))
 \end{verbatim}
 
-The cold-wallet address is the P2SH address of the above script. 
 Spending from this address is done in periods of 24 hours or more such that the maximum spendable is a fixed fraction of the amount at the beginning of the period. We do this by requiring the spending transaction to have an output with value greater than the minumum (which is stored in $R_5$) and paying back to the same address. The start of the current period is stored in $R_4$. Both registers are copied to the new output within the same period and get new values for if the current period has expired.
 
 
@@ -288,14 +290,15 @@ Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20
 		
 %First create a script and compute its hash:
 % There may be advantages of storing the public keys in a register rather than hardwiring them to address
-%First add the public keys \texttt{alice}, \texttt{bob}  and \texttt{carol} of type \texttt{proveDLog} into the environment \texttt{env}. First create a script. 
+%First add the public keys \texttt{alice}, \texttt{bob}  and \texttt{carol} of type \texttt{proveDlog} into the environment \texttt{env}. First create a script. 
 
 %First create an outputScript = 
 
 \begin{verbatim}
 val spenders = SELF.R4[Coll[(SigmaProp, Int)]].get
-val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
-val ratio:Int = spenders(getVar[Int](1).get)._2
+val index = getVar[Int](1).get // index of current spender 
+val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
+val ratio:Int = spenders(index)._2 // ratio of current spender
 val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
 val balance = SELF.value - SELF.value / total * ratio
 val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
@@ -305,12 +308,13 @@ val validOut = OUTPUTS(0).propositionBytes == SELF.propositionBytes &&
 pubKey && (outSpenders.size == 0 || validOut)
 \end{verbatim}
 
-Define \texttt{revenueAddress} as the P2SH address of the following script: 
+The revenue sharing contract is encoded in the P2SH address of the following script: 
 \begin{verbatim}
 val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
-val pubKey:SigmaProp = spenders(getVar[Int](1).get)._1
-val ratio:Int = spenders(getVar[Int](1).get)._2
-val balance = SELF.value - SELF.value / 100 * ratio
+val index = getVar[Int](1).get // index of current spender 
+val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
+val ratio:Int = spenders(index)._2 // ratio of current spender
+val balance = SELF.value - SELF.value / 100 * ratio  // Assume total is 100
 val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
 val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
 val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
@@ -318,40 +322,10 @@ val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
 pubKey && validOut
 \end{verbatim}
 
-Any funds sent to \texttt{revenueAddress} are subject to the revenue share discussed between the parties. 
-Each party can spend only its share and must create another box with the balance amount, the remaining spenders and protected by a script that enforces the same spending condition for any of the remaining spenders.
+For any funds sent to this address, each party can spend only its share and must create another box with the balance amount that enforces the same condition for the remaining spenders.
 
 %\subsection{Automated Salary Contracts}
 %further improvements. Can we reduce offchain data size, do multiple mixes offchain?
-\ignore{
-\subsection{Storing Data in \langname}
-
-We describe a data store using \langname. Let $H:\{0, 1\}^* \mapsto \{0, 1\}^{256}$ be a hash function. We store data in a variant of Merkle tree called {\em Commutative Merkle Tree} (CMT). A CMT is a perfectly balanced binary tree, where each node is computed as $H(left) \oplus H(right)$, which makes the tree commutative. This is different from an ordinary Merkle tree, where each node is $H(left \lVert right)$
-%(instead of $H(left\lVert right)$ as in Merkle Trees). 
-
-We use a balanced tree with 32 levels that can store $2^{32}$ elements. The Merkle root is stored in a box with a token at index 0, such that only one quantity of the token exists. The tree is always ``full'' and an element is never added to the tree. Rather, a leaf is updated with new data. Initially, the tree contains only empty leaves, and accordingly, the Merkle root is computed and stored. 
-To update an element, provide the new and old elements along with a Merkle path. 
-
-\begin{verbatim}
-val oldRoot = SELF.R4[Coll[Byte]].get
-val oldItem = getVar[Coll[Byte]](0).get
-val newItem = getVar[Coll[Byte]](1).get
-val newRoot = OUTPUTS(0).R4[Coll[Byte]].get
-val path = getVar[Coll[Coll[Byte]]](2).get
-val xor:Coll[Byte] = {(a:Coll[Byte], b:Coll[Byte]) => 
-  a.zip(b).map({(c:(Byte, Byte)) => (c._1 ^ c._2).toByte})}  
-val validOld = oldRoot == path.fold(oldItem,
-  {(accum:Coll[Byte], x:Coll[Byte]) => xor(blake2b256(accum), blake2b256(x))})
-val validNew = newRoot == path.fold(newItem,
-  {(accum:Coll[Byte], x:Coll[Byte]) => xor(blake2b256(accum), blake2b256(x))})
-val validOut = OUTPUTS(0).tokens(0) == SELF.tokens(0) && 
-               OUTPUTS(0).propositionBytes == SELF.propositionBytes
-
-validOld && validNew && validOut
-\end{verbatim}
-
-A valid Merkle root is the one contained in an unspent box with the given token. Anyone with the correct box can verify that some data indeed exists by checking the path. The example can be extended by requiring that only a fixed public key can update the tree.
-}
 \section{Two-party Protocols}
 
 We focus on two-round, two-party protocols. %That is, protocols with two parties that can be performed in two transactions. 
@@ -373,7 +347,7 @@ We describe a simple game called ``Same or Different'' or the XOR game. Alice an
 	If Alice fails to open $k$ within a specified deadline then Bob automatically wins. 
 \end{enumerate}
 
-The full-game script encodes the following conditions: The registers $R_4$, $R_5$ and $R_6$ are expected to store Bob's bit $b$, Bob's public key (stored as a \texttt{proveDLog} proposition) and the deadline for Bob's automatic win respectively. The context variables with id 0 and 1 (provided at the time of spending the full-game box) contain $s$ and $a$ required to open Alice's commitnent $k$, which alongwith Alice's public key \texttt{alice} is used to compute \texttt{fullGameScriptHash}, the hash of the below script: 
+The full-game script encodes the following conditions: The registers $R_4$, $R_5$ and $R_6$ are expected to store Bob's bit $b$, Bob's public key (stored as a \texttt{proveDlog} proposition) and the deadline for Bob's automatic win respectively. The context variables with id 0 and 1 (provided at the time of spending the full-game box) contain $s$ and $a$ required to open Alice's commitnent $k$, which alongwith Alice's public key \texttt{alice} is used to compute \texttt{fullGameScriptHash}, the hash of the below script: 
 %Alice compiles the full-game script to get a binary representation of its \langname code: 
 
 \begin{verbatim}
@@ -429,7 +403,7 @@ val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
 }
 \end{verbatim}
 
-To start the game, Alice creates a box protected by \texttt{halfGameScript} given below:
+To start the game, Alice creates a box protected by the script given below:
 
 \begin{verbatim}
 OUTPUTS.forall{(out:Box) =>
@@ -448,18 +422,15 @@ The above code ensures that register $R_7$ of the first output contains Alice's 
 \subsection{\mixname: Non-Interactive CoinJoin}
 \label{mix}
 
-Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{confidential}. The second is obscuring the input-output relationships such as in ZeroCoin~\cite{zerocoin} and CoinJoin~\cite{coinjoin}. Some solutions such as MimbleWimble~\cite{mw} and Z-Cash~\cite{zcash} combine both approaches. We describe \mixname, another privacy enhancing protocol based on the latter approach. The protocol is motivated from ZeroCoin and CoinJoin to overcomes some of their limitations.
+Privacy enhancing techniques in blockchains generally fall into two categories. The first is hiding the amounts being transferred, such as in Confidential Transactions~\cite{ct}. The second is obscuring the input-output relationships such as in ZeroCoin~\cite{zerocoin} and CoinJoin~\cite{coinjoin}. Some solutions such as MimbleWimble~\cite{mw} and Z-Cash~\cite{zcash,zcash1} combine both approaches. We describe \mixname, another privacy enhancing protocol based on the latter approach. The protocol is motivated from ZeroCoin and CoinJoin to overcome some of their limitations.
  
 \paragraph{ZeroCoin:}  In ZeroCoin, coins are added to a mixing pool as Pederson commitments and spent using a zero-knowledge proof that the coin indeed exists in the pool, without revealing which coin is being spent~\cite{zerocoin}. To avoid double spending, the randomness of the commitment is revealed along with a zero-knowledge proof of its correctness. This randonness is used to track spent coins. A consequence of this is that the size of the pool along with the randomness monotonously increases. Furthermore, this information must be maintained in memory for efficient verification. 
 This is the main drawback of ZeroCoin, which \mixname tries to address. 
 
-%In \mixname, this storage is proportional to the number of unspent boxes.
-%, while that of ZC is proportional to the number of deposits (i.e., both spent and unspent boxes).
-%In \mixname, boxes are never persistant. A box is removed when it is spent, whether it is a Half-Mix box or a fully mixed output. 
-%  Thus, the data storage overhead in \mixname is proportional to the number of unspent boxes, while that of ZC is proportional to the number of deposits (i.e., both spent and unspent boxes).  
 \paragraph{CoinJoin:} CoinJoin~\cite{coinjoin} is a privacy enhancing protocol for Bitcoin and also works for \langname. In CoinJoin, multiple parties provide inputs and create outputs in a single transaction computed interactively such that the original inputs and outputs are unlinked. 
-The highest privacy is achieved when there are an equal number of inputs and outputs, each of the same value. 
-The main hurdle in its widespread adoption is its interactive nature, which \mixname aims to overcome. In \mixname, the parties participate non-interactively, two at a time.   
+Highest privacy is achieved when there are an equal number of inputs and outputs, with same value. 
+The primary hurdle in CoinJoin's widespread adoption is its interactive nature, which \mixname aims to overcome. 
+%In \mixname, the parties participate non-interactively, two at a time.   
 
 
 \paragraph{\mixname:}  
@@ -467,7 +438,6 @@ The main hurdle in its widespread adoption is its interactive nature, which \mix
 To mix an arbitrary coin $B$, one of the following two actions is performed:
 \begin{enumerate}
 	\item Pick any coin $A$ from the H-pool and a secret bit $b$. Convert $(A, B)$ to new boxes $(O_0, O_1)$ such that $A$ maps to $O_b$ and $B$ to $O_{1-b}$. 
-%	If $O_0, O_1$ are indistingishable to the outside world, so that one is spendable by $A$'s owner and one by $B$'s, without revealing which. 
 %	Note that the original boxes $A, B$ are destroyed. Thus, $A$ is removed from the H-pool. 
 	We call this the {\em mix} operation. 
 	\item Add coin $B$ to the H-pool and wait for someone to use it in mix. This is the {\em pool} operation.
@@ -476,26 +446,21 @@ To mix an arbitrary coin $B$, one of the following two actions is performed:
 Privacy comes due to the fact that no outsider can guess $b$ assuming the hardness of the {\em Decision Diffie-Hellman} (DDH) problem,  which is the problem of distinguishing $g^{xy}$ from $g^z$, given $(g, g^x, g^y)$, for random $x, y, z$. The protocol is performed several times in sequence with different parties until desired level of privacy is reached.  
 
 \mixname uses a primitive called a {\em Proof of Diffie-Hellman Tuple}, explained below. Let $g, h, u, v$ be public group elements. The prover proves knowledge of $x$ such that $u={g}^x$ and $v={h}^x$. 
-%	This is done by extending the protocol of Section~\ref{intro:sigma} as follows. 
 \begin{enumerate}
 	\item The prover picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_0, t_1) = ({g}^r, {h}^r)$ and sends $(t_0, t_1)$ to the verifier.
 	\item The verifier picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to prover.
 	\item The prover sends $z = r + cx$ to the verifier, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$. % for $b \in \{0,1\}$.
 \end{enumerate}
 We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$.
-%This can also be used in a DDH-easy group. 
-
-
 
 \subsubsection{The Basic Protocol}
  Without loss of generality, Alice will pool and Bob will mix. 
 % In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
-Let $g$ be the generator of \texttt{proveDLog}.
+Let $g$ be the generator of \texttt{proveDlog}.
 \begin{enumerate}
 	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks random $x\in \mathbb{Z}_q$ and creates an output box $A$ containing $u = g^x$ protected by the script given below. She waits for Bob to join, who will do so by spending $A$ in a transaction satisfying following conditions: 
 	
 	\begin{enumerate}
-%		\item It has two inputs of equal value, one of which is $A$. %The value of the second input should be the same as in $A$. 
 		\item It has two outputs $O_0, O_1$ contining tuples $(c_0, u, c_1)$, $(c_1, u, c_0)$ respectively. 
 		\item The spender of $A$ must satisfy $\texttt{proveDHTuple}(g, u, c_0, c_1)\lor \texttt{proveDHTuple}(g, u, c_1, c_0)$.
 		\item The value of $O_0, O_1$ is the same as that of $A$.
@@ -503,17 +468,18 @@ Let $g$ be the generator of \texttt{proveDLog}.
 	\end{enumerate}
 	
 	
-	\item \textbf{Mix:} Bob randomly picks a box from the H-pool, for instance, $A$. Bob then picks secrets $b \in \mathbb{Z}_2$ and $y \in \mathbb{Z}_q$. He spends $A$ (along with his own box) to create two new boxes $O_0, O_1$ of equal values such that $O_b$ is spendable only by Alice and $O_{1-b}$ is spendable only by Bob. 
+	\item \textbf{Mix:} Bob picks secrets $(b, z) \in \mathbb{Z}_2\times \mathbb{Z}_q$ and spends $A$ with his own boxes to create two boxes $O_0, O_1$ of equal value such that $O_b$ is only spendable by Alice and $O_{1-b}$ only by Bob. 
 	
 	\begin{enumerate}
 		\item Let $(h, v) = ({g}^{y}, {u}^{y})$.  
-		The box $O_b$ contains data $(h, u, v)$ and $O_{1-b}$ contains $(v, u, h)$. If the DDH problem in $G$ is hard, the distributions $({g}^{y}, {g}^{x}, {g}^{xy})$ and 
-		$({g}^{xy}, {g}^{x}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
+		The box $O_b$ contains data $(h, v)$ and $O_{1-b}$ contains $(v, h)$. 
+%		If the DDH problem in $G$ is hard, then given $(g, g^x)$ the distributions $({g}^{y}, {g}^{xy})$ and 
+%		$({g}^{xy}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
 		\item  Let 
-		$\tau_\textsf{A}$ be the proposition: ``Parse data as $(h, u, v)$ and
+		$\tau_\textsf{A}$ be the proposition: ``Parse data as $(h, v)$ and
 		prove knowledge of $x$ such that $u = {g}^{x}$ and ${v} = {h}^{x}$.'' This is encoded as $\texttt{proveDHTuple}(g, h, u, v)$.
 		
-		\item Let $\tau_{\textsf{B}}$ be the proposition: ``Parse data as $(*, *, h)$ and
+		\item Let $\tau_{\textsf{B}}$ be the proposition: ``Parse data as $(*, h)$ and
 		prove knowledge of $y$ such that $h = {g}^{y}$.'' This is encoded as $\texttt{proveDlog}(h)$.
 		
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$. 
@@ -523,35 +489,37 @@ Let $g$ be the generator of \texttt{proveDLog}.
 %	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
 	After the mix, Alice and Bob can spent their respective boxes using their secrets. 
-	To identify her box, Alice will parse the data of both boxes as $(h, u, v)$ and select the one with $v = h^x$. 
+	To identify her box, Alice will parse the data of both boxes as $(h, v)$ and select the one with $v = h^x$. 
 
 %\subsubsection{Implementing \mixname In \langname}
 \paragraph{\langname Code:} First compute \texttt{fullMixScriptHash}, the hash of the following script:
 \begin{verbatim}
 val u = SELF.R4[GroupElement].get
-val c1 = SELF.R5[GroupElement].get
-val c2 = SELF.R6[GroupElement].get
-proveDlog(c2) || proveDHTuple(g, c1, u, c2)
+val c0 = SELF.R5[GroupElement].get
+val c1 = SELF.R6[GroupElement].get
+proveDlog(c1) || proveDHTuple(g, c0, u, c1)
 \end{verbatim}
 
 Next create a script, \texttt{halfMixScript}, having the following code:
 \begin{verbatim}
-val r4 = {(b:Box) => b.R4[GroupElement].get}
-val r5 = {(b:Box) => b.R5[GroupElement].get}
-val r6 = {(b:Box) => b.R6[GroupElement].get}
-val fullBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
-val u = r4(SELF)
+val u = SELF.R4[GroupElement].get
+val u_0 = OUTPUT(0).R4[GroupElement].get
+val c0_0 = OUTPUT(0).R5[GroupElement].get
+val c1_0 = OUTPUT(0).R6[GroupElement].get
+val u_1 = OUTPUT(1).R4[GroupElement].get
+val c0_1 = OUTPUT(1).R5[GroupElement].get
+val c1_1 = OUTPUT(1).R6[GroupElement].get
+val bob = u_0 == u && u_1 == u && c0_0 == c1_1 && c1_0 == c0_1 && 
+          (proveDHTuple(g, u, c0_0, c1_0) || proveDHTuple(g, u, c1_0, c0_0))
+val alice = proveDlog(u)
+val fullMixBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
+val fullMixTx = OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
+                fullMixBox(OUTPUT(0)) && fullMixBox(OUTPUT(1))
 
-OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
-fullBox(OUTPUT(0)) && fullBox(OUTPUT(1)) && 
-r4(OUTPUT(0)) == u && r4(OUTPUT(1)) == u && 
-r5(OUTPUT(0)) == r6(OUTPUT(1)) && r6(OUTPUT(0)) == r5(OUTPUT(1)) && (
-  proveDHTuple(g, u, r5(OUTPUT(0)), r6(OUTPUT(0))) || 
-  proveDHTuple(g, u, r6(OUTPUT(0)), r5(OUTPUT(0)))
-)
+fullMixTx && (bob || alice)
 \end{verbatim}
 
-Alice's Half-Mix box is protected by \texttt{halfMixScript} given above. In the basic variant, Alice has to wait for Bob to join the protocol. This can be resolved by adding  \texttt{proveDLog(u) || ...} to \texttt{halfMixScript}, allowing Alice to spend the box if no one joins for a long time.  
+Alice's Half-Mix box is protected by \texttt{halfMixScript} given above, which Bob can spend using the condition \texttt{bob}. In case no one spends her box for a long time, she can do so herself using the condition \texttt{alice}, as long as she spends it in a mix transaction.  
 
 \subsubsection{Analysis Of The Protocol}
 \paragraph{Security:} Note that $O_b$ and $O_{1-b}$ satisfy $(h, v) = (g^y, g^{xy})$ and $(h, v) = (g^{xy}, g^y)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDHTuple}(g, g^y, g^x, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^y) \lor \texttt{proveDHTuple}(g, g^{xy}, g^x, g^y)$. Thus, while Alice can spend $O_b$ using \texttt{proveDHTuple} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
@@ -578,17 +546,13 @@ Assume that fee is paid in {\em mixing tokens}, which are tokens\footnote{Every 
 
 \begin{enumerate}
 	\item \textbf{Perfect Fairness:} 
-% This is the A straightforward method of handling fee is as follows. 
  Alice's Half-Mix box contains $i$ mixing tokens and she requires each output box to contain $i-1$ mixing tokens. Thus, Alice can mix her coin $i$ times. 
  
  This optimal fee strategy, however, has two drawbacks. Firstly, it has weakened privacy because it restricts the coins that can be mixed. Secondly, it impacts usability because there may not be boxes with the desired number of tokens. The approximate fairness strategy, discussed next, has better privacy and usability at the cost of reduced fairness.
  
  \item \textbf{Approximate Fairness:} Alice relaxes her condition by requiring that Bob contribute at least one token in the mix. %In the worst case, Alice will have to start with $2^i$ tokens to mix $i$ times. 
  However, 
-% To avoid free-loaders, 
 she also requires Bob to have {\em initially} started with exactly 1000 tokens in his first mix. Thus, if Bob is contributing, say, 1 token in the current mix, then Alice wants to ensure that he actually got there `the hard way', by starting out with 1000 tokens and losing them in sequential mixes. %, rather than just by starting out with 1. 
-%Thus, coins with lower number of mixing tokens should have a higher {\em mix value}. 
-%One way to achieve this is via tokens with the following two properties. 
 This can be done as follows:
 
 Firstly, the token issuer must restrict the entry of tokens by issuing them only in batches of 1000 in a box protected by the script below,
@@ -627,10 +591,10 @@ The mix step will create an additional box with two tokens spendable by the seco
 %For instance, fee for the mix transaction can be paid when spending the mixed outputs. 	
 % The fee keeps accumulating as long as the coin is circulated within the system (i.e., sent back to the H-pool or used in another mix operation) and is paid when the coin exits the system.
 
-%\section{Finite-State Machine in \langname}
+%\section{Finite-State Machine}
 \section{Conclusion}
 
-This article described smart contracts written in \langname. The examples build upon the basic concepts described in the white-paper~\cite{whitepaper}. More advanced contracts for applications such as ICO, direct debit and salaries will be discussed in another tutorial.
+This article described smart contracts written in \langname. The examples build upon concepts from the \langname white-paper~\cite{whitepaper}. More advanced contracts will be discussed in another tutorial.
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
