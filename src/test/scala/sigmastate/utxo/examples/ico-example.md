@@ -1,4 +1,4 @@
-An ICO Example On Top of Ergo.
+An ICO Example On Top Of Ergo.
 ==============================
 
 We cover such complex example as an ICO (Initial Coin Offering) here covering several important novel features of the Ergo Platform. 
@@ -32,7 +32,7 @@ This three stages should be linked together, and form logical order. To fulfill 
 
 Now it is the time to provide details and ErgoScript code on the ICO contract stages.
 
-### The funding stage
+### The Funding Stage
 
 First, the funding stage. We assume that initially a project creates a coin which is committing to an empty dictionary 
 (stored in the register R5) and also the scripts. This stage is lasts for height 2,000 at least, more concretely, the 
@@ -54,7 +54,8 @@ be such that only a miner can spend the output (we use just a variable "feeProp"
 example without providing any details, but this "feeProp" is corresponding to standard though not required by 
 consensus guarding script). 
 
-The code below is basically checks all that described above, in the form of compilable code.  
+The code below is basically checks all that described above, in the form of compilable code. Please note that the 
+"nextStageScriptHash" environment variable contains hash of the issuance stage serialized script. 
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
 
@@ -88,7 +89,25 @@ The code below is basically checks all that described above, in the form of comp
 
     selfIndexIsZero && outputsCorrect && properTreeModification
 
-### The issuance stage
+### The Issuance Stage
+
+This stage is about only one spending transaction to get to the next stage, which is the withdrawal stage. At the 
+issuance stage, the main things should happen. As in the previous case, the issuance sub-contract assumes  
+
+In the first place, the tree should change a list of allowed operations from "inserts only" to "removals only", as the 
+next stage, the withdrawal one, is about removing from the dictionary.
+
+In the second place, the contract is checking that proper amount of ICO tokens are issued. In Ergo, it is allowed to 
+issue one new kind of token per transaction, and the identifier of the token should be equal to the (unique) 
+identifier of the first input coin. The issuance sub-contract is checking that a new token has been issued, and the 
+amount of it is equal to the amount of nanoErgs collected by the ICO contract coin to the moment.
+
+In the third place, the contract is checking that a spending transaction is indeed re-creating the coin with a 
+guarding script corresponding to the next stage, the withdrawal stage.
+
+At this stage a project can withdraw collected Ergs. And, of course, the spending transaction should pay a fee. Thus
+the sub-contract is checking that the spending transaction has indeed 3 outputs (for the contract itself, for the 
+project withdrawal, and for the fee), and that the only first output is carrying the tokens issued. 
 
     val openTree = SELF.R5[AvlTree].get
     
@@ -117,7 +136,7 @@ The code below is basically checks all that described above, in the form of comp
     
     treeIsCorrect && valuePreserved && stateChanged
 
-### The withdrawal stage 
+### The Withdrawal Stage 
 
     val removeProof = getVar[Coll[Byte]](2).get
     val lookupProof = getVar[Coll[Byte]](3).get
@@ -163,6 +182,8 @@ The code below is basically checks all that described above, in the form of comp
     val selfOutputCorrect = out0.propositionBytes == SELF.propositionBytes
 
     properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
+   
+## Possible Enhancements And Further Steps
    
 ## Part 4. Contractual Money 
 
