@@ -56,7 +56,7 @@ be such that only a miner can spend the output (we use just a variable "feeProp"
 example without providing any details, but this "feeProp" is corresponding to standard though not required by 
 consensus guarding script). 
 
-The code below is basically checks all that described above, in the form of compilable code. Please note that the 
+The code below basically checks all that described above, in the form of compilable code. Please note that the 
 "nextStageScriptHash" environment variable contains hash of the issuance stage serialized script. 
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -145,7 +145,7 @@ At this stage, it is allowed for an investor to withdraw money to predefined gua
 into the dictionary). A withdrawing transaction thus is having N + 2 outputs, where the first output should carry over the
 withdrawal sub-contract, the following N outputs have guarding scripts and token values according to the dictionary, 
 and for the the last output there are no any conditions, aside of that it is not allowed to carry away tokens with it 
-(supposedly, this output pays a fee). The contract is requiring for two proofs for the dictionary elements: one proof
+(supposedly, this output pays a fee). The contract is requiring two proofs for the dictionary elements: one proof
 is showing that values to be withdrawn are indeed in the dictionary, and the second proof is proving that a resulting
 dictionary is free of the withdrawn values. The sub-contract is below.  
 
