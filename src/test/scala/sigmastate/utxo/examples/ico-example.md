@@ -24,7 +24,7 @@ provide lookup or modification proofs. This gives possibility for a contract to 
 
 There could be many possible scenarios associated with the Initial Coin Offering (ICO). In this article we are working with the ICO contract steps briefly described below with details provided further:
 	- first, funding epoch takes place. It starts with a project coin authenticating an empty dictionary. The dictionary is intended for holding (investor, balance) pairs, where the investor is associated with script of its withdrawing coin. For the balance, we assume that 1 token is equal to 1 Ergo during the ICO. During the funding epoch, it is possible to put Ergs into the project coin.
-	For that, a spending transaction for the project coin provides inputs which holding investor withdrawal scripts. Investor scripts and input values should be added to the tree. There could be many chained funding transactions.  
+	For that, a spending transaction for the project coin provides inputs which holding investor withdrawing scripts. Investor scripts and input values should be added to the tree. There could be many chained funding transactions.  
 	- second, the funding period should be finished with closing the tree holding investors data. An authenticated tree could have different modification operations allowed individually: inserts, deletes, updates, or all the operations could be disallowed (so the tree could be in the read-only mode). Also, this transaction creates tokens of the ICO project which will be withdrawn in the next stage. The project can withdraw Ergs at this stage.  
 	- third, investors are withdrawing their tokens. For that, a spending transaction creates outputs with guarding conditions and token values from the tree. The tree should be cleared from withdrawn pairs. There could be many chained funding transactions.
 
@@ -41,7 +41,7 @@ First, the funding stage. We assume that initially a project creates a coin whic
 first transaction with height of 2,000 at least should change the coin's script.
 
 The project coin is considering and checking that it is always input number zero, and also output number zero. The 
-other inputs are considered investors' inputs. An investor's input contains hash of a withdrawal coin guarding script 
+other inputs are considered investors' inputs. An investor's input contains hash of a withdrawing coin guarding script 
 in the register R4. The hashes as well as a monetary values of investing inputs should be added to the dictionary. The 
 spending transaction should provide a proof that investor data are indeed added to the dictionary, 
 and the proof is checked in the contract. 
@@ -142,7 +142,7 @@ specify project money withdrawal details, we require a project signature on the 
 ### The Withdrawal Stage
 
 At this stage, it is allowed for an investor to withdraw money to predefined guarding script (which hash is written down 
-into the dictionary). A withdrawal transaction thus is having N + 2 outputs, where the first output should carry over the
+into the dictionary). A withdrawing transaction thus is having N + 2 outputs, where the first output should carry over the
 withdrawal sub-contract, the following N outputs have guarding scripts and token values according to the dictionary, 
 and for the the last output there are no any conditions, aside of that it is not allowed to carry away tokens with it 
 (supposedly, this output pays a fee). The contract is requiring for two proofs for the dictionary elements: one proof
