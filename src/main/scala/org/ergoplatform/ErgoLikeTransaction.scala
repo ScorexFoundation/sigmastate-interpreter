@@ -116,15 +116,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 
-    val builder = mutable.ArrayBuilder.make[TokenId]()
-    val seen = mutable.Set[TokenId]()
-    tokenIds.foreach { ti =>
-      if (!seen.exists(v => util.Arrays.equals(v, ti))) {
-        builder += ti
-        seen.add(ti)
-      }
-    }
-    val distinctTokenIds = builder.result().toColl
+    val distinctTokenIds = tokenIds.map(_.toColl).distinct.map(_.toArray.asInstanceOf[TokenId])
 
     w.putUInt(distinctTokenIds.length)
     distinctTokenIds.foreach { tokenId =>
