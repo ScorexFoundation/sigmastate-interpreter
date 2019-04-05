@@ -142,7 +142,7 @@ Crucially, the proof for an $\ornode$ and a $\tnode$ connective does not reveal 
 \subsection{Other Features of \langname} 
 }
 
-A key feature of \langname is the use of {\em Sigma-Protocols} (written $\Sigma$-protocols)\cite{Dam10} interleaved with predicates on the transaction and the blockchain state. \langname currently supports two such-Protocols defined on a group $G$ of prime order $q$, written here in multiplicative form. 
+A key feature of \langname is the use of {\em Sigma-Protocols} (written $\Sigma$-protocols)\cite{Dam10} interleaved with predicates on the transaction and the blockchain state. \langname currently supports two such protocols defined on a group $G$ of prime order $q$, written here in multiplicative form. 
 %This group is exactly the one defined by the secp256k1 curve of Bitcoin. 
 The first, denoted as \texttt{proveDlog(u)}, is a {\em proof of knowledge of Discrete Logarithm} of some arbitrary group element $u$ with respect to a fixed generator $g$, where the spender proves knowledge of $x$ such that $u = g^x$.
 This is derived from Schnorr signatures~\cite{Sch91}. The second, denoted as \texttt{proveDHTuple}, is a {\em proof of knowledge of Diffie-Hellman Tuple} and is explained in Section~\ref{mix}.
