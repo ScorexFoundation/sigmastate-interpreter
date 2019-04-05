@@ -2,7 +2,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu,stmaryrd}
 
 \newcommand{\authnote}[2]{\textsf{#1 \textcolor{blue}{: #2}}}
 
@@ -35,6 +35,7 @@
 \newcommand{\ignore}[1]{}
 
 \newcommand{\langname}{ErgoScript\xspace}
+\newcommand{\corelang}{$\lst{Core-}\lambda$\xspace}
 \newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
 \newcommand{\andnode}{\ensuremath{\mathsf{AND}}}
@@ -61,6 +62,7 @@
 % \newcommand{\Fst}[1]{$#1$\lst{.fst}}
 % \newcommand{\Snd}[1]{$#1$\lst{.snd}}
 \newcommand{\Ctx}{\mathcal{E}}
+\newcommand{\Apply}[2]{#1\langle#2\rangle}
 \newcommand{\RCtx}{\mathcal{R}}
 \newcommand{\RMatch}[1]{(#1 :: \mathcal{R})}
 \newcommand{\RCtxEmpty}{\epsilon}
@@ -78,6 +80,7 @@
 \newcommand{\LetrecXXX}[3]{\lst{letrec} $#1$ \lst{=} $#2$ \lst{in} $#3$}
 \newcommand{\CaseOfXX}[2]{\text{\lst{case}}~#1~\text{\lst{of}}~\{ #2 \}}
 \newcommand{\CaseOf}[3]{\text{\lst{case}}~#1~\text{\lst{of}}~\{ #2 \to #3 \}}
+\newcommand{\IfThenElse}[3]{\text{\lst{if}}~(#1)~#2~\text{\lst{else}}~#3}
 \newcommand{\Let}[3]{\text{\lst{let}}~#1~\text{\lst{=}}~#2~\text{\lst{in}}~#3}
 \newcommand{\Field}[2]{#1.\text{\lst{#2}}}
 \newcommand{\FDecl}[2]{\text{\lst{val}}~#1 : #2}
@@ -87,12 +90,14 @@
 \newcommand{\KSet}{\mathcal{K}}  
 \newcommand{\VSet}{\mathcal{V}}  
 \newcommand{\LSet}{\mathcal{L}}  
+\newcommand{\Low}[1]{\mathcal{L}\llbracket#1\rrbracket}  
 \newcommand{\PSet}{\mathcal{P}}  
 \newcommand{\DSet}{\mathcal{D}}  
 \newcommand{\CSet}{\mathcal{CLS}}  
 \newcommand{\ISet}{\mathcal{ABS}}  
 
 \newcommand{\Ov}[1]{\overline{#1}}
+\newcommand{\Un}[1]{\underline{#1}}
 \newcommand{\Tup}[1]{(#1)}
 \newcommand{\Coll}[1]{\text{\lst{Coll}}(#1)}
 \newcommand{\Some}[1]{\text{\lst{Some}}(#1)}
@@ -128,12 +133,18 @@
 \newcommand{\SE}[3]{SE'|[#1|]~#2~#3}
 \newcommand{\SEtop}[2]{SE|[#1|]~#2}
 \newcommand{\TEnv}{\Gamma}
-\newcommand{\Der}[2]{#1\vdash#2}
+\newcommand{\Der}[2]{#1~\vdash~#2}
+\newcommand{\DerV}[2]{#1~\vdash^{\text{\lst{v}}}~#2}
+\newcommand{\DerC}[2]{#1~\vdash^{\text{\lst{c}}}~#2}
 \newcommand{\DerEnv}[1]{\Der{\TEnv}{#1}}
+\newcommand{\DerEnvV}[1]{\DerV{\TEnv}{#1}}
+\newcommand{\DerEnvC}[1]{\DerC{\TEnv}{#1}}
 \newcommand{\Dif}[1]{\partial#1}
 \newcommand{\View}[2]{#1\sphericalangle #2}
 \newcommand{\This}{\text{\lst{this}}}
 \newcommand{\Section}[1]{Section~\ref{section:#1}}
+
+\newtheorem{definition}{Definition}
 
 \begin{document}
 

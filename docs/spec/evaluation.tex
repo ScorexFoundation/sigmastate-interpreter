@@ -1,26 +1,51 @@
 \section{Evaluation Semantics}
 \label{sec:evaluation}
 
-Here we specifiy evaluation semantics of \langname in terms of reduction of
-its terms to values in a given data environment. To do that we specify
-\emph{reduction context} $\Ctx$ - a tree-like structure with the hole, which
-marks the position of \emph{redex} to be evaluated. And using contexts we
-specify \emph{evaluation relation} which defines transformation of redexes
-into irreducible values.
+Here we specifiy evaluation semantics of \corelang, which is based on
+call-by-push-value (CBPV) lambda calculus. Evaluation of \corelang is
+specified using denotational semantics. To do that we first specify types,
+then typed terms and then equations of denotationsl semantics.
 
-The main property of $\Ctx$ is that for any term $t$ there exists a unique
-decompostion of $t$ into redex $r$ and context $\Ctx$ such that $t =
-[r]\Ctx$, i.e. substitution of redex in the hole of the context gives the
-decomposed term $t$. \mnote{This needs to be proved}
+The types of \corelang are given by 
 
+\begin{equation}
+\begin{array}{l c l}
+  A			& ::= & U\Un{B} \mid \mathcal{T}  \\
+  \Un{B}	& ::= & FA \mid A \to \Un{B}
+\end{array}
+\end{equation}
 
+Since identifiers can be bound only to values, they must have value type. So
+we have the following:
+
+\begin{definition}
+ A \emph{context} $\Gamma$ is a finite sequence of identifiers with value
+ types $x_1: A_1, \dots ,x_n: A_n$. Sometimes we omit the identifiers and
+ write $\Gamma$ as a list of value types.
+\end{definition}
+
+We make a syntactic distinction between values and computations, so that
+every term is either a value or a computation but not both. Thus we have two kinds of judgements
+
+\begin{equation}
+\begin{array}{c c}\DerEnvV{V : A} & \DerEnvC{M : \Un{B}} \end{array}
+\end{equation}
+
+\noindent which respectively say that $V$ is a value of type $A$ and that $M$
+is a computation of type $\Un{B}$ (i.e. $M$ produces a value of type $B$). The
+calculus that this leads to is called call-by-push-value (CBPV).
 
 \begin{figure}[h]
-    \footnotesize
-    \input{figures/fig_semantics.tex}
-    \caption{Evaluation semantics of \langname}
-    \label{fig:semantics}
+    % \footnotesize
+    \input{figures/core_terms.tex}
+    \caption{Typed terms of \corelang}
+    \label{fig:core-terms}
 \end{figure}
+
+% \begin{figure}[h]
+%     \footnotesize
+%     \input{figures/fig_semantics.tex}
+%     \caption{Evaluation semantics of \langname}
+%     \label{fig:semantics}
+% \end{figure}
     
-The standard call-by-value evaluation semantics of the core language, which
-is shown in Figure~\ref{fig:semantics}, doesn't use reified types.

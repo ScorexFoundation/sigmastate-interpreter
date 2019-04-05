@@ -12,10 +12,13 @@ $\Ctx$ 	& ::= 		&	$\Hole$ 	&  hole \\
 \multicolumn{1}{l}{\text{Call-by-value evaluation relation}}\\
 \\
 \begin{tabular}{@{}l c l r}
-$[(\Lam{x}{e})~v]\Ctx$   & $\mapsto$ 	& 	$[[v/x]e]\Ctx$					    & (1)     \\
-% $[$ \lst{let} $x = v$ \lst{in} $e]\Ctx$   & $\mapsto$ 	& 	$[[v/x]e]\Ctx$					    & (2)     \\
+$[(\Lam{x}{e})~v]\Ctx$					& $\mapsto$	& 	$[[v/x]e]\Ctx$					    & (1)     \\
+$[$ \lst{let} $x = v$ \lst{in} $e]\Ctx$	& $\mapsto$	& 	$[[v/x]e]\Ctx$					    & (2)     \\
 $[$\lst{case} $k~\Ov{v}$ \lst{of} \{ $k_i~\overline{x_i}$ $\rightarrow$ $e_i$  \}$]\Ctx$   & $\mapsto$ 	& 	$[[\overline{v}/\overline{x_j}]e_j]\Ctx$, if $k = k_j$	& (2)    \\
-$[$\lst{case} $l$ \lst{of} \{ $l_i \rightarrow e_i$ \}$]\Ctx$   & $\mapsto$ 	& 	$[e_j]\Ctx$, if $l = l_j$	& (3)    \\
+$\Apply{\Ctx}{\IfThenElse{v}{e_1}{e_2}}$   & $\mapsto$ 	& \begin{tabular}{ l l}
+													$\Apply{\Ctx}{e_1}$ & if $v = true$ \\
+													$\Apply{\Ctx}{e_2}$ & otherwise
+												  \end{tabular} & (3)    \\
 $[\delta~\overline{v}]\Ctx$   & $\mapsto$ 	& 	$[l]\Ctx$, if $l = |[\Prim|]\overline{v}$					    & (4)     \\
 
 \end{tabular}

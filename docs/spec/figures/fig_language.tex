@@ -14,10 +14,10 @@ $\mathcal{T} \ni \tau$	& ::= 		& \lst{P} 	& \lst{SPredefType}	& predefined types
 $Term\ni e$	& ::= 		&   $C(v, \tau) $				& \lst{Constant} & typed constants  \\
 			& 	$\mid$ 	& 	$Var(id, \tau) $ 			& \lst{ValUse} & typed variables  \\
 			& 	$\mid$ 	& 	$\TyLam{x}{\tau}{e}$ 		& \lst{FuncExpr} & lambda expression \\
-			& 	$\mid$ 	& 	$e_f(\Ov{e})$ 				& \lst{Apply} & application of functional expression \\
-			& 	$\mid$ 	& 	$e.m(\Ov{e})$			 	& \lst{MethodCall} & method invocation  \\
+			& 	$\mid$ 	& 	$\Apply{e_f}{\Ov{e}}$ 		& \lst{Apply} & application of functional expression \\
+			& 	$\mid$ 	& 	$\Apply{e.m}{\Ov{e}}$		& \lst{MethodCall} & method invocation  \\
 			& 	$\mid$ 	&   $\Tup{e_1, \dots ,e_n}$ 	& \lst{Tuple} & constructor of tuple with $n$ items \\
-			& 	$\mid$ 	& 	$\delta(\Ov{e})$ 			& & primitive application (see Appendix~\ref{sec:appendix:primops}) \\
+			& 	$\mid$ 	& 	$\Apply{\delta}{\Ov{e}}$ 	& & primitive application (see Appendix~\ref{sec:appendix:primops}) \\
 			& 	$\mid$ 	& 	\lst{if} $(e_{cond})$ $e_1$ \lst{else} $e_2$ & \lst{If} & if-then-else expression \\
 			& 	$\mid$ 	&   $\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}$  & \lst{BlockExpr} & block expression \\
 			& 	     	&										& &				\\
