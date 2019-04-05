@@ -1,8 +1,10 @@
 package org.ergoplatform
 
+import java.util
+
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
@@ -114,7 +116,15 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val tokenIds = tx.outputCandidates.toColl
       .flatMap(box => box.additionalTokens.map(t => t._1))
 
-    val distinctTokenIds = tokenIds.distinct
+    val builder = mutable.ArrayBuilder.make[TokenId]()
+    val seen = mutable.Set[TokenId]()
+    tokenIds.foreach { ti =>
+      if (!seen.exists(v => util.Arrays.equals(v, ti))) {
+        builder += ti
+        seen.add(ti)
+      }
+    }
+    val distinctTokenIds = builder.result().toColl
 
     w.putUInt(distinctTokenIds.length)
     distinctTokenIds.foreach { tokenId =>

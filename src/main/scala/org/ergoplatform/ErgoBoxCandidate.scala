@@ -89,7 +89,7 @@ object ErgoBoxCandidate {
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (tokensInTx.isDefined) {
-          val tokenIndex = tokensInTx.get.indexOf(id, 0)
+          val tokenIndex = tokensInTx.get.indexWhere(v => util.Arrays.equals(v, id), 0)
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {
