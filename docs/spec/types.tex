@@ -1,11 +1,12 @@
 \section{Typing}
 \label{sec:typing}
 
-\langname is a strictly typed language, in which every term should have a type in order to be evaluated.
-Typing judgement $\Der{\Gamma}{e : \tau}$
+\langname is a strictly typed language, in which every term should have a
+type in order to be wellformed and evaluated. Typing judgement of the form
+$\Der{\Gamma}{e : T}$ say that $e$ is a term of type $T$ in the typing
+context $\Gamma$.
 
 \begin{figure}[h]
-\footnotesize
 \input{figures/fig_typing.tex}
 \caption{Typing rules of \langname}
 \label{fig:typing}

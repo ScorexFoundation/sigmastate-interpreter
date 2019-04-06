@@ -1,68 +1,61 @@
 
 \begin{center}
-% var and consts
+% const, var, tuple
 \(\begin{array}{c c c}
-\frac{}{\Der{\Gamma,x : \tau}{x : \tau}}
- 	 & 
-\frac{}{\Der{\Gamma}{l : \text{\lst{Int}}}}
-     &
-\frac{}{\Der{\Gamma}{() : \text{\lst{Unit}}}}
-	 \\
-	 & & \\
+	\frac{}{\Der{\Gamma}{C(\_, T)~:~T}}~\lst{(Const)}
+	& 
+	\frac{}{\Der{\Gamma,x~:~T}{x~:~T}}~\lst{(Var)}
+	&
+	\frac{
+		\delta :~(T_1,\dots,T_n) \to T~~~\Ov{\DerEnv{e_i:~T_i}}
+	}{
+		\Apply{\delta}{\Ov{e_i}}:~T
+	}~\lst{(Prim)} \\
+	& & \\ % blank line
 \end{array}\) 
 
-% primitive
-\(
-\frac{\oplus : (\tau_1\times\tau_2) \to \tau_3~~~\DerEnv{e_1 : \tau_1}~~~\DerEnv{e_2 : \tau_2}}{\DerEnv{e_1 \oplus e_2 : \tau_3}}
-\)
 
-% pairs
-\(\begin{array}{c c c}
- & \\
-\frac{\DerEnv{e : \TPair{\tau_1}{\tau_2}}}{\DerEnv{\Fst{e} : \tau_1}}
-     &
-\frac{\DerEnv{e : \TPair{\tau_1}{\tau_2}}}{\DerEnv{\Snd{e} : \tau_2}}
-     &
-\frac{\DerEnv{e_1 : \tau_1}~~~\DerEnv{e_2 : \tau_2}}{\DerEnv{\Tup{e_1,e_2} : \TPair{\tau_1}{\tau_2}}}
-	 \\
-\end{array}\) 
-
-% sums
+% tuples
 \(\begin{array}{c c}
- & \\
-\frac{\DerEnv{e : \tau_1}}{\DerEnv{\Left{\tau_1}{\tau_2}{e} : \tau_1 + \tau_2}}
-     &
-\frac{\DerEnv{e : \tau_2}}{\DerEnv{\Right{\tau_1}{\tau_2}{e} : \tau_1 + \tau_2}}
-	 \\
-	& \\ 
+\frac{\DerEnv{e_1 :~T_1}~~\dots~~\DerEnv{e_n :~T_n}}
+     {\DerEnv{(e_1,\dots,e_n)~:~(T_1,\dots,T_n)}}~\lst{(Tuple)}
+& 
+\frac{\DerEnv{e~:~I}~~mtype(m, I)~:~(T_1,\dots,T_n) \to T~~~\Ov{\DerEnv{e_i:~T_i}}}
+	 { \Apply{e.m}{\Ov{e_i}}:~T }~\lst{(MethodCall)} \\
+& \\ % blank line
 \end{array}\) 
-
-% case
-\(\begin{array}{c}
-\frac{\DerEnv{e : \tau_1 + \tau_2}~~~\Der{\Gamma,x_1 : \tau_1}{e_1 : \tau}~~~\Der{\Gamma,x_2 : \tau_2}{e_2 : \tau}}
-     {\DerEnv{\CaseOfXX{e}{\Left{\tau_1}{\tau_2}{x_1} \to e_1;~~\Right{\tau_1}{\tau_2}{x_2} \to e_2} : \tau}} \\
-  \\
-\end{array}\) 
-
-% case
-\(\begin{array}{c}
-\frac{\DerEnv{e : \text{\lst{Int}}}~~~\DerEnv{e_i : \tau}}
-     {\DerEnv{\CaseOf{e}{l_i}{e_i} : \tau}} \\
-  \\
-\end{array}\)
-
-% let
-% \(
-% \frac{\Der{\TEnv,x : \tau_1}{e_2 : \tau_2}}{\Der{\Gamma}{\Let{x}{e_1}{e_2} : \tau_2}}
-% \)
 
 % functions
 \(\begin{array}{c c}
-\frac{\Der{\TEnv,x:\tau_1}{e:\tau_2}}{\Der{\Gamma}{\TyLam{x}{\tau_1}{e} : \tau_1 \to \tau_2}}
- 	 & 
-\frac{\Der{\TEnv}{e_1 : \tau_2 \to \tau}~~~\Der{\TEnv}{e_2 : \tau_2}}{\Der{\Gamma}{e_1~e_2 : \tau}}
-	 \\
+	\frac{\Der{\TEnv,\Ov{x_i:~T_i}}{e~:~T}}
+	     {\Der{\Gamma}{\TyLam{x_i}{T_i}{e}~:~(T_0,\dots,T_n) \to T}}~\lst{(FuncExpr)}
+		  & 
+	\frac{ \Der{\TEnv}{e_f:~(T_1,\dots,T_n) \to T}~~~\Ov{\Der{\TEnv}{e_i:~T_i}} }
+		 { \Der{\Gamma}{\Apply{e_f}{\Ov{e_i}}~:~T} }~\lst{(Apply)} \\
+& \\ % blank line
 \end{array}\) 
+
+% if
+\(\begin{array}{c c}
+	\frac{ \DerEnv{e_{cond} :~\lst{Boolean}}~~\DerEnv{e_1 :~T}~~\DerEnv{e_2 :~T} }
+		 { \DerEnv{\IfThenElse{e_{cond}}{e_1}{e_2}~:~T} }~\lst{(If)}
+		 & 
+		 \\
+		 & \\ % blank line
+\end{array}\) 
+\(
+	\frac{ 
+		\DerEnv{e_1 :~T_1}~\wedge~
+		\forall k\in\{2,\dots,n\}~\Der{\Gamma,x_1:~T_1,\dots,x_{k-1}:~T_{k-1}}{e_k:~T_k}~\wedge~
+        \Der{\Gamma,x_1:~T_1,\dots,x_n:~T_n}{e:~T}
+		}
+		{ \DerEnv{\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}~:~T} }~\lst{(BlockExpr)}
+\)
+% let
+% \(
+% \frac{\Der{\TEnv,x : T_1}{e_2 : T_2}}{\Der{\Gamma}{\Let{x}{e_1}{e_2} : T_2}}
+% \)
+
 
 \end{center}
 

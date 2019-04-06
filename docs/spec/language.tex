@@ -28,8 +28,8 @@ variables and their resolution is described in Section~\ref{sec:blocks}.
 Lambda expressions can take a list of lambda-bound variables which can be
 used in the body expression, which can be \emph{block expression}. 
 
-Function application takes an expression of functional type (e.g. $\tau_1 \to
-\tau_n$) and a list of arguments. The reason we do not write it $e_f(\Ov{e})$
+Function application takes an expression of functional type (e.g. $T_1 \to
+T_n$) and a list of arguments. The reason we do not write it $e_f(\Ov{e})$
 is that this notation suggests that $(\Ov{e})$ is a subterm, which it is not.
 
 Method invocation allows to apply functions defined as methods of
@@ -37,40 +37,63 @@ Method invocation allows to apply functions defined as methods of
 method $m$ is declared in the interface $I$ then method invocation
 $e.m(args)$ is defined for the appropriate $args$.
 
-Conditional expressions are strict in condition and lazy in both of the
-branches. Each branch is an expression which is executed depending on the
-result of condition. This laziness of branches specified by lowering to
+Conditional expressions of \langname are strict in condition and lazy in both
+of the branches. Each branch is an expression which is executed depending on
+the result of condition. This laziness of branches specified by lowering to
 \corelang (see Figure~\ref{fig:lowering}).
 
-Block expression contains a list of \lst{val} definitions of variables. Each
-subsequent definition can refer to the previously defined variables. Result
-of block execution is the result of the resulting expression $e$, which can
-use any variable of the block.
+Block expression contains a list of \lst{val} definitions of variables. To be
+wellformed each subsequent definition can only refer to the previously defined
+variables. Result of block execution is the result of the resulting
+expression $e$, which can use any variable of the block.
 
 Each type may be associated with a list of method declarations, in which case
 we say that \emph{the type has methods}. The semantics of the methods is the
 same as in Java. Having an instance of some type with methods it is possible
 to call methods on the instance with some additional arguments.
 
-\begin{figure}[h]
+The semantics of \langname is specified by translating all its terms to a
+somewhat lower and simplified language, which we call \corelang. This
+\emph{lowering} translation is shown in Figure~\ref{fig:lowering}. 
 
+\begin{figure}[h]
 \begin{center}
 \begin{tabular}{ l c l }
-$\Low{ \TyLam{x}{\tau}{e} 		}$ & \To & $\TyLam{x}{\tau}{ \Low{e} }$ \\	
+	\hline
+$Term_{\langname}$ &  & $Term_{Core}$  \\	
+	\hline
+$\Low{ \TyLam{x}{T}{e} 		}$ & \To & $\TyLam{x}{T}{ \Low{e} }$ \\	
 $\Low{ \Apply{e_f}{\Ov{e_i}} 	}$ & \To & $\Apply{ \Low{e_f} }{ \Ov{\Low{e_i}} }$ \\	
-$\Low{ \Apply{e.m}{\Ov{e}}		}$ & \To & $\Apply{ \Low{e}.m}{\Ov{ \Low{e} }}$ \\	
+$\Low{ \Apply{e.m}{\Ov{e_i}}		}$ & \To & $\Apply{ \Low{e}.m}{\Ov{ \Low{e_i} }}$ \\	
 $\Low{ \Tup{e_1, \dots ,e_n}	}$ & \To & $\Tup{\Low{e_1}, \dots ,\Low{e_n}}$ \\	
-$\Low{ \Apply{\delta}{\Ov{e}}	}$ & \To & $\Apply{\delta}{\Ov{ \Low{e} }}$ \\	
+
+$\Low{ e_1~\text{\lst{||}}~e_2	    }$ & \To & $\Low{ \IfThenElse{ e_1 }{ \True }{ e_2 } }$ \\	
+$\Low{ e_1~\text{\lst{\&\&}}~e_2	}$ & \To & $\Low{ \IfThenElse{ e_1 }{ e_2 }{ \False } }$ \\	
 
 $\Low{ \IfThenElse{e_{cond}}{e_1}{e_2} }$ & \To & 
-		$\Apply{(\IfThenElse{e_{cond}}{\Lam{(\_:Unit)}{\Low{e_1}}}{\Lam{(\_:Unit)}{\Low{e_2}}})}{}$ \\ 
+		$\Apply{(\IfThenElse{ \Low{e_{cond}} }{ \Lam{(\_:Unit)}{\Low{e_1}} }{ \Lam{(\_:Unit)}{\Low{e_2}} })}{}$ \\ 
 
 $\Low{ \{ \Ov{\text{\lst{val}}~x_i: T_i = e_i;}~e\} }$ & \To &  
 		$\Apply{ (\Lam{(x_1:T_1)}{( \dots \Apply{(\Lam{(x_n:T_n)}{\Low{e}})}{\Low{e_n}} \dots )}) }{\Low{e_1}}$\\
 
+$\Low{ \Apply{\delta}{\Ov{e_i}}	}$ & \To & $\Apply{\delta}{\Ov{ \Low{e_i} }}$ \\	
 $\Low{ e }$ 	& \To &  $e$ \\	
 \end{tabular}
 \end{center}
-    \caption{Lowering to \corelang}
-    \label{fig:lowering}
+\caption{Lowering to \corelang}
+\label{fig:lowering}
 \end{figure}
+
+Note that $\IfThenElse{e_{cond}}{e_1}{e_2}$ term of \langname has lazy
+evaluation of its branches whereas right-hand-side \lst{if} belongs to
+\corelang and have strict evaluation of the branches. The laziness is
+achieved by using lambda expressions of \lst{Unit} $\to$ \lst{Boolean} type.
+
+We translate logical operations (\lst{||}, \lst{&&}) of \langname, which are
+lazy on second argument to \lst{if} term of \langname, which is recursively
+translated to the corresponding \corelang term.
+
+Syntactic blocks of \langname are completely eliminated and translated to
+nested lambda expressions, which unambiguously specify evaluation semantics
+of blocks. The \corelang is specified in Section~\ref{sec:evaluation}.
+
