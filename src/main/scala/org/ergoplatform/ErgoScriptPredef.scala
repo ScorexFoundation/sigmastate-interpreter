@@ -9,8 +9,8 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.{SLong, _}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._
 
 object ErgoScriptPredef {
@@ -37,7 +37,7 @@ object ErgoScriptPredef {
   def expectedMinerOutScriptBytesVal(delta: Int, minerPkBytesVal: Value[SByteArray]): Value[SByteArray] = {
     val genericPk = ProveDlog(CryptoConstants.dlogGroup.generator)
     val genericMinerProp = rewardOutputScript(delta, genericPk)
-    val genericMinerPropBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(genericMinerProp)
+    val genericMinerPropBytes = DefaultSerializer.serializeErgoTree(genericMinerProp.treeWithSegregation)
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
     val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))

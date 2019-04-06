@@ -60,24 +60,24 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification with Si
     val prop = IntConstant(1)
     val bytes = DefaultSerializer.serializeErgoTree(extractConstants(prop.asInstanceOf[SigmaPropValue]))
     an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
-    an[SerializerException] should be thrownBy DefaultSerializer.deserialize(bytes)
+    an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
   }
 
   property("Constant extraction during serialization: (de)serialization round trip") {
-    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
-    val bytes = DefaultSerializer.serializeWithSegregation(tree)
+    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val bytes = DefaultSerializer.serializeErgoTree(tree)
     val (_, deserializedConstants, _) = DefaultSerializer.
       deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
     deserializedConstants.length shouldBe 3
-    val deserializedTree = DefaultSerializer.deserialize(bytes)
+    val deserializedTree = DefaultSerializer.deserializeErgoTree(bytes)
     deserializedTree shouldEqual tree
   }
 
   property("tree with placeholders bytes should be equal if only constants are different") {
-    val tree1 = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
-    val tree2 = EQ(Plus(30, 40), IntConstant(70)).toSigmaProp
-    val bytes1 = DefaultSerializer.serializeWithSegregation(tree1)
-    val bytes2 = DefaultSerializer.serializeWithSegregation(tree2)
+    val tree1 = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val tree2 = EQ(Plus(30, 40), IntConstant(70)).toSigmaProp.treeWithSegregation
+    val bytes1 = DefaultSerializer.serializeErgoTree(tree1)
+    val bytes2 = DefaultSerializer.serializeErgoTree(tree2)
     val (_, _, treeBytes1) = DefaultSerializer
       .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes1))
     val (_, _, treeBytes2) = DefaultSerializer

@@ -740,7 +740,7 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
-    def bytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(p)
+    def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
@@ -911,7 +911,7 @@ object Values {
     val ConstantSegregationFlag: Byte = 0x10
 
     /** Default header with constant segregation enabled. */
-    val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
+    val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
 
@@ -925,7 +925,7 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue) = {
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
       if (isConstantSegregation(header)) {
         val prop = substConstants(root, constants).asSigmaProp
         new ErgoTree(header, constants, root, prop)
@@ -933,24 +933,33 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    val EmptyConstants = IndexedSeq.empty[Constant[SType]]
+    val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
 
-    def withoutSegregation(root: SigmaPropValue) = {
+    def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
-    }
 
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       prop match {
         case SigmaPropConstant(_) => withoutSegregation(prop)
-        case _ =>
-          // get ErgoTree with segregated constants
-          // todo rewrite with everywherebu?
-          DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(prop))
+        case _ => withSegregation(prop)
       }
     }
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
+    }
+
+    def withSegregation(value: SigmaPropValue): ErgoTree = {
+      val constantStore = new ConstantStore()
+      val byteWriter = SigmaSerializer.startWriter(constantStore)
+      // serialize value and segregate constants into constantStore
+      ValueSerializer.serialize(value, byteWriter)
+      val extractedConstants = constantStore.getAll
+      val r = SigmaSerializer.startReader(byteWriter.toBytes)
+      r.constantStore = new ConstantStore(extractedConstants)
+      // deserialize value with placeholders
+      val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
+      new ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, valueWithPlaceholders, value)
     }
   }
 

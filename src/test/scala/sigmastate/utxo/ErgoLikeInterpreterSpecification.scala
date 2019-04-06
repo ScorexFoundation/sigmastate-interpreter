@@ -33,14 +33,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val e = compile(Map("h1" -> h1.treeWithSegregation.bytes, "h2" -> h2.treeWithSegregation.bytes), "h1 == h1")
     val exp = TrueLeaf
     e shouldBe exp
 
     val res = verifier.reduceToCrypto(ctx, exp).get._1
     res shouldBe TrueProp
 
-    val res2 = verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes))).get._1
+    val res2 = verifier.reduceToCrypto(ctx,
+      EQ(ByteArrayConstant(h1.treeWithSegregation.bytes),
+        ByteArrayConstant(h2.treeWithSegregation.bytes))).get._1
     res2 shouldBe FalseProp
   }
 

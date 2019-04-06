@@ -58,7 +58,8 @@ class CrowdFundingKernelContract(
     val c2 = Array(
       ctx.currentHeight < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
-        out.value >= minToRaise && util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.bytes)
+        out.value >= minToRaise &&
+          util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.treeWithSegregation.bytes)
       })
     ).forall(identity)
     var proof: projectProver.ProofT = null

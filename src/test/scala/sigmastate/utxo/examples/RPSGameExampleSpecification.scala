@@ -80,7 +80,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
       "alice" -> alicePubKey,
-      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.treeWithSegregation.bytes)
     )
 
     // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.

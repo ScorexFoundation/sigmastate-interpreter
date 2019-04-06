@@ -7,8 +7,9 @@ import sigmastate.{EQ, SInt, SubstConstants}
 class SubstConstantsSerializerSpecification extends SerializationSpecification {
 
   property("SubstConstant deserialization round trip") {
-    forAll(numExprTreeNodeGen) { tree =>
-      val bytes = DefaultSerializer.serializeWithSegregation(EQ(tree, IntConstant(1)).toSigmaProp)
+    forAll(numExprTreeNodeGen) { prop =>
+      val tree = EQ(prop, IntConstant(1)).toSigmaProp.treeWithSegregation
+      val bytes = DefaultSerializer.serializeErgoTree(tree)
       val newVals = ConcreteCollection(Vector[IntValue](1), SInt)
       val expr = SubstConstants(bytes, IntArrayConstant(Array(0)), newVals)
       roundTripTest(expr)
