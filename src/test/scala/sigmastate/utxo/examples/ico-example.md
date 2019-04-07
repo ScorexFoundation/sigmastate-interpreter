@@ -5,7 +5,7 @@ This article describes a full featured ICO (Initial Coin Offering) implemented i
 
 ## Part 1. Preliminaries
 
-An important design decision in a cryptocurrency protocol is specifying what a spending transaction actually spends. There are two possibilities here. The first a UTXO-based model, as in Bitcoin, where a transaction spends one-time asset containers (called as 'coins' or UTXOs in Bitcoin) and creates new ones. The other is an account-based model, as in Nxt, Ethereum, or Waves, where a transaction transfers some amount of asset from an existing long-lived account to another, possibly new, long-lived account, with possible side-effects on the way, such as contract execution in Waves or Ethereum. In this regard, Ergo similar to Bitcoin, because it also uses the UTXO-based approach, where one-time containers called boxes are being spent. Interestingly, an Ergo transaction can also have data-inputs which are not being spent, but rather used to provide some information from the current set of unspent boxes.
+An important design decision in a cryptocurrency protocol is specifying what a spending transaction actually spends. There are two possibilities here. The first a UTXO-based model, as in Bitcoin, where a transaction spends one-time asset containers (called as 'coins' or UTXOs in Bitcoin) and creates new ones. The other is an account-based model, as in Nxt, Ethereum or Waves, where a transaction transfers some amount of asset from an existing long-lived account to another, possibly new, long-lived account, with possible side-effects on the way, such as contract execution in Waves or Ethereum. In this regard, Ergo is similar to Bitcoin, because it uses the UTXO-based approach, where one-time containers called boxes are being spent. Interestingly, an Ergo transaction can also have data-inputs which are not being spent, but rather used to provide some information from the current set of unspent boxes.
 
 It is not trivial to create an ICO on top of an UTXO based model, because, in contrast to account-based models, there is no explicit persistent storage here. However, Ergo brings spending transactions into the execution context of scripts. 
 With this small change it becomes possible to express dependencies between transaction outputs and inputs. In turn, by setting dependencies we can execute even arbitrarily complex Turing-complete programs on top of blockchain (see ...). In this article we will define a concrete scenario of a multi-stage contract using an ICO, where we have three stages (funding, token issuance, withdrawal).
@@ -18,39 +18,29 @@ provide lookup or modification proofs. This gives possibility for a contract to 
 
 ## Part 2. The ICO Contract
 
-There could be many possible scenarios associated with an Initial Coin Offering (ICO). In this article we consider an  that aims to collect at least a certain amount of funds (in Ergs) to start some project. Once the funding threshold is crossed and funding period ends, the project is kickstarted and ICO tokens are issued by the project based on the total funding collected. In the withdraw phase, which extends forever, the investors withdraw ICO tokens based on the amount they had invested during the funding period. The contract steps are briefly described below with details provided further:
-	- First, *funding epoch* takes place. It starts with a project's box authenticating an empty dictionary. The dictionary is intended for holding (investor, balance) pairs, where investor is a script protecting the box containing withdrawn tokens. For the balance, we assume that 1 token is equal to 1 Ergo during the ICO. During the funding epoch, it is only possible to put Ergs into the project's box.
-	A funding transaction spends the project's box and creates a new project box with updated information. For that, a spending transaction for the project's box also has other inputs which hold investor withdrawing scripts. Investor scripts and input values should be added to the tree of the new box. There could be many chained funding transactions.  
-	- second, the funding period should be finished with closing the tree holding investors data. An authenticated tree could have different modification operations allowed individually: inserts, deletes, updates, or all the operations could be disallowed (so the tree could be in the read-only mode). Also, this transaction creates tokens of the ICO project which will be withdrawn in the next stage. The project can withdraw Ergs at this stage.  
-	- third, investors are withdrawing their tokens. For that, a spending transaction creates outputs with guarding conditions and token values from the tree. The tree should be cleared from withdrawn pairs. There could be many chained funding transactions.
+There could be many possible scenarios associated with an Initial Coin Offering (ICO). In this article we consider an ICO that wants to collect at least a certain amount of funds (in Ergs) to start the project. Once the funding threshold is crossed and funding period ends, the project is kickstarted and ICO tokens are issued by the project based on the total funding collected. In the withdraw phase, which extends forever, the investors withdraw ICO tokens based on the amount they had invested during the funding period. The contract steps are briefly described below with details provided further:
 
-This three stages should be linked together, and form logical order. To fulfill these goals, we are using the same coin, 
+* First, *funding epoch* takes place. It starts with a project's box authenticating an empty dictionary. The dictionary is intended for holding (investor, balance) pairs, where investor is a script protecting the box containing withdrawn tokens. For the balance, we assume that 1 token is equal to 1 Ergo during the ICO. During the funding epoch, it is only possible to put Ergs into the project's box.
+A funding transaction spends the project's box and creates a new project box with updated information. For that, a spending transaction for the project's box also has other inputs which hold investor withdrawing scripts. Investor scripts and input values should be added to the tree of the new box. There could be many chained funding transactions.  
+* Second, the funding period finishes, after which the tree holding the investors data becomes read-only. An authenticated tree could have different modification operations allowed individually: inserts, deletes, updates, or all the operations could be disallowed (so the tree could be in the read-only mode). Also, this transaction creates tokens of the ICO project which will be withdrawn in the next stage. The project can withdraw Ergs at this stage.  
+* Third, investors withdraw their ICO tokens. For that, a spending transaction creates outputs with guarding conditions and token values taken from the tree. The withdrawn pairs are also cleared from the tree. There could be many chained spending transactions.
+
+These three stages should be linked together in the logical order. A seqience of boxes are used to achieve these goals, 
 
 ## Part 3. The ICO Contract Details
 
-Now it is the time to provide details and ErgoScript code on the ICO contract stages.
+Now it is the time to provide details and ErgoScript code of the ICO contract stages.
 
 ### The Funding Stage
 
-First, the funding stage. We assume that initially a project creates a coin which is committing to an empty dictionary 
-(stored in the register R5) and also the scripts. This stage is lasts for height 2,000 at least, more concretely, the 
-first transaction with height of 2,000 at least should change the coin's script.
+In the funding stage, which comes first, we assume that initially a project creates a box committing to an empty dictionary (stored in the register R5) with some guarding script described below. This stage lasts at least till height 2,000. More concretely, the first transaction with height of 2,000 or more should change the output box's script as described in the next section (transactions at lower heights must output a box with the same script).
 
-The project's coin is considering and checking that it is always input number zero, and also output number zero. The 
-other inputs are considered investors' inputs. An investor's input contains hash of a withdrawing coin guarding script 
-in the register R4. The hashes as well as a monetary values of investing inputs should be added to the dictionary. The 
-spending transaction should provide a proof that investor data are indeed added to the dictionary, 
-and the proof is checked in the contract. 
+The project's box checks that it is always first input and output of a transaction. The other inputs are considered investors' inputs. An investor's input contains the hash of a script in register R4. This hash represents the _withdraw script_ that will be used later on in the withdraw phase. The hashes as well as the monetary values of all investing inputs should be added to the dictionary. The 
+spending transaction provides a proof that investor data are indeed added to the dictionary, and the proof is checked in the contract. 
 
-It is not checked in the funding sub-contract, rather, investors should check that the dictionary allows insertions 
-only, not updating existing values or removals (it is not hard to add an explicit check though). 
+It is not checked in the funding sub-contract that the dictionary allows only insertions, and not updating existing values or removals (it is not hard to add an explicit check though). 
 
-The spending transaction should pay a fee, otherwise, it it unlikely that it would be included in a block. Thus the 
-funding contract is checking that the spending transaction has two outputs (one for itself, another to pay a fee), 
-the fee is to be no more than a certain limit (just one nanoErg in our example), and the guarding proposition should 
-be such that only a miner can spend the output (we use just a variable "feeProp" from compilation environment in our 
-example without providing any details, but this "feeProp" is corresponding to standard though not required by 
-consensus guarding script). 
+The spending transaction should pay a fee, otherwise, it is unlikely that it would be included in a block. Thus, the funding contract checks that the spending transaction has two outputs (one for itself, another to pay fee), the fee is to be no more than a certain limit (just one nanoErg in our example), and the guarding proposition should e such that only a miner can spend the output (we use just a variable "feeProp" from compilation environment in our example without providing any details). This "feeProp" corresponds to a standard, though not required by protocol. 
 
 The code below basically checks all that described above, in the form of compilable code. Please note that the 
 "nextStageScriptHash" environment variable contains hash of the issuance stage serialized script. 
