@@ -1087,6 +1087,8 @@ object STypeApply {
   val TypeCode = 94: Byte
 }
 
+// TODO rename to STypeVar to reflect spec.tex
+/** Type variable which is used in generic method/func signatures. */
 case class STypeIdent(name: String) extends SType {
   require(name.length <= 255, "name is too long")
   override type WrappedType = Any
