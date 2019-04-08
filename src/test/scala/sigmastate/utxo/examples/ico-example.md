@@ -42,7 +42,7 @@ It is not checked in the funding sub-contract that the dictionary allows only in
 
 The spending transaction should pay a fee, otherwise, it is unlikely that it would be included in a block. Thus, the funding contract checks that the spending transaction has two outputs (one for itself, another to pay fee), the fee is to be no more than a certain limit (just one nanoErg in our example), and the guarding proposition should e such that only a miner can spend the output (we use just a variable "feeProp" from compilation environment in our example without providing any details). This "feeProp" corresponds to a standard, though not required by protocol. 
 
-The code below basically checks all that described above, in the form of compilable code. Please note that the 
+The code below enforces the conditions described above. Please note that the 
 "nextStageScriptHash" environment variable contains hash of the issuance stage serialized script. 
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -79,24 +79,13 @@ The code below basically checks all that described above, in the form of compila
 
 ### The Issuance Stage
 
-This stage is about only one spending transaction to get to the next stage, which is the withdrawal stage. At the 
-issuance stage, the main things should happen. As in the previous case, the issuance sub-contract assumes  
+This stage has only one spending transaction to get to the next stage (the withdrawal stage). The spending transactions makes the following modifications. Firstly, the it changes the list of allowed operations on the dictionary from "inserts only" to "removals only", as the next stage (withdrawal) is only dealing with removing entries from the dictionary.
 
-In the first place, the tree should change a list of allowed operations from "inserts only" to "removals only", as the 
-next stage, the withdrawal one, is about removing from the dictionary.
+Secondly, the contract checks that the proper amount of ICO tokens are issued. In Ergo, it is allowed to issue one new kind of token per transaction, and the identifier of the token should be equal to the (unique) identifier of the first input box. The issuance sub-contract checks that a new token has been issued, and the amount of it is equal to the amount of nanoErgs collected by the ICO at till now.
 
-In the second place, the contract is checking that proper amount of ICO tokens are issued. In Ergo, it is allowed to 
-issue one new kind of token per transaction, and the identifier of the token should be equal to the (unique) 
-identifier of the first input coin. The issuance sub-contract is checking that a new token has been issued, and the 
-amount of it is equal to the amount of nanoErgs collected by the ICO contract coin to the moment.
+Thirdly, the contract checks that a spending transaction is indeed re-creating the box with the guard script corresponding to the next stage, the withdrawal stage.
 
-In the third place, the contract is checking that a spending transaction is indeed re-creating the coin with a 
-guarding script corresponding to the next stage, the withdrawal stage.
-
-At this stage a project can withdraw collected Ergs. And, of course, the spending transaction should pay a fee. Thus
-the sub-contract is checking that the spending transaction has indeed 3 outputs (for the contract itself, for the 
-project withdrawal, and for the fee), and that the only first output is carrying the tokens issued. As we do not 
-specify project money withdrawal details, we require a project signature on the spending transaction.
+Finally, the project should withdraw collected Ergs, and of course, each spending transaction should pay a fee. Thus, the sub-contract checks that the spending transaction has indeed 3 outputs (one each for the project tokens box, the Ergs wirhdrawal box, and the fee box), and that the first output and output is carrying the tokens issued. As we do not specify project money withdrawal details, we require a project signature on the spending transaction.
 
     val openTree = SELF.R5[AvlTree].get
     
@@ -127,13 +116,7 @@ specify project money withdrawal details, we require a project signature on the 
 
 ### The Withdrawal Stage
 
-At this stage, it is allowed for an investor to withdraw money to predefined guarding script (which hash is written down 
-into the dictionary). A withdrawing transaction thus is having N + 2 outputs, where the first output should carry over the
-withdrawal sub-contract, the following N outputs have guarding scripts and token values according to the dictionary, 
-and for the the last output there are no any conditions, aside of that it is not allowed to carry away tokens with it 
-(supposedly, this output pays a fee). The contract is requiring two proofs for the dictionary elements: one proof
-is showing that values to be withdrawn are indeed in the dictionary, and the second proof is proving that a resulting
-dictionary is free of the withdrawn values. The sub-contract is below.  
+At this stage, investors are allowed to withdraw project tokens protected by a predefined guard script (whose hash is stored in the dictionary). Lets say withdraw is done in batches of size N. A withdrawing transaction, thus, has N + 2 outputs, where the first output carrys over the withdrawal sub-contract and balance tokens, the last output pays the fee and the remaining N outputs have guarding scripts and token values according to the dictionary. The contract requires two proofs for the dictionary elements: one proving that values to be withdrawn are indeed in the dictionary, and the second proving that the resulting dictionary does not have the withdrawn values. The sub-contract is below.  
 
     val removeProof = getVar[Coll[Byte]](2).get
     val lookupProof = getVar[Coll[Byte]](3).get
@@ -182,13 +165,6 @@ dictionary is free of the withdrawn values. The sub-contract is below.
    
 ## Possible Enhancements
 
-Please note that there are many nuances our example contract is ignoring. For example, it is allowed to execute the 
-contract to anyone who is able to construct proper spending transactions (in out example, anyone listening to the 
-blockchain) during funding and withdrawal stages. In the real-world cases, additional signature from the project or 
-a trusted arbiter could be needed.
-Also, there is no self-destruction case considered in the withdrawal contract, so it will live before being destroyed 
-by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be 
-reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
+Please note that there are many nuances our example contract is ignoring. For example, anyone listening to the blockchain is allowed to execute the contract and construct proper spending transactions during funding and withdrawal stages. In the real-world, additional signature from the project or a trusted arbiter may be used. 
 
-
-
+Also, there is no self-destruction case considered in the withdrawal contract, so it will live until being destroyed by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
