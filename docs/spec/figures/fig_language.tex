@@ -4,6 +4,7 @@ Set Name				&  			& Syntax	& Mnemonic 		& Description \\
 \hline
 $\mathcal{T} \ni T$	& ::= 		& \lst{P} 	& \lst{SPredefType}	& predefined types (see Appendix~\ref{sec:appendix:predeftypes}) \\
 
+			&	$\mid$	& $\tau$	& \lst{STypeVar} & type variable \\
 			&	$\mid$	& $(T_1, \dots ,T_n) $	& \lst{STuple} & tuple of $n$ elements (see \lst{Tuple} type)\\
 
 			&   $\mid$  & $(T_1,\dots,T_n) \to T $	& \lst{SFunc} & function of $n$ arguments (see \lst{Func} type) \\
@@ -23,6 +24,6 @@ $Term\ni e$	& ::= 		&   $C(v, T)$				& \lst{Constant} & typed constants  \\
 			& 	     	&										& &				\\
 $cd$   		& ::= 		& 	$\Trait{I}{\Ov{ms_i}}$				& \lst{STypeCompanion} & interface declaration    \\
 			& 	     	&										& &				\\
-$ms$	   	& ::= 	& $\MSig{m}{\overline{x_i : T_i}}{T}$ 	& \lst{SMethod} & method signature declaration   \\
+$ms$	   	& ::= 	& $\MSig{m[\Ov{\tau_i}]}{\overline{x_i : T_i}}{T}$ 	& \lst{SMethod} & method signature declaration   \\
 \end{tabular}\] 
 

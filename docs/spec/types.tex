@@ -15,3 +15,15 @@ context $\Gamma$.
 Note that each well-typed term has exactly one type hence we assume there
 exists a funcion $termType: Term \to \mathcal{T}$ which relates each well-typed
 term with the corresponding type.
+
+Primitive operations can be parameterized with type variables, for example
+addition (Table~\ref{table:primops}) has the signature $+~:~ (T,T) \to T$
+where $T$ is numeric type (Table~\ref{table:predeftypes}). Function $ptype$, defined in Appendix~\ref{sec:appendix:primops} returns a type of primitive operation specialized for concrete types of its arguments, for example $ptype(+,\lst{Int}, \lst{Int}) = (\lst{Int}, \lst{Int}) \to \lst{Int}$.
+
+Similarily, the function $mtype$ returns a type of method specialized for concrete types of the arguments of the \lst{MethodCall} term.
+
+\lst{BlockExpr} rule defines a type of well-formed block expression. It
+assumes a total ordering on \lst{val} definitions. If a block expression is
+not well-formed than is cannot be typed and evaluated.
+
+The rest of the rules are standard for typed lambda calculus.

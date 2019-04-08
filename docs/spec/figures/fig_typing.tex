@@ -7,7 +7,8 @@
 	\frac{}{\Der{\Gamma,x~:~T}{x~:~T}}~\lst{(Var)}
 	&
 	\frac{
-		\delta :~(T_1,\dots,T_n) \to T~~~\Ov{\DerEnv{e_i:~T_i}}
+		\Ov{\DerEnv{e_i:~T_i}}~~
+		ptype(\delta, \Ov{T_i}) :~(T_1,\dots,T_n) \to T
 	}{
 		\Apply{\delta}{\Ov{e_i}}:~T
 	}~\lst{(Prim)} \\
@@ -16,13 +17,20 @@
 
 
 % tuples
-\(\begin{array}{c c}
+\(\begin{array}{c}
 \frac{\DerEnv{e_1 :~T_1}~~\dots~~\DerEnv{e_n :~T_n}}
-     {\DerEnv{(e_1,\dots,e_n)~:~(T_1,\dots,T_n)}}~\lst{(Tuple)}
-& 
-\frac{\DerEnv{e~:~I}~~mtype(m, I)~:~(T_1,\dots,T_n) \to T~~~\Ov{\DerEnv{e_i:~T_i}}}
-	 { \Apply{e.m}{\Ov{e_i}}:~T }~\lst{(MethodCall)} \\
-& \\ % blank line
+     {\DerEnv{(e_1,\dots,e_n)~:~(T_1,\dots,T_n)}}~\lst{(Tuple)} \\
+\\ % blank line
+\end{array}\) 
+
+% MethodCall
+\(\begin{array}{c}
+\frac{
+		\DerEnv{e~:~I,~e_i:~T_i}~~
+		mtype(m, I, \Ov{T_i})~:~(I, T_1,\dots,T_n) \to T
+	}
+	{ \Apply{e.m}{\Ov{e_i}}:~T }~\lst{(MethodCall)} \\
+\\ % blank line
 \end{array}\) 
 
 % functions
@@ -38,7 +46,7 @@
 % if
 \(\begin{array}{c c}
 	\frac{ \DerEnv{e_{cond} :~\lst{Boolean}}~~\DerEnv{e_1 :~T}~~\DerEnv{e_2 :~T} }
-		 { \DerEnv{\IfThenElse{e_{cond}}{e_1}{e_2}~:~T} }~\lst{(If)}
+		{ \DerEnv{\IfThenElse{e_{cond}}{e_1}{e_2}~:~T} }~\lst{(If)}
 		 & 
 		 \\
 		 & \\ % blank line
