@@ -9,35 +9,9 @@
         Name   &   Code   &  IsConstSize & 
         isPrim\footnote{isPrim - primitive type} & 
         isEmbed  & isNum & Set of values \\
+        \hline
 
-        \hline
-        \lst{Boolean}	&	$1$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{false}	& $\Set{\lst{true}, \lst{false}}$ \\
-        \hline
-        \lst{Byte}	&	$2$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{true}	& $\Set{-2^{7} \dots 2^{7}-1}$ \\
-        \hline
-        \lst{Short}	&	$3$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{true}	& $\Set{-2^{15} \dots 2^{15}-1}$ \\
-        \hline
-        \lst{Int}	&	$4$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{true}	& $\Set{-2^{31} \dots 2^{31}-1}$ \\
-        \hline
-        \lst{Long}	&	$5$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{true}	& $\Set{-2^{63} \dots 2^{63}-1}$ \\
-        \hline
-        \lst{BigInt}	&	$6$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{true}	& $\Set{-2^{255} \dots 2^{255}-1}$ \\
-        \hline
-        \lst{GroupElement}	&	$7$	&	\lst{true}	& \lst{true}	&	\lst{true} &	\lst{false}	& $\Set{p \in \lst{SecP256K1Point}}$ \\
-        \hline
-        \lst{SigmaProp}	&	$8$	&	\lst{false}	& \lst{true}	&	\lst{true} &	\lst{false}	& Sec.~\ref{sec:type:SigmaProp} \\
-        \hline
-        \lst{Box}	&	$99$	&	\lst{false}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:Box} \\
-        \hline
-        \lst{AvlTree}	&	$100$	&	\lst{false}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:AvlTree} \\
-        \hline
-        \lst{Context}	&	$101$	&	\lst{false}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:Context} \\
-        \hline
-        \lst{Header}	&	$104$	&	\lst{true}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:Header} \\
-        \hline
-        \lst{PreHeader}	&	$105$	&	\lst{true}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:PreHeader} \\
-        \hline
-        \lst{SigmaDslBuilder}	&	$106$	&	\lst{true}	& \lst{false}	&	\lst{false} &	\lst{false}	& Sec.~\ref{sec:type:Global} \\
+\input{generated/primops.tex}
 
     \hline
     \end{tabu}
@@ -71,22 +45,16 @@ Figure~\ref{fig:sigmaprop:tree}.
                      & $\mid$ & \lst{THRESHOLD}$(k,t_1,\dots,t_n)$ 	& \lst{THRESHOLD}	& knowledge of $k$ out of $n$ secrets\\
                      & $\mid$ & \lst{OR}$(t_1,\dots,t_n)$ 	& \lst{OR}	& knowledge of any one of $n$ secrets\\
                      & $\mid$ & \lst{AND}$(t_1,\dots,t_n)$ 	& \lst{AND}	& knowledge of all $n$ secrets\\
-      
-               % &	$\mid$	& $\tau$	& \lst{STypeVar} & type variable \\
-               % &	$\mid$	& $(T_1, \dots ,T_n) $	& \lst{STuple} & tuple of $n$ elements (see \lst{Tuple} type)\\
-      
-               % &   $\mid$  & $(T_1,\dots,T_n) \to T $	& \lst{SFunc} & function of $n$ arguments (see \lst{Func} type) \\
-               % &   $\mid$  & $\text{\lst{Coll}}[T]$			& \lst{SCollection} & collection of elements of type $T$   \\
-               % &   $\mid$  & $\text{\lst{Option}}[T]$		& \lst{SOption} & optional value of type $T$  \\
-               % & 	     	&									& 				&		\\
       \end{tabular} 
    \caption{Abstract syntax of sigma propositions}
    \label{fig:sigmaprop:tree}
 \end{figure}
 
 Every well-formed tree of sigma proposition is a value of type
-\lst{SigmaProp}, thus following the notation of Section~\ref{sec:evaluation} we have 
-$$\Denot{\lst{SigmaProp}} = \Set{t \in SigmaTree}$$
+\lst{SigmaProp}, thus following the notation of Section~\ref{sec:evaluation}
+we can define denotation of \lst{SigmaProp}
+$$\Denot{\lst{SigmaProp}} = \Set{t \in Tree}$$
+
 
 The following methods can be called on all instances of \lst{SigmaProp} type.
 
@@ -118,4 +86,4 @@ For a list of primitive operations on \lst{SigmaProp} type see Appendix~\ref{sec
 \label{sec:type:PreHeader}
 
 \subsection{Global type}
-\label{sec:type:Global}
+\label{sec:type:SigmaDslBuilder}
