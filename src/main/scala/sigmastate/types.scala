@@ -262,7 +262,7 @@ trait SProduct extends SType {
 }
 
 /** Base trait implemented by all generic types (those which has type parameters,
-  * e.g. Array[T], Option[T], etc.)*/
+  * e.g. Coll[T], Option[T], etc.)*/
 trait SGenericType {
   def typeParams: Seq[STypeParam]
   def tparamSubst: Map[STypeIdent, SType]

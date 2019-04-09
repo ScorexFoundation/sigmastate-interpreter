@@ -223,6 +223,7 @@ trait GroupElement {
 @scalan.Liftable
 trait SigmaProp {
   def isValid: Boolean
+  /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
   def propBytes: Coll[Byte]
 
   /** Logical AND between this SigmaProp and other SigmaProp.
