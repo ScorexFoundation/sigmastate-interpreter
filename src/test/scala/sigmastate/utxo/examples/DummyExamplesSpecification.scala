@@ -1,14 +1,11 @@
 package sigmastate.utxo.examples
 
-import org.bouncycastle.jcajce.provider.digest.Blake2b.Blake2b256
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import scorex.crypto.hash
-import scorex.crypto.hash.Blake2b256
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Box, Context, Extensions, SigmaProp}
+import special.sigma.{Box, Context, Extensions}
 
 class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
