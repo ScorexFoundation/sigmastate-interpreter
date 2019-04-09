@@ -5,8 +5,13 @@ Here we define abstract syntax for \langname language. It is a typed
 functional language with tuples, collections, optional types and \lst{val}
 binding expressions. The semantics of \langname is specified by first
 translating it to a core calculus (\corelang) and then by giving its
-operational semantics. Typing rules are given in Section~\ref{sec:typing} and
-big-step semantics are given in Section~\ref{sec:evaluation}.
+evaluation semantics. Typing rules is given in Section~\ref{sec:typing} and
+evaluation semantics is given in Section~\ref{sec:evaluation}.
+
+\langname is defined here using abstract syntax notation as shown in
+Figure~\ref{fig:language}. This corresponds to \lst{ErgoTree} data structure,
+which can be serialized to an array of bytes. The mnemonics shown in the
+figure correspond to classes of \lst{ErgoTree} reference implementation.
 
 \begin{figure}[h]
     \footnotesize

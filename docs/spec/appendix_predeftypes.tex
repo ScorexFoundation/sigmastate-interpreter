@@ -6,11 +6,12 @@
     \begin{tabu}{|l |l |l |l |l |l |l |l|}
      \hline
      \rowfont{\bfseries}
-        Name   &   TypeCode   &  IsConstantSize & isPrimitive & isEmbeddable  & isNumeric  \\
+        Name   &   Code   &  IsConstSize & isPrim & isEmbed  & isNum & Set of values \\
      \hline
-        $Boolean$	&	$1$ 	&	true	&	true	&	true	&	false	  \\
+        \lst{Boolean}	&	$1$ 	&	true	&	true	&	true	&	false	 
+          &  $\Set{\lst{true}, \lst{false}}$ \\
      \hline
-         $Byte$	&	$2$	&	true	& true	&	true	&	true	\\
+        \lst{Byte}	&	$2$	&	true	& true	&	true	&	true	& \Set{-127 \dots 127} \\
     \hline
     \end{tabu}
     \caption{Predefined types of \langname}
