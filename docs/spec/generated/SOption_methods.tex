@@ -1,26 +1,146 @@
 
+\subsubsection{\lst{SOption.isEmpty} method (Code 36.1)}
 \noindent
-\begin{tabularx}{\textwidth}{| c | c | X |}
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
   \hline
-  \bf{Code} & \bf{Method Signature} & \bf{Description} \\
-  \hline
-  36.1 & \lst{def isEmpty()} &  \\
-\hline
-36.2 & \lst{def isDefined()} &  \\
-\hline
-36.3 & \lst{def get()} &  \\
-\hline
-36.4 & \lst{def getOrElse()} &  \\
-\hline
-36.5 & \lst{def fold()} &  \\
-\hline
-36.6 & \lst{def toColl()} &  \\
-\hline
-36.7 & \lst{def map()} &  \\
-\hline
-36.8 & \lst{def filter()} &  \\
-\hline
-36.9 & \lst{def flatMap()} &  \\
+  \bf{Result} & \lst{Boolean} \\
   \hline
 \end{tabularx}
-     
+
+
+
+\subsubsection{\lst{SOption.isDefined} method (Code 36.2)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.get} method (Code 36.3)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.getOrElse} method (Code 36.4)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: T} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.fold} method (Code 36.5)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: R} & \text{// } \\
+\lst{arg1} & \lst{: (T) => R} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{R} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.toColl} method (Code 36.6)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Coll[T]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.map} method (Code 36.7)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (T) => R} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[R]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.filter} method (Code 36.8)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (T) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SOption.flatMap} method (Code 36.9)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (T) => Option[R]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[R]} \\
+  \hline
+\end{tabularx}

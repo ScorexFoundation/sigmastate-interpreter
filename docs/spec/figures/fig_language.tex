@@ -20,7 +20,7 @@ $Term\ni e$	& ::= 		&   $C(v, T)$				& \lst{Constant} & typed constants  \\
 			& 	$\mid$ 	&   $\Tup{e_1, \dots ,e_n}$ 	& \lst{Tuple} & constructor of tuple with $n$ items \\
 			& 	$\mid$ 	& 	$\Apply{\delta}{\Ov{e_i}}$ 	& & primitive application (see Appendix~\ref{sec:appendix:primops}) \\
 			& 	$\mid$ 	& 	\lst{if} $(e_{cond})$ $e_1$ \lst{else} $e_2$ & \lst{If} & if-then-else expression \\
-			& 	$\mid$ 	&   $$  & \lst{BlockExpr} & block expression \\
+			& 	$\mid$ 	&   $\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}$  & \lst{BlockExpr} & block expression \\
 			& 	     	&										& &				\\
 $cd$   		& ::= 		& 	$\Trait{I}{\Ov{ms_i}}$				& \lst{STypeCompanion} & interface declaration    \\
 			& 	     	&										& &				\\

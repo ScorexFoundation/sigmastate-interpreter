@@ -1,76 +1,640 @@
 
+\subsubsection{\lst{SCollection.size} method (Code 12.1)}
 \noindent
-\begin{tabularx}{\textwidth}{| c | c | X |}
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
   \hline
-  \bf{Code} & \bf{Method Signature} & \bf{Description} \\
-  \hline
-  12.1 & \lst{def size()} &  \\
-\hline
-12.2 & \lst{def getOrElse()} &  \\
-\hline
-12.3 & \lst{def map()} &  \\
-\hline
-12.4 & \lst{def exists()} &  \\
-\hline
-12.5 & \lst{def fold()} &  \\
-\hline
-12.6 & \lst{def forall()} &  \\
-\hline
-12.7 & \lst{def slice()} &  \\
-\hline
-12.8 & \lst{def filter()} &  \\
-\hline
-12.9 & \lst{def append()} &  \\
-\hline
-12.10 & \lst{def apply()} &  \\
-\hline
-12.11 & \lst{def <<()} &  \\
-\hline
-12.12 & \lst{def >>()} &  \\
-\hline
-12.13 & \lst{def >>>()} &  \\
-\hline
-12.14 & \lst{def indices()} &  \\
-\hline
-12.15 & \lst{def flatMap()} &  \\
-\hline
-12.16 & \lst{def segmentLength()} &  \\
-\hline
-12.17 & \lst{def indexWhere()} &  \\
-\hline
-12.18 & \lst{def lastIndexWhere()} &  \\
-\hline
-12.19 & \lst{def patch()} &  \\
-\hline
-12.20 & \lst{def updated()} &  \\
-\hline
-12.21 & \lst{def updateMany()} &  \\
-\hline
-12.22 & \lst{def unionSets()} &  \\
-\hline
-12.23 & \lst{def diff()} &  \\
-\hline
-12.24 & \lst{def intersect()} &  \\
-\hline
-12.25 & \lst{def prefixLength()} &  \\
-\hline
-12.26 & \lst{def indexOf()} &  \\
-\hline
-12.27 & \lst{def lastIndexOf()} &  \\
-\hline
-12.28 & \lst{def find()} &  \\
-\hline
-12.29 & \lst{def zip()} &  \\
-\hline
-12.30 & \lst{def distinct()} &  \\
-\hline
-12.31 & \lst{def startsWith()} &  \\
-\hline
-12.32 & \lst{def endsWith()} &  \\
-\hline
-12.33 & \lst{def partition()} &  \\
-\hline
-12.34 & \lst{def mapReduce()} &  \\
+  \bf{Result} & \lst{Int} \\
   \hline
 \end{tabularx}
-     
+
+
+
+\subsubsection{\lst{SCollection.getOrElse} method (Code 12.2)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+\lst{arg1} & \lst{: IV} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{IV} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.map} method (Code 12.3)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => OV} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[OV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.exists} method (Code 12.4)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.fold} method (Code 12.5)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: OV} & \text{// } \\
+\lst{arg1} & \lst{: (OV,IV) => OV} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{OV} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.forall} method (Code 12.6)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.slice} method (Code 12.7)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.filter} method (Code 12.8)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.append} method (Code 12.9)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.apply} method (Code 12.10)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{IV} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.<<} method (Code 12.11)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.>>} method (Code 12.12)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.>>>} method (Code 12.13)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Boolean]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.indices} method (Code 12.14)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Coll[Int]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.flatMap} method (Code 12.15)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Coll[OV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[OV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.segmentLength} method (Code 12.16)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.indexWhere} method (Code 12.17)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.lastIndexWhere} method (Code 12.18)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.patch} method (Code 12.19)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+\lst{arg1} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg2} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.updated} method (Code 12.20)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Int} & \text{// } \\
+\lst{arg1} & \lst{: IV} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.updateMany} method (Code 12.21)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Int]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.unionSets} method (Code 12.22)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.diff} method (Code 12.23)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.intersect} method (Code 12.24)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.prefixLength} method (Code 12.25)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.indexOf} method (Code 12.26)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: IV} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.lastIndexOf} method (Code 12.27)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: IV} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.find} method (Code 12.28)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.zip} method (Code 12.29)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[OV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[(IV,OV)]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.distinct} method (Code 12.30)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.startsWith} method (Code 12.31)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.endsWith} method (Code 12.32)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.partition} method (Code 12.33)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{(Coll[IV],Coll[IV])} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.mapReduce} method (Code 12.34)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: (IV) => (K,V)} & \text{// } \\
+\lst{arg1} & \lst{: ((V,V)) => V} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[(K,V)]} \\
+  \hline
+\end{tabularx}

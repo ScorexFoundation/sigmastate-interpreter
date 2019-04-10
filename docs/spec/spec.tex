@@ -2,7 +2,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu,stmaryrd,tabularx}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu,stmaryrd,tabularx,verbatim}
 
 % "define" Scala
 \lstdefinelanguage{scala}{
@@ -167,6 +167,8 @@
 
 \newtheorem{definition}{Definition}
 
+\setcounter{tocdepth}{2}
+
 \begin{document}
 
 \title{ErgoTree Specification}
@@ -197,6 +199,8 @@ algorithms:
 
 \knote{Please note that the document is intended for general high-skilled tech audience, so avoid describing Scala
 classes etc.}
+
+\tableofcontents
 
 \section{Introduction}
 \label{sec:intro}
