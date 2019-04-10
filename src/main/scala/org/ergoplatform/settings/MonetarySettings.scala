@@ -2,8 +2,7 @@ package org.ergoplatform.settings
 
 import org.ergoplatform.ErgoScriptPredef
 import org.ergoplatform.mining.emission.EmissionRules
-import sigmastate.Values.SigmaPropValue
-import sigmastate.lang.Terms._
+import sigmastate.Values.ErgoTree
 
 /**
   * Configuration file for monetary settings of Ergo chain
@@ -17,9 +16,9 @@ case class MonetarySettings(fixedRatePeriod: Int = 30 * 2 * 24 * 365,
                             minerRewardDelay: Int = 720,
                             foundersInitialReward: Long = 75L * EmissionRules.CoinsInOneErgo / 10) {
 
-  val feeProposition: SigmaPropValue = ErgoScriptPredef.feeProposition(minerRewardDelay)
-  val feePropositionBytes: Array[Byte] = feeProposition.treeWithSegregation.bytes
-  val emissionBoxProposition: SigmaPropValue = ErgoScriptPredef.emissionBoxProp(this)
-  val foundersBoxProposition: SigmaPropValue = ErgoScriptPredef.foundationScript(this)
+  val feeProposition: ErgoTree = ErgoScriptPredef.feeProposition(minerRewardDelay)
+  val feePropositionBytes: Array[Byte] = feeProposition.bytes
+  val emissionBoxProposition: ErgoTree = ErgoScriptPredef.emissionBoxProp(this)
+  val foundersBoxProposition: ErgoTree = ErgoScriptPredef.foundationScript(this)
 
 }
