@@ -463,7 +463,7 @@ Let $g$ be the generator of \texttt{proveDlog}.
 	
 	
 	\item \textbf{Mix:} Bob picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$ and spends $A$ with one of his own box to create two output boxes $O_0, O_1$ of equal value such that $O_b$ is spendable by Alice alone and $O_{1-b}$ by Bob alone. 
-	The boxes are indistinguisable in the sense that they have identical scripts operating on  data registers $c, d$ containing different (but related) values from $G$ as explained below. 
+	The boxes are indistinguisable in the sense that they have identical scripts operating on  data registers $c, d$ containing different (but related) elements from $G$ as explained below. 
 	\begin{enumerate}
 		\item %Let $(h, v) = ({g}^{y}, {u}^{y})$.  
 		Registers $(c, d)$ of $O_b$ and $O_{1-b}$ are set to $(g^y, u^y)$ and $(u^y, g^y)$ respectively. 
@@ -486,8 +486,8 @@ Let $g$ be the generator of \texttt{proveDlog}.
 \paragraph{\langname Code:} First compute \texttt{fullMixScriptHash}, the hash of the following script:
 \begin{verbatim}
 val u = SELF.R4[GroupElement].get // copied from previous transaction
-val c = SELF.R5[GroupElement].get // h in (h, v)
-val d = SELF.R6[GroupElement].get // h in (*, h) and v in (h, v)
+val c = SELF.R5[GroupElement].get 
+val d = SELF.R6[GroupElement].get 
 proveDlog(d) || proveDHTuple(g, c, u, d)
 \end{verbatim}
 
