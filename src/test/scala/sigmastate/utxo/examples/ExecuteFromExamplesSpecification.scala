@@ -1,13 +1,8 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import scorex.crypto.hash.Blake2b256
-import sigmastate.{SSigmaProp, SigmaAnd}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.utxo.DeserializeContext
-import special.collection.Coll
 import special.sigma.Context
 import special.sigma.Extensions._
 
@@ -46,6 +41,7 @@ class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
 
   lazy val alice = spec.ProvingParty("Alice")
 
+  //todo: fix the test
   ignore("Execute from var example (ErgoDsl)") {
     val contract = OracleContract[spec.type](alice)(spec)
     import contract.spec._
