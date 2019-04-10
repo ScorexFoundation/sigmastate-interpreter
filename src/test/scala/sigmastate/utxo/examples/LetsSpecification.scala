@@ -75,8 +75,11 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       | // Checks that the management label token is replicating self
       | val outTokenCorrect = (selfOut.tokens.size == 1) && (selfOut.tokens(0)._1 == letsToken)
       |
-      | //The management script is replicating self
-      | val scriptCorrect = selfOut.propositionBytes == SELF.propositionBytes
+      | // Management script
+      | val managementScript = selfOut.R5[SigmaProp].get
+      |
+      | // The management script template is replicating self, and management script is satisfied
+      | val scriptCorrect = (selfOut.propositionBytes == SELF.propositionBytes) && managementScript
       |
       | // A spending transaction is creating boxes for directory, user, fee.
       | val outsSizeCorrect = OUTPUTS.size == 3
@@ -99,10 +102,10 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |  val toAdd: Coll[(Coll[Byte], Coll[Byte])] = Coll((issuedTokenId, Coll[Byte]()))
       |  val proof = getVar[Coll[Byte]](1).get
       |  val modifiedTree = selfTree.insert(toAdd, proof).get
-      |  val expectedTree = selfOut.R5[AvlTree].get
+      |  val expectedTree = selfOut.R4[AvlTree].get
       |  val treeCorrect = modifiedTree == expectedTree
       |
-      | correctTokenAmounts && outTokenCorrect && scriptCorrect && treeCorrect && zeroUserBalance
+      |  correctTokenAmounts && outTokenCorrect && scriptCorrect && treeCorrect && zeroUserBalance
       |}""".stripMargin
   )
 
