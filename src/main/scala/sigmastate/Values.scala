@@ -955,8 +955,8 @@ object Values {
       * This method uses single traverse of the tree to:
       * 1) find and segregate all constants;
       * 2) replace constants with ConstantPlaceholders in the `tree`;
-      * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`.
-      * 4) deserialize `tree` with ConstantPlaceholders;
+      * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`;
+      * 4) deserialize `tree` with ConstantPlaceholders.
       **/
     def withSegregation(value: SigmaPropValue): ErgoTree = {
       val constantStore = new ConstantStore()
