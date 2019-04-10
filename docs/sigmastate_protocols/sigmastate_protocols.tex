@@ -436,8 +436,10 @@ To mix an arbitrary box $B$, any one of the following is done:
 	\item \textbf{Mix:} Pick any box $A$ from the H-pool and a secret bit $b$. Spend $A, B$ to generate two {\em Fully Mixed} boxes $O_0, O_1$ such $O_b$ and $O_{1-b}$ are spendable by $A$'s and $B$'s owners respectively.
 \end{enumerate}
 
-Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable. That is, no outsider can guess $b$ with probability better than 1/2. A box is mixed several times to reach the desired privacy. Figure~\ref{fig:mixname} explains the protocol. 
-The indistinguishability of $O_b, O_{1-b}$ follows from the hardness of the {\em Decision Diffie-Hellman} (DDH) problem; the problem of distinguishing $g^{xy}$ from $g^z$, given $(g, g^x, g^y)$, for random $x, y, z$. 
+Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable so an outsider cannot guess $b$ with probability better than 1/2. Thus, the probability of guessing the original box after $n$ mixes is $1/2^n$. A box is mixed several times to reach the desired privacy.  Figure~\ref{fig:mixname} explains the protocol. 
+%assuming that the {\em Decision Diffie-Hellman} (DDH) problem in $G$ is hard
+%The indistinguishability of $O_b, O_{1-b}$ follows from the hardness of the {\em Decision Diffie-Hellman} (DDH) problem in $G$. 
+%the problem of distinguishing $g^{xy}$ from $g^z$, given $(g, g^x, g^y)$, for random $x, y, z$. 
 
 \mixname uses a primitive called a {\em Proof of Diffie-Hellman Tuple}, explained below. Let $g, h, u, v$ be public group elements. The prover proves knowledge of $x$ such that $u={g}^x$ and $v={h}^x$. 
 \begin{enumerate}
@@ -515,11 +517,11 @@ Alice's Half-Mix box is protected by \texttt{halfMixScript} given above, which B
 \subsubsection{Analysis Of The Protocol}
 \paragraph{Security:} Observe that registers $(c, d)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDHTuple}(g, g^y, g^x, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^y) \lor \texttt{proveDHTuple}(g, g^{xy}, g^x, g^y)$. Thus, while Alice can spend $O_b$ using \texttt{proveDHTuple} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
 
-For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that any algorithm that, given $(g, g^x)$, distinguishes $(g^y, g^{xy})$ from $(g^{xy}, g^y)$ can be used to solve the DDH problem. It follows that our boxes, which are of this form, are also indistingushable.
+For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that any algorithm that, given $(g, g^x)$, distinguishes $(g^y, g^{xy})$ from $(g^{xy}, g^y)$ can be used to solve the {\em Decision Diffie Hellman} (DDH) problem. It follows that our boxes, which are of this form, are also indistingushable if the DDH problem is hard.
 
 \paragraph{Comparing with CoinJoin:} CoinJoin~\cite{coinjoin} is a privacy enhancing protocol, where multiple parties provide inputs and create outputs in a single transaction computed interactively such that the original inputs and outputs are unlinked. The optimal use of CoinJoin is when two inputs of equal value are joined to generate two outputs of equal value, and the process is repeated, as depicted in Figure~\ref{fig:coinjoin}. 
 This requires two parties to interactively sign a transaction offchain and this interactive nature is the primary drawback of CoinJoin, which \mixname aims to overcome. 
-In \mixname, this interaction is replaced by public participation using the blockchain. While this adds one more transaction, it does not require interaction between the parties. Note that \mixname transactions are detectable, while CoinJoin transactions look like ordinary transactions. 
+In \mixname, this interaction is replaced by public participation using the blockchain. While this adds one more transaction, it does not require interaction between the parties. Note that \mixname transactions are detectable, while CoinJoin transactions are indistinguishable from ordinary transactions. 
 
 \begin{figure}
 	\centering
@@ -539,7 +541,7 @@ In \mixname, this interaction is replaced by public participation using the bloc
 	\label{fig:comparecoinjoin}
 \end{figure}
 
-\paragraph{Comparing with ZeroCoin:} ZeroCoin is a privacy enhancing protocol that uses a mixing pool. An ordinary box is added to the pool as a commitment $c$ to some secrets $r, s$, and is later spent. The value $c$ must be permanently stored in the pool, since a spending transaction does not reveal which commitment is being spent. Instead, it reveals the secret $s$ (called the serial number) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. This serial number is also permanently stored to prevent double spending. One consequence of this is that both the pool (the set of commitments) and the set of spent serial numbers must be maintained in memory since this information is needed for verifying every transaction. Another consequence is that the sizes of the these two sets increase monotonously.
+\paragraph{Comparing with ZeroCoin:} ZeroCoin is a privacy enhancing protocol that uses a mixing pool. An ordinary coin is added to the pool as a commitment $c$ to some secrets $(r, s)$, and is later spent such that the link to $c$ is not publicly visible. The value $c$ must be permanently stored in the pool, since the spending transaction cannot reveal it. Instead, it reveals the secret $s$ (the {\em serial number}) along with a zero-knowledge proof that $s$ was used in a commitment from the pool. The serial number is permanently stored to prevent double spending. One consequence of this is that both the pool (the set of commitments) and the set of spent serial numbers must be maintained in memory for verifying every transaction. Another consequence is that the sizes of the these two sets increase monotonously.
 This is the main drawback of ZeroCoin (also ZCash~\cite{zcash}), which \mixname tries to address. 
 In \mixname, once a box is spent, no information about it is kept in memory, and in particular no data sets of monotonously increasing sizes are maintained. 
 %The data storage overhead in \mixname is proportional to the number of unspent boxes, while that of ZC is proportional to the number of deposits (i.e., both spent and unspent boxes).  
@@ -547,7 +549,7 @@ In \mixname, once a box is spent, no information about it is kept in memory, and
 
 \paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
 
-\paragraph{Future enhancements:} Compared to CoinJoin, \mixname requires an additional box (the Half-Mix box) as depicted in Figure~\ref{fig:comparecoinjoin}. It will be interesting to find a variant that eliminates this box. 
+\paragraph{Future enhancements:} Compared to CoinJoin, \mixname requires an additional box (the Half-Mix box) as depicted in Figure~\ref{fig:comparecoinjoin}. It will be better to have a variant that eliminates this box. 
 One way to do this would be to find a way so that the mix step directly outputs two indistinguishable Half-Mix boxes that can be used either in the mix step or spent externally. 
 \subsubsection{Handling Fee In \mixname}
 
