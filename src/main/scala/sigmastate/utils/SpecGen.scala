@@ -2,9 +2,10 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized}
+import sigmastate.eval.{Zero, Sized, Evaluation}
 import SType._
 import scalan.util.FileUtil
+import scalan.meta.PrintExtensions._
 
 object SpecGen extends App {
   val tT = STypeIdent("T")
@@ -42,22 +43,46 @@ object SpecGen extends App {
     table
   }
 
-  def printMethods(tc: STypeCompanion, t: SType) = {
-    val desc = ""
-    val lines = for { m <- tc.methods.sortBy(_.methodId) } yield {
-      s"${m.objType.typeId}.${m.methodId} & \\lst{def ${m.name}()} & $desc \\\\"
+  def methodSubsection(typeName: String, m: SMethod) = {
+    val argTypes = m.stype.tDom.tail
+    val resTpe = m.stype.tRange.toTermString
+    val ts = argTypes.map(_.toTermString)
+    val argInfos = m.docInfo.fold(
+      Range(0, ts.length).map(i => MethodArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
+    val params = ts.opt { ts =>
+      val args = argInfos.zip(ts)
+      s"""
+        |  \\hline
+        |  \\bf{Parameters} &
+        |      \\(\\begin{array}{l l l}
+        |         ${args.rep({ case (info, t) =>
+                    s"\\lst{${info.name}} & \\lst{: $t} & \\text{// ${info.description}} \\\\"
+                   }, "\n")}
+        |      \\end{array}\\) \\\\
+       """.stripMargin
     }
-    val table = lines.mkString("\n\\hline\n")
-    s"""
-      |\\noindent
-      |\\begin{tabularx}{\\textwidth}{| c | c | X |}
-      |  \\hline
-      |  \\bf{Code} & \\bf{Method Signature} & \\bf{Description} \\\\
-      |  \\hline
-      |  $table
-      |  \\hline
-      |\\end{tabularx}
-     """.stripMargin
+
+   s"""
+     |\\subsubsection{\\lst{$typeName.${m.name}} method (Code ${m.objType.typeId}.${m.methodId})}
+     |\\noindent
+     |\\begin{tabularx}{\\textwidth}{| l | X |}
+     |   \\hline
+     |   \\bf{Description} & ${m.docInfo.opt(_.description)} \\\\
+     |  $params
+     |  \\hline
+     |  \\bf{Result} & \\lst{${resTpe}} \\\\
+     |  \\hline
+     |\\end{tabularx}
+     |""".stripMargin
+  }
+
+  def printMethods(typeName: String, tc: STypeCompanion, t: SType) = {
+    val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
+
+      methodSubsection(typeName, m)
+    }
+    val res = methodSubsections.mkString("\n\n")
+    res
   }
 
   val types = SType.allPredefTypes.diff(Seq(SString))
@@ -70,16 +95,16 @@ object SpecGen extends App {
         companions.zip(companions.asInstanceOf[Seq[SType]]) ++
         Seq((SCollection, SCollection.ThisType), (SOption, SOption.ThisType))
   for ((tc, t) <- typesWithMethods) {
-    val methodsRows = printMethods(tc, t)
-    val name = tc match {
+    val typeName = tc match {
       case t: SType =>
         val rtype = stypeToRType(t)
         rtype.name
       case _ => tc.getClass.getSimpleName.replace("$", "")
     }
-    val fMethods = FileUtil.file(s"docs/spec/generated/${name}_methods.tex")
+    val methodsRows = printMethods(typeName, tc, t)
+    val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
     FileUtil.write(fMethods, methodsRows)
 
-    println(s"\\input{generated/${name}_methods.tex}")
+    println(s"\\input{generated/${typeName}_methods.tex}")
   }
 }

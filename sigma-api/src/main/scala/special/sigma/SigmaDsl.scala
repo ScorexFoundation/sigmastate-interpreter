@@ -336,8 +336,8 @@ trait Box {
   */
 @scalan.Liftable
 trait AvlTree {
-  /** Returns digest of the state represent by this tree.
-    * Authenticated tree digest: root hash along with tree height
+  /** Returns digest of the state represented by this tree.
+    * Authenticated tree digest = root hash bytes ++ tree height
     * @since 2.0
     */
   def digest: Coll[Byte]
