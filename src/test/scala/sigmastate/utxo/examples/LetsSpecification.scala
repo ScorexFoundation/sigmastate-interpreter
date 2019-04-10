@@ -1,9 +1,12 @@
 package sigmastate.utxo.examples
 
+import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.ByteArrayConstant
 import sigmastate.eval.{CompiletimeCosting, IRContext}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.lang.Terms._
 
 import scala.util.Random
 
@@ -64,10 +67,11 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |
       |  selfPubKey && properTree && membersExist && diffCorrect && scriptsSaved
       |}""".stripMargin
-  )
+  ).asSigmaProp
 
+  val userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeScript))
 
-  val managementScript = compiler.compile(env,
+  val managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
     """{
       |
       | val selfOut = OUTPUTS(0)
@@ -92,10 +96,13 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |   (userOut.tokens.size == 1 &&
       |     userOut.tokens(0)._1 == issuedTokenId &&
       |     userOut.tokens(0)._2 == 1 &&
-      |     OUTPUTS(2).tokens.size == 0)
+      |     OUTPUTS(2).tokens.size == 0 &&
+      |     outTokenCorrect)
       |
       |  // Checks that the new user has been created with the zero balance
       |  val zeroUserBalance  = userOut.R4[Long].get == 0
+      |
+      |  val properUserScript = blake2b256(userOut.propositionBytes) == userContractHash
       |
       |  // Checks that the new token identifier has been added to the directory
       |  val selfTree = SELF.R4[AvlTree].get
@@ -105,9 +112,9 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |  val expectedTree = selfOut.R4[AvlTree].get
       |  val treeCorrect = modifiedTree == expectedTree
       |
-      |  correctTokenAmounts && outTokenCorrect && scriptCorrect && treeCorrect && zeroUserBalance
+      |  correctTokenAmounts && scriptCorrect && treeCorrect && zeroUserBalance && properUserScript
       |}""".stripMargin
-  )
+  ).asSigmaProp
 
   println(exchangeScript)
 
