@@ -3,30 +3,25 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{R4, RegisterId}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import org.ergoplatform.ErgoBox.RegisterId
+import scorex.crypto.authds.avltree.batch.BatchAVLProver
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
-import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
-import sigmastate.TrivialProp.TrueProp
-import sigmastate.eval.CSigmaProp
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
-import special.collection.Coll
 import special.sigma.Context
 
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
