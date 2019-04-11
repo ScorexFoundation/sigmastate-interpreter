@@ -39,7 +39,7 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
       """{
         |      val dataInput = CONTEXT.dataInputs(0)
         |      val inReg = dataInput.R4[Long].get
-        |      val inToken = dataInput.R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
+        |      val inToken = dataInput.tokens(0)._1 == tokenId
         |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
         |      inToken && okContractLogic
         |}
