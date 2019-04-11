@@ -114,7 +114,7 @@ object ErgoBox {
     override def toString: Idn = "R" + number
   }
 
-  abstract class MandatoryRegisterId(override val number: Byte, purpose: String) extends RegisterId
+  abstract class MandatoryRegisterId(override val number: Byte, val purpose: String) extends RegisterId
   abstract class NonMandatoryRegisterId(override val number: Byte) extends RegisterId
 
   object R0 extends MandatoryRegisterId(0, "Monetary value, in Ergo tokens")

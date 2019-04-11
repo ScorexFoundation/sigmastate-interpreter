@@ -1150,6 +1150,7 @@ object STypeIdent {
 }
 
 case object SBox extends SProduct with SPredefType with SMonoType {
+  import ErgoBox._
   override type WrappedType = Box
   override val typeCode: TypeCode = 99: Byte
   override def typeId = typeCode
@@ -1163,8 +1164,15 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 
   val tT = STypeIdent("T")
   def registers(idOfs: Int): Seq[SMethod] = {
-    (1 to 10).map { i =>
-      SMethod(this, s"R$i", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i).toByte)
+    allRegisters.map { i =>
+      i match {
+        case r: MandatoryRegisterId =>
+          SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
+              .withInfo(r.purpose)
+        case _ =>
+          SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
+              .withInfo("Non-mandatory register")
+      }
     }
   }
   val PropositionBytes = "propositionBytes"
@@ -1175,16 +1183,27 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val CreationInfo = "creationInfo"
   val GetReg = "getReg"
   // should be lazy, otherwise lead to initialization error
-  lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6) // see ExtractCreationInfo
+  lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
+      .withInfo(
+        "If \\lst{tx} is a transaction which generated this box, then \\lst{creationInfo._1} " +
+        "is a height of the tx's block. The \\lst{creationInfo._2} is a serialized transaction " +
+        "identifier followed by box index in the transaction outputs.") // see ExtractCreationInfo
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder, None)
+      .withInfo("Secondary tokens")
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
-    SMethod(this, Value, SFunc(SBox, SLong), 1), // see ExtractAmount
-    SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2), // see ExtractScriptBytes
-    SMethod(this, Bytes, SFunc(SBox, SByteArray), 3), // see ExtractBytes
-    SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4), // see ExtractBytesWithNoRef
-    SMethod(this, Id, SFunc(SBox, SByteArray), 5), // see ExtractId
+    SMethod(this, Value, SFunc(SBox, SLong), 1)
+        .withInfo("Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)"), // see ExtractAmount
+    SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
+        .withInfo("Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
+            " open this box. (aka spend it in a transaction)"), // see ExtractScriptBytes
+    SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
+        .withInfo("Serialized bytes of this box's content, including proposition bytes."), // see ExtractBytes
+    SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
+        .withInfo("Serialized bytes of this box's content, excluding transactionId and index of output."), // see ExtractBytesWithNoRef
+    SMethod(this, Id, SFunc(SBox, SByteArray), 5)
+        .withInfo("Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
     creationInfoMethod,
     getRegMethod,
     tokensMethod,
