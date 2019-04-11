@@ -76,9 +76,6 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       |
       | val selfOut = OUTPUTS(0)
       |
-      | // Checks that the management label token is replicating self
-      | val outTokenCorrect = (selfOut.tokens.size == 1) && (selfOut.tokens(0)._1 == letsToken)
-      |
       | // Management script
       | val managementScript = selfOut.R5[SigmaProp].get
       |
@@ -88,8 +85,11 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
       | // A spending transaction is creating boxes for directory, user, fee.
       | val outsSizeCorrect = OUTPUTS.size == 3
       |
+      | // Checks that the management label token is replicating self
+      | val outTokenCorrect = (selfOut.tokens.size == 1) && (selfOut.tokens(0)._1 == letsToken)
+      |
       | // Checks that new token is issued, and its amount is correct
-      | // OUTPUTS(0) tokens already checked
+      | // OUTPUTS(0) tokens already checked via outtokenCorrect
       | val issuedTokenId = INPUTS(0).id
       | val userOut = OUTPUTS(1)
       | val correctTokenAmounts =
@@ -117,7 +117,6 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
   ).asSigmaProp
 
   println(exchangeScript)
-
   println(managementScript)
 
 }
