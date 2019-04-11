@@ -312,17 +312,14 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         IndexedSeq(BigIntConstant(1)))
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
-  // TODO  add rule to OptionCoster
-  ignore("SOption.map") {
-    testMissingCosting("getVar[Int](1).map({(i: Int) => i + 1})",
+  property("SOption.map") {
+    comp("getVar[Int](1).map({(i: Int) => i + 1})") shouldBe
       mkMethodCall(GetVarInt(1),
         SOption.MapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
-        IndexedSeq(Terms.Lambda(
-          Vector(("i", SInt)),
-          SInt,
-          Some(Plus(Ident("i", SInt).asIntValue, IntConstant(1))))), Map())
-    )
+        IndexedSeq(FuncValue(
+          Vector((1, SInt)),
+          Plus(ValUse(1, SInt), IntConstant(1)))), Map()
+      )
   }
 
   //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422

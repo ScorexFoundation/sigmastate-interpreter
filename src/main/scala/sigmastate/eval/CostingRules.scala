@@ -479,6 +479,17 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def isDefined: RCosted[Boolean] = constantSizeProperyAccess(_.isDefined)
     def isEmpty: RCosted[Boolean] = constantSizeProperyAccess(_.isEmpty)
+
+    def map[B](_f: RCosted[T => B]): RCosted[WOption[B]] = {
+      val f = asCostedFunc[T,B](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val sizeF = f.sliceSize
+      val v = obj.value.map(calcF)
+      val c = costF(Pair(obj.cost, asSizeOption(obj.size).sizeOpt.get))
+      val s = asSizeOption(obj.size).sizeOpt.map(sizeF)
+      RCCostedOption(v, SOME(c), s, opCost(v, costOfArgs, costOf(method)))
+    }
   }
 
   object OptionCoster extends CostingHandler[WOption[Any]]((obj, m, args) => new OptionCoster[Any](obj, m, args))

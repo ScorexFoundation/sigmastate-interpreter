@@ -268,6 +268,8 @@ object CostTable {
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
     ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+
+    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", MinimalCost),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
