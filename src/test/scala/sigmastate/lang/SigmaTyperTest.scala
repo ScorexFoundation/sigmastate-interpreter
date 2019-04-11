@@ -12,7 +12,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
+import sigmastate.lang.exceptions.TyperException
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ExtractCreationInfo, Append}
 
@@ -408,7 +408,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       checkTypes(t1, t2, exp)
     }
     def checkAll(ts: Seq[String], exp: Option[SType]): Unit = {
-      val types = ts.map(ty(_));
+      val types = ts.map(ty(_))
       checkAllTypes(types, exp)
     }
 

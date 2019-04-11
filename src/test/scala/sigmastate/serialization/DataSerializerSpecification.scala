@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{SigmaBoolean, Constant}
+import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.eval.Evaluation
 import sigmastate.eval._

@@ -342,6 +342,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("ExtractRegisterAs") {
+    //TODO: uncomment and fix
 //    test("Extract1", env, ext,
 //      "{ SELF.R4[SigmaProp].get.isProven }",
 //      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
@@ -494,6 +495,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    println(CostTableStat.costTableString)
   }
 
+  //TODO: uncomment and fix
 //  property("ZKProof") {
 //    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
 //      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
