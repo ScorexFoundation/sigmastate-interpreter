@@ -3,7 +3,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Converts this numeric value to \lst{Byte}, throwing exception if overflow. \\
   
   \hline
   \bf{Result} & \lst{Byte} \\
@@ -16,7 +16,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. \\
   
   \hline
   \bf{Result} & \lst{BigInt} \\
@@ -29,7 +29,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Converts this numeric value to \lst{Short}, throwing exception if overflow. \\
   
   \hline
   \bf{Result} & \lst{Short} \\
@@ -42,12 +42,12 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Adds this number with \lst{other} by module Q. \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: BigInt} & \text{// } \\
+         \lst{other} & \lst{: BigInt} & \text{// Number to add to this.} \\
       \end{array}\) \\
        
   \hline
@@ -61,7 +61,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Converts this numeric value to \lst{Int}, throwing exception if overflow. \\
   
   \hline
   \bf{Result} & \lst{Int} \\
@@ -74,12 +74,12 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Subtracts \lst{other} number from this by module Q. \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: BigInt} & \text{// } \\
+         \lst{other} & \lst{: BigInt} & \text{// Number to subtract from this.} \\
       \end{array}\) \\
        
   \hline
@@ -93,7 +93,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Converts this numeric value to \lst{Long}, throwing exception if overflow. \\
   
   \hline
   \bf{Result} & \lst{Long} \\
@@ -106,12 +106,12 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Multiply this number with \lst{other} by module Q. \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: BigInt} & \text{// } \\
+         \lst{other} & \lst{: BigInt} & \text{// Number to multiply with this.} \\
       \end{array}\) \\
        
   \hline
@@ -125,7 +125,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Converts this numeric value to \lst{BigInt} \\
   
   \hline
   \bf{Result} & \lst{BigInt} \\
@@ -138,7 +138,9 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns a big-endian representation of this numeric value in a collection of bytes.
+ For example, the Int value \lst{0x12131415} would yield the
+ byte array  \lst{[0x12, 0x13, 0x14, 0x15]}. \\
   
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
@@ -151,7 +153,8 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns a big-endian representation of this numeric in a collection of Booleans.
+ Each boolean corresponds to one bit. \\
   
   \hline
   \bf{Result} & \lst{Coll[Boolean]} \\
