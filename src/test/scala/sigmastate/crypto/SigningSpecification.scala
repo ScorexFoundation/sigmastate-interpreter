@@ -1,6 +1,5 @@
 package sigmastate.crypto
 
-import org.ergoplatform.ErgoLikeContext
 import scorex.util.encode.Base16
 import sigmastate.AtLeast
 import sigmastate.basics.DLogProtocol.DLogProverInput
@@ -9,8 +8,6 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 
 class SigningSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-
-  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   property("simple signature test vector") {
 

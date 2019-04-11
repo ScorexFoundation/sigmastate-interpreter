@@ -12,10 +12,10 @@ case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
   extends SigmaSerializer[ProveDlog, ProveDlog] {
 
   override def serialize(obj: ProveDlog, w: SigmaByteWriter): Unit =
-    DataSerializer.serialize[SGroupElement.type](obj.value, SGroupElement, w)
+    GroupElementSerializer.serialize(obj.value, w)
 
   override def parse(r: SigmaByteReader) = {
-    val res = DataSerializer.deserialize(SGroupElement, r)
+    val res = GroupElementSerializer.parse(r)
     cons(res)
   }
 }

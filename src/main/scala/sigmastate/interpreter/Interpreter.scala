@@ -24,7 +24,7 @@ trait Interpreter extends ScorexLogging {
 
   import Interpreter.ReductionResult
 
-  type CTX <: Context
+  type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
@@ -40,7 +40,7 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            Some(ValueSerializer.deserialize(eba.value))
+            Some(ValueSerializer.deserialize(eba.value.toArray))
           case _ => None
         }
       else

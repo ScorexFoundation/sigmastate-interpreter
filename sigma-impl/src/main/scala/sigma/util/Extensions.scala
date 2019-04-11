@@ -218,11 +218,4 @@ object Extensions {
         None
     }
   }
-
-  implicit class NullableOps[T](val nul: Nullable[T]) {
-    def toOption: Option[T] = nul match {
-      case Nullable(v) => Some(v)
-      case _ => None
-    }
-  }
 }

@@ -1,13 +1,12 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import scalan.{SigmaLibrary, RType}
+import org.ergoplatform.ErgoLikeContext
+import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.CostTable
-import special.collection.Coll
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -16,11 +15,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import AvlTree._
   import GroupElement._
   import CollBuilder._
-  import SizeBuilder._
   import CostedBuilder._
   import Costed._
   import Size._
-  import SizePrim._
   import SizeColl._
   import SizeOption._
   import SizePair._
@@ -28,6 +25,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import SizeBox._
   import SizeContext._
   import CCostedPrim._
+  import CostedPair._
   import CCostedPair._
   import CCostedOption._
   import CostedFunc._
@@ -50,65 +48,80 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     * 4) The result of costing-rule-method is returned as the result of MethodCall node costing.
     *
     * Instances of this class are typically singleton objects (see below).
-    * Iach
+    * @param createCoster  constructor of Coster for given parameters of MethodCall: obj, method, costedArgs, args.
     * @see Coster
     */
   abstract class CostingHandler[T](createCoster: (RCosted[T], SMethod, Seq[RCosted[_]]) => Coster[T]) {
-    def apply(obj: RCosted[_], method: SMethod, args: Seq[RCosted[_]]): RCosted[_] = {
-      val coster = createCoster(asCosted[T](obj), method, args)
+    def apply(obj: RCosted[_], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym] = Nil): RCosted[_] = {
+      val coster = createCoster(asCosted[T](obj), method, costedArgs)  // TODO use also args to create Coster
       val costerClass = coster.getClass
-      val costerMethod = costerClass.getMethod(method.name, Array.fill(args.length)(classOf[Sym]):_*)
-      val res = costerMethod.invoke(coster, args:_*)
+      val parameterTypes = Array.fill(costedArgs.length + args.length)(classOf[Sym])
+      val costerMethod = costerClass.getMethod(method.name, parameterTypes:_*)
+      val res = costerMethod.invoke(coster, costedArgs ++ args:_*)
       res.asInstanceOf[RCosted[_]]
     }
   }
 
-  /** Special graph node to represent accumulation of the operation costs.
-    * In general, due to node sharing it is incorrect to just sum up all the `args` costs
-    * and add `resCost` to that value.
-    * Example: <br>
-    * <code>
-    * val x = ..
-    * val y = op1(x)
-    * val z = op2(x)
-    * val res = op3(y, z)
-    * </code>
-    * The naive summation will lead to the cost of x` is accumulated both into `cost of y`
-    * and into `cost of z`, so in the `cost of res` it is accumulated twice.
-    * To avoid this problem OpCost nodes require special handling in during evaluation.
-    *
-    * @param  args    costs of the arguments, which are here represent dependency information.
-    * @param  opCost operation cost, which should be added to the currently accumulated cost
-    * @see `Evaluation`
-    */
-  case class OpCost(args: Seq[Rep[Int]], opCost: Rep[Int]) extends BaseDef[Int] {
-    override def transform(t: Transformer) = OpCost(t(args), t(opCost))
-  }
-  def opCost(args: Seq[Rep[Int]], opCost: Rep[Int]): Rep[Int] = OpCost(args, opCost)
+  /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
+    * the expression is re-evaluated. Each value should be reset in onReset() method. */
+  private val _selectFieldCost = MutableLazy(sigmaDslBuilder.CostModel.SelectField)
+  @inline def selectFieldCost = _selectFieldCost.value
 
-  def selectFieldCost = sigmaDslBuilder.CostModel.SelectField
+  private val _getRegisterCost = MutableLazy(sigmaDslBuilder.CostModel.GetRegister)
+  @inline def getRegisterCost = _getRegisterCost.value
 
-  // TODO move initialization to init() to support resetContext
-  lazy val SizeUnit: RSize[Unit] = costedBuilder.mkSizePrim(0L, UnitElement)
-  lazy val SizeBoolean: RSize[Boolean] = costedBuilder.mkSizePrim(1L, BooleanElement)
-  lazy val SizeByte: RSize[Byte] = costedBuilder.mkSizePrim(1L, ByteElement)
-  lazy val SizeShort: RSize[Short] = costedBuilder.mkSizePrim(2L, ShortElement)
-  lazy val SizeInt: RSize[Int] = costedBuilder.mkSizePrim(4L, IntElement)
-  lazy val SizeLong: RSize[Long] = costedBuilder.mkSizePrim(8L, LongElement)
-  lazy val SizeBigInt: RSize[BigInt] = costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt])
-  lazy val SizeString: RSize[String] = costedBuilder.mkSizePrim(256L, StringElement)
-  lazy val SizeAvlTree: RSize[AvlTree] = costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree])
-  lazy val SizeGroupElement: RSize[GroupElement] = costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement])
+  private val _sizeUnit: LazyRep[Size[Unit]] = MutableLazy(costedBuilder.mkSizePrim(0L, UnitElement))
+  @inline def SizeUnit: RSize[Unit] = _sizeUnit.value
+  
+  private val _sizeBoolean: LazyRep[Size[Boolean]] = MutableLazy(costedBuilder.mkSizePrim(1L, BooleanElement))
+  @inline def SizeBoolean: RSize[Boolean] = _sizeBoolean.value
 
-  lazy val SizeHashBytes: RSize[Coll[Byte]] = {
+  private val _sizeByte: LazyRep[Size[Byte]] = MutableLazy(costedBuilder.mkSizePrim(1L, ByteElement))
+  @inline def SizeByte: RSize[Byte] = _sizeByte.value
+
+  private val _sizeShort: LazyRep[Size[Short]] = MutableLazy(costedBuilder.mkSizePrim(2L, ShortElement))
+  @inline def SizeShort: RSize[Short] = _sizeShort.value
+
+  private val _sizeInt: LazyRep[Size[Int]] = MutableLazy(costedBuilder.mkSizePrim(4L, IntElement))
+  @inline def SizeInt: RSize[Int] = _sizeInt.value
+
+  private val _sizeLong: LazyRep[Size[Long]] = MutableLazy(costedBuilder.mkSizePrim(8L, LongElement))
+  @inline def SizeLong: RSize[Long] = _sizeLong.value
+
+  private val _sizeBigInt: LazyRep[Size[BigInt]] = MutableLazy(costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt]))
+  @inline def SizeBigInt: RSize[BigInt] = _sizeBigInt.value
+
+  private val _sizeString: LazyRep[Size[String]] = MutableLazy(costedBuilder.mkSizePrim(256L, StringElement))
+  @inline def SizeString: RSize[String] = _sizeString.value
+
+  private val _sizeAvlTree: LazyRep[Size[AvlTree]] = MutableLazy(costedBuilder.mkSizePrim(AvlTreeData.TreeDataSize.toLong, element[AvlTree]))
+  @inline def SizeAvlTree: RSize[AvlTree] = _sizeAvlTree.value
+
+  private val _sizeGroupElement: LazyRep[Size[GroupElement]] = MutableLazy(costedBuilder.mkSizePrim(CryptoConstants.EncodedGroupElementLength.toLong, element[GroupElement]))
+  @inline def SizeGroupElement: RSize[GroupElement] = _sizeGroupElement.value
+
+  private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
+  @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
+
+  private val _sizeHashBytes: LazyRep[Size[Coll[Byte]]] = MutableLazy {
     val len: Rep[Int] = CryptoConstants.hashLength
     val sizes = colBuilder.replicate(len, SizeByte)
     costedBuilder.mkSizeColl(sizes)
   }
+  @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
 
-  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, element[SigmaProp])
+  /** */
+  protected override def onReset(): Unit = {
+    super.onReset()
+    // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
+    Array(_selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp, _sizeHashBytes)
+        .foreach(_.reset())
+  }
 
-  def SizeOfSigmaBoolean(sb: SigmaBoolean): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(sb.asWrappedType))
+  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, WRTypeSigmaProp)
+
+  def SizeOfSigmaProp(p: SSigmaProp): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(p.asWrappedType))
 
   case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
     override def transform(t: Transformer) = Cast(eTo, t(x))
@@ -124,6 +137,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   def asCostedColl[T](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = {
     implicit val eT = collC.elem.eVal.eItem
     tryCast[CostedColl[T]](collC)
+  }
+  def asCostedPair[A,B](pC: RCosted[(A,B)]): Rep[CostedPair[A,B]] = {
+    implicit val eA = pC.elem.eVal.eFst
+    implicit val eB = pC.elem.eVal.eSnd
+    tryCast[CostedPair[A,B]](pC)
   }
   def asCostedFunc[A,B](fC: RCosted[A => B]): Rep[CostedFunc[Unit,A,B]] = {
     implicit val eA = fC.elem.eVal.eDom
@@ -146,7 +164,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   def asSizeBox(ctx: RSize[Box]): Rep[SizeBox] = tryCast[SizeBox](ctx)
   def asSizeContext(ctx: RSize[Context]): Rep[SizeContext] = tryCast[SizeContext](ctx)
 
-  def SOME[A](x: Rep[A]): Rep[WOption[A]] = RWSpecialPredef.some(x)
+  def SOME[A](x: Rep[A]): Rep[WOption[A]] = specialPredef.some(x)
 
   def mkSizeColl[T:Elem](len: Rep[Int]): Rep[Size[Coll[T]]] = {
     val sizes = colBuilder.replicate(len, costedBuilder.mkSizePrim(typeSize[T], element[T]): RSize[T])
@@ -251,6 +269,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def isUpdateAllowed() = constantSizeProperyAccess(_.isUpdateAllowed)
     def isRemoveAllowed() = constantSizeProperyAccess(_.isRemoveAllowed)
 
+    def updateDigest(newDigest: RCosted[Coll[Byte]]) = {
+      RCCostedPrim(obj.value.updateDigest(newDigest.value), opCost(costOfArgs, costOf(method)), obj.size)
+    }
     def updateOperations(flags: RCosted[Byte]) = {
       RCCostedPrim(obj.value.updateOperations(flags.value), opCost(costOfArgs, costOf(method)), obj.size)
     }
@@ -262,8 +283,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val size = sizeOfArgs
       val c = opCost(costOfArgs, perKbCostOf(method, size))
       val res = RCCostedOption(value,
-        RWSpecialPredef.some(0),
-        RWSpecialPredef.some(proof.size),
+        specialPredef.some(0),
+        specialPredef.some(proof.size),
         c)
       res
     }
@@ -288,7 +309,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val value = meth(obj.value)
       val size = sizeOfArgs
       RCCostedOption(value,
-        RWSpecialPredef.some(0),
+        specialPredef.some(0),
         SOME(obj.size), opCost(costOfArgs, perKbCostOf(method, size)))
     }
 
@@ -353,11 +374,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SBox methods */
   class BoxCoster(obj: RCosted[Box], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Box](obj, method, args){
     import Box._
-    import ErgoBox._
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
-      val cost = opCost(Seq(obj.cost), sigmaDslBuilder.CostModel.SelectField)
+      val cost = opCost(info, Seq(obj.cost), getRegisterCost)
       val l = RCCostedPrim(info._1, 0, SizeInt)
       val r = mkCostedColl(info._2, CryptoConstants.hashLength, 0)
       RCCostedPair(l, r, cost)
@@ -375,27 +395,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(tokens, costs, sizes, opCost(Seq(obj.cost), costOf(method)))
     }
 
-//    def id: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.id, box.id.length, 1)
-//    def valueCosted: Costed[Long] = {
-//      val cost = dsl.CostModel.SelectField
-//      new CCostedPrim(box.value, cost, 8L)
-//    }
-//    def bytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytes, box.bytes.length, 1)
-//    def bytesWithoutRef: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.bytesWithoutRef, box.bytesWithoutRef.length, 1)
-//    def propositionBytes: CostedColl[Byte] = dsl.costColWithConstSizedItem(box.propositionBytes, box.propositionBytes.length, 1)
-//    def registers: CostedColl[AnyValue] = {
-//      val len = box.registers.length
-//      val costs = dsl.Colls.replicate(len, dsl.CostModel.AccessBox)
-//      val sizes = box.registers.map(o => o.dataSize)
-//      new CCostedColl(box.registers, costs, sizes, dsl.CostModel.CollectionConst)
-//    }
-//    def getReg[@Reified T](id: Int)(implicit cT:RType[T]): CostedOption[T] = {
-//      val opt = box.getReg(id)(cT)
-//      dsl.costOption(opt, dsl.CostModel.GetRegister)
-//    }
-//
-//    @NeverInline
-//    def creationInfo: Costed[(Int, Coll[Byte])] = SpecialPredef.rewritableMethod
+    def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
+      val sBox = asSizeBox(obj.size)
+      implicit val elem = tT.eA
+      val valueOpt = obj.value.getReg(i.value)(elem)
+      val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
+      RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), getRegisterCost))
+    }
   }
 
   object BoxCoster extends CostingHandler[Box]((obj, m, args) => new BoxCoster(obj, m, args))
@@ -403,6 +409,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SHeader methods */
   class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
     import Header._
+
+    def id() = digest32ProperyAccess(_.id)
 
     def version() = constantSizeProperyAccess(_.version)
 
@@ -482,6 +490,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def indices(): RCostedColl[Int] =
       knownLengthCollProperyAccess(_.indices, asSizeColl(obj.size).sizes.length)
+
+    def map[B](_f: RCosted[T => B]): RCosted[Coll[B]] = {
+      val xs = asCostedColl(obj)
+      val f = asCostedFunc[T,B](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val sizeF = f.sliceSize
+      val vals = xs.values.map(calcF)
+      implicit val eT = xs.elem.eItem
+      implicit val eB = f.elem.eVal.eRange
+      val costs = xs.costs.zip(xs.sizes).map(costF)
+      val sizes = if (eB.isConstantSize) {
+        colBuilder.replicate(xs.sizes.length, constantTypeSize(eB): RSize[B])
+      } else {
+        xs.sizes.map(sizeF)
+      }
+      RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
+    }
 
     def getSizePropertyMethod[B](mc: MethodCall): RSize[T] => RColl[Size[B]] = {
       ???
@@ -580,7 +606,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   /** Costing rules for SGlobal methods */
   class SigmaDslBuilderCoster(obj: RCosted[SigmaDslBuilder], method: SMethod, args: Seq[RCosted[_]]) extends Coster[SigmaDslBuilder](obj, method, args){
-    import PreHeader._
 
     def groupGenerator() = groupElementProperyAccess(_.groupGenerator)
   }

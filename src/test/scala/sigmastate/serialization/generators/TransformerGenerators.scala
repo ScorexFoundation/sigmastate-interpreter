@@ -261,8 +261,6 @@ trait TransformerGenerators {
     body <- logicalExprTreeNodeGen(Seq(AND.apply))
   } yield FuncValue(args, body)
 
-  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaBooleanGen.map(SigmaPropConstant(_))
-
   val sigmaAndGen: Gen[SigmaAnd] = for {
     num <- Gen.chooseNum(1, 10)
     items <- Gen.listOfN(num, sigmaPropValueGen)

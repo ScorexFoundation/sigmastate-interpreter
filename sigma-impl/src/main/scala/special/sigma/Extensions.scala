@@ -1,7 +1,6 @@
 package special.sigma
 
 import org.bouncycastle.math.ec.ECPoint
-import scalan.RType
 
 /** This extensions are used from SigmaDsl.
   * If you add something here, make sure the corresponding syntax is supported by SigmaScript. */
@@ -23,9 +22,8 @@ object Extensions {
     s"ECPoint($rawX,$rawY,...)"
   }
 
-  implicit class GroupElementOps(source: GroupElement) {
+  implicit class GroupElementOps(val source: GroupElement) extends AnyVal {
     def showToString: String = showECPoint(source.value)
   }
 
-  def toAnyValue[A:RType](x: A) = new TestValue(x, RType[A].asInstanceOf[RType[Any]])
 }

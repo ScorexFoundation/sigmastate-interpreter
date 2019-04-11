@@ -25,10 +25,8 @@ trait ContractSyntax { contract: SigmaContract =>
   def proposition(name: String, dslSpec: Proposition, scriptCode: String) = {
     val env = contractEnv.mapValues { v =>
       val tV = Evaluation.rtypeOf(v).get
-      val treeType = Evaluation.toErgoTreeType(tV)
-      val data = Evaluation.fromDslData(v, treeType)
-      val elemTpe = Evaluation.rtypeToSType(treeType)
-      spec.IR.builder.mkConstant[SType](data.asWrappedType, elemTpe)
+      val elemTpe = Evaluation.rtypeToSType(tV)
+      spec.IR.builder.mkConstant[SType](v.asWrappedType, elemTpe)
     }
     spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode))
   }

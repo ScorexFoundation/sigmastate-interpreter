@@ -28,7 +28,7 @@ import special.collection.{Coll, Builder}
 class SigmaDslTest extends PropSpec
   with PropertyChecks
   with Matchers
-  with SigmaTestingCommons with SigmaContractSyntax
+  with SigmaTestingData with SigmaContractSyntax
   with SigmaTypeGens { suite =>
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
@@ -41,7 +41,6 @@ class SigmaDslTest extends PropSpec
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
     val b1 = f(x); val b2 = g(x)
-//    assert(b1.getClass == b2.getClass)
     assert(b1 == b2)
   }
 
@@ -117,7 +116,7 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(ge)
-//      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+// TODO uncomment when isIdentity implemented  eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
       eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
       eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
@@ -134,6 +133,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+// TODO uncomment when switch to sigma.types will be finished
 //  property("sigma.types.Byte methods equivalence") {
 //    import sigma.types._
 //    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
@@ -141,7 +141,6 @@ class SigmaDslTest extends PropSpec
 //      Seq(toInt).foreach(_(x))
 //    }
 //  }
-//
 //  property("sigma.types.Int methods equivalence") {
 //    import sigma.types._
 //    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
@@ -154,25 +153,6 @@ class SigmaDslTest extends PropSpec
 //    }
 //  }
 
-  val bytesGen: Gen[Array[Byte]] = containerOfN[Array, Byte](100, Arbitrary.arbByte.arbitrary)
-  val bytesCollGen = bytesGen.map(Colls.fromArray(_))
-  implicit val arbBytes = Arbitrary(bytesCollGen)
-  val keyCollGen = bytesCollGen.map(_.slice(0, 32))
-  import org.ergoplatform.dsl.AvlTreeHelpers._
-
-  private def sampleAvlProver = {
-    val key = keyCollGen.sample.get
-    val value = bytesCollGen.sample.get
-    val (_, avlProver) = createAvlTree(AvlTreeFlags.AllOperationsAllowed, ADKey @@ key.toArray -> ADValue @@ value.toArray)
-    (key, value, avlProver)
-  }
-
-  private def sampleAvlTree: AvlTree = {
-    val (key, _, avlProver) = sampleAvlProver
-    val digest = avlProver.digest.toColl
-    val tree = SigmaDsl.avlTree(AvlTreeFlags.ReadOnly.serializeToByte, digest, 32, None)
-    tree
-  }
 
   property("AvlTree properties equivalence") {
     val doDigest = checkEq(func[AvlTree, Coll[Byte]]("{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
@@ -295,69 +275,7 @@ class SigmaDslTest extends PropSpec
 //    doApply((CFunc[Int, Int](ctx, code), 10))
   }
 
-  val tokenId1: Digest32 = Blake2b256("id1")
-  val tokenId2: Digest32 = Blake2b256("id2")
-  val inBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
 
-  val dataBox = createBox(1000, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val outBox = createBox(10, TrivialProp.TrueProp,
-    Seq(tokenId1 -> 10L, tokenId2 -> 20L),
-    Map(ErgoBox.R4 -> IntConstant(100), ErgoBox.R5 -> BooleanConstant(true)))
-
-  val header1: Header = CHeader(Blake2b256("Header.id").toColl,
-    0,
-    Blake2b256("Header.parentId").toColl,
-    Blake2b256("ADProofsRoot").toColl,
-    sampleAvlTree,
-    Blake2b256("transactionsRoot").toColl,
-    timestamp = 0,
-    nBits = 0,
-    height = 0,
-    extensionRoot = Blake2b256("transactionsRoot").toColl,
-    minerPk = SigmaDsl.groupGenerator,
-    powOnetimePk = SigmaDsl.groupGenerator,
-    powNonce = Colls.fromArray(Array[Byte](0, 1, 2, 3, 4, 5, 6, 7)),
-    powDistance = SigmaDsl.BigInt(BigInt("1405498250268750867257727119510201256371618473728619086008183115260323").bigInteger),
-    votes = Colls.fromArray(Array[Byte](0, 1, 2))
-  )
-  val header2: Header = CHeader(Blake2b256("Header2.id").toColl,
-    0,
-    header1.id,
-    Blake2b256("ADProofsRoot2").toColl,
-    sampleAvlTree,
-    Blake2b256("transactionsRoot2").toColl,
-    timestamp = 2,
-    nBits = 0,
-    height = 1,
-    extensionRoot = Blake2b256("transactionsRoot2").toColl,
-    minerPk = SigmaDsl.groupGenerator,
-    powOnetimePk = SigmaDsl.groupGenerator,
-    powNonce = Colls.fromArray(Array.fill(0.toByte)(8)),
-    powDistance = SigmaDsl.BigInt(BigInt("19306206489815517413186395405558417825367537880571815686937307203793939").bigInteger),
-    votes =  Colls.fromArray(Array[Byte](0, 1, 0))
-    )
-  val headers = Colls.fromItems(header2, header1)
-  val preHeader: PreHeader = CPreHeader(0,
-    header2.id,
-    timestamp = 3,
-    nBits = 0,
-    height = 2,
-    minerPk = SigmaDsl.groupGenerator,
-    votes = Colls.emptyColl[Byte]
-  )
-  val ergoCtx = new ErgoLikeContext(
-    currentHeight = preHeader.height,
-    lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    preHeader.minerPk.getEncoded.toArray,
-    boxesToSpend = IndexedSeq(inBox),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
-    self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension(Map()))
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
   property("Box properties equivalence") {
@@ -390,7 +308,7 @@ class SigmaDslTest extends PropSpec
   property("Header properties equivalence") {
     val h = ctx.headers(0)
     val eq = EqualityChecker(h)
-// TODO costing for  eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
+    eq({ (x: Header) => x.id })("{ (x: Header) => x.id }")
     eq({ (x: Header) => x.version })("{ (x: Header) => x.version }")
     eq({ (x: Header) => x.parentId })("{ (x: Header) => x.parentId }")
     eq({ (x: Header) => x.ADProofsRoot})("{ (x: Header) => x.ADProofsRoot}")
@@ -441,9 +359,6 @@ class SigmaDslTest extends PropSpec
      |    (pk, value)
      |  }
      |}""".stripMargin)
-
-// TODO
-//    checkEq(func[Context, Coll[Box]]("{ (x: Context) => INPUTS }"))({ (x: Context) => x.INPUTS })(ctx)
   }
 
   property("xorOf equivalence") {
@@ -463,19 +378,19 @@ class SigmaDslTest extends PropSpec
 
   property("Negation equivalence") {
     // TODO make a prefix method
-    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { x => (-x).toByte }
+    val negByte = checkEq(func[Byte, Byte]("{ (x: Byte) => -x }")) { (x: Byte) => (-x).toByte }
     forAll { x: Byte => negByte(x) }
-    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { x => (-x).toShort }
+    val negShort = checkEq(func[Short, Short]("{ (x: Short) => -x }")) { (x: Short) => (-x).toShort }
     forAll { x: Short => negShort(x) }
-    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { x => -x }
+    val negInt = checkEq(func[Int, Int]("{ (x: Int) => -x }")) { (x: Int) => -x }
     forAll { x: Int => negInt(x) }
-    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { x => -x }
+    val negLong = checkEq(func[Long, Long]("{ (x: Long) => -x }")) { (x: Long) => -x }
     forAll { x: Long => negLong(x) }
   }
 
   property("special.sigma.BigInt Negation equivalence") {
     // TODO make negate() into a prefix method
-    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { x => x.negate() }
+    val negBigInteger = checkEq(func[BigInt, BigInt]("{ (x: BigInt) => -x }")) { (x: BigInt) => x.negate() }
     forAll { x: BigInt => negBigInteger(x) }
   }
 
@@ -506,7 +421,7 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(n)
-      //      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+      // TODO      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 

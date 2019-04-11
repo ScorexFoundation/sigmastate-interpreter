@@ -4,13 +4,14 @@ import java.math.BigInteger
 
 import org.bouncycastle.util.BigIntegers
 import sigmastate.Values.Value.PropositionCode
-import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.{GroupElementSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, GroupElementSerializer}
 import sigmastate.serialization.OpCodes.OpCode
+import special.sigma.SigmaProp
 
 
 trait DiffieHellmanTupleProtocol extends SigmaProtocol[DiffieHellmanTupleProtocol] {
@@ -70,6 +71,13 @@ object ProveDHTuple {
   val Code: PropositionCode = 103: Byte
 }
 
+/** Helper extractor to match SigmaProp values and extract ProveDHTuple out of it. */
+object ProveDHTupleProp {
+  def unapply(p: SigmaProp): Option[ProveDHTuple] = SigmaDsl.toSigmaBoolean(p) match {
+    case d: ProveDHTuple => Some(d)
+    case _ => None
+  }
+}
 
 class DiffieHellmanTupleInteractiveProver(override val publicInput: ProveDHTuple,
                                           override val privateInputOpt: Option[DiffieHellmanTupleProverInput])

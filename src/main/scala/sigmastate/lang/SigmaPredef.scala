@@ -1,14 +1,13 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress, Global}
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
 import scorex.util.encode.{Base64, Base58}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
-import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, GroupGenerator, BoolValue, Value, ByteArrayConstant, SigmaPropValue}
+import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, SigmaPropValue}
 import sigmastate._
-import sigmastate.lang.SigmaTyper.emptySubst
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
@@ -102,7 +101,7 @@ object SigmaPredef {
       Lambda(Vector("input" -> SString), SSigmaProp, None),
       { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
         ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
-          case a: P2PKAddress => mkConstant[SSigmaProp.type](a.pubkey, SSigmaProp)
+          case a: P2PKAddress => SigmaPropConstant(a.pubkey)
           case a@_ => sys.error(s"unsupported address $a")
         }
       }

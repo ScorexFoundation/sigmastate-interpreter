@@ -6,7 +6,7 @@ import sigmastate.SCollection.{SBooleanArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
-import sigmastate.interpreter.{Context, Interpreter}
+import sigmastate.interpreter.{InterpreterContext, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost

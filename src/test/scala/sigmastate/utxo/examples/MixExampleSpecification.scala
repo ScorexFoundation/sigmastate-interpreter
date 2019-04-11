@@ -15,6 +15,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
+import sigmastate.eval._
 
 class MixExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR = new TestingIRContext
@@ -182,7 +183,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // some 3rd person that will be paid
     val carol = new ContextEnrichingTestProvingInterpreter
-    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+    val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
     val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
@@ -200,7 +201,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     fullMixOutput0_R4 shouldBe c0
     fullMixOutput0_R5 shouldBe c1
 
-    val r4_x = dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x) // R4^x
+    val r4_x = SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x)) // R4^x
 
     // if R4^x == R5 then this fullMixOutput0 is Alice's output else its Bob's output.
     val (aliceAnonBox, bobAnonBox) = if (r4_x == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
@@ -208,7 +209,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       (fullMixOutput0, fullMixOutput1)
     } else {
       println("First output is Bob's")
-      dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
+      SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x)) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
       (fullMixOutput1, fullMixOutput0)
     }
 
