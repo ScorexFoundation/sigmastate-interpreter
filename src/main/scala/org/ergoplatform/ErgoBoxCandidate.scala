@@ -72,7 +72,7 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2).toArray.mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
@@ -93,7 +93,7 @@ object ErgoBoxCandidate {
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {
-          w.putBytes(id.toArray)
+          w.putBytes(id)
         }
         w.putULong(amount)
       }
