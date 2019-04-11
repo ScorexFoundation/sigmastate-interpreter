@@ -301,7 +301,7 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
 }
 
 case class MethodArgInfo(name: String, description: String)
-case class MethodDocInfo(description: String, args: Seq[MethodArgInfo])
+case class MethodInfo(description: String, args: Seq[MethodArgInfo], isOpcode: Boolean)
 
 /** Method info including name, arg type and result type.
   * Here stype.tDom - arg type and stype.tRange - result type.
@@ -312,7 +312,7 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
-    docInfo: Option[MethodDocInfo]) {
+    docInfo: Option[MethodInfo]) {
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
@@ -331,6 +331,11 @@ case class SMethod(
       case _ => this
     }
   }
+  def withInfo(desc: String, args: MethodArgInfo*) = {
+    this.copy(docInfo = Some(MethodInfo(desc, args.toSeq, true)))
+  }
+  def setIsOpcode(value: Boolean) =
+    this.copy(docInfo = docInfo.map(i => i.copy(isOpcode = value)))
 }
 
 object SMethod {
@@ -427,13 +432,23 @@ object SNumericType extends STypeCompanion {
 
   val tNum = STypeIdent("TNum")
   val methods = Vector(
-    SMethod(this, ToByte,   SFunc(tNum, SByte),   1),  // see Downcast
-    SMethod(this, ToShort,  SFunc(tNum, SShort),  2),  // see Downcast
-    SMethod(this, ToInt,    SFunc(tNum, SInt),    3),  // see Downcast
-    SMethod(this, ToLong,   SFunc(tNum, SLong),   4),  // see Downcast
-    SMethod(this, ToBigInt, SFunc(tNum, SBigInt), 5),  // see Downcast
-    SMethod(this, "toBytes", SFunc(tNum, SByteArray),    6, MethodCallIrBuilder, None),
-    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7, MethodCallIrBuilder, None),
+    SMethod(this, ToByte,   SFunc(tNum, SByte),   1)
+        .withInfo("Converts this numeric value to \\lst{Byte}, throwing exception if overflow."),  // see Downcast
+    SMethod(this, ToShort,  SFunc(tNum, SShort),  2)
+        .withInfo("Converts this numeric value to \\lst{Short}, throwing exception if overflow."),  // see Downcast
+    SMethod(this, ToInt,    SFunc(tNum, SInt),    3)
+        .withInfo("Converts this numeric value to \\lst{Int}, throwing exception if overflow."),  // see Downcast
+    SMethod(this, ToLong,   SFunc(tNum, SLong),   4)
+        .withInfo("Converts this numeric value to \\lst{Long}, throwing exception if overflow."),  // see Downcast
+    SMethod(this, ToBigInt, SFunc(tNum, SBigInt), 5)
+        .withInfo("Converts this numeric value to \\lst{BigInt}"),  // see Downcast
+    SMethod(this, "toBytes", SFunc(tNum, SByteArray),  6, MethodCallIrBuilder, None)
+        .withInfo("Returns a big-endian representation of this numeric value in a collection of bytes.\n" +
+            " For example, the Int value \\lst{0x12131415} would yield the\n" +
+            " byte array  \\lst{[0x12, 0x13, 0x14, 0x15]}."),
+    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7, MethodCallIrBuilder, None)
+        .withInfo("Returns a big-endian representation of this numeric in a collection of Booleans.\n" +
+            " Each boolean corresponds to one bit."),
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }
@@ -445,8 +460,8 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
-  protected def property(name: String, tpe: SType, id: Byte) =
-    SMethod(this, name, SFunc(this, tpe), id, MethodCallIrBuilder, None)
+  protected def property(name: String, tpeRes: SType, id: Byte) =
+    SMethod(this, name, SFunc(this, tpeRes), id, MethodCallIrBuilder, None)
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -456,7 +471,8 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
   protected override def getMethods() = super.getMethods() ++ Seq(
-    SMethod(this, ToByte, SFunc(this, SByte), 1),
+    SMethod(this, ToByte, SFunc(this, SByte), 1)
+      .withInfo("Convert true to 1 and false to 0"),
   )
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
@@ -594,9 +610,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   }
 
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1)
+      .withInfo("Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2)
+      .withInfo("Adds this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to add to this."))
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 3)
+      .withInfo("Subtracts \\lst{other} number from this by module Q.", MethodArgInfo("other", "Number to subtract from this."))
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4, MethodCallIrBuilder, None)
+      .withInfo("Multiply this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to multiply with this."))
   protected override def getMethods() = super.getMethods() ++ Seq(
     ModQMethod,
     PlusModQMethod,
@@ -623,18 +643,22 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
-    SMethod(this, "isIdentity", SFunc(this, SBoolean),   1),
-    SMethod(this, "nonce",      SFunc(this, SByteArray), 2),
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 3, MethodCallIrBuilder, None),
-    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 4, Some {
+    SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
+        .withInfo("Checks if this value is identity element of the eliptic curve group."),
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2, MethodCallIrBuilder, None)
+        .withInfo("Get an encoding of the point value."),
+    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3, Some {
       case (builder, obj, _, Seq(arg), _) =>
         builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
-    }, None),
-    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 5, Some {
+    }, None)
+        .withInfo("Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
+          MethodArgInfo("k", "The power")),
+    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4, Some {
       case (builder, obj, _, Seq(arg), _) =>
         builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
-    }, None),
-    SMethod(this, "negate", SFunc(this, this), 6, MethodCallIrBuilder, None)
+    }, None).withInfo("Group operation.", MethodArgInfo("other", "other element of the group")),
+    SMethod(this, "negate", SFunc(this, this), 5, MethodCallIrBuilder, None)
+        .withInfo("Inverse element of the group.")
   )
   override def mkConstant(v: GroupElement): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
@@ -656,8 +680,11 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   val PropBytes = "propBytes"
   val IsProven = "isProven"
   protected override def getMethods() = super.getMethods() ++ Seq(
-    SMethod(this, PropBytes, SFunc(this, SByteArray), 1),
+    SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
+        .withInfo("Serialized bytes of this sigma proposition taken as ErgoTree."),
     SMethod(this, IsProven, SFunc(this, SBoolean), 2)
+        .withInfo("Verify that sigma proposition is proven.")
+        .setIsOpcode(false),  // available only at frontend of ErgoScript
   )
 }
 

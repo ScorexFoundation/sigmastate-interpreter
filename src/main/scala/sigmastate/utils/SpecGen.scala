@@ -67,7 +67,7 @@ object SpecGen extends App {
      |\\noindent
      |\\begin{tabularx}{\\textwidth}{| l | X |}
      |   \\hline
-     |   \\bf{Description} & ${m.docInfo.opt(_.description)} \\\\
+     |   \\bf{Description} & ${m.docInfo.opt(i => i.description + (!i.isOpcode).opt(" (FRONTEND ONLY)"))} \\\\
      |  $params
      |  \\hline
      |  \\bf{Result} & \\lst{${resTpe}} \\\\

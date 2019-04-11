@@ -90,7 +90,7 @@ trait BigInt {
     */
   def plusModQ(other: BigInt): BigInt
 
-  /** Subracts this number with `other` by module Q.
+  /** Subtracts this number with `other` by module Q.
     * @since 2.0
     */
   def minusModQ(other: BigInt): BigInt
@@ -212,7 +212,7 @@ trait GroupElement {
   def negate: GroupElement
 
   /**
-    * Get an encoding of the point value, optionally in compressed format.
+    * Get an encoding of the point value.
     *
     * @return the point encoding
     */
