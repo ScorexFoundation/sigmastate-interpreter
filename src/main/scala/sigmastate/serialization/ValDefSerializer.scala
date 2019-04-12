@@ -8,7 +8,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
-case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer[ValDef] {
+case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
 
   override def serialize(obj: ValDef, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)

@@ -1,15 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, ValueCompanion}
 import sigmastate.lang.Terms._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
-import sigmastate.{TwoArgumentsOperation, SType, SBigInt}
-import scorex.util.Extensions._
-import OpCodes._
-import sigmastate.utxo.CostTable._
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.{TwoArgumentsOperation, SType}
 
 case class TwoArgumentsSerializer[LIV <: SType, RIV <: SType, OV <: Value[SType]]
-(override val opCode: Byte, constructor: (Value[LIV], Value[RIV]) => Value[SType])
+(override val opDesc: ValueCompanion, constructor: (Value[LIV], Value[RIV]) => Value[SType])
   extends ValueSerializer[OV] {
 
   override def serialize(obj: OV, w: SigmaByteWriter): Unit = {

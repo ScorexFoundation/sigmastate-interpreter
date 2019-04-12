@@ -6,7 +6,7 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.lang.Terms.{MethodCall, STypeParam}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
-case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
+case class MethodCallSerializer(opDesc: ValueCompanion, cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {
 
   override def serialize(mc: MethodCall, w: SigmaByteWriter): Unit = {

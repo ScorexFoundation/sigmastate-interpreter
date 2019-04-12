@@ -8,8 +8,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ApplySerializer(cons: (Value[SType], IndexedSeq[Value[SType]]) => Value[SType])
   extends ValueSerializer[Apply] {
-
-  override val opCode: OpCode = FuncApplyCode
+  override def opDesc = Apply
 
   override def serialize(obj: Apply, w: SigmaByteWriter): Unit = {
     w.putValue(obj.func)

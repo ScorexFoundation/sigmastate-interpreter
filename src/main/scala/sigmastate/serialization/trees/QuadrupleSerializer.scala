@@ -5,10 +5,9 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{Quadruple, _}
-import scorex.util.Extensions._
 
 case class QuadrupleSerializer[S1 <: SType, S2 <: SType, S3 <: SType, S4 <: SType]
-(override val opCode: Byte,
+(override val opDesc: ValueCompanion,
  cons: (Value[S1], Value[S2], Value[S3]) => Value[S4])
   extends ValueSerializer[Quadruple[S1, S2, S3, S4]] {
 

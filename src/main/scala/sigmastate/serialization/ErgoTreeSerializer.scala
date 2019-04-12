@@ -135,7 +135,7 @@ class ErgoTreeSerializer {
       ),
       ConcreteCollection(
         OpCodes.ProveDlogCode,
-        OpCodes.ConstantPlaceholderIndexCode,
+        OpCodes.ConstantPlaceholderCode,
         0.toByte // constant index in the store
       )
     )

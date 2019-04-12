@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
@@ -10,8 +9,7 @@ import scala.collection.mutable
 
 case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) => Value[SType])
   extends ValueSerializer[FuncValue] {
-
-  override val opCode: OpCode = FuncValueCode
+  override def opDesc = FuncValue
 
   override def serialize(obj: FuncValue, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.args.length)

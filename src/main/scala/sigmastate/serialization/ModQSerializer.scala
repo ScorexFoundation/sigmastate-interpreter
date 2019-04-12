@@ -6,8 +6,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{ModQ, SType}
 
 object ModQSerializer extends ValueSerializer[ModQ] {
-
-  override val opCode: Byte = OpCodes.ModQCode
+  override def opDesc = ModQ
 
   def serialize(obj: ModQ, w: SigmaByteWriter): Unit = {
     w.putValue(obj.input)

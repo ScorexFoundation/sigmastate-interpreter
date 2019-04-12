@@ -1,19 +1,15 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, ValueCompanion}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.BooleanTransformer
-import sigmastate.{SBoolean, SCollection, SFunc, SType}
-import scorex.util.Extensions._
+import sigmastate.{SCollection, SBoolean, SType, SFunc}
 
 case class BooleanTransformerSerializer[T <: SType]
-(code: OpCode,
+(opDesc: ValueCompanion,
  f: (Value[SCollection[T]], Value[SFunc]) => Value[SBoolean.type]) extends ValueSerializer[BooleanTransformer[T]] {
-
-  override val opCode: OpCode = code
 
   override def serialize(obj: BooleanTransformer[T], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)

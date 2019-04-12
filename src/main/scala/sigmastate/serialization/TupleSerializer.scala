@@ -2,14 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.SType
 import sigmastate.Values._
-import sigmastate.serialization.OpCodes._
-import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   extends ValueSerializer[Tuple] {
-
-  override val opCode: Byte = TupleCode
+  override def opDesc = Tuple
 
   override def serialize(obj: Tuple, w: SigmaByteWriter): Unit = {
     val length = obj.length

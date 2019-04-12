@@ -2,17 +2,14 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import scorex.util.Extensions._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Append
 import sigmastate.{SCollection, SType}
 
 case class AppendSerializer(cons: (Value[SCollection[SType]], Value[SCollection[SType]]) => Value[SCollection[SType]])
   extends ValueSerializer[Append[SType]] {
-
-  override val opCode: OpCode = OpCodes.AppendCode
+  override def opDesc = Append
 
   override def serialize(obj: Append[SType], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)

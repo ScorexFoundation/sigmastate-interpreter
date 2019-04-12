@@ -3,16 +3,14 @@ package sigmastate.serialization.transformers
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.Values.Value
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import scorex.util.Extensions._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractRegisterAs
 import sigmastate.{SBox, SOption, SType}
 
 case class ExtractRegisterAsSerializer(cons: (Value[SBox.type], RegisterId, SOption[SType]) => Value[SType])
   extends ValueSerializer[ExtractRegisterAs[SType]] {
-  override val opCode: OpCode = OpCodes.ExtractRegisterAs
+  override def opDesc = ExtractRegisterAs
 
   override def serialize(obj: ExtractRegisterAs[SType], w: SigmaByteWriter): Unit =
     w.putValue(obj.input)

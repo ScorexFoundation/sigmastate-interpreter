@@ -2,13 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.{Values, SType}
 import sigmastate.lang.Terms._
-import scorex.util.Extensions._
-import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SigmaPropBytes
 
 object SigmaPropBytesSerializer extends ValueSerializer[SigmaPropBytes] {
-  override val opCode: Byte = SigmaPropBytesCode
+  override def opDesc = SigmaPropBytes
 
   def serialize(obj: SigmaPropBytes, w: SigmaByteWriter): Unit = {
     w.putValue(obj.input)

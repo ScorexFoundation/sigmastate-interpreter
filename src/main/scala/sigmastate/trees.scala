@@ -568,8 +568,8 @@ trait OpGroup[C <: ValueCompanion] {
 
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
-  val Plus  = ModQArithOpCompanion(BitOrCode,  "PlusModQ")
-  val Minus = ModQArithOpCompanion(BitAndCode, "MinusModQ")
+  val Plus  = ModQArithOpCompanion(PlusModQCode,  "PlusModQ")
+  val Minus = ModQArithOpCompanion(MinusModQCode, "MinusModQ")
 
   val operations: Map[Byte, ModQArithOpCompanion] = Seq(Plus, Minus).map(o => (o.opCode, o)).toMap
 

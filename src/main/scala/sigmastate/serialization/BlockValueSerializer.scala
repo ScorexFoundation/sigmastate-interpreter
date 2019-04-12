@@ -8,8 +8,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => Value[SType])
   extends ValueSerializer[BlockValue] {
-
-  override val opCode: OpCode = BlockValueCode
+  override def opDesc = BlockValue
 
   override def serialize(obj: BlockValue, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.items.length)

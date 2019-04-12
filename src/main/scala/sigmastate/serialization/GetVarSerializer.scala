@@ -2,15 +2,12 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
-import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.GetVar
 
 case class GetVarSerializer(cons: (Byte, SType) => Value[SOption[SType]])
   extends ValueSerializer[GetVar[_ <: SType]] {
-
-  override val opCode: OpCode = GetVarCode
+  override def opDesc = GetVar
 
   override def serialize(obj: GetVar[_ <: SType], w: SigmaByteWriter): Unit =
     w.put(obj.varId)

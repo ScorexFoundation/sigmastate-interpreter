@@ -1,21 +1,14 @@
 package sigmastate.serialization.transformers
 
-import sigmastate.Values.{SigmaPropValue, Value}
-import sigmastate._
+import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{ValueSerializer, OpCodes}
-import scorex.util.Extensions._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
 import sigmastate._
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 
 case class AtLeastSerializer(cons: (Value[SInt.type], Value[SCollection[SSigmaProp.type]]) => SigmaPropValue)
   extends ValueSerializer[AtLeast] {
-
-  override val opCode: OpCode = OpCodes.AtLeastCode
+  override def opDesc = AtLeast
 
   override def serialize(obj: AtLeast, w: SigmaByteWriter): Unit =
     w.putValue(obj.bound)

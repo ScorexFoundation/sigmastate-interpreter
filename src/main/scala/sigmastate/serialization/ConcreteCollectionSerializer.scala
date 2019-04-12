@@ -2,14 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.{SCollection, SType}
 import sigmastate.Values._
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 
 case class ConcreteCollectionSerializer(cons: (IndexedSeq[Value[SType]], SType) => Value[SCollection[SType]])
   extends ValueSerializer[ConcreteCollection[_ <: SType]] {
-
-  override val opCode: Byte = ConcreteCollectionCode
+  override def opDesc = ConcreteCollection
 
   override def serialize(cc: ConcreteCollection[_ <: SType], w: SigmaByteWriter): Unit = {
     w.putUShort(cc.items.size)

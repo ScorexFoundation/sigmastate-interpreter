@@ -1,11 +1,11 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{BigIntValue, Value}
+import sigmastate.Values.{BigIntValue, Value, ValueCompanion}
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{ModQArithOp, SType}
+import sigmastate.{SType, ModQArithOp}
 
-case class ModQArithOpSerializer(override val opCode: Byte, cons: (BigIntValue, BigIntValue) => BigIntValue)
+case class ModQArithOpSerializer(override val opDesc: ValueCompanion, cons: (BigIntValue, BigIntValue) => BigIntValue)
   extends ValueSerializer[ModQArithOp] {
 
   override def serialize(obj: ModQArithOp, w: SigmaByteWriter): Unit = {

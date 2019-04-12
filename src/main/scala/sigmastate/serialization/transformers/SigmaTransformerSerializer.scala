@@ -1,18 +1,15 @@
 package sigmastate.serialization.transformers
 
 import sigmastate.SigmaTransformer
-import sigmastate.Values.SigmaPropValue
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.Values.{ValueCompanion, SigmaPropValue}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 import scala.collection.mutable
 
 case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
-(code: OpCode, cons: Seq[SigmaPropValue] => SigmaPropValue)
+(opDesc: ValueCompanion, cons: Seq[SigmaPropValue] => SigmaPropValue)
   extends ValueSerializer[SigmaTransformer[I, O]] {
-
-  override val opCode: OpCode = code
 
   override def serialize(obj: SigmaTransformer[I, O], w: SigmaByteWriter): Unit =
     w.putValues(obj.items)

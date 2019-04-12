@@ -4,16 +4,13 @@ import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SType
 import sigmastate.Values.Value
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import scorex.util.Extensions._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.DeserializeRegister
 
 case class DeserializeRegisterSerializer(cons: (RegisterId, SType, Option[Value[SType]]) => Value[SType])
   extends ValueSerializer[DeserializeRegister[SType]] {
-
-  override val opCode: OpCode = OpCodes.DeserializeRegisterCode
+  override def opDesc = DeserializeRegister
 
   override def serialize(obj: DeserializeRegister[SType], w: SigmaByteWriter): Unit =
     w.put(obj.reg.number)

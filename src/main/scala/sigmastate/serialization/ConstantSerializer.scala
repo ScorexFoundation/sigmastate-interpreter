@@ -4,15 +4,13 @@ import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.lang.SigmaBuilder
 import sigmastate.lang.Terms.OperationId
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.CostTable.Cost
 
 /** This works in tandem with DataSerializer, if you change one make sure to check the other.*/
 case class ConstantSerializer(builder: SigmaBuilder)
   extends ByteBufferSerializer[Constant[SType]] with ValueSerializer[Constant[SType]] {
-
-  val opCode: OpCode = OpCodes.ConstantCode
+  override def opDesc = Constant
 
   override def opCost(opId: OperationId): Int = Cost.ConstantNode
 

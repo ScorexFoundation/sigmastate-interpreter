@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import sigmastate.SCollection._
 import sigmastate.SOption.SIntOption
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.Values._
@@ -13,7 +12,7 @@ case class CreateAvlTreeSerializer(
   )
   extends ValueSerializer[CreateAvlTree]
 {
-  override val opCode: OpCode = OpCodes.AvlTreeCode
+  override def opDesc = CreateAvlTree
 
   override def serialize(obj: CreateAvlTree, w: SigmaByteWriter): Unit = {
     w.putValue(obj.operationFlags)

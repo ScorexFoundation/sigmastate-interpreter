@@ -7,8 +7,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{SCollection, SType, SubstConstants}
 
 object SubstConstantsSerializer extends ValueSerializer[SubstConstants[SType]] {
-
-  override val opCode: Byte = OpCodes.SubstConstantsCode
+  override def opDesc = SubstConstants
 
   def serialize(obj: SubstConstants[SType], w: SigmaByteWriter): Unit = {
     w.putValue(obj.scriptBytes)

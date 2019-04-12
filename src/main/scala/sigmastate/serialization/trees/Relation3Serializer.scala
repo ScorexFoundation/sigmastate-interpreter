@@ -8,7 +8,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import scorex.util.Extensions._
 
 case class Relation3Serializer[S1 <: SType, S2 <: SType, S3 <: SType, R <: Value[SBoolean.type]]
-(override val opCode: Byte,
+(override val opDesc: ValueCompanion,
  cons: (Value[S1], Value[S2], Value[S3]) => R) extends ValueSerializer[R] {
 
   override def serialize(obj: R, w: SigmaByteWriter): Unit = {

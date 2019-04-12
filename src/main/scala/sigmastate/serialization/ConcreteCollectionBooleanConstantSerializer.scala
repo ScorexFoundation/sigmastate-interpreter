@@ -1,14 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.{SBoolean, SCollection}
+import sigmastate.{SCollection, SBoolean}
 import sigmastate.Values._
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
-
-  override val opCode: Byte = ConcreteCollectionBooleanConstantCode
+  override def opDesc = ConcreteCollectionBooleanConstant
 
   override def serialize(cc: ConcreteCollection[SBoolean.type], w: SigmaByteWriter): Unit = {
     w.putUShort(cc.items.size)

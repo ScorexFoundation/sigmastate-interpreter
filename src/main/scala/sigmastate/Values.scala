@@ -222,7 +222,7 @@ object Values {
     override def companion: ValueCompanion = ConstantPlaceholder
   }
   object ConstantPlaceholder extends ValueCompanion {
-    override val opCode: OpCode = ConstantPlaceholderIndexCode
+    override val opCode: OpCode = ConstantPlaceholderCode
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -239,12 +239,12 @@ object Values {
 
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
-    override val opCode: OpCode = TaggedVariableCode
+    override def companion = TaggedVariable
     def opType: SFunc = Value.notSupportedError(this, "opType")
-    override def companion = sys.error(s"Companion object is not defined for AST node ${this.getClass}")
   }
 
-  object TaggedVariable {
+  object TaggedVariable extends ValueCompanion {
+    override val opCode: OpCode = TaggedVariableCode
     def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
       TaggedVariableNode(varId, tpe)
   }
@@ -594,8 +594,19 @@ object Values {
     }
   }
 
-  val TrueLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](true, SBoolean)
-  val FalseLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](false, SBoolean)
+  val TrueLeaf: Constant[SBoolean.type] = new ConstantNode[SBoolean.type](true, SBoolean) {
+    override def companion: ValueCompanion = True
+  }
+  object True extends ValueCompanion {
+    override def opCode: OpCode = TrueCode
+  }
+
+  val FalseLeaf: Constant[SBoolean.type] = new ConstantNode[SBoolean.type](false, SBoolean) {
+    override def companion: ValueCompanion = False
+  }
+  object False extends ValueCompanion {
+    override def opCode: OpCode = FalseCode
+  }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
