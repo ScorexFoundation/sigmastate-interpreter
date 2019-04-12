@@ -9,6 +9,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple

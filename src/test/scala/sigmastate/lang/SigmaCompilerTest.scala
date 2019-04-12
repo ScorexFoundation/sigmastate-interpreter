@@ -7,11 +7,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Apply, Ident, Lambda, ZKProofBlock}
+import sigmastate.lang.Terms.{Lambda, MethodCall, ZKProofBlock, Apply, Ident}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
-import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
+import sigmastate.utxo.{GetVar, ExtractAmount, ByIndex, SelectField}
+import sigmastate.eval._
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
   import CheckingSigmaBuilder._
@@ -54,7 +55,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
     comp(env, "Coll(Coll(1))(0)(0)") shouldBe
         ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
-    comp(env, "arr1(0)") shouldBe ByIndex(ByteArrayConstant(Array(1, 2)), 0)
+    comp(env, "arr1(0)") shouldBe ByIndex(ByteArrayConstant(Array[Byte](1, 2)), 0)
   }
 
   property("array indexed access with default value") {
@@ -68,7 +69,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
           Some(ConcreteCollection(Vector(IntConstant(2))))),
         0)
     comp(env, "arr1.getOrElse(999, 0.toByte)") shouldBe
-      ByIndex(ByteArrayConstant(Array(1, 2)), IntConstant(999), Some(ByteConstant(0)))
+      ByIndex(ByteArrayConstant(Array[Byte](1, 2)), IntConstant(999), Some(ByteConstant(0)))
   }
 
   property("predefined functions") {
@@ -81,6 +82,11 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
     comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
+  }
+
+  property("global methods") {
+    comp(env, "{ groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
+    comp(env, "{ Global.groupGenerator }") shouldBe MethodCall(Global, SGlobal.groupGeneratorMethod, IndexedSeq(), SigmaTyper.emptySubst)
   }
 
   property("user-defined functions") {
@@ -126,9 +132,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("fromBaseX") {
-    comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array(49))
-    comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array(49))
-    comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array(49))
+    comp(""" fromBase58("r") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    comp(""" fromBase64("MQ") """) shouldBe ByteArrayConstant(Array[Byte](49))
+    comp(""" fromBase64("M" + "Q") """) shouldBe ByteArrayConstant(Array[Byte](49))
   }
 
   property("deserialize") {

@@ -24,7 +24,7 @@ trait Interpreter extends ScorexLogging {
 
   import Interpreter.ReductionResult
 
-  type CTX <: Context
+  type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
 
@@ -40,7 +40,7 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            Some(ValueSerializer.deserialize(eba.value))
+            Some(ValueSerializer.deserialize(eba.value.toArray))
           case _ => None
         }
       else
@@ -80,7 +80,7 @@ trait Interpreter extends ScorexLogging {
   def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
     import IR._; import Context._; import SigmaProp._
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
-      case sp: SigmaPropElem[_] =>
+      case _: SigmaPropElem[_] =>
         val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
         val (sp, _) = valueFun(context)
         sp

@@ -7,7 +7,7 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, Value, ByteArrayConstant, SigmaPropValue, IntConstant}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, IntConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
@@ -15,7 +15,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField, CostTable}
+import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -44,7 +44,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputBox = ErgoBox(1, prop, nextHeight, Seq(), Map())
     val inputBoxes = IndexedSeq(inputBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight, Seq(), Map())
+    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
 
@@ -288,8 +288,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
     val pkBytes = minerPk.pkBytes
 
-    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight, Seq(), Map())
-    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
+    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight)
+    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
 

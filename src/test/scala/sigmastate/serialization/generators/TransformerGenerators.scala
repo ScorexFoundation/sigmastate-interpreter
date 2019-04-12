@@ -102,7 +102,6 @@ trait TransformerGenerators {
   val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
-    dvInt <- arbIntConstants.arbitrary
   } yield ExtractRegisterAs(input, r)(SInt)
   val extractCreationInfoGen: Gen[ExtractCreationInfo] =
     arbTaggedBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
@@ -261,8 +260,6 @@ trait TransformerGenerators {
     args <- funcValueArgsGen
     body <- logicalExprTreeNodeGen(Seq(AND.apply))
   } yield FuncValue(args, body)
-
-  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaBooleanGen.map(SigmaPropConstant(_))
 
   val sigmaAndGen: Gen[SigmaAnd] = for {
     num <- Gen.chooseNum(1, 10)

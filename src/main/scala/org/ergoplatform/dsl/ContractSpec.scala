@@ -1,13 +1,12 @@
 package org.ergoplatform.dsl
 
-import sigmastate.SType
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 import sigmastate.interpreter.{ProverResult, CostedProverResult}
 import scalan.RType
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import special.sigma.{SigmaDslBuilder, AnyValue, SigmaProp}
-import sigmastate.Values.{ErgoTree, Constant}
-import sigmastate.eval.{IRContext, CostingSigmaDslBuilder, Evaluation}
+import sigmastate.Values.ErgoTree
+import sigmastate.eval.{IRContext, CostingSigmaDslBuilder}
 
 import scala.util.Try
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
