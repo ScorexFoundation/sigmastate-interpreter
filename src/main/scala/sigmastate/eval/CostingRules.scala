@@ -486,8 +486,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costF = f.sliceCost
       val sizeF = f.sliceSize
       val v = obj.value.map(calcF)
-      val c = costF(Pair(obj.cost, asSizeOption(obj.size).sizeOpt.get))
-      val s = asSizeOption(obj.size).sizeOpt.map(sizeF)
+      val sizeOpt = asSizeOption(obj.size).sizeOpt
+      val c = costF(Pair(obj.cost,  sizeOpt.get))
+      val s = sizeOpt.map(sizeF)
       RCCostedOption(v, SOME(c), s, opCost(v, costOfArgs, costOf(method)))
     }
   }
