@@ -5,7 +5,8 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import scorex.crypto.hash
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Box, Context, Extensions}
+import special.sigma.{Box, Context}
+import sigmastate.eval.Extensions
 
 class DummyExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext

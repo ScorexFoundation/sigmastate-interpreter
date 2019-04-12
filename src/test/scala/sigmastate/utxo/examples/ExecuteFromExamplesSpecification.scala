@@ -4,7 +4,7 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.SigmaTestingCommons
 import special.sigma.Context
-import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
 
 class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
