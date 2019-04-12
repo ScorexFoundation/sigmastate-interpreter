@@ -35,7 +35,7 @@ case class CreateProveDHTupleSerializer(cons: (Value[SGroupElement.type],
     Value[SGroupElement.type]) => SigmaPropValue)
     extends ValueSerializer[CreateProveDHTuple] {
 
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  override val opCode: OpCode = OpCodes.ProveDHTupleCode
 
   override def serialize(obj: CreateProveDHTuple, w: SigmaByteWriter): Unit = {
     w.putValue(obj.gv)

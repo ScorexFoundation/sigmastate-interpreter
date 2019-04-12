@@ -23,13 +23,13 @@ object Terms {
     * This node is not part of ErgoTree and hence have Undefined opCode. */
   case class Block(bindings: Seq[Val], result: SValue) extends Value[SType] {
     override def companion = Block
-    override val opCode: OpCode = OpCodes.Undefined
     override def tpe: SType = result.tpe
 
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
   }
@@ -48,11 +48,11 @@ object Terms {
     * */
   case class ZKProofBlock(body: SigmaPropValue) extends BoolValue {
     override def companion = ZKProofBlock
-    override val opCode: OpCode = OpCodes.Undefined
     override def tpe = SBoolean
     override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
   object ZKProofBlock extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
   }
 
   trait Val extends Value[SType] {
@@ -73,18 +73,17 @@ object Terms {
                      givenType: SType,
                      body: SValue) extends Val {
     override def companion = ValNode
-    override val opCode: OpCode = OpCodes.Undefined
     override def tpe: SType = givenType ?: body.tpe
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ValNode extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to select a field from an object. Should be transformed to SelectField*/
   case class Select(obj: Value[SType], field: String, resType: Option[SType] = None) extends Value[SType] {
     override def companion = Select
-    override val opCode: OpCode = OpCodes.Undefined
     override val tpe: SType = resType.getOrElse(obj.tpe match {
       case p: SProduct =>
         val i = p.methodIndex(field)
@@ -95,6 +94,7 @@ object Terms {
     override def opType: SFunc = SFunc(obj.tpe, tpe)
   }
   object Select extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to represent variable names parsed in a source code.
@@ -102,16 +102,15 @@ object Terms {
     * compilation environment value. */
   case class Ident(name: String, tpe: SType = NoType) extends Value[SType] {
     override def companion = Ident
-    override val opCode: OpCode = OpCodes.Undefined
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
   case class Apply(func: Value[SType], args: IndexedSeq[Value[SType]]) extends Value[SType] {
     override def companion = Apply
-    override val opCode: OpCode = OpCodes.FuncApplyCode
     override lazy val tpe: SType = func.tpe match {
       case SFunc(_, r, _) => r
       case tColl: SCollectionType[_] => tColl.elemType
@@ -120,12 +119,12 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
   object Apply extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.FuncApplyCode
   }
 
   /** Apply types for type parameters of input value. */
   case class ApplyTypes(input: Value[SType], tpeArgs: Seq[SType]) extends Value[SType] { node =>
     override def companion = ApplyTypes
-    override val opCode: OpCode = OpCodes.Undefined
     override lazy val tpe: SType = input.tpe match {
       case funcType: SFunc =>
         val subst = funcType.tpeParams.map(_.ident).zip(tpeArgs).toMap
@@ -136,6 +135,7 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ApplyTypes extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to represent potential method call in a source code.
@@ -143,10 +143,10 @@ object Terms {
     * Cannot be serialized to ErgoTree. */
   case class MethodCallLike(obj: Value[SType], name: String, args: IndexedSeq[Value[SType]], tpe: SType = NoType) extends Value[SType] {
     override def companion = MethodCallLike
-    override val opCode: OpCode = OpCodes.Undefined
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
   object MethodCallLike extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
   }
 
   /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
@@ -159,8 +159,7 @@ object Terms {
                         method: SMethod,
                         args: IndexedSeq[Value[SType]],
                         typeSubst: Map[STypeIdent, SType]) extends Value[SType] {
-    override def companion = MethodCall
-    override val opCode: OpCode = if (args.isEmpty) OpCodes.PropertyCallCode else OpCodes.MethodCallCode
+    override def companion = if (args.isEmpty) PropertyCall else MethodCall
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
     override val tpe: SType = method.stype match {
       case f: SFunc => f.tRange.withSubstTypes(typeSubst)
@@ -168,6 +167,10 @@ object Terms {
     }
   }
   object MethodCall extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.MethodCallCode
+  }
+  object PropertyCall extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.PropertyCallCode
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
@@ -187,7 +190,6 @@ object Terms {
   {
     require(!(tpeParams.nonEmpty && body.nonEmpty), s"Generic function definitions are not supported, but found $this")
     override def companion = Lambda
-    override val opCode: OpCode = OpCodes.Undefined
     override lazy val tpe: SFunc = {
       val sRange = givenResType ?: body.fold(NoType: SType)(_.tpe)
       SFunc(args.map(_._2), sRange, tpeParams)
@@ -196,6 +198,7 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda extends ValueCompanion {
+    override val opCode: OpCode = OpCodes.Undefined
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =

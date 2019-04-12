@@ -106,22 +106,22 @@ object TrivialProp {
   */
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def companion = BoolToSigmaProp
-  override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
 }
 object BoolToSigmaProp extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.BoolToSigmaPropCode
 }
 
 /** ErgoTree operation to create a new SigmaProp value representing public key
   * of discrete logarithm signature protocol. */
 case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropValue {
   override def companion = CreateProveDlog
-  override val opCode: OpCode = OpCodes.ProveDlogCode
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
 }
 object CreateProveDlog extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.ProveDlogCode
 }
 
 /** ErgoTree operation to create a new SigmaProp value representing public key
@@ -131,11 +131,11 @@ case class CreateAvlTree(operationFlags: ByteValue,
     keyLength: IntValue,
     valueLengthOpt: Value[SIntOption]) extends AvlTreeValue {
   override def companion = CreateAvlTree
-  override val opCode: OpCode = OpCodes.AvlTreeCode
   override def tpe = SAvlTree
   override def opType = CreateAvlTree.opType
 }
 object CreateAvlTree extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.AvlTreeCode
   val opType = SFunc(IndexedSeq(SByte, SByteArray, SInt, SIntOption), SAvlTree)
 }
 
@@ -147,11 +147,11 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
     uv: Value[SGroupElement.type],
     vv: Value[SGroupElement.type]) extends SigmaPropValue {
   override def companion = CreateProveDHTuple
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
 }
 object CreateProveDHTuple extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.ProveDHTupleCode
 }
 
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
@@ -163,12 +163,12 @@ trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends Sigma
   */
 case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override def companion = SigmaAnd
-  override val opCode: OpCode = OpCodes.SigmaAndCode
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
 object SigmaAnd extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.SigmaAndCode
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(head +: tail)
 }
 
@@ -177,12 +177,12 @@ object SigmaAnd extends ValueCompanion {
   */
 case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPropValue, SigmaPropValue] {
   override def companion = SigmaOr
-  override val opCode: OpCode = OpCodes.SigmaOrCode
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
 object SigmaOr extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.SigmaOrCode
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
 
@@ -193,11 +193,11 @@ object SigmaOr extends ValueCompanion {
 case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = OR
-  override val opCode: OpCode = OrCode
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
 object OR extends ValueCompanion {
+  override val opCode: OpCode = OrCode
   def apply(children: Seq[Value[SBoolean.type]]): OR =
     OR(ConcreteCollection(children.toIndexedSeq))
 
@@ -209,11 +209,11 @@ object OR extends ValueCompanion {
 case class XorOf(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = XorOf
-  override val opCode: OpCode = XorOfCode
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
 object XorOf extends ValueCompanion {
+  override val opCode: OpCode = XorOfCode
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
     XorOf(ConcreteCollection(children.toIndexedSeq))
 
@@ -227,11 +227,11 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type]
     with NotReadyValueBoolean {
   override def companion = AND
-  override val opCode: OpCode = AndCode
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
 object AND extends ValueCompanion {
+  override val opCode: OpCode = AndCode
   def apply(children: Seq[Value[SBoolean.type]]): AND =
     AND(ConcreteCollection(children.toIndexedSeq))
 
@@ -247,13 +247,12 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
     with NotReadyValue[SSigmaProp.type] {
   override def companion = AtLeast
   override def tpe: SSigmaProp.type = SSigmaProp
-  override val opCode: OpCode = AtLeastCode
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
 
 }
 
 object AtLeast extends ValueCompanion {
-
+  override val opCode: OpCode = AtLeastCode
   val MaxChildrenCount = 255
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
@@ -312,11 +311,11 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   import Upcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override def companion = Upcast
-  override val opCode: OpCode = OpCodes.UpcastCode
   override val opType = SFunc(Vector(tT), tR)
 }
 
 object Upcast extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.UpcastCode
   val tT = STypeIdent("T")
   val tR = STypeIdent("R")
 }
@@ -329,11 +328,11 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   import Downcast._
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override def companion = Downcast
-  override val opCode: OpCode = OpCodes.DowncastCode
   override val opType = SFunc(Vector(tT), tR)
 }
 
 object Downcast extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.DowncastCode
   val tT = STypeIdent("T")
   val tR = STypeIdent("R")
 }
@@ -344,10 +343,10 @@ object Downcast extends ValueCompanion {
 case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override def companion = LongToByteArray
-  override val opCode: OpCode = OpCodes.LongToByteArrayCode
   override val opType = SFunc(SLong, SByteArray)
 }
 object LongToByteArray extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.LongToByteArrayCode
 }
 
 /**
@@ -356,10 +355,10 @@ object LongToByteArray extends ValueCompanion {
 case class ByteArrayToLong(input: Value[SByteArray])
   extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
   override def companion = ByteArrayToLong
-  override val opCode: OpCode = OpCodes.ByteArrayToLongCode
   override val opType = SFunc(SByteArray, SLong)
 }
 object ByteArrayToLong extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.ByteArrayToLongCode
 }
 
 /**
@@ -368,10 +367,10 @@ object ByteArrayToLong extends ValueCompanion {
 case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override def companion = ByteArrayToBigInt
-  override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
   override val opType = SFunc(SByteArray, SBigInt)
 }
 object ByteArrayToBigInt extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.ByteArrayToBigIntCode
 }
 
 /**
@@ -380,10 +379,10 @@ object ByteArrayToBigInt extends ValueCompanion {
 case class DecodePoint(input: Value[SByteArray])
   extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
   override def companion = DecodePoint
-  override val opCode: OpCode = OpCodes.DecodePointCode
   override val opType = SFunc(SByteArray, SGroupElement)
 }
 object DecodePoint extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.DecodePointCode
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
@@ -397,10 +396,10 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
   */
 case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcBlake2b256
-  override val opCode: OpCode = OpCodes.CalcBlake2b256Code
   override val hashFn: CryptographicHash32 = Blake2b256
 }
 object CalcBlake2b256 extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.CalcBlake2b256Code
 }
 
 /**
@@ -408,10 +407,10 @@ object CalcBlake2b256 extends ValueCompanion {
   */
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcSha256
-  override val opCode: OpCode = OpCodes.CalcSha256Code
   override val hashFn: CryptographicHash32 = Sha256
 }
 object CalcSha256 extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.CalcSha256Code
 }
 
 /**
@@ -433,11 +432,11 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     extends NotReadyValueByteArray {
   import SubstConstants._
   override def companion = SubstConstants
-  override val opCode: OpCode = OpCodes.SubstConstantsCode
   override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
 }
 
 object SubstConstants extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.SubstConstantsCode
   val tT = STypeIdent("T")
 
   def eval(scriptBytes: Array[Byte],
@@ -464,7 +463,7 @@ sealed trait OneArgumentOperation[IV <: SType, OV <: SType] extends NotReadyValu
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
 
-case class ArithOp[T <: SType](left: Value[T], right: Value[T], opCode: OpCode)
+case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def companion: ValueCompanion = ArithOp.operations(opCode)
   override def tpe: T = left.tpe
@@ -483,7 +482,6 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], opCode: OpCode)
 }
 case class ArithOpCompanion(opCode: Byte, name: String) extends ValueCompanion {
 }
-
 object ArithOp {
   import OpCodes._
   val Plus     = ArithOpCompanion(PlusCode,     "+")
@@ -505,21 +503,21 @@ object ArithOp {
 
 case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = Negation
-  override val opCode: OpCode = OpCodes.NegationCode
   override def tpe: T = input.tpe
 }
 object Negation extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.NegationCode
 }
 
 case class BitInversion[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = BitInversion
-  override val opCode: OpCode = OpCodes.BitInversionCode
   override def tpe: T = input.tpe
 }
 object BitInversion extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.BitInversionCode
 }
 
-case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode)
+case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
   override def companion = BitOp.operations(opCode)
   override def tpe: T = left.tpe
@@ -548,14 +546,14 @@ object BitOp {
 case class ModQ(input: Value[SBigInt.type])
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQ
-  override val opCode: OpCode = OpCodes.ModQCode
   override def tpe: SBigInt.type = SBigInt
   override def opType: SFunc = SFunc(input.tpe, tpe)
 }
 object ModQ extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.ModQCode
 }
 
-case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], opCode: OpCode)
+case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], override val opCode: OpCode)
   extends NotReadyValue[SBigInt.type] {
   override def companion = ModQArithOp.operations(opCode)
   override def tpe: SBigInt.type = SBigInt
@@ -588,9 +586,9 @@ case class Xor(override val left: Value[SByteArray],
   extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
     with NotReadyValueByteArray {
   override def companion = Xor
-  override val opCode: OpCode = XorCode
 }
 object Xor extends ValueCompanion {
+  override val opCode: OpCode = XorCode
 }
 
 case class Exponentiate(override val left: Value[SGroupElement.type],
@@ -598,9 +596,9 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = Exponentiate
-  override val opCode: OpCode = ExponentiateCode
 }
 object Exponentiate extends ValueCompanion {
+  override val opCode: OpCode = ExponentiateCode
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -608,9 +606,9 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = MultiplyGroup
-  override val opCode: OpCode = MultiplyGroupCode
 }
 object MultiplyGroup extends ValueCompanion {
+  override val opCode: OpCode = MultiplyGroupCode
 }
 // Relation
 
@@ -627,36 +625,36 @@ trait SimpleRelation[T <: SType] extends Relation[T, T] {
   */
 case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LT
-  override val opCode: OpCode = LtCode
 }
 object LT extends ValueCompanion {
+  override val opCode: OpCode = LtCode
 }
 /**
   * Less or equals operation for SInt
   */
 case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LE
-  override val opCode: OpCode = LeCode
 }
 object LE extends ValueCompanion {
+  override val opCode: OpCode = LeCode
 }
 /**
   * Greater operation for SInt
   */
 case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GT
-  override val opCode: OpCode = GtCode
 }
 object GT extends ValueCompanion {
+  override val opCode: OpCode = GtCode
 }
 /**
   * Greater or equals operation for SInt
   */
 case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GE
-  override val opCode: OpCode = GeCode
 }
 object GE extends ValueCompanion {
+  override val opCode: OpCode = GeCode
 }
 
 /**
@@ -666,9 +664,9 @@ object GE extends ValueCompanion {
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = EQ
-  override val opCode: OpCode = EqCode
 }
 object EQ extends ValueCompanion {
+  override val opCode: OpCode = EqCode
 }
 
 /**
@@ -677,9 +675,9 @@ object EQ extends ValueCompanion {
 case class NEQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = NEQ
-  override val opCode: OpCode = NeqCode
 }
 object NEQ extends ValueCompanion {
+  override val opCode: OpCode = NeqCode
 }
 
 /**
@@ -689,9 +687,9 @@ object NEQ extends ValueCompanion {
 case class BinOr(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinOr
-  override val opCode: OpCode = BinOrCode
 }
 object BinOr extends ValueCompanion {
+  override val opCode: OpCode = BinOrCode
 }
 
 /**
@@ -701,17 +699,17 @@ object BinOr extends ValueCompanion {
 case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinAnd
-  override val opCode: OpCode = BinAndCode
 }
 object BinAnd extends ValueCompanion {
+  override val opCode: OpCode = BinAndCode
 }
 
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinXor
-  override val opCode: OpCode = BinXorCode
 }
 object BinXor extends ValueCompanion {
+  override val opCode: OpCode = BinXorCode
 }
 
 /**
@@ -740,14 +738,12 @@ case class TreeLookup(tree: Value[SAvlTree.type],
     proof: Value[SByteArray]) extends Quadruple[SAvlTree.type, SByteArray, SByteArray, SOption[SByteArray]] {
   override def companion = TreeLookup
   override def tpe = SOption[SByteArray]
-
-  override val opCode: OpCode = OpCodes.AvlTreeGetCode
-
   override lazy val first = tree
   override lazy val second = key
   override lazy val third = proof
 }
 object TreeLookup extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.AvlTreeGetCode
 }
 
 /**
@@ -761,24 +757,22 @@ object TreeLookup extends ValueCompanion {
 case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T], falseBranch: Value[T])
   extends Quadruple[SBoolean.type, T, T, T] {
   override def companion = If
-  override val opCode: OpCode = OpCodes.IfCode
-
   override def tpe = trueBranch.tpe
-
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch
 }
 object If extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.IfCode
   val tT = STypeIdent("T")
 }
 
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
   override def companion = LogicalNot
-  override val opCode: OpCode = OpCodes.LogicalNotCode
   override val opType = SFunc(Vector(SBoolean), SBoolean)
 }
 object LogicalNot extends ValueCompanion {
+  override val opCode: OpCode = OpCodes.LogicalNotCode
 }
 
 
