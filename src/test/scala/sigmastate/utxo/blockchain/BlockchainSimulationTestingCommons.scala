@@ -1,6 +1,5 @@
 package sigmastate.utxo.blockchain
 
-import org.ergoplatform
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}

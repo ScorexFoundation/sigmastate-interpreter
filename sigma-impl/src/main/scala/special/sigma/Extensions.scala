@@ -1,7 +1,6 @@
 package special.sigma
 
 import org.bouncycastle.math.ec.ECPoint
-import scalan.RType
 
 /** This extensions are used from SigmaDsl.
   * If you add something here, make sure the corresponding syntax is supported by SigmaScript. */

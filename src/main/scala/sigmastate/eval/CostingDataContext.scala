@@ -319,7 +319,6 @@ case class CostingBox(isCost: Boolean, val ebox: ErgoBox) extends Box with Wrapp
 object CostingBox {
 
   import Evaluation._
-  import sigmastate.SType._
 
   def colBytes(b: Array[Byte])(implicit IR: Evaluation): Coll[Byte] = IR.sigmaDslBuilderValue.Colls.fromArray(b)
 

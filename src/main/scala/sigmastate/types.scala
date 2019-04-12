@@ -31,7 +31,6 @@ import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
 import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
-//import sigmastate.SNumericType._
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval._
 

@@ -3,15 +3,13 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import scalan.RType
-import scalan.RType._
-import sigmastate.{SHeader, SPreHeader, SType, SByte}
+import sigmastate.SType
 import sigmastate.Values.Constant
 import sigmastate.lang.DefaultSigmaBuilder
-import special.collection.{CSizePrim, Size, CSizeOption, Coll, CSizeColl}
+import special.collection.Coll
 import special.sigma._
 import SType.AnyOps
 import spire.syntax.all._
-import supertagged.{Tagged}
 
 object Extensions {
   private val Colls = CostingSigmaDslBuilder.Colls

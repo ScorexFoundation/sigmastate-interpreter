@@ -1,6 +1,6 @@
 package sigmastate.eval
 
-import scalan.{Nullable, RType}
+import scalan.RType
 import special.collection._
 import scalan.RType._
 import sigmastate._

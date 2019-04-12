@@ -4,7 +4,6 @@ import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.scalatest.{FunSuite, Matchers}
-import sigmastate.eval.Extensions._
 import special.sigma.{Box, Context, ContractsTestkit, MockSigma, SigmaContract, SigmaDslBuilder, SigmaProp, TestSigmaDslBuilder}
 
 import scala.language.implicitConversions

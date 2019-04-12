@@ -84,7 +84,7 @@ class ErgoBox(
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
   override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1.toArray) + ":" + t._2)}), $transactionId, " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
