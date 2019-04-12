@@ -49,8 +49,8 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
-    def companion: ValueCompanion =
-      sys.error(s"Companion object is not defined for AST node ${this.getClass}")
+    def companion: ValueCompanion /*=
+      sys.error(s"Companion object is not defined for AST node ${this.getClass}")*/
 
     /** Unique id of the node class used in serialization of ErgoTree. */
     val opCode: OpCode
@@ -217,6 +217,9 @@ object Values {
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
     override val opCode: OpCode = ConstantPlaceholderIndexCode
+    override def companion: ValueCompanion = ConstantPlaceholder
+  }
+  object ConstantPlaceholder extends ValueCompanion {
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -235,6 +238,7 @@ object Values {
     extends TaggedVariable[T] {
     override val opCode: OpCode = TaggedVariableCode
     def opType: SFunc = Value.notSupportedError(this, "opType")
+    override def companion = sys.error(s"Companion object is not defined for AST node ${this.getClass}")
   }
 
   object TaggedVariable {
@@ -246,6 +250,9 @@ object Values {
     override val opCode = UnitConstantCode
     override def tpe = SUnit
     val value = ()
+    override def companion: ValueCompanion = UnitConstant
+  }
+  object UnitConstant extends ValueCompanion {
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -561,16 +568,13 @@ object Values {
     override def tpe = SAvlTree
   }
 
-  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
-
+  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
     override val opCode: OpCode = OpCodes.GroupGeneratorCode
-
-    import CryptoConstants.dlogGroup
-
     override def tpe = SGroupElement
-
-    override val value = SigmaDsl.GroupElement(dlogGroup.generator)
+    override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
+    override def companion = this
   }
+
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override def tpe = SGroupElement
@@ -662,6 +666,7 @@ object Values {
   }
 
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
+    override def companion = Tuple
     override val opCode: OpCode = TupleCode
     override def elementType = SAny
     lazy val tpe = STuple(items.map(_.tpe))
@@ -671,7 +676,7 @@ object Values {
     }
   }
 
-  object Tuple {
+  object Tuple extends ValueCompanion {
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -679,19 +684,26 @@ object Values {
   }
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
+    override def companion = SomeValue
     override val opCode = SomeValueCode
     val tpe = SOption(x.tpe)
     def opType = SFunc(x.tpe, tpe)
   }
+  object SomeValue extends ValueCompanion {
+  }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
+    override def companion = NoneValue
     override val opCode = NoneValueCode
     val tpe = SOption(elemType)
     def opType = SFunc(elemType, tpe)
   }
+  object NoneValue extends ValueCompanion {
+  }
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
+    override def companion = ConcreteCollection
     override val opCode: OpCode =
       if (elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]]))
         ConcreteCollectionBooleanConstantCode
@@ -706,7 +718,7 @@ object Values {
       Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
     }
   }
-  object ConcreteCollection {
+  object ConcreteCollection extends ValueCompanion {
     def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items.toIndexedSeq, tV)
 
@@ -780,13 +792,14 @@ object Values {
                     tpeArgs: Seq[STypeIdent],
                     override val rhs: SValue) extends BlockItem {
     require(id >= 0, "id must be >= 0")
+    override def companion = ValDef
     val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
     def tpe: SType = rhs.tpe
     def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
-  object ValDef {
+  object ValDef extends ValueCompanion {
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
   }
   object FunDef {
@@ -798,9 +811,12 @@ object Values {
 
   /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
+    override def companion = ValUse
     override val opCode: OpCode = ValUseCode
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
+  }
+  object ValUse extends ValueCompanion {
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -811,23 +827,26 @@ object Values {
     * in a fixed well defined order.
     */
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
+    override def companion = BlockValue
     val opCode: OpCode = BlockValueCode
     def tpe: SType = result.tpe
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
-
+  object BlockValue extends ValueCompanion {
+  }
   /**
     * @param args parameters list, where each parameter has an id and a type.
     * @param body expression, which refers function parameters with ValUse.
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
+    override def companion = FuncValue
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     val opCode: OpCode = FuncValueCode
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
-  object FuncValue {
+  object FuncValue extends ValueCompanion {
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }
