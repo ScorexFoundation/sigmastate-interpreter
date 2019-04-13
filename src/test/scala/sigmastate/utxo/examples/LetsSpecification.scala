@@ -1,23 +1,34 @@
 package sigmastate.utxo.examples
 
-import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.ByteArrayConstant
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
+import org.ergoplatform.ErgoBox.{R4, R5}
+import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.eval.{CompiletimeCosting, IRContext}
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.lang.Terms._
 
 import scala.util.Random
 
-class LetsSpecification extends SigmaTestingCommons { suite =>
+class LetsSpecification extends SigmaTestingCommons {
+  suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
   implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
 
-  val env = Map(
-    ScriptNameProp -> "withdrawalScriptEnv",
-    "letsToken" -> ByteArrayConstant(Array.fill(32)(Random.nextInt(100).toByte))
-  )
+  lazy val project = new ErgoLikeTestProvingInterpreter()
+
+  val letsTokenId = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+
+  val env = Map(ScriptNameProp -> "withdrawalScriptEnv", "letsToken" -> ByteArrayConstant(letsTokenId))
+
+  private val miningRewardsDelay = 720
+  private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
+  private val feeBytes = feeProp.bytes
 
   val exchangeScript = compiler.compile(env,
     """{
@@ -118,5 +129,48 @@ class LetsSpecification extends SigmaTestingCommons { suite =>
 
   println(exchangeScript)
   println(managementScript)
+
+  property("adding new member") {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    val digest = avlProver.digest
+    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
+
+    val projectBoxBefore = ErgoBox(10, managementScript, 0,
+      Seq(letsTokenId -> 1L),
+      Map(R4 -> AvlTreeConstant(initTreeData), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+
+    val userTokenId = Digest32 @@ projectBoxBefore.id
+
+    avlProver.performOneOperation(Insert(ADKey @@ userTokenId, ADValue @@ Array.emptyByteArray))
+
+    val proof = avlProver.generateProof()
+    val endTree = new AvlTreeData(avlProver.digest, AvlTreeFlags.InsertOnly, 32, None)
+
+    val projectBoxAfter = ErgoBox(9, managementScript, 0,
+      Seq(letsTokenId -> 1L),
+      Map(R4 -> AvlTreeConstant(endTree), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
+    val userBox = ErgoBox(1, exchangeScript, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
+
+    val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, userBox, feeBox))
+
+    val fundingContext = ErgoLikeContext(
+      currentHeight = 1000,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(projectBoxBefore),
+      spendingTransaction = issuanceTx,
+      self = projectBoxBefore)
+
+    val managementProver = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(1, ByteArrayConstant(proof))
+
+    val res = managementProver.prove(env, managementScript, fundingContext, fakeMessage).get
+    println("new user script cost: " + res.cost)
+  }
+
+  property("exchange") {
+
+  }
 
 }
