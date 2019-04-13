@@ -34,7 +34,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   private def processGlobalMethod(srcCtx: Nullable[SourceContext], method: SMethod) = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
-      pf <- method.irBuilder
+      pf <- method.irInfo.irBuilder
       res <- pf.lift((builder, global, method, IndexedSeq(), emptySubst))
     } yield res
     node.getOrElse(mkMethodCall(global, method, IndexedSeq(), emptySubst).withPropagatedSrcCtx(srcCtx))
@@ -101,10 +101,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               else tMethSpec.copy(tDom = tMethSpec.tDom.tail, tRange = tMethSpec.tRange)
             case _ => tMeth
           }
-          if (method.irBuilder.isDefined && !tRes.isFunc) {
+          if (method.irInfo.irBuilder.isDefined && !tRes.isFunc) {
             // this is MethodCall of parameter-less property, so invoke builder and/or fallback to just MethodCall
             val methodConcrType = method.withSType(SFunc(newObj.tpe, tRes))
-            methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq(), Map()))
+            methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq(), Map()))
                 .getOrElse(mkMethodCall(newObj, methodConcrType, IndexedSeq(), Map()))
           } else {
             mkSelect(newObj, n, Some(tRes))
@@ -140,8 +140,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               if (expectedArgs.length != newArgTypes.length
                 || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                 error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
-              if (method.irBuilder.isDefined) {
-                method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
+              if (method.irInfo.irBuilder.isDefined) {
+                method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
                   .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
               } else {
                 val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -168,13 +168,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
               newObj.tpe.asInstanceOf[SProduct].method(n) match {
-                case Some(method) if method.irBuilder.isDefined =>
+                case Some(method) if method.irInfo.irBuilder.isDefined =>
                   val expectedArgs = concrFunTpe.asFunc.tDom
                   if (expectedArgs.length != newArgTypes.length
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                     error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
                   val methodConcrType = method.withSType(concrFunTpe.asFunc.withReceiverType(newObj.tpe))
-                  methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
+                  methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs, Map()))
                 case _ =>
                   val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -283,7 +283,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                 }
               case _ => emptySubst
             }
-            method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
+            method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
               .getOrElse(mkMethodCall(newObj, method, newArgs, typeSubst))
 
           case _ =>

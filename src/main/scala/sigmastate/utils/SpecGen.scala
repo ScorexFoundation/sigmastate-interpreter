@@ -111,3 +111,11 @@ object GenPredeftypesApp extends SpecGen {
     }
   }
 }
+
+object GenPrimopsApp extends SpecGen {
+  import SpecGenUtils._
+
+  def main(args: Array[String]) = {
+
+  }
+}

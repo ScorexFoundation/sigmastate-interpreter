@@ -309,8 +309,24 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
    def apply[Ctx <: RuntimeCosting](IR: Ctx): IR.CostingHandler[_] = selector(IR).asInstanceOf[IR.CostingHandler[_]]
 }
 
+/** Meta information which can be attached to each argument of SMethod.
+  * @param name  name of the argument
+  * @param description argument description. */
 case class MethodArgInfo(name: String, description: String)
+
+/** Meta information which can be attached to SMethod.
+  * @param description  human readable description of the method
+  * @param args         one item for each argument */
 case class MethodInfo(description: String, args: Seq[MethodArgInfo], isOpcode: Boolean)
+
+/** Meta information connecting SMethod with ErgoTree.
+  * @param  irBuilder  optional recognizer and ErgoTree node builder.
+  * @param  opDesc     */
+case class MethodIRInfo(
+    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
+    opDesc: Option[ValueCompanion]
+)
+
 
 /** Method info including name, arg type and result type.
   * Here stype.tDom - arg type and stype.tRange - result type.
@@ -320,7 +336,7 @@ case class SMethod(
     name: String,
     stype: SFunc,
     methodId: Byte,
-    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
+    irInfo: MethodIRInfo,
     docInfo: Option[MethodInfo]) {
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
@@ -343,19 +359,25 @@ case class SMethod(
   def withInfo(desc: String, args: MethodArgInfo*) = {
     this.copy(docInfo = Some(MethodInfo(desc, args.toSeq, true)))
   }
+  def withIRInfo(
+      irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue],
+      opDesc: ValueCompanion) = {
+    this.copy(irInfo = MethodIRInfo(Some(irBuilder), Some(opDesc)))
+  }
   def setIsOpcode(value: Boolean) =
     this.copy(docInfo = docInfo.map(i => i.copy(isOpcode = value)))
 }
 
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
-  val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]] = Some {
+  val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
     case (builder, obj, method, args, tparamSubst) =>
       builder.mkMethodCall(obj, method, args.toIndexedSeq, tparamSubst)
   }
 
-  def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod =
-    SMethod(objType, name, stype, methodId, None, None)
+  def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod = {
+    SMethod(objType, name, stype, methodId, MethodIRInfo(None, None), None)
+  }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
     val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
@@ -429,6 +451,10 @@ trait SNumericType extends SProduct {
 
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
+
+  def castOpDesc(toType: SNumericType): ValueCompanion = {
+    if ((this max toType) == this) Downcast else Upcast
+  }
 }
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
@@ -451,11 +477,13 @@ object SNumericType extends STypeCompanion {
         .withInfo("Converts this numeric value to \\lst{Long}, throwing exception if overflow."),  // see Downcast
     SMethod(this, ToBigInt, SFunc(tNum, SBigInt), 5)
         .withInfo("Converts this numeric value to \\lst{BigInt}"),  // see Downcast
-    SMethod(this, "toBytes", SFunc(tNum, SByteArray),  6, MethodCallIrBuilder, None)
+    SMethod(this, "toBytes", SFunc(tNum, SByteArray),  6)
+        .withIRInfo(MethodCallIrBuilder, PropertyCall)
         .withInfo("Returns a big-endian representation of this numeric value in a collection of bytes.\n" +
             " For example, the Int value \\lst{0x12131415} would yield the\n" +
             " byte array  \\lst{[0x12, 0x13, 0x14, 0x15]}."),
-    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7, MethodCallIrBuilder, None)
+    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7)
+        .withIRInfo(MethodCallIrBuilder, PropertyCall)
         .withInfo("Returns a big-endian representation of this numeric in a collection of Booleans.\n" +
             " Each boolean corresponds to one bit."),
   )
@@ -470,7 +498,8 @@ trait SLogical extends SType {
   */
 trait SMonoType extends SType with STypeCompanion {
   protected def property(name: String, tpeRes: SType, id: Byte) =
-    SMethod(this, name, SFunc(this, tpeRes), id, MethodCallIrBuilder, None)
+    SMethod(this, name, SFunc(this, tpeRes), id)
+        .withIRInfo(MethodCallIrBuilder, PropertyCall)
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -624,7 +653,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withInfo("Adds this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to add to this."))
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 3)
       .withInfo("Subtracts \\lst{other} number from this by module Q.", MethodArgInfo("other", "Number to subtract from this."))
-  val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4, MethodCallIrBuilder, None)
+  val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
       .withInfo("Multiply this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to multiply with this."))
   protected override def getMethods() = super.getMethods() ++ Seq(
     ModQMethod,
@@ -654,19 +684,21 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
         .withInfo("Checks if this value is identity element of the eliptic curve group."),
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2, MethodCallIrBuilder, None)
+    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
+        .withIRInfo(MethodCallIrBuilder, PropertyCall)
         .withInfo("Get an encoding of the point value."),
-    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3, Some {
-      case (builder, obj, _, Seq(arg), _) =>
-        builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
-    }, None)
-        .withInfo("Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
+    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3)
+        .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
+          builder.mkExponentiate(obj.asGroupElement, arg.asBigInt) }, Exponentiate)
+        .withInfo(
+          "Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
           MethodArgInfo("k", "The power")),
-    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4, Some {
-      case (builder, obj, _, Seq(arg), _) =>
-        builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
-    }, None).withInfo("Group operation.", MethodArgInfo("other", "other element of the group")),
-    SMethod(this, "negate", SFunc(this, this), 5, MethodCallIrBuilder, None)
+    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4)
+        .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
+          builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement) }, MultiplyGroup)
+        .withInfo("Group operation.", MethodArgInfo("other", "other element of the group")),
+    SMethod(this, "negate", SFunc(this, this), 5)
+        .withIRInfo(MethodCallIrBuilder, PropertyCall)
         .withInfo("Inverse element of the group.")
   )
   override def mkConstant(v: GroupElement): Value[SGroupElement.type] = GroupElementConstant(v)
@@ -784,16 +816,17 @@ object SOption extends STypeCompanion {
   val GetMethod       = SMethod(this, Get, SFunc(ThisType, tT), 3)
   val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
-  val ToCollMethod    = SMethod(this, "toColl", SFunc(IndexedSeq(ThisType), SCollection(tT), Seq(tT)), 6, MethodCallIrBuilder, None)
+  val ToCollMethod    = SMethod(this, "toColl", SFunc(IndexedSeq(ThisType), SCollection(tT), Seq(tT)), 6)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
   val MapMethod       = SMethod(this, "map",
-    SFunc(IndexedSeq(ThisType, SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
-    7, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))), 7)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
   val FilterMethod    = SMethod(this, "filter",
-    SFunc(IndexedSeq(ThisType, SFunc(tT, SBoolean)), ThisType, Seq(STypeParam(tT))),
-    8, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SFunc(tT, SBoolean)), ThisType, Seq(STypeParam(tT))), 8)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
   val FlatMapMethod   = SMethod(this, "flatMap",
-    SFunc(IndexedSeq(ThisType, SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))),
-    9, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))), 9)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
   val methods: Seq[SMethod] = Seq(
     IsEmptyMethod,
     IsDefinedMethod,
@@ -857,13 +890,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val tPredicate = SFunc(tIV, SBoolean)
 
   val SizeMethod = SMethod(this, "size", SFunc(ThisType, SInt), 1)
-  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(ThisType, SInt, tIV), tIV, Seq(paramIV)), 2, Some {
-    case (builder, obj, _, Seq(index, defaultValue), _) =>
-      val index1 = index.asValue[SInt.type]
-      val defaultValue1 = defaultValue.asValue[SType]
-      builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
-  }, None
-  )
+  val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(ThisType, SInt, tIV), tIV, Seq(paramIV)), 2)
+      .withIRInfo({ case (builder, obj, _, Seq(index, defaultValue), _) =>
+        val index1 = index.asValue[SInt.type]
+        val defaultValue1 = defaultValue.asValue[SType]
+        builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
+      }, ByIndex)
   val MapMethod = SMethod(this, "map", SFunc(IndexedSeq(ThisType, SFunc(tIV, tOV)), tOVColl, Seq(paramIV, paramOV)), 3)
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 4)
   val FoldMethod = SMethod(this, "fold", SFunc(IndexedSeq(ThisType, tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(paramIV, paramOV)), 5)
@@ -878,73 +910,92 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(ThisType, SInt), ThisType, Seq(paramIV)), 12)
   val BitShiftRightZeroedMethod = SMethod(this, ">>>",
     SFunc(IndexedSeq(SCollection(SBoolean), SInt), SCollection(SBoolean)), 13)
-  val IndicesMethod = SMethod(this, "indices", SFunc(ThisType, SCollection(SInt)), 14, MethodCallIrBuilder, None)
+
+  val IndicesMethod = SMethod(this, "indices", SFunc(ThisType, SCollection(SInt)), 14)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+
   val FlatMapMethod = SMethod(this, "flatMap",
-    SFunc(
-      IndexedSeq(ThisType, SFunc(tIV, tOVColl)),
-      tOVColl,
-      Seq(paramIV, paramOV)),
-    15, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SFunc(tIV, tOVColl)), tOVColl, Seq(paramIV, paramOV)), 15)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val SegmentLengthMethod = SMethod(this, "segmentLength",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    16, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)), 16)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val IndexWhereMethod = SMethod(this, "indexWhere",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    17, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)), 17)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val LastIndexWhereMethod = SMethod(this, "lastIndexWhere",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    18, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)), 18)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val PatchMethod = SMethod(this, "patch",
-    SFunc(IndexedSeq(ThisType, SInt, ThisType, SInt), ThisType, Seq(paramIV)),
-    19, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SInt, ThisType, SInt), ThisType, Seq(paramIV)), 19)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val UpdatedMethod = SMethod(this, "updated",
-    SFunc(IndexedSeq(ThisType, SInt, tIV), ThisType, Seq(paramIV)),
-    20, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SInt, tIV), ThisType, Seq(paramIV)), 20)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val UpdateManyMethod = SMethod(this, "updateMany",
-    SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)),
-    21, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)), 21)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val UnionSetsMethod = SMethod(this, "unionSets",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)),
-    22, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 22)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val DiffMethod = SMethod(this, "diff",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)),
-    23, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 23)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val IntersectMethod = SMethod(this, "intersect",
-    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)),
-    24, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 24)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val PrefixLengthMethod = SMethod(this, "prefixLength",
-    SFunc(IndexedSeq(ThisType, tPredicate), SInt, Seq(paramIV)),
-    25, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate), SInt, Seq(paramIV)), 25)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val IndexOfMethod = SMethod(this, "indexOf",
-    SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)),
-    26, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 26)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
-    SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)),
-    27, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   lazy val FindMethod = SMethod(this, "find",
-    SFunc(IndexedSeq(ThisType, tPredicate), SOption(tIV), Seq(paramIV)),
-    28, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate), SOption(tIV), Seq(paramIV)), 28)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val ZipMethod = SMethod(this, "zip",
-    SFunc(IndexedSeq(ThisType, tOVColl),
-      SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)),
-    29, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val DistinctMethod = SMethod(this, "distinct",
-    SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+
   val StartsWithMethod = SMethod(this, "startsWith",
-    SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, Seq(paramIV)),
-    31, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, Seq(paramIV)), 31)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val EndsWithMethod = SMethod(this, "endsWith",
-    SFunc(IndexedSeq(ThisType, ThisType), SBoolean, Seq(paramIV)),
-    32, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, ThisType), SBoolean, Seq(paramIV)), 32)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val PartitionMethod = SMethod(this, "partition",
-    SFunc(IndexedSeq(ThisType, tPredicate), STuple(ThisType, ThisType), Seq(paramIV)),
-    33, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(ThisType, tPredicate), STuple(ThisType, ThisType), Seq(paramIV)), 33)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
+
   val MapReduceMethod = SMethod(this, "mapReduce",
     SFunc(
       IndexedSeq(ThisType, SFunc(tIV, STuple(tK, tV)), SFunc(STuple(tV, tV), tV)),
       SCollection(STuple(tK, tV)),
-      Seq(paramIV, STypeParam(tK), STypeParam(tV))),
-    34, MethodCallIrBuilder, None)
+      Seq(paramIV, STypeParam(tK), STypeParam(tV))), 34)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   lazy val methods: Seq[SMethod] = Seq(
     SizeMethod,
@@ -1198,7 +1249,8 @@ case object SBox extends SProduct with SPredefType with SMonoType {
         "is a height of the tx's block. The \\lst{creationInfo._2} is a serialized transaction " +
         "identifier followed by box index in the transaction outputs.") // see ExtractCreationInfo
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
-  lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder, None)
+  lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
       .withInfo("Secondary tokens")
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
@@ -1233,37 +1285,52 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   val TCollOptionCollByte = SCollection(SByteArrayOption)
   val CollKeyValue = SCollection(STuple(SByteArray, SByteArray))
 
-  val digestMethod            = SMethod(this, "digest", SFunc(this, SByteArray),            1, MethodCallIrBuilder, None)
-  val enabledOperationsMethod = SMethod(this, "enabledOperations", SFunc(this, SByte),      2, MethodCallIrBuilder, None)
-  val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3, MethodCallIrBuilder, None)
-  val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4, MethodCallIrBuilder, None)
-  val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SFunc(this, SBoolean),     5, MethodCallIrBuilder, None)
-  val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SFunc(this, SBoolean),     6, MethodCallIrBuilder, None)
-  val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7, MethodCallIrBuilder, None)
+  val digestMethod            = SMethod(this, "digest", SFunc(this, SByteArray),            1)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val enabledOperationsMethod = SMethod(this, "enabledOperations", SFunc(this, SByte),      2)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SFunc(this, SBoolean),     5)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SFunc(this, SBoolean),     6)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
+  val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7)
+      .withIRInfo(MethodCallIrBuilder, PropertyCall)
 
   val updateOperationsMethod  = SMethod(this, "updateOperations",
-    SFunc(IndexedSeq(SAvlTree, SByte), SAvlTree),                        8, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByte), SAvlTree),                 8)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val containsMethod          = SMethod(this, "contains",
-    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SBoolean),             9, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SBoolean),             9)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val getMethod               = SMethod(this, "get",
-    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val getManyMethod           = SMethod(this, "getMany",
-    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val insertMethod            = SMethod(this, "insert",
-    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     12, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     12)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val updateMethod            = SMethod(this, "update",
-    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     13, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     13)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val removeMethod            = SMethod(this, "remove",
-    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   val updateDigestMethod  = SMethod(this, "updateDigest",
-    SFunc(IndexedSeq(SAvlTree, SByteArray), SAvlTree),                       15, MethodCallIrBuilder, None)
+    SFunc(IndexedSeq(SAvlTree, SByteArray), SAvlTree),                       15)
+      .withIRInfo(MethodCallIrBuilder, MethodCall)
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
@@ -1431,9 +1498,9 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   def ancestors = Nil
 
   val tT = STypeIdent("T")
-  val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1, Some {
+  val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1).withIRInfo({
     case (builder, obj, method, args, tparamSubst) => GroupGenerator
-  }, None)
+  }, GroupGenerator)
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod
