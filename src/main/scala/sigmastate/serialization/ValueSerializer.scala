@@ -37,7 +37,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   private val constantSerializer = ConstantSerializer(builder)
   private val constantPlaceholderSerializer = ConstantPlaceholderSerializer(mkConstantPlaceholder)
 
-  private val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
+  val serializers = SparseArrayContainer.buildForSerializers(Seq[ValueSerializer[_ <: Value[SType]]](
     constantSerializer,
     constantPlaceholderSerializer,
     TupleSerializer(mkTuple),
@@ -70,11 +70,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     TwoArgumentsSerializer(BitOp.ShiftLeft, mkBitShiftLeft[SNumericType]),
     TwoArgumentsSerializer(BitOp.ShiftRight, mkBitShiftRight[SNumericType]),
     TwoArgumentsSerializer(BitOp.ShiftRightZeroed, mkBitShiftRightZeroed[SNumericType]),
-    CaseObjectSerialization(True, TrueLeaf),
-    CaseObjectSerialization(False, FalseLeaf),
     SigmaPropIsProvenSerializer,
     SigmaPropBytesSerializer,
     ConcreteCollectionBooleanConstantSerializer(mkConcreteCollection),
+    CaseObjectSerialization(TrueLeaf, TrueLeaf),
+    CaseObjectSerialization(FalseLeaf, FalseLeaf),
     CaseObjectSerialization(Context, Context),
     CaseObjectSerialization(Global, Global),
     CaseObjectSerialization(Height, Height),
@@ -149,7 +149,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
-    val serializer = serializers.get(opCode)
+    val serializer = serializers(opCode)
     if (serializer == null)
       throw new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - LastConstantCode}")
     serializer

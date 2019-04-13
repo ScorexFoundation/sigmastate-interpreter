@@ -3,16 +3,19 @@ package sigmastate.utils
 import sigmastate._
 import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized, Evaluation}
+import sigma.util.Extensions.ByteOps
 import SType._
 import scalan.util.FileUtil
 import scalan.meta.PrintExtensions._
+import sigmastate.Values.ValueCompanion
+import sigmastate.serialization.{ValueSerializer, OpCodes}
+
+import scala.collection.immutable
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
   val companions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
-  val typesWithMethods =
-    companions.zip(companions.asInstanceOf[Seq[SType]]) ++
-        Seq((SCollection, SCollection.ThisType), (SOption, SOption.ThisType))
+  val typesWithMethods = companions ++ Seq(SCollection, SOption)
 }
 
 trait SpecGen {
@@ -83,7 +86,7 @@ trait SpecGen {
       |""".stripMargin
   }
 
-  def printMethods(tc: STypeCompanion, t: SType) = {
+  def printMethods(tc: STypeCompanion) = {
     val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
 
       methodSubsection(tc.typeName, m)
@@ -101,9 +104,9 @@ object GenPredeftypesApp extends SpecGen {
     val fPrimOps = FileUtil.file("docs/spec/generated/predeftypes.tex")
     FileUtil.write(fPrimOps, table)
 
-    for ((tc, t) <- typesWithMethods) {
+    for (tc <- typesWithMethods) {
       val typeName = tc.typeName
-      val methodsRows = printMethods(tc, t)
+      val methodsRows = printMethods(tc)
       val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
       FileUtil.write(fMethods, methodsRows)
 
@@ -115,7 +118,39 @@ object GenPredeftypesApp extends SpecGen {
 object GenPrimopsApp extends SpecGen {
   import SpecGenUtils._
 
-  def main(args: Array[String]) = {
+  def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
+    ((OpCodes.LastConstantCode + 1) to 255).collect {
+      case i if ValueSerializer.serializers(i.toByte) != null =>
+        val ser = ValueSerializer.serializers(i.toByte)
+        assert(i == ser.opDesc.opCode.toUByte)
+        ser
+    }
+  }
 
+  def collectFreeCodes(): Seq[Int] = {
+    ((OpCodes.LastConstantCode + 1) to 255).collect {
+      case i if ValueSerializer.serializers(i.toByte) == null => i
+    }
+  }
+
+  def main(args: Array[String]) = {
+    val sers = collectSerializers()
+
+    val serTypes =  sers.groupBy(s => s.getClass.getSimpleName)
+    for ((name, group) <- serTypes) {
+      println(name + ":")
+      for (ser <- group) {
+        val line = s"\t${ser.opCode.toUByte} -> serializer: ${ser.getClass.getSimpleName}; opDesc: ${ser.opDesc}"
+        println(line)
+      }
+    }
+    println(s"Total Serializable Ops: ${sers.length}")
+    println(s"Total Serializer Types: ${serTypes.keys.size}")
+
+    val ops = ValueCompanion.allOperations
+    for ((k,v) <- ops.toArray.sortBy(_._1.toUByte)) {
+      println(s"${k.toUByte} -> $v")
+    }
+    println(s"Total ops: ${ops.size}")
   }
 }

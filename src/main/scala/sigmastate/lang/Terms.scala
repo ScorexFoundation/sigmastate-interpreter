@@ -29,7 +29,7 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object Block extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
     def apply(let: Val, result: SValue)(implicit o1: Overload1): Block =
       Block(Seq(let), result)
   }
@@ -52,7 +52,7 @@ object Terms {
     override def opType: SFunc = SFunc(SSigmaProp, SBoolean)
   }
   object ZKProofBlock extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
   }
 
   trait Val extends Value[SType] {
@@ -78,7 +78,7 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ValNode extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to select a field from an object. Should be transformed to SelectField*/
@@ -94,7 +94,7 @@ object Terms {
     override def opType: SFunc = SFunc(obj.tpe, tpe)
   }
   object Select extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to represent variable names parsed in a source code.
@@ -105,7 +105,7 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Ident extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
     def apply(name: String): Ident = Ident(name, NoType)
   }
 
@@ -119,7 +119,7 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
   }
   object Apply extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.FuncApplyCode
+    override def opCode: OpCode = OpCodes.FuncApplyCode
   }
 
   /** Apply types for type parameters of input value. */
@@ -135,7 +135,7 @@ object Terms {
     override def opType: SFunc = Value.notSupportedError(this, "opType")
   }
   object ApplyTypes extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
   }
 
   /** Frontend node to represent potential method call in a source code.
@@ -146,7 +146,7 @@ object Terms {
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
   }
   object MethodCallLike extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
   }
 
   /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
@@ -167,10 +167,10 @@ object Terms {
     }
   }
   object MethodCall extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.MethodCallCode
+    override def opCode: OpCode = OpCodes.MethodCallCode
   }
   object PropertyCall extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.PropertyCallCode
+    override def opCode: OpCode = OpCodes.PropertyCallCode
   }
 
   case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
@@ -198,7 +198,7 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
   object Lambda extends ValueCompanion {
-    override val opCode: OpCode = OpCodes.Undefined
+    override def opCode: OpCode = OpCodes.Undefined
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Value[SType]): Lambda =
       Lambda(Nil, args, resTpe, Some(body))
     def apply(args: IndexedSeq[(String,SType)], resTpe: SType, body: Option[Value[SType]]): Lambda =

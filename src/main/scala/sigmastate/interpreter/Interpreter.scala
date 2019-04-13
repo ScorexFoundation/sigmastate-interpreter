@@ -133,31 +133,25 @@ trait Interpreter extends ScorexLogging {
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
-      case TrueLeaf => true
-      case FalseLeaf => false
-      case cProp: SigmaBoolean =>
-        cProp match {
-          case TrivialProp.TrueProp => true
-          case TrivialProp.FalseProp => false
-          case _ =>
-            // Perform Verifier Steps 1-3
-            SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-              case NoProof => false
-              case sp: UncheckedSigmaTree =>
-                // Perform Verifier Step 4
-                val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
+      case TrivialProp.TrueProp => true
+      case TrivialProp.FalseProp => false
+      case _ =>
+        // Perform Verifier Steps 1-3
+        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
+          case NoProof => false
+          case sp: UncheckedSigmaTree =>
+            // Perform Verifier Step 4
+            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
 
-                /**
-                  * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
-                  * using the same conversion as the prover in 7
-                  * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
-                  * (and, if applicable,  the associated data). Reject otherwise.
-                  */
-                val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-                util.Arrays.equals(newRoot.challenge, expectedChallenge)
-            }
+            /**
+              * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
+              * using the same conversion as the prover in 7
+              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
+              * (and, if applicable,  the associated data). Reject otherwise.
+              */
+            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+            util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
-//      case _: Value[_] => false
     }
     checkingResult -> cost
   }

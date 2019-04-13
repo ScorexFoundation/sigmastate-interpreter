@@ -29,7 +29,7 @@ case class MapCollection[IV <: SType, OV <: SType](
   override val opType = SCollection.MapMethod.stype.asFunc
 }
 object MapCollection extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.MapCollectionCode
+  override def opCode: OpCode = OpCodes.MapCollectionCode
 }
 
 case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SCollection[IV]])
@@ -39,7 +39,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override val opType = SCollection.AppendMethod.stype.asFunc
 }
 object Append extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.AppendCode
+  override def opCode: OpCode = OpCodes.AppendCode
 }
 
 case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.type], until: Value[SInt.type])
@@ -52,7 +52,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   }
 }
 object Slice extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.SliceCode
+  override def opCode: OpCode = OpCodes.SliceCode
 }
 
 case class Filter[IV <: SType](input: Value[SCollection[IV]],
@@ -64,7 +64,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   override val opType = SCollection.FilterMethod.stype.asFunc
 }
 object Filter extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.FilterCode
+  override def opCode: OpCode = OpCodes.FilterCode
 }
 
 trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBoolean.type] {
@@ -80,7 +80,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   override val opType = SCollection.ExistsMethod.stype.asFunc
 }
 object Exists extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExistsCode
+  override def opCode: OpCode = OpCodes.ExistsCode
 }
 
 case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
@@ -90,7 +90,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   override val opType = SCollection.ForallMethod.stype.asFunc
 }
 object ForAll extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ForAllCode
+  override def opCode: OpCode = OpCodes.ForAllCode
 }
 
 case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
@@ -103,7 +103,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
 }
 
 object Fold extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.FoldCode
+  override def opCode: OpCode = OpCodes.FoldCode
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
@@ -131,7 +131,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   override val opType = SCollection.ApplyMethod.stype.asFunc
 }
 object ByIndex extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ByIndexCode
+  override def opCode: OpCode = OpCodes.ByIndexCode
 }
 
 /** Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1) */
@@ -142,7 +142,7 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
   override val opType = SFunc(input.tpe, tpe)
 }
 object SelectField extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.SelectFieldCode
+  override def opCode: OpCode = OpCodes.SelectFieldCode
 }
 
 /** Represents execution of Sigma protocol that validates the given input SigmaProp. */
@@ -152,7 +152,7 @@ case class SigmaPropIsProven(input: Value[SSigmaProp.type])
   override def opType = SFunc(input.tpe, SBoolean)
 }
 object SigmaPropIsProven extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.SigmaPropIsProvenCode
+  override def opCode: OpCode = OpCodes.SigmaPropIsProvenCode
 }
 
 /** Extract serialized bytes of a SigmaProp value */
@@ -163,7 +163,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override val opType = SFunc(input.tpe, tpe)
 }
 object SigmaPropBytes extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.SigmaPropBytesCode
+  override def opCode: OpCode = OpCodes.SigmaPropBytesCode
 }
 
 case class SizeOf[V <: SType](input: Value[SCollection[V]])
@@ -172,7 +172,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   override val opType = SFunc(SCollection(SCollection.tIV), SInt)
 }
 object SizeOf extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.SizeOfCode
+  override def opCode: OpCode = OpCodes.SizeOfCode
 }
 
 sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
@@ -183,7 +183,7 @@ case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] wi
   override val opType = SFunc(SBox, SLong)
 }
 object ExtractAmount extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractAmountCode
+  override def opCode: OpCode = OpCodes.ExtractAmountCode
 }
 
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
@@ -191,7 +191,7 @@ case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArra
   override val opType = SFunc(SBox, SByteArray)
 }
 object ExtractScriptBytes extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractScriptBytesCode
+  override def opCode: OpCode = OpCodes.ExtractScriptBytesCode
 }
 
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
@@ -199,7 +199,7 @@ case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] wit
   override val opType = SFunc(SBox, SByteArray)
 }
 object ExtractBytes extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractBytesCode
+  override def opCode: OpCode = OpCodes.ExtractBytesCode
 }
 
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
@@ -207,7 +207,7 @@ case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteA
   override val opType = SFunc(SBox, SByteArray)
 }
 object ExtractBytesWithNoRef extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
+  override def opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
 }
 
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
@@ -215,7 +215,7 @@ case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with N
   override val opType = SFunc(SBox, SByteArray)
 }
 object ExtractId extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractIdCode
+  override def opCode: OpCode = OpCodes.ExtractIdCode
 }
 
 case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
@@ -226,7 +226,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
   override def opType = SFunc(Vector(SBox, SByte), tpe)
 }
 object ExtractRegisterAs extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractRegisterAs
+  override def opCode: OpCode = OpCodes.ExtractRegisterAs
   def apply[V <: SType](input: Value[SBox.type],
                         registerId: RegisterId)(implicit tpe: V): ExtractRegisterAs[V] =
     ExtractRegisterAs(input, registerId, SOption(tpe))
@@ -243,7 +243,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
   override def opType = OpType
 }
 object ExtractCreationInfo extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.ExtractCreationInfoCode
+  override def opCode: OpCode = OpCodes.ExtractCreationInfoCode
   val ResultType = STuple(SInt, SByteArray)
   val OpType = SFunc(SBox, ResultType)
 }
@@ -263,7 +263,7 @@ case class DeserializeContext[V <: SType](id: Byte, tpe: V) extends Deserialize[
   override val opType = SFunc(Vector(SContext, SByte), tpe)
 }
 object DeserializeContext extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.DeserializeContextCode
+  override def opCode: OpCode = OpCodes.DeserializeContextCode
 }
 
 //todo: make it method of SBox and write test for this class
@@ -272,7 +272,7 @@ case class DeserializeRegister[V <: SType](reg: RegisterId, tpe: V, default: Opt
   override val opType = SFunc(Vector(SBox, SByte, SOption(tpe)), tpe)
 }
 object DeserializeRegister extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.DeserializeRegisterCode
+  override def opCode: OpCode = OpCodes.DeserializeRegisterCode
 }
 
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
@@ -280,7 +280,7 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   override val opType = SFunc(Vector(SContext, SByte), tpe)
 }
 object GetVar extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.GetVarCode
+  override def opCode: OpCode = OpCodes.GetVarCode
   def apply[V <: SType](varId: Byte, innerTpe: V): GetVar[V] = GetVar[V](varId, SOption(innerTpe))
 }
 
@@ -291,7 +291,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def toString: String = s"$input.get"
 }
 object OptionGet extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.OptionGetCode
+  override def opCode: OpCode = OpCodes.OptionGetCode
 }
 
 case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[V])
@@ -301,7 +301,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   override def tpe: V = input.tpe.elemType
 }
 object OptionGetOrElse extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.OptionGetOrElseCode
+  override def opCode: OpCode = OpCodes.OptionGetOrElseCode
 }
 
 case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
@@ -311,5 +311,5 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   override def tpe= SBoolean
 }
 object OptionIsDefined extends ValueCompanion {
-  override val opCode: OpCode = OpCodes.OptionIsDefinedCode
+  override def opCode: OpCode = OpCodes.OptionIsDefinedCode
 }
