@@ -590,8 +590,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
-  ignore("Option.filter") {
+  property("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
       null,

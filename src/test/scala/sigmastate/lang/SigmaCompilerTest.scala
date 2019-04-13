@@ -322,18 +322,14 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/422
-
-  // TODO  add rule to OptionCoster
-  ignore("SOption.filter") {
-    testMissingCosting("getVar[Int](1).filter({(i: Int) => i > 0})",
+  property("SOption.filter") {
+    comp("getVar[Int](1).filter({(i: Int) => i > 0})") shouldBe
       mkMethodCall(GetVarInt(1),
         SOption.FilterMethod.withConcreteTypes(Map(SOption.tT -> SInt)),
-        IndexedSeq(Terms.Lambda(
-          Vector(("i", SInt)),
-          SBoolean,
-          Some(GT(Ident("i", SInt).asIntValue, IntConstant(0))))), Map())
-    )
+        IndexedSeq(FuncValue(
+          Vector((1, SInt)),
+          GT(ValUse(1, SInt), IntConstant(0)))), Map()
+      )
   }
 
   // TODO  add rule to OptionCoster
