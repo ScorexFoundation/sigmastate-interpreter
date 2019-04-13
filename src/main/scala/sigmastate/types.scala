@@ -32,6 +32,7 @@ import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, SigmaDslBuil
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
+import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 
 /** Base type for all AST nodes of sigma lang. */
@@ -218,6 +219,15 @@ trait STypeCompanion {
 
   /** Type identifier to use in method serialization */
   def typeId: Byte
+
+  def typeName: String = {
+    this match {
+      case t: SType =>
+        val rtype = stypeToRType(t)
+        rtype.name
+      case _ => this.getClass.getSimpleName.replace("$", "")
+    }
+  }
 
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]

@@ -7,10 +7,17 @@ import SType._
 import scalan.util.FileUtil
 import scalan.meta.PrintExtensions._
 
-object SpecGen extends App {
+object SpecGenUtils {
+  val types = SType.allPredefTypes.diff(Seq(SString))
+  val companions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
+  val typesWithMethods =
+    companions.zip(companions.asInstanceOf[Seq[SType]]) ++
+        Seq((SCollection, SCollection.ThisType), (SOption, SOption.ThisType))
+}
+
+trait SpecGen {
+  import SpecGenUtils._
   val tT = STypeIdent("T")
-  val tT1 = STypeIdent("T_1")
-  val tTn = STypeIdent("T_n")
 
   def printTypes(companions: Seq[STypeCompanion]) = {
     val lines = for { tc <- companions.sortBy(_.typeId) } yield {
@@ -56,55 +63,51 @@ object SpecGen extends App {
         |  \\bf{Parameters} &
         |      \\(\\begin{array}{l l l}
         |         ${args.rep({ case (info, t) =>
-                    s"\\lst{${info.name}} & \\lst{: $t} & \\text{// ${info.description}} \\\\"
-                   }, "\n")}
+        s"\\lst{${info.name}} & \\lst{: $t} & \\text{// ${info.description}} \\\\"
+      }, "\n")}
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
 
-   s"""
-     |\\subsubsection{\\lst{$typeName.${m.name}} method (Code ${m.objType.typeId}.${m.methodId})}
-     |\\noindent
-     |\\begin{tabularx}{\\textwidth}{| l | X |}
-     |   \\hline
-     |   \\bf{Description} & ${m.docInfo.opt(i => i.description + (!i.isOpcode).opt(" (FRONTEND ONLY)"))} \\\\
-     |  $params
-     |  \\hline
-     |  \\bf{Result} & \\lst{${resTpe}} \\\\
-     |  \\hline
-     |\\end{tabularx}
-     |""".stripMargin
+    s"""
+      |\\subsubsection{\\lst{$typeName.${m.name}} method (Code ${m.objType.typeId}.${m.methodId})}
+      |\\noindent
+      |\\begin{tabularx}{\\textwidth}{| l | X |}
+      |   \\hline
+      |   \\bf{Description} & ${m.docInfo.opt(i => i.description + (!i.isOpcode).opt(" (FRONTEND ONLY)"))} \\\\
+      |  $params
+      |  \\hline
+      |  \\bf{Result} & \\lst{${resTpe}} \\\\
+      |  \\hline
+      |\\end{tabularx}
+      |""".stripMargin
   }
 
-  def printMethods(typeName: String, tc: STypeCompanion, t: SType) = {
+  def printMethods(tc: STypeCompanion, t: SType) = {
     val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
 
-      methodSubsection(typeName, m)
+      methodSubsection(tc.typeName, m)
     }
     val res = methodSubsections.mkString("\n\n")
     res
   }
+}
 
-  val types = SType.allPredefTypes.diff(Seq(SString))
-  val companions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
-  val table = printTypes(companions)
-  val fPrimOps = FileUtil.file("docs/spec/generated/primops.tex")
-  FileUtil.write(fPrimOps, table)
+object GenPredeftypesApp extends SpecGen {
+  import SpecGenUtils._
 
-  val typesWithMethods =
-        companions.zip(companions.asInstanceOf[Seq[SType]]) ++
-        Seq((SCollection, SCollection.ThisType), (SOption, SOption.ThisType))
-  for ((tc, t) <- typesWithMethods) {
-    val typeName = tc match {
-      case t: SType =>
-        val rtype = stypeToRType(t)
-        rtype.name
-      case _ => tc.getClass.getSimpleName.replace("$", "")
+  def main(args: Array[String]) = {
+    val table = printTypes(companions)
+    val fPrimOps = FileUtil.file("docs/spec/generated/predeftypes.tex")
+    FileUtil.write(fPrimOps, table)
+
+    for ((tc, t) <- typesWithMethods) {
+      val typeName = tc.typeName
+      val methodsRows = printMethods(tc, t)
+      val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
+      FileUtil.write(fMethods, methodsRows)
+
+      println(s"\\input{generated/${typeName}_methods.tex}")
     }
-    val methodsRows = printMethods(typeName, tc, t)
-    val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
-    FileUtil.write(fMethods, methodsRows)
-
-    println(s"\\input{generated/${typeName}_methods.tex}")
   }
 }
