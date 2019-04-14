@@ -137,6 +137,8 @@ object Values {
 
     override def toString: Idn = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
 
+    def typeName: String = this.getClass.getSimpleName.replace("$", "")
+
     def init() {
       if (this.opCode != 0 && _allOperations.contains(this.opCode))
         throw sys.error(s"Operation $this already defined")
