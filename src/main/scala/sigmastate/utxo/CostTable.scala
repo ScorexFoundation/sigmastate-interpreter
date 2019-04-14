@@ -139,6 +139,7 @@ object CostTable {
     ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
     ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
     ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
+    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
 

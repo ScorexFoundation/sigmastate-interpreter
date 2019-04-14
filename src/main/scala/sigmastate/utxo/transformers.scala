@@ -47,8 +47,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
 }
 
 case class Filter[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
+                               condition: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override val opCode: OpCode = OpCodes.FilterCode
   override def tpe: SCollection[IV] = input.tpe

@@ -582,6 +582,16 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
+  property("SCollection.filter") {
+    comp("OUTPUTS.filter({ (out: Box) => out.value >= 1L })") shouldBe
+      mkFilter(Outputs,
+        FuncValue(
+          Vector((1, SBox)),
+          GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))
+        )
+      )
+  }
+
   property("failed option constructors (not supported)") {
     costerFail("None", 1, 1)
     costerFail("Some(10)", 1, 1)
