@@ -1,11 +1,7 @@
 package org.ergoplatform
 
-import java.math.BigInteger
-
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoLikeContext.Height
 import scalan.RType
-import scalan.RType.{TupleType, PairType}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
@@ -13,9 +9,9 @@ import sigmastate.eval.Extensions._
 import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import special.collection.{Coll, CollType}
+import special.collection.Coll
 import special.sigma
-import special.sigma.{WrapperType, Header, Box, AnyValue, TestValue, PreHeader}
+import special.sigma.{Header, Box, AnyValue, PreHeader}
 import SType._
 import RType._
 import special.sigma.Extensions._
@@ -122,6 +118,18 @@ object ErgoLikeContext {
       dummyPreHeader,
       noBoxes,
       boxesToSpend, spendingTransaction, self, extension)
+
+  def apply(currentHeight: Height,
+            lastBlockUtxoRoot: AvlTreeData,
+            minerPubkey: Array[Byte],
+            dataBoxes: IndexedSeq[ErgoBox],
+            boxesToSpend: IndexedSeq[ErgoBox],
+            spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
+            self: ErgoBox) =
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
+      noHeaders,
+      dummyPreHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension(Map()))
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

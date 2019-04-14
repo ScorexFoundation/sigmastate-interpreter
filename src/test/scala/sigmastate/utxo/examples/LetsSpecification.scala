@@ -1,9 +1,9 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
+import org.ergoplatform._
 import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
@@ -35,7 +35,7 @@ class LetsSpecification extends SigmaTestingCommons {
       |
       |  val minBalance = -20000
       |
-      |  val lookupProof = getVar[Coll[Byte]](2).get
+      |  val lookupProof = getVar[Coll[Byte]](1).get
       |
       |  val treeHolderBox = CONTEXT.dataInputs(0)
       |
@@ -49,7 +49,7 @@ class LetsSpecification extends SigmaTestingCommons {
       |  val participantOut1 = OUTPUTS(1)
       |
       |  val token0 = participant0.tokens(0)._1
-      |  val token1 = participant1.tokens(1)._1
+      |  val token1 = participant1.tokens(0)._1
       |
       |  val memberTokens = Coll(token0, token1)
       |
@@ -171,6 +171,50 @@ class LetsSpecification extends SigmaTestingCommons {
 
   property("exchange") {
 
+    val userTokenId0 = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+    val userTokenId1 = Digest32 @@ Array.fill(32)(Random.nextInt(100).toByte)
+
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    avlProver.performOneOperation(Insert(ADKey @@ userTokenId0, ADValue @@ Array.emptyByteArray))
+    avlProver.performOneOperation(Insert(ADKey @@ userTokenId1, ADValue @@ Array.emptyByteArray))
+    val digest = avlProver.digest
+    avlProver.generateProof()
+    val initTreeData = new AvlTreeData(digest, AvlTreeFlags.InsertOnly, 32, None)
+
+    avlProver.performOneOperation(Lookup(ADKey @@ userTokenId0))
+    avlProver.performOneOperation(Lookup(ADKey @@ userTokenId1))
+    val proof = avlProver.generateProof()
+
+    val directoryBox = ErgoBox(10, managementScript, 0,
+      Seq(letsTokenId -> 1L),
+      Map(R4 -> AvlTreeConstant(initTreeData), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+
+    val directoryDataInput = DataInput(directoryBox.id)
+
+    val userBoxBefore0 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L),
+      Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+    val userBoxBefore1 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L),
+      Map(R4 -> LongConstant(0), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+
+    val userBoxAfter0 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId0 -> 1L), Map(R4 -> LongConstant(-5)))
+    val userBoxAfter1 = ErgoBox(1, exchangeScript, 0, Seq(userTokenId1 -> 1L), Map(R4 -> LongConstant(5)))
+
+    val issuanceTx = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(directoryDataInput), IndexedSeq(userBoxAfter0, userBoxAfter1))
+
+    val exchangeContext = ErgoLikeContext(
+      currentHeight = 1000,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      dataBoxes = IndexedSeq(directoryBox),
+      boxesToSpend = IndexedSeq(userBoxBefore0, userBoxBefore1),
+      spendingTransaction = issuanceTx,
+      self = userBoxBefore0)
+
+    val managementProver = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(1, ByteArrayConstant(proof))
+
+    val res = managementProver.prove(env, exchangeScript, exchangeContext, fakeMessage).get
+    println("exchange script cost: " + res.cost)
   }
 
 }
