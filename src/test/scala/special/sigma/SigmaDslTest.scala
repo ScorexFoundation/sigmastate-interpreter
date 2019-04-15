@@ -437,7 +437,8 @@ class SigmaDslTest extends PropSpec
     val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
     val eq = EqualityChecker(opt)
     eq({ (x: Option[Long]) => x.get })("{ (x: Option[Long]) => x.get }")
-// TODO   eq({ (x: Option[Long]) => x.isEmpty })("{ (x: Option[Long]) => x.isEmpty }")
+    // TODO implement Option.isEmpty
+    //  eq({ (x: Option[Long]) => x.isEmpty })("{ (x: Option[Long]) => x.isEmpty }")
     eq({ (x: Option[Long]) => x.isDefined })("{ (x: Option[Long]) => x.isDefined }")
     eq({ (x: Option[Long]) => x.getOrElse(1L) })("{ (x: Option[Long]) => x.getOrElse(1L) }")
     eq({ (x: Option[Long]) => x.filter(_ == 1) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
