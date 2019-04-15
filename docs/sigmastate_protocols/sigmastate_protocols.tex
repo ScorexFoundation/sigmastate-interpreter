@@ -166,7 +166,7 @@ The main structure in \langname is a \emph{box}, which is roughly like a UTXO of
 The following sections present smart contracts using \langname. More details of \langname are available in the white paper~\cite{whitepaper} and the code for the below examples is available on GitHub~\cite{langrepo}. 
 \section{Basic Examples: Enhanced Spending Contracts}
 
-The examples below use P2SH address and highlight some limitation of Bitcoin. 
+The examples below use P2SH address and highlight some limitations of Bitcoin. 
 
 \subsection{Short-lived Unconfirmed Transactions: Paying for Coffee}
 
@@ -437,15 +437,12 @@ To mix an arbitrary box $B$, any one of the following is done:
 \end{enumerate}
 
 Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable so an outsider cannot guess $b$ with probability better than 1/2. Thus, the probability of guessing the original box after $n$ mixes is $1/2^n$. A box is mixed several times to reach the desired privacy.  Figure~\ref{fig:mixname} explains the protocol. 
-%assuming that the {\em Decision Diffie-Hellman} (DDH) problem in $G$ is hard
-%The indistinguishability of $O_b, O_{1-b}$ follows from the hardness of the {\em Decision Diffie-Hellman} (DDH) problem in $G$. 
-%the problem of distinguishing $g^{xy}$ from $g^z$, given $(g, g^x, g^y)$, for random $x, y, z$. 
 
-\mixname uses a primitive called a {\em Proof of Diffie-Hellman Tuple}, explained below. Let $g, h, u, v$ be public group elements. The prover proves knowledge of $x$ such that $u={g}^x$ and $v={h}^x$. 
+\mixname uses a primitive called a {\em Proof of Diffie-Hellman Tuple}~\cite{CDS94}, explained below. Let $g, h, u, v$ be public group elements. The prover proves knowledge of $x$ such that $u={g}^x$ and $v={h}^x$. 
 \begin{enumerate}
 	\item The prover picks $r \stackrel{R}{\leftarrow} \mathbb{Z}_q$, computes $(t_0, t_1) = ({g}^r, {h}^r)$ and sends $(t_0, t_1)$ to the verifier.
 	\item The verifier picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to prover.
-	\item The prover sends $z = r + cx$ to the verifier, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$. % for $b \in \{0,1\}$.
+	\item The prover sends $z = r + cx$ to the verifier, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$. 
 \end{enumerate}
 We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$.
 
@@ -457,6 +454,7 @@ Let $g$ be the generator of \texttt{proveDlog}.
 	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks random $x\in \mathbb{Z}_q$ and creates an output box $A$ containing $u = g^x$ protected by the script given below. She waits for Bob to join, who will do so by spending $A$ in a transaction satisfying following conditions: 
 	
 	\begin{enumerate}
+%		\item It has two outputs $O_0, O_1$ containing tuples $(h, w_0)$, $(h, w_1)$ respectively for $w_0, w_1\in G$. 
 		\item It has two outputs $O_0, O_1$ containing pairs $(w_0, w_1)$, $(w_1, w_0)$ respectively for $w_0, w_1\in G$. 
 		\item One of $(g, u, w_0, w_1), (g, u, w_1, w_0)$ is of the form $(g, g^x, g^y, g^{xy})$, a valid Diffie-Hellman tuple. This is encoded as $\texttt{proveDHTuple}(g, u, w_0, w_1)\lor \texttt{proveDHTuple}(g, u, w_1, w_0)$.
 		\item The value of $O_0, O_1$ is the same as that of $A$.
