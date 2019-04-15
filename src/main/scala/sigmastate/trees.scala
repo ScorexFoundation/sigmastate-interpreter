@@ -501,7 +501,8 @@ object ArithOp {
   }
 }
 
-case class Negation[T <: SType](input: Value[T]) extends OneArgumentOperation[T, T] {
+/** Negation operation on numeric type T. */
+case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = Negation
   override def tpe: T = input.tpe
 }

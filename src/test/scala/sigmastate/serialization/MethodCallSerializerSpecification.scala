@@ -19,7 +19,7 @@ class MethodCallSerializerSpecification extends SerializationSpecification {
 
   property("MethodCall deserialization round trip (non-generic method)") {
     val expr = MethodCall(Outputs,
-      SMethod(SCollection, "size", SFunc(SCollection[SBox.type], SInt), 1),
+      SCollection.SizeMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
       Vector(),
       Map()
     )

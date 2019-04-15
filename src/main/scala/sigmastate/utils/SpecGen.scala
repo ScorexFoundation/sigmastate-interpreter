@@ -7,7 +7,7 @@ import sigma.util.Extensions.ByteOps
 import SType._
 import scalan.util.{CollectionUtil, FileUtil}
 import scalan.meta.PrintExtensions._
-import sigmastate.Values.{FalseLeaf, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
+import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
@@ -185,7 +185,6 @@ object GenPrimOpsApp extends SpecGen {
       TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
       ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
     )
-    val predefFuncs = predefFuncRegistry.funcs
 
     // join collection of all methods with all operations by optional opCode
     // and collect only the operation which is not referenced by any method m.irInfo.opDesc
@@ -201,9 +200,26 @@ object GenPrimOpsApp extends SpecGen {
       println(s"$p")
     }
 
-    println(s"Total ops: ${primOps.size}")
+    println(s"Total ops: ${primOps.size}\n")
 
+    val noFuncs: Set[ValueCompanion] = Set(Constant)
+    val predefFuncs = predefFuncRegistry.funcs.filterNot(f => noFuncs.contains(f.info.opDesc))
 
+    // join collection of all methods with all operations by optional opCode
+    // and collect only the operation which is not referenced by any method m.irInfo.opDesc
+    val danglingOps = CollectionUtil.outerJoinSeqs(primOps, predefFuncs)(
+      o => Some(o._1), f => Some(f.info.opDesc.opCode)
+    )(
+      (k, o) => Some(o), // left without right
+      (k,i) => None,     // right without left
+      (k,i,o) => None    // left and right
+    ).map(_._2).collect { case Some(op) => op }
+
+    for (p <- danglingOps) {
+      println(s"$p")
+    }
+
+    println(s"Total dangling: ${danglingOps.size}")
   }
 }
 

@@ -2,7 +2,7 @@ package sigmastate
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoBoxCandidate}
+import org.ergoplatform._
 import scalan.RType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
@@ -27,10 +27,9 @@ import sigmastate.SByte.typeCode
 import sigmastate.SMethod.MethodCallIrBuilder
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
+import sigmastate.utxo._
 import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
-import sigmastate.utxo.ByIndex
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
@@ -364,6 +363,9 @@ case class SMethod(
       opDesc: ValueCompanion) = {
     this.copy(irInfo = MethodIRInfo(Some(irBuilder), Some(opDesc)))
   }
+  def withIRInfo(opDesc: ValueCompanion) = {
+    this.copy(irInfo = MethodIRInfo(None, Some(opDesc)))
+  }
   def setIsOpcode(value: Boolean) =
     this.copy(docInfo = docInfo.map(i => i.copy(isOpcode = value)))
 }
@@ -648,10 +650,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   }
 
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1)
+      .withIRInfo(ModQ)
       .withInfo("Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2)
+      .withIRInfo(ModQArithOp.Plus)
       .withInfo("Adds this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to add to this."))
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 3)
+      .withIRInfo(ModQArithOp.Minus)
       .withInfo("Subtracts \\lst{other} number from this by module Q.", MethodArgInfo("other", "Number to subtract from this."))
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder, MethodCall)
@@ -722,6 +727,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   val IsProven = "isProven"
   protected override def getMethods() = super.getMethods() ++ Seq(
     SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
+        .withIRInfo(SigmaPropBytes)
         .withInfo("Serialized bytes of this sigma proposition taken as ErgoTree."),
     SMethod(this, IsProven, SFunc(this, SBoolean), 2)
         .withInfo("Verify that sigma proposition is proven.")
@@ -812,9 +818,9 @@ object SOption extends STypeCompanion {
   val ThisType = SOption(tT)
 
   val IsEmptyMethod   = SMethod(this, IsEmpty, SFunc(ThisType, SBoolean), 1)
-  val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2)
-  val GetMethod       = SMethod(this, Get, SFunc(ThisType, tT), 3)
-  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
+  val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2).withIRInfo(OptionIsDefined)
+  val GetMethod       = SMethod(this, Get, SFunc(ThisType, tT), 3).withIRInfo(OptionGet)
+  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4).withIRInfo(OptionGetOrElse)
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
   val ToCollMethod    = SMethod(this, "toColl", SFunc(IndexedSeq(ThisType), SCollection(tT), Seq(tT)), 6)
       .withIRInfo(MethodCallIrBuilder, PropertyCall)
@@ -890,6 +896,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val tPredicate = SFunc(tIV, SBoolean)
 
   val SizeMethod = SMethod(this, "size", SFunc(ThisType, SInt), 1)
+      .withIRInfo(SizeOf)
+      .withInfo("The size of the collection in elements.")
   val GetOrElseMethod = SMethod(this, "getOrElse", SFunc(IndexedSeq(ThisType, SInt, tIV), tIV, Seq(paramIV)), 2)
       .withIRInfo({ case (builder, obj, _, Seq(index, defaultValue), _) =>
         val index1 = index.asValue[SInt.type]
@@ -897,13 +905,25 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
       }, ByIndex)
   val MapMethod = SMethod(this, "map", SFunc(IndexedSeq(ThisType, SFunc(tIV, tOV)), tOVColl, Seq(paramIV, paramOV)), 3)
+      .withIRInfo(MapCollection)
+      .withInfo("Builds a new collection by applying a function to all elements of this collection." +
+          "Returns a new collection of type `Coll[B]` resulting from applying the given function\n" +
+          " `f` to each element of this collection and collecting the results.",
+        MethodArgInfo("f", "the function to apply to each element"))
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 4)
+      .withIRInfo(Exists)
   val FoldMethod = SMethod(this, "fold", SFunc(IndexedSeq(ThisType, tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(paramIV, paramOV)), 5)
+      .withIRInfo(Fold)
   val ForallMethod = SMethod(this, "forall", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 6)
+      .withIRInfo(ForAll)
   val SliceMethod = SMethod(this, "slice", SFunc(IndexedSeq(ThisType, SInt, SInt), ThisType, Seq(paramIV)), 7)
+      .withIRInfo(Slice)
   val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8)
+      .withIRInfo(Filter)
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
+      .withIRInfo(Append)
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
+      .withIRInfo(ByIndex)
   val BitShiftLeftMethod = SMethod(this, "<<",
     SFunc(IndexedSeq(ThisType, SInt), ThisType, Seq(paramIV)), 11)
   val BitShiftRightMethod = SMethod(this, ">>",
@@ -1228,9 +1248,11 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       i match {
         case r: MandatoryRegisterId =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
+              .withIRInfo(ExtractRegisterAs)
               .withInfo(r.purpose)
         case _ =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
+              .withIRInfo(ExtractRegisterAs)
               .withInfo("Non-mandatory register")
       }
     }
@@ -1242,28 +1264,37 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val BytesWithoutRef = "bytesWithoutRef"
   val CreationInfo = "creationInfo"
   val GetReg = "getReg"
+
   // should be lazy, otherwise lead to initialization error
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
+      .withIRInfo(ExtractCreationInfo)
       .withInfo(
         "If \\lst{tx} is a transaction which generated this box, then \\lst{creationInfo._1} " +
         "is a height of the tx's block. The \\lst{creationInfo._2} is a serialized transaction " +
         "identifier followed by box index in the transaction outputs.") // see ExtractCreationInfo
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
+      .withIRInfo(ExtractRegisterAs)
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8)
       .withIRInfo(MethodCallIrBuilder, PropertyCall)
       .withInfo("Secondary tokens")
+
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
     SMethod(this, Value, SFunc(SBox, SLong), 1)
+        .withIRInfo(ExtractAmount)
         .withInfo("Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)"), // see ExtractAmount
     SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
+        .withIRInfo(ExtractScriptBytes)
         .withInfo("Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
             " open this box. (aka spend it in a transaction)"), // see ExtractScriptBytes
     SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
+        .withIRInfo(ExtractBytes)
         .withInfo("Serialized bytes of this box's content, including proposition bytes."), // see ExtractBytes
     SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
+        .withIRInfo(ExtractBytesWithNoRef)
         .withInfo("Serialized bytes of this box's content, excluding transactionId and index of output."), // see ExtractBytesWithNoRef
     SMethod(this, Id, SFunc(SBox, SByteArray), 5)
+        .withIRInfo(ExtractId)
         .withInfo("Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
     creationInfoMethod,
     getRegMethod,

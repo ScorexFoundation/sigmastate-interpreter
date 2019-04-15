@@ -1705,7 +1705,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        val c = lC.cost + rC.cost + costOf(node)
 //        withDefaultSize(v, c)
 
-      case neg: Negation[t] =>
+      case neg: Negation[SNumericType]@unchecked =>
         val tpe = neg.input.tpe
         val et = stypeToElem(tpe)
         val op = NumericNegate(elemToNumeric(et))(et)
