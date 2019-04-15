@@ -119,7 +119,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         None
 
     case a @ Apply(PKFunc.symNoType, args) =>
-      Some(PKFunc.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
+      Some(PKFunc.info.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
   })))(e)
 

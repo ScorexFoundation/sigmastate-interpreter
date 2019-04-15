@@ -7,9 +7,12 @@ import sigma.util.Extensions.ByteOps
 import SType._
 import scalan.util.{CollectionUtil, FileUtil}
 import scalan.meta.PrintExtensions._
-import sigmastate.Values.ValueCompanion
+import sigmastate.Values.{FalseLeaf, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
+import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
+import sigmastate.lang.StdSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.utxo.{SigmaPropIsProven, SelectField}
 
 import scala.collection.immutable
 
@@ -172,18 +175,37 @@ object PrintSerializersInfoApp extends SpecGen {
 }
 
 object GenPrimOpsApp extends SpecGen {
+
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+
   def main(args: Array[String]) = {
     val methods = collectMethods()
     val ops = collectOperations()
+    val noOps = Set(
+      TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
+      ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
+    )
+    val predefFuncs = predefFuncRegistry.funcs
+
+    // join collection of all methods with all operations by optional opCode
+    // and collect only the operation which is not referenced by any method m.irInfo.opDesc
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
       o => Some(o._1), m => m.irInfo.opDesc.map(_.opCode)
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left
       (k,i,o) => None    // left and right
-    ).map(_._2).collect { case Some(op) => op }
+    ).map(_._2).collect { case Some(op) if !noOps.contains(op._2) => op }
 
-    for (p <- primOps)
+    for (p <- primOps) {
       println(s"$p")
+    }
+
+    println(s"Total ops: ${primOps.size}")
+
+
   }
 }
+
+
+
