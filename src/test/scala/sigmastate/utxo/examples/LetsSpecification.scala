@@ -28,7 +28,6 @@ class LetsSpecification extends SigmaTestingCommons {
 
   private val miningRewardsDelay = 720
   private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
-  private val feeBytes = feeProp.bytes
 
   val exchangeScript = compiler.compile(env,
     """{
