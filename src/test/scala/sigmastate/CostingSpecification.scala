@@ -202,4 +202,10 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $selfTree.get(key1, lookupProof).isDefined }") shouldBe (AccessTree + containsCost + constCost + selectField)
     cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }") shouldBe (AccessTree + containsCost + constCost + LengthGTConstCost)
   }
+
+  property("Coll operations cost") {
+    val coll = "OUTPUTS"
+    cost(s"{ $coll.filter({ (b: Box) => b.value > 1 }).size > 0 }") shouldBe
+      (OutputsCost + collToColl + lambdaCost + extractCost + GTConstCost + LengthGTCost)
+  }
 }
