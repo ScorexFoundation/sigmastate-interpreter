@@ -48,10 +48,14 @@ trait SpecGen {
     } yield m
   }
 
-  def collectOperations(): Seq[(OpCode, ValueCompanion)] = {
+  def collectSerializableOperations(): Seq[(OpCode, ValueCompanion)] = {
     val sers = collectSerializers()
     sers.map(s => (s.opCode, s.opDesc))
   }
+
+  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
+  val noFuncs: Set[ValueCompanion] = Set(Constant)
+  val predefFuncs = predefFuncRegistry.funcs.filterNot(f => noFuncs.contains(f.info.opDesc))
 
   def printTypes(companions: Seq[STypeCompanion]) = {
     val lines = for { tc <- companions.sortBy(_.typeId) } yield {
@@ -176,18 +180,15 @@ object PrintSerializersInfoApp extends SpecGen {
 
 object GenPrimOpsApp extends SpecGen {
 
-  private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
-
   def main(args: Array[String]) = {
     val methods = collectMethods()
-    val ops = collectOperations()
+    val ops = collectSerializableOperations()
     val noOps = Set(
       TaggedVariable, ValUse, ConstantPlaceholder, TrueLeaf, FalseLeaf,
       ConcreteCollection, ConcreteCollectionBooleanConstant, Tuple, SelectField, SigmaPropIsProven, ValDef, FunDef, BlockValue
     )
 
-    // join collection of all methods with all operations by optional opCode
-    // and collect only the operation which is not referenced by any method m.irInfo.opDesc
+    // join collection of all operations with all methods by optional opCode
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
       o => Some(o._1), m => m.irInfo.opDesc.map(_.opCode)
     )(
@@ -196,17 +197,15 @@ object GenPrimOpsApp extends SpecGen {
       (k,i,o) => None    // left and right
     ).map(_._2).collect { case Some(op) if !noOps.contains(op._2) => op }
 
+    // primOps is collection of operations which are not referenced by any method m.irInfo.opDesc
     for (p <- primOps) {
       println(s"$p")
     }
 
     println(s"Total ops: ${primOps.size}\n")
 
-    val noFuncs: Set[ValueCompanion] = Set(Constant)
-    val predefFuncs = predefFuncRegistry.funcs.filterNot(f => noFuncs.contains(f.info.opDesc))
 
-    // join collection of all methods with all operations by optional opCode
-    // and collect only the operation which is not referenced by any method m.irInfo.opDesc
+    // join collection of operations with all predef functions by opCode
     val danglingOps = CollectionUtil.outerJoinSeqs(primOps, predefFuncs)(
       o => Some(o._1), f => Some(f.info.opDesc.opCode)
     )(
@@ -215,6 +214,7 @@ object GenPrimOpsApp extends SpecGen {
       (k,i,o) => None    // left and right
     ).map(_._2).collect { case Some(op) => op }
 
+    // danglingOps are the operations which are not referenced by any predef funcs
     for (p <- danglingOps) {
       println(s"$p")
     }
@@ -223,5 +223,36 @@ object GenPrimOpsApp extends SpecGen {
   }
 }
 
+object GenSerializableOps extends SpecGen {
+  def collectOpsTable() = {
+    val ops = collectSerializableOperations()
+    val methods = collectMethods()
+    val funcs = predefFuncs
 
+    val methodsByOpCode = methods
+      .groupBy(_.irInfo.opDesc.map(_.opCode))
+//      .map { case p @ (k, xs) => p.ensuring({ k.isEmpty || xs.length == 1}, p) }
+
+    val funcsByOpCode = funcs
+      .groupBy(_.info.opDesc.opCode)
+      .ensuring(g => g.forall{ case (k, xs) => xs.length <= 1})
+
+    val table = ops.map { case (opCode, opDesc) =>
+      val methodOpt = methodsByOpCode.get(Some(opCode)).map(_.head)
+      val funcOpt = funcsByOpCode.get(opCode).map(_.head)
+      val m = methodOpt.opt(m => m.objType.typeName + "." + m.name)
+      val f = funcOpt.opt(f => f.name)
+      (opCode, opDesc, m, f)
+    }
+    table
+  }
+
+  def main(args: Array[String]) = {
+    val table = collectOpsTable()
+    for (r <- table) {
+      println(r)
+    }
+  }
+
+}
 
