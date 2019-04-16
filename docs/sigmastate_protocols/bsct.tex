@@ -1,9 +1,9 @@
-\documentclass[11pt]{article}
-
+%\documentclass[11pt]{article}
+\documentclass[runningheads]{llncs}
 \def\shownotes{1}
 \def\notesinmargins{0}
 
-\usepackage{fullpage}
+%\usepackage{fullpage}
 
 \usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace}
 \usepackage{caption}
@@ -89,18 +89,26 @@
 
 
 \begin{abstract}
-A widely believed tenet in the folklore says that with lack of persistent storage, UTXO model is more limited than account-based smart contracts. While in theory every UTXO blockchain with certain capabilities is able to carry over Turing-complete computations as shown in~\cite{CKM18a}, such results are not practical as they use the highly inefficient Rule 110.
+A widely believed tenet in the folklore says that with lack of persistent storage, UTXO model is more limited than account-based smart contracts. While in theory every UTXO blockchain with certain capabilities is able to carry over Turing-complete computations as shown in~\cite{CKM18a}, such results are not practical.
 In this work we show how to implement many useful multi-stage contracts with complex and evolving data using UTXO-based models. Some of the examples we present are a Rock-Paper-Scissors game, and an initial coin offering campaign.
 \end{abstract}
 
 \section{Introduction}
 
-In Bitcoin, the most popular cryptocurrency, funds are stored in containers protected by a script encoding the {\em spending condition}, which a spender must satisfy~\cite{Nak08}. This is called the UTXO model, because these containers are called {\em unspent transaction outputs} (UTXOs). As the name suggests, UTXOs are the outputs of a transaction that are not yet spent, and can encode arbitrary conditions as long as they are expressible in the script.\footnote{Bitcoin actually discourages such usage of its script, because apart from the few ``standard'' transaction types, a bitcoin core node does not propogate non-standard transactions, even though it accepts a block containing such transactions. Ergo, on the other hand is entirely about non-standard transactions.} A transaction in Bitcoin spends (destroys) some UTXOs and creates new ones. A UTXO is uniquely identified by the transaction id and the output index. Funds stored in a UTXO must be spent in entirety. 
+In Bitcoin, the most popular cryptocurrency, funds are stored in immutable one-time containers protected by a {\em spending condition}, which a spender must satisfy~\cite{Nak08}.
+%~\cite{Nak08}. 
+This is called the {\em UTXO-based} model, because the containers are called {\em unspent transaction outputs} (UTXOs). As the name suggests, UTXOs are the outputs of a transaction that are not yet spent, and can encode arbitrary conditions as long as they are expressible in the underlying script.
+%\footnote{Bitcoin actually discourages such usage of its script, because apart from the few ``standard'' transaction types, a bitcoin core node does not propogate non-standard transactions, even though it accepts a block containing such transactions. Ergo, on the other hand is entirely about non-standard transactions.} 
+A transaction in Bitcoin spends (destroys) some UTXOs and creates new ones. %A UTXO is uniquely identified by the transaction id and the output index. Funds stored in a UTXO must be spent in entirety. 
 
-Instead of UTXOs, Ethereum~\cite{wood2014ethereum} uses the alternative {\em account-based} model, where funds are stored in long-lived accounts (represented by an address) and can be transferred in fractional amounts. End users operate an {\em externally owned account}, whose address is (the hash of) a public key. Smart contracts, on the other hand, exist on an address derived from the creating transaction in a deterministic way. A smart contract has methods that can be invoked by sending a message from another address. An Ethereum contract is written in a Turing complete language and the account based model allows smart contracts to have long-lived global state. %This makes Ethereum contracts very powerful. 
+Instead of UTXOs, Ethereum
+%~\cite{wood2014ethereum} 
+uses the {\em account-based} model, where funds are stored in long-lived accounts (represented by an address) and can be transferred in fractional amounts~\cite{wood2014ethereum}. End users operate an {\em externally owned account}, whose address is (the hash of) a public key. Smart contracts, on the other hand, exist on an address derived from the creating transaction in a deterministic way. A smart contract has methods that can be invoked by sending a message from another address. 
+%An Ethereum contract is written in a Turing complete language and 
+This model allows contracts to keep a long-lived global state. %This makes Ethereum contracts very powerful. 
 
 Bitcoin also allows smart contracts but its language is highly restrictive compared to Ethereum. Ergo is similar to Bitcoin in that it uses the UTXO model. However, unlike Bitcoin, the scripting language of Ergo (called \langname) is very expressive. In particular, \langname has functional programming and allows us to 
-define the spending condition using the inputs and outputs of the spending transaction~\cite{whitepaper}. As shown in~\cite{CKM18a}, \langname does support arbitrary Turing complete computation, albeit very inefficiently via Rule 110 reduction~\cite{NW06}. In this article, we show how to create more efficient and usable contracts with evolving data. The complete code of the examples is available at the \langname repository~\cite{langrepo}.%We refer the reader to~\cite{whitepaper} for details about \langname.
+define the spending condition using the inputs and outputs of the spending transaction~\cite{whitepaper}. As shown in~\cite{CKM18a}, \langname does support arbitrary Turing complete computation, albeit very inefficiently via Rule 110 reduction~\cite{NW06}. In this article, we show how to create more efficient and usable contracts with evolving data. The complete code is available at the \langname repository~\cite{langrepo}.%We refer the reader to~\cite{whitepaper} for details about \langname.
 
 %The main structure in \langname is a \emph{box}, which is roughly like a UTXO of Bitcoin. A transaction spends (destroys) some boxes as inputs and creates new boxes (as outputs). A box is made of upto ten {\em registers} labelled $R_0, R_1,\ldots R_9$, four of which are mandatory. $R_0$ contains the monetary value, $R_1$ contains a script with the spending condition, $R_2$ contains assets (tokens) and $R_3$ contains a unique identifier of 34 bytes made up of a transaction ID (32 bytes) and an output index (2 bytes). The spender of a box must provide a `proof' of satisfying its spending condition. 
 %
@@ -114,12 +122,12 @@ define the spending condition using the inputs and outputs of the spending trans
 \section{Rock-Paper-Scissors Game}
 \label{rps}
 
-Rock-Paper-Scissors (RPS) is a 2-party game, where each party choose a secret independently and the game is decided after the secrets are revealed. 
-Let $a, b\in \mathbb{Z}_3$ be the choices of two parties, Alice and Bob, with the understanding that 0, 1 and 2 represent rock, paper and scissors respectively. If $a = b$ then the game is a draw, otherwise Alice wins if $a-b \in \{1, -2\}$ else Bob wins. 
+Rock-Paper-Scissors (RPS) is a 2-party game, where each party chooses a secret independently of the other and the game is decided after revealing the secrets. 
+Let $a, b\in \mathbb{Z}_3$ be the choices of two parties, Alice and Bob, with the understanding that (0, 1, 2) represent (rock, paper, scissors). If $a = b$ then the game is a draw, otherwise if $a-b \in \{1, -2\}$ then Alice wins else Bob wins. 
 
-In a physical game, both parties reveal their secrets simultaneously, so no party can cheat by selecting the choice adaptively. In a virtual game, having the parties reveal their secrets simultaneously is not possible. Hence, the party that reveals the secret first has to be protected from cheating by the second party, something that is often overlooked~\cite{rps15}. The solution for such scenarios is to use {\em commitments} as follows. 
+In an ideal game, both parties reveal their secrets simultaneously, so no party can choose adaptively. In the real-world, however, having the parties reveal their secrets simultaneously is not feasible. Hence, the party that first reveals the secret must be protected from cheating by the second party, something that is often overlooked~\cite{rps15}. The solution for such scenarios is to use {\em commitments}. 
 Alice creates a commitment $k=H(a||s)$ to her secret $a$. She uses $k$ and her public key \texttt{alice} to generate \texttt{fullGameScriptHash}, the hash of the following script:
-
+\small{
 \begin{verbatim}
 val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
 val a = getVar[Byte](1).get  // Alice's secret choice a (represented as a byte)
@@ -128,13 +136,12 @@ val bob = SELF.R5[SigmaProp].get
 val bobDeadline = SELF.R6[Int].get // after this, it becomes Bob's coin
 val drawPubKey = SELF.R7[SigmaProp].get
 val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
-
 (bob && HEIGHT > bobDeadline) || {valid_a &&
   if (a == b) drawPubKey else {if ((a - b) == 1 || (a - b) == -2) alice else bob}}
 \end{verbatim}
-
+}
 To start the game, Alice creates a box protected by the script given below:
-
+\small{
 \begin{verbatim}
 OUTPUTS.forall{(out:Box) =>
   val b             = out.R4[Byte].get
@@ -144,7 +151,7 @@ OUTPUTS.forall{(out:Box) =>
   blake2b256(out.propositionBytes) == fullGameScriptHash
 } && OUTPUTS.size == 2 && OUTPUTS(0).R7[SigmaProp].get == alice 
 \end{verbatim}
-
+}
 % // Bob needs to ensure that out.R5 contains bobPubKey
 
 The above code ensures that there must be two outputs, one for each player in the draw case (and going to the same player otherwise). We ignore fee in the above code and refer the reader to Sections~\ref{rps} and~\ref{ico} for code that handles fee. Register $R_7$ of the first output must contain Alice's public key (for use in the draw scenario). Bob has to make sure that $R_7$ of the second output contains his public key. Additionally, he must ensure that $R_5$ of both outputs contains his public key. We don't encode these conditions here because if Bob doesn't follow the protocol, he will lose. If Alice refuses to open her commitment before a certain deadline, then Bob automatically wins. 
@@ -152,18 +159,19 @@ The above code ensures that there must be two outputs, one for each player in th
 \section{Hot-Wallet Contracts: Reversible Addresses}
 
 Our second example describes {\em reversible addresses}, which have anti-theft features in the following sense. 
-Any funds sent to a reversible address can only be spent in way that allows payments to be reversed for a certain time. The idea was proposed for Bitcoin~\cite{raddress} (using the moniker {\em R-addresses}) and requires a hardfork. In \langname, however, this can be done natively.
+Any funds sent to a reversible address can only be spent in way that allows payments to be reversed for a certain time. The idea was proposed for Bitcoin and requires a hardfork~\cite{raddress}. In \langname, however, this can be done natively.
 
-To motivate this feature, consider managing the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private key is succeptible to compromise. One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. In general there is no way to recover the lost funds once the transaction is mined, even if the breach was discovered within minutes. 
+To motivate this feature, consider managing the hot-wallet (for instance, of a mining pool). Funds withdrawn by customers originate from this hot-wallet. Being a hot-wallet, its private key is succeptible to compromise, which will lead to funds being stolen. %One day you discover several unauthorized transactions from the hot-wallet, indicating a breach. 
+%You wish there was a way to reverse the transactions and cancel the withdraws but alas this is not the case. 
+%It is usually impossible to recover the stolen funds once the transaction is mined, even if the breach was discovered within minutes. 
 %The irreversibility of fund transfers, usually considered a feature, has now become a bug.
-
 We would like that in the event of such a compromise, we are able to save all funds stored in this wallet and move them to another address, provided that the breach is discovered within a specified time (such as 24 hours) of the first unauthorized withdraw. 
 
 %To achieve this, we require that all coins sent from the hot-wallet (both legitimate and by the attacker)
 %have a 24 hour cooling-off period, during which the created boxes can only be spent by a trusted private key that is was selected {\em before} the compromise occurred. This trusted key must be different from the hot-wallet private key and should ideally be in cold storage. 
 %After 24 hours, these boxes become `normal' and can only be spent by the receiver.
 
-This is done by storing the hot-wallet funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party. Note that the trusted party must be decided at the time of address generation ({\em before} the compromise occurred) and cannot be changed later. To use a different trusted party, a new address has to be generated. Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. 
+In \langname, this can done by storing the funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party. Note that the trusted party must be decided at the time of address generation ({\em before} the compromise occurred) and cannot be changed later. To use a different trusted party, a new address has to be generated. Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. 
 %A reversible address is a P2SH address whose script encodes the following conditions:   
 %\begin{enumerate}
 %	\item This input box can only be spent by \texttt{alice}.
@@ -181,13 +189,16 @@ Let \texttt{bob} be the public key of a customer who is withdrawing.
 %Such addresses are designed for storing large amount of funds for automated withdraws (such as hot-wallets). 
 %They are not designed for daily spending (such as paying for a coffee). 
 To create a reversible address, first create a script, \texttt{withdrawScript}, with the following code:
+\small{
 \begin{verbatim}
 val bob         = SELF.R4[SigmaProp].get // public key of customer withdrawing
 val bobDeadline = SELF.R5[Int].get       // max locking height
 (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
 \end{verbatim}
+}
 
-Let \texttt{feeProposition} be the script of a box that pays mining fee and \texttt{maxFee} be the maximum fee allowed in one transaction. The reversible address is the P2SH address of the following script:
+Let \texttt{feeProposition} be the script paying mining fee and \texttt{maxFee} be the maximum allowed fee. The reversible address is the P2SH address of the following script:
+\small{
 \begin{verbatim}
 val isChange = {(out:Box) => out.propositionBytes == SELF.propositionBytes}
 val isWithdraw = {(out:Box) => 
@@ -197,44 +208,37 @@ val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}
 val totalFee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x + b.value else x })
 alice && OUTPUTS.forall(isValid) && totalFee <= maxFee
 \end{verbatim}
-
-The sender (\texttt{alice}) must ensure that register $R_4$ of the created box contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the box after roughly \texttt{blocksIn24h} blocks. If an unauthorized transaction from \texttt{alice} is detected, an ``abort procedure'' is triggered by \texttt{carol} and all funds sent from \texttt{alice} are diverted elsewhere. %Additionally, boxes currently controlled by \texttt{alice} also need to be sent secure addresses. 
+}
+%The sender (\texttt{alice}) must ensure that register $R_4$ of the new box contains \texttt{bob}. 
+Normally \texttt{bob} will spend the box after roughly \texttt{blocksIn24h} blocks. If an unauthorized transaction from \texttt{alice} is detected, an ``abort procedure'' is triggered by \texttt{carol} and funds in any unspent boxes sent from \texttt{alice} are diverted to a secure address. %Additionally, boxes currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
 
 \section{An ICO Example}
 \label{ico}
-It is not trivial to create an Initial Coin Offering (ICO) on top of UTXO based currencies, because, in contrast to account-based models, there is no explicit persistent storage here. However, Ergo brings spending transactions into the execution context of scripts. With this small change it becomes possible to express dependencies between transaction outputs and inputs, and execute arbitrarily complex Turing-complete programs~\cite{CKM18a}. 
+
+We consider an Initial Coin Offering (ICO) for a project wanting to collect at least a certain amount of funds (in Ergs). Once the funding threshold is crossed and funding period ends, the project is kickstarted and tokens are issued proportional to the total funding. The investors can then withdraw the tokens based on their investment amount. % during the funding period. The contract steps are briefly described below with details provided further.
+
+It is not trivial to create an ICO on top of UTXO based currencies, because, in contrast to account-based models, there is no explicit persistent storage here. However, Ergo brings spending transactions into the execution context of scripts. With this small change it becomes possible to express dependencies between transaction outputs and inputs, and create complex systems such as an ICO.%execute arbitrarily complex Turing-complete programs~\cite{CKM18a}. 
 %In this article we will define a concrete scenario of a multi-stage contract using an ICO, where we have three stages (funding, token issuance, withdrawal).
 %Now imagine an ICO for thousands of participants. 
 
-Unlike Ethereum, Ergo does not provide possibility to store large sets of data and carry them over throughout contract execution. Rather, it allows to store only about 40-bytes header of a data structure, represented as (key, value) dictionary, authenticated like a Merkle tree. To access some elements in the dictionary, or to modify it, a spending transaction which is triggering protecting script execution should provide lookup or modification proofs. This gives possibility for a contract to authenticate potentially huge datasets without requiring much memory to store contract state. However, storing space in the state (of active contracts) would mean bigger transactions, but this problem is easier from scalability point of view, which is a top priority for Ergo.
-\subsection{Overview of the ICO}
+%\subsection{Overview of the ICO}
+%\paragraph{Overview:}
 %There could be many possible scenarios associated with an ICO. 
-We consider an ICO that wants to collect at least a certain amount of funds (in Ergs) to start the project. Once the funding threshold is crossed and funding period ends, the project is kickstarted and ICO tokens are issued based on the total funding collected. In the withdraw phase, which extends forever, the investors withdraw ICO tokens based on the amount they had invested. % during the funding period. The contract steps are briefly described below with details provided further.
+%We consider an ICO that wants to collect at least a certain amount of funds (in Ergs) to start the project. Once the funding threshold is crossed and funding period ends, the project is kickstarted and ICO tokens are issued proportional to the total funding. After this the investors can withdraw ICO tokens based on the amount they had invested. % during the funding period. The contract steps are briefly described below with details provided further.
 %\begin{enumerate}
 %	\item 
+The number of investors may run into thousands, and the naive solution would store this data in the contract, as in ERC20 tokens~\cite{erc20}. 
+Unlike Ethereum, Ergo does not allow storing large datasets in a contract (this is done for performance and scalability). Rather, we store only a 40-bytes header of (a key, value) dictionary, that is authenticated like a Merkle tree~\cite{RMCI17}. To access some elements in the dictionary, or to modify it, a spending transaction should provide lookup or modification proofs. This allows a contract to authenticate large datasets using very little storage and memory. 
 
-In the funding epoch, which comes first, the project creates box authenticating an empty dictionary. The dictionary is intended for holding (investor, balance) pairs, where investor is a script protecting the box containing withdrawn tokens. %Assume that 1 token is equal to 1 Ergo during the ICO. 
-During the funding epoch, it is only possible to put Ergs into the project's box. A funding transaction spends the project box and creates a new box with updated data but the same script. The transaction must have other inputs which hold investor withdrawing scripts to be added to the dictionary. %Investor scripts and input values should be added to the tree of the new box. %There could be many chained funding transactions.
-%\item 
-
-Second, the funding period finishes, after which the tree holding the investors data becomes read-only. 
-%An authenticated tree could have different modification operations allowed individually: inserts, deletes, updates, or all the operations could be disallowed (so the tree could be in the read-only mode). 
-Also, this stage creates tokens of the ICO project which will be withdrawn in the next stage. The project can withdraw Ergs at this stage.
-%\item 
-
-Third, investors withdraw their ICO tokens. For that, a spending transaction creates outputs with guarding conditions and token values taken from the tree. The withdrawn pairs are also cleared from the tree. There could be many chained spending transactions.
-%\end{enumerate}
-%These three stages should be linked together in the logical order. A seqience of boxes are used to achieve these goals, 
-
-\subsection{The Funding Stage}
-The project initiates the stage by creating a box committing to an empty dictionary in $R_5$ with some guarding script described below. This stage lasts at least till height 2,000. More concretely, the first transaction with height of 2,000 or more should change the output box's script as described in the next section (transactions at lower heights must output a box with the same script).
-
-The box checks that it is always first input and output of a transaction. The other inputs belong to investors, which contain the hash of a script in register $R_4$. This hash is of the withdraw script that will be used later on in the withdraw phase. The hashes as well as the monetary values of all investing inputs are added to the dictionary and the spending transaction provides a proof that investor data are indeed added to the dictionary, and the proof is checked in the contract.
-%It is not checked in the funding sub-contract that the dictionary allows only insertions, and not updating existing values or removals (it is not hard to add an explicit check though).
-%The spending transaction should pay a fee, otherwise, it is unlikely that it would be included in a block. Thus, the funding contract checks that the spending transaction has two outputs (one for itself, another to pay fee), the fee is to be no more than a certain limit. The code below enforces these conditions. 
+\textbf{The Funding Stage:} 
+The project initiates the ICO by creating a box with the guarding script described below and committed to an empty dictionary of type (investor, balance) in $R_5$, where investor is the hash of a script that will guard the box with the withdrawn tokens (once the funding period ends). 
+The first funding transaction spends this box and creates a box with the same script and updated data. Further funding transactions spend the box created from the previous funding transaction. The box checks that it is first input of each funding transaction, which must have other inputs belonging to investors. The investor inputs contain a hash of the withdraw script in register $R_4$. 
+The script also checks (via proofs) that hashes and monetary values of the investing inputs are correctly added to the dictionary of the new box, which must be the first of two outputs with the correct amount of Ergs (the second output pays a predefined fee). 
+In this stage, which lasts at least till height 2,000, withdraws are not permitted and it is only possible to put Ergs into the project. 
+More concretely, the first transaction with height of 2,000 or more should keep the same data but change the output's script as described in the next section. 
 The \texttt{nextStageScriptHash} variable contains the hash of the issuance stage script.
-\begin{verbatim}
+\small{\begin{verbatim}
 val selfIndexIsZero = INPUTS(0).id == SELF.id
 val proof = getVar[Coll[Byte]](1).get
 val inputsCount = INPUTS.size
@@ -242,7 +246,6 @@ val toAdd = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
   val pk = b.R4[Coll[Byte]].get
   val value = longToByteArray(b.value)
   (pk, value)})
-
 val modifiedTree = SELF.R5[AvlTree].get.insert(toAdd, proof).get
 val expectedTree = OUTPUTS(0).R5[AvlTree].get
 val properTreeModification = modifiedTree == expectedTree
@@ -250,18 +253,19 @@ val outputsCount = OUTPUTS.size == 2
 val selfOutputCorrect = 
   if(HEIGHT < 2000) OUTPUTS(0).propositionBytes == SELF.propositionBytes
   else blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash
-
 val feeOutputCorrect = OUTPUTS(1).value <= 1 && OUTPUTS(1).propositionBytes == feeBytes
 val outputsCorrect = outputsCount && feeOutputCorrect && selfOutputCorrect
 selfIndexIsZero && outputsCorrect && properTreeModification
 \end{verbatim}
-\subsection{The Issuance Stage}
+}
+%\subsection{The Issuance Stage}
+\textbf{The Issuance Stage:}
 This stage has only one spending transaction to get to the next stage (the withdrawal stage). The spending transactions makes the following modifications. Firstly, it changes the list of allowed operations on the dictionary from ``inserts only'' to ``removals only'', as the next stage (withdrawal) is only dealing with removing entries from the dictionary.
 
 Secondly, the contract checks that the proper amount of ICO tokens are issued. In Ergo, it is allowed to issue one new kind of token per transaction, and the identifier of the token should be equal to the (unique) identifier of the first input box. The issuance sub-contract checks that a new token has been issued, and the amount of it is equal to the amount of nanoErgs collected by the ICO at till now. Thirdly, the contract checks that a spending transaction is indeed re-creating the box with the guard script corresponding to the next stage, the withdrawal stage.
 
 Finally, the project should withdraw collected Ergs, and of course, each spending transaction should pay a fee. Thus, the sub-contract checks that the spending transaction has indeed 3 outputs (one each for the project tokens box, the Ergs wirhdrawal box, and the fee box), and that the first output and output is carrying the tokens issued. As we do not specify project money withdrawal details, we require a project signature on the spending transaction.
-
+\small{
 \begin{verbatim}
 val openTree = SELF.R5[AvlTree].get
 val closedTree = OUTPUTS(0).R5[AvlTree].get
@@ -285,11 +289,13 @@ val treeIsCorrect = digestPreserved && valueLengthPreserved &&
                     keyLengthPreserved && treeIsClosed
 projectPubKey && treeIsCorrect && valuePreserved && stateChanged
 \end{verbatim}
-\subsection{The Withdrawal Stage}
+}
+%\subsection{The Withdrawal Stage}
 
-At this stage, investors are allowed to withdraw project tokens protected by a predefined guard script (whose hash is stored in the dictionary). Lets say withdraw is done in batches of size N. A withdrawing transaction, thus, has N + 2 outputs, where the first output carrys over the withdrawal sub-contract and balance tokens, the last output pays the fee and the remaining N outputs have guarding scripts and token values according to the dictionary. The contract requires two proofs for the dictionary elements: one proving that values to be withdrawn are indeed in the dictionary, and the second proving that the resulting dictionary does not have the withdrawn values. 
+\textbf{The Withdrawal Stage:}
+Investors are now allowed to withdraw ICO tokens protected by a guard script whose hash is stored in the dictionary. Withdraw is done in batches of size $N$. A withdrawing transaction, thus, has $N + 2$ outputs, where the first output carrys over the withdrawal sub-contract and balance tokens, the last output pays the fee and the remaining $N$ outputs have guarding scripts and token values according to the dictionary. The contract requires two proofs for the dictionary elements: one proving that values to be withdrawn are indeed in the dictionary, and the second proving that the resulting dictionary does not have the withdrawn values. 
 %The sub-contract is below.
-
+\small{
 \begin{verbatim}
 val removeProof = getVar[Coll[Byte]](2).get
 val lookupProof = getVar[Coll[Byte]](3).get
@@ -319,6 +325,7 @@ val properTreeModification = modifiedTree == expectedTree
 val selfOutputCorrect = out0.propositionBytes == SELF.propositionBytes
 properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
 \end{verbatim}
+}
 %\subsection{Possible Enhancements}
 
 %Please note that there are many nuances our example contract is ignoring. For example, anyone listening to the blockchain is allowed to execute the contract and construct proper spending transactions during funding and withdrawal stages. In the real-world, additional signature from the project or a trusted arbiter may be used.
@@ -327,7 +334,7 @@ properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
 
 \section{Conclusion}
 
-This article described smart contracts in \langname using concepts from the \langname tutorial~\cite{whitepaper}.
+This article demonstrated how \langname can be used to create complex contracts as in Ethereum, despite having UTXOdescribed smart contracts in \langname using concepts from the \langname tutorial~\cite{whitepaper}.
 We described the following contracts: (1) {\em Reversible Addresses} that have anti-theft features and can be used for running the hot-wallets of an exchange or mining pool. (2) A Rock-Papers-Scissors game similar to the one used in Ethereum tutorials. (3) A full features ICO contract that accepts funding in Ergs and has all the features found in Ethereum examples.
 
 \bibliographystyle{unsrt}
