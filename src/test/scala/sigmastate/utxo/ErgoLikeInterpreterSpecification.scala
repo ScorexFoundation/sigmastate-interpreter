@@ -16,9 +16,11 @@ import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 
-class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
+class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
+  with SerializationSpecification {
+
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -636,22 +638,25 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("DeserializeContext value(script) type mismatch") {
-    val scriptId = 21.toByte
-    val prover0 = new ContextEnrichingTestProvingInterpreter()
-    val script = SigmaPropConstant(prover0.dlogSecrets.head.publicImage)
-    val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(ValueSerializer.serialize(script)))
-    val prop = SigmaAnd(DeserializeContext(scriptId, SBoolean))
+    forAll(numExprTreeNodeGen) { scriptProp =>
+      val scriptId = 21.toByte
+      val prover0 = new ContextEnrichingTestProvingInterpreter()
+      // serialize numerical expression
+      val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(ValueSerializer.serialize(scriptProp)))
+      // try to deserialize it as a sigma prop expression
+      val prop = SigmaAnd(DeserializeContext(scriptId, SSigmaProp))
 
-    val box = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
-    val ctx = ErgoLikeContext(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(box),
-      createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
-      self = box)
+      val box = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
+      val ctx = ErgoLikeContext(
+        currentHeight = 50,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = IndexedSeq(box),
+        createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
+        self = box)
 
-    an[InterpreterException] should be thrownBy prover.prove(prop, ctx, fakeMessage).get
+      an[InterpreterException] should be thrownBy prover.prove(prop, ctx, fakeMessage).get
+    }
  }
 
   property("non-const ProveDHT") {
