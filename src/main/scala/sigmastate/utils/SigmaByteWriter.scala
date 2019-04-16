@@ -3,7 +3,7 @@ package sigmastate.utils
 import scorex.util.serialization.{VLQByteStringWriter, VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigmastate.SType
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, PropInfo}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
 
 class SigmaByteWriter(val w: Writer,
@@ -56,6 +56,10 @@ class SigmaByteWriter(val w: Writer,
 
   @inline def putType[T <: SType](x: T): this.type = { TypeSerializer.serialize(x, this); this }
   @inline def putValue[T <: SType](x: Value[T]): this.type = { ValueSerializer.serialize(x, this); this }
+  @inline def putValue[T <: SType](x: Value[T], info: PropInfo): this.type = {
+    ValueSerializer.addArgInfo(info)
+    ValueSerializer.serialize(x, this); this
+  }
   @inline def putValues[T <: SType](xs: Seq[Value[T]]): this.type = {
     putUInt(xs.length)
     xs.foreach(putValue(_))

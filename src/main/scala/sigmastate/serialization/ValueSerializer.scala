@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import java.util.Properties
+
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -14,6 +16,8 @@ import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 import sigmastate.utxo._
+
+import scala.collection.mutable
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
@@ -155,6 +159,32 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
+  case class SerInfo(opCode: OpCode, properties: Properties)
+
+  val collectSerInfo: Boolean = true
+  val serializerInfo: mutable.Map[OpCode, SerInfo] = mutable.HashMap.empty
+  private var serializerStack: List[ValueSerializer[_]] = Nil
+
+  def printSerInfo(): String = {
+    serializerInfo.map { case (_, s) =>
+      val ser = getSerializer(s.opCode)
+      s"${ser.opDesc}: ${s.properties}"
+    }.mkString("\n")
+  }
+
+  def addArgInfo(prop: PropInfo) = {
+    val ser = serializerStack.head
+    val info = serializerInfo(ser.opCode)
+    val saved = info.properties.get(prop.name)
+    if (saved == null) {
+      info.properties.put(prop.name, prop)
+      println(s"Added $prop to ${ser.opDesc}")
+    }
+    else {
+      assert(saved == prop, s"Saved property $saved is different from being added $prop: operation ${ser.opDesc}")
+    }
+  }
+
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
     case c: Constant[SType] =>
       w.constantExtractionStore match {
@@ -167,9 +197,21 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       }
     case _ =>
       val opCode = v.opCode
-      w.put(opCode)
       // help compiler recognize the type
-      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
+      val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
+      if (collectSerInfo) {
+        serializerInfo.get(opCode) match {
+          case None =>
+            serializerInfo += (opCode -> SerInfo(opCode, new Properties()))
+            println(s"Added: ${ser.opDesc}")
+          case _ =>
+        }
+      }
+      w.put(opCode)
+
+      serializerStack ::= ser
+      ser.serialize(v, w)
+      serializerStack = serializerStack.tail
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {

@@ -99,11 +99,15 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   extends Transformer[SCollection[IV], OV] {
   override def companion = Fold
   implicit override def tpe: OV = zero.tpe
-  val opType: SFunc = SCollection.FoldMethod.stype.asFunc
+  val opType: SFunc = SCollection.FoldMethod.stype
 }
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
+  val inputArg = PropInfo("input", "Collection to fold over.")
+  val zeroArg = PropInfo("zero", "Initial state")
+  val foldOpArg = PropInfo("foldOp", "Operation to fold over input")
+
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),

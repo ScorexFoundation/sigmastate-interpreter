@@ -311,12 +311,12 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
 /** Meta information which can be attached to each argument of SMethod.
   * @param name  name of the argument
   * @param description argument description. */
-case class MethodArgInfo(name: String, description: String)
+case class ArgInfo(name: String, description: String)
 
 /** Meta information which can be attached to SMethod.
   * @param description  human readable description of the method
   * @param args         one item for each argument */
-case class MethodInfo(description: String, args: Seq[MethodArgInfo], isOpcode: Boolean)
+case class OperationInfo(description: String, args: Seq[ArgInfo], isOpcode: Boolean)
 
 /** Meta information connecting SMethod with ErgoTree.
   * @param  irBuilder  optional recognizer and ErgoTree node builder.
@@ -336,7 +336,7 @@ case class SMethod(
     stype: SFunc,
     methodId: Byte,
     irInfo: MethodIRInfo,
-    docInfo: Option[MethodInfo]) {
+    docInfo: Option[OperationInfo]) {
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
@@ -355,8 +355,8 @@ case class SMethod(
       case _ => this
     }
   }
-  def withInfo(desc: String, args: MethodArgInfo*) = {
-    this.copy(docInfo = Some(MethodInfo(desc, args.toSeq, true)))
+  def withInfo(desc: String, args: ArgInfo*) = {
+    this.copy(docInfo = Some(OperationInfo(desc, args.toSeq, true)))
   }
   def withIRInfo(
       irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue],
@@ -654,13 +654,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withInfo("Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2)
       .withIRInfo(ModQArithOp.Plus)
-      .withInfo("Adds this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to add to this."))
+      .withInfo("Adds this number with \\lst{other} by module Q.", ArgInfo("other", "Number to add to this."))
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 3)
       .withIRInfo(ModQArithOp.Minus)
-      .withInfo("Subtracts \\lst{other} number from this by module Q.", MethodArgInfo("other", "Number to subtract from this."))
+      .withInfo("Subtracts \\lst{other} number from this by module Q.", ArgInfo("other", "Number to subtract from this."))
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder, MethodCall)
-      .withInfo("Multiply this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to multiply with this."))
+      .withInfo("Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
   protected override def getMethods() = super.getMethods() ++ Seq(
     ModQMethod,
     PlusModQMethod,
@@ -697,11 +697,11 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
           builder.mkExponentiate(obj.asGroupElement, arg.asBigInt) }, Exponentiate)
         .withInfo(
           "Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
-          MethodArgInfo("k", "The power")),
+          ArgInfo("k", "The power")),
     SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4)
         .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
           builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement) }, MultiplyGroup)
-        .withInfo("Group operation.", MethodArgInfo("other", "other element of the group")),
+        .withInfo("Group operation.", ArgInfo("other", "other element of the group")),
     SMethod(this, "negate", SFunc(this, this), 5)
         .withIRInfo(MethodCallIrBuilder, PropertyCall)
         .withInfo("Inverse element of the group.")
@@ -909,11 +909,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo("Builds a new collection by applying a function to all elements of this collection." +
           "Returns a new collection of type `Coll[B]` resulting from applying the given function\n" +
           " `f` to each element of this collection and collecting the results.",
-        MethodArgInfo("f", "the function to apply to each element"))
+        ArgInfo("f", "the function to apply to each element"))
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 4)
       .withIRInfo(Exists)
   val FoldMethod = SMethod(this, "fold", SFunc(IndexedSeq(ThisType, tOV, SFunc(IndexedSeq(tOV, tIV), tOV)), tOV, Seq(paramIV, paramOV)), 5)
       .withIRInfo(Fold)
+      .withInfo("Applies a binary operator to a start value and all elements of this collection, going left to right.",
+        ArgInfo("zero", "a starting value"), ArgInfo("op", "the binary operator"))
   val ForallMethod = SMethod(this, "forall", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 6)
       .withIRInfo(ForAll)
   val SliceMethod = SMethod(this, "slice", SFunc(IndexedSeq(ThisType, SInt, SInt), ThisType, Seq(paramIV)), 7)

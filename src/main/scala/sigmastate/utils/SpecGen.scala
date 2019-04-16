@@ -93,7 +93,7 @@ trait SpecGen {
     val resTpe = m.stype.tRange.toTermString
     val ts = argTypes.map(_.toTermString)
     val argInfos = m.docInfo.fold(
-      Range(0, ts.length).map(i => MethodArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
+      Range(0, ts.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
     val params = ts.opt { ts =>
       val args = argInfos.zip(ts)
       s"""
