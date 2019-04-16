@@ -2,13 +2,14 @@ package sigmastate.utils
 
 import scorex.util.serialization.{VLQByteStringWriter, VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
-import sigmastate.SType
-import sigmastate.Values.{Value, PropInfo}
+import sigmastate.{ArgInfo, SType}
+import sigmastate.Values.{Value, SValue}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
+import sigmastate.utils.SigmaByteWriter.ValueFmt
 
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {
-
+  import SigmaByteWriter._
   type CH = w.CH
 
   @inline override def length(): Int = w.length()
@@ -56,7 +57,7 @@ class SigmaByteWriter(val w: Writer,
 
   @inline def putType[T <: SType](x: T): this.type = { TypeSerializer.serialize(x, this); this }
   @inline def putValue[T <: SType](x: Value[T]): this.type = { ValueSerializer.serialize(x, this); this }
-  @inline def putValue[T <: SType](x: Value[T], info: PropInfo): this.type = {
+  @inline def putValue[T <: SType](x: Value[T], info: DataInfo[SValue]): this.type = {
     ValueSerializer.addArgInfo(info)
     ValueSerializer.serialize(x, this); this
   }
@@ -66,4 +67,24 @@ class SigmaByteWriter(val w: Writer,
     this
   }
 
+}
+
+object SigmaByteWriter {
+  import scala.language.implicitConversions
+  /** Format descriptor type family. */
+  trait FormatDescriptor[T]
+
+  /** Marker type to automatically resolve correct implicit format descriptor
+    * in Writer methods.
+    * This is phantom type, since no instances of it are ever created. */
+  trait Vlq[T]
+
+  implicit case object ValueFmt extends FormatDescriptor[SValue]
+  object ByteFmt extends FormatDescriptor[Byte]
+  object IntFmt extends FormatDescriptor[Int]
+  object VlqIntFmt extends FormatDescriptor[Vlq[Int]]
+
+  case class DataInfo[T](info: ArgInfo, format: FormatDescriptor[T])
+
+  implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 }

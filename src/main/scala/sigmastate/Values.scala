@@ -153,8 +153,6 @@ object Values {
     lazy val allOperations = _allOperations.toMap
   }
 
-  case class PropInfo(name: String, desc: String)
-
   trait EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {

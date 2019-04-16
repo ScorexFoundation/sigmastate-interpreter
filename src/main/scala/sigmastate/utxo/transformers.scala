@@ -36,7 +36,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Append
   override val tpe = input.tpe
-  override val opType = SCollection.AppendMethod.stype.asFunc
+  override val opType = SCollection.AppendMethod.stype
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
@@ -61,7 +61,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Filter
   override def tpe: SCollection[IV] = input.tpe
-  override val opType = SCollection.FilterMethod.stype.asFunc
+  override val opType = SCollection.FilterMethod.stype
 }
 object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
@@ -77,7 +77,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
   override def companion = Exists
-  override val opType = SCollection.ExistsMethod.stype.asFunc
+  override val opType = SCollection.ExistsMethod.stype
 }
 object Exists extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
@@ -87,7 +87,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
   extends BooleanTransformer[IV] {
   override def companion = ForAll
-  override val opType = SCollection.ForallMethod.stype.asFunc
+  override val opType = SCollection.ForallMethod.stype
 }
 object ForAll extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
@@ -104,10 +104,10 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
-  val inputArg = PropInfo("input", "Collection to fold over.")
-  val zeroArg = PropInfo("zero", "Initial state")
-  val foldOpArg = PropInfo("foldOp", "Operation to fold over input")
-
+  val inputArg = ArgInfo("input", "Collection to fold over.")
+  val zeroArg = ArgInfo("zero", "Initial state")
+  val foldOpArg = ArgInfo("foldOp", "Operation to fold over input")
+//  val Seq(input, zero, fold) = SCollection.FoldMethod.stype.tDom
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),

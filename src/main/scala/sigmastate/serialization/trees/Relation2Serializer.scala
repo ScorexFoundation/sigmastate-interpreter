@@ -6,8 +6,7 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
-
+import sigmastate.serialization.ValueSerializer._
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
 (override val opDesc: ValueCompanion,
@@ -15,13 +14,19 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
 
   override def serialize(obj: R, w: SigmaByteWriter): Unit = {
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
-    (typedRel.left, typedRel.right) match {
-      case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
-        w.put(ConcreteCollectionBooleanConstantCode)
-        w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
-      case _ =>
-        w.putValue(typedRel.left)
-        w.putValue(typedRel.right)
+    cases("(left, right)") {
+      (typedRel.left, typedRel.right) match {
+        case (Constant(left, lTpe), Constant(right, rTpe)) if lTpe == SBoolean && rTpe == SBoolean =>
+          when("(Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean") {
+            w.put(ConcreteCollectionBooleanConstantCode)
+            w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
+          }
+        case _ =>
+          when("otherwise") {
+            w.putValue(typedRel.left)
+            w.putValue(typedRel.right)
+          }
+      }
     }
   }
 

@@ -5,18 +5,20 @@ import sigmastate._
 import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-
+import ValueSerializer._
 import scala.collection.mutable
 
 case class ValDefSerializer(override val opDesc: ValueCompanion) extends ValueSerializer[ValDef] {
 
   override def serialize(obj: ValDef, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)
-    if (opCode == FunDefCode) {
-      require(!obj.isValDef, s"expected FunDef, got $obj")
-      require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
-      w.put(obj.tpeArgs.length.toByteExact)
-      obj.tpeArgs.foreach(w.putType(_))
+    optional("type arguments") {
+      if (opCode == FunDefCode) {
+        require(!obj.isValDef, s"expected FunDef, got $obj")
+        require(obj.tpeArgs.nonEmpty, s"expected FunDef with type args, got $obj")
+        w.put(obj.tpeArgs.length.toByteExact)
+        obj.tpeArgs.foreach(w.putType(_))
+      }
     }
     w.putValue(obj.rhs)
   }

@@ -4,6 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import ValueSerializer._
 
 import scala.collection.mutable
 
@@ -13,7 +14,7 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
 
   override def serialize(obj: FuncValue, w: SigmaByteWriter): Unit = {
     w.putUInt(obj.args.length)
-    obj.args.foreach{ case (idx, tpe) => w.putUInt(idx).putType(tpe) }
+    foreach("arguments", obj.args) { case (idx, tpe) => w.putUInt(idx).putType(tpe) }
     w.putValue(obj.body)
   }
 

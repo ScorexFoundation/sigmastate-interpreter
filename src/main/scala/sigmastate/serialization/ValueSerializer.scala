@@ -13,6 +13,7 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
+import sigmastate.utils.SigmaByteWriter.{FormatDescriptor, DataInfo}
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 import sigmastate.utxo._
@@ -159,29 +160,126 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  case class SerInfo(opCode: OpCode, properties: Properties)
+  type ChildrenMap = mutable.ListMap[String, Scope]
+  trait Scope {
+    def name: String
+    def parent: Scope
+    def children: ChildrenMap
+    def get(name: String): Option[Scope] = children.get(name)
+    def add(name: String, s: Scope) = {
+      children.put(name, s)
+    }
+    def showInScope(v: String): String
+
+    def provideScope(n: String, createNewScope: => Scope) = {
+      val scope = get(n) match {
+        case Some(saved) => saved
+        case None =>
+          val newScope = createNewScope
+          add(n, newScope)
+          newScope
+      }
+      scope
+    }
+  }
+
+  case class SerScope(opCode: OpCode, children: ChildrenMap) extends Scope {
+    def serializer = getSerializer(opCode)
+    def name = s"Serializer of ${serializer.opDesc}"
+    override def parent: Scope = null
+    override def showInScope(v: String): String = name + "/" + v
+    override def toString: Idn = s"SerScope(${serializer.opDesc}, $children)"
+  }
+
+  case class DataScope(parent: Scope, data: DataInfo[_]) extends Scope {
+    def name = data.info.name
+    override def children = mutable.ListMap.empty
+    override def showInScope(v: String): String = parent.showInScope(s"DataInfo($data)")
+    override def toString = s"DataScope($data)"
+  }
+
+  case class OptionalScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+    override def showInScope(v: String): String = parent.showInScope(s"/opt[$name]/$v")
+    override def toString = s"OptionalScope($name, $children)"
+  }
+
+  case class CasesScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+    override def showInScope(v: String): String = parent.showInScope(s"/cases[$name]/$v")
+    override def toString = s"CasesScope($name, $children)"
+  }
+
+  case class WhenScope(parent: Scope, condition: String, children: ChildrenMap) extends Scope {
+    override def name: String = condition
+    override def showInScope(v: String): String = parent.showInScope(s"/when[$condition]/$v")
+    override def toString = s"WhenScope($condition, $children)"
+  }
+
+  case class ForScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+    override def showInScope(v: String): String = parent.showInScope(s"/for[$name]/$v")
+    override def toString = s"ForScope($name, $children)"
+  }
 
   val collectSerInfo: Boolean = true
-  val serializerInfo: mutable.Map[OpCode, SerInfo] = mutable.HashMap.empty
-  private var serializerStack: List[ValueSerializer[_]] = Nil
+  val serializerInfo: mutable.Map[OpCode, SerScope] = mutable.HashMap.empty
+  private var scopeStack: List[Scope] = Nil
 
   def printSerInfo(): String = {
     serializerInfo.map { case (_, s) =>
       val ser = getSerializer(s.opCode)
-      s"${ser.opDesc}: ${s.properties}"
+      s.toString
     }.mkString("\n")
   }
 
-  def addArgInfo(prop: PropInfo) = {
-    val ser = serializerStack.head
-    val info = serializerInfo(ser.opCode)
-    val saved = info.properties.get(prop.name)
-    if (saved == null) {
-      info.properties.put(prop.name, prop)
-      println(s"Added $prop to ${ser.opDesc}")
-    }
-    else {
-      assert(saved == prop, s"Saved property $saved is different from being added $prop: operation ${ser.opDesc}")
+  def optional(name: String)(block: => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(name, OptionalScope(parent, name, mutable.ListMap.empty))
+
+    scopeStack ::= scope
+    block
+    scopeStack = scopeStack.tail
+  }
+
+  def cases(name: String)(block: => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(name, CasesScope(parent, name, mutable.ListMap.empty))
+
+    scopeStack ::= scope
+    block
+    scopeStack = scopeStack.tail
+  }
+
+  def when(condition: String)(block: => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(condition, WhenScope(parent, condition, mutable.ListMap.empty))
+
+    scopeStack ::= scope
+    block
+    scopeStack = scopeStack.tail
+  }
+
+
+
+  def foreach[T](name: String, seq: Seq[T])(f: T => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(name, ForScope(parent, name, mutable.ListMap.empty))
+
+    scopeStack ::= scope
+    seq.foreach(f)
+    scopeStack = scopeStack.tail
+  }
+
+  def addArgInfo[T](prop: DataInfo[T]) = {
+    val scope = scopeStack.head
+    scope.get(prop.info.name) match {
+      case None =>
+        scope.add(prop.info.name, DataScope(scope, prop))
+        println(s"Added $prop to ${scope}")
+      case Some(saved) => saved match {
+        case DataScope(_, data) =>
+          assert(data == prop, s"Saved property $data is different from being added $prop: scope $scope")
+        case _ =>
+          sys.error(s"Expected DataScope, but found $saved: while adding $prop to scope $scope")
+      }
     }
   }
 
@@ -200,18 +298,23 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       // help compiler recognize the type
       val ser = getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]]
       if (collectSerInfo) {
-        serializerInfo.get(opCode) match {
+        val scope = serializerInfo.get(opCode) match {
           case None =>
-            serializerInfo += (opCode -> SerInfo(opCode, new Properties()))
+            val newScope = SerScope(opCode, mutable.ListMap.empty)
+            serializerInfo += (opCode -> newScope)
             println(s"Added: ${ser.opDesc}")
-          case _ =>
+            newScope
+          case Some(scope) => scope
         }
-      }
-      w.put(opCode)
+        w.put(opCode)
 
-      serializerStack ::= ser
-      ser.serialize(v, w)
-      serializerStack = serializerStack.tail
+        scopeStack ::= scope
+        ser.serialize(v, w)
+        scopeStack = scopeStack.tail
+      } else {
+        w.put(opCode)
+        ser.serialize(v, w)
+      }
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
