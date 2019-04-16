@@ -24,9 +24,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // Alice is first player, who initiates the mix
     val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
 
-    val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
+    val x: BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
     val gX = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
     // Alternative 1:
@@ -112,9 +112,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // If Alice wants to abort the mix, she can take Bob's role and spend her Half-Mix output
 
     val bob = new ContextEnrichingTestProvingInterpreter
-    val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
+    val bobPubKey: ProveDlog = bob.dlogSecrets.head.publicImage
 
-    val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
+    val y: BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
     val gY = GroupElementConstant(bobPubKey.h) // g^y
     val gY_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
@@ -180,7 +180,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // some 3rd person that will be paid
     val carol = new ContextEnrichingTestProvingInterpreter
-    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+    val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
     val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
