@@ -21,7 +21,7 @@ import sigmastate.utxo._
 import scala.collection.mutable
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
-
+  import scala.language.implicitConversions
   val companion = ValueSerializer
   def opDesc: ValueCompanion
 
@@ -219,6 +219,11 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     override def toString = s"ForScope($name, $children)"
   }
 
+  case class OptionScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+    override def showInScope(v: String): String = parent.showInScope(s"/option[$name]/$v")
+    override def toString = s"OptionScope($name, $children)"
+  }
+
   val collectSerInfo: Boolean = true
   val serializerInfo: mutable.Map[OpCode, SerScope] = mutable.HashMap.empty
   private var scopeStack: List[Scope] = Nil
@@ -257,14 +262,21 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     scopeStack = scopeStack.tail
   }
 
-
-
   def foreach[T](name: String, seq: Seq[T])(f: T => Unit): Unit = {
     val parent = scopeStack.head
     val scope = parent.provideScope(name, ForScope(parent, name, mutable.ListMap.empty))
 
     scopeStack ::= scope
     seq.foreach(f)
+    scopeStack = scopeStack.tail
+  }
+
+  def opt[T](w: SigmaByteWriter, name: String, o: Option[T])(f: (SigmaByteWriter, T) => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(name, OptionScope(parent, name, mutable.ListMap.empty))
+
+    scopeStack ::= scope
+    w.putOption(o)(f)
     scopeStack = scopeStack.tail
   }
 

@@ -12,8 +12,8 @@ case class AppendSerializer(cons: (Value[SCollection[SType]], Value[SCollection[
   override def opDesc = Append
 
   override def serialize(obj: Append[SType], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.col2)
+    w.putValue(obj.input, "input")
+      .putValue(obj.col2, "other")
 
   override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {
     val input = r.getValue().asCollection[SType]

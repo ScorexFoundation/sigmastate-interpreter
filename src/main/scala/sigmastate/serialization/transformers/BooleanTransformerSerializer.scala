@@ -12,8 +12,8 @@ case class BooleanTransformerSerializer[T <: SType]
  f: (Value[SCollection[T]], Value[SFunc]) => Value[SBoolean.type]) extends ValueSerializer[BooleanTransformer[T]] {
 
   override def serialize(obj: BooleanTransformer[T], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.condition)
+    w.putValue(obj.input, "input")
+      .putValue(obj.condition, "condition")
 
   override def parse(r: SigmaByteReader): Value[SBoolean.type] = {
     val input = r.getValue().asCollection[T]

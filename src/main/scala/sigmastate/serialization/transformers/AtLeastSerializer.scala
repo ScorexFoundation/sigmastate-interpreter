@@ -11,8 +11,8 @@ case class AtLeastSerializer(cons: (Value[SInt.type], Value[SCollection[SSigmaPr
   override def opDesc = AtLeast
 
   override def serialize(obj: AtLeast, w: SigmaByteWriter): Unit =
-    w.putValue(obj.bound)
-      .putValue(obj.input)
+    w.putValue(obj.bound, "bound")
+      .putValue(obj.input, "input")
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
     val bound = r.getValue().asIntValue
