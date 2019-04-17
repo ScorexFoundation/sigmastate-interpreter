@@ -3,6 +3,7 @@ package sigmastate.serialization
 import sigmastate.SType
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import ValueSerializer._
 
 case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   extends ValueSerializer[Tuple] {
@@ -10,8 +11,8 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
 
   override def serialize(obj: Tuple, w: SigmaByteWriter): Unit = {
     val length = obj.length
-    w.putUByte(length)
-    obj.items.foreach(w.putValue(_))
+    w.putUByte(length, "numItems")
+    foreach("items", obj.items) { w.putValue(_) }
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {

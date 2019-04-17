@@ -26,6 +26,11 @@ class SigmaByteWriter(val w: Writer,
     w.put(x); this
   }
 
+  def putUByte(x: Int, info: DataInfo[U[Byte]]): this.type = {
+    ValueSerializer.addArgInfo(info)
+    super.putUByte(x)
+  }
+
   @inline def putBoolean(x: Boolean): this.type = { w.putBoolean(x); this }
   @inline def putBoolean(x: Boolean, info: DataInfo[Boolean]): this.type = {
     ValueSerializer.addArgInfo(info)

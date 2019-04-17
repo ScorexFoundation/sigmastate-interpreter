@@ -12,13 +12,14 @@ case class CreateAvlTreeSerializer(
   )
   extends ValueSerializer[CreateAvlTree]
 {
+  import sigmastate.Operations.CreateAvlTreeInfo._
   override def opDesc = CreateAvlTree
 
   override def serialize(obj: CreateAvlTree, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.operationFlags)
-    w.putValue(obj.digest)
-    w.putValue(obj.keyLength)
-    w.putValue(obj.valueLengthOpt)
+    w.putValue(obj.operationFlags, operationFlagsArg)
+    w.putValue(obj.digest, digestArg)
+    w.putValue(obj.keyLength, keyLengthArg)
+    w.putValue(obj.valueLengthOpt, valueLengthOptArg)
   }
 
   override def parse(r: SigmaByteReader) = {

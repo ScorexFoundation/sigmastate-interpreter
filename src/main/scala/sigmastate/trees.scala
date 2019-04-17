@@ -1,6 +1,7 @@
 package sigmastate
 
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
+import sigmastate.Operations.{IfInfo, TreeLookupInfo}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
@@ -195,8 +196,10 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
-object OR extends ValueCompanion {
+object OR extends LogicalTransformerCompanion {
   override def opCode: OpCode = OrCode
+  override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
+
   def apply(children: Seq[Value[SBoolean.type]]): OR =
     OR(ConcreteCollection(children.toIndexedSeq))
 
@@ -211,8 +214,10 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
-object XorOf extends ValueCompanion {
+object XorOf extends LogicalTransformerCompanion {
   override def opCode: OpCode = XorOfCode
+  override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
+
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
     XorOf(ConcreteCollection(children.toIndexedSeq))
 
@@ -235,8 +240,7 @@ trait LogicalTransformerCompanion extends ValueCompanion {
 
 object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
-
-  override def argInfos: Seq[ArgInfo] = ??? //Operations.ANDInfo.argInfos
+  override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
     AND(ConcreteCollection(children.toIndexedSeq))
@@ -750,8 +754,12 @@ case class TreeLookup(tree: Value[SAvlTree.type],
   override lazy val second = key
   override lazy val third = proof
 }
-object TreeLookup extends ValueCompanion {
+trait QuadrupleCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
+object TreeLookup extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.AvlTreeGetCode
+  override def argInfos: Seq[ArgInfo] = TreeLookupInfo.argInfos
 }
 
 /**
@@ -770,8 +778,9 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val second = trueBranch
   override lazy val third = falseBranch
 }
-object If extends ValueCompanion {
+object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
+  override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
   val tT = STypeIdent("T")
 }
 

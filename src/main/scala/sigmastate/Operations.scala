@@ -198,6 +198,14 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
+  object IfInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("if")
+    val conditionArg: ArgInfo = func.argInfo("condition")
+    val trueBranchArg: ArgInfo = func.argInfo("trueBranch")
+    val falseBranchArg: ArgInfo = func.argInfo("falseBranch")
+    val argInfos: Seq[ArgInfo] = Seq(conditionArg, trueBranchArg, falseBranchArg)
+  }
+
   object LongToByteArrayInfo extends InfoObject {
     private val func = predefinedOps.funcs("longToByteArray")
     val inputArg: ArgInfo = func.argInfo("input")
@@ -276,6 +284,13 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
+  object SelectFieldInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("selectField")
+    val inputArg: ArgInfo = func.argInfo("input")
+    val fieldIndexArg: ArgInfo = func.argInfo("fieldIndex")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg, fieldIndexArg)
+  }
+
   object SigmaPropBytesInfo extends InfoObject {
     private val method = SMethod.fromIds(8, 1)
     val thisArg: ArgInfo = method.argInfo("this")
@@ -302,6 +317,14 @@ object Operations {
     val positionsArg: ArgInfo = func.argInfo("positions")
     val newValuesArg: ArgInfo = func.argInfo("newValues")
     val argInfos: Seq[ArgInfo] = Seq(scriptBytesArg, positionsArg, newValuesArg)
+  }
+
+  object TreeLookupInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("treeLookup")
+    val treeArg: ArgInfo = func.argInfo("tree")
+    val keyArg: ArgInfo = func.argInfo("key")
+    val proofArg: ArgInfo = func.argInfo("proof")
+    val argInfos: Seq[ArgInfo] = Seq(treeArg, keyArg, proofArg)
   }
 
   object XorOfInfo extends InfoObject {

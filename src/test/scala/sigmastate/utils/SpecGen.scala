@@ -57,11 +57,12 @@ trait SpecGen {
   val noFuncs: Set[ValueCompanion] = Set(Constant)
   val predefFuncs: Seq[PredefinedFunc] = predefFuncRegistry.funcs.values
       .filterNot { f => noFuncs.contains(f.docInfo.opDesc) }.toSeq
+  val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
 
   def collectOpsTable() = {
     val ops = collectSerializableOperations()
     val methods = collectMethods()
-    val funcs = predefFuncs
+    val funcs = predefFuncs ++ specialFuncs
 
     val methodsByOpCode = methods
         .groupBy(_.docInfo.flatMap(i => Option(i.opDesc).map(_.opCode)))
@@ -308,14 +309,15 @@ object GenSerializableOps extends SpecGen {
         case Left(f) =>
           assert(f.declaration.args.length == info.args.length,
             s"Predefined function $f has ${f.declaration.args} arguments, but ${info.args} descriptions attached.")
-          Try{assert(predefFuncRegistry.funcs(f.name)!=null)}
-              .fold(t => throw new RuntimeException(s"Cannot resolve func $f using predefFuncRegistry.funcs(${f.name})"), _ => ())
+          val isSpecialFunc = predefFuncRegistry.specialFuncs.get(f.name).isDefined
+          Try{assert(predefFuncRegistry.funcs.get(f.name).isDefined || isSpecialFunc)}
+              .fold(t => throw new RuntimeException(s"Cannot resolve func $f using predefFuncRegistry.funcs(${f.name})", t), _ => ())
           val args = info.args.map { a =>
             s"""val ${a.name}Arg: ArgInfo = func.argInfo("${a.name}")"""
           }
           s"""
             |  object ${opName}Info extends InfoObject {
-            |    private val func = predefinedOps.funcs("${f.name}")
+            |    private val func = predefinedOps.${ if (isSpecialFunc) "specialFuncs" else "funcs" }("${f.name}")
             |    ${args.rep(sep = "\n    ")}
             |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
             |  }
