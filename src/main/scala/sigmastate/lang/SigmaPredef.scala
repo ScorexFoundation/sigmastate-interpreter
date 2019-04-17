@@ -22,7 +22,7 @@ object SigmaPredef {
     *                  Rule: Apply(f, args) -->  irBuilder(f, args)
     * @param opDesc    ErgoTree node descriptor
     */
-  case class PredefFuncInfo(irBuilder: IrBuilderFunc, opDesc: ValueCompanion)
+  case class PredefFuncInfo(irBuilder: IrBuilderFunc)
 
   case class PredefinedFunc(
     /** A name which is used in scripts */
@@ -30,7 +30,8 @@ object SigmaPredef {
     /** Function declaration without body */
     declaration: Lambda,
     /** Metadata for this function */
-    info: PredefFuncInfo) {
+    irInfo: PredefFuncInfo,
+    docInfo: OperationInfo) {
 
     val sym: Ident = Ident(name, declaration.tpe)
     val symNoType: Ident = Ident(name, NoType)
@@ -52,23 +53,23 @@ object SigmaPredef {
 
     val AllOfFunc = PredefinedFunc("allOf",
       Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      PredefFuncInfo(
-        { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkAND(col) },
-        AND)
+      PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkAND(col) }),
+      OperationInfo(AND, "Returns true if all the elements in collection are true.",
+       Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val AnyOfFunc = PredefinedFunc("anyOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      PredefFuncInfo(
-        { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) },
-        OR)
+      PredefFuncInfo( { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) }),
+      OperationInfo(OR, "",
+        Seq(ArgInfo("", "")))
     )
 
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      PredefFuncInfo(
-        { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) },
-        XorOf)
+      PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }),
+      OperationInfo(XorOf, "",
+          Seq(ArgInfo("", "")))
     )
 
     val AtLeastFunc = PredefinedFunc("atLeast",
@@ -76,8 +77,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(bound: IntValue@unchecked, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
           mkAtLeast(bound, arr)
-        },
-        AtLeast)
+        }),
+      OperationInfo(AtLeast, "",
+          Seq(ArgInfo("", "")))
     )
 
     val OuterJoinFunc = PredefinedFunc(
@@ -92,21 +94,23 @@ object SigmaPredef {
           "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
         ),
         SCollection(STuple(tK, tO)), None),
-      PredefFuncInfo(undefined, MethodCall)
+      PredefFuncInfo(undefined),
+      OperationInfo(MethodCall, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ZKProofFunc = PredefinedFunc("ZKProof",
       Lambda(Vector("block" -> SSigmaProp), SBoolean, None),
-      PredefFuncInfo(
-        { case (_, Seq(block: SigmaPropValue@unchecked)) => mkZKProofBlock(block) },
-        ZKProofBlock)
+      PredefFuncInfo({ case (_, Seq(block: SigmaPropValue@unchecked)) => mkZKProofBlock(block) }),
+      OperationInfo(ZKProofBlock, "",
+          Seq(ArgInfo("", "")))
     )
 
     val SigmaPropFunc = PredefinedFunc("sigmaProp",
       Lambda(Vector("condition" -> SBoolean), SSigmaProp, None),
-      PredefFuncInfo(
-        { case (_, Seq(b: BoolValue@unchecked)) => mkBoolToSigmaProp(b) },
-        BoolToSigmaProp)
+      PredefFuncInfo({ case (_, Seq(b: BoolValue@unchecked)) => mkBoolToSigmaProp(b) }),
+      OperationInfo(BoolToSigmaProp, "",
+          Seq(ArgInfo("", "")))
     )
 
     val GetVarFunc = PredefinedFunc("getVar",
@@ -114,8 +118,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (Ident(_, SFunc(_, SOption(rtpe), _)), Seq(id: Constant[SNumericType]@unchecked)) =>
           mkGetVar(SByte.downcast(id.value.asInstanceOf[AnyVal]), rtpe)
-        },
-        GetVar)
+        }),
+      OperationInfo(GetVar, "",
+          Seq(ArgInfo("", "")))
     )
 
     def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
@@ -126,8 +131,9 @@ object SigmaPredef {
             case a: P2PKAddress => SigmaPropConstant(a.pubkey)
             case a@_ => sys.error(s"unsupported address $a")
           }
-        },
-        Constant)
+        }),
+      OperationInfo(Constant, "",
+          Seq(ArgInfo("", "")))
     )
 
     val DeserializeFunc = PredefinedFunc("deserialize",
@@ -146,8 +152,9 @@ object SigmaPredef {
         if (res.tpe != tpe)
           throw new InvalidArguments(s"Wrong type after deserialization, expected $tpe, got ${res.tpe}")
         res
-      },
-      Constant)
+      }),
+      OperationInfo(Constant, "",
+          Seq(ArgInfo("", "")))
     )
 
     val FromBase58Func = PredefinedFunc("fromBase58",
@@ -155,8 +162,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base58.decode(arg.value).get)
-        },
-      Constant)
+        }),
+      OperationInfo(Constant, "",
+          Seq(ArgInfo("", "")))
     )
 
     val FromBase64Func = PredefinedFunc("fromBase64",
@@ -164,8 +172,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
           ByteArrayConstant(Base64.decode(arg.value).get)
-        },
-        Constant)
+        }),
+      OperationInfo(Constant, "",
+          Seq(ArgInfo("", "")))
     )
 
     val Blake2b256Func = PredefinedFunc("blake2b256",
@@ -173,8 +182,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkCalcBlake2b256(arg)
-        },
-        CalcBlake2b256)
+        }),
+      OperationInfo(CalcBlake2b256, "",
+          Seq(ArgInfo("", "")))
     )
 
     val Sha256Func = PredefinedFunc("sha256",
@@ -182,8 +192,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkCalcSha256(arg)
-        },
-        CalcSha256)
+        }),
+      OperationInfo(CalcSha256, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ByteArrayToBigIntFunc = PredefinedFunc("byteArrayToBigInt",
@@ -191,7 +202,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkByteArrayToBigInt(arg)
-        }, ByteArrayToBigInt)
+        }),
+      OperationInfo(ByteArrayToBigInt, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ByteArrayToLongFunc = PredefinedFunc("byteArrayToLong",
@@ -199,8 +212,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkByteArrayToLong(arg)
-        },
-        ByteArrayToLong)
+        }),
+      OperationInfo(ByteArrayToLong, "",
+          Seq(ArgInfo("", "")))
     )
 
     val DecodePointFunc = PredefinedFunc("decodePoint",
@@ -208,8 +222,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SByteArray]@unchecked)) =>
           mkDecodePoint(arg)
-        },
-        DecodePoint)
+        }),
+      OperationInfo(DecodePoint, "",
+          Seq(ArgInfo("", "")))
     )
 
     val LongToByteArrayFunc = PredefinedFunc("longToByteArray",
@@ -217,8 +232,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SLong.type]@unchecked)) =>
           mkLongToByteArray(arg)
-        },
-        LongToByteArray)
+        }),
+      OperationInfo(LongToByteArray, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ProveDHTupleFunc = PredefinedFunc("proveDHTuple",
@@ -226,8 +242,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(g, h, u, v)) =>
             mkCreateProveDHTuple(g.asGroupElement, h.asGroupElement, u.asGroupElement, v.asGroupElement)
-        },
-        CreateProveDHTuple)
+        }),
+      OperationInfo(CreateProveDHTuple, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ProveDlogFunc = PredefinedFunc("proveDlog",
@@ -235,8 +252,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(arg: Value[SGroupElement.type]@unchecked)) =>
           mkCreateProveDlog(arg)
-        },
-        CreateProveDlog)
+        }),
+      OperationInfo(CreateProveDlog, "",
+          Seq(ArgInfo("", "")))
     )
 
     val AvlTreeFunc = PredefinedFunc("avlTree",
@@ -244,8 +262,9 @@ object SigmaPredef {
       PredefFuncInfo(
         { case (_, Seq(flags, digest, keyLength, valueLength)) =>
           mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
-        },
-        CreateAvlTree)
+        }),
+      OperationInfo(CreateAvlTree, "",
+          Seq(ArgInfo("", "")))
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",
@@ -254,7 +273,9 @@ object SigmaPredef {
         Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
         SByteArray, None
       ),
-      PredefFuncInfo( undefined, SubstConstants)
+      PredefFuncInfo( undefined),
+      OperationInfo(SubstConstants, "",
+          Seq(ArgInfo("", "")))
     )
 
     val ExecuteFromVarFunc = PredefinedFunc("executeFromVar",
@@ -263,7 +284,9 @@ object SigmaPredef {
         Vector("id" -> SByte),
         tT, None
       ),
-      PredefFuncInfo(undefined, DeserializeContext)
+      PredefFuncInfo(undefined),
+      OperationInfo(DeserializeContext, "",
+          Seq(ArgInfo("", "")))
     )
 
     val funcs: Seq[PredefinedFunc] = Seq(
@@ -292,8 +315,8 @@ object SigmaPredef {
     )
 
     private val funcNameToIrBuilderMap: Map[String, IrBuilderFunc] =
-      funcs.filter(_.info.irBuilder != undefined)
-        .map(f => f.name -> f.info.irBuilder)
+      funcs.filter(_.irInfo.irBuilder != undefined)
+        .map(f => f.name -> f.irInfo.irBuilder)
         .toMap
 
     def irBuilderForFunc(name: String): Option[IrBuilderFunc] = funcNameToIrBuilderMap.get(name)

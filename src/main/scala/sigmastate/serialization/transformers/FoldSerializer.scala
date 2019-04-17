@@ -12,10 +12,10 @@ case class FoldSerializer(cons: (Value[SCollection[SType]], Value[SType], Value[
   override def opDesc = Fold
 
   override def serialize(obj: Fold[SType, SType], w: SigmaByteWriter): Unit = {
-    import Fold._
-    w.putValue(obj.input, inputArg)
+    import sigmastate.Operations.FoldInfo._
+    w.putValue(obj.input, thisArg)
       .putValue(obj.zero, zeroArg)
-      .putValue(obj.foldOp, foldOpArg)
+      .putValue(obj.foldOp, opArg)
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {

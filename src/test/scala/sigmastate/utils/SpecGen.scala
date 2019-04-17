@@ -2,9 +2,8 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized, Evaluation}
+import sigmastate.eval.{Zero, Sized}
 import sigma.util.Extensions.ByteOps
-import SType._
 import scalan.util.{CollectionUtil, FileUtil}
 import scalan.meta.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
@@ -13,8 +12,6 @@ import sigmastate.lang.StdSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
-
-import scala.collection.immutable
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
@@ -55,7 +52,7 @@ trait SpecGen {
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   val noFuncs: Set[ValueCompanion] = Set(Constant)
-  val predefFuncs = predefFuncRegistry.funcs.filterNot(f => noFuncs.contains(f.info.opDesc))
+  val predefFuncs = predefFuncRegistry.funcs.filterNot(f => noFuncs.contains(f.docInfo.opDesc))
 
   def printTypes(companions: Seq[STypeCompanion]) = {
     val lines = for { tc <- companions.sortBy(_.typeId) } yield {
@@ -106,7 +103,7 @@ trait SpecGen {
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
-    val serializedAs = m.irInfo.opDesc.opt(d =>
+    val serializedAs = m.docInfo.map(_.opDesc).opt(d =>
       s"""
         |  \\bf{Serialized as} & \\lst{${d.typeName}(opCode=${d.opCode.toUByte})} \\\\
         |  \\hline
@@ -117,7 +114,7 @@ trait SpecGen {
       |\\noindent
       |\\begin{tabularx}{\\textwidth}{| l | X |}
       |   \\hline
-      |   \\bf{Description} & ${m.docInfo.opt(i => i.description + (!i.isOpcode).opt(" (FRONTEND ONLY)"))} \\\\
+      |   \\bf{Description} & ${m.docInfo.opt(i => i.description + i.isFrontendOnly.opt(" (FRONTEND ONLY)"))} \\\\
       |  $params
       |  \\hline
       |  \\bf{Result} & \\lst{${resTpe}} \\\\
@@ -190,7 +187,7 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of all operations with all methods by optional opCode
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
-      o => Some(o._1), m => m.irInfo.opDesc.map(_.opCode)
+      o => Some(o._1), m => m.docInfo.map(_.opDesc.opCode)
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left
@@ -207,7 +204,7 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of operations with all predef functions by opCode
     val danglingOps = CollectionUtil.outerJoinSeqs(primOps, predefFuncs)(
-      o => Some(o._1), f => Some(f.info.opDesc.opCode)
+      o => Some(o._1), f => Some(f.docInfo.opDesc.opCode)
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left
@@ -230,29 +227,56 @@ object GenSerializableOps extends SpecGen {
     val funcs = predefFuncs
 
     val methodsByOpCode = methods
-      .groupBy(_.irInfo.opDesc.map(_.opCode))
+      .groupBy(_.docInfo.map(_.opDesc.opCode))
 //      .map { case p @ (k, xs) => p.ensuring({ k.isEmpty || xs.length == 1}, p) }
 
     val funcsByOpCode = funcs
-      .groupBy(_.info.opDesc.opCode)
+      .groupBy(_.docInfo.opDesc.opCode)
       .ensuring(g => g.forall{ case (k, xs) => xs.length <= 1})
 
     val table = ops.map { case (opCode, opDesc) =>
       val methodOpt = methodsByOpCode.get(Some(opCode)).map(_.head)
       val funcOpt = funcsByOpCode.get(opCode).map(_.head)
-      val m = methodOpt.opt(m => m.objType.typeName + "." + m.name)
-      val f = funcOpt.opt(f => f.name)
-      (opCode, opDesc, m, f)
+      (opCode, opDesc, methodOpt, funcOpt)
     }
     table
   }
 
+  case class OpInfo(opDesc: ValueCompanion, description: String, args: Seq[ArgInfo])
+
   def main(args: Array[String]) = {
     val table = collectOpsTable()
-    for (r <- table) {
-      println(r)
+    val rowsWithInfo =
+      for ((opCode, opDesc, optM, optF) <- table if optM.nonEmpty || optF.nonEmpty)
+      yield (opDesc, optM, optF)
+
+    for ((opDesc, optM, optF) <- rowsWithInfo) {
+      val m = optM.map(m => s"method = ${m.objType.typeName}.${m.name}")
+      val f = optF.map(f => s"func = ${f.name}")
+      val rhs = Seq(m, f).flatten.mkString("{", ";", "}")
+      println(s"$opDesc -> $rhs")
+    }
+
+    for (row @ (opDesc, optM, optF) <- rowsWithInfo) {
+      (optM, optF) match {
+        case (Some(m), _) =>
+          val description = m.docInfo.map(i => i.description).opt()
+          val args = m.docInfo.map(i => i.args).getOrElse(Seq())
+          OpInfo(opDesc, description, args)
+        case (_, Some(f)) =>
+          val description = f.docInfo.description
+          val args = f.docInfo.args
+          OpInfo(opDesc, description, args)
+        case _ => sys.error(s"Unexpected $row")
+      }
     }
   }
 
+  object FoldInfo {
+    private val method = SMethod.fromIds(SCollection.typeId, 5)
+    val inputArg = method.argInfo("input")
+    val zeroArg = method.argInfo("zero")
+    val foldOpArg = method.argInfo("foldOp")
+  }
 }
 

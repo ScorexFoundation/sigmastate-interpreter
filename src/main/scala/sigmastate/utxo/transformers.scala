@@ -104,10 +104,6 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
-  val inputArg = ArgInfo("input", "Collection to fold over.")
-  val zeroArg = ArgInfo("zero", "Initial state")
-  val foldOpArg = ArgInfo("foldOp", "Operation to fold over input")
-//  val Seq(input, zero, fold) = SCollection.FoldMethod.stype.tDom
   def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
