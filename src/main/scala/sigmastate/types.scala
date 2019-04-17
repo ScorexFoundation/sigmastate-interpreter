@@ -126,7 +126,7 @@ object SType {
     * a companion object which can be used to access the list of corresponding methods.
     * NOTE: in the current implementation only monomorphic methods are supported (without type parameters)*/
   val types: Map[Byte, STypeCompanion] = Seq(
-    SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
+    SBoolean, SNumericType, SString, STuple, SGroupElement, SSigmaProp, SContext, SGlobal, SHeader, SPreHeader,
     SAvlTree, SBox, SOption, SCollection, SBigInt
   ).map { t => (t.typeId, t) }.toMap
 
@@ -365,11 +365,6 @@ case class SMethod(
   }
   def argInfo(argName: String): ArgInfo =
     docInfo.get.args.find(_.name == argName).get
-//  def withIRInfo(opDesc: ValueCompanion) = {
-//    this.copy(irInfo = MethodIRInfo(None, Some(opDesc)))
-//  }
-//  def setIsOpcode(value: Boolean) =
-//    this.copy(docInfo = docInfo.map(i => i.copy(isOpcode = value)))
 }
 
 object SMethod {
@@ -654,9 +649,9 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val ModQMethod = SMethod(this, "modQ", SFunc(this, SBigInt), 1)
       .withInfo(ModQ, "Returns this \\lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group.")
   val PlusModQMethod = SMethod(this, "plusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 2)
-      .withInfo(ModQArithOp.Plus, "Adds this number with \\lst{other} by module Q.", ArgInfo("other", "Number to add to this."))
+      .withInfo(ModQArithOp.PlusModQ, "Adds this number with \\lst{other} by module Q.", ArgInfo("other", "Number to add to this."))
   val MinusModQMethod = SMethod(this, "minusModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 3)
-      .withInfo(ModQArithOp.Minus, "Subtracts \\lst{other} number from this by module Q.", ArgInfo("other", "Number to subtract from this."))
+      .withInfo(ModQArithOp.MinusModQ, "Subtracts \\lst{other} number from this by module Q.", ArgInfo("other", "Number to subtract from this."))
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
@@ -943,7 +938,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         builder.mkByIndex(obj.asValue[SCollection[SType]], index1, Some(defaultValue1))
       })
       .withInfo(ByIndex, "Return the element of collection if \\lst{index} is in range \\lst{0 .. size-1}",
-        ArgInfo("index", "index of the element of this collection"))
+        ArgInfo("index", "index of the element of this collection"),
+        ArgInfo("default", "value to return when \\lst{index} is out of range"))
 
   val MapMethod = SMethod(this, "map", SFunc(IndexedSeq(ThisType, SFunc(tIV, tOV)), tOVColl, Seq(paramIV, paramOV)), 3)
       .withInfo(MapCollection, "Builds a new collection by applying a function to all elements of this collection." +
@@ -968,7 +964,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """Tests whether a predicate holds for all elements of this collection.
          |Returns \\lst{true} if this collection is empty or the given predicate \\lst{p}
          |holds for all elements of this collection, otherwise \\lst{false}.
-        """.stripMargin)
+        """.stripMargin,
+        ArgInfo("p", "the predicate used to test elements"))
 
   val SliceMethod = SMethod(this, "slice", SFunc(IndexedSeq(ThisType, SInt, SInt), ThisType, Seq(paramIV)), 7)
       .withInfo(Slice,
@@ -986,11 +983,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """Selects all elements of this collection which satisfy a predicate.
          | Returns  a new collection consisting of all elements of this collection that satisfy the given
          | predicate \\lst{p}. The order of the elements is preserved.
-        """.stripMargin, ArgInfo("p", "the predicate used to test elements."))
+        """.stripMargin,
+        ArgInfo("p", "the predicate used to test elements."))
 
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
       .withInfo(Append, "Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)",
-        ArgInfo("other", ""))
+        ArgInfo("other", "the collection to append at the end of this"))
 
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
       .withInfo(ByIndex,
@@ -1378,8 +1376,16 @@ case object SBox extends SProduct with SPredefType with SMonoType {
         "If \\lst{tx} is a transaction which generated this box, then \\lst{creationInfo._1} " +
         "is a height of the tx's block. The \\lst{creationInfo._2} is a serialized transaction " +
         "identifier followed by box index in the transaction outputs.") // see ExtractCreationInfo
+
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
-      .withInfo(ExtractRegisterAs, "")
+      .withInfo(ExtractRegisterAs,
+        """ Extracts register by id and type.
+         | Type param \\lst{T} expected type of the register.
+         | Returns \\lst{Some(value)} if the register is defined and has given type and \\lst{None} otherwise
+         |
+        """.stripMargin,
+        ArgInfo("regId", "zero-based identifier of the register."))
+
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "Secondary tokens")

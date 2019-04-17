@@ -29,7 +29,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   private val tT = STypeIdent("T") // to be used in typing rules
 
   private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.map(f => f.name -> f.declaration.tpe).toMap
+      predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext], method: SMethod) = {
     val global = Global.withPropagatedSrcCtx(srcCtx)

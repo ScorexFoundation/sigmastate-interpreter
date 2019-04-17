@@ -102,7 +102,7 @@ object TrivialProp {
 
 /** Embedding of Boolean values to SigmaProp values. As an example, this operation allows boolean experesions
   * to be used as arguments of `atLeast(..., sigmaProp(boolExpr), ...)` operation.
-  * During execution results to either `TrueProp` or `FalseProp` values of SigmaBoolean type.
+  * During execution results to either `TrueProp` or `FalseProp` values of SigmaProp type.
   */
 case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def companion = BoolToSigmaProp
@@ -124,8 +124,7 @@ object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
 }
 
-/** ErgoTree operation to create a new SigmaProp value representing public key
-  * of discrete logarithm signature protocol. */
+/** Construct a new authenticated dictionary with given parameters and tree root digest.*/
 case class CreateAvlTree(operationFlags: ByteValue,
     digest: Value[SByteArray],
     keyLength: IntValue,
@@ -240,7 +239,8 @@ object AND extends ValueCompanion {
 
 /**
   * Logical threshold.
-  * AtLeast has two inputs: integer bound and children same as in AND/OR. The result is true if at least bound children are true.
+  * AtLeast has two inputs: integer bound and children same as in AND/OR.
+  * The result is true if at least bound children are true.
   */
 case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.type]])
   extends Transformer[SCollection[SSigmaProp.type], SSigmaProp.type]
@@ -569,10 +569,10 @@ trait OpGroup[C <: ValueCompanion] {
 
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
-  val Plus  = ModQArithOpCompanion(PlusModQCode,  "PlusModQ")
-  val Minus = ModQArithOpCompanion(MinusModQCode, "MinusModQ")
+  object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ")
+  object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ")
 
-  val operations: Map[Byte, ModQArithOpCompanion] = Seq(Plus, Minus).map(o => (o.opCode, o)).toMap
+  val operations: Map[Byte, ModQArithOpCompanion] = Seq(PlusModQ, MinusModQ).map(o => (o.opCode, o)).toMap
 
   def opcodeToName(opCode: Byte): String = operations.get(opCode) match {
     case Some(c)  => c.name
