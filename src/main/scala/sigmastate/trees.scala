@@ -229,8 +229,15 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
 }
 
-object AND extends ValueCompanion {
+trait LogicalTransformerCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
+
+object AND extends LogicalTransformerCompanion {
   override def opCode: OpCode = AndCode
+
+  override def argInfos: Seq[ArgInfo] = ??? //Operations.ANDInfo.argInfos
+
   def apply(children: Seq[Value[SBoolean.type]]): AND =
     AND(ConcreteCollection(children.toIndexedSeq))
 

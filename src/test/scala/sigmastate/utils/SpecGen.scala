@@ -299,9 +299,10 @@ object GenSerializableOps extends SpecGen {
             s"""val ${a.name}Arg: ArgInfo = method.argInfo("${a.name}")"""
           }
           s"""
-            |  object ${opName}Info {
+            |  object ${opName}Info extends InfoObject {
             |    private val method = SMethod.fromIds(${typeId}, ${m.methodId})
             |    ${args.rep(sep = "\n    ")}
+            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
             |  }
            """.stripMargin
         case Left(f) =>
@@ -313,9 +314,10 @@ object GenSerializableOps extends SpecGen {
             s"""val ${a.name}Arg: ArgInfo = func.argInfo("${a.name}")"""
           }
           s"""
-            |  object ${opName}Info {
+            |  object ${opName}Info extends InfoObject {
             |    private val func = predefinedOps.funcs("${f.name}")
             |    ${args.rep(sep = "\n    ")}
+            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
             |  }
            """.stripMargin
       }

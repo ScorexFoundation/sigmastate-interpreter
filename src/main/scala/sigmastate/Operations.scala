@@ -9,256 +9,305 @@ import sigmastate.lang.StdSigmaBuilder
   */
 object Operations {
   val predefinedOps = new PredefinedFuncRegistry(StdSigmaBuilder)
-
-  object ANDInfo {
-    private val func = predefinedOps.funcs("allOf")
-    val conditionsArg: ArgInfo = func.argInfo("conditions")
+  trait InfoObject {
+    def argInfos: Seq[ArgInfo]
   }
 
-  object AppendInfo {
+  object ANDInfo extends InfoObject {
+    private val func = predefinedOps.funcs("allOf")
+    val conditionsArg: ArgInfo = func.argInfo("conditions")
+    val argInfos: Seq[ArgInfo] = Seq(conditionsArg)
+  }
+
+  object AppendInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 9)
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object AtLeastInfo {
+  object AtLeastInfo extends InfoObject {
     private val func = predefinedOps.funcs("atLeast")
     val boundArg: ArgInfo = func.argInfo("bound")
     val childrenArg: ArgInfo = func.argInfo("children")
+    val argInfos: Seq[ArgInfo] = Seq(boundArg, childrenArg)
   }
 
-  object BoolToSigmaPropInfo {
+  object BoolToSigmaPropInfo extends InfoObject {
     private val func = predefinedOps.funcs("sigmaProp")
     val conditionArg: ArgInfo = func.argInfo("condition")
+    val argInfos: Seq[ArgInfo] = Seq(conditionArg)
   }
 
-  object ByIndexInfo {
+  object ByIndexInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 2)
     val thisArg: ArgInfo = method.argInfo("this")
     val indexArg: ArgInfo = method.argInfo("index")
     val defaultArg: ArgInfo = method.argInfo("default")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, indexArg, defaultArg)
   }
 
-  object ByteArrayToBigIntInfo {
+  object ByteArrayToBigIntInfo extends InfoObject {
     private val func = predefinedOps.funcs("byteArrayToBigInt")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object ByteArrayToLongInfo {
+  object ByteArrayToLongInfo extends InfoObject {
     private val func = predefinedOps.funcs("byteArrayToLong")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object CalcBlake2b256Info {
+  object CalcBlake2b256Info extends InfoObject {
     private val func = predefinedOps.funcs("blake2b256")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object CalcSha256Info {
+  object CalcSha256Info extends InfoObject {
     private val func = predefinedOps.funcs("sha256")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object CreateAvlTreeInfo {
+  object CreateAvlTreeInfo extends InfoObject {
     private val func = predefinedOps.funcs("avlTree")
     val operationFlagsArg: ArgInfo = func.argInfo("operationFlags")
     val digestArg: ArgInfo = func.argInfo("digest")
     val keyLengthArg: ArgInfo = func.argInfo("keyLength")
     val valueLengthOptArg: ArgInfo = func.argInfo("valueLengthOpt")
+    val argInfos: Seq[ArgInfo] = Seq(operationFlagsArg, digestArg, keyLengthArg, valueLengthOptArg)
   }
 
-  object CreateProveDHTupleInfo {
+  object CreateProveDHTupleInfo extends InfoObject {
     private val func = predefinedOps.funcs("proveDHTuple")
     val gArg: ArgInfo = func.argInfo("g")
     val hArg: ArgInfo = func.argInfo("h")
     val uArg: ArgInfo = func.argInfo("u")
     val vArg: ArgInfo = func.argInfo("v")
+    val argInfos: Seq[ArgInfo] = Seq(gArg, hArg, uArg, vArg)
   }
 
-  object CreateProveDlogInfo {
+  object CreateProveDlogInfo extends InfoObject {
     private val func = predefinedOps.funcs("proveDlog")
     val valueArg: ArgInfo = func.argInfo("value")
+    val argInfos: Seq[ArgInfo] = Seq(valueArg)
   }
 
-  object DecodePointInfo {
+  object DecodePointInfo extends InfoObject {
     private val func = predefinedOps.funcs("decodePoint")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object DeserializeContextInfo {
+  object DeserializeContextInfo extends InfoObject {
     private val func = predefinedOps.funcs("executeFromVar")
     val idArg: ArgInfo = func.argInfo("id")
+    val argInfos: Seq[ArgInfo] = Seq(idArg)
   }
 
-  object ExistsInfo {
+  object ExistsInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 4)
     val thisArg: ArgInfo = method.argInfo("this")
     val pArg: ArgInfo = method.argInfo("p")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, pArg)
   }
 
-  object ExponentiateInfo {
+  object ExponentiateInfo extends InfoObject {
     private val method = SMethod.fromIds(7, 3)
     val thisArg: ArgInfo = method.argInfo("this")
     val kArg: ArgInfo = method.argInfo("k")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, kArg)
   }
 
-  object ExtractAmountInfo {
+  object ExtractAmountInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object ExtractBytesInfo {
+  object ExtractBytesInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 3)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object ExtractBytesWithNoRefInfo {
+  object ExtractBytesWithNoRefInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 4)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object ExtractCreationInfoInfo {
+  object ExtractCreationInfoInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 6)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object ExtractIdInfo {
+  object ExtractIdInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 5)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object ExtractRegisterAsInfo {
+  object ExtractRegisterAsInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 7)
     val thisArg: ArgInfo = method.argInfo("this")
     val regIdArg: ArgInfo = method.argInfo("regId")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, regIdArg)
   }
 
-  object ExtractScriptBytesInfo {
+  object ExtractScriptBytesInfo extends InfoObject {
     private val method = SMethod.fromIds(99, 2)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object FilterInfo {
+  object FilterInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 8)
     val thisArg: ArgInfo = method.argInfo("this")
     val pArg: ArgInfo = method.argInfo("p")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, pArg)
   }
 
-  object FoldInfo {
+  object FoldInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 5)
     val thisArg: ArgInfo = method.argInfo("this")
     val zeroArg: ArgInfo = method.argInfo("zero")
     val opArg: ArgInfo = method.argInfo("op")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, zeroArg, opArg)
   }
 
-  object ForAllInfo {
+  object ForAllInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 6)
     val thisArg: ArgInfo = method.argInfo("this")
     val pArg: ArgInfo = method.argInfo("p")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, pArg)
   }
 
-  object GetVarInfo {
+  object GetVarInfo extends InfoObject {
     private val func = predefinedOps.funcs("getVar")
     val varIdArg: ArgInfo = func.argInfo("varId")
+    val argInfos: Seq[ArgInfo] = Seq(varIdArg)
   }
 
-  object GroupGeneratorInfo {
+  object GroupGeneratorInfo extends InfoObject {
     private val method = SMethod.fromIds(106, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object LongToByteArrayInfo {
+  object LongToByteArrayInfo extends InfoObject {
     private val func = predefinedOps.funcs("longToByteArray")
     val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
-  object MapCollectionInfo {
+  object MapCollectionInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 3)
     val thisArg: ArgInfo = method.argInfo("this")
     val fArg: ArgInfo = method.argInfo("f")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, fArg)
   }
 
-  object MethodCallInfo {
+  object MethodCallInfo extends InfoObject {
     private val method = SMethod.fromIds(6, 4)
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object MinusModQInfo {
+  object MinusModQInfo extends InfoObject {
     private val method = SMethod.fromIds(6, 3)
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object ModQInfo {
+  object ModQInfo extends InfoObject {
     private val method = SMethod.fromIds(6, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object MultiplyGroupInfo {
+  object MultiplyGroupInfo extends InfoObject {
     private val method = SMethod.fromIds(7, 4)
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object ORInfo {
+  object ORInfo extends InfoObject {
     private val func = predefinedOps.funcs("anyOf")
     val conditionsArg: ArgInfo = func.argInfo("conditions")
+    val argInfos: Seq[ArgInfo] = Seq(conditionsArg)
   }
 
-  object OptionGetInfo {
+  object OptionGetInfo extends InfoObject {
     private val method = SMethod.fromIds(36, 3)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object OptionGetOrElseInfo {
+  object OptionGetOrElseInfo extends InfoObject {
     private val method = SMethod.fromIds(36, 4)
     val thisArg: ArgInfo = method.argInfo("this")
     val defaultArg: ArgInfo = method.argInfo("default")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, defaultArg)
   }
 
-  object OptionIsDefinedInfo {
+  object OptionIsDefinedInfo extends InfoObject {
     private val method = SMethod.fromIds(36, 2)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object PlusModQInfo {
+  object PlusModQInfo extends InfoObject {
     private val method = SMethod.fromIds(6, 2)
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object PropertyCallInfo {
+  object PropertyCallInfo extends InfoObject {
     private val method = SMethod.fromIds(1, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object SigmaPropBytesInfo {
+  object SigmaPropBytesInfo extends InfoObject {
     private val method = SMethod.fromIds(8, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object SizeOfInfo {
+  object SizeOfInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 1)
     val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
-  object SliceInfo {
+  object SliceInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 7)
     val thisArg: ArgInfo = method.argInfo("this")
     val fromArg: ArgInfo = method.argInfo("from")
     val untilArg: ArgInfo = method.argInfo("until")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg, fromArg, untilArg)
   }
 
-  object SubstConstantsInfo {
+  object SubstConstantsInfo extends InfoObject {
     private val func = predefinedOps.funcs("substConstants")
     val scriptBytesArg: ArgInfo = func.argInfo("scriptBytes")
     val positionsArg: ArgInfo = func.argInfo("positions")
     val newValuesArg: ArgInfo = func.argInfo("newValues")
+    val argInfos: Seq[ArgInfo] = Seq(scriptBytesArg, positionsArg, newValuesArg)
   }
 
-  object XorOfInfo {
+  object XorOfInfo extends InfoObject {
     private val func = predefinedOps.funcs("xorOf")
     val conditionsArg: ArgInfo = func.argInfo("conditions")
+    val argInfos: Seq[ArgInfo] = Seq(conditionsArg)
   }
+
 }
