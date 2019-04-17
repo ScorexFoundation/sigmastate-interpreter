@@ -8,7 +8,6 @@ import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
-import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.existentials
