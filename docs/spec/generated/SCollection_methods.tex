@@ -3,12 +3,21 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & The size of the collection in elements. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
   
+  \bf{Serialized as} & \lst{SizeOf(opCode=177)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -17,13 +26,13 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Return the element of collection if \lst{index} is in range \lst{0 .. size-1} \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
-\lst{arg1} & \lst{: IV} & \text{// } \\
+         \lst{index} & \lst{: Int} & \text{// index of the element of this collection} \\
+\lst{default} & \lst{: IV} & \text{// value to return when \lst{index} is out of range} \\
       \end{array}\) \\
        
   \hline
@@ -41,18 +50,24 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} &  Builds a new collection by applying a function to all elements of this collection.
+ Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
+ \lst{f} to each element of this collection and collecting the results.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => OV} & \text{// } \\
+         \lst{f} & \lst{: (IV) => OV} & \text{// the function to apply to each element} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[OV]} \\
   \hline
   
+  \bf{Serialized as} & \lst{MapCollection(opCode=173)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -61,18 +76,23 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Tests whether a predicate holds for at least one element of this collection.
+Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
   
+  \bf{Serialized as} & \lst{Exists(opCode=174)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -81,19 +101,22 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Applies a binary operator to a start value and all elements of this collection, going left to right. \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: OV} & \text{// } \\
-\lst{arg1} & \lst{: (OV,IV) => OV} & \text{// } \\
+         \lst{zero} & \lst{: OV} & \text{// a starting value} \\
+\lst{op} & \lst{: (OV,IV) => OV} & \text{// the binary operator} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{OV} \\
   \hline
   
+  \bf{Serialized as} & \lst{Fold(opCode=176)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -102,18 +125,24 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Tests whether a predicate holds for all elements of this collection.
+Returns \lst{true} if this collection is empty or the given predicate \lst{p}
+holds for all elements of this collection, otherwise \lst{false}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
   
+  \bf{Serialized as} & \lst{ForAll(opCode=175)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -122,19 +151,27 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Selects an interval of elements.  The returned collection is made up
+  of all elements \lst{x} which satisfy the invariant:
+  \lst{
+     from <= indexOf(x) < until
+  }
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         \lst{from} & \lst{: Int} & \text{// the lowest index to include from this collection} \\
+\lst{until} & \lst{: Int} & \text{// the lowest index to EXCLUDE from this collection} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
+  \bf{Serialized as} & \lst{Slice(opCode=180)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -143,18 +180,24 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Selects all elements of this collection which satisfy a predicate.
+ Returns  a new collection consisting of all elements of this collection that satisfy the given
+ predicate \lst{p}. The order of the elements is preserved.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
+  \bf{Serialized as} & \lst{Filter(opCode=181)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -163,18 +206,21 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+         \lst{other} & \lst{: Coll[IV]} & \text{// the collection to append at the end of this} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
+  \bf{Serialized as} & \lst{Append(opCode=179)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -183,18 +229,26 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & The element at given index.
+ Indices start at \lst{0}; \lst{xs.apply(0)} is the first element of collection \lst{xs}.
+ Note the indexing syntax \lst{xs(i)} is a shorthand for \lst{xs.apply(i)}.
+ Returns the element at the given index.
+ Throws an exception if \lst{i < 0} or \lst{length <= i}
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
+         \lst{i} & \lst{: Int} & \text{// the index} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{IV} \\
   \hline
   
+  \bf{Serialized as} & \lst{ByIndex(opCode=178)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -208,7 +262,8 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
       \end{array}\) \\
        
   \hline
@@ -228,7 +283,8 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
       \end{array}\) \\
        
   \hline
@@ -248,7 +304,8 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
+         \lst{arg0} & \lst{: Coll[Boolean]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
       \end{array}\) \\
        
   \hline
@@ -263,8 +320,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Produces the range of all indices of this collection as a new collection
+ containing [0 .. length-1] values.
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Int]} \\
   \hline
@@ -280,12 +345,18 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} &  Builds a new collection by applying a function to all elements of this collection
+ and using the elements of the resulting collections.
+ Function \lst{f} is constrained to be of the form \lst{x => x.someProperty}, otherwise
+ it is illegal.
+ Returns a new collection of type \lst{Coll[B]} resulting from applying the given collection-valued function
+ \lst{f} to each element of this collection and concatenating the results.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Coll[OV]} & \text{// } \\
+         \lst{f} & \lst{: (IV) => Coll[OV]} & \text{// the function to apply to each element.} \\
       \end{array}\) \\
        
   \hline
@@ -303,13 +374,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Computes length of longest segment whose elements all satisfy some predicate.
+ Returns the length of the longest segment of this collection starting from index \lst{from}
+ such that every element of the segment satisfies the predicate \lst{p}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
+\lst{from} & \lst{: Int} & \text{// the index where the search starts.} \\
       \end{array}\) \\
        
   \hline
@@ -327,13 +401,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Finds index of the first element satisfying some predicate after or at some start index.
+ Returns the index \lst{>= from} of the first element of this collection that satisfies the predicate \lst{p},
+ or \lst{-1}, if none exists.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
+\lst{from} & \lst{: Int} & \text{// the start index} \\
       \end{array}\) \\
        
   \hline
@@ -351,13 +428,15 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Finds index of last element satisfying some predicate before or at given end index.
+ Return the index \lst{<= end} of the last element of this collection that satisfies the predicate \lst{p},
+ or \lst{-1}, if none exists.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
       \end{array}\) \\
        
   \hline
@@ -380,9 +459,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
-\lst{arg1} & \lst{: Coll[IV]} & \text{// } \\
-\lst{arg2} & \lst{: Int} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -405,8 +482,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Int} & \text{// } \\
-\lst{arg1} & \lst{: IV} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -429,8 +505,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Int]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[IV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -453,7 +528,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -476,7 +551,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -499,7 +574,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -522,7 +597,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -545,8 +620,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: IV} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -569,8 +643,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: IV} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -593,7 +666,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -616,7 +689,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[OV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -637,6 +710,12 @@
    \bf{Description} &  \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
@@ -656,8 +735,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
-\lst{arg1} & \lst{: Int} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -680,7 +758,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -703,7 +781,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => Boolean} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -726,8 +804,7 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (IV) => (K,V)} & \text{// } \\
-\lst{arg1} & \lst{: ((V,V)) => V} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline

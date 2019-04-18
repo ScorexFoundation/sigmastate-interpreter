@@ -6,6 +6,12 @@
    \bf{Description} &  \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Option[T]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
   
@@ -17,12 +23,21 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} otherwise. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
   
+  \bf{Serialized as} & \lst{OptionIsDefined(opCode=230)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -31,12 +46,21 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the option's value. The option must be nonempty. Throws exception if the option is empty. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{T} \\
   \hline
   
+  \bf{Serialized as} & \lst{OptionGet(opCode=228)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -45,18 +69,23 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the option's value if the option is nonempty, otherwise
+return the result of evaluating \lst{default}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: T} & \text{// } \\
+         \lst{default} & \lst{: T} & \text{// the default value} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{T} \\
   \hline
   
+  \bf{Serialized as} & \lst{OptionGetOrElse(opCode=229)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -65,19 +94,26 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the result of applying \lst{f} to this option's
+  value if the option is nonempty.  Otherwise, evaluates
+  expression \lst{ifEmpty}.
+  This is equivalent to \lst{option map f getOrElse ifEmpty}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: R} & \text{// } \\
-\lst{arg1} & \lst{: (T) => R} & \text{// } \\
+         \lst{ifEmpty} & \lst{: R} & \text{// the expression to evaluate if empty} \\
+\lst{f} & \lst{: (T) => R} & \text{// the function to apply if nonempty} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{R} \\
   \hline
   
+  \bf{Serialized as} & \lst{MethodCall(opCode=220)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -86,8 +122,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Convert this Option to a collection with zero or one element. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[T]} \\
   \hline
@@ -103,12 +145,15 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns a \lst{Some} containing the result of applying \lst{f} to this option's
+   value if this option is nonempty.
+   Otherwise return \lst{None}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => R} & \text{// } \\
+         \lst{f} & \lst{: (T) => R} & \text{// the function to apply} \\
       \end{array}\) \\
        
   \hline
@@ -126,12 +171,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns this option if it is nonempty and applying the predicate \lst{p} to
+  this option's value returns true. Otherwise, return \lst{None}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => Boolean} & \text{// } \\
+         \lst{p} & \lst{: (T) => Boolean} & \text{// the predicate used for testing} \\
       \end{array}\) \\
        
   \hline
@@ -149,12 +196,17 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the result of applying \lst{f} to this option's value if
+   this option is nonempty.
+   Returns \lst{None} if this option is empty.
+   Slightly different from \lst{map} in that \lst{f} is expected to
+   return an option (which could be \lst{one}).
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => Option[R]} & \text{// } \\
+         \lst{f} & \lst{: (T) => Option[R]} & \text{// the function to apply} \\
       \end{array}\) \\
        
   \hline

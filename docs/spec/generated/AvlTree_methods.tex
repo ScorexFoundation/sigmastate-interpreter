@@ -3,8 +3,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns digest of the state represented by this tree.
+ Authenticated tree \lst{digest} = \lst{root hash bytes} ++ \lst{tree height}
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
@@ -20,8 +28,18 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} &  Flags of enabled operations packed in single byte.
+ \lst{isInsertAllowed == (enabledOperations & 0x01) != 0}\newline
+ \lst{isUpdateAllowed == (enabledOperations & 0x02) != 0}\newline
+ \lst{isRemoveAllowed == (enabledOperations & 0x04) != 0}
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Byte} \\
   \hline
@@ -37,8 +55,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
@@ -54,8 +80,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Option[Int]} \\
   \hline
@@ -71,8 +105,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
@@ -88,8 +130,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
@@ -105,8 +155,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
@@ -122,12 +180,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Byte} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -145,13 +205,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -169,13 +230,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -193,13 +255,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Coll[Byte]]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -217,13 +280,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[(Coll[Byte],Coll[Byte])]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -241,13 +305,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[(Coll[Byte],Coll[Byte])]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -265,13 +330,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Coll[Byte]]} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
@@ -289,12 +355,14 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & 
+
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline

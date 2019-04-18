@@ -478,13 +478,17 @@ object SNumericType extends STypeCompanion {
         .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}"),  // see Downcast
     SMethod(this, "toBytes", SFunc(tNum, SByteArray),  6)
         .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall, "Returns a big-endian representation of this numeric value in a collection of bytes.\n" +
-            " For example, the Int value \\lst{0x12131415} would yield the\n" +
-            " byte array  \\lst{[0x12, 0x13, 0x14, 0x15]}."),
+        .withInfo(PropertyCall,
+          """ Returns a big-endian representation of this numeric value in a collection of bytes.
+           | For example, the \lst{Int} value \lst{0x12131415} would yield the
+           | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
+          """.stripMargin),
     SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7)
         .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall, "Returns a big-endian representation of this numeric in a collection of Booleans.\n" +
-            " Each boolean corresponds to one bit."),
+        .withInfo(PropertyCall,
+          """ Returns a big-endian representation of this numeric in a collection of Booleans.
+           |  Each boolean corresponds to one bit.
+          """.stripMargin)
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
 }
@@ -812,24 +816,25 @@ object SOption extends STypeCompanion {
 
   val IsEmptyMethod   = SMethod(this, IsEmpty, SFunc(ThisType, SBoolean), 1)
   val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2)
-      .withInfo(OptionIsDefined, "Returns true if the option is an instance of $some, false otherwise.")
+      .withInfo(OptionIsDefined,
+        "Returns \\lst{true} if the option is an instance of \\lst{Some}, \\lst{false} otherwise.")
+
   val GetMethod       = SMethod(this, Get, SFunc(ThisType, tT), 3)
       .withInfo(OptionGet,
-      """Returns the option's value.\n
-      The option must be nonempty.\n
-      Throws exception if the option is empty.""")
+      """Returns the option's value. The option must be nonempty. Throws exception if the option is empty.""")
+
   val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
-         |return the result of evaluating `default`.
+         |return the result of evaluating \lst{default}.
         """.stripMargin, ArgInfo("default", "the default value"))
 
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
       .withInfo(MethodCall,
-        """Returns the result of applying f to this option's
+        """Returns the result of applying \lst{f} to this option's
          |  value if the option is nonempty.  Otherwise, evaluates
-         |  expression \\lst{ifEmpty}.
-         |  This is equivalent to \\lst{option map f getOrElse ifEmpty}.
+         |  expression \lst{ifEmpty}.
+         |  This is equivalent to \lst{option map f getOrElse ifEmpty}.
         """.stripMargin,
         ArgInfo("ifEmpty", "the expression to evaluate if empty"),
         ArgInfo("f", "the function to apply if nonempty"))
@@ -842,28 +847,28 @@ object SOption extends STypeCompanion {
     SFunc(IndexedSeq(ThisType, SFunc(tT, tR)), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))), 7)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """Returns a \\lst{Some} containing the result of applying \\lst{f} to this $option's
+        """Returns a \lst{Some} containing the result of applying \lst{f} to this option's
          |   value if this option is nonempty.
-         |   Otherwise return \\lst{None}.
+         |   Otherwise return \lst{None}.
         """.stripMargin, ArgInfo("f", "the function to apply"))
 
   val FilterMethod    = SMethod(this, "filter",
     SFunc(IndexedSeq(ThisType, SFunc(tT, SBoolean)), ThisType, Seq(STypeParam(tT))), 8)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """Returns this option if it is nonempty and applying the predicate \\lst{p} to
-         |  this option's value returns true. Otherwise, return \\lst{None}.
+        """Returns this option if it is nonempty and applying the predicate \lst{p} to
+         |  this option's value returns true. Otherwise, return \lst{None}.
         """.stripMargin, ArgInfo("p", "the predicate used for testing"))
 
   val FlatMapMethod   = SMethod(this, "flatMap",
     SFunc(IndexedSeq(ThisType, SFunc(tT, SOption(tR))), SOption(tR), Seq(STypeParam(tT), STypeParam(tR))), 9)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """Returns the result of applying \\lst{f} to this option's value if
+        """Returns the result of applying \lst{f} to this option's value if
          |   this option is nonempty.
-         |   Returns \\lst{None} if this option is empty.
-         |   Slightly different from \\lst{map} in that \\lst{f} is expected to
-         |   return an option (which could be \\lst{one}).
+         |   Returns \lst{None} if this option is empty.
+         |   Slightly different from \lst{map} in that \lst{f} is expected to
+         |   return an option (which could be \lst{one}).
         """.stripMargin, ArgInfo("f", "the function to apply"))
 
   val methods: Seq[SMethod] = Seq(
@@ -942,15 +947,17 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("default", "value to return when \\lst{index} is out of range"))
 
   val MapMethod = SMethod(this, "map", SFunc(IndexedSeq(ThisType, SFunc(tIV, tOV)), tOVColl, Seq(paramIV, paramOV)), 3)
-      .withInfo(MapCollection, "Builds a new collection by applying a function to all elements of this collection." +
-          "Returns a new collection of type \\lst{Coll[B]} resulting from applying the given function\n" +
-          " \\lst{f} to each element of this collection and collecting the results.",
+      .withInfo(MapCollection,
+        """ Builds a new collection by applying a function to all elements of this collection.
+         | Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
+         | \lst{f} to each element of this collection and collecting the results.
+        """.stripMargin,
         ArgInfo("f", "the function to apply to each element"))
         
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 4)
       .withInfo(Exists,
         """Tests whether a predicate holds for at least one element of this collection.
-         |Returns \\lst{true} if the given predicate \\lst{p} is satisfied by at least one element of this collection, otherwise \\lst{false}
+         |Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements"))
 
@@ -962,16 +969,16 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val ForallMethod = SMethod(this, "forall", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 6)
       .withInfo(ForAll,
         """Tests whether a predicate holds for all elements of this collection.
-         |Returns \\lst{true} if this collection is empty or the given predicate \\lst{p}
-         |holds for all elements of this collection, otherwise \\lst{false}.
+         |Returns \lst{true} if this collection is empty or the given predicate \lst{p}
+         |holds for all elements of this collection, otherwise \lst{false}.
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements"))
 
   val SliceMethod = SMethod(this, "slice", SFunc(IndexedSeq(ThisType, SInt, SInt), ThisType, Seq(paramIV)), 7)
       .withInfo(Slice,
         """Selects an interval of elements.  The returned collection is made up
-         |  of all elements \\lst{x} which satisfy the invariant:
-         |  \\lst{
+         |  of all elements \lst{x} which satisfy the invariant:
+         |  \lst{
          |     from <= indexOf(x) < until
          |  }
         """.stripMargin,
@@ -982,7 +989,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(Filter,
         """Selects all elements of this collection which satisfy a predicate.
          | Returns  a new collection consisting of all elements of this collection that satisfy the given
-         | predicate \\lst{p}. The order of the elements is preserved.
+         | predicate \lst{p}. The order of the elements is preserved.
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."))
 
@@ -993,10 +1000,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
       .withInfo(ByIndex,
         """The element at given index.
-         | Indices start at \\lst{0}; \\lst{xs.apply(0)} is the first element of collection \\lst{xs}.
-         | Note the indexing syntax \\lst{xs(i)} is a shorthand for \\lst{xs.apply(i)}.
+         | Indices start at \lst{0}; \lst{xs.apply(0)} is the first element of collection \lst{xs}.
+         | Note the indexing syntax \lst{xs(i)} is a shorthand for \lst{xs.apply(i)}.
          | Returns the element at the given index.
-         | Throws an exception if \\lst{i < 0} or \\lst{length <= i}
+         | Throws an exception if \lst{i < 0} or \lst{length <= i}
         """.stripMargin, ArgInfo("i", "the index"))
 
   val BitShiftLeftMethod = SMethod(this, "<<",
@@ -1019,10 +1026,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
          | and using the elements of the resulting collections.
-         | Function \\lst{f} is constrained to be of the form \\lst{x => x.someProperty}, otherwise
+         | Function \lst{f} is constrained to be of the form \lst{x => x.someProperty}, otherwise
          | it is illegal.
-         | Returns a new collection of type \\lst{Coll[B]} resulting from applying the given collection-valued function
-         | \\lst{f} to each element of this collection and concatenating the results.
+         | Returns a new collection of type \lst{Coll[B]} resulting from applying the given collection-valued function
+         | \lst{f} to each element of this collection and concatenating the results.
         """.stripMargin, ArgInfo("f", "the function to apply to each element."))
 
   val SegmentLengthMethod = SMethod(this, "segmentLength",
@@ -1030,8 +1037,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Computes length of longest segment whose elements all satisfy some predicate.
-         | Returns the length of the longest segment of this collection starting from index \\lst{from}
-         | such that every element of the segment satisfies the predicate \\lst{p}.
+         | Returns the length of the longest segment of this collection starting from index \lst{from}
+         | such that every element of the segment satisfies the predicate \lst{p}.
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."),
         ArgInfo("from", "the index where the search starts."))
@@ -1041,8 +1048,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Finds index of the first element satisfying some predicate after or at some start index.
-         | Returns the index \\lst{>= from} of the first element of this collection that satisfies the predicate \\lst{p},
-         | or \\lst{-1}, if none exists.
+         | Returns the index \lst{>= from} of the first element of this collection that satisfies the predicate \lst{p},
+         | or \lst{-1}, if none exists.
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."),
         ArgInfo("from", "the start index"))
@@ -1052,8 +1059,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """Finds index of last element satisfying some predicate before or at given end index.
-         | Return the index \\lst{<= end} of the last element of this collection that satisfies the predicate \\lst{p},
-         | or \\lst{-1}, if none exists.
+         | Return the index \lst{<= end} of the last element of this collection that satisfies the predicate \lst{p},
+         | or \lst{-1}, if none exists.
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."))
 
@@ -1373,16 +1380,16 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   // should be lazy, otherwise lead to initialization error
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
       .withInfo(ExtractCreationInfo,
-        "If \\lst{tx} is a transaction which generated this box, then \\lst{creationInfo._1} " +
-        "is a height of the tx's block. The \\lst{creationInfo._2} is a serialized transaction " +
-        "identifier followed by box index in the transaction outputs.") // see ExtractCreationInfo
+        """ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
+         | is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
+         | identifier followed by box index in the transaction outputs.
+        """.stripMargin ) // see ExtractCreationInfo
 
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
       .withInfo(ExtractRegisterAs,
         """ Extracts register by id and type.
-         | Type param \\lst{T} expected type of the register.
-         | Returns \\lst{Some(value)} if the register is defined and has given type and \\lst{None} otherwise
-         |
+         | Type param \lst{T} expected type of the register.
+         | Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
         """.stripMargin,
         ArgInfo("regId", "zero-based identifier of the register."))
 
@@ -1427,14 +1434,16 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
         """Returns digest of the state represented by this tree.
-         | Authenticated tree \\lst{digest} = \\lst{root hash bytes} ++ \\lst{tree height}
+         | Authenticated tree \lst{digest} = \lst{root hash bytes} ++ \lst{tree height}
         """.stripMargin)
 
   val enabledOperationsMethod = SMethod(this, "enabledOperations", SFunc(this, SByte),      2)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
+        """ Flags of enabled operations packed in single byte.
+         | \lst{isInsertAllowed == (enabledOperations & 0x01) != 0}\newline
+         | \lst{isUpdateAllowed == (enabledOperations & 0x02) != 0}\newline
+         | \lst{isRemoveAllowed == (enabledOperations & 0x04) != 0}
         """.stripMargin)
   val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3)
       .withIRInfo(MethodCallIrBuilder)

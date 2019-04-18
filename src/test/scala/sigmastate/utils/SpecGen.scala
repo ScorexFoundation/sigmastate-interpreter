@@ -4,17 +4,14 @@ import sigmastate._
 import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized}
 import sigma.util.Extensions.ByteOps
-import scalan.util.{CollectionUtil, FileUtil}
+import scalan.util.CollectionUtil
 import scalan.meta.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utils.GenSerializableOps.{collectMethods, collectSerializableOperations, predefFuncs}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
-
-import scala.util.Try
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
@@ -112,13 +109,13 @@ trait SpecGen {
   }
 
   def methodSubsection(typeName: String, m: SMethod) = {
-    val argTypes = m.stype.tDom.tail
+    val argTypes = m.stype.tDom
     val resTpe = m.stype.tRange.toTermString
     val ts = argTypes.map(_.toTermString)
     val argInfos = m.docInfo.fold(
       Range(0, ts.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
     val params = ts.opt { ts =>
-      val args = argInfos.zip(ts)
+      val args = argInfos.zip(ts).filter { case (a, _) => a.name != "this" }
       s"""
         |  \\hline
         |  \\bf{Parameters} &
@@ -129,7 +126,7 @@ trait SpecGen {
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
-    val serializedAs = m.docInfo.map(_.opDesc).opt(d =>
+    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt(d =>
       s"""
         |  \\bf{Serialized as} & \\lst{${d.typeName}(opCode=${d.opCode.toUByte})} \\\\
         |  \\hline
@@ -156,25 +153,6 @@ trait SpecGen {
     }
     val res = methodSubsections.mkString("\n\n")
     res
-  }
-}
-
-object GenPredeftypesApp extends SpecGen {
-  import SpecGenUtils._
-
-  def main(args: Array[String]) = {
-    val table = printTypes(companions)
-    val fPrimOps = FileUtil.file("docs/spec/generated/predeftypes.tex")
-    FileUtil.write(fPrimOps, table)
-
-    for (tc <- typesWithMethods) {
-      val typeName = tc.typeName
-      val methodsRows = printMethods(tc)
-      val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
-      FileUtil.write(fMethods, methodsRows)
-
-      println(s"\\input{generated/${typeName}_methods.tex}")
-    }
   }
 }
 
@@ -246,89 +224,5 @@ object GenPrimOpsApp extends SpecGen {
   }
 }
 
-/** Generate in console output operations objects.
-  * Which provide stable identifiers to access metadata information.
-  * This should be regenerated each time metadata is changed.
-  * Example:
-  * object AppendInfo {
-  *   private val method = SMethod.fromIds(12, 9)
-  *   val thisArg = method.argInfo("this")
-  *   val otherArg = method.argInfo("other")
-  * }
-  * The following consistency checks are performed:
-  * 1) every func/method argument has attached ArgInfo
-  * 2) method is resolvable by ids (e.g. as SMethod.fromIds(12, 9))
-  * 3) func is resolvable by name (e.g. predefinedOps.funcs("sigmaProp"))
-  */
-object GenSerializableOps extends SpecGen {
 
-  case class OpInfo(
-    opDesc: ValueCompanion,
-    description: String,
-    args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
-
-  def main(args: Array[String]) = {
-    val table = collectOpsTable()
-    val rowsWithInfo =
-      for ((opCode, opDesc, optM, optF) <- table if optM.nonEmpty || optF.nonEmpty)
-      yield (opDesc, optM, optF)
-
-    val infos = for (row @ (opDesc, optM, optF) <- rowsWithInfo) yield {
-      (optM, optF) match {
-        case (Some(m), _) =>
-          val description = m.docInfo.map(i => i.description).opt()
-          val args = m.docInfo.map(i => i.args).getOrElse(Seq())
-          OpInfo(opDesc, description, args, Right(m))
-        case (_, Some(f)) =>
-          val description = f.docInfo.description
-          val args = f.docInfo.args
-          OpInfo(opDesc, description, args, Left(f))
-        case _ => sys.error(s"Unexpected $row")
-      }
-    }
-    val infoStrings = infos.sortBy(_.opDesc.typeName).map { info =>
-      val opName = info.opDesc.typeName
-
-      val res = info.op match {
-        case Right(m) =>
-          val typeId = m.objType.typeId
-          assert(m.stype.tDom.length == info.args.length,
-            s"Method $m has ${m.stype.tDom} arguments, but ${info.args} descriptions attached.")
-          Try{SMethod.fromIds(typeId, m.methodId)}
-            .fold(t => throw new RuntimeException(s"Cannot resolve method $m using SMethod.fromIds(${typeId}, ${m.methodId})"), _ => ())
-          val args = info.args.map { a =>
-            s"""val ${a.name}Arg: ArgInfo = method.argInfo("${a.name}")"""
-          }
-          s"""
-            |  object ${opName}Info extends InfoObject {
-            |    private val method = SMethod.fromIds(${typeId}, ${m.methodId})
-            |    ${args.rep(sep = "\n    ")}
-            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
-            |  }
-           """.stripMargin
-        case Left(f) =>
-          assert(f.declaration.args.length == info.args.length,
-            s"Predefined function $f has ${f.declaration.args} arguments, but ${info.args} descriptions attached.")
-          val isSpecialFunc = predefFuncRegistry.specialFuncs.get(f.name).isDefined
-          Try{assert(predefFuncRegistry.funcs.get(f.name).isDefined || isSpecialFunc)}
-              .fold(t => throw new RuntimeException(s"Cannot resolve func $f using predefFuncRegistry.funcs(${f.name})", t), _ => ())
-          val args = info.args.map { a =>
-            s"""val ${a.name}Arg: ArgInfo = func.argInfo("${a.name}")"""
-          }
-          s"""
-            |  object ${opName}Info extends InfoObject {
-            |    private val func = predefinedOps.${ if (isSpecialFunc) "specialFuncs" else "funcs" }("${f.name}")
-            |    ${args.rep(sep = "\n    ")}
-            |    val argInfos: Seq[ArgInfo] = Seq(${info.args.rep(a => s"${a.name}Arg")})
-            |  }
-           """.stripMargin
-      }
-      res
-    }
-    val infoText = infoStrings.rep(sep = "")
-    println(infoText)
-    println(s"Total infos: ${infoStrings.length}")
-  }
-
-}
 

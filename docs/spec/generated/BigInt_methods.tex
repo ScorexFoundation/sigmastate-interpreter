@@ -6,9 +6,18 @@
    \bf{Description} & Converts this numeric value to \lst{Byte}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Byte} \\
   \hline
   
+  \bf{Serialized as} & \lst{PropertyCall(opCode=219)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -20,9 +29,18 @@
    \bf{Description} & Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
   
+  \bf{Serialized as} & \lst{ModQ(opCode=231)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -34,9 +52,18 @@
    \bf{Description} & Converts this numeric value to \lst{Short}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Short} \\
   \hline
   
+  \bf{Serialized as} & \lst{PropertyCall(opCode=219)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -57,6 +84,9 @@
   \bf{Result} & \lst{BigInt} \\
   \hline
   
+  \bf{Serialized as} & \lst{PlusModQ(opCode=232)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -68,9 +98,18 @@
    \bf{Description} & Converts this numeric value to \lst{Int}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Int} \\
   \hline
   
+  \bf{Serialized as} & \lst{PropertyCall(opCode=219)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -91,6 +130,9 @@
   \bf{Result} & \lst{BigInt} \\
   \hline
   
+  \bf{Serialized as} & \lst{MinusModQ(opCode=233)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -102,9 +144,18 @@
    \bf{Description} & Converts this numeric value to \lst{Long}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Long} \\
   \hline
   
+  \bf{Serialized as} & \lst{PropertyCall(opCode=219)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -139,9 +190,18 @@
    \bf{Description} & Converts this numeric value to \lst{BigInt} \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
   
+  \bf{Serialized as} & \lst{PropertyCall(opCode=219)} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -150,10 +210,17 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Returns a big-endian representation of this numeric value in a collection of bytes.
- For example, the Int value \lst{0x12131415} would yield the
- byte array  \lst{[0x12, 0x13, 0x14, 0x15]}. \\
+   \bf{Description} &  Returns a big-endian representation of this numeric value in a collection of bytes.
+ For example, the \lst{Int} value \lst{0x12131415} would yield the
+ collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
+           \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
@@ -169,9 +236,16 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Returns a big-endian representation of this numeric in a collection of Booleans.
- Each boolean corresponds to one bit. \\
+   \bf{Description} &  Returns a big-endian representation of this numeric in a collection of Booleans.
+  Each boolean corresponds to one bit.
+           \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Boolean]} \\
   \hline

@@ -13,12 +13,13 @@ import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
-import sigmastate.utils.SigmaByteWriter.{FormatDescriptor, DataInfo}
+import sigmastate.utils.SigmaByteWriter.{DataInfo, FormatDescriptor}
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 import sigmastate.utxo._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions
@@ -160,14 +161,15 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     serializer
   }
 
-  type ChildrenMap = mutable.ListMap[String, Scope]
+  type ChildrenMap = mutable.ArrayBuffer[(String, Scope)]
   trait Scope {
     def name: String
     def parent: Scope
     def children: ChildrenMap
-    def get(name: String): Option[Scope] = children.get(name)
+    def get(name: String): Option[Scope] = children.find(_._1 == name).map(_._2)
     def add(name: String, s: Scope) = {
-      children.put(name, s)
+      assert(get(name).isEmpty, s"Error while adding scope $s: name $name already exists in $this")
+      children += (name -> s)
     }
     def showInScope(v: String): String
 
@@ -193,7 +195,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   case class DataScope(parent: Scope, data: DataInfo[_]) extends Scope {
     def name = data.info.name
-    override def children = mutable.ListMap.empty
+    override def children = mutable.ArrayBuffer.empty
     override def showInScope(v: String): String = parent.showInScope(s"DataInfo($data)")
     override def toString = s"DataScope($data)"
   }
@@ -237,7 +239,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def optional(name: String)(block: => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, OptionalScope(parent, name, mutable.ListMap.empty))
+    val scope = parent.provideScope(name, OptionalScope(parent, name, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     block
@@ -246,7 +248,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def cases(name: String)(block: => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, CasesScope(parent, name, mutable.ListMap.empty))
+    val scope = parent.provideScope(name, CasesScope(parent, name, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     block
@@ -255,7 +257,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def when(condition: String)(block: => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(condition, WhenScope(parent, condition, mutable.ListMap.empty))
+    val scope = parent.provideScope(condition, WhenScope(parent, condition, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     block
@@ -264,7 +266,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def foreach[T](name: String, seq: Seq[T])(f: T => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, ForScope(parent, name, mutable.ListMap.empty))
+    val scope = parent.provideScope(name, ForScope(parent, name, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     seq.foreach(f)
@@ -273,7 +275,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def opt[T](w: SigmaByteWriter, name: String, o: Option[T])(f: (SigmaByteWriter, T) => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, OptionScope(parent, name, mutable.ListMap.empty))
+    val scope = parent.provideScope(name, OptionScope(parent, name, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     w.putOption(o)(f)
@@ -312,7 +314,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       if (collectSerInfo) {
         val scope = serializerInfo.get(opCode) match {
           case None =>
-            val newScope = SerScope(opCode, mutable.ListMap.empty)
+            val newScope = SerScope(opCode, mutable.ArrayBuffer.empty)
             serializerInfo += (opCode -> newScope)
             println(s"Added: ${ser.opDesc}")
             newScope
