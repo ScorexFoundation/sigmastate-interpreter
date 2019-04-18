@@ -23,11 +23,6 @@ import sigmastate.lang.SigmaPredef.PredefinedFunc
   */
 object GenInfoObjects extends SpecGen {
 
-  case class OpInfo(
-    opDesc: ValueCompanion,
-    description: String,
-    args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
-
   def main(args: Array[String]) = {
     val table = collectOpsTable()
     val rowsWithInfo =

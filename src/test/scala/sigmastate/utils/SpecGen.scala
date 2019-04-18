@@ -23,6 +23,11 @@ trait SpecGen {
   import SpecGenUtils._
   val tT = STypeIdent("T")
 
+  case class OpInfo(
+      opDesc: ValueCompanion,
+      description: String,
+      args: Seq[ArgInfo], op: Either[PredefinedFunc, SMethod])
+
   def collectSerializers(): Seq[ValueSerializer[_ <: Values.Value[SType]]] = {
     ((OpCodes.LastConstantCode + 1) to 255).collect {
       case i if ValueSerializer.serializers(i.toByte) != null =>

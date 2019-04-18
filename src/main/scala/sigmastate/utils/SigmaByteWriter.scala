@@ -137,6 +137,7 @@ object SigmaByteWriter {
 
   implicit case object ValueFmt extends FormatDescriptor[SValue]
   implicit case object TypeFmt extends FormatDescriptor[SType]
+  implicit case object BitsFmt extends FormatDescriptor[Array[Boolean]]
 
   implicit object BooleanFmt extends FormatDescriptor[Boolean]
   implicit object ByteFmt extends FormatDescriptor[Byte]

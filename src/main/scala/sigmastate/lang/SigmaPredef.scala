@@ -338,7 +338,7 @@ object SigmaPredef {
         Seq(ArgInfo("id", "identifier of the context variable")))
     )
 
-    val funcs: Map[String, PredefinedFunc] = Seq(
+    val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
       AtLeastFunc,
@@ -362,6 +362,46 @@ object SigmaPredef {
       SubstConstantsFunc,
       ExecuteFromVarFunc,
     ).map(f => f.name -> f).toMap
+
+    def binop(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+      PredefinedFunc(symbolName,
+        Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), SBoolean, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(opDesc, desc, args)
+      )
+    }
+    def logical(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+      PredefinedFunc(symbolName,
+        Lambda(Vector("left" -> SBoolean, "right" -> SBoolean), SBoolean, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(opDesc, desc, args)
+      )
+    }
+
+    val infixFuncs: Map[String, PredefinedFunc] = Seq(
+      binop("==", EQ, "Compare equality of \\lst{left} and \\lst{right} arguments",
+          Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      binop("!=", NEQ, "Compare inequality of \\lst{left} and \\lst{right} arguments",
+          Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+
+      binop("<", LT, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      binop("<=", LE, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      binop(">", GT, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      binop(">=", GE, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      binop("^", BinXor, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+
+      logical("||", BinOr, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+      logical("&&", BinAnd, "",
+        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+    ).map(f => f.name -> f).toMap
+
+    val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs
 
     /** WARNING: This operations are not used in frontend, and should be be used.
       * They are used in SpecGen only the source of metadata for the corresponding ErgoTree nodes.

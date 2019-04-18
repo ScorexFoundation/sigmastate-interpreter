@@ -1,7 +1,7 @@
 package sigmastate
 
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
-import sigmastate.Operations.{IfInfo, TreeLookupInfo}
+import sigmastate.Operations._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
@@ -632,14 +632,19 @@ trait SimpleRelation[T <: SType] extends Relation[T, T] {
   override val opType = SFunc(Vector(tT, tT), SBoolean)
 }
 
+trait RelationCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
+
 /**
   * Less operation for SInt
   */
 case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LT
 }
-object LT extends ValueCompanion {
+object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
+  override def argInfos: Seq[ArgInfo] = LTInfo.argInfos
 }
 /**
   * Less or equals operation for SInt
@@ -647,8 +652,9 @@ object LT extends ValueCompanion {
 case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LE
 }
-object LE extends ValueCompanion {
+object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
+  override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
 /**
   * Greater operation for SInt
@@ -656,8 +662,9 @@ object LE extends ValueCompanion {
 case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GT
 }
-object GT extends ValueCompanion {
+object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
+  override def argInfos: Seq[ArgInfo] = GTInfo.argInfos
 }
 /**
   * Greater or equals operation for SInt
@@ -665,8 +672,9 @@ object GT extends ValueCompanion {
 case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GE
 }
-object GE extends ValueCompanion {
+object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode
+  override def argInfos: Seq[ArgInfo] = GEInfo.argInfos
 }
 
 /**
@@ -677,8 +685,9 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
   extends SimpleRelation[S] {
   override def companion = EQ
 }
-object EQ extends ValueCompanion {
+object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
+  override def argInfos: Seq[ArgInfo] = EQInfo.argInfos
 }
 
 /**
@@ -688,8 +697,9 @@ case class NEQ[S <: SType](override val left: Value[S], override val right: Valu
   extends SimpleRelation[S] {
   override def companion = NEQ
 }
-object NEQ extends ValueCompanion {
+object NEQ extends RelationCompanion {
   override def opCode: OpCode = NeqCode
+  override def argInfos: Seq[ArgInfo] = NEQInfo.argInfos
 }
 
 /**
@@ -700,8 +710,9 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinOr
 }
-object BinOr extends ValueCompanion {
+object BinOr extends RelationCompanion {
   override def opCode: OpCode = BinOrCode
+  override def argInfos: Seq[ArgInfo] = BinOrInfo.argInfos
 }
 
 /**
@@ -712,16 +723,18 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinAnd
 }
-object BinAnd extends ValueCompanion {
+object BinAnd extends RelationCompanion {
   override def opCode: OpCode = BinAndCode
+  override def argInfos: Seq[ArgInfo] = BinAndInfo.argInfos
 }
 
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinXor
 }
-object BinXor extends ValueCompanion {
+object BinXor extends RelationCompanion {
   override def opCode: OpCode = BinXorCode
+  override def argInfos: Seq[ArgInfo] = BinXorInfo.argInfos
 }
 
 /**

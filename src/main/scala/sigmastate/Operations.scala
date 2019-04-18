@@ -33,6 +33,27 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(boundArg, childrenArg)
   }
 
+  object BinAndInfo extends InfoObject {
+    private val func = predefinedOps.funcs("&&")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
+  object BinOrInfo extends InfoObject {
+    private val func = predefinedOps.funcs("||")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
+  object BinXorInfo extends InfoObject {
+    private val func = predefinedOps.funcs("^")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
   object BoolToSigmaPropInfo extends InfoObject {
     private val func = predefinedOps.funcs("sigmaProp")
     val conditionArg: ArgInfo = func.argInfo("condition")
@@ -105,6 +126,13 @@ object Operations {
     private val func = predefinedOps.funcs("executeFromVar")
     val idArg: ArgInfo = func.argInfo("id")
     val argInfos: Seq[ArgInfo] = Seq(idArg)
+  }
+
+  object EQInfo extends InfoObject {
+    private val func = predefinedOps.funcs("==")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
   }
 
   object ExistsInfo extends InfoObject {
@@ -186,6 +214,20 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg, pArg)
   }
 
+  object GEInfo extends InfoObject {
+    private val func = predefinedOps.funcs(">=")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
+  object GTInfo extends InfoObject {
+    private val func = predefinedOps.funcs(">")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
   object GetVarInfo extends InfoObject {
     private val func = predefinedOps.funcs("getVar")
     val varIdArg: ArgInfo = func.argInfo("varId")
@@ -204,6 +246,20 @@ object Operations {
     val trueBranchArg: ArgInfo = func.argInfo("trueBranch")
     val falseBranchArg: ArgInfo = func.argInfo("falseBranch")
     val argInfos: Seq[ArgInfo] = Seq(conditionArg, trueBranchArg, falseBranchArg)
+  }
+
+  object LEInfo extends InfoObject {
+    private val func = predefinedOps.funcs("<=")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
+  }
+
+  object LTInfo extends InfoObject {
+    private val func = predefinedOps.funcs("<")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
   }
 
   object LongToByteArrayInfo extends InfoObject {
@@ -244,6 +300,13 @@ object Operations {
     val thisArg: ArgInfo = method.argInfo("this")
     val otherArg: ArgInfo = method.argInfo("other")
     val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
+  }
+
+  object NEQInfo extends InfoObject {
+    private val func = predefinedOps.funcs("!=")
+    val leftArg: ArgInfo = func.argInfo("left")
+    val rightArg: ArgInfo = func.argInfo("right")
+    val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
   }
 
   object ORInfo extends InfoObject {
