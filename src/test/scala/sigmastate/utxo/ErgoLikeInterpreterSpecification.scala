@@ -638,13 +638,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   }
 
   property("DeserializeContext value(script) type mismatch") {
-    forAll(numExprTreeNodeGen) { scriptProp =>
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { scriptProp =>
+      val verifier = new ErgoLikeTestInterpreter
       val scriptId = 21.toByte
       val prover0 = new ContextEnrichingTestProvingInterpreter()
-      // serialize numerical expression
+      // serialize boolean expression
       val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(ValueSerializer.serialize(scriptProp)))
-      // try to deserialize it as a sigma prop expression
-      val prop = SigmaAnd(DeserializeContext(scriptId, SSigmaProp))
+      val prop = OR(
+        LogicalNot(DeserializeContext(scriptId, scriptProp.tpe)),
+        DeserializeContext(scriptId, scriptProp.tpe)
+      ).toSigmaProp
 
       val box = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
       val ctx = ErgoLikeContext(
@@ -655,7 +658,14 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
         self = box)
 
-      an[InterpreterException] should be thrownBy prover.prove(prop, ctx, fakeMessage).get
+      val pr = prover.prove(prop, ctx, fakeMessage).get
+      // make sure verifier will fail on deserializing context with mismatched type
+      // try to deserialize it as an expression with integer type
+      val prop1 = EQ(DeserializeContext(scriptId, SInt), IntConstant(1)).toSigmaProp
+      an[InterpreterException] should be thrownBy
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop1, ctx, pr, fakeMessage).get
+      // make sure prover fails as well on deserializing context with mismatched type
+      an[InterpreterException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
     }
  }
 
