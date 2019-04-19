@@ -12,7 +12,7 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   override def serialize(obj: Tuple, w: SigmaByteWriter): Unit = {
     val length = obj.length
     w.putUByte(length, "numItems")
-    foreach("items", obj.items) { i => w.putValue(i, "item") }
+    foreach("numItems", obj.items) { i => w.putValue(i, "item") }
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {

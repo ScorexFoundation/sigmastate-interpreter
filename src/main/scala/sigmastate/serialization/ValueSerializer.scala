@@ -216,7 +216,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     override def toString = s"WhenScope($condition, $children)"
   }
 
-  case class ForScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+  case class ForScope(parent: Scope, name: String, limitVar: String, children: ChildrenMap) extends Scope {
     override def showInScope(v: String): String = parent.showInScope(s"/for[$name]/$v")
     override def toString = s"ForScope($name, $children)"
   }
@@ -266,7 +266,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   def foreach[T](name: String, seq: Seq[T])(f: T => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, ForScope(parent, name, mutable.ArrayBuffer.empty))
+    val forName = name + "*"
+    val scope = parent.provideScope(forName, ForScope(parent, forName, name, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     seq.foreach(f)
