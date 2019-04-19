@@ -15,7 +15,7 @@ object GenSerializers extends SpecGen {
     val size = fmt.size
     val desc = dataScope.data.info.description
     val row =
-      s"""    $prefix\\lst{$name} & \\lst{$fmt} & \\text{$size} & \\text{$desc} \\\\
+      s"""    $prefix $name & \\lst{$fmt} & \\text{$size} & \\text{$desc} \\\\
          |    \\hline
       """.stripMargin
     sb.append(row)

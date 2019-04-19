@@ -11,6 +11,7 @@ import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{R3, RegisterId}
+import sigmastate.Operations.{ExistsInfo, ForAllInfo}
 import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
 import special.sigma.InvalidType
 
@@ -72,6 +73,9 @@ trait BooleanTransformer[IV <: SType] extends Transformer[SCollection[IV], SBool
   val condition: Value[SFunc]
   override def tpe = SBoolean
 }
+trait BooleanTransformerCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
 
 case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
                                override val condition: Value[SFunc])
@@ -79,8 +83,9 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   override def companion = Exists
   override val opType = SCollection.ExistsMethod.stype
 }
-object Exists extends ValueCompanion {
+object Exists extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
+  override def argInfos: Seq[ArgInfo] = ExistsInfo.argInfos
 }
 
 case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
@@ -89,8 +94,9 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   override def companion = ForAll
   override val opType = SCollection.ForallMethod.stype
 }
-object ForAll extends ValueCompanion {
+object ForAll extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
+  override def argInfos: Seq[ArgInfo] = ForAllInfo.argInfos
 }
 
 case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],

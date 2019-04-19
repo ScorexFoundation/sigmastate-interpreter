@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import sigmastate.Operations.AppendInfo
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -12,8 +13,8 @@ case class AppendSerializer(cons: (Value[SCollection[SType]], Value[SCollection[
   override def opDesc = Append
 
   override def serialize(obj: Append[SType], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input, "input")
-      .putValue(obj.col2, "other")
+    w.putValue(obj.input, AppendInfo.thisArg)
+      .putValue(obj.col2, AppendInfo.otherArg)
 
   override def parse(r: SigmaByteReader): Value[SCollection[SType]] = {
     val input = r.getValue().asCollection[SType]

@@ -57,22 +57,22 @@ object SigmaPredef {
     val AllOfFunc = PredefinedFunc("allOf",
       Lambda(IndexedSeq("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkAND(col) }),
-      OperationInfo(AND, "Returns true if all the elements in collection are true.",
+      OperationInfo(AND, "Returns true if \\emph{all} the elements in collection are \\lst{true}.",
        Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val AnyOfFunc = PredefinedFunc("anyOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo( { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) }),
-      OperationInfo(OR, "OR logical conjunction",
-        Seq(ArgInfo("conditions", "")))
+      OperationInfo(OR, "Returns true if \\emph{any} the elements in collection are \\lst{true}.",
+        Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val XorOfFunc = PredefinedFunc("xorOf",
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }),
-      OperationInfo(XorOf, "Similar to allOf, but performing logical XOR operation instead of `&&`",
-          Seq(ArgInfo("conditions", "")))
+      OperationInfo(XorOf, "Similar to \\lst{allOf}, but performing logical XOR operation between all conditions instead of \\lst{&&}",
+          Seq(ArgInfo("conditions", "a collection of conditions")))
     )
 
     val AtLeastFunc = PredefinedFunc("atLeast",
@@ -380,25 +380,25 @@ object SigmaPredef {
 
     val infixFuncs: Map[String, PredefinedFunc] = Seq(
       binop("==", EQ, "Compare equality of \\lst{left} and \\lst{right} arguments",
-          Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+          Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binop("!=", NEQ, "Compare inequality of \\lst{left} and \\lst{right} arguments",
-          Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+          Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
       binop("<", LT, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binop("<=", LE, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binop(">", GT, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binop(">=", GE, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       binop("^", BinXor, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
       logical("||", BinOr, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       logical("&&", BinAnd, "",
-        Seq(ArgInfo("left", ""), ArgInfo("right", ""))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
     ).map(f => f.name -> f).toMap
 
     val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs
@@ -419,14 +419,18 @@ object SigmaPredef {
         PredefFuncInfo(undefined),
         OperationInfo(TreeLookup,
           "",
-          Seq(ArgInfo("tree", ""), ArgInfo("key", ""), ArgInfo("proof", "")))
+          Seq(ArgInfo("tree", "tree to lookup the key"),
+          ArgInfo("key", "a key of an item in the \\lst{tree} to lookup"),
+          ArgInfo("proof", "proof to perform verification of the operation")))
       ),
       PredefinedFunc("if",
         Lambda(Seq(STypeParam(tT)), Vector("condition" -> SBoolean, "trueBranch" -> tT, "falseBranch" -> tT), tT, None),
         PredefFuncInfo(undefined),
         OperationInfo(If,
           "Compute condition, if true then compute trueBranch else compute falseBranch",
-          Seq(ArgInfo("condition", ""), ArgInfo("trueBranch", ""), ArgInfo("falseBranch", "")))
+          Seq(ArgInfo("condition", "condition expression"),
+          ArgInfo("trueBranch", "expression to execute when \\lst{condition == true}"),
+          ArgInfo("falseBranch", "expression to execute when \\lst{condition == false}")))
       )
     ).map(f => f.name -> f).toMap
 
