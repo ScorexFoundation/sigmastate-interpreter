@@ -24,7 +24,7 @@ object GenSerializers extends SpecGen {
   def printForScope(scope: ForScope, level: Int, sb: StringBuilder) = {
     val prefix = "~~" * level
     val header =
-      s"""    \\multicolumn{4}{l}{${prefix}\\lst{for i=1 to ${scope.limitVar}}} \\\\
+      s"""    \\multicolumn{4}{l}{${prefix}\\lst{for}~i=1~\\lst{to}~${scope.limitVar}} \\\\
         |    \\hline
          """.stripMargin
     sb.append(header)
@@ -40,11 +40,11 @@ object GenSerializers extends SpecGen {
   def printOptionScope(scope: OptionScope, level: Int, sb: StringBuilder) = {
     val prefix = "~~" * level
     val header =
-      s"""    \\multicolumn{4}{l}{${prefix}\\lst{optional ${scope.name}}} \\\\
+      s"""    \\multicolumn{4}{l}{${prefix}\\lst{optional}~${scope.name}} \\\\
          |    \\hline
-         |    ${prefix}~~\\lst{tag} & \\lst{Byte} & 1 & \\text{0 - no value; 1 - has value} \\\\
+         |    ${prefix}~~tag & \\lst{Byte} & 1 & \\text{0 - no value; 1 - has value} \\\\
          |    \\hline
-         |    \\multicolumn{4}{l}{~~\\lst{when tag == 1}} \\\\
+         |    \\multicolumn{4}{l}{${prefix}~~\\lst{when}~tag == 1} \\\\
          |    \\hline
          """.stripMargin
     sb.append(header)
@@ -60,14 +60,14 @@ object GenSerializers extends SpecGen {
   def printCasesScope(scope: CasesScope, level: Int, sb: StringBuilder) = {
     val prefix = "~~" * level
     val header =
-      s"""    \\multicolumn{4}{l}{${prefix}\\lst{match ${scope.matchExpr}}} \\\\
+      s"""    \\multicolumn{4}{l}{${prefix}\\lst{match}~${scope.matchExpr}} \\\\
          """.stripMargin
     sb.append(header)
 
     for (when <- scope.cases) {
       val pattern =
         s"""
-         |    \\multicolumn{4}{l}{${prefix}~~\\lst{${ if(when.isOtherwise) otherwiseCondition else s"with ${when.condition}" } }} \\\\
+         |    \\multicolumn{4}{l}{${prefix}~~${ if(when.isOtherwise) s"\\lst{$otherwiseCondition}" else s"\\lst{with}~${when.condition}" } } \\\\
          |    \\hline
         """.stripMargin
       sb.append(pattern)
