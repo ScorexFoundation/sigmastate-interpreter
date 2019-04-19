@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import sigmastate.Operations.AtLeastInfo
 import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.lang.Terms._
 import sigmastate._
@@ -11,8 +12,8 @@ case class AtLeastSerializer(cons: (Value[SInt.type], Value[SCollection[SSigmaPr
   override def opDesc = AtLeast
 
   override def serialize(obj: AtLeast, w: SigmaByteWriter): Unit =
-    w.putValue(obj.bound, "bound")
-      .putValue(obj.input, "input")
+    w.putValue(obj.bound, AtLeastInfo.boundArg)
+      .putValue(obj.input, AtLeastInfo.childrenArg)
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
     val bound = r.getValue().asIntValue

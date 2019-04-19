@@ -281,10 +281,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     scopeStack = scopeStack.tail
   }
 
-  def foreach[T](name: String, seq: Seq[T])(f: T => Unit): Unit = {
+  def foreach[T](sizeVar: String, seq: Seq[T])(f: T => Unit): Unit = {
     val parent = scopeStack.head
-    val forName = name + "*"
-    val scope = parent.provideScope(forName, ForScope(parent, forName, name, mutable.ArrayBuffer.empty))
+    val forName = sizeVar + "*"
+    val scope = parent.provideScope(forName, ForScope(parent, forName, sizeVar, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     seq.foreach(f)

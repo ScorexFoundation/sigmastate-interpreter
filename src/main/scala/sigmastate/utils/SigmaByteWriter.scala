@@ -10,6 +10,7 @@ import sigmastate.utils.SigmaByteWriter.ValueFmt
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {
   import SigmaByteWriter._
+  import ValueSerializer._
   type CH = w.CH
 
   @inline override def length(): Int = w.length()
@@ -120,7 +121,14 @@ class SigmaByteWriter(val w: Writer,
     xs.foreach(putValue(_))
     this
   }
-
+  @inline def putValues[T <: SType](xs: Seq[Value[T]], info: DataInfo[Seq[SValue]]): this.type = {
+    putUInt(xs.length, ArgInfo("\\#items", "number of items in the collection"))
+    foreach("\\#items", xs) { x =>
+      val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
+      putValue(x, DataInfo(ArgInfo(info.info.name, s"i-th item in ${info.info.description}"), itemFmt))
+    }
+    this
+  }
 }
 
 object SigmaByteWriter {
@@ -226,17 +234,21 @@ object SigmaByteWriter {
     override def size: String = s"[1, *]"
     override def toString: String = s"VLQ($fmt)"
   }
+  case class SeqFmt[T](fmt: FormatDescriptor[T]) extends FormatDescriptor[Seq[T]] {
+    override def size: String = s"n * ${fmt.size}"
+    override def toString: String = s"Seq($fmt)"
+  }
 
   implicit def toZigZagFmt[T](implicit fmt: FormatDescriptor[T]): FormatDescriptor[ZigZag[T]] = ZigZagFmt(fmt)
   implicit def toUVlqFmt[T](implicit fmt: FormatDescriptor[U[T]]): FormatDescriptor[Vlq[U[T]]] = UVlqFmt(fmt)
   implicit def toZigZagVlqFmt[T](implicit fmt: FormatDescriptor[ZigZag[T]]): FormatDescriptor[Vlq[ZigZag[T]]] = ZigZagVlqFmt(fmt)
-
+  implicit def toSeqFmt[T](implicit fmt: FormatDescriptor[T]): FormatDescriptor[Seq[T]] = SeqFmt(fmt)
   case class DataInfo[T](info: ArgInfo, format: FormatDescriptor[T])
-
-  implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 
   def bitsInfo(name: String, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), BitsFmt)
   def maxBitsInfo(name: String, maxBits: Int, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), MaxBitsFmt(maxBits))
+
+  implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 
   // TODO remove this conversion and make it explicit
   /**Helper conversion */

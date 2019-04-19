@@ -105,7 +105,10 @@ object GenSerializers extends SpecGen {
   }
 
   def printSerializerSections() = {
-    serializerInfo.filter(_._2.children.nonEmpty).map { case (_, s) =>
+    val scopes = serializerInfo
+      .filter(_._2.children.nonEmpty).toSeq
+      .sortBy(_._1).map(_._2)
+    scopes.map { s =>
       val ser = getSerializer(s.opCode)
       val opCode = ser.opCode.toUByte
       val opName = ser.opDesc.typeName

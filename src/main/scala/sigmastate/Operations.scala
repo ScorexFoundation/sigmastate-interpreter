@@ -128,6 +128,19 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(idArg)
   }
 
+  object DeserializeRegisterInfo extends InfoObject {
+    private val func = predefinedOps.funcs("executeFromSelfReg")
+    val idArg: ArgInfo = func.argInfo("id")
+    val defaultArg: ArgInfo = func.argInfo("default")
+    val argInfos: Seq[ArgInfo] = Seq(idArg, defaultArg)
+  }
+
+  object DowncastInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("downcast")
+    val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
+  }
+
   object EQInfo extends InfoObject {
     private val func = predefinedOps.funcs("==")
     val leftArg: ArgInfo = func.argInfo("left")
@@ -354,6 +367,18 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(inputArg, fieldIndexArg)
   }
 
+  object SigmaAndInfo extends InfoObject {
+    private val func = predefinedOps.funcs("allZK")
+    val propositionsArg: ArgInfo = func.argInfo("propositions")
+    val argInfos: Seq[ArgInfo] = Seq(propositionsArg)
+  }
+
+  object SigmaOrInfo extends InfoObject {
+    private val func = predefinedOps.funcs("anyZK")
+    val propositionsArg: ArgInfo = func.argInfo("propositions")
+    val argInfos: Seq[ArgInfo] = Seq(propositionsArg)
+  }
+
   object SigmaPropBytesInfo extends InfoObject {
     private val method = SMethod.fromIds(8, 1)
     val thisArg: ArgInfo = method.argInfo("this")
@@ -388,6 +413,12 @@ object Operations {
     val keyArg: ArgInfo = func.argInfo("key")
     val proofArg: ArgInfo = func.argInfo("proof")
     val argInfos: Seq[ArgInfo] = Seq(treeArg, keyArg, proofArg)
+  }
+
+  object UpcastInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("upcast")
+    val inputArg: ArgInfo = func.argInfo("input")
+    val argInfos: Seq[ArgInfo] = Seq(inputArg)
   }
 
   object XorOfInfo extends InfoObject {

@@ -21,10 +21,11 @@ case class ProveDlogSerializer(cons: EcPointType => ProveDlog)
 
 case class CreateProveDlogSerializer(cons: Value[SGroupElement.type] => SigmaPropValue)
     extends ValueSerializer[CreateProveDlog] {
+  import sigmastate.Operations.CreateProveDlogInfo._
   override def opDesc = CreateProveDlog
 
   override def serialize(obj: CreateProveDlog, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.value)
+    w.putValue(obj.value, valueArg)
   }
 
   override def parse(r: SigmaByteReader) = {

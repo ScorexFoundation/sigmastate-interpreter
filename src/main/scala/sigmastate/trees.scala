@@ -8,7 +8,7 @@ import sigmastate.Values._
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
-import sigmastate.utxo.Transformer
+import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -157,7 +157,9 @@ object CreateProveDHTuple extends ValueCompanion {
 trait SigmaTransformer[IV <: SigmaPropValue, OV <: SigmaPropValue] extends SigmaPropValue {
   val items: Seq[IV]
 }
-
+trait SigmaTransformerCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
 /**
   * AND conjunction for sigma propositions
   */
@@ -166,9 +168,9 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
-
-object SigmaAnd extends ValueCompanion {
+object SigmaAnd extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaAndCode
+  override def argInfos: Seq[ArgInfo] = SigmaAndInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaAnd = SigmaAnd(head +: tail)
 }
 
@@ -181,8 +183,9 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
 }
 
-object SigmaOr extends ValueCompanion {
+object SigmaOr extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaOrCode
+  override def argInfos: Seq[ArgInfo] = SigmaOrInfo.argInfos
   def apply(head: SigmaPropValue, tail: SigmaPropValue*): SigmaOr = SigmaOr(head +: tail)
 }
 
@@ -324,9 +327,12 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   override def companion = Upcast
   override val opType = SFunc(Vector(tT), tR)
 }
-
-object Upcast extends ValueCompanion {
+trait NumericCastCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
+object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
+  override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   val tT = STypeIdent("T")
   val tR = STypeIdent("R")
 }
@@ -342,8 +348,9 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   override val opType = SFunc(Vector(tT), tR)
 }
 
-object Downcast extends ValueCompanion {
+object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
+  override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   val tT = STypeIdent("T")
   val tR = STypeIdent("R")
 }
@@ -356,8 +363,9 @@ case class LongToByteArray(input: Value[SLong.type])
   override def companion = LongToByteArray
   override val opType = SFunc(SLong, SByteArray)
 }
-object LongToByteArray extends ValueCompanion {
+object LongToByteArray extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
+  override def argInfos: Seq[ArgInfo] = LongToByteArrayInfo.argInfos
 }
 
 /**
@@ -368,8 +376,9 @@ case class ByteArrayToLong(input: Value[SByteArray])
   override def companion = ByteArrayToLong
   override val opType = SFunc(SByteArray, SLong)
 }
-object ByteArrayToLong extends ValueCompanion {
+object ByteArrayToLong extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
+  override def argInfos: Seq[ArgInfo] = ByteArrayToLongInfo.argInfos
 }
 
 /**
@@ -380,8 +389,9 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
   override def companion = ByteArrayToBigInt
   override val opType = SFunc(SByteArray, SBigInt)
 }
-object ByteArrayToBigInt extends ValueCompanion {
+object ByteArrayToBigInt extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
+  override def argInfos: Seq[ArgInfo] = ByteArrayToBigIntInfo.argInfos
 }
 
 /**
@@ -392,8 +402,9 @@ case class DecodePoint(input: Value[SByteArray])
   override def companion = DecodePoint
   override val opType = SFunc(SByteArray, SGroupElement)
 }
-object DecodePoint extends ValueCompanion {
+object DecodePoint extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.DecodePointCode
+  override def argInfos: Seq[ArgInfo] = DecodePointInfo.argInfos
 }
 
 trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByteArray {
@@ -409,8 +420,9 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override def companion = CalcBlake2b256
   override val hashFn: CryptographicHash32 = Blake2b256
 }
-object CalcBlake2b256 extends ValueCompanion {
+object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
+  override def argInfos: Seq[ArgInfo] = CalcBlake2b256Info.argInfos
 }
 
 /**
@@ -420,8 +432,9 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcSha256
   override val hashFn: CryptographicHash32 = Sha256
 }
-object CalcSha256 extends ValueCompanion {
+object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
+  override def argInfos: Seq[ArgInfo] = CalcSha256Info.argInfos
 }
 
 /**

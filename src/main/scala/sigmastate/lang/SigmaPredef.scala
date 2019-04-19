@@ -8,10 +8,11 @@ import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
 import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
 import sigmastate._
+import sigmastate.lang.SigmaPredef.PredefinedFunc
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{GetVar, DeserializeContext, SelectField}
+import sigmastate.utxo.{GetVar, DeserializeContext, DeserializeRegister, SelectField}
 
 object SigmaPredef {
 
@@ -72,7 +73,21 @@ object SigmaPredef {
       Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
       PredefFuncInfo({ case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }),
       OperationInfo(XorOf, "Similar to \\lst{allOf}, but performing logical XOR operation between all conditions instead of \\lst{&&}",
-          Seq(ArgInfo("conditions", "a collection of conditions")))
+        Seq(ArgInfo("conditions", "a collection of conditions")))
+    )
+
+    val AllZKFunc = PredefinedFunc("allZK",
+      Lambda(IndexedSeq("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      PredefFuncInfo(undefined),
+      OperationInfo(SigmaAnd, "Returns sigma proposition which is proven when \\emph{all} the elements in collection are proven.",
+        Seq(ArgInfo("propositions", "a collection of propositions")))
+    )
+
+    val AnyZKFunc = PredefinedFunc("anyZK",
+      Lambda(IndexedSeq("propositions" -> SCollection(SSigmaProp)), SSigmaProp, None),
+      PredefFuncInfo(undefined),
+      OperationInfo(SigmaOr, "Returns sigma proposition which is proven when \\emph{any} of the elements in collection is proven.",
+        Seq(ArgInfo("propositions", "a collection of propositions")))
     )
 
     val AtLeastFunc = PredefinedFunc("atLeast",
@@ -328,19 +343,41 @@ object SigmaPredef {
       ),
       PredefFuncInfo(undefined),
       OperationInfo(DeserializeContext,
-        """Extracts context variable as \\lst{Coll[Byte]}, deserializes it to script
+        """Extracts context variable as \lst{Coll[Byte]}, deserializes it to script
          | and then executes this script in the current context.
-         | The original \\lst{Coll[Byte]} of the script is available as \\lst{getVar[Coll[Byte]](id)}.
-         | Type parameter \\lst{V} result type of the deserialized script.
+         | The original \lst{Coll[Byte]} of the script is available as \lst{getVar[Coll[Byte]](id)}.
+         | Type parameter \lst{V} result type of the deserialized script.
          | Throws an exception if the actual script type doesn't conform to T.
          | Returns a result of the script execution in the current context
         """.stripMargin,
         Seq(ArgInfo("id", "identifier of the context variable")))
     )
 
+    val ExecuteFromSelfRegFunc = PredefinedFunc("executeFromSelfReg",
+      Lambda(
+        Seq(STypeParam(tT)),
+        Vector("id" -> SByte, "default" -> SOption(tT)),
+        tT, None
+      ),
+      PredefFuncInfo(undefined),
+      OperationInfo(DeserializeRegister,
+        """Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
+         | and then executes this script in the current context.
+         | The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
+         | Type parameter \lst{T} result type of the deserialized script.
+         | Throws an exception if the actual script type doesn't conform to \lst{T}.
+         | Returns a result of the script execution in the current context
+        """.stripMargin,
+        Seq(ArgInfo("id", "identifier of the register"),
+          ArgInfo("default", "optional default value, if register is not available")))
+    )
+
     val globalFuncs: Map[String, PredefinedFunc] = Seq(
       AllOfFunc,
       AnyOfFunc,
+      XorOfFunc,
+      AllZKFunc,
+      AnyZKFunc,
       AtLeastFunc,
       OuterJoinFunc,
       ZKProofFunc,
@@ -358,9 +395,9 @@ object SigmaPredef {
       ProveDHTupleFunc,
       ProveDlogFunc,
       AvlTreeFunc,
-      XorOfFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
+      ExecuteFromSelfRegFunc,
     ).map(f => f.name -> f).toMap
 
     def binop(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
@@ -431,7 +468,21 @@ object SigmaPredef {
           Seq(ArgInfo("condition", "condition expression"),
           ArgInfo("trueBranch", "expression to execute when \\lst{condition == true}"),
           ArgInfo("falseBranch", "expression to execute when \\lst{condition == false}")))
-      )
+      ),
+      PredefinedFunc("upcast",
+        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(Upcast,
+          "Cast this numeric value to a bigger type (e.g. Int to Long)",
+          Seq(ArgInfo("input", "value to cast")))
+      ),
+      PredefinedFunc("downcast",
+        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(Downcast,
+          "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
+          Seq(ArgInfo("input", "value to cast")))
+      ),
     ).map(f => f.name -> f).toMap
 
     private val funcNameToIrBuilderMap: Map[String, PredefinedFunc] =

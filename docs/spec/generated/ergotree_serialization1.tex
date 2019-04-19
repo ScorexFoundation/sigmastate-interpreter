@@ -1,0 +1,673 @@
+
+\subsubsection{\lst{Tuple} operation (OpCode 134)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         numItems & \lst{UByte} & \text{1} & \text{number of items in the tuple} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+    \hline
+             ~~ item_i & \lst{Value} & \text{[1, *]} & \text{tuple's item in i-th position} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{SelectField} operation (OpCode 140)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{tuple of items} \\
+    \hline
+           fieldIndex & \lst{Byte} & \text{1} & \text{index of an item to select} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{LT} operation (OpCode 143)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{LE} operation (OpCode 144)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{GT} operation (OpCode 145)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{GE} operation (OpCode 146)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{EQ} operation (OpCode 147)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
+    \hline
+            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
+    \hline
+          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
+    \hline
+      
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{NEQ} operation (OpCode 148)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
+    \hline
+            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
+    \hline
+          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
+    \hline
+      
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{If} operation (OpCode 149)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         condition & \lst{Value} & \text{[1, *]} & \text{condition expression} \\
+    \hline
+           trueBranch & \lst{Value} & \text{[1, *]} & \text{expression to execute when \lst{condition == true}} \\
+    \hline
+           falseBranch & \lst{Value} & \text{[1, *]} & \text{expression to execute when \lst{condition == false}} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{AND} operation (OpCode 150)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         conditions & \lst{Value} & \text{[1, *]} & \text{a collection of conditions} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{AtLeast} operation (OpCode 152)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         bound & \lst{Value} & \text{[1, *]} & \text{required minimum of proven children} \\
+    \hline
+           children & \lst{Value} & \text{[1, *]} & \text{proposition to be proven/validated} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{MapCollection} operation (OpCode 173)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           f & \lst{Value} & \text{[1, *]} & \text{the function to apply to each element} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Exists} operation (OpCode 174)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           p & \lst{Value} & \text{[1, *]} & \text{the predicate used to test elements} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ForAll} operation (OpCode 175)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           p & \lst{Value} & \text{[1, *]} & \text{the predicate used to test elements} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Fold} operation (OpCode 176)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           zero & \lst{Value} & \text{[1, *]} & \text{a starting value} \\
+    \hline
+           op & \lst{Value} & \text{[1, *]} & \text{the binary operator} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{SizeOf} operation (OpCode 177)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ByIndex} operation (OpCode 178)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           index & \lst{Value} & \text{[1, *]} & \text{index of the element of this collection} \\
+    \hline
+          \multicolumn{4}{l}{\lst{optional}~default} \\
+    \hline
+    ~~tag & \lst{Byte} & 1 & \text{0 - no value; 1 - has value} \\
+    \hline
+    \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
+    \hline
+             ~~~~ default & \lst{Value} & \text{[1, *]} & \text{value to return when \lst{index} is out of range} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end optional}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{Append} operation (OpCode 179)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           other & \lst{Value} & \text{[1, *]} & \text{the collection to append at the end of this} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{TreeLookup} operation (OpCode 183)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         tree & \lst{Value} & \text{[1, *]} & \text{tree to lookup the key} \\
+    \hline
+           key & \lst{Value} & \text{[1, *]} & \text{a key of an item in the \lst{tree} to lookup} \\
+    \hline
+           proof & \lst{Value} & \text{[1, *]} & \text{proof to perform verification of the operation} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractAmount} operation (OpCode 193)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractScriptBytes} operation (OpCode 194)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractBytes} operation (OpCode 195)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractBytesWithNoRef} operation (OpCode 196)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractId} operation (OpCode 197)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractRegisterAs} operation (OpCode 198)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           regId & \lst{Byte} & \text{1} & \text{zero-based identifier of the register.} \\
+    \hline
+           type & \lst{Type} & \text{[1, *]} & \text{expected type of the value in register} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ExtractCreationInfo} operation (OpCode 199)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{CalcBlake2b256} operation (OpCode 203)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{CalcSha256} operation (OpCode 204)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{DeserializeContext} operation (OpCode 212)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         type & \lst{Type} & \text{[1, *]} & \text{expected type of the deserialized script} \\
+    \hline
+           id & \lst{Byte} & \text{1} & \text{identifier of the context variable} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{DeserializeRegister} operation (OpCode 213)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         id & \lst{Byte} & \text{1} & \text{identifier of the register} \\
+    \hline
+           type & \lst{Type} & \text{[1, *]} & \text{expected type of the deserialized script} \\
+    \hline
+          \multicolumn{4}{l}{\lst{optional}~default} \\
+    \hline
+    ~~tag & \lst{Byte} & 1 & \text{0 - no value; 1 - has value} \\
+    \hline
+    \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
+    \hline
+             ~~~~ default & \lst{Value} & \text{[1, *]} & \text{optional default value, if register is not available} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end optional}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{ValDef} operation (OpCode 214)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    % skipped OptionalScope(type arguments, ArrayBuffer())
+
+\end{array}\)
+       
+
+\subsubsection{\lst{FunDef} operation (OpCode 215)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    % skipped OptionalScope(type arguments, ArrayBuffer())
+
+\end{array}\)
+       
+
+\subsubsection{\lst{FuncValue} operation (OpCode 217)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~arguments} \\
+    \hline
+             \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{OptionGet} operation (OpCode 228)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{OptionIsDefined} operation (OpCode 230)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{SigmaAnd} operation (OpCode 234)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         \#items & \lst{UInt} & \text{4} & \text{number of items in the collection} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+    \hline
+             ~~ propositions & \lst{Value} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{SigmaOr} operation (OpCode 235)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         \#items & \lst{UInt} & \text{4} & \text{number of items in the collection} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+    \hline
+             ~~ propositions & \lst{Value} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{XorOf} operation (OpCode 255)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         conditions & \lst{Value} & \text{[1, *]} & \text{a collection of conditions} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{LongToByteArray} operation (OpCode 122)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{value to convert} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ByteArrayToBigInt} operation (OpCode 123)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{ByteArrayToLong} operation (OpCode 124)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Downcast} operation (OpCode 125)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{value to cast} \\
+    \hline
+           type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Upcast} operation (OpCode 126)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Value} & \text{[1, *]} & \text{value to cast} \\
+    \hline
+           type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
+    \hline
+      
+\end{array}\)
+       

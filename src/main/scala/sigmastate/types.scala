@@ -1412,7 +1412,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
         .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
     creationInfoMethod,
     getRegMethod,
-    tokensMethod,
+    tokensMethod
   ) ++ registers(8)
   override val coster = Some(Coster(_.BoxCoster))
 }

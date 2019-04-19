@@ -33,13 +33,14 @@ case class CreateProveDHTupleSerializer(cons: (Value[SGroupElement.type],
     Value[SGroupElement.type],
     Value[SGroupElement.type]) => SigmaPropValue)
     extends ValueSerializer[CreateProveDHTuple] {
+  import sigmastate.Operations.CreateProveDHTupleInfo._
   override def opDesc = CreateProveDHTuple
 
   override def serialize(obj: CreateProveDHTuple, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.gv)
-    w.putValue(obj.hv)
-    w.putValue(obj.uv)
-    w.putValue(obj.vv)
+    w.putValue(obj.gv, gArg)
+    w.putValue(obj.hv, hArg)
+    w.putValue(obj.uv, uArg)
+    w.putValue(obj.vv, vArg)
   }
 
   override def parse(r: SigmaByteReader) = {
