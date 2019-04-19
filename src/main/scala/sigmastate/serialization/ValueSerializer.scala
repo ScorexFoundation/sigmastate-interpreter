@@ -205,15 +205,21 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     override def toString = s"OptionalScope($name, $children)"
   }
 
-  case class CasesScope(parent: Scope, name: String, children: ChildrenMap) extends Scope {
+  case class CasesScope(parent: Scope, matchExpr: String, children: ChildrenMap) extends Scope {
+    override def name: String = matchExpr
+    def cases: Seq[WhenScope] = children.map {
+      case (_, when: WhenScope) => when
+      case s => sys.error(s"Invalid child scope $s in $this")
+    }.sortBy(_.pos)
     override def showInScope(v: String): String = parent.showInScope(s"/cases[$name]/$v")
     override def toString = s"CasesScope($name, $children)"
   }
 
-  case class WhenScope(parent: Scope, condition: String, children: ChildrenMap) extends Scope {
+  case class WhenScope(parent: Scope, pos: Int, condition: String, children: ChildrenMap) extends Scope {
     override def name: String = condition
-    override def showInScope(v: String): String = parent.showInScope(s"/when[$condition]/$v")
-    override def toString = s"WhenScope($condition, $children)"
+    override def showInScope(v: String): String = parent.showInScope(s"/when[$pos: $condition]/$v")
+    override def toString = s"WhenScope($pos, $condition, $children)"
+    def isOtherwise: Boolean = condition == otherwiseCondition
   }
 
   case class ForScope(parent: Scope, name: String, limitVar: String, children: ChildrenMap) extends Scope {
@@ -246,18 +252,29 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     scopeStack = scopeStack.tail
   }
 
-  def cases(name: String)(block: => Unit): Unit = {
+  def cases(matchExpr: String)(block: => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(name, CasesScope(parent, name, mutable.ArrayBuffer.empty))
+    val scope = parent.provideScope(matchExpr, CasesScope(parent, matchExpr, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     block
     scopeStack = scopeStack.tail
   }
 
-  def when(condition: String)(block: => Unit): Unit = {
+  def when(pos: Int, condition: String)(block: => Unit): Unit = {
     val parent = scopeStack.head
-    val scope = parent.provideScope(condition, WhenScope(parent, condition, mutable.ArrayBuffer.empty))
+    val scope = parent.provideScope(condition, WhenScope(parent, pos, condition, mutable.ArrayBuffer.empty))
+
+    scopeStack ::= scope
+    block
+    scopeStack = scopeStack.tail
+  }
+
+  val otherwiseCondition = "otherwise"
+
+  def otherwise(block: => Unit): Unit = {
+    val parent = scopeStack.head
+    val scope = parent.provideScope(otherwiseCondition, WhenScope(parent, Int.MaxValue, otherwiseCondition, mutable.ArrayBuffer.empty))
 
     scopeStack ::= scope
     block

@@ -57,6 +57,29 @@ object GenSerializers extends SpecGen {
     sb.append(footer)
   }
 
+  def printCasesScope(scope: CasesScope, level: Int, sb: StringBuilder) = {
+    val prefix = "~~" * level
+    val header =
+      s"""    \\multicolumn{4}{l}{${prefix}\\lst{match ${scope.matchExpr}}} \\\\
+         """.stripMargin
+    sb.append(header)
+
+    for (when <- scope.cases) {
+      val pattern =
+        s"""
+         |    \\multicolumn{4}{l}{${prefix}~~\\lst{${ if(when.isOtherwise) otherwiseCondition else s"with ${when.condition}" } }} \\\\
+         |    \\hline
+        """.stripMargin
+      sb.append(pattern)
+      for((_,s) <- when.children) {
+        printScope(s, level + 2, sb)
+      }
+    }
+
+    val footer = s"    \\multicolumn{4}{l}{${prefix}\\lst{end match}} \\\\"
+    sb.append(footer)
+  }
+
   def printScope(scope: Scope, level: Int, sb: StringBuilder): Unit = {
     scope match {
       case scope: DataScope =>
@@ -65,6 +88,8 @@ object GenSerializers extends SpecGen {
         printForScope(scope, level, sb)
       case scope: OptionScope =>
         printOptionScope(scope, level, sb)
+      case scope: CasesScope =>
+        printCasesScope(scope, level, sb)
       case _ =>
         sb.append(s"% skipped $scope\n")
     }
