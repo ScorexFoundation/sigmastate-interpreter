@@ -11,6 +11,7 @@ import sigmastate.serialization.ValueSerializer._
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
 (override val opDesc: RelationCompanion,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
+  import SigmaByteWriter._
 
   override def serialize(obj: R, w: SigmaByteWriter): Unit = {
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
@@ -19,7 +20,7 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
         case (Constant(left, lTpe), Constant(right, rTpe)) if lTpe == SBoolean && rTpe == SBoolean =>
           when("(Constant(left, SBoolean), Constant(right, SBoolean))") {
             w.put(ConcreteCollectionBooleanConstantCode, ArgInfo("opCode", "ConcreteCollectionBooleanConstantCode"))
-            w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]), "(left,right)")
+            w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]), maxBitsInfo("(left,right)", 2))
           }
         case _ =>
           when("otherwise") {

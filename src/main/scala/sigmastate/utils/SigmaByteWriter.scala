@@ -26,6 +26,9 @@ class SigmaByteWriter(val w: Writer,
     w.put(x); this
   }
 
+  override def putUByte(x: Int): this.type = {
+    super.putUByte(x)
+  }
   def putUByte(x: Int, info: DataInfo[U[Byte]]): this.type = {
     ValueSerializer.addArgInfo(info)
     super.putUByte(x)
@@ -62,13 +65,13 @@ class SigmaByteWriter(val w: Writer,
   }
 
   @inline def putLong(x: Long): this.type = { w.putLong(x); this }
-  @inline def putLong(x: Long, info: DataInfo[Long]): this.type = {
+  @inline def putLong(x: Long, info: DataInfo[Vlq[ZigZag[Long]]]): this.type = {
     ValueSerializer.addArgInfo(info)
     w.putLong(x); this
   }
 
   @inline def putULong(x: Long): this.type = { w.putULong(x); this }
-  @inline def putULong(x: Long, info: DataInfo[U[Long]]): this.type = {
+  @inline def putULong(x: Long, info: DataInfo[Vlq[U[Long]]]): this.type = {
     ValueSerializer.addArgInfo(info)
     w.putULong(x); this
   }
@@ -80,7 +83,7 @@ class SigmaByteWriter(val w: Writer,
   }
 
   @inline def putBits(xs: Array[Boolean]): this.type = { w.putBits(xs); this }
-  @inline def putBits(xs: Array[Boolean], info: DataInfo[Array[Boolean]]): this.type = {
+  @inline def putBits(xs: Array[Boolean], info: DataInfo[Bits]): this.type = {
     ValueSerializer.addArgInfo(info)
     w.putBits(xs);
     this
@@ -122,37 +125,118 @@ class SigmaByteWriter(val w: Writer,
 
 object SigmaByteWriter {
   import scala.language.implicitConversions
+
   /** Format descriptor type family. */
-  trait FormatDescriptor[T]
+  trait FormatDescriptor[T] {
+    /** Size formula associated with this format */
+    def size: String
+  }
 
   /** Marker type to automatically resolve correct implicit format descriptor
     * in Writer methods.
-    * This is phantom type, since no instances of it are ever created. */
+    * This is type-level type, since no instances of it are ever created. */
   trait Vlq[T]
+
+  /** Marker type to automatically resolve correct implicit format descriptor
+    * in Writer methods.
+    * This is type-level type, since no instances of it are ever created. */
+  trait ZigZag[T]
 
   /** Marker type for Unsigned types to automatically resolve correct implicit format descriptor
     * in Writer methods.
-    * This is phantom type, since no instances of it are ever created. */
+    * This is type-level type, since no instances of it are ever created. */
   trait U[T]
 
-  implicit case object ValueFmt extends FormatDescriptor[SValue]
-  implicit case object TypeFmt extends FormatDescriptor[SType]
-  implicit case object BitsFmt extends FormatDescriptor[Array[Boolean]]
+  /** Marker type for bits representation of Coll[Boolean].
+    * Should be used only as argument for FormatDescriptor.
+    * This is type-level type, since no instances of it are ever created.
+    */
+  trait Bits
 
-  implicit object BooleanFmt extends FormatDescriptor[Boolean]
-  implicit object ByteFmt extends FormatDescriptor[Byte]
-  implicit object ShortFmt extends FormatDescriptor[Short]
-  implicit object IntFmt extends FormatDescriptor[Int]
-  implicit object LongFmt extends FormatDescriptor[Long]
+  implicit case object ValueFmt extends FormatDescriptor[SValue] {
+    override def size: String = "[1, *]"
+    override def toString: String = "Value"
+  }
+  implicit case object TypeFmt extends FormatDescriptor[SType] {
+    override def size: String = "[1, *]"
+    override def toString: String = "Type"
+  }
 
-  implicit object UByteFmt extends FormatDescriptor[U[Byte]]
-  implicit object UShortFmt extends FormatDescriptor[U[Short]]
-  implicit object UIntFmt extends FormatDescriptor[U[Int]]
-  implicit object ULongFmt extends FormatDescriptor[U[Long]]
+  case object BitsFmt extends FormatDescriptor[Bits] {
+    override def size: String = "[1, *]"
+    override def toString: String = "Bits"
+  }
+
+  case class MaxBitsFmt(maxBits: Int) extends FormatDescriptor[Bits] {
+    override def size: String = {
+      val maxBytes = (maxBits - 1) / 8 + 1
+      if (maxBytes == 1) "1"
+      else s"[1, $maxBytes]"
+    }
+    override def toString: String = "Bits"
+  }
+
+  implicit object BooleanFmt extends FormatDescriptor[Boolean] {
+    override def size: String = "1"
+    override def toString: String = "Boolean"
+  }
+  implicit object ByteFmt extends FormatDescriptor[Byte] {
+    override def size: String = "1"
+    override def toString: String = "Byte"
+  }
+  implicit object ShortFmt extends FormatDescriptor[Short] {
+    override def size: String = "2"
+    override def toString: String = "Short"
+  }
+  implicit object IntFmt extends FormatDescriptor[Int] {
+    override def size: String = "4"
+    override def toString: String = "Int"
+  }
+  implicit object LongFmt extends FormatDescriptor[Long] {
+    override def size: String = "8"
+    override def toString: String = "Long"
+  }
+
+  implicit object UByteFmt extends FormatDescriptor[U[Byte]] {
+    override def size: String = "1"
+    override def toString: String = "UByte"
+  }
+  implicit object UShortFmt extends FormatDescriptor[U[Short]] {
+    override def size: String = "2"
+    override def toString: String = "UShort"
+  }
+  implicit object UIntFmt extends FormatDescriptor[U[Int]] {
+    override def size: String = "4"
+    override def toString: String = "UInt"
+  }
+  implicit object ULongFmt extends FormatDescriptor[U[Long]] {
+    override def size: String = "8"
+    override def toString: String = "ULong"
+  }
+
+  case class ZigZagFmt[T](fmt: FormatDescriptor[T]) extends FormatDescriptor[ZigZag[T]] {
+    override def size: String = s"[1, *]"
+    override def toString: String = s"ZigZag($fmt)"
+  }
+  case class UVlqFmt[T](fmt: FormatDescriptor[U[T]]) extends FormatDescriptor[Vlq[U[T]]] {
+    override def size: String = s"[1, *]"
+    override def toString: String = s"VLQ($fmt)"
+  }
+  case class ZigZagVlqFmt[T](fmt: FormatDescriptor[ZigZag[T]]) extends FormatDescriptor[Vlq[ZigZag[T]]] {
+    override def size: String = s"[1, *]"
+    override def toString: String = s"VLQ($fmt)"
+  }
+
+  implicit def toZigZagFmt[T](implicit fmt: FormatDescriptor[T]): FormatDescriptor[ZigZag[T]] = ZigZagFmt(fmt)
+  implicit def toUVlqFmt[T](implicit fmt: FormatDescriptor[U[T]]): FormatDescriptor[Vlq[U[T]]] = UVlqFmt(fmt)
+  implicit def toZigZagVlqFmt[T](implicit fmt: FormatDescriptor[ZigZag[T]]): FormatDescriptor[Vlq[ZigZag[T]]] = ZigZagVlqFmt(fmt)
 
   case class DataInfo[T](info: ArgInfo, format: FormatDescriptor[T])
 
   implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
+
+  def bitsInfo(name: String, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), BitsFmt)
+  def maxBitsInfo(name: String, maxBits: Int, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), MaxBitsFmt(maxBits))
 
   // TODO remove this conversion and make it explicit
   /**Helper conversion */

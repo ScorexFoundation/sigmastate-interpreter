@@ -14,7 +14,7 @@ class PDHTSerializerSpecification extends SerializationSpecification {
     // We output it here in the console
     println(CostTableStat.costTableString)
     println(ValueSerializer.printSerInfo())
-//    GenSerializers.generateSerSpec()
+    GenSerializers.generateSerSpec()
   }
 
 }
