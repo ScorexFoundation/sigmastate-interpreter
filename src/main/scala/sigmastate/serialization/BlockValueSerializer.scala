@@ -5,15 +5,19 @@ import sigmastate._
 import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import ValueSerializer._
 
 case class BlockValueSerializer(cons: (IndexedSeq[BlockItem], Value[SType]) => Value[SType])
   extends ValueSerializer[BlockValue] {
   override def opDesc = BlockValue
 
   override def serialize(obj: BlockValue, w: SigmaByteWriter): Unit = {
-    w.putUInt(obj.items.length)
-    obj.items.foreach(w.putValue(_))
-    w.putValue(obj.result)
+    val sizeVar = "numItems"
+    w.putUInt(obj.items.length, ArgInfo(sizeVar, "number of block items"))
+    foreach(sizeVar, obj.items){ i =>
+      w.putValue(i, ArgInfo("item_i", "block's item in i-th position"))
+    }
+    w.putValue(obj.result, ArgInfo("result", "result expression of the block"))
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {

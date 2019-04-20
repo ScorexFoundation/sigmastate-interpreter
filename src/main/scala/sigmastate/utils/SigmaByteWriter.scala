@@ -5,7 +5,7 @@ import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
 import sigmastate.Values.{Value, SValue}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
-import sigmastate.utils.SigmaByteWriter.ValueFmt
+import sigmastate.utils.SigmaByteWriter._
 
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {
@@ -48,7 +48,7 @@ class SigmaByteWriter(val w: Writer,
   }
 
   @inline def putUShort(x: Int): this.type = { w.putUShort(x); this }
-  @inline def putUShort(x: Int, info: DataInfo[U[Short]]): this.type = {
+  @inline def putUShort(x: Int, info: DataInfo[Vlq[U[Short]]]): this.type = {
     ValueSerializer.addArgInfo(info)
     w.putUShort(x); this
   }
@@ -60,7 +60,7 @@ class SigmaByteWriter(val w: Writer,
   }
 
   @inline def putUInt(x: Long): this.type = { w.putUInt(x); this }
-  @inline def putUInt(x: Long, info: DataInfo[U[Int]]): this.type = {
+  @inline def putUInt(x: Long, info: DataInfo[Vlq[U[Int]]]): this.type = {
     ValueSerializer.addArgInfo(info)
     w.putUInt(x); this
   }
@@ -125,7 +125,7 @@ class SigmaByteWriter(val w: Writer,
     putUInt(xs.length, ArgInfo("\\#items", "number of items in the collection"))
     foreach("\\#items", xs) { x =>
       val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
-      putValue(x, DataInfo(ArgInfo(info.info.name, s"i-th item in ${info.info.description}"), itemFmt))
+      putValue(x, DataInfo(ArgInfo(info.info.name+"_i", s"i-th item in the ${info.info.description}"), itemFmt))
     }
     this
   }
@@ -163,7 +163,7 @@ object SigmaByteWriter {
 
   implicit case object ValueFmt extends FormatDescriptor[SValue] {
     override def size: String = "[1, *]"
-    override def toString: String = "Value"
+    override def toString: String = "Expr"
   }
   implicit case object TypeFmt extends FormatDescriptor[SType] {
     override def size: String = "[1, *]"

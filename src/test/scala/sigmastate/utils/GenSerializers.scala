@@ -19,6 +19,7 @@ object GenSerializers extends SpecGen {
          |    \\hline
       """.stripMargin
     sb.append(row)
+    openRow = false
   }
 
   def printForScope(scope: ForScope, level: Int, sb: StringBuilder) = {
@@ -35,6 +36,7 @@ object GenSerializers extends SpecGen {
 
     val footer = s"    \\multicolumn{4}{l}{${prefix}\\lst{end for}} \\\\"
     sb.append(footer)
+    openRow = true
   }
 
   def printOptionScope(scope: OptionScope, level: Int, sb: StringBuilder) = {
@@ -55,6 +57,7 @@ object GenSerializers extends SpecGen {
 
     val footer = s"    \\multicolumn{4}{l}{${prefix}\\lst{end optional}} \\\\"
     sb.append(footer)
+    openRow = true
   }
 
   def printCasesScope(scope: CasesScope, level: Int, sb: StringBuilder) = {
@@ -78,9 +81,14 @@ object GenSerializers extends SpecGen {
 
     val footer = s"    \\multicolumn{4}{l}{${prefix}\\lst{end match}} \\\\"
     sb.append(footer)
+    openRow = true
   }
 
   def printScope(scope: Scope, level: Int, sb: StringBuilder): Unit = {
+    if (openRow) {
+      sb.append(s"\\hline\n")
+      openRow = false // close the table row with a horizontal line
+    }
     scope match {
       case scope: DataScope =>
         printDataScope(scope, level, sb)
@@ -95,9 +103,11 @@ object GenSerializers extends SpecGen {
     }
   }
 
+  var openRow: Boolean = false
+
   def printSerScopeSlots(serScope: SerScope) = {
     val rows = StringBuilder.newBuilder
-    var betweenLines = false
+    openRow = false
     serScope.children.map { case (name, scope) =>
        printScope(scope, 0, rows)
     }

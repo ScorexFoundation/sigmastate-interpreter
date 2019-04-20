@@ -26,6 +26,13 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
+  object ApplyInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("apply")
+    val funcArg: ArgInfo = func.argInfo("func")
+    val argsArg: ArgInfo = func.argInfo("args")
+    val argInfos: Seq[ArgInfo] = Seq(funcArg, argsArg)
+  }
+
   object AtLeastInfo extends InfoObject {
     private val func = predefinedOps.funcs("atLeast")
     val boundArg: ArgInfo = func.argInfo("bound")
@@ -90,6 +97,12 @@ object Operations {
     private val func = predefinedOps.funcs("sha256")
     val inputArg: ArgInfo = func.argInfo("input")
     val argInfos: Seq[ArgInfo] = Seq(inputArg)
+  }
+
+  object ConstantPlaceholderInfo extends InfoObject {
+    private val func = predefinedOps.specialFuncs("placeholder")
+    val indexArg: ArgInfo = func.argInfo("index")
+    val argInfos: Seq[ArgInfo] = Seq(indexArg)
   }
 
   object CreateAvlTreeInfo extends InfoObject {

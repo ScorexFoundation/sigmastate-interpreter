@@ -6,7 +6,7 @@ import scalan.Nullable
 import scorex.util.encode.{Base64, Base58}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
-import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
+import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
 import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFunc
 import sigmastate.lang.Terms._
@@ -482,6 +482,21 @@ object SigmaPredef {
         OperationInfo(Downcast,
           "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
           Seq(ArgInfo("input", "value to cast")))
+      ),
+      PredefinedFunc("apply",
+        Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(Apply,
+          "Apply the function to the arguments. ",
+          Seq(ArgInfo("func", "function which is applied"),
+            ArgInfo("args", "list of arguments")))
+      ),
+      PredefinedFunc("placeholder",
+        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(ConstantPlaceholder,
+          "Create special ErgoTree node which can be replaced by constant with given id.",
+          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
       ),
     ).map(f => f.name -> f).toMap
 

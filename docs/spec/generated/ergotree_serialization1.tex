@@ -1,4 +1,38 @@
 
+\subsubsection{\lst{ConcreteCollection} operation (OpCode 131)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         numItems & \lst{VLQ(UShort)} & \text{[1, *]} & \text{number of item in a collection of expressions} \\
+    \hline
+           elementType & \lst{Type} & \text{[1, *]} & \text{type of each expression in the collection} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+    \hline
+             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{expression in i-th position} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{ConcreteCollectionBooleanConstant} operation (OpCode 133)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         numBits & \lst{VLQ(UShort)} & \text{[1, *]} & \text{number of items in a collection of Boolean values} \\
+    \hline
+           bits & \lst{Bits} & \text{[1, 1024]} & \text{Boolean values encoded as as bits (right most byte is zero-padded on the right)} \\
+    \hline
+      
+\end{array}\)
+       
+
 \subsubsection{\lst{Tuple} operation (OpCode 134)}
 
 \noindent
@@ -10,7 +44,7 @@
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
     \hline
-             ~~ item_i & \lst{Value} & \text{[1, *]} & \text{tuple's item in i-th position} \\
+             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{tuple's item in i-th position} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{array}\)
@@ -23,7 +57,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{tuple of items} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{tuple of items} \\
     \hline
            fieldIndex & \lst{Byte} & \text{1} & \text{index of an item to select} \\
     \hline
@@ -42,9 +76,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -61,9 +95,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -80,9 +114,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -99,9 +133,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -125,9 +159,9 @@
       
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -151,9 +185,9 @@
       
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Value} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
     \hline
-          ~~~~ right & \lst{Value} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
@@ -166,11 +200,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         condition & \lst{Value} & \text{[1, *]} & \text{condition expression} \\
+         condition & \lst{Expr} & \text{[1, *]} & \text{condition expression} \\
     \hline
-           trueBranch & \lst{Value} & \text{[1, *]} & \text{expression to execute when \lst{condition == true}} \\
+           trueBranch & \lst{Expr} & \text{[1, *]} & \text{expression to execute when \lst{condition == true}} \\
     \hline
-           falseBranch & \lst{Value} & \text{[1, *]} & \text{expression to execute when \lst{condition == false}} \\
+           falseBranch & \lst{Expr} & \text{[1, *]} & \text{expression to execute when \lst{condition == false}} \\
     \hline
       
 \end{array}\)
@@ -183,7 +217,20 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         conditions & \lst{Value} & \text{[1, *]} & \text{a collection of conditions} \\
+         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{OR} operation (OpCode 151)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
     \hline
       
 \end{array}\)
@@ -196,9 +243,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         bound & \lst{Value} & \text{[1, *]} & \text{required minimum of proven children} \\
+         bound & \lst{Expr} & \text{[1, *]} & \text{required minimum of proven children} \\
     \hline
-           children & \lst{Value} & \text{[1, *]} & \text{proposition to be proven/validated} \\
+           children & \lst{Expr} & \text{[1, *]} & \text{proposition to be proven/validated} \\
     \hline
       
 \end{array}\)
@@ -211,9 +258,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           f & \lst{Value} & \text{[1, *]} & \text{the function to apply to each element} \\
+           f & \lst{Expr} & \text{[1, *]} & \text{the function to apply to each element} \\
     \hline
       
 \end{array}\)
@@ -226,9 +273,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           p & \lst{Value} & \text{[1, *]} & \text{the predicate used to test elements} \\
+           p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
     \hline
       
 \end{array}\)
@@ -241,9 +288,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           p & \lst{Value} & \text{[1, *]} & \text{the predicate used to test elements} \\
+           p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
     \hline
       
 \end{array}\)
@@ -256,11 +303,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           zero & \lst{Value} & \text{[1, *]} & \text{a starting value} \\
+           zero & \lst{Expr} & \text{[1, *]} & \text{a starting value} \\
     \hline
-           op & \lst{Value} & \text{[1, *]} & \text{the binary operator} \\
+           op & \lst{Expr} & \text{[1, *]} & \text{the binary operator} \\
     \hline
       
 \end{array}\)
@@ -273,7 +320,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -286,9 +333,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           index & \lst{Value} & \text{[1, *]} & \text{index of the element of this collection} \\
+           index & \lst{Expr} & \text{[1, *]} & \text{index of the element of this collection} \\
     \hline
           \multicolumn{4}{l}{\lst{optional}~default} \\
     \hline
@@ -296,7 +343,7 @@
     \hline
     \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
     \hline
-             ~~~~ default & \lst{Value} & \text{[1, *]} & \text{value to return when \lst{index} is out of range} \\
+             ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{value to return when \lst{index} is out of range} \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
 \end{array}\)
@@ -309,9 +356,26 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
-           other & \lst{Value} & \text{[1, *]} & \text{the collection to append at the end of this} \\
+           other & \lst{Expr} & \text{[1, *]} & \text{the collection to append at the end of this} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Slice} operation (OpCode 180)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           from & \lst{Expr} & \text{[1, *]} & \text{the lowest index to include from this collection} \\
+    \hline
+           until & \lst{Expr} & \text{[1, *]} & \text{the lowest index to EXCLUDE from this collection} \\
     \hline
       
 \end{array}\)
@@ -324,11 +388,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         tree & \lst{Value} & \text{[1, *]} & \text{tree to lookup the key} \\
+         tree & \lst{Expr} & \text{[1, *]} & \text{tree to lookup the key} \\
     \hline
-           key & \lst{Value} & \text{[1, *]} & \text{a key of an item in the \lst{tree} to lookup} \\
+           key & \lst{Expr} & \text{[1, *]} & \text{a key of an item in the \lst{tree} to lookup} \\
     \hline
-           proof & \lst{Value} & \text{[1, *]} & \text{proof to perform verification of the operation} \\
+           proof & \lst{Expr} & \text{[1, *]} & \text{proof to perform verification of the operation} \\
     \hline
       
 \end{array}\)
@@ -341,7 +405,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -354,7 +418,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -367,7 +431,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -380,7 +444,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -393,7 +457,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -406,7 +470,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
            regId & \lst{Byte} & \text{1} & \text{zero-based identifier of the register.} \\
     \hline
@@ -423,7 +487,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -436,7 +500,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
     \hline
       
 \end{array}\)
@@ -449,7 +513,52 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{CreateProveDlog} operation (OpCode 205)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         value & \lst{Expr} & \text{[1, *]} & \text{element of elliptic curve group} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{CreateProveDHTuple} operation (OpCode 206)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         g & \lst{Expr} & \text{[1, *]} & \text{} \\
+    \hline
+           h & \lst{Expr} & \text{[1, *]} & \text{} \\
+    \hline
+           u & \lst{Expr} & \text{[1, *]} & \text{} \\
+    \hline
+           v & \lst{Expr} & \text{[1, *]} & \text{} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{BoolToSigmaProp} operation (OpCode 209)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         condition & \lst{Expr} & \text{[1, *]} & \text{boolean value to embed in SigmaProp value} \\
     \hline
       
 \end{array}\)
@@ -487,7 +596,7 @@
     \hline
     \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
     \hline
-             ~~~~ default & \lst{Value} & \text{[1, *]} & \text{optional default value, if register is not available} \\
+             ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{optional default value, if register is not available} \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
 \end{array}\)
@@ -517,6 +626,26 @@
 \end{array}\)
        
 
+\subsubsection{\lst{BlockValue} operation (OpCode 216)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         numItems & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of block items} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+    \hline
+             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{block's item in i-th position} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\\hline
+     result & \lst{Expr} & \text{[1, *]} & \text{result expression of the block} \\
+    \hline
+      
+\end{array}\)
+       
+
 \subsubsection{\lst{FuncValue} operation (OpCode 217)}
 
 \noindent
@@ -524,9 +653,52 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~arguments} \\
+         numArgs & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of function arguments} \\
     \hline
-             \multicolumn{4}{l}{\lst{end for}} \\
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numArgs} \\
+    \hline
+             ~~ id_i & \lst{VLQ(UInt)} & \text{[1, *]} & \text{identifier of the i-th argument} \\
+    \hline
+          ~~ type_i & \lst{Type} & \text{[1, *]} & \text{type of the i-th argument} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\\hline
+     body & \lst{Expr} & \text{[1, *]} & \text{function body, which is parameterized by arguments} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{Apply} operation (OpCode 218)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         func & \lst{Expr} & \text{[1, *]} & \text{function which is applied} \\
+    \hline
+           \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+    \hline
+             ~~ args & \lst{Expr} & \text{[1, *]} & \text{i-th item in list of arguments} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{GetVar} operation (OpCode 227)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         varId & \lst{Byte} & \text{1} & \text{\lst{Byte} identifier of context variable} \\
+    \hline
+           type & \lst{Type} & \text{[1, *]} & \text{expected by of context variable} \\
+    \hline
+      
 \end{array}\)
        
 
@@ -537,7 +709,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -550,7 +722,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Value} & \text{[1, *]} & \text{this instance} \\
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
 \end{array}\)
@@ -563,11 +735,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         \#items & \lst{UInt} & \text{4} & \text{number of items in the collection} \\
+         \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
     \hline
-             ~~ propositions & \lst{Value} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+             ~~ propositions & \lst{Expr} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{array}\)
@@ -580,13 +752,83 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         \#items & \lst{UInt} & \text{4} & \text{number of items in the collection} \\
+         \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
     \hline
-             ~~ propositions & \lst{Value} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+             ~~ propositions & \lst{Expr} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{BinOr} operation (OpCode 236)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{BinAnd} operation (OpCode 237)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{array}\)
+       
+
+\subsubsection{\lst{DecodePoint} operation (OpCode 238)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         input & \lst{Expr} & \text{[1, *]} & \text{serialized bytes of some \lst{GroupElement} value} \\
+    \hline
+      
+\end{array}\)
+       
+
+\subsubsection{\lst{BinXor} operation (OpCode 244)}
+
+\noindent
+\(\begin{array}{| l | l | l | l |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+         
+    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
+    \hline
+            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
+    \hline
+          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
 \end{array}\)
        
 
@@ -597,7 +839,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         conditions & \lst{Value} & \text{[1, *]} & \text{a collection of conditions} \\
+         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
     \hline
       
 \end{array}\)
@@ -610,7 +852,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{value to convert} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{value to convert} \\
     \hline
       
 \end{array}\)
@@ -623,7 +865,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
     \hline
       
 \end{array}\)
@@ -636,7 +878,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
     \hline
       
 \end{array}\)
@@ -649,7 +891,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{value to cast} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{value to cast} \\
     \hline
            type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
     \hline
@@ -664,7 +906,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Value} & \text{[1, *]} & \text{value to cast} \\
+         input & \lst{Expr} & \text{[1, *]} & \text{value to cast} \\
     \hline
            type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
     \hline

@@ -13,9 +13,12 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
   override def opDesc = FuncValue
 
   override def serialize(obj: FuncValue, w: SigmaByteWriter): Unit = {
-    w.putUInt(obj.args.length)
-    foreach("arguments", obj.args) { case (idx, tpe) => w.putUInt(idx).putType(tpe) }
-    w.putValue(obj.body)
+    w.putUInt(obj.args.length, ArgInfo("numArgs", "number of function arguments"))
+    foreach("numArgs", obj.args) { case (idx, tpe) =>
+      w.putUInt(idx, ArgInfo("id_i", "identifier of the i-th argument"))
+        .putType(tpe, ArgInfo("type_i", "type of the i-th argument"))
+    }
+    w.putValue(obj.body, ArgInfo("body", "function body, which is parameterized by arguments"))
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
