@@ -2,7 +2,7 @@ package sigmastate.utils
 
 import scalan.util.FileUtil
 
-object GenPredeftypesApp extends SpecGen {
+object GenPredefTypesApp extends SpecGen {
   import SpecGenUtils._
 
   def main(args: Array[String]) = {

@@ -98,8 +98,8 @@ object SigmaPredef {
         }),
       OperationInfo(AtLeast,
         """ Logical threshold.
-         | AtLeast has two inputs: integer \\lst{bound\ and \\lst{children} same as in AND/OR.
-         | The result is true if at least \\lst{bound} children are proven.
+         | AtLeast has two inputs: integer \lst{bound} and \lst{children} same as in AND/OR.
+         | The result is true if at least \lst{bound} children are proven.
         """.stripMargin, Seq(
           ArgInfo("bound", "required minimum of proven children"),
           ArgInfo("children", "proposition to be proven/validated")))
@@ -133,10 +133,10 @@ object SigmaPredef {
       Lambda(Vector("condition" -> SBoolean), SSigmaProp, None),
       PredefFuncInfo({ case (_, Seq(b: BoolValue@unchecked)) => mkBoolToSigmaProp(b) }),
       OperationInfo(BoolToSigmaProp,
-        """Embedding of \\lst{Boolean} values to \\lst{SigmaProp} values.
+        """Embedding of \lst{Boolean} values to \lst{SigmaProp} values.
          | As an example, this operation allows boolean experessions
-         | to be used as arguments of \\lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
-         | During execution results to either \\lst{TrueProp} or \\lst{FalseProp} values of \\lst{SigmaProp} type.
+         | to be used as arguments of \lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
+         | During execution results to either \lst{TrueProp} or \lst{FalseProp} values of \lst{SigmaProp} type.
         """.stripMargin,
           Seq(ArgInfo("condition", "boolean value to embed in SigmaProp value")))
     )
@@ -290,7 +290,7 @@ object SigmaPredef {
           mkCreateProveDlog(arg)
         }),
       OperationInfo(CreateProveDlog,
-        """ErgoTree operation to create a new \\lst{SigmaProp} value representing public key
+        """ErgoTree operation to create a new \lst{SigmaProp} value representing public key
          | of discrete logarithm signature protocol.
         """.stripMargin,
           Seq(ArgInfo("value", "element of elliptic curve group")))
