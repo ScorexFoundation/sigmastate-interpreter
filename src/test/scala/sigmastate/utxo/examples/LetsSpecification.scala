@@ -32,47 +32,46 @@ class LetsSpecification extends SigmaTestingCommons {
   val exchangeScript = compiler.compile(env,
     """{
       |
+      |  // Minimal balance allowed for LETS trader
       |  val minBalance = -20000
       |
       |  val lookupProof = getVar[Coll[Byte]](1).get
       |
+      |  // The read-only box which contains directory of LETS members
       |  val treeHolderBox = CONTEXT.dataInputs(0)
-      |
       |  val properTree = treeHolderBox.tokens(0)._1 == letsToken
       |  val membersTree = treeHolderBox.R4[AvlTree].get
       |
+      |  // A spending transaction is taking two boxes of LETS members willing to make a deal,
+      |  // and returns boxes with modified balances.
       |  val participant0 = INPUTS(0)
       |  val participant1 = INPUTS(1)
-      |
       |  val participantOut0 = OUTPUTS(0)
       |  val participantOut1 = OUTPUTS(1)
       |
+      |  //Check that members are indeed belong to the LETS
       |  val token0 = participant0.tokens(0)._1
       |  val token1 = participant1.tokens(0)._1
-      |
       |  val memberTokens = Coll(token0, token1)
-      |
       |  val membersExist = membersTree.getMany(memberTokens, lookupProof).forall({ (o: Option[Coll[Byte]]) => o.isDefined })
       |
+      |  // Check that LETS member balance changes during the deal are correct
       |  val initialBalance0 = participant0.R4[Long].get
-      |
       |  val initialBalance1 = participant1.R4[Long].get
-      |
       |  val finishBalance0  = participantOut0.R4[Long].get
-      |
       |  val finishBalance1  = participantOut1.R4[Long].get
+      |  val diff0 = finishBalance0 - initialBalance0
+      |  val diff1 = finishBalance1 - initialBalance1
+      |  val diffCorrect = diff0 == -diff1
+      |  val balancesCorrect = (finishBalance0 > minBalance) && (finishBalance1 > minBalance) && diffCorrect
       |
+      |  // Check that member boxes save their scripts.
+      |  // todo: optimization could be made here
       |  val script0Saved = participantOut0.propositionBytes == participant0.propositionBytes
       |  val script1Saved = participantOut1.propositionBytes == participant1.propositionBytes
       |  val scriptsSaved = script0Saved && script1Saved
       |
-      |  val diff0 = finishBalance0 - initialBalance0
-      |  val diff1 = finishBalance1 - initialBalance1
-      |
-      |  val diffCorrect = diff0 == -diff1
-      |
-      |  val balancesCorrect = (finishBalance0 > minBalance) && (finishBalance1 > minBalance) && diffCorrect
-      |
+      |  // Member-specific box protection
       |  val selfPubKey = SELF.R5[SigmaProp].get
       |
       |  selfPubKey && properTree && membersExist && diffCorrect && scriptsSaved
