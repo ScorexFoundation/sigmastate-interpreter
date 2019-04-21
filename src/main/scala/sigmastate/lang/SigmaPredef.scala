@@ -519,7 +519,7 @@ object SigmaPredef {
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT, "fieldIndex" -> SByte), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(SelectField,
-          "Select tuple field by its 1-based index. E.g. input._1 is transformed to SelectField(input, 1)",
+          "Select tuple field by its 1-based index. E.g. \\lst{input._1} is transformed to \\lst{SelectField(input, 1)}",
           Seq(ArgInfo("input", "tuple of items"), ArgInfo("fieldIndex", "index of an item to select")))
       ),
       PredefinedFunc("treeLookup",

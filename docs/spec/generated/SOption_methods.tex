@@ -1,5 +1,6 @@
 
 \subsubsection{\lst{SOption.isEmpty} method (Code 36.1)}
+\label{sec:type:SOption:isEmpty}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -20,6 +21,7 @@
 
 
 \subsubsection{\lst{SOption.isDefined} method (Code 36.2)}
+\label{sec:type:SOption:isDefined}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -35,7 +37,7 @@
   \bf{Result} & \lst{Boolean} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionIsDefined]{\lst{OptionIsDefined(opCode=230)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionIsDefined]{\lst{OptionIsDefined}} \\
   \hline
        
 \end{tabularx}
@@ -43,6 +45,7 @@
 
 
 \subsubsection{\lst{SOption.get} method (Code 36.3)}
+\label{sec:type:SOption:get}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -58,7 +61,7 @@
   \bf{Result} & \lst{T} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGet]{\lst{OptionGet(opCode=228)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGet]{\lst{OptionGet}} \\
   \hline
        
 \end{tabularx}
@@ -66,6 +69,7 @@
 
 
 \subsubsection{\lst{SOption.getOrElse} method (Code 36.4)}
+\label{sec:type:SOption:getOrElse}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -83,7 +87,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{T} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGetOrElse]{\lst{OptionGetOrElse(opCode=229)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGetOrElse]{\lst{OptionGetOrElse}} \\
   \hline
        
 \end{tabularx}
@@ -91,6 +95,7 @@ return the result of evaluating \lst{default}.
 
 
 \subsubsection{\lst{SOption.fold} method (Code 36.5)}
+\label{sec:type:SOption:fold}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -111,7 +116,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{R} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -119,6 +124,7 @@ return the result of evaluating \lst{default}.
 
 
 \subsubsection{\lst{SOption.toColl} method (Code 36.6)}
+\label{sec:type:SOption:toColl}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -134,7 +140,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{Coll[T]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall(opCode=219)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
        
 \end{tabularx}
@@ -142,6 +148,7 @@ return the result of evaluating \lst{default}.
 
 
 \subsubsection{\lst{SOption.map} method (Code 36.7)}
+\label{sec:type:SOption:map}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -160,7 +167,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{Option[R]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -168,6 +175,7 @@ return the result of evaluating \lst{default}.
 
 
 \subsubsection{\lst{SOption.filter} method (Code 36.8)}
+\label{sec:type:SOption:filter}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -185,7 +193,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{Option[T]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -193,6 +201,7 @@ return the result of evaluating \lst{default}.
 
 
 \subsubsection{\lst{SOption.flatMap} method (Code 36.9)}
+\label{sec:type:SOption:flatMap}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -213,7 +222,7 @@ return the result of evaluating \lst{default}.
   \bf{Result} & \lst{Option[R]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}

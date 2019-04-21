@@ -1,8 +1,10 @@
 package sigmastate.utils
 
 import scalan.util.FileUtil
+import scalan.meta.PrintExtensions._
 import sigmastate.serialization.ValueSerializer._
-import sigma.util.Extensions._
+import sigma.util.Extensions.ByteOps
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 
 /** Generate contents of ErgoTree serializer format specification.
   */
@@ -115,6 +117,8 @@ object GenSerializers extends SpecGen {
   }
 
   def printSerializerSections() = {
+    val opsTable = collectOpsTable()
+    val opInfos = opsTable.map { case (d, m, f) => getOpInfo(d, m, f) }
     val scopes = serializerInfo
       .filter(_._2.children.nonEmpty).toSeq
       .sortBy(_._1).map(_._2)
@@ -123,9 +127,28 @@ object GenSerializers extends SpecGen {
       val opCode = ser.opCode.toUByte
       val opName = ser.opDesc.typeName
       val rows = printSerScopeSlots(s)
+      val opRow = opsTable.find(r => r._1.opCode == s.opCode)
+      val opInfo = opInfos.find(i => i.opDesc.opCode == s.opCode)
+      val desc = opInfo.map(_.description)
+      val opRef = opRow
+        .filterNot { case (d,_,_) => d == PropertyCall || d == MethodCall }
+        .opt { case (d, m, f) =>
+          m.fold(f.opt { f =>
+            val refName = f.docInfo.opDesc.typeName
+            val opName = f.name.replace("%", "\\%")
+            s"See~\\hyperref[sec:appendix:primops:$refName]{\\lst{${opName}}}"
+          })({ m =>
+            val typeName = m.objType.typeName
+            s"See~\\hyperref[sec:type:$typeName:${m.name}]{\\lst{$typeName.${m.name}}}"
+          })
+        }
+
       s"""
         |\\subsubsection{\\lst{$opName} operation (OpCode $opCode)}
         |\\label{sec:serialization:operation:$opName}
+        |
+        |${desc.opt(_.toString)} $opRef
+        |
         |\\noindent
         |\\(\\begin{tabularx}{\\textwidth}{| l | l | l | X |}
         |    \\hline

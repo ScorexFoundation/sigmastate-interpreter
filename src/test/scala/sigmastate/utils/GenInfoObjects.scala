@@ -3,6 +3,7 @@ package sigmastate.utils
 import sigmastate.Values.ValueCompanion
 import sigmastate.{ArgInfo, SMethod}
 import scalan.meta.PrintExtensions._
+
 import scala.util.Try
 import sigmastate.lang.SigmaPredef.PredefinedFunc
 
@@ -25,23 +26,8 @@ object GenInfoObjects extends SpecGen {
 
   def main(args: Array[String]) = {
     val table = collectOpsTable()
-    val rowsWithInfo =
-      for ((opCode, opDesc, optM, optF) <- table if optM.nonEmpty || optF.nonEmpty)
-      yield (opDesc, optM, optF)
+    val infos = table.map { case (d, m, f) => getOpInfo(d, m, f) }
 
-    val infos = for (row @ (opDesc, optM, optF) <- rowsWithInfo) yield {
-      (optM, optF) match {
-        case (Some(m), _) =>
-          val description = m.docInfo.map(i => i.description).opt()
-          val args = m.docInfo.map(i => i.args).getOrElse(Seq())
-          OpInfo(opDesc, description, args, Right(m))
-        case (_, Some(f)) =>
-          val description = f.docInfo.description
-          val args = f.docInfo.args
-          OpInfo(opDesc, description, args, Left(f))
-        case _ => sys.error(s"Unexpected $row")
-      }
-    }
     val infoStrings = infos.sortBy(_.opDesc.typeName).map { info =>
       val opName = info.opDesc.typeName
 

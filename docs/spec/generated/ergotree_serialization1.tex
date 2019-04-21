@@ -1,6 +1,9 @@
 
 \subsubsection{\lst{ConcreteCollection} operation (OpCode 131)}
 \label{sec:serialization:operation:ConcreteCollection}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -20,6 +23,9 @@
 
 \subsubsection{\lst{ConcreteCollectionBooleanConstant} operation (OpCode 133)}
 \label{sec:serialization:operation:ConcreteCollectionBooleanConstant}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -35,6 +41,9 @@
 
 \subsubsection{\lst{Tuple} operation (OpCode 134)}
 \label{sec:serialization:operation:Tuple}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -52,6 +61,9 @@
 
 \subsubsection{\lst{SelectField} operation (OpCode 140)}
 \label{sec:serialization:operation:SelectField}
+
+Select tuple field by its 1-based index. E.g. \lst{input._1} is transformed to \lst{SelectField(input, 1)} See~\hyperref[sec:appendix:primops:SelectField]{\lst{selectField}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -67,6 +79,9 @@
 
 \subsubsection{\lst{LT} operation (OpCode 143)}
 \label{sec:serialization:operation:LT}
+
+Returns \lst{true} is the left operand is less then the right operand, \lst{false} otherwise. See~\hyperref[sec:appendix:primops:LT]{\lst{<}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -86,6 +101,9 @@
 
 \subsubsection{\lst{LE} operation (OpCode 144)}
 \label{sec:serialization:operation:LE}
+
+Returns \lst{true} is the left operand is less then or equal to the right operand, \lst{false} otherwise. See~\hyperref[sec:appendix:primops:LE]{\lst{<=}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -105,6 +123,9 @@
 
 \subsubsection{\lst{GT} operation (OpCode 145)}
 \label{sec:serialization:operation:GT}
+
+Returns \lst{true} is the left operand is greater then the right operand, \lst{false} otherwise. See~\hyperref[sec:appendix:primops:GT]{\lst{>}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -124,6 +145,9 @@
 
 \subsubsection{\lst{GE} operation (OpCode 146)}
 \label{sec:serialization:operation:GE}
+
+Returns \lst{true} is the left operand is greater then or equal to the right operand, \lst{false} otherwise. See~\hyperref[sec:appendix:primops:GE]{\lst{>=}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -143,6 +167,9 @@
 
 \subsubsection{\lst{EQ} operation (OpCode 147)}
 \label{sec:serialization:operation:EQ}
+
+Compare equality of \lst{left} and \lst{right} arguments See~\hyperref[sec:appendix:primops:EQ]{\lst{==}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -169,6 +196,9 @@
 
 \subsubsection{\lst{NEQ} operation (OpCode 148)}
 \label{sec:serialization:operation:NEQ}
+
+Compare inequality of \lst{left} and \lst{right} arguments See~\hyperref[sec:appendix:primops:NEQ]{\lst{!=}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -195,6 +225,9 @@
 
 \subsubsection{\lst{If} operation (OpCode 149)}
 \label{sec:serialization:operation:If}
+
+Compute condition, if true then compute trueBranch else compute falseBranch See~\hyperref[sec:appendix:primops:If]{\lst{if}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -212,6 +245,25 @@
 
 \subsubsection{\lst{AND} operation (OpCode 150)}
 \label{sec:serialization:operation:AND}
+
+Returns true if \emph{all} the elements in collection are \lst{true}. See~\hyperref[sec:appendix:primops:AND]{\lst{allOf}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ conditions $ & \lst{Expr} & [1, *] & a collection of conditions \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{OR} operation (OpCode 151)}
+\label{sec:serialization:operation:OR}
+
+Returns true if \emph{any} the elements in collection are \lst{true}. See~\hyperref[sec:appendix:primops:OR]{\lst{anyOf}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -225,6 +277,12 @@
 
 \subsubsection{\lst{AtLeast} operation (OpCode 152)}
 \label{sec:serialization:operation:AtLeast}
+
+ Logical threshold.
+ AtLeast has two inputs: integer \\lst{bound\ and \\lst{children} same as in AND/OR.
+ The result is true if at least \\lst{bound} children are proven.
+         See~\hyperref[sec:appendix:primops:AtLeast]{\lst{atLeast}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -240,6 +298,9 @@
 
 \subsubsection{\lst{Minus} operation (OpCode 153)}
 \label{sec:serialization:operation:Minus}
+
+Returns a result of subtracting second numeric operand from the first. See~\hyperref[sec:appendix:primops:Minus]{\lst{-}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -255,6 +316,9 @@
 
 \subsubsection{\lst{Plus} operation (OpCode 154)}
 \label{sec:serialization:operation:Plus}
+
+Returns a sum of two numeric operands See~\hyperref[sec:appendix:primops:Plus]{\lst{+}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -270,6 +334,9 @@
 
 \subsubsection{\lst{Xor} operation (OpCode 155)}
 \label{sec:serialization:operation:Xor}
+
+Byte-wise XOR of two collections of bytes See~\hyperref[sec:appendix:primops:Xor]{\lst{binary_|}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -285,6 +352,9 @@
 
 \subsubsection{\lst{Multiply} operation (OpCode 156)}
 \label{sec:serialization:operation:Multiply}
+
+Returns a multiplication of two numeric operands See~\hyperref[sec:appendix:primops:Multiply]{\lst{*}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -300,6 +370,9 @@
 
 \subsubsection{\lst{Division} operation (OpCode 157)}
 \label{sec:serialization:operation:Division}
+
+Integer division of the first operand by the second operand. See~\hyperref[sec:appendix:primops:Division]{\lst{/}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -315,6 +388,9 @@
 
 \subsubsection{\lst{Modulo} operation (OpCode 158)}
 \label{sec:serialization:operation:Modulo}
+
+Reminder from division of the first operand by the second operand. See~\hyperref[sec:appendix:primops:Modulo]{\lst{\%}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -330,6 +406,9 @@
 
 \subsubsection{\lst{Exponentiate} operation (OpCode 159)}
 \label{sec:serialization:operation:Exponentiate}
+
+Exponentiate this \lst{GroupElement} to the given number. Returns this to the power of k See~\hyperref[sec:type:GroupElement:exp]{\lst{GroupElement.exp}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -345,6 +424,9 @@
 
 \subsubsection{\lst{MultiplyGroup} operation (OpCode 160)}
 \label{sec:serialization:operation:MultiplyGroup}
+
+Group operation. See~\hyperref[sec:type:GroupElement:multiply]{\lst{GroupElement.multiply}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -360,6 +442,9 @@
 
 \subsubsection{\lst{Min} operation (OpCode 161)}
 \label{sec:serialization:operation:Min}
+
+Minimum value of two operands. See~\hyperref[sec:appendix:primops:Min]{\lst{min}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -375,6 +460,9 @@
 
 \subsubsection{\lst{Max} operation (OpCode 162)}
 \label{sec:serialization:operation:Max}
+
+Maximum value of two operands. See~\hyperref[sec:appendix:primops:Max]{\lst{max}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -390,6 +478,12 @@
 
 \subsubsection{\lst{MapCollection} operation (OpCode 173)}
 \label{sec:serialization:operation:MapCollection}
+
+ Builds a new collection by applying a function to all elements of this collection.
+ Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
+ \lst{f} to each element of this collection and collecting the results.
+         See~\hyperref[sec:type:SCollection:map]{\lst{SCollection.map}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -405,6 +499,11 @@
 
 \subsubsection{\lst{Exists} operation (OpCode 174)}
 \label{sec:serialization:operation:Exists}
+
+Tests whether a predicate holds for at least one element of this collection.
+Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
+         See~\hyperref[sec:type:SCollection:exists]{\lst{SCollection.exists}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -420,6 +519,12 @@
 
 \subsubsection{\lst{ForAll} operation (OpCode 175)}
 \label{sec:serialization:operation:ForAll}
+
+Tests whether a predicate holds for all elements of this collection.
+Returns \lst{true} if this collection is empty or the given predicate \lst{p}
+holds for all elements of this collection, otherwise \lst{false}.
+         See~\hyperref[sec:type:SCollection:forall]{\lst{SCollection.forall}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -435,6 +540,9 @@
 
 \subsubsection{\lst{Fold} operation (OpCode 176)}
 \label{sec:serialization:operation:Fold}
+
+Applies a binary operator to a start value and all elements of this collection, going left to right. See~\hyperref[sec:type:SCollection:fold]{\lst{SCollection.fold}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -452,6 +560,9 @@
 
 \subsubsection{\lst{SizeOf} operation (OpCode 177)}
 \label{sec:serialization:operation:SizeOf}
+
+The size of the collection in elements. See~\hyperref[sec:type:SCollection:size]{\lst{SCollection.size}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -465,6 +576,9 @@
 
 \subsubsection{\lst{ByIndex} operation (OpCode 178)}
 \label{sec:serialization:operation:ByIndex}
+
+Return the element of collection if \lst{index} is in range \lst{0 .. size-1} See~\hyperref[sec:type:SCollection:getOrElse]{\lst{SCollection.getOrElse}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -488,6 +602,9 @@
 
 \subsubsection{\lst{Append} operation (OpCode 179)}
 \label{sec:serialization:operation:Append}
+
+Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) See~\hyperref[sec:type:SCollection:append]{\lst{SCollection.append}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -503,6 +620,14 @@
 
 \subsubsection{\lst{Slice} operation (OpCode 180)}
 \label{sec:serialization:operation:Slice}
+
+Selects an interval of elements.  The returned collection is made up
+  of all elements \lst{x} which satisfy the invariant:
+  \lst{
+     from <= indexOf(x) < until
+  }
+         See~\hyperref[sec:type:SCollection:slice]{\lst{SCollection.slice}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -520,6 +645,9 @@
 
 \subsubsection{\lst{TreeLookup} operation (OpCode 183)}
 \label{sec:serialization:operation:TreeLookup}
+
+ See~\hyperref[sec:appendix:primops:TreeLookup]{\lst{treeLookup}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -537,6 +665,9 @@
 
 \subsubsection{\lst{ExtractAmount} operation (OpCode 193)}
 \label{sec:serialization:operation:ExtractAmount}
+
+Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure) See~\hyperref[sec:type:Box:value]{\lst{Box.value}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -550,6 +681,10 @@
 
 \subsubsection{\lst{ExtractScriptBytes} operation (OpCode 194)}
 \label{sec:serialization:operation:ExtractScriptBytes}
+
+Serialized bytes of guarding script, which should be evaluated to true in order to
+ open this box. (aka spend it in a transaction) See~\hyperref[sec:type:Box:propositionBytes]{\lst{Box.propositionBytes}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -563,6 +698,9 @@
 
 \subsubsection{\lst{ExtractBytes} operation (OpCode 195)}
 \label{sec:serialization:operation:ExtractBytes}
+
+Serialized bytes of this box's content, including proposition bytes. See~\hyperref[sec:type:Box:bytes]{\lst{Box.bytes}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -576,6 +714,9 @@
 
 \subsubsection{\lst{ExtractBytesWithNoRef} operation (OpCode 196)}
 \label{sec:serialization:operation:ExtractBytesWithNoRef}
+
+Serialized bytes of this box's content, excluding transactionId and index of output. See~\hyperref[sec:type:Box:bytesWithoutRef]{\lst{Box.bytesWithoutRef}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -589,6 +730,9 @@
 
 \subsubsection{\lst{ExtractId} operation (OpCode 197)}
 \label{sec:serialization:operation:ExtractId}
+
+Blake2b256 hash of this box's content, basically equals to \lst{blake2b256(bytes)} See~\hyperref[sec:type:Box:id]{\lst{Box.id}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -602,6 +746,12 @@
 
 \subsubsection{\lst{ExtractRegisterAs} operation (OpCode 198)}
 \label{sec:serialization:operation:ExtractRegisterAs}
+
+ Extracts register by id and type.
+ Type param \lst{T} expected type of the register.
+ Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
+         See~\hyperref[sec:type:Box:getReg]{\lst{Box.getReg}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -619,6 +769,12 @@
 
 \subsubsection{\lst{ExtractCreationInfo} operation (OpCode 199)}
 \label{sec:serialization:operation:ExtractCreationInfo}
+
+ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
+ is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
+ identifier followed by box index in the transaction outputs.
+         See~\hyperref[sec:type:Box:creationInfo]{\lst{Box.creationInfo}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -632,6 +788,9 @@
 
 \subsubsection{\lst{CalcBlake2b256} operation (OpCode 203)}
 \label{sec:serialization:operation:CalcBlake2b256}
+
+Calculate Blake2b hash from \lst{input} bytes. See~\hyperref[sec:appendix:primops:CalcBlake2b256]{\lst{blake2b256}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -645,6 +804,9 @@
 
 \subsubsection{\lst{CalcSha256} operation (OpCode 204)}
 \label{sec:serialization:operation:CalcSha256}
+
+Calculate Sha256 hash from \lst{input} bytes. See~\hyperref[sec:appendix:primops:CalcSha256]{\lst{sha256}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -656,8 +818,74 @@
 \end{tabularx}\)
        
 
+\subsubsection{\lst{CreateProveDlog} operation (OpCode 205)}
+\label{sec:serialization:operation:CreateProveDlog}
+
+ErgoTree operation to create a new \\lst{SigmaProp} value representing public key
+ of discrete logarithm signature protocol.
+         See~\hyperref[sec:appendix:primops:CreateProveDlog]{\lst{proveDlog}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ value $ & \lst{Expr} & [1, *] & element of elliptic curve group \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{CreateProveDHTuple} operation (OpCode 206)}
+\label{sec:serialization:operation:CreateProveDHTuple}
+
+ ErgoTree operation to create a new SigmaProp value representing public key
+ of Diffie Hellman signature protocol.
+ Common input: (g,h,u,v)
+         See~\hyperref[sec:appendix:primops:CreateProveDHTuple]{\lst{proveDHTuple}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ g $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ h $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ u $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ v $ & \lst{Expr} & [1, *] &  \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{SigmaPropBytes} operation (OpCode 208)}
+\label{sec:serialization:operation:SigmaPropBytes}
+
+Serialized bytes of this sigma proposition taken as ErgoTree. See~\hyperref[sec:type:SigmaProp:propBytes]{\lst{SigmaProp.propBytes}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
+    \hline
+      
+\end{tabularx}\)
+       
+
 \subsubsection{\lst{BoolToSigmaProp} operation (OpCode 209)}
 \label{sec:serialization:operation:BoolToSigmaProp}
+
+Embedding of \\lst{Boolean} values to \\lst{SigmaProp} values.
+ As an example, this operation allows boolean experessions
+ to be used as arguments of \\lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
+ During execution results to either \\lst{TrueProp} or \\lst{FalseProp} values of \\lst{SigmaProp} type.
+         See~\hyperref[sec:appendix:primops:BoolToSigmaProp]{\lst{sigmaProp}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -671,6 +899,15 @@
 
 \subsubsection{\lst{DeserializeContext} operation (OpCode 212)}
 \label{sec:serialization:operation:DeserializeContext}
+
+Extracts context variable as \lst{Coll[Byte]}, deserializes it to script
+ and then executes this script in the current context.
+ The original \lst{Coll[Byte]} of the script is available as \lst{getVar[Coll[Byte]](id)}.
+ Type parameter \lst{V} result type of the deserialized script.
+ Throws an exception if the actual script type doesn't conform to T.
+ Returns a result of the script execution in the current context
+         See~\hyperref[sec:appendix:primops:DeserializeContext]{\lst{executeFromVar}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -686,6 +923,15 @@
 
 \subsubsection{\lst{DeserializeRegister} operation (OpCode 213)}
 \label{sec:serialization:operation:DeserializeRegister}
+
+Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
+ and then executes this script in the current context.
+ The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
+ Type parameter \lst{T} result type of the deserialized script.
+ Throws an exception if the actual script type doesn't conform to \lst{T}.
+ Returns a result of the script execution in the current context
+         See~\hyperref[sec:appendix:primops:DeserializeRegister]{\lst{executeFromSelfReg}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -709,6 +955,9 @@
 
 \subsubsection{\lst{ValDef} operation (OpCode 214)}
 \label{sec:serialization:operation:ValDef}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -721,6 +970,9 @@
 
 \subsubsection{\lst{FunDef} operation (OpCode 215)}
 \label{sec:serialization:operation:FunDef}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -733,6 +985,9 @@
 
 \subsubsection{\lst{BlockValue} operation (OpCode 216)}
 \label{sec:serialization:operation:BlockValue}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -753,6 +1008,9 @@
 
 \subsubsection{\lst{FuncValue} operation (OpCode 217)}
 \label{sec:serialization:operation:FuncValue}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -773,8 +1031,33 @@
 \end{tabularx}\)
        
 
+\subsubsection{\lst{Apply} operation (OpCode 218)}
+\label{sec:serialization:operation:Apply}
+
+Apply the function to the arguments.  See~\hyperref[sec:appendix:primops:Apply]{\lst{apply}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ func $ & \lst{Expr} & [1, *] & function which is applied \\
+    \hline
+           $ \#items $ & \lst{VLQ(UInt)} & [1, *] & number of items in the collection \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$\#items$} \\
+    \hline
+             ~~ $ args_i $ & \lst{Expr} & [1, *] & i-th item in the list of arguments \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
+\end{tabularx}\)
+       
+
 \subsubsection{\lst{PropertyCall} operation (OpCode 219)}
 \label{sec:serialization:operation:PropertyCall}
+
+Convert true to 1 and false to 0 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -792,6 +1075,9 @@
 
 \subsubsection{\lst{MethodCall} operation (OpCode 220)}
 \label{sec:serialization:operation:MethodCall}
+
+ 
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -815,6 +1101,9 @@
 
 \subsubsection{\lst{GetVar} operation (OpCode 227)}
 \label{sec:serialization:operation:GetVar}
+
+Get context variable with given \lst{varId} and type. See~\hyperref[sec:appendix:primops:GetVar]{\lst{getVar}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -830,6 +1119,9 @@
 
 \subsubsection{\lst{OptionGet} operation (OpCode 228)}
 \label{sec:serialization:operation:OptionGet}
+
+Returns the option's value. The option must be nonempty. Throws exception if the option is empty. See~\hyperref[sec:type:SOption:get]{\lst{SOption.get}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -843,6 +1135,11 @@
 
 \subsubsection{\lst{OptionGetOrElse} operation (OpCode 229)}
 \label{sec:serialization:operation:OptionGetOrElse}
+
+Returns the option's value if the option is nonempty, otherwise
+return the result of evaluating \lst{default}.
+         See~\hyperref[sec:type:SOption:getOrElse]{\lst{SOption.getOrElse}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -858,6 +1155,9 @@
 
 \subsubsection{\lst{OptionIsDefined} operation (OpCode 230)}
 \label{sec:serialization:operation:OptionIsDefined}
+
+Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} otherwise. See~\hyperref[sec:type:SOption:isDefined]{\lst{SOption.isDefined}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -871,6 +1171,9 @@
 
 \subsubsection{\lst{ModQ} operation (OpCode 231)}
 \label{sec:serialization:operation:ModQ}
+
+Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. See~\hyperref[sec:type:BigInt:modQ]{\lst{BigInt.modQ}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -884,6 +1187,9 @@
 
 \subsubsection{\lst{PlusModQ} operation (OpCode 232)}
 \label{sec:serialization:operation:PlusModQ}
+
+Adds this number with \lst{other} by module Q. See~\hyperref[sec:type:BigInt:plusModQ]{\lst{BigInt.plusModQ}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -899,6 +1205,9 @@
 
 \subsubsection{\lst{MinusModQ} operation (OpCode 233)}
 \label{sec:serialization:operation:MinusModQ}
+
+Subtracts \lst{other} number from this by module Q. See~\hyperref[sec:type:BigInt:minusModQ]{\lst{BigInt.minusModQ}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -914,6 +1223,9 @@
 
 \subsubsection{\lst{SigmaAnd} operation (OpCode 234)}
 \label{sec:serialization:operation:SigmaAnd}
+
+Returns sigma proposition which is proven when \emph{all} the elements in collection are proven. See~\hyperref[sec:appendix:primops:SigmaAnd]{\lst{allZK}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -931,6 +1243,9 @@
 
 \subsubsection{\lst{SigmaOr} operation (OpCode 235)}
 \label{sec:serialization:operation:SigmaOr}
+
+Returns sigma proposition which is proven when \emph{any} of the elements in collection is proven. See~\hyperref[sec:appendix:primops:SigmaOr]{\lst{anyZK}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -946,8 +1261,249 @@
 \end{tabularx}\)
        
 
+\subsubsection{\lst{BinOr} operation (OpCode 236)}
+\label{sec:serialization:operation:BinOr}
+
+Logical OR of two operands See~\hyperref[sec:appendix:primops:BinOr]{\lst{||}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinAnd} operation (OpCode 237)}
+\label{sec:serialization:operation:BinAnd}
+
+Logical AND of two operands See~\hyperref[sec:appendix:primops:BinAnd]{\lst{&&}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{DecodePoint} operation (OpCode 238)}
+\label{sec:serialization:operation:DecodePoint}
+
+Convert \lst{Coll[Byte]} to \lst{GroupElement} using \lst{GroupElementSerializer} See~\hyperref[sec:appendix:primops:DecodePoint]{\lst{decodePoint}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & serialized bytes of some \lst{GroupElement} value \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{LogicalNot} operation (OpCode 239)}
+\label{sec:serialization:operation:LogicalNot}
+
+Logical NOT operation. Returns \lst{true} if input is \lst{false} and \lst{false} if input is \lst{true}. See~\hyperref[sec:appendix:primops:LogicalNot]{\lst{unary_!}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & input \lst{Boolean} value \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Negation} operation (OpCode 240)}
+\label{sec:serialization:operation:Negation}
+
+Negates numeric value \lst{x} by returning \lst{-x}. See~\hyperref[sec:appendix:primops:Negation]{\lst{unary_-}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitInversion} operation (OpCode 241)}
+\label{sec:serialization:operation:BitInversion}
+
+Invert every bit of the numeric value. See~\hyperref[sec:appendix:primops:BitInversion]{\lst{unary_~}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitOr} operation (OpCode 242)}
+\label{sec:serialization:operation:BitOr}
+
+Bitwise OR of two numeric operands. See~\hyperref[sec:appendix:primops:BitOr]{\lst{bit_|}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitAnd} operation (OpCode 243)}
+\label{sec:serialization:operation:BitAnd}
+
+Bitwise AND of two numeric operands. See~\hyperref[sec:appendix:primops:BitAnd]{\lst{bit_&}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinXor} operation (OpCode 244)}
+\label{sec:serialization:operation:BinXor}
+
+Logical XOR of two operands See~\hyperref[sec:appendix:primops:BinXor]{\lst{^}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \hline
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+    \hline
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitXor} operation (OpCode 245)}
+\label{sec:serialization:operation:BitXor}
+
+Bitwise XOR of two numeric operands. See~\hyperref[sec:appendix:primops:BitXor]{\lst{bit_^}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftRight} operation (OpCode 246)}
+\label{sec:serialization:operation:BitShiftRight}
+
+Right shift of bits. See~\hyperref[sec:appendix:primops:BitShiftRight]{\lst{bit_>>}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftLeft} operation (OpCode 247)}
+\label{sec:serialization:operation:BitShiftLeft}
+
+Left shift of bits. See~\hyperref[sec:appendix:primops:BitShiftLeft]{\lst{bit_<<}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftRightZeroed} operation (OpCode 248)}
+\label{sec:serialization:operation:BitShiftRightZeroed}
+
+Right shift of bits. See~\hyperref[sec:appendix:primops:BitShiftRightZeroed]{\lst{bit_>>>}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
 \subsubsection{\lst{XorOf} operation (OpCode 255)}
 \label{sec:serialization:operation:XorOf}
+
+Similar to \lst{allOf}, but performing logical XOR operation between all conditions instead of \lst{&&} See~\hyperref[sec:appendix:primops:XorOf]{\lst{xorOf}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -961,6 +1517,19 @@
 
 \subsubsection{\lst{SubstConstants} operation (OpCode 116)}
 \label{sec:serialization:operation:SubstConstants}
+
+Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+ at given positions with new values. This operation allow to use serialized scripts as
+ pre-defined templates.
+ The typical usage is "check that output box have proposition equal to given script bytes,
+ where minerPk (constants(0)) is replaced with currentMinerPk".
+ Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+ During substitution each value from newValues is checked to be an instance of the corresponding type.
+ This means, the constants during substitution cannot change their types.
+
+ Returns original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same.
+         See~\hyperref[sec:appendix:primops:SubstConstants]{\lst{substConstants}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -978,6 +1547,9 @@
 
 \subsubsection{\lst{LongToByteArray} operation (OpCode 122)}
 \label{sec:serialization:operation:LongToByteArray}
+
+Converts \lst{Long} value to big-endian bytes representation. See~\hyperref[sec:appendix:primops:LongToByteArray]{\lst{longToByteArray}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -991,6 +1563,9 @@
 
 \subsubsection{\lst{ByteArrayToBigInt} operation (OpCode 123)}
 \label{sec:serialization:operation:ByteArrayToBigInt}
+
+Convert big-endian bytes representation (Coll[Byte]) to BigInt value. See~\hyperref[sec:appendix:primops:ByteArrayToBigInt]{\lst{byteArrayToBigInt}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -1004,6 +1579,9 @@
 
 \subsubsection{\lst{ByteArrayToLong} operation (OpCode 124)}
 \label{sec:serialization:operation:ByteArrayToLong}
+
+Convert big-endian bytes representation (Coll[Byte]) to Long value. See~\hyperref[sec:appendix:primops:ByteArrayToLong]{\lst{byteArrayToLong}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -1017,6 +1595,9 @@
 
 \subsubsection{\lst{Downcast} operation (OpCode 125)}
 \label{sec:serialization:operation:Downcast}
+
+Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow. See~\hyperref[sec:appendix:primops:Downcast]{\lst{downcast}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
@@ -1032,6 +1613,9 @@
 
 \subsubsection{\lst{Upcast} operation (OpCode 126)}
 \label{sec:serialization:operation:Upcast}
+
+Cast this numeric value to a bigger type (e.g. Int to Long) See~\hyperref[sec:appendix:primops:Upcast]{\lst{upcast}}
+
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline

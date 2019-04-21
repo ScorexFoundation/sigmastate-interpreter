@@ -1,5 +1,6 @@
 
 \subsubsection{\lst{SCollection.size} method (Code 12.1)}
+\label{sec:type:SCollection:size}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -15,7 +16,7 @@
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:SizeOf]{\lst{SizeOf(opCode=177)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SizeOf]{\lst{SizeOf}} \\
   \hline
        
 \end{tabularx}
@@ -23,6 +24,7 @@
 
 
 \subsubsection{\lst{SCollection.getOrElse} method (Code 12.2)}
+\label{sec:type:SCollection:getOrElse}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -39,7 +41,7 @@
   \bf{Result} & \lst{IV} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex(opCode=178)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
   \hline
        
 \end{tabularx}
@@ -47,6 +49,7 @@
 
 
 \subsubsection{\lst{SCollection.map} method (Code 12.3)}
+\label{sec:type:SCollection:map}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -65,7 +68,7 @@
   \bf{Result} & \lst{Coll[OV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MapCollection]{\lst{MapCollection(opCode=173)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MapCollection]{\lst{MapCollection}} \\
   \hline
        
 \end{tabularx}
@@ -73,6 +76,7 @@
 
 
 \subsubsection{\lst{SCollection.exists} method (Code 12.4)}
+\label{sec:type:SCollection:exists}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -90,7 +94,7 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
   \bf{Result} & \lst{Boolean} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:Exists]{\lst{Exists(opCode=174)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Exists]{\lst{Exists}} \\
   \hline
        
 \end{tabularx}
@@ -98,6 +102,7 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
 
 
 \subsubsection{\lst{SCollection.fold} method (Code 12.5)}
+\label{sec:type:SCollection:fold}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -114,7 +119,7 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
   \bf{Result} & \lst{OV} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:Fold]{\lst{Fold(opCode=176)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Fold]{\lst{Fold}} \\
   \hline
        
 \end{tabularx}
@@ -122,6 +127,7 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
 
 
 \subsubsection{\lst{SCollection.forall} method (Code 12.6)}
+\label{sec:type:SCollection:forall}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -140,7 +146,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Boolean} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ForAll]{\lst{ForAll(opCode=175)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ForAll]{\lst{ForAll}} \\
   \hline
        
 \end{tabularx}
@@ -148,6 +154,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.slice} method (Code 12.7)}
+\label{sec:type:SCollection:slice}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -169,7 +176,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:Slice]{\lst{Slice(opCode=180)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Slice]{\lst{Slice}} \\
   \hline
        
 \end{tabularx}
@@ -177,6 +184,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.filter} method (Code 12.8)}
+\label{sec:type:SCollection:filter}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -195,7 +203,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:Filter]{\lst{Filter(opCode=181)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Filter]{\lst{Filter}} \\
   \hline
        
 \end{tabularx}
@@ -203,6 +211,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.append} method (Code 12.9)}
+\label{sec:type:SCollection:append}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -218,7 +227,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:Append]{\lst{Append(opCode=179)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Append]{\lst{Append}} \\
   \hline
        
 \end{tabularx}
@@ -226,6 +235,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.apply} method (Code 12.10)}
+\label{sec:type:SCollection:apply}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -246,7 +256,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{IV} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex(opCode=178)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
   \hline
        
 \end{tabularx}
@@ -254,6 +264,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.<<} method (Code 12.11)}
+\label{sec:type:SCollection:<<}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -275,6 +286,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.>>} method (Code 12.12)}
+\label{sec:type:SCollection:>>}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -296,6 +308,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.>>>} method (Code 12.13)}
+\label{sec:type:SCollection:>>>}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -317,6 +330,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.indices} method (Code 12.14)}
+\label{sec:type:SCollection:indices}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -334,7 +348,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[Int]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall(opCode=219)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
        
 \end{tabularx}
@@ -342,6 +356,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.flatMap} method (Code 12.15)}
+\label{sec:type:SCollection:flatMap}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -363,7 +378,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[OV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -371,6 +386,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.segmentLength} method (Code 12.16)}
+\label{sec:type:SCollection:segmentLength}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -390,7 +406,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -398,6 +414,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.indexWhere} method (Code 12.17)}
+\label{sec:type:SCollection:indexWhere}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -417,7 +434,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -425,6 +442,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.lastIndexWhere} method (Code 12.18)}
+\label{sec:type:SCollection:lastIndexWhere}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -443,7 +461,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -451,6 +469,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.patch} method (Code 12.19)}
+\label{sec:type:SCollection:patch}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -466,7 +485,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -474,6 +493,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.updated} method (Code 12.20)}
+\label{sec:type:SCollection:updated}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -489,7 +509,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -497,6 +517,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.updateMany} method (Code 12.21)}
+\label{sec:type:SCollection:updateMany}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -512,7 +533,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -520,6 +541,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.unionSets} method (Code 12.22)}
+\label{sec:type:SCollection:unionSets}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -535,7 +557,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -543,6 +565,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.diff} method (Code 12.23)}
+\label{sec:type:SCollection:diff}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -558,7 +581,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -566,6 +589,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.intersect} method (Code 12.24)}
+\label{sec:type:SCollection:intersect}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -581,7 +605,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -589,6 +613,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.prefixLength} method (Code 12.25)}
+\label{sec:type:SCollection:prefixLength}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -604,7 +629,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -612,6 +637,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.indexOf} method (Code 12.26)}
+\label{sec:type:SCollection:indexOf}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -627,7 +653,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -635,6 +661,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.lastIndexOf} method (Code 12.27)}
+\label{sec:type:SCollection:lastIndexOf}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -650,7 +677,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Int} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -658,6 +685,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.find} method (Code 12.28)}
+\label{sec:type:SCollection:find}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -673,7 +701,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Option[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -681,6 +709,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.zip} method (Code 12.29)}
+\label{sec:type:SCollection:zip}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -696,7 +725,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[(IV,OV)]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -704,6 +733,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.distinct} method (Code 12.30)}
+\label{sec:type:SCollection:distinct}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -719,7 +749,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall(opCode=219)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
        
 \end{tabularx}
@@ -727,6 +757,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.startsWith} method (Code 12.31)}
+\label{sec:type:SCollection:startsWith}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -742,7 +773,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Boolean} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -750,6 +781,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.endsWith} method (Code 12.32)}
+\label{sec:type:SCollection:endsWith}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -765,7 +797,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Boolean} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -773,6 +805,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.partition} method (Code 12.33)}
+\label{sec:type:SCollection:partition}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -788,7 +821,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{(Coll[IV],Coll[IV])} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}
@@ -796,6 +829,7 @@ holds for all elements of this collection, otherwise \lst{false}.
 
 
 \subsubsection{\lst{SCollection.mapReduce} method (Code 12.34)}
+\label{sec:type:SCollection:mapReduce}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -811,7 +845,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \bf{Result} & \lst{Coll[(K,V)]} \\
   \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall(opCode=220)}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
        
 \end{tabularx}

@@ -80,7 +80,24 @@ trait SpecGen {
       val funcOpt = funcsByOpCode.get(opCode).map(_.head)
       (opCode, opDesc, methodOpt, funcOpt)
     }
-    table
+    val rowsWithInfo =
+      for ((opCode, opDesc, optM, optF) <- table if optM.nonEmpty || optF.nonEmpty)
+        yield (opDesc, optM, optF)
+    rowsWithInfo
+  }
+
+  def getOpInfo(opDesc: ValueCompanion, optM: Option[SMethod], optF: Option[PredefinedFunc]): OpInfo = {
+    (optM, optF) match {
+      case (Some(m), _) =>
+        val description = m.docInfo.map(i => i.description).opt()
+        val args = m.docInfo.map(i => i.args).getOrElse(Seq())
+        OpInfo(opDesc, description, args, Right(m))
+      case (_, Some(f)) =>
+        val description = f.docInfo.description
+        val args = f.docInfo.args
+        OpInfo(opDesc, description, args, Left(f))
+      case p => sys.error(s"Unexpected $opDesc with $p")
+    }
   }
 
   def printTypes(companions: Seq[STypeCompanion]) = {
