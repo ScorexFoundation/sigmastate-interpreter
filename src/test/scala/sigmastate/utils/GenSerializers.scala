@@ -125,7 +125,7 @@ object GenSerializers extends SpecGen {
       val rows = printSerScopeSlots(s)
       s"""
         |\\subsubsection{\\lst{$opName} operation (OpCode $opCode)}
-        |
+        |\\label{sec:serialization:operation:$opName}
         |\\noindent
         |\\(\\begin{tabularx}{\\textwidth}{| l | l | l | X |}
         |    \\hline

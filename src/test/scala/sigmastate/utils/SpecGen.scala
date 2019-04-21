@@ -132,14 +132,17 @@ trait SpecGen {
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
-    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt(d =>
+    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt { d =>
+      val opName = d.typeName
+      val opCode = d.opCode.toUByte
       s"""
-        |  \\bf{Serialized as} & \\lst{${d.typeName}(opCode=${d.opCode.toUByte})} \\\\
+        |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$opName]{\\lst{$opName}} \\\\
         |  \\hline
        """.stripMargin
-    )
+    }
     s"""
       |\\subsubsection{\\lst{$typeName.${m.name}} method (Code ${m.objType.typeId}.${m.methodId})}
+      |\\label{sec:type:$typeName:${m.name}}
       |\\noindent
       |\\begin{tabularx}{\\textwidth}{| l | X |}
       |   \\hline
