@@ -29,7 +29,14 @@ A Local Exchange Trading System On Top Of Ergo
  is adding the member to the directory. The transaction creates a new member's box which contains
  the member's singleton token. The member's box is protected the exchange contract. Also, the newly
  created member's box has initial balance written down into the R4 register, and the balance is 
- equal to zero in our example.
+ equal to zero in our example. The management contract box is controlled usually by a committee, and the 
+ committee could evolve over time. To support that, we allow committee logic to reside in the register R5.
+ For example, if a new committee member has been added along with a new LETS member,
+ the input management contract box is requiring 2-out-of-3 signature, and the output box requires 3-out-of-4 signature.
+ In this case contents of the R5 register in the input and the output box would differ.
+ 
+ The management contract code with comments is provided below. Please note that "userContractHash" is about exchange
+ contract hash. 
  
     val selfOut = OUTPUTS(0)
  
@@ -72,7 +79,56 @@ A Local Exchange Trading System On Top Of Ergo
     correctTokenAmounts && scriptCorrect && treeCorrect && zeroUserBalance && properUserScript       
  
  
- The exchange script 
+ The exchange contract script is pretty straightforward and provided below along with comments describing its logic. In the 
+ contract, it is assumed that a spending transaction for an exchange contract box is receiving at least two inputs, 
+ and the first two inputs should be protected by the exchange contract script and contain LETS member tokens. To check
+ that singleton member tokens in the inputs are indeed belong to the LETS system, a spending transaction provides the management
+ contract box as the first read-only data input, and also should provide a proof that the member tokens are belong to 
+ the directory authenticated via the R4 register of the management contract box. 
  
+    // Minimal balance allowed for LETS trader
+    val minBalance = -20000
  
+    val lookupProof = getVar[Coll[Byte]](1).get
  
+    // The read-only box which contains directory of LETS members
+    val treeHolderBox = CONTEXT.dataInputs(0)
+    val properTree = treeHolderBox.tokens(0)._1 == letsToken
+    val membersTree = treeHolderBox.R4[AvlTree].get
+ 
+    // A spending transaction is taking two boxes of LETS members willing to make a deal,
+    // and returns boxes with modified balances.
+    val participant0 = INPUTS(0)
+    val participant1 = INPUTS(1)
+    val participantOut0 = OUTPUTS(0)
+    val participantOut1 = OUTPUTS(1)
+ 
+    //Check that members are indeed belong to the LETS
+    val token0 = participant0.tokens(0)._1
+    val token1 = participant1.tokens(0)._1
+    val memberTokens = Coll(token0, token1)
+    val membersExist = membersTree.getMany(memberTokens, lookupProof).forall({ (o: Option[Coll[Byte]]) => o.isDefined })
+ 
+    // Check that LETS member balance changes during the deal are correct
+    val initialBalance0 = participant0.R4[Long].get
+    val initialBalance1 = participant1.R4[Long].get
+    val finishBalance0  = participantOut0.R4[Long].get
+    val finishBalance1  = participantOut1.R4[Long].get
+    val diff0 = finishBalance0 - initialBalance0
+    val diff1 = finishBalance1 - initialBalance1
+    val diffCorrect = diff0 == -diff1
+    val balancesCorrect = (finishBalance0 > minBalance) && (finishBalance1 > minBalance) && diffCorrect
+ 
+    // Check that member boxes save their scripts.
+    // todo: optimization could be made here
+    val script0Saved = participantOut0.propositionBytes == participant0.propositionBytes
+    val script1Saved = participantOut1.propositionBytes == participant1.propositionBytes
+    val scriptsSaved = script0Saved && script1Saved
+ 
+    // Member-specific box protection
+    val selfPubKey = SELF.R5[SigmaProp].get
+ 
+    selfPubKey && properTree && membersExist && diffCorrect && scriptsSaved
+    
+ Note that both contracts could be modified in many ways to get new systems with different properties. So hopefully 
+ some day this article will be continued.
