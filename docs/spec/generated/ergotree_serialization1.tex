@@ -6,13 +6,13 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         numItems & \lst{VLQ(UShort)} & \text{[1, *]} & \text{number of item in a collection of expressions} \\
+         $ numItems $ & \lst{VLQ(UShort)} & [1, *] & number of item in a collection of expressions \\
     \hline
-           elementType & \lst{Type} & \text{[1, *]} & \text{type of each expression in the collection} \\
+           $ elementType $ & \lst{Type} & [1, *] & type of each expression in the collection \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$numItems$} \\
     \hline
-             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{expression in i-th position} \\
+             ~~ $ item_i $ & \lst{Expr} & [1, *] & expression in i-th position \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{tabularx}\)
@@ -25,9 +25,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         numBits & \lst{VLQ(UShort)} & \text{[1, *]} & \text{number of items in a collection of Boolean values} \\
+         $ numBits $ & \lst{VLQ(UShort)} & [1, *] & number of items in a collection of Boolean values \\
     \hline
-           bits & \lst{Bits} & \text{[1, 1024]} & \text{Boolean values encoded as as bits (right most byte is zero-padded on the right)} \\
+           $ bits $ & \lst{Bits} & [1, 1024] & Boolean values encoded as as bits (right most byte is zero-padded on the right) \\
     \hline
       
 \end{tabularx}\)
@@ -40,11 +40,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         numItems & \lst{UByte} & \text{1} & \text{number of items in the tuple} \\
+         $ numItems $ & \lst{UByte} & 1 & number of items in the tuple \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$numItems$} \\
     \hline
-             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{tuple's item in i-th position} \\
+             ~~ $ item_i $ & \lst{Expr} & [1, *] & tuple's item in i-th position \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{tabularx}\)
@@ -57,9 +57,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{tuple of items} \\
+         $ input $ & \lst{Expr} & [1, *] & tuple of items \\
     \hline
-           fieldIndex & \lst{Byte} & \text{1} & \text{index of an item to select} \\
+           $ fieldIndex $ & \lst{Byte} & 1 & index of an item to select \\
     \hline
       
 \end{tabularx}\)
@@ -76,9 +76,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -95,9 +95,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -114,9 +114,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -133,9 +133,9 @@
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -150,18 +150,18 @@
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
-    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
     \hline
-            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
     \hline
-          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
     \hline
       
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -176,18 +176,18 @@
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
-    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
     \hline
-            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
     \hline
-          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
     \hline
       
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
@@ -200,11 +200,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         condition & \lst{Expr} & \text{[1, *]} & \text{condition expression} \\
+         $ condition $ & \lst{Expr} & [1, *] & condition expression \\
     \hline
-           trueBranch & \lst{Expr} & \text{[1, *]} & \text{expression to execute when \lst{condition == true}} \\
+           $ trueBranch $ & \lst{Expr} & [1, *] & expression to execute when \lst{condition == true} \\
     \hline
-           falseBranch & \lst{Expr} & \text{[1, *]} & \text{expression to execute when \lst{condition == false}} \\
+           $ falseBranch $ & \lst{Expr} & [1, *] & expression to execute when \lst{condition == false} \\
     \hline
       
 \end{tabularx}\)
@@ -217,7 +217,20 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
+         $ conditions $ & \lst{Expr} & [1, *] & a collection of conditions \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{OR} operation (OpCode 151)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ conditions $ & \lst{Expr} & [1, *] & a collection of conditions \\
     \hline
       
 \end{tabularx}\)
@@ -230,9 +243,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         bound & \lst{Expr} & \text{[1, *]} & \text{required minimum of proven children} \\
+         $ bound $ & \lst{Expr} & [1, *] & required minimum of proven children \\
     \hline
-           children & \lst{Expr} & \text{[1, *]} & \text{proposition to be proven/validated} \\
+           $ children $ & \lst{Expr} & [1, *] & proposition to be proven/validated \\
     \hline
       
 \end{tabularx}\)
@@ -245,9 +258,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -260,9 +273,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -275,9 +288,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -290,9 +303,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -305,9 +318,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -320,9 +333,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -335,9 +348,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           k & \lst{Expr} & \text{[1, *]} & \text{The power} \\
+           $ k $ & \lst{Expr} & [1, *] & The power \\
     \hline
       
 \end{tabularx}\)
@@ -350,9 +363,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           other & \lst{Expr} & \text{[1, *]} & \text{other element of the group} \\
+           $ other $ & \lst{Expr} & [1, *] & other element of the group \\
     \hline
       
 \end{tabularx}\)
@@ -365,9 +378,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -380,9 +393,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)
@@ -395,9 +408,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           f & \lst{Expr} & \text{[1, *]} & \text{the function to apply to each element} \\
+           $ f $ & \lst{Expr} & [1, *] & the function to apply to each element \\
     \hline
       
 \end{tabularx}\)
@@ -410,9 +423,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
+           $ p $ & \lst{Expr} & [1, *] & the predicate used to test elements \\
     \hline
       
 \end{tabularx}\)
@@ -425,9 +438,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
+           $ p $ & \lst{Expr} & [1, *] & the predicate used to test elements \\
     \hline
       
 \end{tabularx}\)
@@ -440,11 +453,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           zero & \lst{Expr} & \text{[1, *]} & \text{a starting value} \\
+           $ zero $ & \lst{Expr} & [1, *] & a starting value \\
     \hline
-           op & \lst{Expr} & \text{[1, *]} & \text{the binary operator} \\
+           $ op $ & \lst{Expr} & [1, *] & the binary operator \\
     \hline
       
 \end{tabularx}\)
@@ -457,7 +470,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -470,17 +483,17 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           index & \lst{Expr} & \text{[1, *]} & \text{index of the element of this collection} \\
+           $ index $ & \lst{Expr} & [1, *] & index of the element of this collection \\
     \hline
-          \multicolumn{4}{l}{\lst{optional}~default} \\
+          \multicolumn{4}{l}{\lst{optional}~$default$} \\
     \hline
-    ~~tag & \lst{Byte} & 1 & \text{0 - no value; 1 - has value} \\
+    ~~$tag$ & \lst{Byte} & 1 & 0 - no value; 1 - has value \\
     \hline
-    \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
+    \multicolumn{4}{l}{~~\lst{when}~$tag == 1$} \\
     \hline
-             ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{value to return when \lst{index} is out of range} \\
+             ~~~~ $ default $ & \lst{Expr} & [1, *] & value to return when \lst{index} is out of range \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
 \end{tabularx}\)
@@ -493,9 +506,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           other & \lst{Expr} & \text{[1, *]} & \text{the collection to append at the end of this} \\
+           $ other $ & \lst{Expr} & [1, *] & the collection to append at the end of this \\
     \hline
       
 \end{tabularx}\)
@@ -508,11 +521,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           from & \lst{Expr} & \text{[1, *]} & \text{the lowest index to include from this collection} \\
+           $ from $ & \lst{Expr} & [1, *] & the lowest index to include from this collection \\
     \hline
-           until & \lst{Expr} & \text{[1, *]} & \text{the lowest index to EXCLUDE from this collection} \\
+           $ until $ & \lst{Expr} & [1, *] & the lowest index to EXCLUDE from this collection \\
     \hline
       
 \end{tabularx}\)
@@ -525,11 +538,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         tree & \lst{Expr} & \text{[1, *]} & \text{tree to lookup the key} \\
+         $ tree $ & \lst{Expr} & [1, *] & tree to lookup the key \\
     \hline
-           key & \lst{Expr} & \text{[1, *]} & \text{a key of an item in the \lst{tree} to lookup} \\
+           $ key $ & \lst{Expr} & [1, *] & a key of an item in the \lst{tree} to lookup \\
     \hline
-           proof & \lst{Expr} & \text{[1, *]} & \text{proof to perform verification of the operation} \\
+           $ proof $ & \lst{Expr} & [1, *] & proof to perform verification of the operation \\
     \hline
       
 \end{tabularx}\)
@@ -542,7 +555,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -555,7 +568,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -568,7 +581,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -581,7 +594,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -594,7 +607,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -607,11 +620,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           regId & \lst{Byte} & \text{1} & \text{zero-based identifier of the register.} \\
+           $ regId $ & \lst{Byte} & 1 & zero-based identifier of the register. \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{expected type of the value in register} \\
+           $ type $ & \lst{Type} & [1, *] & expected type of the value in register \\
     \hline
       
 \end{tabularx}\)
@@ -624,7 +637,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -637,7 +650,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
+         $ input $ & \lst{Expr} & [1, *] & collection of bytes \\
     \hline
       
 \end{tabularx}\)
@@ -650,7 +663,52 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
+         $ input $ & \lst{Expr} & [1, *] & collection of bytes \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{CreateProveDlog} operation (OpCode 205)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ value $ & \lst{Expr} & [1, *] & element of elliptic curve group \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{CreateProveDHTuple} operation (OpCode 206)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ g $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ h $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ u $ & \lst{Expr} & [1, *] &  \\
+    \hline
+           $ v $ & \lst{Expr} & [1, *] &  \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{SigmaPropBytes} operation (OpCode 208)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -663,7 +721,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         condition & \lst{Expr} & \text{[1, *]} & \text{boolean value to embed in SigmaProp value} \\
+         $ condition $ & \lst{Expr} & [1, *] & boolean value to embed in SigmaProp value \\
     \hline
       
 \end{tabularx}\)
@@ -676,9 +734,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         type & \lst{Type} & \text{[1, *]} & \text{expected type of the deserialized script} \\
+         $ type $ & \lst{Type} & [1, *] & expected type of the deserialized script \\
     \hline
-           id & \lst{Byte} & \text{1} & \text{identifier of the context variable} \\
+           $ id $ & \lst{Byte} & 1 & identifier of the context variable \\
     \hline
       
 \end{tabularx}\)
@@ -691,17 +749,17 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         id & \lst{Byte} & \text{1} & \text{identifier of the register} \\
+         $ id $ & \lst{Byte} & 1 & identifier of the register \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{expected type of the deserialized script} \\
+           $ type $ & \lst{Type} & [1, *] & expected type of the deserialized script \\
     \hline
-          \multicolumn{4}{l}{\lst{optional}~default} \\
+          \multicolumn{4}{l}{\lst{optional}~$default$} \\
     \hline
-    ~~tag & \lst{Byte} & 1 & \text{0 - no value; 1 - has value} \\
+    ~~$tag$ & \lst{Byte} & 1 & 0 - no value; 1 - has value \\
     \hline
-    \multicolumn{4}{l}{~~\lst{when}~tag == 1} \\
+    \multicolumn{4}{l}{~~\lst{when}~$tag == 1$} \\
     \hline
-             ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{optional default value, if register is not available} \\
+             ~~~~ $ default $ & \lst{Expr} & [1, *] & optional default value, if register is not available \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
 \end{tabularx}\)
@@ -738,14 +796,14 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         numItems & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of block items} \\
+         $ numItems $ & \lst{VLQ(UInt)} & [1, *] & number of block items \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numItems} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$numItems$} \\
     \hline
-             ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{block's item in i-th position} \\
+             ~~ $ item_i $ & \lst{Expr} & [1, *] & block's item in i-th position \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\\hline
-     result & \lst{Expr} & \text{[1, *]} & \text{result expression of the block} \\
+     $ result $ & \lst{Expr} & [1, *] & result expression of the block \\
     \hline
       
 \end{tabularx}\)
@@ -758,18 +816,37 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         numArgs & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of function arguments} \\
+         $ numArgs $ & \lst{VLQ(UInt)} & [1, *] & number of function arguments \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~numArgs} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$numArgs$} \\
     \hline
-             ~~ id_i & \lst{VLQ(UInt)} & \text{[1, *]} & \text{identifier of the i-th argument} \\
+             ~~ $ id_i $ & \lst{VLQ(UInt)} & [1, *] & identifier of the i-th argument \\
     \hline
-          ~~ type_i & \lst{Type} & \text{[1, *]} & \text{type of the i-th argument} \\
+          ~~ $ type_i $ & \lst{Type} & [1, *] & type of the i-th argument \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\\hline
-     body & \lst{Expr} & \text{[1, *]} & \text{function body, which is parameterized by arguments} \\
+     $ body $ & \lst{Expr} & [1, *] & function body, which is parameterized by arguments \\
     \hline
       
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Apply} operation (OpCode 218)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ func $ & \lst{Expr} & [1, *] & function which is applied \\
+    \hline
+           $ \#items $ & \lst{VLQ(UInt)} & [1, *] & number of items in the collection \\
+    \hline
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$\#items$} \\
+    \hline
+             ~~ $ args_i $ & \lst{Expr} & [1, *] & i-th item in the list of arguments \\
+    \hline
+          \multicolumn{4}{l}{\lst{end for}} \\
 \end{tabularx}\)
        
 
@@ -780,11 +857,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         typeCode & \lst{Byte} & \text{1} & \text{type of the method (see Table~\ref{table:predeftypes})} \\
+         $ typeCode $ & \lst{Byte} & 1 & type of the method (see Table~\ref{table:predeftypes}) \\
     \hline
-           methodCode & \lst{Byte} & \text{1} & \text{a code of the proprty} \\
+           $ methodCode $ & \lst{Byte} & 1 & a code of the proprty \\
     \hline
-           obj & \lst{Expr} & \text{[1, *]} & \text{receiver object of this property call} \\
+           $ obj $ & \lst{Expr} & [1, *] & receiver object of this property call \\
     \hline
       
 \end{tabularx}\)
@@ -797,17 +874,17 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         typeCode & \lst{Byte} & \text{1} & \text{type of the method (see Table~\ref{table:predeftypes})} \\
+         $ typeCode $ & \lst{Byte} & 1 & type of the method (see Table~\ref{table:predeftypes}) \\
     \hline
-           methodCode & \lst{Byte} & \text{1} & \text{a code of the method} \\
+           $ methodCode $ & \lst{Byte} & 1 & a code of the method \\
     \hline
-           obj & \lst{Expr} & \text{[1, *]} & \text{receiver object of this method call} \\
+           $ obj $ & \lst{Expr} & [1, *] & receiver object of this method call \\
     \hline
-           \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
+           $ \#items $ & \lst{VLQ(UInt)} & [1, *] & number of items in the collection \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$\#items$} \\
     \hline
-             ~~ args_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the arguments of the method call} \\
+             ~~ $ args_i $ & \lst{Expr} & [1, *] & i-th item in the arguments of the method call \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{tabularx}\)
@@ -820,9 +897,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         varId & \lst{Byte} & \text{1} & \text{\lst{Byte} identifier of context variable} \\
+         $ varId $ & \lst{Byte} & 1 & \lst{Byte} identifier of context variable \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{expected type of context variable} \\
+           $ type $ & \lst{Type} & [1, *] & expected type of context variable \\
     \hline
       
 \end{tabularx}\)
@@ -835,7 +912,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -848,9 +925,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           default & \lst{Expr} & \text{[1, *]} & \text{the default value} \\
+           $ default $ & \lst{Expr} & [1, *] & the default value \\
     \hline
       
 \end{tabularx}\)
@@ -863,7 +940,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -876,7 +953,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
       
 \end{tabularx}\)
@@ -889,9 +966,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           other & \lst{Expr} & \text{[1, *]} & \text{Number to add to this.} \\
+           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
     \hline
       
 \end{tabularx}\)
@@ -904,9 +981,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
     \hline
-           other & \lst{Expr} & \text{[1, *]} & \text{Number to add to this.} \\
+           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
     \hline
       
 \end{tabularx}\)
@@ -919,11 +996,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
+         $ \#items $ & \lst{VLQ(UInt)} & [1, *] & number of items in the collection \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$\#items$} \\
     \hline
-             ~~ propositions_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the a collection of propositions} \\
+             ~~ $ propositions_i $ & \lst{Expr} & [1, *] & i-th item in the a collection of propositions \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
 \end{tabularx}\)
@@ -936,13 +1013,212 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
+         $ \#items $ & \lst{VLQ(UInt)} & [1, *] & number of items in the collection \\
     \hline
-          \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
+          \multicolumn{4}{l}{\lst{for}~$i=1$~\lst{to}~$\#items$} \\
     \hline
-             ~~ propositions_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the a collection of propositions} \\
+             ~~ $ propositions_i $ & \lst{Expr} & [1, *] & i-th item in the a collection of propositions \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinOr} operation (OpCode 236)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinAnd} operation (OpCode 237)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{DecodePoint} operation (OpCode 238)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & serialized bytes of some \lst{GroupElement} value \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{LogicalNot} operation (OpCode 239)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & input \lst{Boolean} value \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Negation} operation (OpCode 240)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitInversion} operation (OpCode 241)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitOr} operation (OpCode 242)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitAnd} operation (OpCode 243)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinXor} operation (OpCode 244)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \hline
+            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+    \hline
+          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitXor} operation (OpCode 245)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftRight} operation (OpCode 246)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftLeft} operation (OpCode 247)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BitShiftRightZeroed} operation (OpCode 248)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+           $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+      
 \end{tabularx}\)
        
 
@@ -953,7 +1229,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
+         $ conditions $ & \lst{Expr} & [1, *] & a collection of conditions \\
     \hline
       
 \end{tabularx}\)
@@ -966,11 +1242,11 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         scriptBytes & \lst{Expr} & \text{[1, *]} & \text{serialized ErgoTree with ConstantSegregationFlag set to 1.} \\
+         $ scriptBytes $ & \lst{Expr} & [1, *] & serialized ErgoTree with ConstantSegregationFlag set to 1. \\
     \hline
-           positions & \lst{Expr} & \text{[1, *]} & \text{zero based indexes in ErgoTree.constants array which should be replaced with new values} \\
+           $ positions $ & \lst{Expr} & [1, *] & zero based indexes in ErgoTree.constants array which should be replaced with new values \\
     \hline
-           newValues & \lst{Expr} & \text{[1, *]} & \text{new values to be injected into the corresponding positions in ErgoTree.constants array} \\
+           $ newValues $ & \lst{Expr} & [1, *] & new values to be injected into the corresponding positions in ErgoTree.constants array \\
     \hline
       
 \end{tabularx}\)
@@ -983,7 +1259,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{value to convert} \\
+         $ input $ & \lst{Expr} & [1, *] & value to convert \\
     \hline
       
 \end{tabularx}\)
@@ -996,7 +1272,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+         $ input $ & \lst{Expr} & [1, *] & collection of bytes in big-endian format \\
     \hline
       
 \end{tabularx}\)
@@ -1009,7 +1285,7 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
+         $ input $ & \lst{Expr} & [1, *] & collection of bytes in big-endian format \\
     \hline
       
 \end{tabularx}\)
@@ -1022,9 +1298,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{value to cast} \\
+         $ input $ & \lst{Expr} & [1, *] & value to cast \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
+           $ type $ & \lst{Type} & [1, *] & resulting type of the cast operation \\
     \hline
       
 \end{tabularx}\)
@@ -1037,9 +1313,9 @@
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{value to cast} \\
+         $ input $ & \lst{Expr} & [1, *] & value to cast \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
+           $ type $ & \lst{Type} & [1, *] & resulting type of the cast operation \\
     \hline
       
 \end{tabularx}\)
