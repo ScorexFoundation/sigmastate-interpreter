@@ -400,14 +400,21 @@ object SigmaPredef {
       ExecuteFromSelfRegFunc,
     ).map(f => f.name -> f).toMap
 
-    def binop(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+    def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
       PredefinedFunc(symbolName,
         Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), SBoolean, None),
         PredefFuncInfo(undefined),
         OperationInfo(opDesc, desc, args)
       )
     }
-    def logical(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+    def binaryOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
+      PredefinedFunc(symbolName,
+        Lambda(Seq(STypeParam(tT)), Vector("left" -> tT, "right" -> tT), tT, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(opDesc, desc, args)
+      )
+    }
+    def logicalOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
       PredefinedFunc(symbolName,
         Lambda(Vector("left" -> SBoolean, "right" -> SBoolean), SBoolean, None),
         PredefFuncInfo(undefined),
@@ -416,29 +423,93 @@ object SigmaPredef {
     }
 
     val infixFuncs: Map[String, PredefinedFunc] = Seq(
-      binop("==", EQ, "Compare equality of \\lst{left} and \\lst{right} arguments",
+      comparisonOp("==", EQ, "Compare equality of \\lst{left} and \\lst{right} arguments",
           Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binop("!=", NEQ, "Compare inequality of \\lst{left} and \\lst{right} arguments",
+      comparisonOp("!=", NEQ, "Compare inequality of \\lst{left} and \\lst{right} arguments",
           Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
-      binop("<", LT, "",
+      comparisonOp("<", LT,
+        "Returns \\lst{true} is the left operand is less then the right operand, \\lst{false} otherwise.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binop("<=", LE, "",
+      comparisonOp("<=", LE,
+        "Returns \\lst{true} is the left operand is less then or equal to the right operand, \\lst{false} otherwise.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binop(">", GT, "",
+      comparisonOp(">", GT,
+        "Returns \\lst{true} is the left operand is greater then the right operand, \\lst{false} otherwise.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binop(">=", GE, "",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      binop("^", BinXor, "",
+      comparisonOp(">=", GE,
+        "Returns \\lst{true} is the left operand is greater then or equal to the right operand, \\lst{false} otherwise.",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
 
-      logical("||", BinOr, "",
+      binaryOp("+", ArithOp.Plus, "Returns a sum of two numeric operands",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
-      logical("&&", BinAnd, "",
+      binaryOp("-", ArithOp.Minus, "Returns a result of subtracting second numeric operand from the first.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("*", ArithOp.Multiply, "Returns a multiplication of two numeric operands",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("/", ArithOp.Division, "Integer division of the first operand by the second operand.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("%", ArithOp.Modulo, "Reminder from division of the first operand by the second operand.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("min", ArithOp.Min, "Minimum value of two operands.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("max", ArithOp.Max, "Maximum value of two operands.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+
+      binaryOp("bit_|", BitOp.BitOr, "Bitwise OR of two numeric operands.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("bit_&", BitOp.BitAnd, "Bitwise AND of two numeric operands.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("bit_^", BitOp.BitXor, "Bitwise XOR of two numeric operands.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+
+      binaryOp("bit_>>", BitOp.BitShiftRight, "Right shift of bits.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("bit_<<", BitOp.BitShiftLeft, "Left shift of bits.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      binaryOp("bit_>>>", BitOp.BitShiftRightZeroed, "Right shift of bits.",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+
+      PredefinedFunc("binary_|",
+        Lambda(Vector("left" -> SByteArray, "right" -> SByteArray), SByteArray, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(Xor, "Byte-wise XOR of two collections of bytes",
+          Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
+      ),
+
+      logicalOp("||", BinOr, "Logical OR of two operands",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      logicalOp("&&", BinAnd, "Logical AND of two operands",
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+      logicalOp("^", BinXor, "Logical XOR of two operands",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
     ).map(f => f.name -> f).toMap
 
-    val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs
+    val unaryFuncs: Map[String, PredefinedFunc] = Seq(
+      PredefinedFunc("unary_!",
+        Lambda(Vector("input" -> SBoolean), SBoolean, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(LogicalNot,
+          "Logical NOT operation. Returns \\lst{true} if input is \\lst{false} and \\lst{false} if input is \\lst{true}.",
+          Seq(ArgInfo("input", "input \\lst{Boolean} value")))
+      ),
+      PredefinedFunc("unary_-",
+        Lambda(Seq(STypeParam(tT)), Vector("input" -> tT), tT, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(Negation,
+          "Negates numeric value \\lst{x} by returning \\lst{-x}.",
+          Seq(ArgInfo("input", "value of numeric type")))
+      ),
+      PredefinedFunc("unary_~",
+        Lambda(Seq(STypeParam(tT)), Vector("input" -> tT), tT, None),
+        PredefFuncInfo(undefined),
+        OperationInfo(BitInversion,
+          "Invert every bit of the numeric value.",
+          Seq(ArgInfo("input", "value of numeric type")))
+      ),
+    ).map(f => f.name -> f).toMap
+
+    val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs ++ unaryFuncs
 
     /** WARNING: This operations are not used in frontend, and should be be used.
       * They are used in SpecGen only the source of metadata for the corresponding ErgoTree nodes.

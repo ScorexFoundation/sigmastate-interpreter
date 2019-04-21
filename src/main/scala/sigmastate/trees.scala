@@ -482,10 +482,17 @@ sealed trait OneArgumentOperation[IV <: SType, OV <: SType] extends NotReadyValu
   val input: Value[IV]
   override def opType = SFunc(input.tpe, tpe)
 }
+trait OneArgumentOperationCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
 
 // TwoArgumentsOperation
 sealed trait TwoArgumentsOperation[LIV <: SType, RIV <: SType, OV <: SType]
   extends Triple[LIV, RIV, OV]
+
+trait TwoArgumentOperationCompanion extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
+}
 
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
@@ -504,17 +511,19 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
     case OpCodes.MaxCode      => s"Max($left, $right)"
   }
 }
-case class ArithOpCompanion(opCode: Byte, name: String) extends ValueCompanion {
+/** NOTE: by-name argument is required for correct initialization order. */
+class ArithOpCompanion(val opCode: Byte, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+  override def argInfos: Seq[ArgInfo] = _argInfos
 }
 object ArithOp {
   import OpCodes._
-  val Plus     = ArithOpCompanion(PlusCode,     "+")
-  val Minus    = ArithOpCompanion(MinusCode,    "-")
-  val Multiply = ArithOpCompanion(MultiplyCode, "*")
-  val Division = ArithOpCompanion(DivisionCode, "/")
-  val Modulo   = ArithOpCompanion(ModuloCode,   "%")
-  val Min      = ArithOpCompanion(MinCode,      "min")
-  val Max      = ArithOpCompanion(MaxCode,      "max")
+  object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos)
+  object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos)
+  object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos)
+  object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos)
+  object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos)
+  object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos)
+  object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos)
 
   val operations: Map[Byte, ArithOpCompanion] =
     Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)).toMap
@@ -530,16 +539,18 @@ case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOpera
   override def companion = Negation
   override def tpe: T = input.tpe
 }
-object Negation extends ValueCompanion {
+object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
+  override def argInfos: Seq[ArgInfo] = NegationInfo.argInfos
 }
 
 case class BitInversion[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = BitInversion
   override def tpe: T = input.tpe
 }
-object BitInversion extends ValueCompanion {
+object BitInversion extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.BitInversionCode
+  override def argInfos: Seq[ArgInfo] = BitInversionInfo.argInfos
 }
 
 case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], override val opCode: OpCode)
@@ -547,20 +558,22 @@ case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], override va
   override def companion = BitOp.operations(opCode)
   override def tpe: T = left.tpe
 }
-case class BitOpCompanion(opCode: Byte, name: String) extends ValueCompanion {
+/** NOTE: by-name argument is required for correct initialization order. */
+class BitOpCompanion(val opCode: Byte, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+  override def argInfos: Seq[ArgInfo] = _argInfos
 }
 
 object BitOp {
   import OpCodes._
-  val Or     = BitOpCompanion(BitOrCode,     "|")
-  val And    = BitOpCompanion(BitAndCode,    "&")
-  val Xor = BitOpCompanion(BitXorCode, "^")
-  val ShiftRight = BitOpCompanion(BitShiftRightCode, ">>")
-  val ShiftLeft        = BitOpCompanion(BitShiftLeftCode,   "<<")
-  val ShiftRightZeroed = BitOpCompanion(BitShiftRightZeroedCode, ">>>")
+  object BitOr     extends BitOpCompanion(BitOrCode,  "|", BitOrInfo.argInfos)
+  object BitAnd    extends BitOpCompanion(BitAndCode, "&", BitAndInfo.argInfos)
+  object BitXor    extends BitOpCompanion(BitXorCode, "^", BitXorInfo.argInfos)
+  object BitShiftRight extends BitOpCompanion(BitShiftRightCode, ">>", BitShiftRightInfo.argInfos)
+  object BitShiftLeft        extends BitOpCompanion(BitShiftLeftCode,   "<<", BitShiftLeftInfo.argInfos)
+  object BitShiftRightZeroed extends BitOpCompanion(BitShiftRightZeroedCode, ">>>", BitShiftRightZeroedInfo.argInfos)
 
   val operations: Map[Byte, BitOpCompanion] =
-    Seq(Or, And, Xor, ShiftRight, ShiftLeft, ShiftRightZeroed).map(o => (o.opCode, o)).toMap
+    Seq(BitOr, BitAnd, BitXor, BitShiftRight, BitShiftLeft, BitShiftRightZeroed).map(o => (o.opCode, o)).toMap
 
   def opcodeToName(opCode: Byte): String = operations.get(opCode) match {
     case Some(c)  => c.name
@@ -584,7 +597,8 @@ case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], ov
   override def tpe: SBigInt.type = SBigInt
   override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
-case class ModQArithOpCompanion(opCode: Byte, name: String) extends ValueCompanion {
+abstract class ModQArithOpCompanion(val opCode: Byte, val name: String) extends ValueCompanion {
+  def argInfos: Seq[ArgInfo]
 }
 
 trait OpGroup[C <: ValueCompanion] {
@@ -593,8 +607,12 @@ trait OpGroup[C <: ValueCompanion] {
 
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
-  object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ")
-  object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ")
+  object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ") {
+    override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
+  }
+  object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ") {
+    override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
+  }
 
   val operations: Map[Byte, ModQArithOpCompanion] = Seq(PlusModQ, MinusModQ).map(o => (o.opCode, o)).toMap
 
@@ -612,8 +630,9 @@ case class Xor(override val left: Value[SByteArray],
     with NotReadyValueByteArray {
   override def companion = Xor
 }
-object Xor extends ValueCompanion {
+object Xor extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = XorCode
+  override def argInfos: Seq[ArgInfo] = XorInfo.argInfos
 }
 
 case class Exponentiate(override val left: Value[SGroupElement.type],
@@ -622,8 +641,9 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
     with NotReadyValueGroupElement {
   override def companion = Exponentiate
 }
-object Exponentiate extends ValueCompanion {
+object Exponentiate extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = ExponentiateCode
+  override def argInfos: Seq[ArgInfo] = ExponentiateInfo.argInfos
 }
 
 case class MultiplyGroup(override val left: Value[SGroupElement.type],
@@ -632,8 +652,9 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
     with NotReadyValueGroupElement {
   override def companion = MultiplyGroup
 }
-object MultiplyGroup extends ValueCompanion {
+object MultiplyGroup extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = MultiplyGroupCode
+  override def argInfos: Seq[ArgInfo] = MultiplyGroupInfo.argInfos
 }
 // Relation
 

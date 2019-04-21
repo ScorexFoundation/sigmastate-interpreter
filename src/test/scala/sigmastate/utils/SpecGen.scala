@@ -9,6 +9,7 @@ import scalan.meta.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
@@ -56,13 +57,13 @@ trait SpecGen {
   }
 
   protected val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
-  val noFuncs: Set[ValueCompanion] = Set(Constant)
+  val noFuncs: Set[ValueCompanion] = Set(Constant, MethodCall)
   val predefFuncs: Seq[PredefinedFunc] = predefFuncRegistry.funcs.values
       .filterNot { f => noFuncs.contains(f.docInfo.opDesc) }.toSeq
   val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
 
   def collectOpsTable() = {
-    val ops = collectSerializableOperations()
+    val ops = collectSerializableOperations().filterNot { case (_, opDesc) => noFuncs.contains(opDesc) }
     val methods = collectMethods()
     val funcs = predefFuncs ++ specialFuncs
 

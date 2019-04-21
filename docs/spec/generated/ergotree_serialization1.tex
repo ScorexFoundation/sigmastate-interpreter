@@ -2,7 +2,7 @@
 \subsubsection{\lst{ConcreteCollection} operation (OpCode 131)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -15,13 +15,13 @@
              ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{expression in i-th position} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ConcreteCollectionBooleanConstant} operation (OpCode 133)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -30,13 +30,13 @@
            bits & \lst{Bits} & \text{[1, 1024]} & \text{Boolean values encoded as as bits (right most byte is zero-padded on the right)} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Tuple} operation (OpCode 134)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -47,13 +47,13 @@
              ~~ item_i & \lst{Expr} & \text{[1, *]} & \text{tuple's item in i-th position} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{SelectField} operation (OpCode 140)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -62,17 +62,17 @@
            fieldIndex & \lst{Byte} & \text{1} & \text{index of an item to select} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{LT} operation (OpCode 143)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
@@ -81,17 +81,17 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{LE} operation (OpCode 144)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
@@ -100,17 +100,17 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{GT} operation (OpCode 145)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
@@ -119,17 +119,17 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{GE} operation (OpCode 146)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
@@ -138,17 +138,17 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{EQ} operation (OpCode 147)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
     \hline
@@ -164,17 +164,17 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{NEQ} operation (OpCode 148)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
     \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
     \hline
@@ -190,13 +190,13 @@
           ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{If} operation (OpCode 149)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -207,39 +207,26 @@
            falseBranch & \lst{Expr} & \text{[1, *]} & \text{expression to execute when \lst{condition == false}} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{AND} operation (OpCode 150)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
     \hline
       
-\end{array}\)
-       
-
-\subsubsection{\lst{OR} operation (OpCode 151)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
-    \hline
-      
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{AtLeast} operation (OpCode 152)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -248,13 +235,163 @@
            children & \lst{Expr} & \text{[1, *]} & \text{proposition to be proven/validated} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Minus} operation (OpCode 153)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Plus} operation (OpCode 154)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Xor} operation (OpCode 155)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Multiply} operation (OpCode 156)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Division} operation (OpCode 157)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Modulo} operation (OpCode 158)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Exponentiate} operation (OpCode 159)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           k & \lst{Expr} & \text{[1, *]} & \text{The power} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{MultiplyGroup} operation (OpCode 160)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           other & \lst{Expr} & \text{[1, *]} & \text{other element of the group} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Min} operation (OpCode 161)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{Max} operation (OpCode 162)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
+    \hline
+           right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
+    \hline
+      
+\end{tabularx}\)
        
 
 \subsubsection{\lst{MapCollection} operation (OpCode 173)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -263,13 +400,13 @@
            f & \lst{Expr} & \text{[1, *]} & \text{the function to apply to each element} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Exists} operation (OpCode 174)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -278,13 +415,13 @@
            p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ForAll} operation (OpCode 175)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -293,13 +430,13 @@
            p & \lst{Expr} & \text{[1, *]} & \text{the predicate used to test elements} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Fold} operation (OpCode 176)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -310,26 +447,26 @@
            op & \lst{Expr} & \text{[1, *]} & \text{the binary operator} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{SizeOf} operation (OpCode 177)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ByIndex} operation (OpCode 178)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -346,13 +483,13 @@
              ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{value to return when \lst{index} is out of range} \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Append} operation (OpCode 179)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -361,13 +498,13 @@
            other & \lst{Expr} & \text{[1, *]} & \text{the collection to append at the end of this} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Slice} operation (OpCode 180)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -378,13 +515,13 @@
            until & \lst{Expr} & \text{[1, *]} & \text{the lowest index to EXCLUDE from this collection} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{TreeLookup} operation (OpCode 183)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -395,78 +532,78 @@
            proof & \lst{Expr} & \text{[1, *]} & \text{proof to perform verification of the operation} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractAmount} operation (OpCode 193)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractScriptBytes} operation (OpCode 194)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractBytes} operation (OpCode 195)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractBytesWithNoRef} operation (OpCode 196)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractId} operation (OpCode 197)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractRegisterAs} operation (OpCode 198)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -477,97 +614,65 @@
            type & \lst{Type} & \text{[1, *]} & \text{expected type of the value in register} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ExtractCreationInfo} operation (OpCode 199)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{CalcBlake2b256} operation (OpCode 203)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{CalcSha256} operation (OpCode 204)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes} \\
     \hline
       
-\end{array}\)
-       
-
-\subsubsection{\lst{CreateProveDlog} operation (OpCode 205)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         value & \lst{Expr} & \text{[1, *]} & \text{element of elliptic curve group} \\
-    \hline
-      
-\end{array}\)
-       
-
-\subsubsection{\lst{CreateProveDHTuple} operation (OpCode 206)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         g & \lst{Expr} & \text{[1, *]} & \text{} \\
-    \hline
-           h & \lst{Expr} & \text{[1, *]} & \text{} \\
-    \hline
-           u & \lst{Expr} & \text{[1, *]} & \text{} \\
-    \hline
-           v & \lst{Expr} & \text{[1, *]} & \text{} \\
-    \hline
-      
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{BoolToSigmaProp} operation (OpCode 209)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          condition & \lst{Expr} & \text{[1, *]} & \text{boolean value to embed in SigmaProp value} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{DeserializeContext} operation (OpCode 212)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -576,13 +681,13 @@
            id & \lst{Byte} & \text{1} & \text{identifier of the context variable} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{DeserializeRegister} operation (OpCode 213)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -599,37 +704,37 @@
              ~~~~ default & \lst{Expr} & \text{[1, *]} & \text{optional default value, if register is not available} \\
     \hline
           \multicolumn{4}{l}{\lst{end optional}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ValDef} operation (OpCode 214)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
     % skipped OptionalScope(type arguments, ArrayBuffer())
 
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{FunDef} operation (OpCode 215)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
     % skipped OptionalScope(type arguments, ArrayBuffer())
 
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{BlockValue} operation (OpCode 216)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -643,13 +748,13 @@
      result & \lst{Expr} & \text{[1, *]} & \text{result expression of the block} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{FuncValue} operation (OpCode 217)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -665,73 +770,152 @@
      body & \lst{Expr} & \text{[1, *]} & \text{function body, which is parameterized by arguments} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
-\subsubsection{\lst{Apply} operation (OpCode 218)}
+\subsubsection{\lst{PropertyCall} operation (OpCode 219)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-         func & \lst{Expr} & \text{[1, *]} & \text{function which is applied} \\
+         typeCode & \lst{Byte} & \text{1} & \text{type of the method (see Table~\ref{table:predeftypes})} \\
+    \hline
+           methodCode & \lst{Byte} & \text{1} & \text{a code of the proprty} \\
+    \hline
+           obj & \lst{Expr} & \text{[1, *]} & \text{receiver object of this property call} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{MethodCall} operation (OpCode 220)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         typeCode & \lst{Byte} & \text{1} & \text{type of the method (see Table~\ref{table:predeftypes})} \\
+    \hline
+           methodCode & \lst{Byte} & \text{1} & \text{a code of the method} \\
+    \hline
+           obj & \lst{Expr} & \text{[1, *]} & \text{receiver object of this method call} \\
     \hline
            \#items & \lst{VLQ(UInt)} & \text{[1, *]} & \text{number of items in the collection} \\
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
     \hline
-             ~~ args & \lst{Expr} & \text{[1, *]} & \text{i-th item in list of arguments} \\
+             ~~ args_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the arguments of the method call} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{GetVar} operation (OpCode 227)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          varId & \lst{Byte} & \text{1} & \text{\lst{Byte} identifier of context variable} \\
     \hline
-           type & \lst{Type} & \text{[1, *]} & \text{expected by of context variable} \\
+           type & \lst{Type} & \text{[1, *]} & \text{expected type of context variable} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{OptionGet} operation (OpCode 228)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{OptionGetOrElse} operation (OpCode 229)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           default & \lst{Expr} & \text{[1, *]} & \text{the default value} \\
+    \hline
+      
+\end{tabularx}\)
        
 
 \subsubsection{\lst{OptionIsDefined} operation (OpCode 230)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{ModQ} operation (OpCode 231)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{PlusModQ} operation (OpCode 232)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           other & \lst{Expr} & \text{[1, *]} & \text{Number to add to this.} \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{MinusModQ} operation (OpCode 233)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         this & \lst{Expr} & \text{[1, *]} & \text{this instance} \\
+    \hline
+           other & \lst{Expr} & \text{[1, *]} & \text{Number to add to this.} \\
+    \hline
+      
+\end{tabularx}\)
        
 
 \subsubsection{\lst{SigmaAnd} operation (OpCode 234)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -739,16 +923,16 @@
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
     \hline
-             ~~ propositions & \lst{Expr} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+             ~~ propositions_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the a collection of propositions} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{SigmaOr} operation (OpCode 235)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -756,138 +940,85 @@
     \hline
           \multicolumn{4}{l}{\lst{for}~i=1~\lst{to}~\#items} \\
     \hline
-             ~~ propositions & \lst{Expr} & \text{[1, *]} & \text{i-th item in a collection of propositions} \\
+             ~~ propositions_i & \lst{Expr} & \text{[1, *]} & \text{i-th item in the a collection of propositions} \\
     \hline
           \multicolumn{4}{l}{\lst{end for}} \\
-\end{array}\)
-       
-
-\subsubsection{\lst{BinOr} operation (OpCode 236)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
-         
-    \multicolumn{4}{l}{~~\lst{otherwise} } \\
-    \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
-    \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
-    \hline
-          \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
-       
-
-\subsubsection{\lst{BinAnd} operation (OpCode 237)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
-         
-    \multicolumn{4}{l}{~~\lst{otherwise} } \\
-    \hline
-            ~~~~ left & \lst{Expr} & \text{[1, *]} & \text{left operand} \\
-    \hline
-          ~~~~ right & \lst{Expr} & \text{[1, *]} & \text{right operand} \\
-    \hline
-          \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
-       
-
-\subsubsection{\lst{DecodePoint} operation (OpCode 238)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         input & \lst{Expr} & \text{[1, *]} & \text{serialized bytes of some \lst{GroupElement} value} \\
-    \hline
-      
-\end{array}\)
-       
-
-\subsubsection{\lst{BinXor} operation (OpCode 244)}
-
-\noindent
-\(\begin{array}{| l | l | l | l |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-        \multicolumn{4}{l}{\lst{match}~(left, right)} \\
-         
-    \multicolumn{4}{l}{~~\lst{with}~(Constant(l, Boolean), Constant(r, Boolean)) } \\
-    \hline
-            ~~~~ opCode & \lst{Byte} & \text{1} & \text{always contains OpCode 133} \\
-    \hline
-          ~~~~ (l,r) & \lst{Bits} & \text{1} & \text{two higher bits in a byte} \\
-    \hline
-          \multicolumn{4}{l}{\lst{end match}} \\
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{XorOf} operation (OpCode 255)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          conditions & \lst{Expr} & \text{[1, *]} & \text{a collection of conditions} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{SubstConstants} operation (OpCode 116)}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         scriptBytes & \lst{Expr} & \text{[1, *]} & \text{serialized ErgoTree with ConstantSegregationFlag set to 1.} \\
+    \hline
+           positions & \lst{Expr} & \text{[1, *]} & \text{zero based indexes in ErgoTree.constants array which should be replaced with new values} \\
+    \hline
+           newValues & \lst{Expr} & \text{[1, *]} & \text{new values to be injected into the corresponding positions in ErgoTree.constants array} \\
+    \hline
+      
+\end{tabularx}\)
        
 
 \subsubsection{\lst{LongToByteArray} operation (OpCode 122)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          input & \lst{Expr} & \text{[1, *]} & \text{value to convert} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ByteArrayToBigInt} operation (OpCode 123)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{ByteArrayToLong} operation (OpCode 124)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          input & \lst{Expr} & \text{[1, *]} & \text{collection of bytes in big-endian format} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Downcast} operation (OpCode 125)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -896,13 +1027,13 @@
            type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        
 
 \subsubsection{\lst{Upcast} operation (OpCode 126)}
 
 \noindent
-\(\begin{array}{| l | l | l | l |}
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
@@ -911,5 +1042,5 @@
            type & \lst{Type} & \text{[1, *]} & \text{resulting type of the cast operation} \\
     \hline
       
-\end{array}\)
+\end{tabularx}\)
        

@@ -423,9 +423,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case ArithOp(l, r, OpCodes.MinCode) => bimap(env, "min", l.asNumValue, r.asNumValue)(mkMin)(tT, tT)
     case ArithOp(l, r, OpCodes.MaxCode) => bimap(env, "max", l.asNumValue, r.asNumValue)(mkMax)(tT, tT)
 
-    case BitOp(l, r, OpCodes.BitOrCode) => bimap(env, BitOp.Or.name, l.asNumValue, r.asNumValue)(mkBitOr)(tT, tT)
-    case BitOp(l, r, OpCodes.BitAndCode) => bimap(env, BitOp.And.name, l.asNumValue, r.asNumValue)(mkBitAnd)(tT, tT)
-    case BitOp(l, r, OpCodes.BitXorCode) => bimap(env, BitOp.Xor.name, l.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
+    case BitOp(l, r, OpCodes.BitOrCode) => bimap(env, BitOp.BitOr.name, l.asNumValue, r.asNumValue)(mkBitOr)(tT, tT)
+    case BitOp(l, r, OpCodes.BitAndCode) => bimap(env, BitOp.BitAnd.name, l.asNumValue, r.asNumValue)(mkBitAnd)(tT, tT)
+    case BitOp(l, r, OpCodes.BitXorCode) => bimap(env, BitOp.BitXor.name, l.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
 
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
