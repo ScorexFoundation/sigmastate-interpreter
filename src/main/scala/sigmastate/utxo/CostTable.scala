@@ -17,7 +17,9 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
   override def apply(operId: OperationId): Int = {
     val costOpt = this.get(operId)
     costOpt match {
-      case Some(cost) => cost
+      case Some(cost) =>
+        // println(s"$operId -> $cost")
+        cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }

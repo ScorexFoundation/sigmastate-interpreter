@@ -205,7 +205,8 @@ class CostingSpecification extends SigmaTestingData {
 
   property("Coll operations cost") {
     val coll = "OUTPUTS"
-    cost(s"{ $coll.filter({ (b: Box) => b.value > 1 }).size > 0 }") shouldBe
-      (OutputsCost + collToColl + lambdaCost + extractCost + GTConstCost + LengthGTCost)
+    cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }") shouldBe
+      (lambdaCost + accessBox + extractCost + GTConstCost + selectField +
+        (accessBox + comparisonCost) * tx.outputs.length + collToColl + LengthGTConstCost)
   }
 }
