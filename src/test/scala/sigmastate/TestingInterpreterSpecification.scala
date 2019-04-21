@@ -304,7 +304,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
     verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop4 = GT(Height, LongConstant(100)).toSigmaProp
+    val prop4 = GT(Height, IntConstant(100)).toSigmaProp
     verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
   }
 

@@ -96,7 +96,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "blocksIn24h" -> blocksIn24h,
       "maxFee" -> 10L,
       "feePropositionBytes" -> feeProposition.bytes,
-      "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
+      "withdrawScriptHash" -> Blake2b256(withdrawScript.treeWithSegregation.bytes)
     )
 
     val depositScript = compile(depositEnv,
