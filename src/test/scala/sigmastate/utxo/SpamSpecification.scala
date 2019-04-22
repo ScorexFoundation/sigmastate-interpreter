@@ -145,7 +145,9 @@ class SpamSpecification extends SigmaTestingCommons {
         FuncValue(Vector((1, SBox)),
           AND(
             GE(ExtractAmount(ValUse(1, SBox)), LongConstant(10)),
-            EQ(ExtractScriptBytes(ValUse(1, SBox)), ByteArrayConstant(propToCompare.bytes))
+            EQ(
+              ExtractScriptBytes(ValUse(1, SBox)),
+              ByteArrayConstant(propToCompare.treeWithSegregation.bytes))
           )
         )
       ).toSigmaProp

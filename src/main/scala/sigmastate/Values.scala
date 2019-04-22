@@ -5,22 +5,18 @@ import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.ErgoLikeContext
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
-import scorex.util.serialization.Serializer
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, InterpreterContext, CryptoFunctions}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization._
-import sigmastate.serialization.{ErgoTreeSerializer, OpCodes, ConstantStore}
+import sigmastate.serialization.{OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
-import sigmastate.utxo.CostTable.Cost
-import sigma.util.Extensions._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -37,7 +33,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Header, Extensions, AnyValue, AvlTree, TestValue, PreHeader}
+import special.sigma.{Header, AnyValue, AvlTree, PreHeader}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -58,8 +54,6 @@ object Values {
     /** The type of the value represented by this node. If the value is an operation it is
       * the type of operation result. */
     def tpe: S
-
-    lazy val bytes = DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -742,6 +736,7 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
+    def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
@@ -912,7 +907,7 @@ object Values {
     val ConstantSegregationFlag: Byte = 0x10
 
     /** Default header with constant segregation enabled. */
-    val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
+    val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
 
@@ -926,7 +921,7 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue) = {
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
       if (isConstantSegregation(header)) {
         val prop = substConstants(root, constants).asSigmaProp
         new ErgoTree(header, constants, root, prop)
@@ -934,24 +929,42 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    val EmptyConstants = IndexedSeq.empty[Constant[SType]]
+    val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
 
-    def withoutSegregation(root: SigmaPropValue) = {
+    def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
-    }
 
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       prop match {
         case SigmaPropConstant(_) => withoutSegregation(prop)
-        case _ =>
-          // get ErgoTree with segregated constants
-          // todo rewrite with everywherebu?
-          DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(prop))
+        case _ => withSegregation(prop)
       }
     }
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
+    }
+
+    /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated
+      * from the tree and ConstantPlaceholders referring to the segregated constants.
+      *
+      * This method uses single traverse of the tree to:
+      * 1) find and segregate all constants;
+      * 2) replace constants with ConstantPlaceholders in the `tree`;
+      * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`;
+      * 4) deserialize `tree` with ConstantPlaceholders.
+      **/
+    def withSegregation(value: SigmaPropValue): ErgoTree = {
+      val constantStore = new ConstantStore()
+      val byteWriter = SigmaSerializer.startWriter(constantStore)
+      // serialize value and segregate constants into constantStore
+      ValueSerializer.serialize(value, byteWriter)
+      val extractedConstants = constantStore.getAll
+      val r = SigmaSerializer.startReader(byteWriter.toBytes)
+      r.constantStore = new ConstantStore(extractedConstants)
+      // deserialize value with placeholders
+      val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
+      new ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, valueWithPlaceholders, value)
     }
   }
 

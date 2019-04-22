@@ -40,7 +40,11 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            Some(ValueSerializer.deserialize(eba.value.toArray))
+            val script = ValueSerializer.deserialize(eba.value.toArray)
+            if (d.tpe != script.tpe)
+              throw new InterpreterException(s"Failed context deserialization of $d: expected deserialized script to have type ${d.tpe}; got ${script.tpe}")
+            else
+              Some(script)
           case _ => None
         }
       else
