@@ -15,13 +15,18 @@ A Local Exchange Trading System On Top Of Ergo
  1998-2002 Argentine Great Depression. Most LETS groups range from 50 to 250 members, with paper-based credit notes and 
  ledger maintained by a core committee. However, paper-based LETS currencies have shown some problems, such as 
  counterfeit notes, possible rogue behavior of system managers, and so on. Therefore, blockchain-based LETS could be superior
- to the old systems.
+ to the old systems. More information on LETS could be found in 
+ ["The Ecology of Money" book (by Richard Douthwaite)](http://feasta.org/documents/moneyecology/chaptertwo.htm) and 
+ [Wikipedia](https://en.wikipedia.org/wiki/Local_exchange_trading_system).
  
  In this article we show how LETS could be implemented on top of Ergo. To the best of our knowledge, this is 
  the first implementation of such kind of community currency on top of a blockchain.
  Our reference implementation 
  is simple and consists of two contracts, namely, a management contract and an exchange contract.
- We skip Ergo preliminaries, so please read the ICO article and ErgoScript tutorials for starters.
+ We skip Ergo preliminaries, so please read 
+ [the ICO article](https://github.com/ergoplatform/ergo/wiki/An-ICO-Example-On-Top-Of-Ergo) and 
+ ErgoScript tutorials([basic](https://docs.ergoplatform.com/ErgoScript.pdf) and 
+ [advanced](https://docs.ergoplatform.com/sigmastate_protocols.pdf)) for starters.
  Nevertheless, we are going to introduce a couple of new terms in following sentences.
  If a token is issued with amount equal to one, we call it the singleton token. Similarly, 
  a box which contains the singleton token is called the singleton box.
