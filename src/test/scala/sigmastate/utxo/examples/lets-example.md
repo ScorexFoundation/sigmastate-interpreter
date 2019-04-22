@@ -14,24 +14,24 @@ A Local Exchange Trading System On Top Of Ergo
  a Canadian town stuck in depression back in 1981. Local exchange trading systems were extremely popular during 
  1998-2002 Argentine Great Depression. Most LETS groups range from 50 to 250 members, with paper-based credit notes and 
  ledger maintained by a core committee. However, paper-based LETS currencies have shown some problems, such as 
- counterfeit notes, possible rogue behavior of system managers, and so on. So blockchain-based LETS could be superior
+ counterfeit notes, possible rogue behavior of system managers, and so on. Therefore, blockchain-based LETS could be superior
  to the old systems.
  
  In this article we show how LETS could be implemented on top of Ergo. To the best of our knowledge, this is 
  the first implementation of such kind of community currency on top of a blockchain.
  Our reference implementation 
  is simple and consists of two contracts, namely, a management contract and an exchange contract.
- We skip Ergo preliminaries, so please read ICO article and ErgoScript tutorials for starters.
+ We skip Ergo preliminaries, so please read the ICO article and ErgoScript tutorials for starters.
  Nevertheless, we are going to introduce a couple of new terms in following sentences.
  If a token is issued with amount equal to one, we call it the singleton token. Similarly, 
  a box which contains the singleton token is called the singleton box.
  
  The management contract is controlling a singleton box which holds members of the LETS system. 
- The contract allows to add new members with the pace of one member per one transaction. The box
+ The contract enables the adding of new members at the pace of one member per one transaction. The box
  is not storing members, but only a small digest of authenticated data structure built on top of
- the members directory. A member is associated with a singleton token issued in a transaction which
+ the members' directory. A member is associated with a singleton token issued in a transaction which
  is adding the member to the directory. The transaction creates a new member's box which contains
- the member's singleton token. The member's box is protected the exchange contract. Also, the newly
+ the member's singleton token. The member's box is protected by the exchange contract. Also, the newly
  created member's box has initial balance written down into the R4 register, and the balance is 
  equal to zero in our example. The transaction creating a new member must provide a proof of correctness for
  directory transformation.  
@@ -39,7 +39,7 @@ A Local Exchange Trading System On Top Of Ergo
  The management contract box is controlled usually by a committee, and the committee could evolve over time. To support 
  that, we allow committee logic to reside in the register R5.
  For example, assume that a new committee member has been added along with a new LETS member,
- the input management contract box is requiring 2-out-of-3 signature, and the output box requires 3-out-of-4 signature.
+ the input management contract box is requiring 2-out-of-3 signatures, and the output box requires 3-out-of-4 signatures.
  In this case contents of the R5 register in the input and the output box would differ.
  
  The management contract code in ErgoScript with comments is provided below. Please note that 
@@ -86,12 +86,13 @@ A Local Exchange Trading System On Top Of Ergo
     correctTokenAmounts && scriptCorrect && treeCorrect && zeroUserBalance && properUserScript       
  
  
- The exchange contract script is pretty straightforward and provided below along with comments describing its logic. In the 
+ The exchange contract script is fairly straightforward and provided below along with comments describing its logic. In the 
  contract, it is assumed that a spending transaction for an exchange contract box is receiving at least two inputs, 
  and the first two inputs should be protected by the exchange contract script and contain LETS member tokens. To check
- that singleton member tokens in the inputs are indeed belong to the LETS system, a spending transaction provides the management
- contract box as the first read-only data input, and also should provide a proof that the member tokens are belong to 
- the directory authenticated via the R4 register of the management contract box. 
+ that singleton member tokens in the inputs do indeed belong to the LETS system, a spending transaction provides the management
+ contract box as the first read-only data input, and also should provide a proof that the member tokens do belong to 
+ the directory authenticated via the R4 register of the management contract box. "letsToken" in the script is about
+ the singleton token of the management box. 
  
     // Minimal balance allowed for LETS trader
     val minBalance = -20000
@@ -100,7 +101,7 @@ A Local Exchange Trading System On Top Of Ergo
  
     // The read-only box which contains directory of LETS members
     val treeHolderBox = CONTEXT.dataInputs(0)
-    val properTree = treeHolderBox.tokens(0)._1 == letsToken
+    val properLetsToken = treeHolderBox.tokens(0)._1 == letsToken
     val membersTree = treeHolderBox.R4[AvlTree].get
  
     // A spending transaction is taking two boxes of LETS members willing to make a deal,
@@ -110,7 +111,7 @@ A Local Exchange Trading System On Top Of Ergo
     val participantOut0 = OUTPUTS(0)
     val participantOut1 = OUTPUTS(1)
  
-    //Check that members are indeed belong to the LETS
+    //Check that members do indeed belong to the LETS
     val token0 = participant0.tokens(0)._1
     val token1 = participant1.tokens(0)._1
     val memberTokens = Coll(token0, token1)
@@ -135,7 +136,7 @@ A Local Exchange Trading System On Top Of Ergo
     // Member-specific box protection
     val selfPubKey = SELF.R5[SigmaProp].get
  
-    selfPubKey && properTree && membersExist && diffCorrect && scriptsSaved
+    selfPubKey && properLetsToken && membersExist && diffCorrect && scriptsSaved
     
  Note that both contracts could be modified in many ways to get new systems with different properties. So hopefully 
  some day this article will be continued!

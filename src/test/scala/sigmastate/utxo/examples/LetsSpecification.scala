@@ -39,7 +39,7 @@ class LetsSpecification extends SigmaTestingCommons {
       |
       |  // The read-only box which contains directory of LETS members
       |  val treeHolderBox = CONTEXT.dataInputs(0)
-      |  val properTree = treeHolderBox.tokens(0)._1 == letsToken
+      |  val properLetsToken = treeHolderBox.tokens(0)._1 == letsToken
       |  val membersTree = treeHolderBox.R4[AvlTree].get
       |
       |  // A spending transaction is taking two boxes of LETS members willing to make a deal,
@@ -49,7 +49,7 @@ class LetsSpecification extends SigmaTestingCommons {
       |  val participantOut0 = OUTPUTS(0)
       |  val participantOut1 = OUTPUTS(1)
       |
-      |  //Check that members are indeed belong to the LETS
+      |  //Check that members do indeed belong to the LETS
       |  val token0 = participant0.tokens(0)._1
       |  val token1 = participant1.tokens(0)._1
       |  val memberTokens = Coll(token0, token1)
@@ -74,7 +74,7 @@ class LetsSpecification extends SigmaTestingCommons {
       |  // Member-specific box protection
       |  val selfPubKey = SELF.R5[SigmaProp].get
       |
-      |  selfPubKey && properTree && membersExist && diffCorrect && scriptsSaved
+      |  selfPubKey && properLetsToken && membersExist && diffCorrect && scriptsSaved
       |}""".stripMargin
   ).asSigmaProp
 
