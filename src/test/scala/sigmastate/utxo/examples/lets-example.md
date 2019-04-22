@@ -1,7 +1,7 @@
 A Local Exchange Trading System On Top Of Ergo
 ==============================================
 
- A local exchange trading system (LETS) is a local association which members are allowed to create common 
+ A local exchange trading system (LETS) is a local mutual credit association which members are allowed to create common 
  credit money individually, with all the deals in the system written into a common ledger. 
  As an example, assume that Alice with zero balance is willing to buy a liter of raw milk from Bob.
  First, they agree on a price, for example, assume that the price is about 2 Euro (as Alice and Bob 
@@ -10,9 +10,12 @@ A Local Exchange Trading System On Top Of Ergo
  home-made beer from Charlie. Often, such systems impose limits on negative balances, and sometimes 
  even on positive ones, in order to promote exchange in the community.
  
- Historically, such systems become popular during crisis times. For example, in Argentina, 2001,
- ... . However, paper-based LETS currencies have shown some problems, such as counterfeit notes, 
- possible rogue behavior of system managers, and so on. 
+ Historically, such systems become popular during crisis times. The first system was established by Michael Linton in
+ a Canadian town stuck in depression back in 1981. Local exchange trading systems were extremely popular during 
+ 1998-2002 Argentine Great Depression. Most LETS groups range from 50 to 250 members, with paper-based credit notes and 
+ ledger maintained by a core committee. However, paper-based LETS currencies have shown some problems, such as 
+ counterfeit notes, possible rogue behavior of system managers, and so on. So blockchain-based LETS could be superior
+ to the old systems.
  
  In this article we show how LETS could be implemented on top of Ergo. To the best of our knowledge, this is 
  the first implementation of such kind of community currency on top of a blockchain.
