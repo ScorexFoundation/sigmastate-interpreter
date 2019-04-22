@@ -100,6 +100,10 @@ trait SpecGen {
     }
   }
 
+  def toTexName(name: String) = name.replace("%", "\\%")
+
+  def toDisplayCode(opCode: OpCode): Int = opCode.toUByte
+
   def printTypes(companions: Seq[STypeCompanion]) = {
     val lines = for { tc <- companions.sortBy(_.typeId) } yield {
       val t = tc match {
@@ -130,14 +134,63 @@ trait SpecGen {
     val table = lines.mkString("\n\\hline\n")
     table
   }
-
+  
   def methodSubsection(typeName: String, m: SMethod) = {
     val argTypes = m.stype.tDom
     val resTpe = m.stype.tRange.toTermString
-    val ts = argTypes.map(_.toTermString)
+    val types = argTypes.map(_.toTermString)
     val argInfos = m.docInfo.fold(
-      Range(0, ts.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
-    val params = ts.opt { ts =>
+      Range(0, types.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
+
+    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt { d =>
+      val opName = d.typeName
+      val opCode = d.opCode.toUByte
+      s"""
+        |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$opName]{\\lst{$opName}} \\\\
+        |  \\hline
+       """.stripMargin
+    }
+    subsectionTempl(
+      opName = s"$typeName.${m.name}",
+      opCode = s"${m.objType.typeId}.${m.methodId}",
+      label  = s"sec:type:$typeName:${m.name}",
+      desc = m.docInfo.opt(i => i.description + i.isFrontendOnly.opt(" (FRONTEND ONLY)")),
+      types = types,
+      argInfos = argInfos,
+      resTpe = resTpe,
+      serializedAs = serializedAs
+      )
+  }
+
+  def funcSubsection(f: PredefinedFunc) = {
+    val argTypes = f.declaration.tpe.tDom
+    val resTpe = f.declaration.tpe.tRange.toTermString
+    val types = argTypes.map(_.toTermString)
+    val argInfos = f.docInfo.args
+    val opDesc = f.docInfo.opDesc
+    val opCode = opDesc.opCode.toUByte
+
+    val serializedAs = {
+      val nodeName = opDesc.typeName
+      s"""
+        |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$nodeName]{\\lst{$nodeName}} \\\\
+        |  \\hline
+       """.stripMargin
+    }
+    subsectionTempl(
+      opName = toTexName(f.name),
+      opCode = opCode.toString,
+      label  = s"sec:appendix:primops:${f.docInfo.opDesc.typeName}",
+      desc = f.docInfo.description + f.docInfo.isFrontendOnly.opt(" (FRONTEND ONLY)"),
+      types = types,
+      argInfos = argInfos,
+      resTpe = resTpe,
+      serializedAs = serializedAs
+    )
+  }
+
+  def subsectionTempl(opName: String, opCode: String, label: String, desc: String, types: Seq[String], argInfos: Seq[ArgInfo], resTpe: String, serializedAs: String) = {
+    val params = types.opt { ts =>
       val args = argInfos.zip(ts).filter { case (a, _) => a.name != "this" }
       s"""
         |  \\hline
@@ -149,21 +202,13 @@ trait SpecGen {
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
-    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt { d =>
-      val opName = d.typeName
-      val opCode = d.opCode.toUByte
-      s"""
-        |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$opName]{\\lst{$opName}} \\\\
-        |  \\hline
-       """.stripMargin
-    }
     s"""
-      |\\subsubsection{\\lst{$typeName.${m.name}} method (Code ${m.objType.typeId}.${m.methodId})}
-      |\\label{sec:type:$typeName:${m.name}}
+      |\\subsubsection{\\lst{$opName} method (Code $opCode)}
+      |\\label{$label}
       |\\noindent
       |\\begin{tabularx}{\\textwidth}{| l | X |}
       |   \\hline
-      |   \\bf{Description} & ${m.docInfo.opt(i => i.description + i.isFrontendOnly.opt(" (FRONTEND ONLY)"))} \\\\
+      |   \\bf{Description} & $desc \\\\
       |  $params
       |  \\hline
       |  \\bf{Result} & \\lst{${resTpe}} \\\\

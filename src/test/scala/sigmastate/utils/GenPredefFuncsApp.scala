@@ -7,9 +7,6 @@ import sigma.util.Extensions.ByteOps
 
 object GenPredefFuncsApp extends SpecGen {
 
-  def toTexName(name: String) = name.replace("%", "\\%")
-  def toDisplayCode(opCode: OpCode): Int = opCode.toUByte
-
   def main(args: Array[String]) = {
     val rowsFile = FileUtil.file("docs/spec/generated/predeffunc_rows.tex")
     val sectionsFile = FileUtil.file(s"docs/spec/generated/predeffunc_sections.tex")
@@ -21,6 +18,7 @@ object GenPredefFuncsApp extends SpecGen {
     }.sortBy(i => toDisplayCode(i._1.opCode))
 
     val funcRows = StringBuilder.newBuilder
+    val sections = StringBuilder.newBuilder
 
     for (row @ (d, f, info) <- opInfos) {
       val opCode = toDisplayCode(d.opCode)
@@ -34,9 +32,12 @@ object GenPredefFuncsApp extends SpecGen {
         s""" $opCode & $serRef & \\parbox{4cm}{\\lst{$opName:} \\\\ \\lst{($argsTpe)} \\\\ \\lst{  => $resTpe}} & $desc \\\\
           | \\hline
          """.stripMargin)
+
+      val subsection = funcSubsection(f)
+      sections.append(subsection)
     }
     println(s"Total ops: ${opInfos.length}")
     FileUtil.write(rowsFile, funcRows.result())
-//    FileUtil.write(sectionsFile, sections)
+    FileUtil.write(sectionsFile, sections.result())
   }
 }
