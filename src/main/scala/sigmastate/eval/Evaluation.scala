@@ -253,23 +253,27 @@ trait Evaluation extends RuntimeCosting { IR =>
       * When the evaluation leaves the scope, the top is popped off the stack. */
     class Scope(visitiedOnEntry: Set[Sym], initialCost: Int) extends CostCounter(initialCost) {
       private var _visited: Set[Sym] = visitiedOnEntry
-      @inline def visited = _visited
-      @inline def add(s: Sym, op: OpCost, opCost: Int, dataEnv: DataEnv) = {
+      @inline def visited: Set[Sym] = _visited
+      @inline def add(s: Sym, op: OpCost, opCost: Int, dataEnv: DataEnv): Unit = {
         for (arg <- op.args) {
           if (!_visited.contains(arg)) {
             val argCost = getCostFromEnv(dataEnv, arg)
+//            println(s"${this.currentCost} + $argCost ($arg <- $op)")
             this += argCost
             _visited += arg
           }
         }
-        this += opCost
+        if (!_visited.contains(op.opCost)) {
+//          println(s"${this.currentCost} + $opCost (${op.opCost} <- $op)")
+          this += opCost
+        }
         _visited += s
       }
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
       * if costLimit is defined then delegates to currentScope. */
-    def add(s: Sym, op: OpCost, dataEnv: DataEnv) = {
+    def add(s: Sym, op: OpCost, dataEnv: DataEnv): Int = {
       val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
       if (costLimit.isDefined) {
         currentScope.add(s, op, opCost, dataEnv)

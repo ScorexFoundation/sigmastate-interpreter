@@ -216,9 +216,9 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $opt.get > 0 }") shouldBe (accessOpt + selectField + GTConstCost)
     cost(s"{ $opt.isDefined }") shouldBe (accessOpt + selectField)
     cost(s"{ $opt.getOrElse(1) > 0 }") shouldBe (accessOpt + selectField + GTConstCost)
-    // TODO (45 != 48)  cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }") shouldBe
-    //      (accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
-    // TODO (45 != 48)  cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }") shouldBe
-    //      (accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
+    cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }") shouldBe
+       (accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
+    cost(s"{ $opt.map({ (x: Int) => x + 1}).isDefined }") shouldBe
+      (accessOpt + OptionOp + lambdaCost + plusMinus + constCost + selectField)
   }
 }
