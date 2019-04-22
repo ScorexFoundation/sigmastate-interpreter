@@ -608,7 +608,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costF = f.sliceCost
       val vals = xs.values.filter(calcF)
       val costs = xs.costs.zip(xs.sizes).map(costF)
-      RCCostedColl(vals, costs, xs.sizes, opCost(vals, costOfArgs, costOf(method)))
+      val zeros = colBuilder.replicate(xs.costs.length, 0)
+      RCCostedColl(vals, zeros, xs.sizes, opCost(vals, costOfArgs, costOf(method) + costs.sum(intPlusMonoid)))
     }
   }
 
