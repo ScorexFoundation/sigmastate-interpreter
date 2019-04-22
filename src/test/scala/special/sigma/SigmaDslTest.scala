@@ -426,4 +426,10 @@ class SigmaDslTest extends PropSpec
     }
 
   }
+
+  property("Coll methods equivalence") {
+    val coll = ctx.OUTPUTS
+    val eq = EqualityChecker(coll)
+    eq({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }")
+  }
 }

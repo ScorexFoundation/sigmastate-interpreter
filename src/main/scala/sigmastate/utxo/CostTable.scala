@@ -17,7 +17,9 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
   override def apply(operId: OperationId): Int = {
     val costOpt = this.get(operId)
     costOpt match {
-      case Some(cost) => cost
+      case Some(cost) =>
+        // println(s"$operId -> $cost")
+        cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }
@@ -139,6 +141,7 @@ object CostTable {
     ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
     ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
     ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
+    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
 

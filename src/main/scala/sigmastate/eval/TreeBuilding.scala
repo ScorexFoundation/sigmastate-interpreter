@@ -250,6 +250,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
+      case CollM.filter(colSym, pSym) =>
+        val Seq(col, p) = Seq(colSym, pSym).map(recurse)
+        mkFilter(col.asCollection[SType], p.asFunc)
 
       case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]

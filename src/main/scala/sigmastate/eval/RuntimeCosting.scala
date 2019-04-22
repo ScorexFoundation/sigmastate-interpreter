@@ -1440,18 +1440,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val sizes = col1.sizes.append(col2.sizes)
         RCCostedColl(values, costs, sizes, opCost(Seq(col1.cost, col2.cost), costOf(node)))
 
-      case Terms.Apply(Select(col, "where", _), Seq(Terms.Lambda(_, Seq((n, t)), _, Some(body)))) =>
-        val input = col.asValue[SCollection[SType]]
-        val cond = body.asValue[SBoolean.type]
-        val eIn = stypeToElem(input.tpe.elemType)
-        val inputC = asRep[CostedColl[Any]](evalNode(ctx, env, input))
-        implicit val eAny = inputC.elem.asInstanceOf[CostedElem[Coll[Any],_]].eVal.eA
-        assert(eIn == eAny, s"Types should be equal: but $eIn != $eAny")
-        val condC = fun { x: Rep[Costed[Any]] =>
-          evalNode(ctx, env + (n -> x), cond)
-        }
-        val res = inputC.filterCosted(condC)
+      case Filter(input, p) =>
+        val inputC = evalNode(ctx, env, input)
+        val pC = evalNode(ctx, env, p)
+        val res = CollCoster(inputC, SCollection.FilterMethod, Seq(pC))
         res
+
 
 //      case Terms.Apply(Select(col,"fold", _), Seq(zero, Terms.Lambda(Seq((zeroArg, tZero), (opArg, tOp)), _, Some(body)))) =>
 //        val taggedZero = mkTaggedVariable(21, tZero)

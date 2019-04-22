@@ -226,6 +226,7 @@ trait Evaluation extends RuntimeCosting { IR =>
     private var _currentCost: Int = initialCost
 
     @inline def += (n: Int) = {
+      // println(s"${_currentCost} + $n")
       this._currentCost += n
     }
     @inline def currentCost: Int = _currentCost

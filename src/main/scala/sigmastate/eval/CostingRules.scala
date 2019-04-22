@@ -600,6 +600,17 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val c = opCost(costOfArgs, perKbCostOf(method, values.size.dataSize))  // TODO costing rule should be more accurate with sizes
       RCCostedColl(xsC.value.updateMany(indexes.value, values.value), xsC.costs, xsC.sizes, c)
     }
+
+    def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
+      val xs = asCostedColl(obj)
+      val f = asCostedFunc[T,Boolean](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val vals = xs.values.filter(calcF)
+      val costs = xs.costs.zip(xs.sizes).map(costF)
+      val zeros = colBuilder.replicate(xs.costs.length, 0)
+      RCCostedColl(vals, zeros, xs.sizes, opCost(vals, costOfArgs, costOf(method) + costs.sum(intPlusMonoid)))
+    }
   }
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, args) => new CollCoster[Any](obj, m, args))
