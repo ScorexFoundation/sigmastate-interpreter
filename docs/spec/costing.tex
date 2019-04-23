@@ -1,7 +1,6 @@
 \section{Costing}
 \label{sec:costing}
 
-can check the graphs generated and saved in file.
 This is how the file name is specified
 \begin{lstlisting}  
 
@@ -30,3 +29,9 @@ How much cost is represented by OpCost node?
     \item OpCost is special node, interpreted in a special way. See method
     evaluate in Evaluation.
 \end{enumerate}
+
+% For why this is necessary, consider a script where two different context
+% variables are used. Without this, the same OpCost node is emitted twice, but
+% only single is added in the graph because of unification of nodes. Thus
+% adding costedValue.id make those nodes different and they both added to the
+% graph.

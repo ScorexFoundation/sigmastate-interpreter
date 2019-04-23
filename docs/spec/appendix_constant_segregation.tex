@@ -1,0 +1,85 @@
+\section{Constant Segregation rationale}
+
+\subsection{Massive script validation}
+
+Consider a transaction \lst{tx} which have \lst{INPUTS} collection of boxes to
+spend. Every input box can have a script protecting it (\lst{propostionBytes}
+property). This script should be executed in a context of the current
+transaction. The simplest transaction have 1 input box. Thus if we want to
+have a sustained block validation of 1000 transactions per second we need to
+be able to validate 1000 scripts per second.
+
+For every script (of input \lst{box}) the following is done in order to
+validate it:
+\begin{enumerate}
+    \item Context is created with \lst{SELF} = box
+    \item The script is deserialized into ErgoTree 
+    \item ErgoTree is traversed to build costGraph and calcGraph, two graphs for
+    cost estimation function and script calculation function.
+    \item Cost estimation is computed by evaluating costGraph with current context data
+    \item If cost and data size limits are not exceeded, calcGraph is
+    evaluated using context data to obtain sigma proposition (see
+    \hyperref[sec:type:SigmaProp]{\lst{SigmaProp}})
+    \item Verification procedure is executed
+\end{enumerate}
+
+\subsection{Potential for Script processing optimization}
+
+Before an \langname contract can be stored in a blockchain it should be first
+compiled from its source text into ErgoTree and then serialized into byte
+array.
+
+Because the language is purely functional and IR is graph-based, the
+compilation process has an effect of normalization/unification. This means
+that different original scripts may have identical ErgoTrees and as the
+result identical serialized bytes.
+
+Because of normalization, and also because of script reusability, the number
+of conceptually (or logically) different scripts is much less than the number
+of individual scripts in a blockchain. For example we may have 1000s of
+different scripts in a blockchain with millions of boxes.
+
+The average reusability ratio is 1000 in this case. And even those different
+scripts may have different usage frequency. Having big reusability ratio we
+can optimize script evaluation by performing steps 1 - 4 only once per unique
+script.
+
+The compiled calcGraph can be cached in \lst{Map[Array[Byte], Context =>
+SigmaBoolean]}. Every script extracted from an input box can be used as a key
+in this map to obtain ready to execute graph.
+
+However, we have a problem with constants embedded in contracts. There is one
+obstacle to the optimization by caching. In many cases it is very natural to
+embed constants in the script body, most notable scenario is when public keys
+are embedded. As result two functionally identical scripts may serialize to
+different byte arrays because they have different embedded constants.
+
+\subsection{Constant-less ErgoTree}
+
+The solution to the problem with embedded constants is simple, we don't need
+to embed constants. Each constant in the body of \ASDag can be replaced
+with indexed placeholder (see \hyperref[sec:appendix:primops:ConstantPlaceholder]{\lst{ConstantPlaceholder}}).
+Each placeholder have an index field. The index of the placeholder is
+assigned by breadth-first topological order of the graph traversal.
+
+The transformation is part of compilation and is performed ahead of time.
+Each \ASDag have an array of all the constants extracted from its body. Each
+placeholder refers to the constant by the constant's index in the array.
+
+Thus the format of serialized script is shown in Figure~\ref{fig:ser:ergotree} which contains:
+\begin{enumerate}
+    \item number of constants
+    \item constants collection
+    \item script expression with placeholders
+\end{enumerate}
+
+The constants collection contains serialized constant data (using
+ConstantSerializer) one after another.
+The script expression is a serialized ErgoTree with placeholders.
+
+Using this new script format we can use script expression part as a key in
+the cache. An observation is that after the constants are extracted, what
+remains is a template. Thus instead of applying steps 1-4 to
+\emph{constant-full} scripts we can apply them to \emph{constant-less}
+templates. Before applying steps 4 and 5 we need to bind placeholders with
+actual values taken from the cconstants collection.

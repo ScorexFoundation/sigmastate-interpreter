@@ -61,7 +61,7 @@
 \newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 
-\newcommand{\asdag}{ErgoTree}
+\newcommand{\ASDag}{ErgoTree\xspace}
 
 \newcommand{\I}[1]{\mathit{#1}}
 \newcommand{\B}[1]{\mathbf{#1}}
@@ -180,7 +180,7 @@
 
 \begin{abstract}
 In this document we consider typed abstract syntax directed acyclic graph
-called \asdag which defines semantics of a condition which protects a closed
+called \ASDag which defines semantics of a condition which protects a closed
 box in the Ergo Platform blockchain. Serialized graph is written into a box.
 Most of Ergo users are unaware of the graph since they are developing contracts in higher-level languages, such as
 ErgoScript. However, for developers of alternative higher-level languages, client libraries and clients knowledge of
@@ -226,5 +226,6 @@ classes etc.}
 \include{appendix_predeftypes}
 \include{appendix_primops}
 \include{appendix_ergotree_serialization}
+\include{appendix_constant_segregation}
 
 \end{document}
