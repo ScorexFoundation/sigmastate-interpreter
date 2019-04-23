@@ -1,3 +1,39 @@
+@InProceedings{RMCI17,
+author="Reyzin, Leonid
+and Meshkov, Dmitry
+and Chepurnoy, Alexander
+and Ivanov, Sasha",
+editor="Kiayias, Aggelos",
+title="Improving Authenticated Dynamic Dictionaries, with Applications to Cryptocurrencies",
+booktitle="Financial Cryptography and Data Security",
+year="2017",
+publisher="Springer International Publishing",
+address="Cham",
+pages="376--392",
+abstract="We improve the design and implementation of two-party and three-party authenticated dynamic dictionaries and apply these dictionaries to cryptocurrency ledgers.",
+isbn="978-3-319-70972-7"
+}
+
+
+@InProceedings{CKM18a,
+author="Chepurnoy, Alexander
+and Kharin, Vasily
+and Meshkov, Dmitry",
+editor="Garcia-Alfaro, Joaquin
+and Herrera-Joancomart{\'i}, Jordi
+and Livraga, Giovanni
+and Rios, Ruben",
+title="Self-reproducing Coins as Universal Turing Machine",
+booktitle="Data Privacy Management, Cryptocurrencies and Blockchain Technology",
+year="2018",
+publisher="Springer International Publishing",
+address="Cham",
+pages="57--64",
+abstract="Turing-completeness of smart contract languages in blockchain systems is often associated with a variety of language features (such as loops). On the contrary, we show that Turing-completeness of a blockchain system can be achieved through unwinding the recursive calls between multiple transactions and blocks instead of using a single one. We prove it by constructing a simple universal Turing machine using a small set of language features in the unspent transaction output (UTXO) model, with explicitly given relations between input and output transaction states. Neither unbounded loops nor possibly infinite validation time are needed in this approach.",
+isbn="978-3-030-00305-0"
+}
+
+
 @InProceedings{fiatshamir,
 author="Fiat, Amos
 and Shamir, Adi",
@@ -33,6 +69,13 @@ isbn="978-3-540-47721-1"
   title = {Confidential Transactions}, 
   howpublished = {\url{https://people.xiph.org/~greg/confidential_values.txt}}
 }
+@misc{erc20, 
+  year = {2018},
+  author = {The Ethereum Wiki},
+  title = {ERC20 Token Standard}, 
+  howpublished = {\url{https://theethereum.wiki/w/index.php/ERC20_Token_Standard}}
+}
+
 @misc{mw,
   year = {2016},
   author = {T.E. Jedusor}, 
@@ -163,6 +206,34 @@ title = {Modular Design of Secure, yet Practical Cryptographic Protocols},
 school = {University of Amsterdam},
 year = 1996
 }
+@article{wood2014ethereum,
+     title={Ethereum: A secure decentralised generalised transaction ledger},
+     author={Wood, Gavin},
+     journal={Ethereum project yellow paper},
+     volume={151},
+     pages={1--32},
+     year={2014}
+ }
+
+
+@article{rps15,
+  added-at = {2018-08-14T00:00:00.000+0200},
+  author = {Delmolino, Kevin and Arnett, Mitchell and Kosba, Ahmed E. and Miller, Andrew and Shi, Elaine},
+  biburl = {https://www.bibsonomy.org/bibtex/201346e267684bdc7cd96b186072bbf50/dblp},
+  ee = {http://eprint.iacr.org/2015/460},
+  interhash = {c694ac7b413b6acfd8c4d518df9ca33d},
+  intrahash = {01346e267684bdc7cd96b186072bbf50},
+  journal = {IACR Cryptology ePrint Archive},
+  keywords = {dblp},
+  pages = 460,
+  timestamp = {2018-08-15T11:53:36.000+0200},
+  title = {Step by Step Towards Creating a Safe Smart Contract: Lessons and Insights from a Cryptocurrency Lab.},
+  url = {http://dblp.uni-trier.de/db/journals/iacr/iacr2015.html#DelmolinoAKMS15},
+  volume = 2015,
+  year = 2015
+}
+
+
 
 @misc{Dam10,
 author = {Ivan Damg{\aa}rd},
@@ -621,8 +692,6 @@ note = {Available at \url{http://www.ece.umd.edu/~cpap/published/theses/cpap-phd
   biburl    = {http://dblp.uni-trier.de/rec/bib/journals/tc/00010WML16},
   bibsource = {dblp computer science bibliography, http://dblp.org}
 }
-homebrowsesearchabout
-
 
 @article{MWMS16,
 title = {Publicly verifiable databases with efficient insertion/deletion operations},
@@ -1290,7 +1359,7 @@ note = {Available at \url{http://arxiv.org/abs/1406.5694}}
 
 @inproceedings{aumasson2013blake2,
   title={{BLAKE2}: simpler, smaller, fast as {MD5}},
-  author={Aumasson, Jean-Philippe and Neves, Samuel and Wilcox-O’Hearn, Zooko and Winnerlein, Christian},
+  author={Aumasson, Jean-Philippe and Neves, Samuel and Wilcox-OâHearn, Zooko and Winnerlein, Christian},
   booktitle={International Conference on Applied Cryptography and Network Security},
   pages={119--135},
   year={2013},
@@ -1333,7 +1402,7 @@ note = {Available at \url{http://arxiv.org/abs/1406.5694}}
 }
 
 @misc{ethattacks,
-  title={Ethereum Network Attacker’s IP Address Is Traceable},
+  title={Ethereum Network Attackerâs IP Address Is Traceable},
   author={Bok Khoo},
   year=2016,
   note={\url{https://www.bokconsulting.com.au/blog/ethereum-network-attackers-ip-address-is-traceable/}}
