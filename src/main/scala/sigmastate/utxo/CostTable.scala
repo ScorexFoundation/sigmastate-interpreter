@@ -85,6 +85,8 @@ object CostTable {
   val accessBox        = 10
   val accessRegister   = 10
 
+  val OptionOp         = 10
+
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
     ("Const", "() => Boolean", constCost),
@@ -268,6 +270,9 @@ object CostTable {
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
     ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+
+    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
+    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {

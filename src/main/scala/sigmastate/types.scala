@@ -694,6 +694,8 @@ object SOption extends STypeCompanion {
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
   override def typeId = OptionTypeCode
 
+  override def coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
+
   type SBooleanOption      = SOption[SBoolean.type]
   type SByteOption         = SOption[SByte.type]
   type SShortOption        = SOption[SShort.type]

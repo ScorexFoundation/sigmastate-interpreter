@@ -197,7 +197,7 @@ class CostingSpecification extends SigmaTestingData {
     val selfTree = "SELF.R6[AvlTree].get"
     val sizeOfArgs = Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize)
     val containsCost = perKbCostOf(sizeOfArgs, avlTreeOp)
-    
+
     cost(s"{ $selfTree.contains(key1, lookupProof) }") shouldBe (AccessTree + containsCost + constCost)
     cost(s"{ $selfTree.get(key1, lookupProof).isDefined }") shouldBe (AccessTree + containsCost + constCost + selectField)
     cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }") shouldBe (AccessTree + containsCost + constCost + LengthGTConstCost)
@@ -208,5 +208,17 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }") shouldBe
       (lambdaCost + accessBox + extractCost + GTConstCost + selectField +
         (accessBox + comparisonCost) * tx.outputs.length + collToColl + LengthGTConstCost)
+  }
+
+  property("Option operations cost") {
+    val opt = "SELF.R5[Int]"
+    val accessOpt = accessBox + accessRegister
+    cost(s"{ $opt.get > 0 }") shouldBe (accessOpt + selectField + GTConstCost)
+    cost(s"{ $opt.isDefined }") shouldBe (accessOpt + selectField)
+    cost(s"{ $opt.getOrElse(1) > 0 }") shouldBe (accessOpt + selectField + GTConstCost)
+    cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }") shouldBe
+       (accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
+    cost(s"{ $opt.map({ (x: Int) => x + 1}).isDefined }") shouldBe
+      (accessOpt + OptionOp + lambdaCost + plusMinus + constCost + selectField)
   }
 }
