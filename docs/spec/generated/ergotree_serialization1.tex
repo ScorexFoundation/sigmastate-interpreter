@@ -279,8 +279,8 @@ Returns true if \emph{any} the elements in collection are \lst{true}. See~\hyper
 \label{sec:serialization:operation:AtLeast}
 
  Logical threshold.
- AtLeast has two inputs: integer \\lst{bound\ and \\lst{children} same as in AND/OR.
- The result is true if at least \\lst{bound} children are proven.
+ AtLeast has two inputs: integer \lst{bound} and \lst{children} same as in AND/OR.
+ The result is true if at least \lst{bound} children are proven.
          See~\hyperref[sec:appendix:primops:AtLeast]{\lst{atLeast}}
 
 \noindent
@@ -821,7 +821,7 @@ Calculate Sha256 hash from \lst{input} bytes. See~\hyperref[sec:appendix:primops
 \subsubsection{\lst{CreateProveDlog} operation (OpCode 205)}
 \label{sec:serialization:operation:CreateProveDlog}
 
-ErgoTree operation to create a new \\lst{SigmaProp} value representing public key
+ErgoTree operation to create a new \lst{SigmaProp} value representing public key
  of discrete logarithm signature protocol.
          See~\hyperref[sec:appendix:primops:CreateProveDlog]{\lst{proveDlog}}
 
@@ -880,10 +880,10 @@ Serialized bytes of this sigma proposition taken as ErgoTree. See~\hyperref[sec:
 \subsubsection{\lst{BoolToSigmaProp} operation (OpCode 209)}
 \label{sec:serialization:operation:BoolToSigmaProp}
 
-Embedding of \\lst{Boolean} values to \\lst{SigmaProp} values.
+Embedding of \lst{Boolean} values to \lst{SigmaProp} values.
  As an example, this operation allows boolean experessions
- to be used as arguments of \\lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
- During execution results to either \\lst{TrueProp} or \\lst{FalseProp} values of \\lst{SigmaProp} type.
+ to be used as arguments of \lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
+ During execution results to either \lst{TrueProp} or \lst{FalseProp} values of \lst{SigmaProp} type.
          See~\hyperref[sec:appendix:primops:BoolToSigmaProp]{\lst{sigmaProp}}
 
 \noindent

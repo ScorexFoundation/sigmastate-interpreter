@@ -14,8 +14,61 @@ format of \langname terms and types is specified in
 Appendix~\ref{sec:appendix:ergotree_serialization} and
 ~\ref{sec:appendix:type_serialization} correspondingly. 
 
-Basic (or primitive) serialization formats which are use thoughout this
-section are defined in Table~\ref{table:basic_formats}.
+All serialization formats which are uses and defined thoughout this
+section are listed in Table~\ref{table:ser:formats}.
+
+\begin{table}[h]
+    \footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | X |}
+    \hline
+    \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \lst{Byte} & 1 & 8-bit signed two's-complement integer \\
+    \hline
+    \lst{Short} & 2 & 16-bit signed two's-complement integer (big-endian) \\
+    \hline    
+    \lst{Int} & 4 & 32-bit signed two's-complement integer (big-endian) \\
+    \hline
+    \lst{Long} & 8 & 64-bit signed two's-complement integer (big-endian) \\
+    \hline
+    \lst{UByte} & 1 & 8-bit unsigned integer \\
+    \hline
+    \lst{UShort} & 2 & 16-bit unsigned integer (big-endian) \\
+    \hline    
+    \lst{UInt} & 4 & 32-bit unsigned integer (big-endian) \\
+    \hline
+    \lst{ULong} & 8 & 64-bit unsigned integer (big-endian) \\
+
+    \hline
+    \lst{VLQ(UShort)} & [1..3] & Encoded unsigned \lst{Short} value using VLQ. See~\cite{VLQWikipedia} and~\ref{sec:vlq-encoding} \\
+    \hline    
+    \lst{VLQ(UInt)} & [1..5] & Encoded unsigned 32-bit integer using VLQ. \\
+    \hline
+    \lst{VLQ(ULong)} & [1..10] & Encoded unsigned 64-bit integer using VLQ. \\
+    \hline
+    \lst{Type} & [1..*] & Serialized type terms of \langname \\
+    \hline
+    \lst{Data} & [1..*] & Serialized \langname values \\
+    \hline
+    \lst{Constant} & [1..*] & Serialized \langname constants (values with types) \\
+    \hline
+    \lst{Expr} & [1..*] & Serialized expression terms of \langname \\
+    \hline
+    \lst{ErgoTree} & [1..*] & Serialized instances of \langname contracts \\
+    \hline
+\end{tabularx}\)
+\caption{Serialization formats}
+\label{table:ser:formats}
+\end{table}
+
+\subsection{Type Serialization}
+\label{sec:serialization:constants}
+
+\subsection{Data Serialization}
+\label{sec:serialization:constants}
+
+\subsection{Constant Serialization}
+\label{sec:serialization:constants}
 
 \subsection{\ASDag~serialization}
 \label{sec:serialization:ergotree}
@@ -99,5 +152,3 @@ exception.
 \subsection{Constant Segregation}
 \label{sec:serialization:constant_segregation}
 
-\subsection{Constant Serialization}
-\label{sec:serialization:constants}
