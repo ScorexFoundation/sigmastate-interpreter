@@ -291,7 +291,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
     def cost: Rep[Int] = {
       val costs = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.cost }
-      opCost(costs, structCost)
+      opCost(value, costs, structCost)
     }
 
     override def size: Rep[Size[Struct]] = {
@@ -648,9 +648,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        RCostedColl(vals, costs, sizes, xs.valuesCost)
 
 
-      case CostedM.cost(Def(CCostedCollCtor(_, costs, _, accCost))) => opCost(Seq(accCost), costs.sum(intPlusMonoid))
-      case CostedM.cost(Def(CCostedOptionCtor(_, costOpt, _, accCost))) => opCost(Seq(accCost), costOpt.getOrElse(Thunk(0)))
-      case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) => opCost(Seq(accCost), l.cost + r.cost)
+      case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
+        opCost(values, Seq(accCost), costs.sum(intPlusMonoid))
+      case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>
+        opCost(v, Seq(accCost), costOpt.getOrElse(Thunk(0)))
+      case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) =>
+        opCost(l.value, Seq(accCost), l.cost + r.cost)
 
       case CostedM.value(Def(CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_))) =>
         func.sliceCalc
@@ -1260,7 +1263,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case CreateProveDlog(In(_v)) =>
         val vC = asRep[Costed[GroupElement]](_v)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
-        val cost = opCost(Seq(vC.cost), costOfDHTuple)
+        val cost = opCost(vC.value, Seq(vC.cost), costOfDHTuple)
         RCCostedPrim(resV, cost, mkSizeSigmaProp(vC.size.dataSize))
 
       case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
@@ -1269,21 +1272,21 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val uvC = asRep[Costed[GroupElement]](_uv)
         val vvC = asRep[Costed[GroupElement]](_vv)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-        val cost = opCost(Seq(gvC.cost, hvC.cost, uvC.cost, vvC.cost), costOfDHTuple)
+        val cost = opCost(resV, Seq(gvC.cost, hvC.cost, uvC.cost, vvC.cost), costOfDHTuple)
         RCCostedPrim(resV, cost, mkSizeSigmaProp(gvC.size.dataSize * 4L))
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
         val r = asRep[Costed[BigInt]](_r)
         val value = l.value.exp(r.value)
-        val cost = opCost(Seq(l.cost, r.cost), costOf(node))
+        val cost = opCost(value, Seq(l.cost, r.cost), costOf(node))
         RCCostedPrim(value, cost, SizeGroupElement)
 
       case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
         val r = asRep[Costed[GroupElement]](_r)
         val value = l.value.multiply(r.value)
-        val cost = opCost(Seq(l.cost, r.cost), costOf(node))
+        val cost = opCost(value, Seq(l.cost, r.cost), costOf(node))
         RCCostedPrim(value, cost, SizeGroupElement)
 
       case Values.GroupGenerator =>
@@ -1294,13 +1297,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val arr = arrC.value
         val value = sigmaDslBuilder.byteArrayToBigInt(arr)
         val size = arrC.size.dataSize
-        val cost = opCost(Seq(arrC.cost), costOf(node) + costOf("new_BigInteger_per_item", node.opType) * size.toInt)
+        val cost = opCost(value, Seq(arrC.cost), costOf(node) + costOf("new_BigInteger_per_item", node.opType) * size.toInt)
         RCCostedPrim(value, cost, SizeBigInt)
 
       case sigmastate.LongToByteArray(In(_x)) =>
         val xC = asRep[Costed[Long]](_x)
         val col = sigmaDslBuilder.longToByteArray(xC.value) // below we assume col.length == typeSize[Long]
-        val cost = opCost(Seq(xC.cost), costOf(node))
+        val cost = opCost(col, Seq(xC.cost), costOf(node))
         val len = SizeLong.dataSize.toInt
         mkCostedColl(col, len, cost)
 
@@ -1322,7 +1325,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val tup = asRep[Costed[Struct]](_tup)
             val fn = STuple.componentNameByIndex(fieldIndex - 1)
             val v = tup.value.getUntyped(fn)
-            val c = opCost(Seq(tup.cost), costedBuilder.SelectFieldCost)
+            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
             val s: RSize[Any] = ??? // TODO implement similar to Pair case
             RCCostedPrim(v, c, s)
           case pe: PairElem[a,b] =>
@@ -1338,12 +1341,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
-        RCCostedPair(x, y, opCost(Seq(x.cost, y.cost), CostTable.newPairValueCost))
+        RCCostedPair(x, y, opCost(x.value, Seq(x.cost, y.cost), CostTable.newPairValueCost))
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
-        val cost = opCost(items.map(_.cost), costedBuilder.ConstructTupleCost)
-        RCostedStruct(struct(fields), cost)
+        val value = struct(fields)
+        val cost = opCost(value, items.map(_.cost), costedBuilder.ConstructTupleCost)
+        RCostedStruct(value, cost)
 
       case node: BooleanTransformer[_] =>
         val eIn = stypeToElem(node.input.tpe.elemType)
@@ -1430,7 +1434,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val vals = inputC.values.slice(f, u)
         val costs = inputC.costs
         val sizes = inputC.sizes
-        RCCostedColl(vals, costs, sizes, opCost(Seq(inputC.valuesCost), costOf(op)))
+        RCCostedColl(vals, costs, sizes, opCost(vals, Seq(inputC.valuesCost), costOf(op)))
 
       case Append(In(_col1), In(_col2)) =>
         val col1 = asRep[CostedColl[Any]](_col1)
@@ -1438,7 +1442,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val values = col1.values.append(col2.values)
         val costs = col1.costs.append(col2.costs)
         val sizes = col1.sizes.append(col2.sizes)
-        RCCostedColl(values, costs, sizes, opCost(Seq(col1.cost, col2.cost), costOf(node)))
+        RCCostedColl(values, costs, sizes, opCost(values, Seq(col1.cost, col2.cost), costOf(node)))
 
       case Filter(input, p) =>
         val inputC = evalNode(ctx, env, input)
@@ -1478,7 +1482,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val sizeF = fC.sliceSize
             val value = xC.value
             val y: Rep[Any] = Apply(calcF, value, false)
-            val c: Rep[Int] = opCost(Seq(fC.cost, xC.cost), Apply(costF, Pair(xC.cost, xC.size), false))
+            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), Apply(costF, Pair(xC.cost, xC.size), false))
             val s: Rep[Size[Any]]= Apply(sizeF, xC.size, false)
             RCCostedPrim(y, c, s)
         }
@@ -1489,12 +1493,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case CalcBlake2b256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
-        val cost = opCost(Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
+        val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
         mkCostedColl(res, Blake2b256.DigestSize, cost)
       case CalcSha256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
-        val cost = opCost(Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
+        val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
         mkCostedColl(res, Sha256.DigestSize, cost)
 
       case utxo.SizeOf(In(xs)) =>
@@ -1502,13 +1506,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           case ce: CollElem[a,_] =>
             val xsC = asRep[Costed[Coll[a]]](xs)
             val v = xsC.value.length
-            RCCostedPrim(v, opCost(Seq(xsC.cost), costOf(node)), SizeInt)
+            RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
           case se: StructElem[_] =>
             val xsC = asRep[Costed[Struct]](xs)
-            RCCostedPrim(se.fields.length, opCost(Seq(xsC.cost), costOf(node)), SizeInt)
+            RCCostedPrim(se.fields.length, opCost(xsC.value, Seq(xsC.cost), costOf(node)), SizeInt)
           case pe: PairElem[a,b] =>
             val xsC = asRep[Costed[(a,b)]](xs)
-            RCCostedPrim(2, opCost(Seq(xsC.cost), costOf(node)), SizeInt)
+            RCCostedPrim(2, opCost(xsC.value, Seq(xsC.cost), costOf(node)), SizeInt)
         }
 
       case ByIndex(xs, i, default) =>
@@ -1521,44 +1525,47 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             val defaultC = asRep[Costed[Any]](eval(defaultValue))
             val default = defaultC.value
             val value = xsC.value.getOrElse(iV, default)
-            val cost = opCost(Seq(xsC.cost, iC.cost, defaultC.cost), costOf(node))
+            val cost = opCost(value, Seq(xsC.cost, iC.cost, defaultC.cost), costOf(node))
             RCCostedPrim(value, cost, size)
           case None =>
-            RCCostedPrim(xsC.value(iV), opCost(Seq(xsC.cost, iC.cost), costOf(node)), size)
+            val value = xsC.value(iV)
+            RCCostedPrim(value, opCost(value, Seq(xsC.cost, iC.cost), costOf(node)), size)
         }
 
       case SigmaPropIsProven(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.isValid
-        val c = opCost(Seq(pC.cost), costOf(node))
+        val c = opCost(v, Seq(pC.cost), costOf(node))
 //        val s = pC.size // NOTE: we pass SigmaProp's size, this is handled in buildCostedGraph
         RCCostedPrim(v, c, SizeBoolean)
       case SigmaPropBytes(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.propBytes
-        mkCostedColl(v, pC.size.dataSize.toInt, opCost(Seq(pC.cost), costOf(node)))
+        mkCostedColl(v, pC.size.dataSize.toInt, opCost(v, Seq(pC.cost), costOf(node)))
 
       case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedCollFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
         val id = boxC.value.id
-        mkCostedColl(id, Blake2b256.DigestSize, opCost(Seq(boxC.cost), costOf(node)))
+        mkCostedColl(id, Blake2b256.DigestSize, opCost(id, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val sBox = tryCast[SizeBox](boxC.size)
-        mkCostedColl(boxC.value.bytesWithoutRef, sBox.bytesWithoutRef.dataSize.toInt, opCost(Seq(boxC.cost), costOf(node)))
+        val v = boxC.value.bytesWithoutRef
+        mkCostedColl(v, sBox.bytesWithoutRef.dataSize.toInt, opCost(v, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractAmount(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        withConstantSize(boxC.value.value, opCost(Seq(boxC.cost), costOf(node)))
+        val v = boxC.value.value
+        withConstantSize(v, opCost(v, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val sBox = tryCast[SizeBox](boxC.size)
         val bytes = boxC.value.propositionBytes
-        mkCostedColl(bytes, sBox.propositionBytes.dataSize.toInt, opCost(Seq(boxC.cost), costOf(node)))
+        mkCostedColl(bytes, sBox.propositionBytes.dataSize.toInt, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val sBox = tryCast[SizeBox](boxC.size)
         val bytes = boxC.value.bytes
-        mkCostedColl(bytes, sBox.bytes.dataSize.toInt, opCost(Seq(boxC.cost), costOf(node)))
+        mkCostedColl(bytes, sBox.bytes.dataSize.toInt, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractCreationInfo(In(box)) =>
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
@@ -1569,7 +1576,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case BoolToSigmaProp(bool) =>
         val boolC = eval(bool)
         val value = sigmaDslBuilder.sigmaProp(boolC.value)
-        RCCostedPrim(value, opCost(Seq(boolC.cost), costOf(node)), mkSizeSigmaProp(1L))
+        RCCostedPrim(value, opCost(value, Seq(boolC.cost), costOf(node)), mkSizeSigmaProp(1L))
 
       case AtLeast(bound, input) =>
         val inputC = asRep[CostedColl[SigmaProp]](evalNode(ctx, env, input))
@@ -1580,7 +1587,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, inputC.values)
-        val cost = opCost(Seq(boundC.cost, inputC.cost), costOf(node))
+        val cost = opCost(res, Seq(boundC.cost, inputC.cost), costOf(node))
         val sInput = tryCast[SizeColl[SigmaProp]](inputC.size)
         RCCostedPrim(res, cost, mkSizeSigmaProp(sInput.dataSize))
 
@@ -1607,7 +1614,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             v = xC.value.max(yC.value)
           case code => error(s"Cannot perform Costing.evalNode($op): unknown opCode ${code}", op.sourceContext.toOption)
         }
-        val c = opCost(Seq(xC.cost, yC.cost), costOf(op))
+        val c = opCost(v, Seq(xC.cost, yC.cost), costOf(op))
         RCCostedPrim(v, c, SizeBigInt)
 
       case op: ArithOp[t] =>
@@ -1617,17 +1624,19 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val x = evalNode(ctx, env, op.left)
         val y = evalNode(ctx, env, op.right)
         (x, y) match { case (x: RCosted[a], y: RCosted[b]) =>
-          withConstantSize(ApplyBinOp(binop, x.value, y.value), opCost(Seq(x.cost, y.cost), costOf(op)))
+          val v = ApplyBinOp(binop, x.value, y.value)
+          withConstantSize(v, opCost(v, Seq(x.cost, y.cost), costOf(op)))
         }
 
       case LogicalNot(input) =>
         val inputC = evalNode(ctx, env, input)
-        withConstantSize(ApplyUnOp(Not, inputC.value), opCost(Seq(inputC.cost), costOf(node)))
+        val v = ApplyUnOp(Not, inputC.value)
+        withConstantSize(v, opCost(v, Seq(inputC.cost), costOf(node)))
 
       case ModQ(input) =>
         val inputC = asRep[Costed[BigInt]](eval(input))
         val v = inputC.value.modQ
-        RCCostedPrim(v, opCost(Seq(inputC.cost), costOf(node)), SizeBigInt)
+        RCCostedPrim(v, opCost(v, Seq(inputC.cost), costOf(node)), SizeBigInt)
 
       case OR(input) => input match {
         case ConcreteCollection(items, tpe) =>
@@ -1635,13 +1644,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val res = sigmaDslBuilder.anyOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
           val nOps = costs.length - 1
-          val cost = opCost(costs, perItemCostOf(node, nOps))
+          val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = asRep[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.anyOf(inputC.value)
           val nOps = inputC.sizes.length - 1
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
+          val cost = opCost(res, Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 
@@ -1651,13 +1660,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val res = sigmaDslBuilder.allOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
           val nOps = costs.length - 1
-          val cost = opCost(costs, perItemCostOf(node, nOps))
+          val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = tryCast[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.allOf(inputC.value)
           val nOps = inputC.sizes.length - 1
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
+          val cost = opCost(res, Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 
@@ -1667,13 +1676,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           val res = sigmaDslBuilder.xorOf(colBuilder.fromItems(itemsC.map(_.value): _*))
           val costs = itemsC.map(_.cost)
           val nOps = costs.length - 1
-          val cost = opCost(costs, perItemCostOf(node, nOps))
+          val cost = opCost(res, costs, perItemCostOf(node, nOps))
           withConstantSize(res, cost)
         case _ =>
           val inputC = tryCast[CostedColl[Boolean]](eval(input))
           val res = sigmaDslBuilder.xorOf(inputC.value)
           val nOps = inputC.sizes.length - 1
-          val cost = opCost(Seq(inputC.cost), perItemCostOf(node, nOps))
+          val cost = opCost(res, Seq(inputC.cost), perItemCostOf(node, nOps))
           withConstantSize(res, cost)
       }
 
@@ -1681,7 +1690,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val lC = evalNode(ctx, env, l)
         val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
         val v = Or.applyLazy(lC.value, rC.value)
-        val c = opCost(Seq(lC.cost, rC.cost), costOf(node))
+        val c = opCost(v, Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
 
@@ -1689,7 +1698,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val lC = evalNode(ctx, env, l)
         val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
         val v = And.applyLazy(lC.value, rC.value)
-        val c = opCost(Seq(lC.cost, rC.cost), costOf(node))
+        val c = opCost(v, Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
 //      case BinXor(l, r) =>
@@ -1705,14 +1714,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val op = NumericNegate(elemToNumeric(et))(et)
         val inputC = evalNode(ctx, env, neg.input)
         inputC match { case x: RCosted[a] =>
-            withConstantSize(ApplyUnOp(op, x.value), opCost(Seq(x.cost), costOf(neg)))
+            val v = ApplyUnOp(op, x.value)
+          withConstantSize(v, opCost(v, Seq(x.cost), costOf(neg)))
         }
 
       case SigmaAnd(items) =>
         val itemsC = items.map(eval)
         val res = sigmaDslBuilder.allZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
         val costs = itemsC.map(_.cost)
-        val cost = opCost(costs, perItemCostOf(node, costs.length))
+        val cost = opCost(res, costs, perItemCostOf(node, costs.length))
         val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
         RCCostedPrim(res, cost, mkSizeSigmaProp(size))
 
@@ -1720,7 +1730,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val itemsC = items.map(eval)
         val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
         val costs = itemsC.map(_.cost)
-        val cost = opCost(costs, perItemCostOf(node, costs.length))
+        val cost = opCost(res, costs, perItemCostOf(node, costs.length))
         val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
         RCCostedPrim(res, cost, mkSizeSigmaProp(size))
 
@@ -1737,7 +1747,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         def tC = evalNode(ctx, env, t)
         def eC = evalNode(ctx, env, e)
         val resV = IF (cC.value) THEN tC.value ELSE eC.value
-        val resCost = opCost(Seq(cC.cost, tC.cost, eC.cost), costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT)))
+        val resCost = opCost(resV, Seq(cC.cost, tC.cost, eC.cost), costOf("If", SFunc(Vector(SBoolean, If.tT, If.tT), If.tT)))
         RCCostedPrim(resV, resCost, tC.size) // TODO implement tC.size max eC.size
 
       case rel: Relation[t, _] =>
@@ -1754,9 +1764,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
                 costOf(rel.opName, SBigInt.RelationOpType)
               } else
                 costOf(rel)
-              opCost(Seq(x.cost, y.cost), opcost)
+              opCost(value, Seq(x.cost, y.cost), opcost)
             }
-            else opCost(Seq(x.cost, y.cost), perKbCostOf(node, x.size.dataSize + y.size.dataSize))
+            else opCost(value, Seq(x.cost, y.cost), perKbCostOf(node, x.size.dataSize + y.size.dataSize))
           val res = withConstantSize(value, cost)
           res
         }
@@ -1768,7 +1778,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           evalNode(ctx, env + (n -> x), body)
         }(Lazy(eCostedArg))
         val eRes = f.elem.eRange.eVal
-        mkCostedFunc(f, opCost(Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
+        mkCostedFunc(f, opCost(f, Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
 
       case l @ FuncValue(Seq((n, argTpe)), body) =>
         val eArg = stypeToElem(argTpe).asElem[Any]
@@ -1777,35 +1787,35 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
           evalNode(ctx, env + (n -> x), body)
         }(Lazy(xElem))
         val eRes = f.elem.eRange.eVal
-        mkCostedFunc(f, opCost(Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
+        mkCostedFunc(f, opCost(f, Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
 
       case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), elemType) =>
         implicit val eAny = stypeToElem(elemType).asElem[Any]
         val values = colBuilder.fromItems(vs: _*)(eAny)
         val costs = colBuilder.fromItems(cs: _*)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
-        RCCostedColl(values, costs, sizes, opCost(cs, costOf(col)))
+        RCCostedColl(values, costs, sizes, opCost(values, cs, costOf(col)))
 
       case sigmastate.Upcast(In(inputC), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         val res = upcast(inputC.value)(elem)
-        withConstantSize(res, opCost(Seq(inputC.cost), costOf(node)))
+        withConstantSize(res, opCost(res, Seq(inputC.cost), costOf(node)))
 
       case sigmastate.Downcast(In(inputC), tpe) =>
         val elem = stypeToElem(tpe.asNumType)
         val res = downcast(inputC.value)(elem)
-        withConstantSize(res, opCost(Seq(inputC.cost), costOf(node)))
+        withConstantSize(res, opCost(res, Seq(inputC.cost), costOf(node)))
 
       case LongToByteArray(In(input)) =>
         val inputC = asRep[Costed[Long]](input)
         val res = sigmaDslBuilder.longToByteArray(inputC.value)
-        val cost = opCost(Seq(inputC.cost), costOf(node))
+        val cost = opCost(res, Seq(inputC.cost), costOf(node))
         mkCostedColl(res, 8, cost)
 
       case ByteArrayToLong(In(arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](arr)
         val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
-        val cost = opCost(Seq(arrC.cost), costOf(node))
+        val cost = opCost(value, Seq(arrC.cost), costOf(node))
         withConstantSize(value, cost)
 
       case Xor(InCollByte(l), InCollByte(r)) =>
@@ -1813,7 +1823,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val sizes = r.sizes
         val len = sizes.length
         val costs = colBuilder.replicate(len, 0)
-        val cost = opCost(Seq(l.cost, r.cost), perKbCostOf(node, len.toLong))
+        val cost = opCost(values, Seq(l.cost, r.cost), perKbCostOf(node, len.toLong))
         RCCostedColl(values, costs, sizes, cost)
 
 // TODO should be
@@ -1830,12 +1840,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case SubstConstants(InCollByte(bytes), InCollInt(positions), InCollAny(newValues)) =>
         val values = sigmaDslBuilder.substConstants(bytes.values, positions.values, newValues.values)(AnyElement)
         val len = bytes.size.dataSize + newValues.size.dataSize
-        val cost = opCost(Seq(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
+        val cost = opCost(values, Seq(bytes.cost, positions.cost, newValues.cost), perKbCostOf(node, len))
         mkCostedColl(values, len.toInt, cost)
 
       case DecodePoint(InCollByte(bytes)) =>
         val res = sigmaDslBuilder.decodePoint(bytes.values)
-        RCCostedPrim(res, opCost(Seq(bytes.cost), costOf(node)), SizeGroupElement)
+        RCCostedPrim(res, opCost(res, Seq(bytes.cost), costOf(node)), SizeGroupElement)
 
 //      case Terms.MethodCall(obj, method, args, _) if obj.tpe.isCollectionLike =>
 //        val xsC = asRep[CostedColl[Any]](evalNode(ctx, env, obj))

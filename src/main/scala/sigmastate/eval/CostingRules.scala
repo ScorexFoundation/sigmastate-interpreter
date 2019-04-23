@@ -201,13 +201,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def sizeOfArgs = args.foldLeft(obj.size.dataSize)({ case (s, e) => s + e.size.dataSize })
 
     def constantSizeProperyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] =
-      withConstantSize(prop(obj.value), opCost(costOfArgs, selectFieldCost))
+      withConstantSize(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost))
 
     def knownSizeProperyAccess[R](prop: Rep[T] => Rep[R], size: RSize[R]): RCosted[R] =
-      RCCostedPrim(prop(obj.value), opCost(costOfArgs, selectFieldCost), size)
+      RCCostedPrim(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost), size)
 
     def knownLengthCollProperyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] =
-      mkCostedColl(prop(obj.value), len, opCost(costOfArgs, selectFieldCost))
+      mkCostedColl(prop(obj.value), len, opCost(obj.value, costOfArgs, selectFieldCost))
 
     def digest32ProperyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
       knownLengthCollProperyAccess(prop, CryptoConstants.hashLength)
@@ -219,12 +219,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       knownSizeProperyAccess(prop, SizeBigInt)
 
     def defaultProperyAccess[R](prop: Rep[T] => Rep[R], propSize: RSize[T] => RSize[R]): RCosted[R] =
-      RCCostedPrim(prop(obj.value), opCost(costOfArgs, selectFieldCost), propSize(obj.size))
+      RCCostedPrim(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost), propSize(obj.size))
 
     def defaultOptionProperyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
-      RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(costOfArgs, selectFieldCost))
+      RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(obj.value, costOfArgs, selectFieldCost))
     }
 
     def defaultCollProperyAccess[R: Elem](prop: Rep[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Rep[Int]): RCostedColl[R] = {
@@ -232,12 +232,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val s = propSize(obj.size)
       val sizes = asSizeColl(s).sizes
       val costs = colBuilder.replicate(sizes.length, itemCost)
-      RCCostedColl(v, costs, sizes, opCost(costOfArgs, selectFieldCost))
+      RCCostedColl(v, costs, sizes, opCost(obj.value, costOfArgs, selectFieldCost))
     }
 
     def boxPropertyAccess(prop: Rep[T] => Rep[Box], propSize: RSize[T] => RSize[Box]): RCosted[Box] = {
       val v = prop(obj.value)
-      val c = opCost(costOfArgs, sigmaDslBuilder.CostModel.AccessBox)
+      val c = opCost(obj.value, costOfArgs, sigmaDslBuilder.CostModel.AccessBox)
       val s = propSize(obj.size)
       RCCostedPrim(v, c, s)
     }
@@ -251,7 +251,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       knownLengthCollProperyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
 
     def negate: RCosted[GroupElement] = {
-      RCCostedPrim(obj.value.negate, opCost(costOfArgs, costOf(method)), SizeGroupElement)
+      RCCostedPrim(obj.value.negate, opCost(obj.value, costOfArgs, costOf(method)), SizeGroupElement)
     }
   }
 
@@ -270,18 +270,18 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def isRemoveAllowed() = constantSizeProperyAccess(_.isRemoveAllowed)
 
     def updateDigest(newDigest: RCosted[Coll[Byte]]) = {
-      RCCostedPrim(obj.value.updateDigest(newDigest.value), opCost(costOfArgs, costOf(method)), obj.size)
+      RCCostedPrim(obj.value.updateDigest(newDigest.value), opCost(obj.value, costOfArgs, costOf(method)), obj.size)
     }
     def updateOperations(flags: RCosted[Byte]) = {
-      RCCostedPrim(obj.value.updateOperations(flags.value), opCost(costOfArgs, costOf(method)), obj.size)
+      RCCostedPrim(obj.value.updateOperations(flags.value), opCost(obj.value, costOfArgs, costOf(method)), obj.size)
     }
     def contains(key: RCosted[Coll[Byte]], proof: RCosted[Coll[Byte]]): RCosted[Boolean] = {
-      withConstantSize(obj.value.contains(key.value, proof.value), opCost(costOfArgs, perKbCostOf(method, sizeOfArgs)))
+      withConstantSize(obj.value.contains(key.value, proof.value), opCost(obj.value, costOfArgs, perKbCostOf(method, sizeOfArgs)))
     }
     def get(key: RCosted[Coll[Byte]], proof: RCosted[Coll[Byte]]): RCosted[WOption[Coll[Byte]]] = {
       val value = obj.value.get(key.value, proof.value)
       val size = sizeOfArgs
-      val c = opCost(costOfArgs, perKbCostOf(method, size))
+      val c = opCost(obj.value, costOfArgs, perKbCostOf(method, size))
       val res = RCCostedOption(value,
         specialPredef.some(0),
         specialPredef.some(proof.size),
@@ -295,7 +295,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
       val value = obj.value.getMany(keysC.value, proofC.value)
       val costs = colBuilder.replicate(nKeys, 0)
-      val valuesCost = opCost(costOfArgs, perKbCostOf(method, sizeOfArgs))
+      val valuesCost = opCost(obj.value, costOfArgs, perKbCostOf(method, sizeOfArgs))
 
       val treeValueLengthPerKey = proofC.sizes.length div nKeys
       val treeValueS = mkSizeColl[Byte](treeValueLengthPerKey)
@@ -310,7 +310,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val size = sizeOfArgs
       RCCostedOption(value,
         specialPredef.some(0),
-        SOME(obj.size), opCost(costOfArgs, perKbCostOf(method, size)))
+        SOME(obj.size), opCost(obj.value, costOfArgs, perKbCostOf(method, size)))
     }
 
     def insert(kvs: RCosted[Coll[(Coll[Byte], Coll[Byte])]], proof: RCosted[Coll[Byte]]): RCosted[WOption[AvlTree]] = {
@@ -392,7 +392,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val sInfo = mkSizeColl(len, sToken)
       val costs = colBuilder.replicate(len, 0)
       val sizes = colBuilder.replicate(len, sToken)
-      RCCostedColl(tokens, costs, sizes, opCost(Seq(obj.cost), costOf(method)))
+      RCCostedColl(tokens, costs, sizes, opCost(obj.value, Seq(obj.cost), costOf(method)))
     }
 
     def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
@@ -472,7 +472,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def getOrElse(default: RCosted[T]): RCosted[T] = {
       val v = obj.value.getOrElse(default.value)
-      val c = opCost(costOfArgs, selectFieldCost)
+      val c = opCost(obj.value, costOfArgs, selectFieldCost)
       val s = asSizeOption(obj.size).sizeOpt.getOrElse(default.size)
       RCCostedPrim(v, c, s)
     }
@@ -547,33 +547,33 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
           })
           val values = obj.value.flatMap(f)
           val costs = colBuilder.replicate(sizes.length, 0)
-          RCCostedColl(values, costs, sizes, opCost(costOfArgs, costOf(method)))
+          RCCostedColl(values, costs, sizes, opCost(obj.value, costOfArgs, costOf(method)))
         case _ =>
           !!!(s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
       }
     }
 
     def indexOf(elem: RCosted[T], from: RCosted[Int]): RCosted[Int] = {
-      val c = opCost(costOfArgs, perKbCostOf(method, obj.size.dataSize))
+      val c = opCost(obj.value, costOfArgs, perKbCostOf(method, obj.size.dataSize))
       RCCostedPrim(obj.value.indexOf(elem.value, from.value), c, SizeInt)
     }
 
     def segmentLength(p: RCosted[T => Boolean], from: RCosted[Int]): RCosted[Int] = {
 //      val pCost: Rep[((Int, Size[A])) => Int] = asCostedFunc(p).func.sliceCost
       // TODO costing rule should be more accurate
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedPrim(obj.value.segmentLength(p.value, from.value), c, SizeInt)
     }
 
     def indexWhere(p: RCosted[T => Boolean], from: RCosted[Int]): RCosted[Int] = {
       // TODO costing rule should be more accurate
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedPrim(obj.value.indexWhere(p.value, from.value), c, SizeInt)
     }
 
     def lastIndexWhere(p: RCosted[T => Boolean], end: RCosted[Int]): RCosted[Int] = {
       // TODO costing rule should be more accurate
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedPrim(obj.value.lastIndexWhere(p.value, end.value), c, SizeInt)
     }
 
@@ -585,7 +585,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       // TODO optimize: it make sence to add more high level operations to avoid building large graphs
       val costs = xsC.costs.zip(ysC.costs).map(fun { in: Rep[(Int,Int)] => in._1 + in._2 })
       val sizes = xsC.sizes.zip(ysC.sizes).map(fun { in: Rep[(Size[T],Size[B])] => RCSizePair(in._1, in._2): RSize[(T,B)] })
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedColl(values, costs, sizes, c)
     }
 
@@ -595,7 +595,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val Pair(lvalues, rvalues) = xsC.value.partition(pred.value)
       val costs = xsC.costs
       val sizes = xsC.sizes
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedPair(
         RCCostedColl(lvalues, costs, sizes, CostTable.newCollValueCost),
         RCCostedColl(rvalues, costs, sizes, CostTable.newCollValueCost), c)
@@ -607,19 +607,19 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val values = xsC.value.patch(from.value, patch.value, replaced.value)
       val sizes = xsC.sizes.append(patchC.sizes)
       val costs = xsC.costs.append(patchC.costs)
-      val c = opCost(costOfArgs, costOf(method)) // TODO costing rule should be more accurate
+      val c = opCost(obj.value, costOfArgs, costOf(method)) // TODO costing rule should be more accurate
       RCCostedColl(values, costs, sizes, c)
     }
 
     def updated(index: RCosted[Int], elem: RCosted[T]): RCosted[Coll[T]] = {
       val xsC = asCostedColl(obj)
-      val c = opCost(costOfArgs, costOf(method))
+      val c = opCost(obj.value, costOfArgs, costOf(method))
       RCCostedColl(xsC.value.updated(index.value, elem.value), xsC.costs, xsC.sizes, c)
     }
 
     def updateMany(indexes: RCosted[Coll[Int]], values: RCosted[Coll[T]]): RCosted[Coll[T]] = {
       val xsC = asCostedColl(obj)
-      val c = opCost(costOfArgs, perKbCostOf(method, values.size.dataSize))  // TODO costing rule should be more accurate with sizes
+      val c = opCost(obj.value, costOfArgs, perKbCostOf(method, values.size.dataSize))  // TODO costing rule should be more accurate with sizes
       RCCostedColl(xsC.value.updateMany(indexes.value, values.value), xsC.costs, xsC.sizes, c)
     }
 
