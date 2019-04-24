@@ -197,42 +197,46 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     * This class defines generic costing helpers, to unify and simplify costing rules of individual methods.
     */
   abstract class Coster[T](obj: RCosted[T], method: SMethod, args: Seq[RCosted[_]]) {
-    def costOfArgs = (obj +: args).map(_.cost)
-    def sizeOfArgs = args.foldLeft(obj.size.dataSize)({ case (s, e) => s + e.size.dataSize })
+    def costOfArgs: Seq[Rep[Int]] = (obj +: args).map(_.cost)
+    def sizeOfArgs: Rep[Long] = args.foldLeft(obj.size.dataSize)({ case (s, e) => s + e.size.dataSize })
 
-    def constantSizeProperyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] =
-      withConstantSize(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost))
+    def constantSizePropertyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] = {
+      val value = prop(obj.value)
+      withConstantSize(value, opCost(value, costOfArgs, selectFieldCost))
+    }
 
-    def knownSizeProperyAccess[R](prop: Rep[T] => Rep[R], size: RSize[R]): RCosted[R] =
-      RCCostedPrim(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost), size)
+    def knownSizePropertyAccess[R](prop: Rep[T] => Rep[R], size: RSize[R]): RCosted[R] = {
+      val value = prop(obj.value)
+      RCCostedPrim(value, opCost(value, costOfArgs, selectFieldCost), size)
+    }
 
-    def knownLengthCollProperyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] =
+    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] =
       mkCostedColl(prop(obj.value), len, opCost(obj.value, costOfArgs, selectFieldCost))
 
-    def digest32ProperyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
-      knownLengthCollProperyAccess(prop, CryptoConstants.hashLength)
+    def digest32PropertyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
+      knownLengthCollPropertyAccess(prop, CryptoConstants.hashLength)
 
-    def groupElementProperyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
-      knownSizeProperyAccess(prop, SizeGroupElement)
+    def groupElementPropertyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
+      knownSizePropertyAccess(prop, SizeGroupElement)
 
-    def bigIntProperyAccess(prop: Rep[T] => Rep[BigInt]): RCosted[BigInt] =
-      knownSizeProperyAccess(prop, SizeBigInt)
+    def bigIntPropertyAccess(prop: Rep[T] => Rep[BigInt]): RCosted[BigInt] =
+      knownSizePropertyAccess(prop, SizeBigInt)
 
-    def defaultProperyAccess[R](prop: Rep[T] => Rep[R], propSize: RSize[T] => RSize[R]): RCosted[R] =
+    def defaultPropertyAccess[R](prop: Rep[T] => Rep[R], propSize: RSize[T] => RSize[R]): RCosted[R] =
       RCCostedPrim(prop(obj.value), opCost(obj.value, costOfArgs, selectFieldCost), propSize(obj.size))
 
-    def defaultOptionProperyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
+    def defaultOptionPropertyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
       RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(obj.value, costOfArgs, selectFieldCost))
     }
 
-    def defaultCollProperyAccess[R: Elem](prop: Rep[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Rep[Int]): RCostedColl[R] = {
+    def defaultCollPropertyAccess[R: Elem](prop: Rep[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Rep[Int]): RCostedColl[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
       val sizes = asSizeColl(s).sizes
       val costs = colBuilder.replicate(sizes.length, itemCost)
-      RCCostedColl(v, costs, sizes, opCost(obj.value, costOfArgs, selectFieldCost))
+      RCCostedColl(v, costs, sizes, opCost(v, costOfArgs, selectFieldCost))
     }
 
     def boxPropertyAccess(prop: Rep[T] => Rep[Box], propSize: RSize[T] => RSize[Box]): RCosted[Box] = {
@@ -248,7 +252,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class GroupElementCoster(obj: RCosted[GroupElement], method: SMethod, args: Seq[RCosted[_]]) extends Coster[GroupElement](obj, method, args){
     import GroupElement._
     def getEncoded: RCosted[Coll[Byte]] =
-      knownLengthCollProperyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
+      knownLengthCollPropertyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
 
     def negate: RCosted[GroupElement] = {
       RCCostedPrim(obj.value.negate, opCost(obj.value, costOfArgs, costOf(method)), SizeGroupElement)
@@ -261,13 +265,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SAvlTree methods */
   class AvlTreeCoster(obj: RCosted[AvlTree], method: SMethod, args: Seq[RCosted[_]]) extends Coster[AvlTree](obj, method, args){
     import AvlTree._
-    def digest() = knownLengthCollProperyAccess(_.digest, AvlTreeData.DigestSize)
-    def enabledOperations() = constantSizeProperyAccess(_.enabledOperations)
-    def keyLength() = constantSizeProperyAccess(_.keyLength)
-    def valueLengthOpt() = defaultOptionProperyAccess(_.valueLengthOpt, _ => mkSizeOption(SizeInt), 0)
-    def isInsertAllowed() = constantSizeProperyAccess(_.isInsertAllowed)
-    def isUpdateAllowed() = constantSizeProperyAccess(_.isUpdateAllowed)
-    def isRemoveAllowed() = constantSizeProperyAccess(_.isRemoveAllowed)
+    def digest() = knownLengthCollPropertyAccess(_.digest, AvlTreeData.DigestSize)
+    def enabledOperations() = constantSizePropertyAccess(_.enabledOperations)
+    def keyLength() = constantSizePropertyAccess(_.keyLength)
+    def valueLengthOpt() = defaultOptionPropertyAccess(_.valueLengthOpt, _ => mkSizeOption(SizeInt), 0)
+    def isInsertAllowed() = constantSizePropertyAccess(_.isInsertAllowed)
+    def isUpdateAllowed() = constantSizePropertyAccess(_.isUpdateAllowed)
+    def isRemoveAllowed() = constantSizePropertyAccess(_.isRemoveAllowed)
 
     def updateDigest(newDigest: RCosted[Coll[Byte]]) = {
       RCCostedPrim(obj.value.updateDigest(newDigest.value), opCost(obj.value, costOfArgs, costOf(method)), obj.size)
@@ -330,12 +334,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class ContextCoster(obj: RCosted[Context], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Context](obj, method, args){
     import Context._
     def boxCollProperty(prop: Rep[Context] => Rep[Coll[Box]], propSize: Rep[SizeContext] => RSize[Coll[Box]]) = {
-      defaultCollProperyAccess(prop, ctxS => propSize(asSizeContext(ctxS)), sigmaDslBuilder.CostModel.AccessBox)
+      defaultCollPropertyAccess(prop, ctxS => propSize(asSizeContext(ctxS)), sigmaDslBuilder.CostModel.AccessBox)
     }
     def headers() = {
-      knownLengthCollProperyAccess(_.headers, ErgoLikeContext.MaxHeaders)
+      knownLengthCollPropertyAccess(_.headers, ErgoLikeContext.MaxHeaders)
     }
-    def preHeader() = constantSizeProperyAccess(_.preHeader)
+    def preHeader() = constantSizePropertyAccess(_.preHeader)
 
     def dataInputs(): RCostedColl[Box] = {
       boxCollProperty(_.dataInputs, _.dataInputs)
@@ -349,23 +353,23 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       boxCollProperty(_.INPUTS, _.inputs)
     }
 
-    def HEIGHT: RCosted[Int] = constantSizeProperyAccess(_.HEIGHT)
+    def HEIGHT: RCosted[Int] = constantSizePropertyAccess(_.HEIGHT)
 
     def SELF: RCosted[Box] = boxPropertyAccess(_.SELF, asSizeContext(_).selfBox)
 
     def LastBlockUtxoRootHash: RCosted[AvlTree] =
-      knownSizeProperyAccess(_.LastBlockUtxoRootHash, SizeAvlTree)
+      knownSizePropertyAccess(_.LastBlockUtxoRootHash, SizeAvlTree)
 
     def minerPubKey: RCostedColl[Byte] =
-      knownLengthCollProperyAccess(_.minerPubKey, CryptoConstants.EncodedGroupElementLength.toInt)
+      knownLengthCollPropertyAccess(_.minerPubKey, CryptoConstants.EncodedGroupElementLength.toInt)
 
     def getVar[T](id: RCosted[Byte])(implicit tT: Rep[WRType[T]]): RCostedOption[T] = { ???
-//      defaultOptionProperyAccess(_.getVar(id.value)(tT.eA), asSizeContext(_).reg)
+//      defaultOptionPropertyAccess(_.getVar(id.value)(tT.eA), asSizeContext(_).reg)
 //      val opt = ctx.getVar(id)(cT)
 //      dsl.costOption(opt, dsl.CostModel.GetVar)
     }
 
-    def selfBoxIndex: RCosted[Int] = constantSizeProperyAccess(_.selfBoxIndex)
+    def selfBoxIndex: RCosted[Int] = constantSizePropertyAccess(_.selfBoxIndex)
 
   }
 
@@ -410,35 +414,35 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class HeaderCoster(obj: RCosted[Header], method: SMethod, args: Seq[RCosted[_]]) extends Coster[Header](obj, method, args){
     import Header._
 
-    def id() = digest32ProperyAccess(_.id)
+    def id() = digest32PropertyAccess(_.id)
 
-    def version() = constantSizeProperyAccess(_.version)
+    def version() = constantSizePropertyAccess(_.version)
 
-    def parentId() = digest32ProperyAccess(_.parentId)
+    def parentId() = digest32PropertyAccess(_.parentId)
 
-    def ADProofsRoot() = digest32ProperyAccess(_.ADProofsRoot)
+    def ADProofsRoot() = digest32PropertyAccess(_.ADProofsRoot)
 
-    def stateRoot() = knownSizeProperyAccess(_.stateRoot, SizeAvlTree)
+    def stateRoot() = knownSizePropertyAccess(_.stateRoot, SizeAvlTree)
 
-    def transactionsRoot() = digest32ProperyAccess(_.transactionsRoot)
+    def transactionsRoot() = digest32PropertyAccess(_.transactionsRoot)
 
-    def timestamp() = constantSizeProperyAccess(_.timestamp)
+    def timestamp() = constantSizePropertyAccess(_.timestamp)
 
-    def nBits() = constantSizeProperyAccess(_.nBits)
+    def nBits() = constantSizePropertyAccess(_.nBits)
 
-    def height() = constantSizeProperyAccess(_.height)
+    def height() = constantSizePropertyAccess(_.height)
 
-    def extensionRoot() = digest32ProperyAccess(_.extensionRoot)
+    def extensionRoot() = digest32PropertyAccess(_.extensionRoot)
 
-    def minerPk() = groupElementProperyAccess(_.minerPk)
+    def minerPk() = groupElementPropertyAccess(_.minerPk)
 
-    def powOnetimePk() = groupElementProperyAccess(_.powOnetimePk)
+    def powOnetimePk() = groupElementPropertyAccess(_.powOnetimePk)
 
-    def powNonce() = knownLengthCollProperyAccess(_.powNonce, 8)
+    def powNonce() = knownLengthCollPropertyAccess(_.powNonce, 8)
 
-    def powDistance() = bigIntProperyAccess(_.powDistance)
+    def powDistance() = bigIntPropertyAccess(_.powDistance)
 
-    def votes() = knownLengthCollProperyAccess(_.votes, 3)
+    def votes() = knownLengthCollPropertyAccess(_.votes, 3)
   }
 
   object HeaderCoster extends CostingHandler[Header]((obj, m, args) => new HeaderCoster(obj, m, args))
@@ -447,19 +451,19 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class PreHeaderCoster(obj: RCosted[PreHeader], method: SMethod, args: Seq[RCosted[_]]) extends Coster[PreHeader](obj, method, args){
     import PreHeader._
 
-    def version() = constantSizeProperyAccess(_.version)
+    def version() = constantSizePropertyAccess(_.version)
 
-    def parentId() = digest32ProperyAccess(_.parentId)
+    def parentId() = digest32PropertyAccess(_.parentId)
 
-    def timestamp() = constantSizeProperyAccess(_.timestamp)
+    def timestamp() = constantSizePropertyAccess(_.timestamp)
 
-    def nBits() = constantSizeProperyAccess(_.nBits)
+    def nBits() = constantSizePropertyAccess(_.nBits)
 
-    def height() = constantSizeProperyAccess(_.height)
+    def height() = constantSizePropertyAccess(_.height)
 
-    def minerPk() = groupElementProperyAccess(_.minerPk)
+    def minerPk() = groupElementPropertyAccess(_.minerPk)
 
-    def votes() = knownLengthCollProperyAccess(_.votes, 3)
+    def votes() = knownLengthCollPropertyAccess(_.votes, 3)
   }
 
   object PreHeaderCoster extends CostingHandler[PreHeader]((obj, m, args) => new PreHeaderCoster(obj, m, args))
@@ -468,7 +472,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class OptionCoster[T](obj: RCosted[WOption[T]], method: SMethod, args: Seq[RCosted[_]]) extends Coster[WOption[T]](obj, method, args){
     import WOption._
     implicit val eT = obj.elem.eVal.eItem
-    def get(): RCosted[T] = defaultProperyAccess(_.get, asSizeOption(_).sizeOpt.get)
+    def get(): RCosted[T] = defaultPropertyAccess(_.get, asSizeOption(_).sizeOpt.get)
 
     def getOrElse(default: RCosted[T]): RCosted[T] = {
       val v = obj.value.getOrElse(default.value)
@@ -477,8 +481,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedPrim(v, c, s)
     }
 
-    def isDefined: RCosted[Boolean] = constantSizeProperyAccess(_.isDefined)
-    def isEmpty: RCosted[Boolean] = constantSizeProperyAccess(_.isEmpty)
+    def isDefined: RCosted[Boolean] = constantSizePropertyAccess(_.isDefined)
+    def isEmpty: RCosted[Boolean] = constantSizePropertyAccess(_.isEmpty)
 
     def map[B](_f: RCosted[T => B]): RCosted[WOption[B]] = {
       val f = asCostedFunc[T,B](_f)
@@ -511,7 +515,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     implicit val eT = obj.elem.eVal.eItem
 
     def indices(): RCostedColl[Int] =
-      knownLengthCollProperyAccess(_.indices, asSizeColl(obj.size).sizes.length)
+      knownLengthCollPropertyAccess(_.indices, asSizeColl(obj.size).sizes.length)
 
     def map[B](_f: RCosted[T => B]): RCosted[Coll[B]] = {
       val xs = asCostedColl(obj)
@@ -640,7 +644,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SGlobal methods */
   class SigmaDslBuilderCoster(obj: RCosted[SigmaDslBuilder], method: SMethod, args: Seq[RCosted[_]]) extends Coster[SigmaDslBuilder](obj, method, args){
 
-    def groupGenerator() = groupElementProperyAccess(_.groupGenerator)
+    def groupGenerator() = groupElementPropertyAccess(_.groupGenerator)
   }
 
   object SigmaDslBuilderCoster extends CostingHandler[SigmaDslBuilder]((obj, m, args) => new SigmaDslBuilderCoster(obj, m, args))
