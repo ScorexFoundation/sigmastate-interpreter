@@ -6,13 +6,16 @@ serialized to array of bytes to be stored in Ergo blockchain (e.g. as
 Box.propositionBytes).
 
 When the guarding script of an input box of a transaction is validated the
-\lst{propositionBytes} array is deserialized to an \langname term, which can
+\lst{propositionBytes} array is deserialized to an \langname IR (called \ASDag), which can
 be evaluated as it is specified in Section~\ref{sec:evaluation}.
 
 Here we specify the serialization procedure in general. The serialization
 format of \langname terms and types is specified in
 Appendix~\ref{sec:appendix:ergotree_serialization} and
-~\ref{sec:appendix:type_serialization} correspondingly. 
+~\ref{sec:appendix:type_serialization} correspondingly.
+
+Table~\ref{table:ser:formats} shows size limits which are checked during
+contract deserialization.
 
 \begin{table}[h]
     \footnotesize
@@ -103,6 +106,15 @@ Table~\ref{table:ser:formats} introduce a name for each format and also shows
 the number of bytes each format may occupy in the byte stream. We use $[1..n]$
 notation when serialization may produce from 1 to n bytes depending of actual
 data instance. 
+
+Serialization format of \ASDag is optimized for compact storage. In many
+cases serialization procedure is data dependent and thus have branching
+logic. To express this complex serialization logic we use
+\emph{pseudo-language operators} like \lst{for, match, if, optional} which
+allow to specify a \emph{structure} on \emph{simple serialization slots}.
+Each \emph{slot} specifies a fragment of serialized stream of bytes, whereas
+\emph{operators} specifiy how the slots are combined together to form the
+stream of bytes.
 
 \subsection{Type Serialization}
 \label{sec:ser:type}
