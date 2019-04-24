@@ -12,6 +12,7 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
+  private val reg2 = ErgoBox.nonMandatoryRegisters(1)
 
   private lazy val tokenId: Coll[Byte] = spec.Coll(Blake2b256("token1"))
 
@@ -32,15 +33,17 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
       import CONTEXT._
       val dataInput = CONTEXT.dataInputs(0)
       val inReg = dataInput.R4[Long].get
+      val inTime = dataInput.R5[Long].get
       val inToken = dataInput.R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId
-      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
+      val okContractLogic = (inTime > 1556089223) && ((inReg > 15L && pkA) || (inReg <= 15L && pkB))
       inToken && okContractLogic
     },
       """{
         |      val dataInput = CONTEXT.dataInputs(0)
         |      val inReg = dataInput.R4[Long].get
+        |      val inTime = dataInput.R5[Long].get
         |      val inToken = dataInput.tokens(0)._1 == tokenId
-        |      val okContractLogic = (inReg > 15L && pkA) || (inReg <= 15L && pkB)
+        |      val okContractLogic = (inTime > 1556089223) && ((inReg > 15L && pkA) || (inReg <= 15L && pkB))
         |      inToken && okContractLogic
         |}
       """.stripMargin)
@@ -57,6 +60,7 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
 
   property("lightweight oracle token example (ErgoDsl)") {
     val temperature: Long = 18
+    val time = 1556089423L
     val contract = OracleContract[spec.type](temperature, tokenId, alice, bob)(spec)
     import contract.spec._
 
@@ -68,7 +72,7 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
 
     val sOracle = mockTx // in real world, this must be protected by pkOracle
         .outBox(value = 1L, contract.dummySignature)
-        .withRegs(reg1 -> temperature)
+        .withRegs(reg1 -> temperature, reg2 -> time)
         .withTokens(Token(tokenId, 1))
 
     val sAlice = mockTx.outBox(10, contract.prop)
@@ -83,4 +87,9 @@ class OracleDataInputsExamplesSpecification extends SigmaTestingCommons { suite 
     val pr = alice.prove(in).get
     contract.verifier.verify(in, pr) shouldBe true
   }
+}
+
+
+object TimePrinter extends App {
+  println(System.currentTimeMillis() / 1000)
 }
