@@ -14,6 +14,29 @@ format of \langname terms and types is specified in
 Appendix~\ref{sec:appendix:ergotree_serialization} and
 ~\ref{sec:appendix:type_serialization} correspondingly. 
 
+\begin{table}[h]
+    \footnotesize
+\(\begin{tabularx}{\textwidth}{| l | p{2cm} | X |}
+    \hline
+    \bf{Name}   & \bf{Value} & \bf{Description} \\
+    \hline
+    $\MaxVlqSize$  & $10$ & Maximum size of VLQ encoded byte sequence (See VLQ formats)  \\
+    \hline
+    $\MaxTypeSize$ & $100$ & Maximum size of serialized type term (see Type format) \\
+    \hline
+    $\MaxDataSize$ & $10Kb$ & Maximum size of serialized data instance (see Data format) \\
+    \hline
+    $\MaxConstSize$ & $=\MaxTypeSize + \MaxDataSize$  & Maximum size of serialized data instance (see Const format) \\
+    \hline
+    $\MaxExprSize$ & $1Kb$ & Maximum size of serialized \langname term (see Expr format) \\
+    \hline
+    $\MaxErgoTreeSize$ & $24Kb$ & Maximum size of serialized \langname contract (see ErgoTree format) \\
+    \hline
+\end{tabularx}\)
+\caption{Serialization limits}
+\label{table:ser:formats}
+\end{table}
+
 All serialization formats which are uses and defined thoughout this
 section are listed in Table~\ref{table:ser:formats}.
 
@@ -23,55 +46,236 @@ section are listed in Table~\ref{table:ser:formats}.
     \hline
     \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
-    \lst{Byte} & 1 & 8-bit signed two's-complement integer \\
+    \lst{Byte} & $1$ & 8-bit signed two's-complement integer \\
     \hline
-    \lst{Short} & 2 & 16-bit signed two's-complement integer (big-endian) \\
+    \lst{Short} & $2$ & 16-bit signed two's-complement integer (big-endian) \\
     \hline    
-    \lst{Int} & 4 & 32-bit signed two's-complement integer (big-endian) \\
+    \lst{Int} & $4$ & 32-bit signed two's-complement integer (big-endian) \\
     \hline
-    \lst{Long} & 8 & 64-bit signed two's-complement integer (big-endian) \\
+    \lst{Long} & $8$ & 64-bit signed two's-complement integer (big-endian) \\
     \hline
-    \lst{UByte} & 1 & 8-bit unsigned integer \\
+    \lst{UByte} & $1$ & 8-bit unsigned integer \\
     \hline
-    \lst{UShort} & 2 & 16-bit unsigned integer (big-endian) \\
+    \lst{UShort} & $2$ & 16-bit unsigned integer (big-endian) \\
     \hline    
-    \lst{UInt} & 4 & 32-bit unsigned integer (big-endian) \\
+    \lst{UInt} & $4$ & 32-bit unsigned integer (big-endian) \\
     \hline
-    \lst{ULong} & 8 & 64-bit unsigned integer (big-endian) \\
+    \lst{ULong} & $8$ & 64-bit unsigned integer (big-endian) \\
 
     \hline
-    \lst{VLQ(UShort)} & [1..3] & Encoded unsigned \lst{Short} value using VLQ. See~\cite{VLQWikipedia} and~\ref{sec:vlq-encoding} \\
+    \lst{VLQ(UShort)} & $[1..3]$ & Encoded unsigned \lst{Short} value using VLQ. See~\cite{VLQWikipedia,VLQRosetta} and~\ref{sec:vlq-encoding} \\
     \hline    
-    \lst{VLQ(UInt)} & [1..5] & Encoded unsigned 32-bit integer using VLQ. \\
+    \lst{VLQ(UInt)} & $[1..5]$ & Encoded unsigned 32-bit integer using VLQ. \\
     \hline
-    \lst{VLQ(ULong)} & [1..10] & Encoded unsigned 64-bit integer using VLQ. \\
+    \lst{VLQ(ULong)} & $[1..\MaxVlqSize]$ & Encoded unsigned 64-bit integer using VLQ. \\
+
     \hline
-    \lst{Type} & [1..*] & Serialized type terms of \langname \\
+    \lst{Bits} & $[1..\MaxBits]$ & A collection of bits packed in a sequence of bytes. \\
     \hline
-    \lst{Data} & [1..*] & Serialized \langname values \\
+    \lst{Bytes} & $[1..\MaxBytes]$ & A sequence (block) of bytes. 
+    The size of the block should either stored elsewhere or wellknown. \\
+
     \hline
-    \lst{Constant} & [1..*] & Serialized \langname constants (values with types) \\
+    \lst{Type} & $[1..\MaxTypeSize]$ & Serialized type terms of \langname. See~\ref{sec:ser:type} \\
     \hline
-    \lst{Expr} & [1..*] & Serialized expression terms of \langname \\
+    \lst{Data} & $[1..\MaxDataSize]$ & Serialized \langname values. See~\ref{sec:ser:data} \\
     \hline
-    \lst{ErgoTree} & [1..*] & Serialized instances of \langname contracts \\
+    \lst{GroupElement} & $33$ & Serialized elements of eliptic curve group. See~\ref{sec:ser:data:groupelement} \\
+    \hline
+    \lst{SigmaProp} & $[1..\MaxSigmaProp]$ & Serialized sigma propositions. See~\ref{sec:ser:data:sigmaprop} \\
+    \hline
+    \lst{Box} & $[1..\MaxBox]$ & Serialized box data. See~\ref{sec:ser:data:box} \\
+    \hline
+    \lst{AvlTree} & $44$ & Serialized dynamic dictionary digest. See~\ref{sec:ser:data:avltree} \\
+    \hline
+    \lst{Const} & $[1..\MaxConstSize]$ & Serialized \langname constants (values with types). See~\ref{sec:ser:const} \\
+    \hline
+    \lst{Expr} & $[1..\MaxExprSize]$ & Serialized expression terms of \langname. See~\ref{sec:ser:expr} \\
+    \hline
+    \lst{ErgoTree} & $[1..\MaxErgoTreeSize]$ & Serialized instances of \langname contracts. See~\ref{sec:ser:ergotree} \\
     \hline
 \end{tabularx}\)
 \caption{Serialization formats}
 \label{table:ser:formats}
 \end{table}
 
+Table~\ref{table:ser:formats} introduce a name for each format and also shows
+the number of bytes each format may occupy in the byte stream. We use $[1..n]$
+notation when serialization may produce from 1 to n bytes depending of actual
+data instance. 
+
 \subsection{Type Serialization}
-\label{sec:serialization:constants}
+\label{sec:ser:type}
+
+\mnote{Migrate TypeSerialization.md here}
+
 
 \subsection{Data Serialization}
-\label{sec:serialization:constants}
+\label{sec:ser:data}
+
+In \langname all runtime data values have an associated type also available
+at runtime (this is called \emph{type reification}\cite{Reification}).
+However serialization format separates data values from its type descriptors. 
+This allows to save space when for example a collection of items is serialized.
+
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \hline
+    \multicolumn{4}{l}{\lst{def serializeData(}$t, v$\lst{)}} \\
+    \multicolumn{4}{l}{~~\lst{match} $(t, v)$ } \\
+
+    \multicolumn{4}{l}{~~~~\lst{with} $(Unit, v \in \Denot{Unit})$~~~// nothing serialized } \\
+    \multicolumn{4}{l}{~~~~\lst{with} $(Boolean, v \in \Denot{Boolean})$} \\
+    \hline
+    $~~~~~~v$ & \lst{Byte} & 1 & 0 or 1 in a single byte \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Byte, v \in \Denot{Byte})$} \\
+    \hline
+    $~~~~~~v$  & \lst{Byte} & 1 &  in a single byte \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(N, v \in \Denot{Short}), N \in {Short, Int, Long}$} \\
+    \hline
+    $~~~~~~v$  & \lst{VLQ(ZigZag($$N$$))} & [1..3] & 
+      16,32,64-bit signed integer encoded using \hyperref[sec:zigzag-encoding]{ZigZag} 
+      and then using \hyperref[sec:vlq-encoding]{VLQ} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(BigInt, v \in \Denot{BigInt})$} \\
+    \multicolumn{4}{l}{~~~~~~$bytes = v$\lst{.toByteArray} } \\
+    \hline
+    $~~~~~~numBytes$  & \lst{VLQ(UInt)} &  & number of bytes in $bytes$ array \\
+    \hline
+    $~~~~~~bytes$  & \lst{Bytes} &  & serialized $bytes$ array \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(GroupElement, v \in \Denot{GroupElement})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{GroupElement} &  & serialization of GroupElement data. See~\ref{sec:ser:data:groupelement} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(SigmaProp, v \in \Denot{SigmaProp})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{SigmaProp} &  & serialization of SigmaProp data. See~\ref{sec:ser:data:sigmaprop} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Box, v \in \Denot{Box})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{Box} &  & serialization of Box data. See~\ref{sec:ser:data:box} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(AvlTree, v \in \Denot{AvlTree})$} \\
+    \hline
+    ~~~~~~$v$  & \lst{AvlTree} &  & serialization of AvlTree data. See~\ref{sec:ser:data:avltree} \\
+
+    \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $(Coll[T], v \in \Denot{Coll[T]})$} \\
+    \hline
+    $~~~~~~len$  & \lst{VLQ(UShort)} & [1..3] & length of the collection \\
+    \hline
+    \multicolumn{4}{l}{~~~~~~\lst{match} $(T, v)$ } \\
+
+    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Boolean, v \in \Denot{Coll[Boolean]})$} \\
+    \hline
+    $~~~~~~~~~~items$  & \lst{Bits} & [1..1024] & boolean values packed in bits \\
+    \hline
+
+    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Byte, v \in \Denot{Coll[Byte]})$} \\
+    \hline
+    $~~~~~~~~~~items$  & \lst{Bytes} & $[1..len]$ & items of the collection  \\
+    \hline
+    \multicolumn{4}{l}{~~~~~~~~\lst{otherwise} } \\
+    \multicolumn{4}{l}{~~~~~~~~~~\lst{for}~$i=1$~\lst{to}~$len$} \\
+    \multicolumn{4}{l}{~~~~~~~~~~~~\lst{serializeData(}$T, v_i$\lst{)}} \\
+    \multicolumn{4}{l}{~~~~~~~~~~\lst{end for}} \\
+    \multicolumn{4}{l}{~~~~~~\lst{end match}} \\
+
+    \multicolumn{4}{l}{~~\lst{end match}} \\
+    \multicolumn{4}{l}{\lst{end serializeData}} \\
+    \hline
+    \hline
+\end{tabularx}\)
+\caption{Data serialization format}
+\label{fig:ser:data}
+\end{figure}
+
+\subsubsection{GroupElement serialization}
+\label{sec:ser:data:groupelement}
+
+\subsubsection{SigmaProp serialization}
+\label{sec:ser:data:sigmaprop}
+
+\subsubsection{Box serialization}
+\label{sec:ser:data:box}
+
+\subsubsection{AvlTree serialization}
+\label{sec:ser:data:avltree}
 
 \subsection{Constant Serialization}
-\label{sec:serialization:constants}
+\label{sec:ser:const}
+
+\lst{Constant} format is simple and self sufficient to represent any data value in
+\langname. Every data block of \lst{Constant} format contains both type and
+data, such it can be stored or wire transfered and then later unambiguously
+interpreted. The format is shown in Figure~\ref{fig:ser:const}
+
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    $type$  & \lst{Type} & $[1..\MaxTypeSize]$ & type of the data instance (see~\ref{sec:ser:type}) \\
+    \hline
+    $value$  & \lst{Data} & $[1..\MaxDataSize]$ & serialized data instance (see~\ref{sec:ser:data}) \\
+    \hline
+\end{tabularx}\)
+\caption{Constant serialization format}
+\label{fig:ser:const}
+\end{figure}
+
+\subsection{Expression Serialization}
+\label{sec:ser:expr}
+
+Expressions of \langname are serialized as tree data structure using
+recursive procedure described here. 
+
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \multicolumn{4}{l}{\lst{def serializeExpr(}$e$\lst{)}} \\
+    \hline
+    ~~$e.opCode$  & \lst{Byte} & $1$ & opcode of ErgoTree node, 
+    used for selection of an appropriate node serializer from Appendix~\ref{sec:appendix:ergotree_serialization} \\
+    \hline
+    \multicolumn{4}{l}{~~\lst{if} $opCode <= LastConstantCode$ \lst{then}} \\
+    \hline
+    ~~~~$c$  & \lst{Const} & $[1..\MaxConstSize]$ & Constant serializaton slot \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{else}} \\
+    \hline
+    ~~~~$body$  & Op & $[1..\MaxExprSize]$ & serialization of operation arguments 
+    depending on $e.opCode$ as defined in Appendix~\ref{sec:appendix:ergotree_serialization} \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{end if}} \\
+    \multicolumn{4}{l}{\lst{end serializeExpr}} \\
+    \hline
+\end{tabularx}\)
+\caption{Expression serialization format}
+\label{fig:ser:expr}
+\end{figure}
+
 
 \subsection{\ASDag~serialization}
-\label{sec:serialization:ergotree}
+\label{sec:ser:ergotree}
 
 The root of a serializable \langname term is a data structure called \ASDag
 which serialization format shown in Figure~\ref{fig:ergotree}
@@ -119,7 +323,7 @@ Currently we define meaning for only first byte, which may be extended in future
     \hline
     Bit 3 & 0 & reserved (should be 0) \\
     \hline
-    Bit 4 & 0 & == 1 if constant segregation is used for this ErgoTree (see~ Section~\ref{sec:serialization:constant_segregation}\\
+    Bit 4 & 0 & == 1 if constant segregation is used for this ErgoTree (see~ Section~\ref{sec:ser:constant_segregation}\\
     \hline
     Bit 5 & 0 & == 1 - reserved for context dependent costing (should be = 0) \\
     \hline
@@ -150,5 +354,5 @@ collection should be empty and any placeholder in the tree will lead to
 exception.
 
 \subsection{Constant Segregation}
-\label{sec:serialization:constant_segregation}
+\label{sec:ser:constant_segregation}
 
