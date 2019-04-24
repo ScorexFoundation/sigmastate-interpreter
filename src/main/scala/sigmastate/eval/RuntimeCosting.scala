@@ -653,7 +653,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>
         opCost(v, Seq(accCost), costOpt.getOrElse(Thunk(0)))
       case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) =>
-        opCost(l.value, Seq(accCost), l.cost + r.cost)
+        opCost(Pair(l.value, r.value), Seq(accCost), l.cost + r.cost)
 
       case CostedM.value(Def(CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_))) =>
         func.sliceCalc
@@ -1263,7 +1263,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
       case CreateProveDlog(In(_v)) =>
         val vC = asRep[Costed[GroupElement]](_v)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
-        val cost = opCost(vC.value, Seq(vC.cost), costOfDHTuple)
+        val cost = opCost(resV, Seq(vC.cost), costOfDHTuple)
         RCCostedPrim(resV, cost, mkSizeSigmaProp(vC.size.dataSize))
 
       case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
@@ -1341,7 +1341,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
-        RCCostedPair(x, y, opCost(x.value, Seq(x.cost, y.cost), CostTable.newPairValueCost))
+        RCCostedPair(x, y, opCost(Pair(x.value, y.value), Seq(x.cost, y.cost), CostTable.newPairValueCost))
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
@@ -1509,10 +1509,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
           case se: StructElem[_] =>
             val xsC = asRep[Costed[Struct]](xs)
-            RCCostedPrim(se.fields.length, opCost(xsC.value, Seq(xsC.cost), costOf(node)), SizeInt)
+            val v = se.fields.length
+            RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
           case pe: PairElem[a,b] =>
             val xsC = asRep[Costed[(a,b)]](xs)
-            RCCostedPrim(2, opCost(xsC.value, Seq(xsC.cost), costOf(node)), SizeInt)
+            val v: Rep[Int] = 2
+            RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
         }
 
       case ByIndex(xs, i, default) =>
