@@ -189,7 +189,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
   }
 
   property("LogicalXor") {
-    testMissingCosting("true ^ false", BinXor(TrueLeaf, FalseLeaf))
+    comp("true ^ false") shouldBe BinXor(TrueLeaf, FalseLeaf)
   }
 
   property("BitwiseOr") {

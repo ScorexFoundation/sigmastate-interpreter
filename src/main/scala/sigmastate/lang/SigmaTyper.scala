@@ -330,7 +330,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               val res = m match {
                 case "||" => mkSigmaOr(Seq(a, b))
                 case "&&" => mkSigmaAnd(Seq(a, b))
-                case "^" => error(s"Not implemented") // TODO: mkSigmaXor(Seq(a, b))
+                case "^" => throw new NotImplementedError(s"Not implemented") // TODO: mkSigmaXor(Seq(a, b))
               }
               res
             case _ =>
