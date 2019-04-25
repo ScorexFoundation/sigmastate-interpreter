@@ -1341,7 +1341,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
-        RCCostedPair(x, y, opCost(Pair(x.value, y.value), Seq(x.cost, y.cost), CostTable.newPairValueCost))
+        RCCostedPair(x, y, opCost(Pair(x, y), Seq(x.cost, y.cost), CostTable.newPairValueCost))
 
       case Values.Tuple(InSeq(items)) =>
         val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}

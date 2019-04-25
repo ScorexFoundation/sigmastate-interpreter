@@ -387,9 +387,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
-      val cost = opCost(info, Seq(obj.cost), getRegisterCost)
       val l = RCCostedPrim(info._1, 0, SizeInt)
       val r = mkCostedColl(info._2, CryptoConstants.hashLength, 0)
+      val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
 
@@ -609,10 +609,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val Pair(lvalues, rvalues) = xsC.value.partition(pred.value)
       val costs = xsC.costs
       val sizes = xsC.sizes
-      val c = opCost(obj.value, costOfArgs, costOf(method))
-      RCCostedPair(
-        RCCostedColl(lvalues, costs, sizes, CostTable.newCollValueCost),
-        RCCostedColl(rvalues, costs, sizes, CostTable.newCollValueCost), c)
+      val l = RCCostedColl(lvalues, costs, sizes, CostTable.newCollValueCost)
+      val r = RCCostedColl(rvalues, costs, sizes, CostTable.newCollValueCost)
+      val c = opCost(Pair(l, r), costOfArgs, costOf(method))
+      RCCostedPair(l, r, c)
     }
 
     def patch(from: RCosted[Int], patch: RCosted[Coll[T]], replaced: RCosted[Int]): RCosted[Coll[T]] = {
