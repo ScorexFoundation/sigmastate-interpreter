@@ -152,6 +152,12 @@ class SigmaSpecializerTest extends PropSpec
       BinOr(BinOr(TrueLeaf, BinOr(TrueLeaf, TrueLeaf)), TrueLeaf)
   }
 
+  property("XOR flattening predefined") {
+    spec("true ^ true ^ true") shouldBe BinXor(BinXor(TrueLeaf, TrueLeaf), TrueLeaf)
+    spec("true ^ (true ^ true) ^ true") shouldBe
+      BinXor(BinXor(TrueLeaf, BinXor(TrueLeaf, TrueLeaf)), TrueLeaf)
+  }
+
   property("OR flattening, CAND/COR untouched") {
     val sigmaBooleans1 = OR(Seq(TrueLeaf, CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
