@@ -402,6 +402,13 @@ class SigmaDslTest extends PropSpec
     forAll { x: (Boolean, Boolean) => eq(x) }
   }
 
+  property("BinXor(logical XOR) test") {
+    val eq = checkEq(func[(BigInt, Boolean), Boolean]("{ (x: (BigInt, Boolean)) => (x._1 == 0) ^ x._2 }")) {
+      x => (x._1 == 0) ^ x._2
+    }
+    forAll { x: (BigInt, Boolean) => eq(x) }
+  }
+
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg equivalence") {
     // TODO implement in SigmaDsl (interpreter test passes in BasicOpsSpec.Box.getReg test)
