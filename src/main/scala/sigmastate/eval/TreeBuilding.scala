@@ -76,6 +76,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
       case And => Some(builder.mkBinAnd)
       case Or  => Some(builder.mkBinOr)
+      case BinaryXorOp => Some(builder.mkBinXor)
       case _ => None
     }
   }

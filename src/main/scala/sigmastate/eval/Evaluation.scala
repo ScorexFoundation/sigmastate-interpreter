@@ -404,6 +404,9 @@ trait Evaluation extends RuntimeCosting { IR =>
               out(th())
             } else
               out(false)
+          case ApplyBinOpLazy(op, In(x: Boolean), In(y)) if op == BinaryXorOp =>
+            val th = y.asInstanceOf[() => Boolean]
+            out(th() ^ x)
           case IfThenElseLazy(In(cond: Boolean), In(t), In(e)) =>
             if (cond) {
               val th = t.asInstanceOf[() => Any]

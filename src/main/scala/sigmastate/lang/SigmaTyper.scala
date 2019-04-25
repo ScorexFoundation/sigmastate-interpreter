@@ -316,10 +316,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         }
 
         case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
+          case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
             case SBoolean =>
               val (a,b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val res = if (m == "||") mkBinOr(a,b) else if (m == "^") mkBinXor(a, b) else mkBinAnd(a,b)
               res
             case SSigmaProp =>
               val (a,b) = (newObj.asSigmaProp, r.asSigmaProp)
@@ -341,7 +341,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             }
             case SSigmaProp =>
               val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val res = if (m == "||") mkBinOr(a,b) else if (m == "^") mkBinXor(a, b) else mkBinAnd(a,b)
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)
