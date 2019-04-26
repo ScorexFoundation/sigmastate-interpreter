@@ -1708,8 +1708,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 
       case BinXor(l, r) =>
         val lC = evalNode(ctx, env, l)
-        val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), 0)
-        val v = BinaryXorOp.applyLazy(lC.value, rC.value)
+        val rC = evalNode(ctx, env, r)
+        val v = BinaryXorOp.apply(lC.value, rC.value)
         val c = opCost(Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
