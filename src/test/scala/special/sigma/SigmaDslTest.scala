@@ -403,10 +403,10 @@ class SigmaDslTest extends PropSpec
   }
 
   property("BinXor(logical XOR) test") {
-    val eq = checkEq(func[(BigInt, Boolean), Boolean]("{ (x: (BigInt, Boolean)) => (x._1 == 0) ^ x._2 }")) {
+    val eq = checkEq(func[(Int, Boolean), Boolean]("{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }")) {
       x => (x._1 == 0) ^ x._2
     }
-    forAll { x: (BigInt, Boolean) => eq(x) }
+    forAll { x: (Int, Boolean) => eq(x) }
   }
 
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
