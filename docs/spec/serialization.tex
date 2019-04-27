@@ -1,6 +1,10 @@
 \section{Serialization}
 \label{sec:serialization}
 
+This section defines a binary format, which is used to store \langname
+contracts in persistent stores, to transfer them over wire and to enable
+cross-platform interoperation.
+
 Terms of the language described in Section~\ref{sec:language} can be
 serialized to array of bytes to be stored in Ergo blockchain (e.g. as
 Box.propositionBytes).
@@ -116,11 +120,7 @@ Each \emph{slot} specifies a fragment of serialized stream of bytes, whereas
 \emph{operators} specifiy how the slots are combined together to form the
 stream of bytes.
 
-\subsection{Type Serialization}
-\label{sec:ser:type}
-
-\mnote{Migrate TypeSerialization.md here}
-
+\input{type_serialization.tex}
 
 \subsection{Data Serialization}
 \label{sec:ser:data}
@@ -129,6 +129,17 @@ In \langname all runtime data values have an associated type also available
 at runtime (this is called \emph{type reification}\cite{Reification}).
 However serialization format separates data values from its type descriptors. 
 This allows to save space when for example a collection of items is serialized.
+
+The contents of a typed data structure can be fully described by a type tree.
+For example having a typed data object \lst{d: (Int, Coll[Byte], Boolean)} we can
+tell that \lst{d} has 3 items, the first item contain 32-bit integer, the second
+- collection of bytes, and the third - logical true/false value.
+
+To serialize/deserialize typed data we need to know its type descriptor (type
+tree). Serialization procedure is recursive over type tree and the
+corresponding subcomponents of an object. For primitive types (the leaves of
+the type tree) the format is fixed. The data values of \langname types are
+serialized using predefined function shown in Figure~\ref{fig:ser:data}.
 
 \begin{figure}[h]
 \footnotesize
