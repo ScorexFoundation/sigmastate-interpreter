@@ -7,7 +7,7 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
 import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
-import sigmastate.eval.{CompiletimeCosting, IRContext}
+import sigmastate.eval.{CompiletimeCosting, IRContext, SigmaDsl}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
@@ -135,7 +135,7 @@ class LetsSpecification extends SigmaTestingCommons {
 
     val projectBoxBefore = ErgoBox(10, managementScript, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(initTreeData), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
     val userTokenId = Digest32 @@ projectBoxBefore.id
 
@@ -146,7 +146,7 @@ class LetsSpecification extends SigmaTestingCommons {
 
     val projectBoxAfter = ErgoBox(9, managementScript, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(endTree), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(endTree)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
     val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
     val userBox = ErgoBox(1, exchangeScript, 0, Seq(userTokenId -> 1L), Map(R4 -> LongConstant(0)))
 
@@ -185,7 +185,7 @@ class LetsSpecification extends SigmaTestingCommons {
 
     val directoryBox = ErgoBox(10, managementScript, 0,
       Seq(letsTokenId -> 1L),
-      Map(R4 -> AvlTreeConstant(initTreeData), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
+      Map(R4 -> AvlTreeConstant(SigmaDsl.avlTree(initTreeData)), R5 -> SigmaPropConstant(TrivialProp.TrueProp)))
 
     val directoryDataInput = DataInput(directoryBox.id)
 

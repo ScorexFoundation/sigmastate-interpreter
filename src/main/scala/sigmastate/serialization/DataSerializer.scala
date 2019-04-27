@@ -4,18 +4,23 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
+import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
 import sigmastate._
-import sigmastate.eval.Evaluation
-import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.eval.{Evaluation, _}
+import special.collection._
+import special.sigma._
 
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
 
+  /** Use type descriptor `tpe` to deconstruct type structure and recursively serialize subcomponents.
+    * Primitive types are leaves of the type tree, and they are served as basis of recursion.
+    * The data value `v` is expected to conform to the type described by `tpe`.
+    */
   def serialize[T <: SType](v: T#WrappedType, tpe: T, w: SigmaByteWriter): Unit = tpe match {
     case SUnit => // don't need to save anything
     case SBoolean => w.putBoolean(v.asInstanceOf[Boolean])
@@ -28,28 +33,29 @@ object DataSerializer {
       w.putUInt(bytes.length)
       w.putBytes(bytes)
     case SBigInt =>
-      val data = v.asInstanceOf[BigInteger].toByteArray
+      val data = SigmaDsl.toBigInteger(v.asInstanceOf[BigInt]).toByteArray
       w.putUShort(data.length)
       w.putBytes(data)
     case SGroupElement =>
-      GroupElementSerializer.serialize(v.asInstanceOf[EcPointType], w)
+      GroupElementSerializer.serialize(groupElementToECPoint(v.asInstanceOf[GroupElement]), w)
     case SSigmaProp =>
-      val p = v.asInstanceOf[SigmaBoolean]
-      SigmaBoolean.serializer.serialize(p, w)
+      val p = v.asInstanceOf[SigmaProp]
+      SigmaBoolean.serializer.serialize(sigmaPropToSigmaBoolean(p), w)
     case SBox =>
-      ErgoBox.sigmaSerializer.serialize(v.asInstanceOf[ErgoBox], w)
+      val b = v.asInstanceOf[Box]
+      ErgoBox.sigmaSerializer.serialize(boxToErgoBox(b), w)
     case SAvlTree =>
-      AvlTreeData.serializer.serialize(v.asInstanceOf[AvlTreeData], w)
+      AvlTreeData.serializer.serialize(avlTreeToAvlTreeData(v.asInstanceOf[AvlTree]), w)
     case tColl: SCollectionType[a] =>
       val arr = v.asInstanceOf[tColl.WrappedType]
       w.putUShort(arr.length)
       tColl.elemType match {
         case SBoolean =>
-          w.putBits(arr.asInstanceOf[Array[Boolean]])
+          w.putBits(arr.asInstanceOf[Coll[Boolean]].toArray)
         case SByte =>
-          w.putBytes(arr.asInstanceOf[Array[Byte]])
+          w.putBytes(arr.asInstanceOf[Coll[Byte]].toArray)
         case _ =>
-          arr.foreach(x => serialize(x, tColl.elemType, w))
+          arr.toArray.foreach(x => serialize(x, tColl.elemType, w))
       }
 
     case t: STuple =>
@@ -67,6 +73,8 @@ object DataSerializer {
     case _ => sys.error(s"Don't know how to serialize ($v, $tpe)")
   }
 
+  /** Reads a data value from Reader. The data value bytes is expected to confirm
+    * to the type descriptor `tpe`. */
   def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = (tpe match {
     case SUnit => ()
     case SBoolean => r.getUByte() != 0
@@ -81,38 +89,49 @@ object DataSerializer {
     case SBigInt =>
       val size: Short = r.getUShort().toShort
       val valueBytes = r.getBytes(size)
-      new BigInteger(valueBytes)
+      SigmaDsl.BigInt(new BigInteger(valueBytes))
     case SGroupElement =>
-      GroupElementSerializer.parse(r)
+      SigmaDsl.GroupElement(GroupElementSerializer.parse(r))
     case SSigmaProp =>
-      SigmaBoolean.serializer.parse(r)
+      SigmaDsl.SigmaProp(SigmaBoolean.serializer.parse(r))
     case SBox =>
-      ErgoBox.sigmaSerializer.parse(r)
+      SigmaDsl.Box(ErgoBox.sigmaSerializer.parse(r))
     case SAvlTree =>
-      AvlTreeData.serializer.parse(r)
+      SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
     case tColl: SCollectionType[a] =>
       val len = r.getUShort()
       if (tColl.elemType == SByte)
-        r.getBytes(len)
+        Colls.fromArray(r.getBytes(len))
       else
-        deserializeArray(len, tColl.elemType, r)
+        deserializeColl(len, tColl.elemType, r)
     case tuple: STuple =>
-      val arr =  tuple.items.map { t =>
+      val arr = tuple.items.map { t =>
         deserialize(t, r)
       }.toArray[Any]
-      arr
+      val coll = Colls.fromArray(arr)(RType.AnyType)
+      Evaluation.toDslTuple(coll, tuple)
     case _ => sys.error(s"Don't know how to deserialize $tpe")
   }).asInstanceOf[T#WrappedType]
 
-  def deserializeArray[T <: SType](len: Int, tpe: T, r: SigmaByteReader): Array[T#WrappedType] =
-    tpe match {
+  def deserializeColl[T <: SType](len: Int, tpeElem: T, r: SigmaByteReader): Coll[T#WrappedType] =
+    tpeElem match {
       case SBoolean =>
-        r.getBits(len).asInstanceOf[Array[T#WrappedType]]
+        Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
+      case SByte =>
+        Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
-        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tpe.classTag)
-        for (i <- 0 until len) {
-          b += deserialize(tpe, r)
+        implicit val tItem = (tpeElem match {
+          case tTup: STuple if tTup.items.length == 2 =>
+            Evaluation.stypeToRType(tpeElem)
+          case tTup: STuple =>
+            collRType(RType.AnyType)
+          case _ =>
+            Evaluation.stypeToRType(tpeElem)
+        }).asInstanceOf[RType[T#WrappedType]]
+        val b = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+        for (_ <- 0 until len) {
+          b += deserialize(tpeElem, r)
         }
-        b.result()
+        Colls.fromArray(b.result())
     }
 }

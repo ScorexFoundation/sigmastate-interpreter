@@ -23,7 +23,7 @@ class AvlTreeSpecification extends SerializationSpecification {
   }
 
   property("roundtrip for an AVL tree") {
-    forAll(avlTreeDataGen) { t =>
+    forAll(avlTreeGen) { t =>
       val v = AvlTreeConstant(t)
       roundTripTest(v)
     }

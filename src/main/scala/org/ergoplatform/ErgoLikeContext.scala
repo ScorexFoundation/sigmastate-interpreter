@@ -6,11 +6,14 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.{ContextExtension, Context => ErgoContext}
+import sigmastate.interpreter.{ContextExtension, InterpreterContext}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
+import special.sigma.{AnyValue, Box, PreHeader, Header}
+import sigmastate.SType._
+import scalan.RType._
 import special.sigma.{Header, Box, AnyValue, PreHeader}
 import SType._
 import RType._
@@ -46,7 +49,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map())
-                 ) extends ErgoContext {
+                 ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
   assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
@@ -80,8 +83,7 @@ class ErgoLikeContext(val currentHeight: Height,
         spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
-      val dslData = Evaluation.toDslData(v.value, v.tpe, isCost)
-      toAnyValue(dslData.asWrappedType)(tVal)
+      toAnyValue(v.value.asWrappedType)(tVal)
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
@@ -158,7 +160,6 @@ object ErgoLikeContext {
   val noOutputs: Array[Box] = Array[Box]()
 
   import special.sigma._
-  import sigmastate.SType._
 
   def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
     val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
@@ -171,9 +172,9 @@ object ErgoLikeContext {
   }
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
-    def toTestBox(isCost: Boolean)(implicit IR: Evaluation): Box = {
+    def toTestBox(isCost: Boolean): Box = {
       if (ebox == null) return null
-      new CostingBox(IR, isCost, ebox)
+      new CostingBox(isCost, ebox)
     }
   }
 }
@@ -221,4 +222,10 @@ case object Context extends NotReadyValue[SContext.type] {
   override val opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
+}
+
+case object Global extends NotReadyValue[SGlobal.type] {
+  override val opCode: OpCode = OpCodes.GlobalCode
+  override def tpe: SGlobal.type = SGlobal
+  override def opType: SFunc = SFunc(SUnit, SGlobal)
 }

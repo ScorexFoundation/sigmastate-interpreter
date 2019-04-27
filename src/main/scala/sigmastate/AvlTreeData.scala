@@ -74,8 +74,10 @@ object AvlTreeData {
   val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
-  val dummy =
-    new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), AvlTreeFlags.AllOperationsAllowed, keyLength = 32)
+  val dummy = new AvlTreeData(
+    ADDigest @@ Array.fill(DigestSize)(0:Byte),
+    AvlTreeFlags.AllOperationsAllowed,
+    keyLength = 32)
 
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 

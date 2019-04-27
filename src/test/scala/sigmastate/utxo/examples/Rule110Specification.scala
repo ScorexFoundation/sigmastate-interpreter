@@ -3,9 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
+import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, GetVarByteArray, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -51,8 +52,8 @@ class Rule110Specification extends SigmaTestingCommons {
         |   (OUTPUTS(0).propositionBytes == SELF.propositionBytes)
          }""".stripMargin).asBoolValue.toSigmaProp
 
-    val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(0, 1, 1, 0, 1, 0))))
-    val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array(1, 1, 1, 1, 1, 0))))
+    val input = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](0, 1, 1, 0, 1, 0))))
+    val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
     val ctx = ErgoLikeContext(
@@ -431,7 +432,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
         val value = ValueReg -> BooleanConstant.fromBoolean(calcRule110(lv, cv, rv))
 
-        val c = new ErgoBoxCandidate(0L, prop, row,  Seq(), Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
+        val c = new ErgoBoxCandidate(0L, prop, row, Colls.emptyColl, Map(RowReg -> LongConstant(row), ColumnReg -> LongConstant(col), value))
 
         val ut = UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(left.id), new UnsignedInput(center.id), new UnsignedInput(right.id)),

@@ -1,11 +1,9 @@
 package special.sigma
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.eval.CBigInt
 import sigmastate.serialization.generators.ValueGenerators
 
 trait SigmaTypeGens extends ValueGenerators {
-  import Gen._; import Arbitrary._
   import sigma.types._
   val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
   implicit val arbBoolean = Arbitrary(genBoolean)
@@ -15,8 +13,5 @@ trait SigmaTypeGens extends ValueGenerators {
 
   val genInt = Arbitrary.arbInt.arbitrary.map(CInt(_): Int)
   implicit val arbInt = Arbitrary(genInt)
-
-  val genBigInt = arbBigInteger.arbitrary.map(CBigInt(_): BigInt)
-  implicit val arbBigInt = Arbitrary(genBigInt)
 }
 

@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.util
+
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -7,10 +9,13 @@ import scorex.util._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import special.collection.ExtensionMethods._
+import sigmastate.eval.Extensions._
 
 import scala.collection.mutable
 import scala.util.Try
-
+import sigmastate.SType._
+import sigmastate.eval._
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
@@ -108,13 +113,14 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
       w.putBytes(input.boxId)
     }
     // serialize distinct ids of tokens in transaction outputs
-    val distinctTokenIds = tx.outputCandidates
-      .flatMap(_.additionalTokens.map(t => new mutable.WrappedArray.ofByte(t._1)))
-      .distinct
-      .toArray
+    val tokenIds = tx.outputCandidates.toColl
+      .flatMap(box => box.additionalTokens.map(t => t._1))
+
+    val distinctTokenIds = tokenIds.map(_.toColl).distinct.map(_.toArray.asInstanceOf[TokenId])
+
     w.putUInt(distinctTokenIds.length)
     distinctTokenIds.foreach { tokenId =>
-      w.putBytes(tokenId.array)
+      w.putBytes(tokenId.toArray)
     }
     // serialize outputs
     w.putUShort(tx.outputCandidates.length)
@@ -138,12 +144,13 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     }
     // parse distinct ids of tokens in transaction outputs
     val tokensCount = r.getUInt().toInt
-    val tokensBuilder = mutable.ArrayBuilder.make[Digest32]()
+    val tokensBuilder = mutable.ArrayBuilder.make[TokenId]()
     for (_ <- 0 until tokensCount) {
       tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)
     }
+    val tokens = tokensBuilder.result().toColl
     // parse outputs
-    val tokens = tokensBuilder.result()
+
     val outsCount = r.getUShort()
     val outputCandidatesBuilder = mutable.ArrayBuilder.make[ErgoBoxCandidate]()
     for (_ <- 0 until outsCount) {

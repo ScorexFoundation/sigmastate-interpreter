@@ -50,13 +50,15 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
         case "SELF" => Some(Self)
         case "CONTEXT" => Some(Context)
+        case "Global" => Some(Global)
         case "None" => Some(mkNoneValue(NoType))
         case _ => None
       }
     }
 
     // Rule: Coll[Int](...) -->
-    case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
+    case _ @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
+      //todo: morphic: do we need the commented out code below?
 //      args.foreach{ e =>
 //        if (e.tpe != tpe)
 //          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",

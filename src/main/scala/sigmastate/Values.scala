@@ -5,10 +5,9 @@ import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import scalan.Nullable
-import scorex.crypto.authds.SerializedAdProof
+import org.ergoplatform.ErgoLikeContext
+import scalan.{Nullable, RType}
+import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
@@ -23,7 +22,10 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
+import special.sigma._
 import special.sigma.Extensions._
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -31,8 +33,9 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Header, Extensions, AnyValue, PreHeader}
+import special.sigma.{Header, AnyValue, AvlTree, PreHeader}
 import sigmastate.lang.SourceContext
+import special.collection.Coll
 
 
 object Values {
@@ -51,8 +54,6 @@ object Values {
     /** The type of the value represented by this node. If the value is an operation it is
       * the type of operation result. */
     def tpe: S
-
-    lazy val bytes = DefaultSerializer.serializeWithSegregation(this)
 
     /** Every value represents an operation and that operation can be associated with a function type,
       * describing functional meaning of the operation, kind of operation signature.
@@ -107,11 +108,13 @@ object Values {
 
     implicit def liftByteArray(arr: Array[Byte]): Value[SByteArray] = ByteArrayConstant(arr)
 
-    implicit def liftBigInt(arr: BigInteger): Value[SBigInt.type] = BigIntConstant(arr)
+    implicit def liftBigInt(arr: BigInt): Value[SBigInt.type] = BigIntConstant(arr)
 
-    implicit def liftGroupElement(g: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
+    implicit def liftGroupElement(g: GroupElement): Value[SGroupElement.type] = GroupElementConstant(g)
+    implicit def liftECPoint(g: EcPointType): Value[SGroupElement.type] = GroupElementConstant(g)
 
-    implicit def liftSigmaProp(g: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(g)
+    implicit def liftSigmaProp(g: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(g)
+    implicit def liftSigmaBoolean(sb: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(SigmaDsl.SigmaProp(sb))
 
     def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
@@ -128,7 +131,7 @@ object Values {
       val resType = tpe match {
         case ct : SCollection[_] =>
           SCollection(ct.typeParams.head.ident)
-        case ft @ SFunc(tD, tR, _) =>
+        case ft @ SFunc(_, _, _) =>
           ft.getGenericType
         case _ => tpe
       }
@@ -139,21 +142,21 @@ object Values {
   trait Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
+    assert(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
-
     override val opCode: OpCode = ConstantCode
     override def opName: String = s"Const"
 
-    override def equals(obj: scala.Any): Boolean = obj match {
-      case c: Constant[_] => Objects.deepEquals(value, c.value) && tpe == c.tpe
+    override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
+      case c: Constant[_] => tpe == c.tpe && Objects.deepEquals(value, c.value)
       case _ => false
-    }
+    }))
 
     override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
-      case SGroupElement if value.isInstanceOf[ECPoint] =>
-        s"ConstantNode(${showECPoint(value.asInstanceOf[ECPoint])},$tpe)"
+      case SGroupElement if value.isInstanceOf[GroupElement] =>
+        s"ConstantNode(${showECPoint(value.asInstanceOf[GroupElement])},$tpe)"
       case SGroupElement  =>
         sys.error(s"Invalid value in Constant($value, $tpe)")
       case SInt => s"IntConstant($value)"
@@ -169,6 +172,38 @@ object Values {
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
       case _ => None
+    }
+
+    /** Checks that the type of the value corresponds to the descriptor `tpe`.
+      * If the value has complex structure only root type constructor is checked.
+      * NOTE, this is surface check with possible false positives, but it is ok
+      * when used in assertions, like `assert(isCorrestType(...))`, see `ConstantNode`.
+      */
+    def isCorrectType[T <: SType](value: Any, tpe: T): Boolean = value match {
+      case c: Coll[_] => tpe match {
+        case STuple(items) => c.tItem == RType.AnyType && c.length == items.length
+        case tpeColl: SCollection[_] => true
+        case _ => sys.error(s"Collection value $c has unexpected type $tpe")
+      }
+      case _: Option[_] => tpe.isOption
+      case _: Tuple2[_,_] => tpe.isTuple && tpe.asTuple.items.length == 2
+      case _: Boolean => tpe == SBoolean
+      case _: Byte => tpe == SByte
+      case _: Short => tpe == SShort
+      case _: Int => tpe == SInt
+      case _: Long => tpe == SLong
+      case _: BigInt => tpe == SBigInt
+      case _: String => tpe == SString
+      case _: GroupElement => tpe.isGroupElement
+      case _: SigmaProp => tpe.isSigmaProp
+      case _: AvlTree => tpe.isAvlTree
+      case _: Box => tpe.isBox
+      case _: PreHeader => tpe == SPreHeader
+      case _: Header => tpe == SHeader
+      case _: Context => tpe == SContext
+      case _: Function1[_,_] => tpe.isFunc
+      case _: Unit => tpe == SUnit
+      case _ => false
     }
   }
 
@@ -262,10 +297,11 @@ object Values {
     }
   }
   object BigIntConstant {
-    def apply(value: BigInteger): Constant[SBigInt.type]  = Constant[SBigInt.type](value, SBigInt)
-    def apply(value: Long): Constant[SBigInt.type]  = Constant[SBigInt.type](BigInt(value).underlying(), SBigInt)
-    def unapply(v: SValue): Option[BigInteger] = v match {
-      case Constant(value: BigInteger, SBigInt) => Some(value)
+    def apply(value: BigInt): Constant[SBigInt.type] = Constant[SBigInt.type](value, SBigInt)
+    def apply(value: BigInteger): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(value), SBigInt)
+    def apply(value: Long): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(BigInteger.valueOf(value)), SBigInt)
+    def unapply(v: SValue): Option[BigInt] = v match {
+      case Constant(value: BigInt, SBigInt) => Some(value)
       case _ => None
     }
   }
@@ -280,38 +316,39 @@ object Values {
   }
 
   object BoxConstant {
-    def apply(value: ErgoBox): Constant[SBox.type]  = Constant[SBox.type](value, SBox)
-    def unapply(v: SValue): Option[ErgoBox] = v match {
-      case Constant(value: ErgoBox, SBox) => Some(value)
+    def apply(value: Box): Constant[SBox.type] = Constant[SBox.type](value, SBox)
+    def unapply(v: SValue): Option[Box] = v match {
+      case Constant(value: Box, SBox) => Some(value)
       case _ => None
     }
   }
 
   object GroupElementConstant {
-    def apply(value: EcPointType): Constant[SGroupElement.type]  = Constant[SGroupElement.type](value, SGroupElement)
-    def unapply(v: SValue): Option[EcPointType] = v match {
-      case Constant(value: EcPointType, SGroupElement) => Some(value)
+    def apply(value: GroupElement): Constant[SGroupElement.type] = Constant[SGroupElement.type](value, SGroupElement)
+    def unapply(v: SValue): Option[GroupElement] = v match {
+      case Constant(value: GroupElement, SGroupElement) => Some(value)
       case _ => None
     }
   }
 
-  val FalseSigmaProp = SigmaPropConstant(TrivialProp.FalseProp)
-  val TrueSigmaProp = SigmaPropConstant(TrivialProp.TrueProp)
+  val FalseSigmaProp = SigmaPropConstant(SigmaDsl.SigmaProp(TrivialProp.FalseProp))
+  val TrueSigmaProp = SigmaPropConstant(SigmaDsl.SigmaProp(TrivialProp.TrueProp))
 
   implicit def boolToSigmaProp(b: BoolValue): SigmaPropValue = BoolToSigmaProp(b)
 
   object SigmaPropConstant {
-    def apply(value: SigmaBoolean): Constant[SSigmaProp.type] = Constant[SSigmaProp.type](value, SSigmaProp)
-    def unapply(v: SValue): Option[SigmaBoolean] = v match {
-      case Constant(value: SigmaBoolean, SSigmaProp) => Some(value)
+    def apply(value: SigmaProp): Constant[SSigmaProp.type] = Constant[SSigmaProp.type](value, SSigmaProp)
+    def apply(value: SigmaBoolean): Constant[SSigmaProp.type] = Constant[SSigmaProp.type](SigmaDsl.SigmaProp(value), SSigmaProp)
+    def unapply(v: SValue): Option[SigmaProp] = v match {
+      case Constant(value: SigmaProp, SSigmaProp) => Some(value)
       case _ => None
     }
   }
 
   object AvlTreeConstant {
-    def apply(value: AvlTreeData): Constant[SAvlTree.type]  = Constant[SAvlTree.type](value, SAvlTree)
-    def unapply(v: SValue): Option[AvlTreeData] = v match {
-      case Constant(value: AvlTreeData, SAvlTree) => Some(value)
+    def apply(value: AvlTree): Constant[SAvlTree.type] = Constant[SAvlTree.type](value, SAvlTree)
+    def unapply(v: SValue): Option[AvlTree] = v match {
+      case Constant(value: AvlTree, SAvlTree) => Some(value)
       case _ => None
     }
   }
@@ -319,7 +356,7 @@ object Values {
   implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
     def createVerifier(proof: SerializedAdProof) =
       new BatchAVLVerifier[Digest32, Blake2b256.type](
-        c.value.digest,
+        ADDigest @@ c.value.digest.toArray,
         proof,
         c.value.keyLength,
         c.value.valueLengthOpt)
@@ -415,12 +452,12 @@ object Values {
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]
 
   object CollectionConstant {
-    def apply[T <: SType](value: Array[T#WrappedType], elementType: T): Constant[SCollection[T]] =
+    def apply[T <: SType](value: Coll[T#WrappedType], elementType: T): Constant[SCollection[T]] =
       Constant[SCollection[T]](value, SCollection(elementType))
-    def unapply[T <: SType](node: Value[SCollection[T]]): Option[(Array[T#WrappedType], T)] = node match {
-      case arr: Constant[SCollection[a]] @unchecked if arr.tpe.isCollection =>
-        val v = arr.value.asInstanceOf[Array[T#WrappedType]]
-        val t = arr.tpe.elemType.asInstanceOf[T]
+    def unapply[T <: SType](node: Value[SCollection[T]]): Option[(Coll[T#WrappedType], T)] = node match {
+      case c: Constant[SCollection[a]] @unchecked if c.tpe.isCollection =>
+        val v = c.value.asInstanceOf[Coll[T#WrappedType]]
+        val t = c.tpe.elemType
         Some((v, t))
       case _ => None
     }
@@ -429,7 +466,7 @@ object Values {
   implicit class CollectionConstantOps[T <: SType](val c: CollectionConstant[T]) extends AnyVal {
     def toConcreteCollection: ConcreteCollection[T] = {
       val tElem = c.tpe.elemType
-      val items = c.value.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
+      val items = c.value.toArray.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
       ConcreteCollection(items, tElem)
     }
   }
@@ -437,8 +474,9 @@ object Values {
   val ByteArrayTypeCode = (SCollectionType.CollectionTypeCode + SByte.typeCode).toByte
 
   object ByteArrayConstant {
-    def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
-    def unapply(node: SValue): Option[Array[Byte]] = node match {
+    def apply(value: Coll[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value, SByte)
+    def apply(value: Array[Byte]): CollectionConstant[SByte.type] = CollectionConstant[SByte.type](value.toColl, SByte)
+    def unapply(node: SValue): Option[Coll[Byte]] = node match {
       case coll: CollectionConstant[SByte.type] @unchecked => coll match {
         case CollectionConstant(arr, SByte) => Some(arr)
         case _ => None
@@ -448,8 +486,9 @@ object Values {
   }
 
   object ShortArrayConstant {
-    def apply(value: Array[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value, SShort)
-    def unapply(node: SValue): Option[Array[Short]] = node match {
+    def apply(value: Coll[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value, SShort)
+    def apply(value: Array[Short]): CollectionConstant[SShort.type] = CollectionConstant[SShort.type](value.toColl, SShort)
+    def unapply(node: SValue): Option[Coll[Short]] = node match {
       case coll: CollectionConstant[SShort.type] @unchecked => coll match {
         case CollectionConstant(arr, SShort) => Some(arr)
         case _ => None
@@ -459,8 +498,9 @@ object Values {
   }
 
   object IntArrayConstant {
-    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
-    def unapply(node: SValue): Option[Array[Int]] = node match {
+    def apply(value: Coll[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value, SInt)
+    def apply(value: Array[Int]): CollectionConstant[SInt.type] = CollectionConstant[SInt.type](value.toColl, SInt)
+    def unapply(node: SValue): Option[Coll[Int]] = node match {
       case coll: CollectionConstant[SInt.type] @unchecked => coll match {
         case CollectionConstant(arr, SInt) => Some(arr)
         case _ => None
@@ -470,8 +510,9 @@ object Values {
   }
 
   object LongArrayConstant {
-    def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
-    def unapply(node: SValue): Option[Array[Long]] = node match {
+    def apply(value: Coll[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value, SLong)
+    def apply(value: Array[Long]): CollectionConstant[SLong.type] = CollectionConstant[SLong.type](value.toColl, SLong)
+    def unapply(node: SValue): Option[Coll[Long]] = node match {
       case coll: CollectionConstant[SLong.type] @unchecked => coll match {
         case CollectionConstant(arr, SLong) => Some(arr)
         case _ => None
@@ -481,8 +522,9 @@ object Values {
   }
 
   object BigIntArrayConstant {
-    def apply(value: Array[BigInteger]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value, SBigInt)
-    def unapply(node: SValue): Option[Array[BigInteger]] = node match {
+    def apply(value: Coll[BigInt]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value, SBigInt)
+    def apply(value: Array[BigInt]): CollectionConstant[SBigInt.type] = CollectionConstant[SBigInt.type](value.toColl, SBigInt)
+    def unapply(node: SValue): Option[Coll[BigInt]] = node match {
       case coll: CollectionConstant[SBigInt.type] @unchecked => coll match {
         case CollectionConstant(arr, SBigInt) => Some(arr)
         case _ => None
@@ -494,8 +536,9 @@ object Values {
   val BoolArrayTypeCode = (SCollectionType.CollectionTypeCode + SBoolean.typeCode).toByte
 
   object BoolArrayConstant {
-    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
-    def unapply(node: SValue): Option[Array[Boolean]] = node match {
+    def apply(value: Coll[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value, SBoolean)
+    def apply(value: Array[Boolean]): CollectionConstant[SBoolean.type] = CollectionConstant[SBoolean.type](value.toColl, SBoolean)
+    def unapply(node: SValue): Option[Coll[Boolean]] = node match {
       case coll: CollectionConstant[SBoolean.type] @unchecked => coll match {
         case CollectionConstant(arr, SBoolean) => Some(arr)
         case _ => None
@@ -520,7 +563,7 @@ object Values {
 
     override def tpe = SGroupElement
 
-    override val value: CryptoConstants.EcPointType = dlogGroup.generator
+    override val value = SigmaDsl.GroupElement(dlogGroup.generator)
   }
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
@@ -548,12 +591,7 @@ object Values {
   /** Algebraic data type of sigma proposition expressions.
     * Values of this type are used as values of SigmaProp type of SigmaScript and SigmaDsl
     */
-  trait SigmaBoolean /*extends NotReadyValue[SBoolean.type]*/ {
-    def tpe = SBoolean
-
-    /** This is not used as operation, but rather as data value of SigmaProp type. */
-    def opType: SFunc = Value.notSupportedError(this, "opType")
-
+  trait SigmaBoolean {
     /** Unique id of the node class used in serialization of SigmaBoolean. */
     val opCode: OpCode
   }
@@ -623,7 +661,7 @@ object Values {
     lazy val tpe = STuple(items.map(_.tpe))
     lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
-      xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]])
+      Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
   }
 
@@ -658,7 +696,8 @@ object Values {
 
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]])
+      val tElement = Evaluation.stypeToRType(elementType)
+      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
     }
   }
   object ConcreteCollection {
@@ -697,13 +736,14 @@ object Values {
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(p)
     def propBytes: Value[SByteArray] = SigmaPropBytes(p)
+    def treeWithSegregation: ErgoTree = ErgoTree.withSegregation(p)
   }
 
   implicit class SigmaBooleanOps(val sb: SigmaBoolean) extends AnyVal {
     def toSigmaProp: SigmaPropValue = SigmaPropConstant(sb)
     def isProven: Value[SBoolean.type] = SigmaPropIsProven(SigmaPropConstant(sb))
     def propBytes: Value[SByteArray] = SigmaPropBytes(SigmaPropConstant(sb))
-    def toAnyValue: AnyValue = Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
+    def toAnyValue: AnyValue = eval.Extensions.toAnyValue(sb)(SType.SigmaBooleanRType)
     def showToString: String = sb match {
       case ProveDlog(v) =>
         s"ProveDlog(${showECPoint(v)})"
@@ -867,7 +907,7 @@ object Values {
     val ConstantSegregationFlag: Byte = 0x10
 
     /** Default header with constant segregation enabled. */
-    val ConstantSegregationHeader = (DefaultHeader | ConstantSegregationFlag).toByte
+    val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
 
@@ -881,7 +921,7 @@ object Values {
       everywherebu(substRule)(root).fold(root)(_.asInstanceOf[SValue])
     }
 
-    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue) = {
+    def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
       if (isConstantSegregation(header)) {
         val prop = substConstants(root, constants).asSigmaProp
         new ErgoTree(header, constants, root, prop)
@@ -889,24 +929,42 @@ object Values {
         new ErgoTree(header, constants, root, root)
     }
 
-    val EmptyConstants = IndexedSeq.empty[Constant[SType]]
+    val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
 
-    def withoutSegregation(root: SigmaPropValue) = {
+    def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)
-    }
 
     implicit def fromProposition(prop: SigmaPropValue): ErgoTree = {
       prop match {
         case SigmaPropConstant(_) => withoutSegregation(prop)
-        case _ =>
-          // get ErgoTree with segregated constants
-          // todo rewrite with everywherebu?
-          DefaultSerializer.deserializeErgoTree(DefaultSerializer.serializeWithSegregation(prop))
+        case _ => withSegregation(prop)
       }
     }
 
     implicit def fromSigmaBoolean(pk: SigmaBoolean): ErgoTree = {
       withoutSegregation(pk.toSigmaProp)
+    }
+
+    /** Build ErgoTree via serialization of the value with ConstantSegregationHeader, constants segregated
+      * from the tree and ConstantPlaceholders referring to the segregated constants.
+      *
+      * This method uses single traverse of the tree to:
+      * 1) find and segregate all constants;
+      * 2) replace constants with ConstantPlaceholders in the `tree`;
+      * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`;
+      * 4) deserialize `tree` with ConstantPlaceholders.
+      **/
+    def withSegregation(value: SigmaPropValue): ErgoTree = {
+      val constantStore = new ConstantStore()
+      val byteWriter = SigmaSerializer.startWriter(constantStore)
+      // serialize value and segregate constants into constantStore
+      ValueSerializer.serialize(value, byteWriter)
+      val extractedConstants = constantStore.getAll
+      val r = SigmaSerializer.startReader(byteWriter.toBytes)
+      r.constantStore = new ConstantStore(extractedConstants)
+      // deserialize value with placeholders
+      val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
+      new ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, valueWithPlaceholders, value)
     }
   }
 

@@ -287,8 +287,8 @@ class CoopExampleSpecification extends SigmaTestingCommons {
       "pubkeyB" -> pubkeyB,
       "pubkeyC" -> pubkeyC,
       "pubkeyD" -> pubkeyD,
-      "spendingContract1Hash" -> ByteArrayConstant(Blake2b256(spendingProp1.bytes)),
-      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.bytes))
+      "spendingContract1Hash" -> ByteArrayConstant(Blake2b256(spendingProp1.treeWithSegregation.bytes)),
+      "spendingContract2Hash" -> ByteArrayConstant(Blake2b256(spendingProp3.treeWithSegregation.bytes))
     )
 
     // Basic compilation
@@ -357,7 +357,7 @@ class CoopExampleSpecification extends SigmaTestingCommons {
 
 
     val inputEnv = Map(
-      "thresholdProp" -> ByteArrayConstant(Blake2b256(thresholdProp.bytes)),
+      "thresholdProp" -> ByteArrayConstant(Blake2b256(thresholdProp.treeWithSegregation.bytes)),
       "pubkeyA" -> pubkeyA
     )
 
