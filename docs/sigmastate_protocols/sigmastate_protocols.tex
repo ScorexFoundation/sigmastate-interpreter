@@ -187,7 +187,7 @@ Any funds deposited to this address can only be spent if the spending transactio
 Observe that if the transaction is not mined before height $i$ then the transaction becomes invalid. When paying at a coffee shop, for example, Alice can set $i$ close to the height $h$ at the time of broadcast, for instance, $i = h + 10$. 
 Alice can still send non-timed payments by making $i$ very large. Since the context variables are part of the message in constructing the zero-knowledge proof, a miner cannot change it (to make this transaction valid). 
 
-\subsection{Hot-Wallet Contracts: Reversible Addresses}
+\subsection{Reversible Addresses}
 
 We create a useful primitives called {\em reversible addresses}, designed for storing funds in a hot-wallet. %These addresses have anti-theft features in the following sense:
 Any funds sent to a reversible address can only be spent in way that allows payments to be reversed for a certain time. The idea was proposed for Bitcoin~\cite{raddress} (using the moniker {\em R-addresses}) and requires a hardfork. In \langname, however, this can be done natively.
@@ -219,7 +219,7 @@ address whose script encodes the following conditions:
 Thus, all funds sent from such addresses have a temporary lock of \texttt{blocksIn24h} blocks. This can be replaced by any other desired value but it must be decided at the time of address generation. 
 Let \texttt{bob} be the public key of a customer who is withdrawing. The sender (\texttt{alice}) must ensure that register $R_4$ of the created box contains \texttt{bob}. In the normal scenario, \texttt{bob} will be able to spend the box after roughly \texttt{blocksIn24h} blocks (with the exact number depending on \texttt{bobDeadline}). 
 
-If an unauthorized transaction from \texttt{alice} is detected, an ``abort procedure'' is triggered via \texttt{carol}: all funds sent from \texttt{alice} and in the locked state are suspect and need to diverted elsewhere. %Additionally, boxes currently controlled by \texttt{alice} also need to be sent secure addresses. 
+If an unauthorized transaction from \texttt{alice} is detected, an ``abort procedure'' is triggered via \texttt{carol} and all funds sent from the address within the last \texttt{blocksIn24h} blocks are diverted elsewhere. %Additionally, boxes currently controlled by \texttt{alice} also need to be sent secure addresses. 
 
 %Such addresses are designed for storing large amount of funds for automated withdraws (such as hot-wallets). 
 %They are not designed for daily spending (such as paying for a coffee). 
@@ -234,20 +234,15 @@ Let \texttt{feeProposition} be the script of a box that pays mining fee and \tex
 \begin{verbatim}
 val isChange = {(out:Box) => out.propositionBytes == SELF.propositionBytes}
 val isWithdraw = {(out:Box) => 
-  out.R5[Int].get >= HEIGHT + blocksIn24h && 
-  out.propositionBytes == withdrawScript
-}
+  out.R5[Int].get >= HEIGHT + blocksIn24h && out.propositionBytes == withdrawScript}
 val isFee = {(out:Box) => out.propositionBytes == feeProposition}
 val isValid = {(out:Box) => isChange(out) || isWithdraw(out) || isFee(out)}
+val totalFee = OUTPUTS.fold(0L, {(x:Long, b:Box) => if (isFee(b)) x+b.value else x})
 
-val totalFee = OUTPUTS.fold(0L, {
-    (x:Long, b:Box) => if (isFee(b)) x + b.value else x 
-  }
-)
 alice && OUTPUTS.forall(isValid) && totalFee <= maxFee
 \end{verbatim}
 
-\subsection{Cold-Wallet Contracts: Limiting Spending Capacity}
+\subsection{Cold-Wallet Contracts}
 
 Assume an address is protected by 2 private keys, corresponding to the public keys \texttt{alice} and \texttt{bob}. For security, we want the following conditions to hold:
 
@@ -276,7 +271,7 @@ val valid = INPUTS.size == 1 && out.propositionBytes == SELF.propositionBytes &&
 (alice && bob) || ((alice || bob) && min >= keep && (nMin == 0 || valid))
 \end{verbatim}
 
-Spending from this address is done in periods of 24 hours or more such that the maximum spendable is a fixed fraction of the amount at the beginning of the period. We do this by requiring the spending transaction to have an output with value greater than the minumum (which is stored in $R_5$) and paying back to the same address. The start of the current period is stored in $R_4$. Both registers are copied to the new output within the same period and get new values for if the current period has expired.
+Spending from this address is done in periods of 24 hours or more such that the maximum spendable is a fixed fraction of the amount at the beginning of the period. We require the spending transaction to have an output with value greater than the minumum (stored in $R_5$) and paying back to the same address. The start of the current period is stored in $R_4$. Both registers are copied to the new output within the same period and get new values if the current period has expired.
 
 
 %\subsection{Advanced Cold-Wallet Contracts}
@@ -436,7 +431,8 @@ To mix an arbitrary box $B$, any one of the following is done:
 	\item \textbf{Mix:} Pick any box $A$ from the H-pool and a secret bit $b$. Spend $A, B$ to generate two {\em Fully Mixed} boxes $O_0, O_1$ such $O_b$ and $O_{1-b}$ are spendable by $A$'s and $B$'s owners respectively.
 \end{enumerate}
 
-Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable so an outsider cannot guess $b$ with probability better than 1/2. Thus, the probability of guessing the original box after $n$ mixes is $1/2^n$. A box is mixed several times to reach the desired privacy.  Figure~\ref{fig:mixname} explains the protocol. 
+Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable so an outsider cannot guess $b$ with probability better than 1/2. Thus, the probability of guessing the original box after $n$ mixes is $1/2^n$. A box is mixed several times for the desired privacy. 
+Figure~\ref{fig:mixname} explains the protocol. 
 
 \mixname uses a primitive called a {\em Proof of Diffie-Hellman Tuple}~\cite{CDS94}, explained below. Let $g, h, u, v$ be public group elements. The prover proves knowledge of $x$ such that $u={g}^x$ and $v={h}^x$. 
 \begin{enumerate}
@@ -444,68 +440,66 @@ Privacy comes from the fact that boxes $O_b$ and $O_{1-b}$ are indistinguishable
 	\item The verifier picks $c \stackrel{R}{\leftarrow} \mathbb{Z}_q$ and sends $c$ to prover.
 	\item The prover sends $z = r + cx$ to the verifier, who accepts if ${g}^z = {t_0}\cdot {u}^c$ and $h^z=t_1\cdot v^c$. 
 \end{enumerate}
-We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$.
+We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$. Observe that this protocol requires 4 exponentiations for verification, while \texttt{proveDlog} requires 2.
 
+We also need a variant of \texttt{proveDlog} denoted as \texttt{proveDlogH}$(h, v)$ (not yet present in \langname), that takes in 2 parameters and proves knowledge of $x$ such that $v = h^x$ for arbitrary generator $h$. Currently, this can be done as \texttt{proveDlogH}$(h, v) = $ \texttt{proveDHTuple}$(h, h, v, v)$.
+ 
 \subsubsection{The Basic Protocol}
- Without loss of generality, Alice will pool and Bob will mix. 
+Without loss of generality, Alice will pool and Bob will mix. 
 % In practice, each coin must go through multiple stages of mix, with the choice of going via pool randomly decided after each mix.
 Let $g$ be the generator of \texttt{proveDlog}.
 \begin{enumerate}
 	\item \textbf{Pool:} To add a coin to the H-pool, Alice picks random $x\in \mathbb{Z}_q$ and creates an output box $A$ containing $u = g^x$ protected by the script given below. She waits for Bob to join, who will do so by spending $A$ in a transaction satisfying following conditions: 
 	
 	\begin{enumerate}
-%		\item It has two outputs $O_0, O_1$ containing tuples $(h, w_0)$, $(h, w_1)$ respectively for $w_0, w_1\in G$. 
-		\item It has two outputs $O_0, O_1$ containing pairs $(w_0, w_1)$, $(w_1, w_0)$ respectively for $w_0, w_1\in G$. 
-		\item One of $(g, u, w_0, w_1), (g, u, w_1, w_0)$ is of the form $(g, g^x, g^y, g^{xy})$, a valid Diffie-Hellman tuple. This is encoded as $\texttt{proveDHTuple}(g, u, w_0, w_1)\lor \texttt{proveDHTuple}(g, u, w_1, w_0)$.
-		\item The value of $O_0, O_1$ is the same as that of $A$.
-		\item Both $O_0, O_1$ should be protected by the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
+		%		\item It has two outputs $O_0, O_1$ containing tuples $(h, w_0)$, $(h, w_1)$ respectively for $w_0, w_1\in G$. 
+		\item It has two outputs $O_0, O_1$ containing pairs $(c, d_0)$, $(c, d_1)$ respectively for $d_0, d_1\in G$. 
+		\item One of $(g, u, c, d_0), (g, u, c, d_1)$ is of the form $(g, g^x, g^y, g^{xy})$, a valid Diffie-Hellman tuple. This is encoded as $\texttt{proveDHTuple}(g, u, c, d_0)\lor \texttt{proveDHTuple}(g, u, c, d_1)$.
+		\item Apart from the above, the boxes $O_0, O_1$ are otherwise identical. That is, they have the same value as that of $A$ and are protected the script $\tau_\textsf{A} \lor \tau_\textsf{B}$ given in the Mix step below.
 	\end{enumerate}
 	
 	
-	\item \textbf{Mix:} Bob picks secrets $(b, y) \in \mathbb{Z}_2\times \mathbb{Z}_q$ and spends $A$ with one of his own box to create two output boxes $O_0, O_1$ of equal value such that $O_b$ is spendable by Alice alone and $O_{1-b}$ by Bob alone. 
-	The boxes are indistinguisable in the sense that they have identical scripts operating on  data registers $c, d$ containing different (but related) elements from $G$ as explained below. 
+	\item \textbf{Mix:} Bob picks secrets $(b, y, z) \in \mathbb{Z}_2\times \mathbb{Z}_q\times\mathbb{Z}_q$ and spends $A$ with one of his own box to create two output boxes $O_0, O_1$ of equal value such that $O_b$ is spendable by Alice alone and $O_{1-b}$ by Bob alone. 
+	The boxes have registers $c, d$ containing elements from $G$ as follows: 
 	\begin{enumerate}
 		\item %Let $(h, v) = ({g}^{y}, {u}^{y})$.  
-		Registers $(c, d)$ of $O_b$ and $O_{1-b}$ are set to $(g^y, u^y)$ and $(u^y, g^y)$ respectively. 
-%		If the DDH problem in $G$ is hard, then given $(g, g^x)$ the distributions $({g}^{y}, {g}^{xy})$ and 
-%		$({g}^{xy}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
+		Registers $(c, d)$ of $O_b$ and $O_{1-b}$ are set to $(g^y, u^y)$ and $(g^y, g^z)$ respectively. 
+		%		If the DDH problem in $G$ is hard, then given $(g, g^x)$ the distributions $({g}^{y}, {g}^{xy})$ and 
+		%		$({g}^{xy}, {g}^{y})$ are computationally indistinguishable. In other words, without knowledge of $x$ or $y$, one cannot guess $b$ with probability better than $1/2$.
 		\item Each box is protected by the proposition $\tau_\textsf{A} \lor \tau_\textsf{B}$, where $\tau_\textsf{A}$ and $\tau_\textsf{B}$ are as follows: 
-
-		$\tau_\textsf{A} = $ ``Prove knowledge of $x$ such that $u = {g}^{x}$ and ${d} = {c}^{x}$ via $\texttt{proveDHTuple}(g, c, u, d)$.''
-				
+		
+		$\tau_\textsf{A} = $ ``Prove knowledge of $x$ such that ${d} = {c}^{x}$ via $\texttt{proveDlogH}(c, d)$.''
+		
 		$\tau_{\textsf{B}} = $ ``Prove knowledge of $y$ such that $d = {g}^{y}$ via $\texttt{proveDlog}(d)$.''
-				
+		
 	\end{enumerate}
-
-%	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
+	
+	%	\item \textbf{Spend:} Alice and Bob spent their respective boxes using their secrets, possibly sending funds back to the pool or mix stages. Bob already knows which coin belongs to him. For each output, Alice will parse the data as $(g, h, u, v)$ and select the one with $v = h^x$. 
 \end{enumerate}
-	After the mix, Alice and Bob can spent their respective boxes using their secrets. 
-	Alice can identify her box as the one with $d = c^x$. 
+After the mix, Alice and Bob can spent their respective boxes using their secrets. 
+Alice can identify her box as the one with $d = c^x$. 
 
 %\subsubsection{Implementing \mixname In \langname}
 \paragraph{\langname Code:} First compute \texttt{fullMixScriptHash}, the hash of the following script:
 \begin{verbatim}
-val u = SELF.R4[GroupElement].get // copied from previous transaction
-val c = SELF.R5[GroupElement].get 
-val d = SELF.R6[GroupElement].get 
-proveDlog(d) || proveDHTuple(g, c, u, d)
+val c = SELF.R4[GroupElement].get 
+val d = SELF.R5[GroupElement].get 
+def proveDlogH(h:GroupElement, v:GroupElement) = proveDHTuple(h, h, v, v)
+proveDlog(d) || proveDlogH(c, d)
 \end{verbatim}
 
 Next create a script, \texttt{halfMixScript}, having the following code:
 \begin{verbatim}
 val u = SELF.R4[GroupElement].get
-val u0 = OUTPUT(0).R4[GroupElement].get
-val c0 = OUTPUT(0).R5[GroupElement].get // w0
-val d0 = OUTPUT(0).R6[GroupElement].get // w1
-val u1 = OUTPUT(1).R4[GroupElement].get 
-val c1 = OUTPUT(1).R5[GroupElement].get // w1
-val d1 = OUTPUT(1).R6[GroupElement].get // w0
-val bob = u0 == u && u1 == u && c0 == d1 && c1 == d0 && 
-          (proveDHTuple(g, u, c0, d0) || proveDHTuple(g, u, d0, c0))
+val c = OUTPUT(0).R4[GroupElement].get 
+val d0 = OUTPUT(0).R5[GroupElement].get 
+val d1 = OUTPUT(1).R5[GroupElement].get 
+val bob = c == OUTPUT(1).R4[GroupElement].get && 
+          (proveDHTuple(g, u, c, d0) || proveDHTuple(g, u, c, d1))
 val alice = proveDlog(u)    // so Alice can spend if no one joins for a long time
 val fullMixBox = {(b:Box) => blake2b256(b.propositionBytes) == fullMixScriptHash}
 val fullMixTx = OUTPUT(0).value == SELF.value && OUTPUT(1).value == SELF.value && 
-                fullMixBox(OUTPUT(0)) && fullMixBox(OUTPUT(1))
+fullMixBox(OUTPUT(0)) && fullMixBox(OUTPUT(1))
 
 fullMixTx && (bob || alice)
 \end{verbatim}
@@ -513,9 +507,9 @@ fullMixTx && (bob || alice)
 Alice's Half-Mix box is protected by \texttt{halfMixScript} given above, which Bob can spend using the condition \texttt{bob}. In case no one spends her box for a long time, she can do so herself using the condition \texttt{alice}, as long as she spends it in a mix transaction.  
 
 \subsubsection{Analysis Of The Protocol}
-\paragraph{Security:} Observe that registers $(c, d)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDHTuple}(g, g^y, g^x, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^y) \lor \texttt{proveDHTuple}(g, g^{xy}, g^x, g^y)$. Thus, while Alice can spend $O_b$ using \texttt{proveDHTuple} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
+\paragraph{Security:} Observe that registers $(c, d)$ of $O_b$ and $O_{1-b}$ contain $(g^y, g^{xy})$ and $(g^y, g^z)$ respectively, implying that $O_b$'s  spending condition reduces to $\texttt{proveDlog}(g^{xy}) \lor \texttt{proveDlogH}(g^y, g^{xy})$ and $O_{1-b}$'s reduces to $\texttt{proveDlog}(g^z) \lor \texttt{proveDlogH}(g^{y}, g^z)$. Thus, while Alice can spend $O_b$ using \texttt{proveDlogH} with her secret $x$, she cannot satisfy the spending condition of $O_{1-b}$. Similarly, Bob can only spend $O_{1-b}$ using \texttt{proveDlog} with his secret $y$. Bob must generate $O_0, O_1$ this way because he must prove that one of the outputs contains a valid DH tuple.
 
-For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. It can be shown that any algorithm that, given $(g, g^x)$, distinguishes $(g^y, g^{xy})$ from $(g^{xy}, g^y)$ can be used to solve the {\em Decision Diffie Hellman} (DDH) problem. It follows that our boxes, which are of this form, are also indistingushable if the DDH problem is hard.
+For privacy, observe that any two identical boxes protected by \texttt{halfMixScript} have {\em spender indistinguisbility} because each one is spent using a $\Sigma$-OR-proof that is zero-knowledge~\cite{Dam10}. Also, any algorithm that can distinghish the two boxes can be directly used to solve the {\em Decision Diffie Hellman} (DDH) problem. Thus, the boxes are indistingushable if the DDH problem is hard.
 
 \paragraph{Comparing with CoinJoin:} CoinJoin~\cite{coinjoin} is a privacy enhancing protocol, where multiple parties provide inputs and create outputs in a single transaction computed interactively such that the original inputs and outputs are unlinked. The optimal use of CoinJoin is when two inputs of equal value are joined to generate two outputs of equal value, and the process is repeated, as depicted in Figure~\ref{fig:coinjoin}. 
 This requires two parties to interactively sign a transaction offchain and this interactive nature is the primary drawback of CoinJoin, which \mixname aims to overcome. 
@@ -547,8 +541,16 @@ In \mixname, once a box is spent, no information about it is kept in memory, and
 
 \paragraph{Offchain Pool:} The H-Pool can be kept entirely offchain, so that Alice's Half-Mix box need not be present on the blockchain till the time Bob decides to spend it. Alice sends her unbroadcasted transaction directly to Bob who will broadcast both transactions at some later time. 
 
-\paragraph{Future enhancements:} Compared to CoinJoin, \mixname requires an additional box (the Half-Mix box) as depicted in Figure~\ref{fig:comparecoinjoin}. It will be better to have a variant that eliminates this box. 
-One way to do this would be to find a way so that the mix step directly outputs two indistinguishable Half-Mix boxes that can be used either in the mix step or spent externally. 
+%\paragraph{Faster Verification:} Consider the condition \texttt{proveDlog(d) || proveDHTuple(g, c, u, d)} of the mixed outputs.
+
+\paragraph{Future enhancements:} Compared to CoinJoin, \mixname requires an additional box (the Half-Mix box) as depicted in Figure~\ref{fig:comparecoinjoin}. One way to eliminate the extra box would be to have the mix step output two indistinguishable Half-Mix boxes that can be used again in the mix step (or spent elsewhere). 
+We can do this inefficiently by accumulating the statements and making the proof size linear to the number of mixes. It is an open question if this can be done with constant proof size.
+
+%\paragraph{Another variant:} Registers $(c, d)$ of the outputs $O_b$ and $O_{1-b}$ in the above protocol contain $(g^y, g^{xy})$ and $(g^{xy}, g^y)$ respectively for random $y$. 
+%We can modify the protocol so that these register instead contain $(g^y, g^{xy})$ and $(g^y, g^z)$ respectively for random $y, z$ with the same spending condition, that is, \texttt{proveDlog(d) || proveDHTuple(g, c, u, d)}. Alice will spend using \texttt{proveDHTuple}$(g, g^y, g^x, g^{xy})$ and Bob will spend using \texttt{proveDlog}$(g^z)$. 
+%%This has similar performance and security as the original. 
+%The only difference is that we can use the spending condition  
+%\texttt{proveDHTuple(g, u, d, c) || proveDHTuple(g, c, u, d)} in the original, which is more symmetric and may be useful in some situations.
 \subsubsection{Handling Fee In \mixname}
 
 %\paragraph{Fixed Value Coins:} 
@@ -576,11 +578,15 @@ val sameTokenHalfBox = {(b:Box) => halfBox(b) && b.tokens(0) == SELF.tokens(0)}
 carol && (halfBox(INPUTS(0) || sameTokenHalfBox(OUTPUTS(0))) // carol is buyer
 \end{verbatim}
 
-The value \texttt{halfMixScriptHash} is a hash of \texttt{halfMixScript}, which has the following additional code: 
-\texttt{out.R7[Coll[Byte]].get == blake2b256(SELF.propositionBytes)}, thereby ensuring that $R_7$ of each output contains its hash. The code of \texttt{fullMixScript} is modified:
+The value \texttt{halfMixScriptHash} is a hash of \texttt{halfMixScript} with the additional code: 
+\begin{verbatim}
+OUTPUTS.forall({(o:Box) => o.R6[Coll[Byte]].get == blake2b256(SELF.propositionBytes)}
+\end{verbatim}
+This ensures that $R_6$ of each output 
+contains its hash. The code of \texttt{fullMixScript} is modified:
 
 \begin{verbatim}
-val halfMixScriptHash = SELF.R7[Coll[Byte]].get
+val halfMixScriptHash = SELF.R6[Coll[Byte]].get
 val halfBox = {(b:Box) => blake2b256(b.propositionBytes) == halfMixScriptHash}
 val sameTokenHalfBox = {(b:Box) => halfBox(b) && b.tokens(0) == SELF.tokens(0)}
 val noToken = {(token:(Coll[Byte], Long)) => token._1 != SELF.tokens(0)._1}
