@@ -733,7 +733,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   def costedPrimToPair[A,B](p: Rep[(A,B)], c: Rep[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
     case se: SizeElem[_,_] if se.eVal.isInstanceOf[PairElem[_,_]] =>
       val sPair = asSizePair(s)
-      RCCostedPair(RCCostedPrim(p._1, 0, sPair.l), RCCostedPrim(p._2, 0, sPair.r), c)
+      val l = RCCostedPrim(p._1, 0, sPair.l)
+      val r = RCCostedPrim(p._2, 0, sPair.r)
+      val newCost = opCost(Pair(l, r), Seq(c), 0)
+      RCCostedPair(l, r, newCost)
     case _ =>
       !!!(s"Expected RCSizePair node but was $s -> ${s.rhs}")
   }
@@ -1141,7 +1144,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         RCCostedColl(v, xsC.costs, xsC.sizes, newCost(v, c))
       case e: PairElem[a,b] =>
         val pC = asCostedPair[a,b](asCosted[(a,b)](source))
-        RCCostedPair(pC.l, pC.r, newCost(pC, pC.cost))
+        RCCostedPair(pC.l, pC.r, newCost(Pair(pC.l, pC.r), pC.cost))
       case e =>
         val c = source.cost  // this is a current cost of the value
         val v = source.value
