@@ -210,8 +210,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedPrim(value, opCost(value, costOfArgs, selectFieldCost), size)
     }
 
-    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] =
-      mkCostedColl(prop(obj.value), len, opCost(obj.value, costOfArgs, selectFieldCost))
+    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] = {
+      val value = prop(obj.value)
+      mkCostedColl(value, len, opCost(value, costOfArgs, selectFieldCost))
+    }
 
     def digest32PropertyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
       knownLengthCollPropertyAccess(prop, CryptoConstants.hashLength)
@@ -402,7 +404,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val sInfo = mkSizeColl(len, sToken)
       val costs = colBuilder.replicate(len, 0)
       val sizes = colBuilder.replicate(len, sToken)
-      RCCostedColl(tokens, costs, sizes, opCost(obj.value, Seq(obj.cost), costOf(method)))
+      RCCostedColl(tokens, costs, sizes, opCost(tokens, Seq(obj.cost), costOf(method)))
     }
 
     def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
