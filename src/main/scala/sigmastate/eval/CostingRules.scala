@@ -230,7 +230,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def defaultOptionPropertyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
-      RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(obj.value, costOfArgs, selectFieldCost))
+      RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(v, costOfArgs, selectFieldCost))
     }
 
     def defaultCollPropertyAccess[R: Elem](prop: Rep[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Rep[Int]): RCostedColl[R] = {
