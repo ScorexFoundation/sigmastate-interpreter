@@ -281,8 +281,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         if (regId.isConst)
           mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
         else
-          builder.mkMethodCall(box, SBox.getRegMethod, IndexedSeq(recurse(regId)),
-            Map(SBox.tT -> tpe.elemType))
+          error(s"Non constant expressions (${regId.rhs}) are not supported in getReg")
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
@@ -372,7 +371,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkIf(cond, thenP, elseP)
 
       case Def(Tup(In(x), In(y))) =>
-        mkTuple(Seq(x, y))  
+        mkTuple(Seq(x, y))
       case Def(First(pair)) =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>
