@@ -1897,10 +1897,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
 //        }
 
       // fallback rule for MethodCall, should be the last case in the list
-      case Terms.MethodCall(obj, method, args, _) if method.objType.coster.isDefined =>
+      case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
         val objC = eval(obj)
         val argsC = args.map(eval)
-        method.objType.coster.get(IR)(objC, method, argsC)
+        val elems = typeSubst.values.toSeq.map(tpe => liftElem(stypeToElem(tpe).asElem[Any]))
+        method.objType.coster.get(IR)(objC, method, argsC, elems)
 
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
