@@ -1131,7 +1131,8 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   val GetReg = "getReg"
   // should be lazy, otherwise lead to initialization error
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6) // see ExtractCreationInfo
-  lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
+  lazy val getRegMethod = SMethod(this, "getReg",
+    SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7, MethodCallIrBuilder)
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8, MethodCallIrBuilder)
   // should be lazy to solve recursive initialization
   protected override def getMethods() = super.getMethods() ++ Vector(
