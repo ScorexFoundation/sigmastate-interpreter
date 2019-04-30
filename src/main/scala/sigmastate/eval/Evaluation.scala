@@ -390,8 +390,6 @@ trait Evaluation extends RuntimeCosting { IR =>
             out(res)
           case ApplyUnOp(op: UnOp[l,r], In(x)) =>
             out(op.applySeq(x).asInstanceOf[AnyRef])
-          case ApplyBinOp(op, In(x: Boolean), In(y: Boolean)) if op == BinaryXorOp =>
-            out(x ^ y)
           case ApplyBinOp(op: BinOp[l,r], In(x), In(y)) =>
             out(op.applySeq(x, y).asInstanceOf[AnyRef])
           case ApplyBinOpLazy(op, In(x: Boolean), In(y)) if op == Or =>
