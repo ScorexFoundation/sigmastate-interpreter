@@ -1,7 +1,5 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, SigmaPropConstant, TaggedBox}
-import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
@@ -12,7 +10,6 @@ import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
     * Demurrage currency example.

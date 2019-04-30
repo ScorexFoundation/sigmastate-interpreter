@@ -1,20 +1,14 @@
 package org.ergoplatform.dsl
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 import scalan.RType
 import sigmastate.SType
 import sigmastate.SType.AnyOps
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
-import sigmastate.Values.{ErgoTree, Constant}
-import sigmastate.eval.{IRContext, CSigmaProp, CostingSigmaDslBuilder, Evaluation}
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
+import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.collection.Coll
-import special.sigma.{SigmaProp, SigmaContract, AnyValue, Context, DslSyntaxExtensions, SigmaDslBuilder}
-
+import special.sigma.{SigmaProp, SigmaContract, Context, DslSyntaxExtensions, SigmaDslBuilder}
 import scala.language.implicitConversions
-import scala.util.Try
 
 trait ContractSyntax { contract: SigmaContract =>
   override def builder: SigmaDslBuilder = new CostingSigmaDslBuilder
@@ -31,10 +25,8 @@ trait ContractSyntax { contract: SigmaContract =>
   def proposition(name: String, dslSpec: Proposition, scriptCode: String) = {
     val env = contractEnv.mapValues { v =>
       val tV = Evaluation.rtypeOf(v).get
-      val treeType = Evaluation.toErgoTreeType(tV)
-      val data = Evaluation.fromDslData(v, treeType)
-      val elemTpe = Evaluation.rtypeToSType(treeType)
-      spec.IR.builder.mkConstant[SType](data.asWrappedType, elemTpe)
+      val elemTpe = Evaluation.rtypeToSType(tV)
+      spec.IR.builder.mkConstant[SType](v.asWrappedType, elemTpe)
     }
     spec.mkPropositionSpec(name, dslSpec, ErgoScript(env, scriptCode))
   }

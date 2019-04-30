@@ -29,6 +29,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     case SBox => w.put(SBox.typeCode)
     case SAvlTree => w.put(SAvlTree.typeCode)
     case SContext => w.put(SContext.typeCode)
+    case SGlobal => w.put(SGlobal.typeCode)
     case SHeader => w.put(SHeader.typeCode)
     case SPreHeader => w.put(SPreHeader.typeCode)
     case c: SCollectionType[a] => c.elemType match {
@@ -39,7 +40,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case p: SEmbeddable =>
           val code = p.embedIn(NestedCollectionTypeCode)
           w.put(code)
-        case t =>
+        case _ =>
           w.put(CollectionTypeCode)
           serialize(cn, w)
       }
@@ -55,7 +56,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case p: SEmbeddable =>
           val code = p.embedIn(SOption.OptionCollectionTypeCode)
           w.put(code)
-        case t =>
+        case _ =>
           w.put(SOption.OptionTypeCode)
           serialize(c, w)
       }
@@ -63,7 +64,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         w.put(SOption.OptionTypeCode)
         serialize(t, w)
     }
-    case tup @ STuple(Seq(t1, t2)) => (t1, t2) match {
+    case _ @ STuple(Seq(t1, t2)) => (t1, t2) match {
       case (p: SEmbeddable, _) =>
         if (p == t2) {
           // Symmetric pair of primitive types (`(Int, Int)`, `(Byte,Byte)`, etc.)
@@ -182,6 +183,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
         case SContext.typeCode => SContext
+        case SGlobal.typeCode => SGlobal
         case SHeader.typeCode => SHeader
         case SPreHeader.typeCode => SPreHeader
         case STypeIdent.TypeCode => {

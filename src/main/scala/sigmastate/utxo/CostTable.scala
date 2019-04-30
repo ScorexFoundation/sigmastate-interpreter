@@ -17,7 +17,9 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
   override def apply(operId: OperationId): Int = {
     val costOpt = this.get(operId)
     costOpt match {
-      case Some(cost) => cost
+      case Some(cost) =>
+        // println(s"$operId -> $cost")
+        cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }
@@ -43,31 +45,47 @@ object CostTable {
   val newCollValueCost = 1
   val newPairValueCost = 1
   val newOptionValueCost = 1
+  val newAvlTreeCost = 10
 
   val plusMinus = 2
   val multiply = 10
 
   val plusMinusBigInt = 10
+  val comparisonBigInt = 10
   val multiplyBigInt = 50
 
   val hashPerKb = 100
 
+  val avlTreeOp = hashPerKb * 2
+
   val collAccess = 5
+  val collLength  = 5 // TODO should be >= selectField
+  val collByIndex = 5 // TODO should be >= selectField
 
   val collToColl = 20
 
   val comparisonCost = 3
+  val comparisonPerKbCost = 10
 
   val logicCost = 2
 
   val sigmaAndCost = 10
   val sigmaOrCost = 40
 
-  val castOp = 5
+  val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
+  val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
+
+  val castOp = 5  // TODO should be >= selectField
 
   val treeOp = 1000
 
-  val extractCost = 10
+  val extractCost      = 10
+  val selectField      = 10
+  val accessContextVar = 10
+  val accessBox        = 10
+  val accessRegister   = 10
+
+  val OptionOp         = 10
 
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
@@ -91,12 +109,12 @@ object CostTable {
     ("Self$", "Context => Box", constCost),
     ("AccessAvlTree", "Context => AvlTree", constCost),
 
-    ("SelectField", "() => Unit", extractCost),
+    ("SelectField", "() => Unit", selectField),
     ("AccessKiloByteOfData", "() => Unit", extractCost),
-    ("AccessBox", "Context => Box", extractCost),
+    ("AccessBox", "Context => Box", accessBox),
     ("GetVar", "(Context, Byte) => Option[T]", extractCost),
-    ("GetRegister", "(Box, Byte) => Option[T]", extractCost),
-    ("AccessRegister", "Box => Option[T]", extractCost),
+    ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
+    ("AccessRegister", "Box => Option[T]", accessRegister),
     ("ExtractAmount", "(Box) => Long", extractCost),
     ("ExtractId", "(Box) => Coll[Byte]", extractCost),
     ("ExtractBytes", "(Box) => Coll[Byte]", extractCost),
@@ -113,8 +131,9 @@ object CostTable {
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
-    ("SizeOf", "(Coll[IV]) => Int", collAccess),
-    ("ByIndex", "(Coll[IV],Int) => IV", collAccess),
+    ("SizeOf", "(Coll[IV]) => Int", collLength),
+    ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
+    ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
     ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
     ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
@@ -124,6 +143,7 @@ object CostTable {
     ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
     ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
     ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
+    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
 
@@ -149,19 +169,19 @@ object CostTable {
     ("EQ", "(T,T) => Boolean", comparisonCost),
     ("NEQ", "(T,T) => Boolean", comparisonCost),
 
-    ("GT_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("GE_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("LE_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("LT_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("EQ_per_kb", "(T,T) => Boolean", comparisonCost),
-    ("NEQ_per_kb", "(T,T) => Boolean", comparisonCost),
+    ("GT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("GE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("LE_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("LT_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("EQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
+    ("NEQ_per_kb", "(T,T) => Boolean", comparisonPerKbCost),
 
-    ("GT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("GE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("LE", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("LT", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("EQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
-    ("NEQ", "(BigInt,BigInt) => Boolean", plusMinusBigInt),
+    ("GT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("GE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("LE", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("LT", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("EQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
+    ("NEQ", "(BigInt,BigInt) => Boolean", comparisonBigInt),
 //    (">_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("+", "(Byte, Byte) => Byte", plusMinus),
@@ -229,20 +249,20 @@ object CostTable {
     ("max", "(BigInt, BigInt) => BigInt", comparisonCost),
     ("max_per_item", "(BigInt, BigInt) => BigInt", comparisonCost),
 
-    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", hashPerKb * 2),
-    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", hashPerKb * 2),
-    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", hashPerKb * 2),
-    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", hashPerKb * 2),
+    ("SAvlTree$.insert_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.update_per_kb", "(AvlTree, Coll[(Coll[Byte], Coll[Byte])], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.remove_per_kb", "(AvlTree, Coll[Coll[Byte]], Coll[Byte]) => Option[AvlTree]", avlTreeOp),
+    ("SAvlTree$.contains_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Boolean", avlTreeOp),
+    ("SAvlTree$.get_per_kb", "(AvlTree,Coll[Byte],Coll[Byte]) => Option[Coll[Byte]]", avlTreeOp),
+    ("SAvlTree$.getMany_per_kb", "(AvlTree,Coll[Coll[Byte]],Coll[Byte]) => Coll[Option[Coll[Byte]]]", avlTreeOp),
+    ("SAvlTree$.updateDigest", "(AvlTree,Coll[Byte]) => AvlTree", newAvlTreeCost),
+    ("SAvlTree$.updateOperations", "(AvlTree,Byte) => AvlTree", newAvlTreeCost),
 
     ("LongToByteArray", "(Long) => Coll[Byte]", castOp),
     ("ByteArrayToLong", "(Coll[Byte]) => Long", castOp),
 
-    ("ProveDlogEval", "(Unit) => SigmaProp", groupElementConst + constCost + 2 * expCost + multiplyGroup),
-
-    //cost if of twice prove dlog
-    ("ProveDHTuple", "(Unit) => SigmaProp", 2 * (groupElementConst + constCost + 2 * expCost + multiplyGroup)),
+    ("ProveDlogEval", "(Unit) => SigmaProp", proveDlogEvalCost),
+    ("ProveDHTuple", "(Unit) => SigmaProp", proveDHTupleEvalCost),
 
     ("SigmaAnd_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaAndCost),
     ("SigmaOr_per_item", "(Coll[SigmaProp]) => SigmaProp", sigmaOrCost),
@@ -250,6 +270,9 @@ object CostTable {
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
     ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+
+    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
+    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {

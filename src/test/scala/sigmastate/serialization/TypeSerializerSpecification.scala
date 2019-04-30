@@ -60,7 +60,6 @@ class TypeSerializerSpecification extends SerializationSpecification {
     forAll { t: SPredefType =>
       whenever(t.isInstanceOf[SEmbeddable]) {
         val e = t.asInstanceOf[SEmbeddable]
-        val tCode = e.typeCode
         val tupCode = e.embedIn(PairSymmetricTypeCode)
         roundtrip(SCollection(STuple(e, e)), Array[Byte](CollectionTypeCode, tupCode))
         roundtrip(SCollection(SOption(e)), Array[Byte](CollectionTypeCode, e.embedIn(OptionTypeCode)))

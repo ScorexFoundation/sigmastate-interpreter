@@ -3,10 +3,10 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
-import scorex.util.encode.{Base58, Base64}
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import scorex.util.encode.{Base64, Base58}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
-import sigmastate.Values.{BoolValue, ByteArrayConstant, Constant, EvaluatedValue, IntValue, SValue, SigmaPropConstant, SigmaPropValue, StringConstant, Value}
+import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, BoolValue, Value, ByteArrayConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
@@ -53,6 +53,11 @@ object SigmaPredef {
       { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkOR(col) }
     )
 
+    val XorOfFunc = PredefinedFunc("xorOf",
+      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
+      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }
+    )
+
     val AtLeastFunc = PredefinedFunc("atLeast",
       Lambda(Vector("k" -> SInt, "conditions" -> SCollection(SSigmaProp)), SSigmaProp, None),
       { case (_, Seq(bound: IntValue@unchecked, arr: Value[SCollection[SSigmaProp.type]]@unchecked)) =>
@@ -96,7 +101,7 @@ object SigmaPredef {
       Lambda(Vector("input" -> SString), SSigmaProp, None),
       { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
         ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
-          case a: P2PKAddress => mkConstant[SSigmaProp.type](a.pubkey, SSigmaProp)
+          case a: P2PKAddress => SigmaPropConstant(a.pubkey)
           case a@_ => sys.error(s"unsupported address $a")
         }
       }
@@ -191,55 +196,9 @@ object SigmaPredef {
     )
     val AvlTreeFunc = PredefinedFunc("avlTree",
       Lambda(Vector("operationFlags" -> SByte, "digest" -> SByteArray, "keyLength" -> SInt, "valueLengthOpt" -> SIntOption), SAvlTree, None),
-      { case (_, Seq(arg: Value[SGroupElement.type]@unchecked)) =>
-        mkCreateProveDlog(arg)
+      { case (_, Seq(flags, digest, keyLength, valueLength)) =>
+        mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
       }
-    )
-
-//    val IsMemberFunc = PredefinedFunc("isMember",
-//      Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SBoolean, None),
-//      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
-//          proof: Value[SByteArray]@unchecked)) =>
-//        mkIsMember(tree, key, proof)
-//      }
-//    )
-//
-//    val TreeLookupFunc = PredefinedFunc("treeLookup",
-//      Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
-//      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, key: Value[SByteArray]@unchecked,
-//          proof: Value[SByteArray]@unchecked)) =>
-//        mkTreeLookup(tree, key, proof)
-//      }
-//    )
-//
-//    val TreeModificationsFunc = PredefinedFunc("treeModifications",
-//      Lambda(Vector("tree" -> SAvlTree, "ops" -> SByteArray, "proof" -> SByteArray), SOption[SByteArray], None),
-//      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SByteArray]@unchecked,
-//          proof: Value[SByteArray]@unchecked)) =>
-//        mkTreeModifications(tree, operations, proof)
-//      }
-//    )
-//
-//    val TreeInsertsFunc = PredefinedFunc("treeInserts",
-//      Lambda(Vector("tree" -> SAvlTree, "ops" -> SCollection(STuple(IndexedSeq(SByteArray, SByteArray))), "proof" -> SByteArray),
-//        SOption[SByteArray], None),
-//      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SCollection[STuple]]@unchecked,
-//      proof: Value[SByteArray]@unchecked)) =>
-//        mkTreeInserts(tree, operations, proof)
-//      }
-//    )
-//
-//    val TreeRemovalsFunc = PredefinedFunc("treeRemovals",
-//      Lambda(Vector("tree" -> SAvlTree, "ops" -> SCollection[SByteArray], "proof" -> SByteArray), SOption[SByteArray], None),
-//      { case (_, Seq(tree: Value[SAvlTree.type]@unchecked, operations: Value[SCollection[SByteArray]]@unchecked,
-//      proof: Value[SByteArray]@unchecked)) =>
-//        mkTreeRemovals(tree, operations, proof)
-//      }
-//    )
-
-    val XorOfFunc = PredefinedFunc("xorOf",
-      Lambda(Vector("conditions" -> SCollection(SBoolean)), SBoolean, None),
-      { case (_, Seq(col: Value[SCollection[SBoolean.type]]@unchecked)) => mkXorOf(col) }
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",

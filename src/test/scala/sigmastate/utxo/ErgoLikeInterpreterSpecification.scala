@@ -9,14 +9,18 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values._
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.ValueSerializer
+import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 
-class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
+class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
+  with SerializationSpecification {
+
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
@@ -31,14 +35,16 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val e = compile(Map("h1" -> h1.bytes, "h2" -> h2.bytes), "h1 == h1")
+    val e = compile(Map("h1" -> h1.treeWithSegregation.bytes, "h2" -> h2.treeWithSegregation.bytes), "h1 == h1")
     val exp = TrueLeaf
     e shouldBe exp
 
     val res = verifier.reduceToCrypto(ctx, exp).get._1
     res shouldBe TrueProp
 
-    val res2 = verifier.reduceToCrypto(ctx, EQ(ByteArrayConstant(h1.bytes), ByteArrayConstant(h2.bytes))).get._1
+    val res2 = verifier.reduceToCrypto(ctx,
+      EQ(ByteArrayConstant(h1.treeWithSegregation.bytes),
+        ByteArrayConstant(h2.treeWithSegregation.bytes))).get._1
     res2 shouldBe FalseProp
   }
 
@@ -630,6 +636,38 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons {
     an[RuntimeException] should be thrownBy
       prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
   }
+
+  property("DeserializeContext value(script) type mismatch") {
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply))) { scriptProp =>
+      val verifier = new ErgoLikeTestInterpreter
+      val scriptId = 21.toByte
+      val prover0 = new ContextEnrichingTestProvingInterpreter()
+      // serialize boolean expression
+      val prover = prover0.withContextExtender(scriptId, ByteArrayConstant(ValueSerializer.serialize(scriptProp)))
+      val prop = OR(
+        LogicalNot(DeserializeContext(scriptId, scriptProp.tpe)),
+        DeserializeContext(scriptId, scriptProp.tpe)
+      ).toSigmaProp
+
+      val box = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map())
+      val ctx = ErgoLikeContext(
+        currentHeight = 50,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = IndexedSeq(box),
+        createTransaction(IndexedSeq(ErgoBox(10, TrueProp, 0))),
+        self = box)
+
+      val pr = prover.prove(prop, ctx, fakeMessage).get
+      // make sure verifier will fail on deserializing context with mismatched type
+      // try to deserialize it as an expression with integer type
+      val prop1 = EQ(DeserializeContext(scriptId, SInt), IntConstant(1)).toSigmaProp
+      an[InterpreterException] should be thrownBy
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop1, ctx, pr, fakeMessage).get
+      // make sure prover fails as well on deserializing context with mismatched type
+      an[InterpreterException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
+    }
+ }
 
   property("non-const ProveDHT") {
     import sigmastate.interpreter.CryptoConstants.dlogGroup

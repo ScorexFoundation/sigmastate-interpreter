@@ -6,13 +6,9 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
-import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
-import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractRegisterAs, SigmaPropIsProven, Slice}
-import special.sigma.{AnyValue, TestValue}
 
 import scala.language.implicitConversions
 
@@ -223,7 +219,6 @@ object Terms {
     }
     /**
       * Set source context to all nodes missing source context in the given tree.
-      * @param tree AST to traverse
       * @param srcCtx source context to set
       * @return AST where all nodes with missing source context are set to the given srcCtx
       */
