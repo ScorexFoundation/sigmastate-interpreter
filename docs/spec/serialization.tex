@@ -230,14 +230,66 @@ serialized using predefined function shown in Figure~\ref{fig:ser:data}.
 \subsubsection{GroupElement serialization}
 \label{sec:ser:data:groupelement}
 
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \multicolumn{4}{l}{\lst{def serialize(}$ge$\lst{)}} \\
+    \multicolumn{4}{l}{~~\lst{if} $ge.isIdentity$ \lst{then}} \\
+    \hline
+    ~~~~$ $  & \lst{Const} & $ $ &  \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{else}} \\
+    \hline
+    ~~~~$ $  &  & $ $ &  \\ 
+    \hline
+    \multicolumn{4}{l}{~~\lst{end if}} \\
+    \multicolumn{4}{l}{\lst{end def}} \\
+\end{tabularx}\)
+\caption{GroupElement serialization format}
+\label{fig:ser:data:groupelement}
+\end{figure}
+
 \subsubsection{SigmaProp serialization}
 \label{sec:ser:data:sigmaprop}
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+\end{tabularx}\)
+\caption{SigmaProp serialization format}
+\label{fig:ser:data:sigmaprop}
+\end{figure}
 
 \subsubsection{Box serialization}
 \label{sec:ser:data:box}
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+\end{tabularx}\)
+\caption{Box serialization format}
+\label{fig:ser:data:box}
+\end{figure}
 
 \subsubsection{AvlTree serialization}
 \label{sec:ser:data:avltree}
+\begin{figure}[h]
+\footnotesize
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+\end{tabularx}\)
+\caption{AvlTree serialization format}
+\label{fig:ser:data:avltree}
+\end{figure}
 
 \subsection{Constant Serialization}
 \label{sec:ser:const}
