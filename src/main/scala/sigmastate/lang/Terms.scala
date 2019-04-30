@@ -150,6 +150,15 @@ object Terms {
   }
 
   /** Represents in ErgoTree an invocation of method of the object `obj` with arguments `args`.
+    * The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
+    * but valid ErgoTree should have SMethod instances specialized for specific types of
+    * obj and args using `specializeFor`.
+    * This means, if we save typeId, mathodId, and we save all the arguments,
+    * we can restore the specialized SMethod instance.
+    * This work by induction, if we assume all arguments are monomorphic,
+    * then we can make MethodCall monomorphic.
+    * Thus, all ErgoTree is monomorphic by construction.
+    *
     * @param obj object on which method will be invoked
     * @param method method to be invoked
     * @param args arguments passed to the method on invocation
