@@ -43,7 +43,8 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      override val extension: ContextExtension = ContextExtension(Map())
+                      override val extension: ContextExtension = ContextExtension(Map()),
+                      val validationSettings: ValidationSettings = ValidationRules.initialSettings
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -58,12 +59,12 @@ class ErgoLikeContext(val currentHeight: Height,
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension)
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension)
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings)
 
   import ErgoLikeContext._
   import Evaluation._

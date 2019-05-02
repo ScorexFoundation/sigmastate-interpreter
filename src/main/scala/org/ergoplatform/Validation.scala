@@ -1,6 +1,10 @@
 package org.ergoplatform
 
-class RuleStatus
+import sigmastate.Values.SValue
+import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.utxo.DeserializeContext
+
+sealed trait RuleStatus
 case object EnabledRule extends RuleStatus
 case object DisabledRule extends RuleStatus
 case class  ReplacedRule(newRuleId: Short) extends RuleStatus
@@ -9,17 +13,34 @@ final case class InvalidResult(errors: Seq[Throwable])
 
 case class ValidationRule(
   id: Short,
-  errorReporter: String => InvalidResult,
+  description: String,
   status: RuleStatus
-)
-object ValidationRule {
-  def enabled(id: Short, errorReporter: String => InvalidResult): ValidationRule = {
-    ValidationRule(id, errorReporter, EnabledRule)
+) {
+  protected def validate[T](vs: ValidationSettings, condition: => Boolean, message: => String)(block: => T): T = {
+    val status = vs.getStatus(this.id)
+    status match {
+      case Some(DisabledRule) => block
+      case Some(EnabledRule) =>
+        if (!condition) {
+          throw new InterpreterException(message)
+        } else
+          block
+      case Some(r: ReplacedRule) =>
+        throw new ReplacedRuleException(vs, this, r)
+      case None =>
+        throw new InterpreterException(
+          s"ValidationRule $this not found in validation settings")
+    }
   }
+}
+object ValidationRule {
   def error(msg: String): InvalidResult = InvalidResult(Seq(new SigmaSoftForkException(msg)))
 }
 
 class SigmaSoftForkException(message: String) extends Exception(message)
+
+class ReplacedRuleException(vs: ValidationSettings, replacedRule: ValidationRule, replacement: ReplacedRule)
+  extends SigmaSoftForkException(s"Rule ${replacedRule.id} was replaced with ${replacement.newRuleId}")
 
 /**
   * Configuration of validation.
@@ -35,15 +56,21 @@ class MapValidationSettings(map: Map[Short, ValidationRule]) extends ValidationS
 }
 
 object ValidationRules {
-  import org.ergoplatform.ValidationRule._
 
-  val Rule1: Short = 1000
+  val DeserializedScriptTypeRule = new ValidationRule(1000,
+    "Deserialized script should have expected type", EnabledRule) {
+    def validateIn[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T = {
+      validate(vs, d.tpe == script.tpe,
+        s"Failed context deserialization of $d: \n" +
+        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}")(block)
+    }
+  }
 
-  lazy val rulesSpec: Seq[ValidationRule] = Seq(
-    enabled(Rule1, s => error(s"Rule1. $s"))
+  val ruleSpecs: Seq[ValidationRule] = Seq(
+    DeserializedScriptTypeRule
   )
 
-  lazy val initialSettings: ValidationSettings = new MapValidationSettings(
-    rulesSpec.map(r => r.id -> r).toMap)
+  val initialSettings: ValidationSettings = new MapValidationSettings(
+    ruleSpecs.map(r => r.id -> r).toMap)
 
 }

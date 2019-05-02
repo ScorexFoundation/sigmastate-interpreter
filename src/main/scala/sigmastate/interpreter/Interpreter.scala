@@ -16,9 +16,10 @@ import sigmastate.lang.exceptions.{InterpreterException, CosterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
+import org.ergoplatform.ValidationRules._
 
 import scala.util.Try
-
+import scala.language.reflectiveCalls
 
 trait Interpreter extends ScorexLogging {
 
@@ -41,10 +42,9 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
             val script = ValueSerializer.deserialize(eba.value.toArray)
-            if (d.tpe != script.tpe)
-              throw new InterpreterException(s"Failed context deserialization of $d: expected deserialized script to have type ${d.tpe}; got ${script.tpe}")
-            else
+            DeserializedScriptTypeRule.validateIn(context.validationSettings, d, script) {
               Some(script)
+            }
           case _ => None
         }
       else
