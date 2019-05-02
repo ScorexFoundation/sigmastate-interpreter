@@ -5,8 +5,9 @@ import java.nio.ByteBuffer
 import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import sigmastate.Values.{IntConstant, SValue}
 import sigmastate.utils.SigmaByteReader
-import sigmastate.{AND, OR, SBoolean}
+import sigmastate.{AND, EQ, OR, SBoolean}
 
 import scala.collection.mutable
 
@@ -53,8 +54,7 @@ class DeserializationResilience extends SerializationSpecification {
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
   }
 
-  property("reader.level correspondence to the serializer recursive call depth") {
-
+  private def traceReaderCallDepth(expr: SValue): (IndexedSeq[Int], IndexedSeq[Int]) = {
     class LoggingSigmaByteReader(r: Reader) extends
       SigmaByteReader(r, new ConstantStore(), resolvePlaceholdersToConstants = false) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
@@ -82,33 +82,40 @@ class DeserializationResilience extends SerializationSpecification {
       }
     }
 
-    forAll(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply))) { tree =>
-      val bytes = ValueSerializer.serialize(tree)
-      val r = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
-      val deserializedTree = ValueSerializer.deserialize(r)
-      deserializedTree shouldEqual tree
-      val levels = r.levels.result()
-      levels.nonEmpty shouldBe true
+    val bytes = ValueSerializer.serialize(expr)
+    val loggingR = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
+    val _ = ValueSerializer.deserialize(loggingR)
+    val levels = loggingR.levels.result()
+    levels.nonEmpty shouldBe true
 
-      val callDepthsBuilder = mutable.ArrayBuilder.make[Int]()
-      levels.zipWithIndex.foreach { case (level, levelIndex) =>
-        val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
-          levels,
-          throwOnNthLevelCall = levelIndex).mark()
-        try {
-          val _ = ValueSerializer.deserialize(throwingR)
-        } catch {
-          case e: Exception =>
-            e.isInstanceOf[ProbeException] shouldBe true
-            val stackTrace = e.getStackTrace
-            val depth = stackTrace.count { se =>
-              se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize"
-            }
-            callDepthsBuilder += depth
-        }
+    val callDepthsBuilder = mutable.ArrayBuilder.make[Int]()
+    levels.zipWithIndex.foreach { case (_, levelIndex) =>
+      val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
+        levels,
+        throwOnNthLevelCall = levelIndex).mark()
+      try {
+        val _ = ValueSerializer.deserialize(throwingR)
+      } catch {
+        case e: Exception =>
+          e.isInstanceOf[ProbeException] shouldBe true
+          val stackTrace = e.getStackTrace
+          val depth = stackTrace.count { se =>
+            se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize"
+          }
+          callDepthsBuilder += depth
       }
-      val callDepths = callDepthsBuilder.result()
-      callDepths.length shouldEqual levels.length
+    }
+    (levels, callDepthsBuilder.result())
+  }
+
+  property("reader.level correspondence to the serializer recursive call depth") {
+    forAll(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply))) { expr =>
+      val (callDepths, levels) = traceReaderCallDepth(expr)
+      callDepths shouldEqual levels
+    }
+    forAll(numExprTreeNodeGen) { numExpr =>
+      val expr = EQ(numExpr, IntConstant(1))
+      val (callDepths, levels) = traceReaderCallDepth(expr)
       callDepths shouldEqual levels
     }
   }
