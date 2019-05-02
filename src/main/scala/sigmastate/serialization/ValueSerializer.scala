@@ -190,7 +190,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = r.getByte()
       getSerializer(opCode).parse(r)
     }
-    r.level = depth - 1
+    r.level = r.level - 1
     v
   }
 

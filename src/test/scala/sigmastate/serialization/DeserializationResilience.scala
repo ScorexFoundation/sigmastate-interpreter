@@ -59,7 +59,13 @@ class DeserializationResilience extends SerializationSpecification {
       SigmaByteReader(r, new ConstantStore(), resolvePlaceholdersToConstants = false) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
-        levels += v
+        if (v >= super.level) {
+          // going deeper (save new depth to account added depth by the caller)
+          levels += v
+        } else {
+          // going up (save previous depth to account added depth be the caller)
+          levels += super.level
+        }
         super.level_=(v)
       }
     }
@@ -84,6 +90,7 @@ class DeserializationResilience extends SerializationSpecification {
       val levels = r.levels.result()
       levels.nonEmpty shouldBe true
 
+      val callDepthsBuilder = mutable.ArrayBuilder.make[Int]()
       levels.zipWithIndex.foreach { case (level, levelIndex) =>
         val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
           levels,
@@ -94,12 +101,15 @@ class DeserializationResilience extends SerializationSpecification {
           case e: Exception =>
             e.isInstanceOf[ProbeException] shouldBe true
             val stackTrace = e.getStackTrace
-            val depth = stackTrace.count{ se =>
+            val depth = stackTrace.count { se =>
               se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize"
             }
-            depth shouldBe level
+            callDepthsBuilder += depth
         }
       }
+      val callDepths = callDepthsBuilder.result()
+      callDepths.length shouldEqual levels.length
+      callDepths shouldEqual levels
     }
   }
 }
