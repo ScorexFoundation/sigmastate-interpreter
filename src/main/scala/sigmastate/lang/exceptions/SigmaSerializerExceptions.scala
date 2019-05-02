@@ -11,7 +11,7 @@ final class InputSizeLimitExceeded(message: String, source: Option[SourceContext
 final class TypeDeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None)
   extends SerializerException(message, source)
 
-final class ValueDeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None)
+final class DeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None)
   extends SerializerException(message, source)
 
 final class InvalidOpCode(message: String, source: Option[SourceContext] = None)

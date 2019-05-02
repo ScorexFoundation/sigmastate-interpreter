@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
 import sigmastate.Values.{IntConstant, SValue}
@@ -31,12 +31,12 @@ class DeserializationResilience extends SerializationSpecification {
   property("AND/OR nested crazy deep") {
     val evilBytes = List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode))
       .toArray.flatten
-    an[ValueDeserializeCallDepthExceeded] should be thrownBy
+    an[DeserializeCallDepthExceeded] should be thrownBy
       SigmaSerializer.startReader(evilBytes, 0).getValue()
     // test other API endpoints
-    an[ValueDeserializeCallDepthExceeded] should be thrownBy
+    an[DeserializeCallDepthExceeded] should be thrownBy
       ValueSerializer.deserialize(evilBytes, 0)
-    an[ValueDeserializeCallDepthExceeded] should be thrownBy
+    an[DeserializeCallDepthExceeded] should be thrownBy
       ValueSerializer.deserialize(SigmaSerializer.startReader(evilBytes, 0))
 
     // guard should not be tripped up by a huge collection
@@ -100,7 +100,8 @@ class DeserializationResilience extends SerializationSpecification {
           e.isInstanceOf[ProbeException] shouldBe true
           val stackTrace = e.getStackTrace
           val depth = stackTrace.count { se =>
-            se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize"
+            (se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize") ||
+              (se.getClassName.contains("DataSerializer") && se.getMethodName == "deserialize")
           }
           callDepthsBuilder += depth
       }
