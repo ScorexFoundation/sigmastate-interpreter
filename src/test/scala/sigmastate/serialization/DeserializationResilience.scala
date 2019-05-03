@@ -101,7 +101,8 @@ class DeserializationResilience extends SerializationSpecification {
           val stackTrace = e.getStackTrace
           val depth = stackTrace.count { se =>
             (se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize") ||
-              (se.getClassName.contains("DataSerializer") && se.getMethodName == "deserialize")
+              (se.getClassName.contains("DataSerializer") && se.getMethodName == "deserialize") ||
+              (se.getClassName.contains("SigmaBoolean") && se.getMethodName == "parse")
           }
           callDepthsBuilder += depth
       }
@@ -117,6 +118,10 @@ class DeserializationResilience extends SerializationSpecification {
     forAll(numExprTreeNodeGen) { numExpr =>
       val expr = EQ(numExpr, IntConstant(1))
       val (callDepths, levels) = traceReaderCallDepth(expr)
+      callDepths shouldEqual levels
+    }
+    forAll(sigmaBooleanGen) { sigmaBool =>
+      val (callDepths, levels) = traceReaderCallDepth(sigmaBool)
       callDepths shouldEqual levels
     }
   }
