@@ -5,7 +5,7 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoBoxCandidate}
+import org.ergoplatform._
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
@@ -19,7 +19,7 @@ import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import special.sigma._
 import spire.util.Opt
@@ -32,7 +32,7 @@ import scala.language.implicitConversions
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers with TestUtils with TestContexts {
+  with Matchers with TestUtils with TestContexts with ValidationSpecification {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
 

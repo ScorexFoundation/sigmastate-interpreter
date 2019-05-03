@@ -44,7 +44,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map()),
-                      val validationSettings: ValidationSettings = ValidationRules.initialSettings
+                      val validationSettings: ValidationSettings = ValidationRules.currentSettings
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")

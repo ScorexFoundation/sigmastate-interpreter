@@ -1,42 +1,77 @@
 package sigmastate.serialization
 
-import sigmastate.SType
-import sigmastate.Values.{Constant, ErgoTree, Value}
+import org.ergoplatform.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import org.ergoplatform.{SigmaSoftForkException, ValidationRules, ValidationRule, ValidationSettings}
+import sigmastate.{SType, TrivialProp}
+import sigmastate.Values.{Value, ErgoTree, Constant}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.util.Extensions._
 
+import scala.language.reflectiveCalls
 import scala.collection.mutable
 
 class ErgoTreeSerializer {
 
-  /** Default serialization of ErgoTree. Doesn't apply any transformations and guarantee to preserve original
-    * structure after deserialization. */
-  def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
+  private def serializeWithoutSize(ergoTree: ErgoTree): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
     serializeHeader(ergoTree, w)
     ValueSerializer.serialize(ergoTree.root, w)
     w.toBytes
   }
 
+  /** Default serialization of ErgoTree. Doesn't apply any transformations and guarantee to preserve original
+    * structure after deserialization. */
+  def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
+    val bytes = serializeWithoutSize(ergoTree)
+    if (ergoTree.hasSize) {
+      val w = SigmaSerializer.startWriter()
+      val header = bytes(0)
+      val contentLength = bytes.length - 1
+      val contentBytes = new Array[Byte](contentLength)
+      Array.copy(bytes, 1, contentBytes, 0, contentLength)  // TODO optimize: avoid new array by implementing putSlice(arr, from, len)
+      w.put(header)
+      w.putUInt(contentLength)
+      w.putBytes(contentBytes)
+      w.toBytes
+    }
+    else bytes
+  }
+
   /** Default deserialization of ErgoTree (should be inverse to `serializeErgoTree`).
     * Doesn't apply any transformations to the parsed tree. */
-  def deserializeErgoTree(bytes: Array[Byte]): ErgoTree  = {
+  def deserializeErgoTree(bytes: Array[Byte])(implicit vs: ValidationSettings): ErgoTree  = {
     val r = SigmaSerializer.startReader(bytes)
     deserializeErgoTree(r)
   }
 
   def deserializeErgoTree(r: SigmaByteReader): ErgoTree  = {
-    val (h, cs) = deserializeHeader(r)
-    val previousConstantStore = r.constantStore
-    r.constantStore = new ConstantStore(cs)
-    // reader with constant store attached is required (to get tpe for a constant placeholder)
-    val root = ValueSerializer.deserialize(r)
-    if (!root.tpe.isSigmaProp)
-      throw new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}")
-    r.constantStore = previousConstantStore
-    ErgoTree(h, cs, root.asSigmaProp)
+    val (h, sizeOpt) = deserializeHeaderAndSize(r)
+    val startPos = r.position
+    val tree = try {
+      val cs = deserializeConstants(h, r)
+      val previousConstantStore = r.constantStore
+      r.constantStore = new ConstantStore(cs)
+      // reader with constant store attached is required (to get tpe for a constant placeholder)
+      val root = ValueSerializer.deserialize(r)
+      CheckDeserializedScriptIsSigmaProp(r.validationSettings, root) {}
+      r.constantStore = previousConstantStore
+      ErgoTree(h, cs, root.asSigmaProp)
+    }
+    catch {
+      case sfe: SigmaSoftForkException =>
+        sizeOpt match {
+          case Some(treeSize) =>
+            val endPos = startPos + treeSize
+            r.position = endPos
+            ErgoTree.fromSigmaBoolean(TrivialProp.TrueProp)
+          case None =>
+            throw sfe
+        }
+    }
+    tree
   }
 
   /** Serialize header and constants section only.*/
@@ -49,9 +84,20 @@ class ErgoTreeSerializer {
     }
   }
 
-  /** Deserialize header and constants section only. */
-  private def deserializeHeader(r: SigmaByteReader): (Byte, Array[Constant[SType]]) = {
+  /** Deserialize `header` and optional `size` slots only. */
+  private def deserializeHeaderAndSize(r: SigmaByteReader): (Byte, Option[Int]) = {
     val header = r.getByte()
+    val sizeOpt = if (ErgoTree.hasSize(header)) {
+      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+      val size = r.getUInt().toIntExact
+      Some(size)
+    } else
+      None
+    (header, sizeOpt)
+  }
+
+  /** Deserialize constants section only. */
+  private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
     val constants = if (ErgoTree.isConstantSegregation(header)) {
       val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
       val nConsts = r.getUInt().toInt
@@ -63,23 +109,24 @@ class ErgoTreeSerializer {
     }
     else
       Array.empty[Constant[SType]]
-    (header, constants)
+    constants
   }
 
   /** Deserialize header and constant sections, but output the rest of the bytes as separate array. */
-  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Array[Constant[SType]], Array[Byte]) = {
-    val (header, constants) = deserializeHeader(r)
+  def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Option[Int], Array[Constant[SType]], Array[Byte]) = {
+    val (header, sizeOpt) = deserializeHeaderAndSize(r)
+    val constants = deserializeConstants(header, r)
     val treeBytes = r.getBytes(r.remaining)
-    (header, constants, treeBytes)
+    (header, sizeOpt, constants, treeBytes)
   }
 
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]]): Array[Byte] = {
+                          newVals: Array[Value[SType]])(implicit vs: ValidationSettings): Array[Byte] = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val r = SigmaSerializer.startReader(scriptBytes)
-    val (header, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
+    val (header, _, constants, treeBytes) = deserializeHeaderWithTreeBytes(r)
     val w = SigmaSerializer.startWriter()
     w.put(header)
     w.putUInt(constants.length)

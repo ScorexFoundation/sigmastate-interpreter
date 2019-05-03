@@ -173,7 +173,7 @@ object Pay2SAddress {
 }
 
 
-case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
+case class ErgoAddressEncoder(networkPrefix: NetworkPrefix)(implicit vs: ValidationSettings) {
 
   import ErgoAddressEncoder._
 

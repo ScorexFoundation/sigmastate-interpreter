@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress, ValidationRules}
 import scalan.Nullable
 import scorex.util.encode.{Base64, Base58}
 import sigmastate.SCollection.{SIntArray, SByteArray}
@@ -100,7 +100,7 @@ object SigmaPredef {
     def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
       Lambda(Vector("input" -> SString), SSigmaProp, None),
       { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
+        ErgoAddressEncoder(networkPrefix)(ValidationRules.currentSettings).fromString(arg.value).get match {
           case a: P2PKAddress => SigmaPropConstant(a.pubkey)
           case a@_ => sys.error(s"unsupported address $a")
         }
@@ -118,7 +118,7 @@ object SigmaPredef {
             throw new InvalidArguments(s"invalid argument in $args: expected a string constant")
         }
         val bytes = Base58.decode(str).get
-        val res = ValueSerializer.deserialize(bytes)
+        val res = ValueSerializer.deserialize(bytes)(ValidationRules.currentSettings)
         if (res.tpe != tpe)
           throw new InvalidArguments(s"Wrong type after deserialization, expected $tpe, got ${res.tpe}")
         res

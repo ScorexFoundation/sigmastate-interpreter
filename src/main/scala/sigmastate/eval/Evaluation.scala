@@ -360,7 +360,7 @@ trait Evaluation extends RuntimeCosting { IR =>
               case Nullable(v) => v
               case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
             })
-            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)
+            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)(sigmaDslBuilderValue.validationSettings)
             out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)

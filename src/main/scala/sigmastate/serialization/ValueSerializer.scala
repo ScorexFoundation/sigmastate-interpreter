@@ -200,7 +200,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     w.toBytes
   }
 
-  def deserialize(bytes: Array[Byte], pos: SigmaSerializer.Position = 0): Value[SType] =
+  def deserialize(bytes: Array[Byte], pos: SigmaSerializer.Position = 0)(implicit vs: ValidationSettings): Value[SType] =
     deserialize(SigmaSerializer.startReader(bytes, pos))
 
 }

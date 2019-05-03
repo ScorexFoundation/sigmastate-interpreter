@@ -2,16 +2,17 @@ package sigmastate.utils
 
 import java.nio.ByteBuffer
 
-import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import org.ergoplatform.ValidationSettings
+import scorex.util.serialization.{VLQByteBufferReader, Reader}
 import sigmastate.SType
 import sigmastate.Values.SValue
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
 import scorex.util.Extensions._
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
                       var resolvePlaceholdersToConstants: Boolean)
-  extends Reader {
+                     (implicit val validationSettings: ValidationSettings) extends Reader {
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 

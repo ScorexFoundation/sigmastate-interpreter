@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.lang.exceptions.{InterpreterException, SerializerException}
 import sigmastate.utxo.DeserializeContext
 
 sealed trait RuleStatus
@@ -16,13 +16,13 @@ case class ValidationRule(
   description: String,
   status: RuleStatus
 ) {
-  protected def validate[T](vs: ValidationSettings, condition: => Boolean, message: => String)(block: => T): T = {
+  protected def validate[T](vs: ValidationSettings, condition: => Boolean, error: => Throwable)(block: => T): T = {
     val status = vs.getStatus(this.id)
     status match {
       case Some(DisabledRule) => block
       case Some(EnabledRule) =>
         if (!condition) {
-          throw new InterpreterException(message)
+          throw error
         } else
           block
       case Some(r: ReplacedRule) =>
@@ -57,20 +57,31 @@ class MapValidationSettings(map: Map[Short, ValidationRule]) extends ValidationS
 
 object ValidationRules {
 
-  val DeserializedScriptTypeRule = new ValidationRule(1000,
+  val CheckDeserializedScriptType = new ValidationRule(1000,
     "Deserialized script should have expected type", EnabledRule) {
-    def validateIn[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T = {
+    def apply[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T = {
       validate(vs, d.tpe == script.tpe,
-        s"Failed context deserialization of $d: \n" +
-        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}")(block)
+        new InterpreterException(s"Failed context deserialization of $d: \n" +
+        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"))(block)
+    }
+  }
+
+  val CheckDeserializedScriptIsSigmaProp = new ValidationRule(1001,
+    "Deserialized script should have SigmaProp type", EnabledRule) {
+    def apply[T](vs: ValidationSettings, root: SValue)(block: => T): T = {
+      validate(vs, root.tpe.isSigmaProp, new SerializerException(
+        s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}")
+        )(block)
     }
   }
 
   val ruleSpecs: Seq[ValidationRule] = Seq(
-    DeserializedScriptTypeRule
+    CheckDeserializedScriptType,
+    CheckDeserializedScriptIsSigmaProp
   )
 
-  val initialSettings: ValidationSettings = new MapValidationSettings(
+  /** Validation settings that correspond to the latest version of the ErgoScript. */
+  val currentSettings: ValidationSettings = new MapValidationSettings(
     ruleSpecs.map(r => r.id -> r).toMap)
 
 }

@@ -4,6 +4,7 @@ import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.ergoplatform.ValidationRules
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
@@ -41,8 +42,8 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            val script = ValueSerializer.deserialize(eba.value.toArray)
-            DeserializedScriptTypeRule.validateIn(context.validationSettings, d, script) {
+            val script = ValueSerializer.deserialize(eba.value.toArray)(ValidationRules.currentSettings)
+            CheckDeserializedScriptType.apply(context.validationSettings, d, script) {
               Some(script)
             }
           case _ => None

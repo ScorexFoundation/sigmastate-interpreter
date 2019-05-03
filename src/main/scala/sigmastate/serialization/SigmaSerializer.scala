@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import org.ergoplatform.ValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
@@ -19,7 +20,7 @@ object SigmaSerializer {
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
     * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
+  def startReader(bytes: Array[Byte], pos: Int = 0)(implicit vs: ValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
@@ -29,7 +30,7 @@ object SigmaSerializer {
 
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean)(implicit vs: ValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf), constantStore, resolvePlaceholdersToConstants)
       .mark()
@@ -62,7 +63,7 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
     serialize(obj, new SigmaByteWriter(w, None))
   }
 
-  def parseWithGenericReader(r: Reader): TFamily = {
+  def parseWithGenericReader(r: Reader)(implicit vs: ValidationSettings): TFamily = {
     parse(new SigmaByteReader(r,  new ConstantStore(), resolvePlaceholdersToConstants = false))
   }
 

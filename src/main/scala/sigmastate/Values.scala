@@ -5,7 +5,7 @@ import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.{ErgoLikeContext, ValidationRules}
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
@@ -33,7 +33,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{Header, AnyValue, AvlTree, PreHeader}
+import special.sigma.{AnyValue, AvlTree, PreHeader, Header}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -856,7 +856,7 @@ object Values {
     *  Bit 5 == 1 - reserved for context dependent costing (should be = 0)
     *  Bit 4 == 1 if constant segregation is used for this ErgoTree (default = 0)
     *                (see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/264)
-    *  Bit 3 - reserved (should be 0)
+    *  Bit 3 == 1 if size of the whole tree is serialized after the header byte (default = 0)
     *  Bits 2-0 - language version (current version == 0)
     *
     *  Currently we don't specify interpretation for the second and other bytes of the header.
@@ -893,6 +893,7 @@ object Values {
     assert(isConstantSegregation || constants.isEmpty)
 
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
+    @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
   }
 
@@ -906,10 +907,14 @@ object Values {
     /** Header flag to indicate that constant segregation should be applied. */
     val ConstantSegregationFlag: Byte = 0x10
 
+    /** Header flag to indicate that whole size of ErgoTree should be saved before tree content. */
+    val SizeFlag: Byte = 0x8
+
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+    @inline def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
@@ -960,7 +965,7 @@ object Values {
       // serialize value and segregate constants into constantStore
       ValueSerializer.serialize(value, byteWriter)
       val extractedConstants = constantStore.getAll
-      val r = SigmaSerializer.startReader(byteWriter.toBytes)
+      val r = SigmaSerializer.startReader(byteWriter.toBytes)(ValidationRules.currentSettings)
       r.constantStore = new ConstantStore(extractedConstants)
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
