@@ -76,6 +76,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
       case And => Some(builder.mkBinAnd)
       case Or  => Some(builder.mkBinOr)
+      case BinaryXorOp => Some(builder.mkBinXor)
       case _ => None
     }
   }
@@ -172,6 +173,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
       case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyBinOp(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>

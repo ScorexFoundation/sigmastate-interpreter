@@ -102,6 +102,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ val cond = getVar[Boolean](2).get; cond || cond }") shouldBe (ContextVarAccess + logicCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
   }
 

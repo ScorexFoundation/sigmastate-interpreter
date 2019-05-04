@@ -152,6 +152,7 @@ object CostTable {
     ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
     ("AND", "(Coll[Boolean]) => Boolean", logicCost),
     ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -334,6 +335,7 @@ object CostTable {
 
     val BinOrDeclaration = 1
     val BinAndDeclaration = 1
+    val BinXorDeclaration = 1
     val IfDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/
