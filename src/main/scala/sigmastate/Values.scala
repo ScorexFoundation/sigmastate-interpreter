@@ -959,7 +959,7 @@ object Values {
       * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`;
       * 4) deserialize `tree` with ConstantPlaceholders.
       **/
-    def withSegregation(value: SigmaPropValue): ErgoTree = {
+    def withSegregation(headerFlags: Byte, value: SigmaPropValue): ErgoTree = {
       val constantStore = new ConstantStore()
       val byteWriter = SigmaSerializer.startWriter(constantStore)
       // serialize value and segregate constants into constantStore
@@ -969,8 +969,11 @@ object Values {
       r.constantStore = new ConstantStore(extractedConstants)
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
-      new ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, valueWithPlaceholders, value)
+      new ErgoTree((ErgoTree.ConstantSegregationHeader | headerFlags).toByte, extractedConstants, valueWithPlaceholders, value)
     }
+
+    def withSegregation(value: SigmaPropValue): ErgoTree =
+      withSegregation(0, value)
   }
 
 }

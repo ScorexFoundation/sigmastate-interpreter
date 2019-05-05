@@ -9,8 +9,6 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
-
-import scala.language.reflectiveCalls
 import scala.collection.mutable
 
 class ErgoTreeSerializer {
@@ -68,7 +66,8 @@ class ErgoTreeSerializer {
             r.position = endPos
             ErgoTree.fromSigmaBoolean(TrivialProp.TrueProp)
           case None =>
-            throw sfe
+            throw new SerializerException(
+              s"Cannot handle soft-fork, ErgoTree serialized without size bit.", None, Some(sfe))
         }
     }
     tree

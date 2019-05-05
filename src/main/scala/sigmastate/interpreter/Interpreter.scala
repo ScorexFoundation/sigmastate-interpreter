@@ -20,7 +20,6 @@ import sigmastate.{SType, _}
 import org.ergoplatform.ValidationRules._
 
 import scala.util.Try
-import scala.language.reflectiveCalls
 
 trait Interpreter extends ScorexLogging {
 
@@ -43,7 +42,7 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
             val script = ValueSerializer.deserialize(eba.value.toArray)(ValidationRules.currentSettings)
-            CheckDeserializedScriptType.apply(context.validationSettings, d, script) {
+            CheckDeserializedScriptType(context.validationSettings, d, script) {
               Some(script)
             }
           case _ => None

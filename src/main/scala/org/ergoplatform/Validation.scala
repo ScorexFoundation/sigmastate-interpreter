@@ -9,7 +9,6 @@ import sigma.util.Extensions.ByteOps
 
 sealed trait RuleStatus
 case object EnabledRule extends RuleStatus
-case object DisabledRule extends RuleStatus
 case class  ReplacedRule(newRuleId: Short) extends RuleStatus
 case class  ChangedRule(newValue: Array[Byte]) extends RuleStatus
 
@@ -17,25 +16,26 @@ final case class InvalidResult(errors: Seq[Throwable])
 
 case class ValidationRule(
   id: Short,
-  description: String,
-  status: RuleStatus
+  description: String
 ) {
   protected def validate[T](vs: ValidationSettings, condition: => Boolean, error: => Throwable)(block: => T): T = {
     val status = vs.getStatus(this.id)
     status match {
-      case Some(DisabledRule) => block
-      case Some(EnabledRule) =>
-        if (!condition) {
-          throw error
-        } else
-          block
-      case Some(r: ReplacedRule) =>
-        throw new ReplacedRuleException(vs, this, r)
-      case Some(r: ChangedRule) =>
-        throw new ChangedRuleException(vs, this, r)
       case None =>
-        throw new InterpreterException(
-          s"ValidationRule $this not found in validation settings")
+        throw new InterpreterException(s"ValidationRule $this not found in validation settings")
+      case Some(status) =>
+        if (condition)
+          block
+        else {
+          status match {
+            case EnabledRule =>
+              throw error
+            case r: ReplacedRule =>
+              throw ReplacedRuleException(vs, this, r)
+            case c: ChangedRule =>
+              throw ChangedRuleException(vs, this, c)
+          }
+        }
     }
   }
 }
@@ -65,19 +65,24 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
   * Configuration of validation.
   */
 abstract class ValidationSettings {
-  def get(id: Short): Option[ValidationRule]
+  def get(id: Short): Option[(ValidationRule, RuleStatus)]
   def getStatus(id: Short): Option[RuleStatus]
+  def updated(id: Short, newStatus: RuleStatus): ValidationSettings
 }
 
-class MapValidationSettings(map: Map[Short, ValidationRule]) extends ValidationSettings {
-  override def get(id: Short): Option[ValidationRule] = map.get(id)
-  override def getStatus(id: Short): Option[RuleStatus] = map.get(id).map(_.status)
+sealed class MapValidationSettings(map: Map[Short, (ValidationRule, RuleStatus)]) extends ValidationSettings {
+  override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
+  override def getStatus(id: Short): Option[RuleStatus] = map.get(id).map(_._2)
+  override def updated(id: Short, newStatus: RuleStatus): MapValidationSettings = {
+    val (rule,_) = map(id)
+    new MapValidationSettings(map.updated(id, (rule, newStatus)))
+  }
 }
 
 object ValidationRules {
 
-  val CheckDeserializedScriptType = new ValidationRule(1000,
-    "Deserialized script should have expected type", EnabledRule) {
+  object CheckDeserializedScriptType extends ValidationRule(1000,
+    "Deserialized script should have expected type") {
     def apply[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T = {
       validate(vs, d.tpe == script.tpe,
         new InterpreterException(s"Failed context deserialization of $d: \n" +
@@ -85,8 +90,8 @@ object ValidationRules {
     }
   }
 
-  val CheckDeserializedScriptIsSigmaProp = new ValidationRule(1001,
-    "Deserialized script should have SigmaProp type", EnabledRule) {
+  object CheckDeserializedScriptIsSigmaProp extends ValidationRule(1001,
+    "Deserialized script should have SigmaProp type") {
     def apply[T](vs: ValidationSettings, root: SValue)(block: => T): T = {
       validate(vs, root.tpe.isSigmaProp, new SerializerException(
         s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}")
@@ -94,8 +99,8 @@ object ValidationRules {
     }
   }
 
-  val CheckValidOpCode = new ValidationRule(1002,
-    "There should be registered serializer for each OpCode", EnabledRule) {
+  object CheckValidOpCode extends ValidationRule(1002,
+    "There should be registered serializer for each OpCode") {
     def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
       try validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg))(block)
@@ -114,7 +119,7 @@ object ValidationRules {
 
   /** Validation settings that correspond to the latest version of the ErgoScript. */
   val currentSettings: ValidationSettings = new MapValidationSettings(
-    ruleSpecs.map(r => r.id -> r).toMap
+    ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
   )
 
 }

@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import javax.annotation.CheckReturnValue
 import org.ergoplatform.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
@@ -8,14 +7,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.OperationId
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
-import scala.language.reflectiveCalls
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
@@ -155,6 +153,12 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   override def getSerializer(opCode: Tag)(implicit vs: ValidationSettings): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
     CheckValidOpCode(vs, serializer, opCode) { serializer }
+  }
+  def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
+    serializers.add(opCode, ser)
+  }
+  def removeSerializer(opCode: OpCode) = {
+    serializers.remove(opCode)
   }
 
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
