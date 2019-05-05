@@ -1,9 +1,10 @@
 package sigmastate.serialization
 
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, ValueDeserializeCallDepthExceeded}
+import org.ergoplatform.ValidationException
+import sigmastate.lang.exceptions.{InvalidTypePrefix, InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
-import sigmastate.{AND, SBoolean}
+import sigmastate.{SBoolean, AND}
 
 class DeserializationResilience extends SerializationSpecification {
 
@@ -44,7 +45,7 @@ class DeserializationResilience extends SerializationSpecification {
   }
 
   property("invalid op code") {
-    an[InvalidOpCode] should be thrownBy
+    an[ValidationException] should be thrownBy
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
   }
 }

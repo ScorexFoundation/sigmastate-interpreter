@@ -5,7 +5,7 @@ import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.{ErgoLikeContext, ValidationRules}
+import org.ergoplatform.{ErgoLikeContext, ValidationRules, SoftForkException}
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
@@ -888,7 +888,8 @@ object Values {
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: SigmaPropValue,
-    proposition: SigmaPropValue
+    proposition: SigmaPropValue,
+    softForkException: Option[SoftForkException]
   ) {
     assert(isConstantSegregation || constants.isEmpty)
 
@@ -929,9 +930,9 @@ object Values {
     def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
       if (isConstantSegregation(header)) {
         val prop = substConstants(root, constants).asSigmaProp
-        new ErgoTree(header, constants, root, prop)
+        new ErgoTree(header, constants, root, prop, None)
       } else
-        new ErgoTree(header, constants, root, root)
+        new ErgoTree(header, constants, root, root, None)
     }
 
     val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
@@ -969,7 +970,8 @@ object Values {
       r.constantStore = new ConstantStore(extractedConstants)
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
-      new ErgoTree((ErgoTree.ConstantSegregationHeader | headerFlags).toByte, extractedConstants, valueWithPlaceholders, value)
+      val header = (ErgoTree.ConstantSegregationHeader | headerFlags).toByte
+      new ErgoTree(header, extractedConstants, valueWithPlaceholders, value, None)
     }
 
     def withSegregation(value: SigmaPropValue): ErgoTree =

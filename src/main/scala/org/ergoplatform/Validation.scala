@@ -18,7 +18,9 @@ case class ValidationRule(
   id: Short,
   description: String
 ) {
-  protected def validate[T](vs: ValidationSettings, condition: => Boolean, error: => Throwable)(block: => T): T = {
+  protected def validate[T](
+        vs: ValidationSettings, condition: => Boolean,
+        cause: => Throwable, args: Seq[Any], block: => T): T = {
     val status = vs.getStatus(this.id)
     status match {
       case None =>
@@ -29,7 +31,7 @@ case class ValidationRule(
         else {
           status match {
             case EnabledRule =>
-              throw error
+              throw new ValidationException("Validation failed.", this, args, Option(cause))
             case r: ReplacedRule =>
               throw ReplacedRuleException(vs, this, r)
             case c: ChangedRule =>
@@ -42,6 +44,10 @@ case class ValidationRule(
 object ValidationRule {
   def error(msg: String): InvalidResult = InvalidResult(Seq(new SoftForkException(msg)))
 }
+
+/** Base class for all exception which may be thrown by validation rules. */
+case class ValidationException(message: String, rule: ValidationRule, args: Seq[Any], cause: Option[Throwable] = None)
+  extends Exception(message, cause.orNull)
 
 /** Instances of this class are used as messages to communicate soft-fork information,
   * from the context where the soft-fork condition is detected (such as in ValidationRules),
@@ -83,30 +89,39 @@ object ValidationRules {
 
   object CheckDeserializedScriptType extends ValidationRule(1000,
     "Deserialized script should have expected type") {
-    def apply[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T = {
+    def apply[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T =
       validate(vs, d.tpe == script.tpe,
         new InterpreterException(s"Failed context deserialization of $d: \n" +
-        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"))(block)
-    }
+        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"),
+        Seq[Any](d, script), block
+      )
   }
 
   object CheckDeserializedScriptIsSigmaProp extends ValidationRule(1001,
     "Deserialized script should have SigmaProp type") {
-    def apply[T](vs: ValidationSettings, root: SValue)(block: => T): T = {
-      validate(vs, root.tpe.isSigmaProp, new SerializerException(
-        s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}")
-        )(block)
-    }
+    def apply[T](vs: ValidationSettings, root: SValue)(block: => T): T =
+      validate(vs, root.tpe.isSigmaProp,
+        new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}"),
+        Seq(root), block
+      )
   }
 
   object CheckValidOpCode extends ValidationRule(1002,
-    "There should be registered serializer for each OpCode") {
+    "Check the opcode is supported by registered serializer or is added via soft-fork") {
     def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
-      try validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg))(block)
+      def args = Seq(ser, opCode)
+      try validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
       catch { case e: ChangedRuleException =>
-        if (e.change.newValue.contains(opCode)) throw e
-        else throw new InvalidOpCode(msg, None, Some(e))
+        if (e.change.newValue.contains(opCode)) {
+          // this is correct soft-fork supported by newValue which come from block extensions
+          // rethrowing it further to be handled by the caller
+          throw e
+        } else {
+          // opcode is not supported by soft-fork
+          throw new ValidationException(s"Validation failed", this, args,
+            Some(new InvalidOpCode(msg, None, Some(e))))
+        }
       }
     }
   }

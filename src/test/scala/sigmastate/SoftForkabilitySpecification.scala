@@ -2,14 +2,14 @@ package sigmastate
 
 import org.ergoplatform.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
-import sigmastate.Values.{NotReadyValueInt, IntConstant, ErgoTree}
+import sigmastate.Values.{NotReadyValueInt, ErgoTree, IntConstant}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, InvalidOpCode}
-import sigmastate.serialization.OpCodes.{HeightCode, LastConstantCode, OpCode}
+import sigmastate.lang.exceptions.{SerializerException, InvalidOpCode, CosterException}
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import special.sigma.SigmaTestingData
 
 class SoftForkabilitySpecification extends SigmaTestingData {
@@ -46,10 +46,13 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
   
   property("node v1, received tx with script v1, incorrect script") {
-    an[SerializerException] should be thrownBy {
+    assertExceptionThrown({
       // CheckDeserializedScriptIsSigmaProp rule violated
       ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV1bytes))
-    }
+    }, {
+      case e: ValidationException => e.getCause.isInstanceOf[SerializerException]
+      case _ => false
+    })
   }
 
   property("node v1, received tx with script v1, correct script") {
@@ -70,7 +73,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   lazy val prop = GT(Height2, IntConstant(100))
   lazy val invalidTxV2 = createTransaction(createBox(100, prop.asSigmaProp, 1))
-  lazy val invalidTxV2bytes = invalidTxV2.messageToSign
+
 
   lazy val propV2 = prop.toSigmaProp
 
@@ -113,7 +116,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("propV2", tx)
 
     // also check that transaction prop was trivialized due to soft-fork
-    tx.outputs(0).ergoTree shouldBe ErgoTree.fromSigmaBoolean(TrivialProp.TrueProp)
+    tx.outputs(0).ergoTree.copy(softForkException = None) shouldBe ErgoTree.fromSigmaBoolean(TrivialProp.TrueProp)
+    tx.outputs(0).ergoTree.softForkException.get.isInstanceOf[ChangedRuleException] shouldBe true
 
     // check deserialized tx is otherwise remains the same
     checkTxProp(txV2, tx)(_.inputs)
@@ -124,20 +128,43 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     checkTxProp(txV2, tx)(_.outputs(0).additionalTokens)
   }
 
-  property("node v1, soft-fork up to v2, script v2, soft-fork exception") {
-    // try to parse
-    // handle soft-fork exception, skip validation
-  }
-
   property("node v1, no soft-fork, received script v2, raise error") {
-    an[InvalidOpCode] should be thrownBy {
+    assertExceptionThrown({
+      ValueSerializer.addSerializer(Height2Code, Height2Ser)
+      val invalidTxV2bytes = invalidTxV2.messageToSign
+      ValueSerializer.removeSerializer(Height2Code)
       ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV2bytes))
-    }
+    },{
+      case ValidationException(_, CheckValidOpCode, _, Some(_: InvalidOpCode)) => true
+      case _ => false
+    })
   }
 
   property("our node v2, was soft-fork up to v2, received script v2") {
-    // able to parse
-    // validating script
+    // make node v2
+    ValueSerializer.addSerializer(Height2Code, Height2Ser)
+
+    // prepare bytes using special serialization WITH `size flag` in the header
+    val tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
+    val txV2 = createTransaction(createBox(100, tree, 1))
+    val txV2bytes = txV2.messageToSign
+
+    // prepare soft-fork settings
+    val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
+
+    // parse and validate tx with v2 script (since serializers were extended to v2)
+    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes)(v2vs))
+    tx shouldBe txV2
+
+    // fails evaluation of v2 script (due to the rest of the implementation is still v1)
+    assertExceptionThrown({
+      verifyTx("propV2", tx)
+    },{
+      case _: CosterException => true
+      case _ => false
+    })
+
+    ValueSerializer.removeSerializer(Height2Code)
   }
 
 }
