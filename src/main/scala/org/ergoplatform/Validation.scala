@@ -1,13 +1,17 @@
 package org.ergoplatform
 
 import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.{InterpreterException, SerializerException}
+import sigmastate.lang.exceptions.{SerializerException, InterpreterException, InvalidOpCode}
+import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
+import sigma.util.Extensions.ByteOps
 
 sealed trait RuleStatus
 case object EnabledRule extends RuleStatus
 case object DisabledRule extends RuleStatus
 case class  ReplacedRule(newRuleId: Short) extends RuleStatus
+case class  ChangedRule(newValue: Array[Byte]) extends RuleStatus
 
 final case class InvalidResult(errors: Seq[Throwable])
 
@@ -27,6 +31,8 @@ case class ValidationRule(
           block
       case Some(r: ReplacedRule) =>
         throw new ReplacedRuleException(vs, this, r)
+      case Some(r: ChangedRule) =>
+        throw new ChangedRuleException(vs, this, r)
       case None =>
         throw new InterpreterException(
           s"ValidationRule $this not found in validation settings")
@@ -34,13 +40,26 @@ case class ValidationRule(
   }
 }
 object ValidationRule {
-  def error(msg: String): InvalidResult = InvalidResult(Seq(new SigmaSoftForkException(msg)))
+  def error(msg: String): InvalidResult = InvalidResult(Seq(new SoftForkException(msg)))
 }
 
-class SigmaSoftForkException(message: String) extends Exception(message)
+/** Instances of this class are used as messages to communicate soft-fork information,
+  * from the context where the soft-fork condition is detected (such as in ValidationRules),
+  * up the stack to the point where it is clear how to handle it.
+  * Some messages of this kind are not handled, it which case a new Exception is thrown
+  * and this instance should be attached as `cause` parameter. */
+class SoftForkException(message: String) extends Exception(message) {
+  /** This override is required as an optimization to avoid spending time on recording stack trace.
+    * This makes throwing exceptions almost as fast as usual return of a method.
+    */
+  override def fillInStackTrace(): Throwable = this
+}
 
-class ReplacedRuleException(vs: ValidationSettings, replacedRule: ValidationRule, replacement: ReplacedRule)
-  extends SigmaSoftForkException(s"Rule ${replacedRule.id} was replaced with ${replacement.newRuleId}")
+case class ReplacedRuleException(vs: ValidationSettings, replacedRule: ValidationRule, replacement: ReplacedRule)
+  extends SoftForkException(s"Rule ${replacedRule.id} was replaced with ${replacement.newRuleId}")
+
+case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationRule, change: ChangedRule)
+  extends SoftForkException(s"Rule ${changedRule.id} was changed with ${change}")
 
 /**
   * Configuration of validation.
@@ -75,13 +94,27 @@ object ValidationRules {
     }
   }
 
+  val CheckValidOpCode = new ValidationRule(1002,
+    "There should be registered serializer for each OpCode", EnabledRule) {
+    def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
+      def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
+      try validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg))(block)
+      catch { case e: ChangedRuleException =>
+        if (e.change.newValue.contains(opCode)) throw e
+        else throw new InvalidOpCode(msg, None, Some(e))
+      }
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
-    CheckDeserializedScriptIsSigmaProp
+    CheckDeserializedScriptIsSigmaProp,
+    CheckValidOpCode
   )
 
   /** Validation settings that correspond to the latest version of the ErgoScript. */
   val currentSettings: ValidationSettings = new MapValidationSettings(
-    ruleSpecs.map(r => r.id -> r).toMap)
+    ruleSpecs.map(r => r.id -> r).toMap
+  )
 
 }

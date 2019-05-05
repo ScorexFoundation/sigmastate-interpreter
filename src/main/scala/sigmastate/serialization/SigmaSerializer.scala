@@ -79,7 +79,7 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
 trait SigmaSerializerCompanion[TFamily] {
   type Tag
 
-  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
+  def getSerializer(opCode: Tag)(implicit vs: ValidationSettings): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
   def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }

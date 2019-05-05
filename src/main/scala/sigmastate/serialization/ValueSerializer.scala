@@ -1,5 +1,7 @@
 package sigmastate.serialization
 
+import javax.annotation.CheckReturnValue
+import org.ergoplatform.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -13,6 +15,7 @@ import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
+import scala.language.reflectiveCalls
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
 
@@ -149,11 +152,9 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
-  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
+  override def getSerializer(opCode: Tag)(implicit vs: ValidationSettings): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    if (serializer == null)
-      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - LastConstantCode}")
-    serializer
+    CheckValidOpCode(vs, serializer, opCode) { serializer }
   }
 
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {
@@ -170,7 +171,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = v.opCode
       w.put(opCode)
       // help compiler recognize the type
-      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
+      getSerializer(opCode)(ValidationRules.currentSettings).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
@@ -188,7 +189,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
     else {
       val opCode = r.getByte()
-      getSerializer(opCode).parse(r)
+      getSerializer(opCode)(r.validationSettings).parse(r)
     }
     r.level = depth - 1
     v
