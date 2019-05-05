@@ -41,7 +41,7 @@ trait Interpreter extends ScorexLogging {
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            val script = ValueSerializer.deserialize(eba.value.toArray)(ValidationRules.currentSettings)
+            val script = ValueSerializer.deserialize(eba.value.toArray)(context.validationSettings)
             CheckDeserializedScriptType(context.validationSettings, d, script) {
               Some(script)
             }

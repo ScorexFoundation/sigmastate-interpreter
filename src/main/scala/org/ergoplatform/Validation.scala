@@ -7,17 +7,33 @@ import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
 
+/** Base trait for rule status information. */
 sealed trait RuleStatus
+
+/** This is a default status of a rule which is registered in the table
+  * and not yet altered by soft-forks.
+  */
 case object EnabledRule extends RuleStatus
+
+/** The status of the rule which is replaced by a new rule via soft-fork extensions.
+  * @param newRuleId  id of a new rule which replaces the rule marked with this status
+  */
 case class  ReplacedRule(newRuleId: Short) extends RuleStatus
+
+/** The status of the rule whose parameters are changed via soft-fork extensions.
+  * @param newValue  new value of block extension value with key == rule.id
+  */
 case class  ChangedRule(newValue: Array[Byte]) extends RuleStatus
 
-final case class InvalidResult(errors: Seq[Throwable])
-
+/** Base class for different validation rules registered in ValidationRules.currentSettings.
+  * Each rule is identified by `id` and have a description.
+  * Validation logic is implemented by `apply` methods of derived classes.
+  */
 case class ValidationRule(
   id: Short,
   description: String
 ) {
+  /** Can be used in derived classes to implemented validation logic. */
   protected def validate[T](
         vs: ValidationSettings, condition: => Boolean,
         cause: => Throwable, args: Seq[Any], block: => T): T = {
@@ -40,9 +56,6 @@ case class ValidationRule(
         }
     }
   }
-}
-object ValidationRule {
-  def error(msg: String): InvalidResult = InvalidResult(Seq(new SoftForkException(msg)))
 }
 
 /** Base class for all exception which may be thrown by validation rules. */
