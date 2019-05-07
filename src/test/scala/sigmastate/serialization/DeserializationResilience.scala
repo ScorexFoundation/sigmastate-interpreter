@@ -4,16 +4,25 @@ import java.nio.ByteBuffer
 
 import org.ergoplatform.Outputs
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{IntConstant, SValue, SigmaBoolean}
+import sigmastate.Values.{IntConstant, SValue, SigmaBoolean, Tuple}
+import sigmastate._
 import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
-import sigmastate._
 
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification {
+
+  private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
+    val buf = ByteBuffer.wrap(bytes)
+    new SigmaByteReader(
+      new VLQByteBufferReader(buf),
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = maxTreeDepth).mark()
+  }
 
   property("empty") {
     an[ArrayIndexOutOfBoundsException] should be thrownBy ValueSerializer.deserialize(Array[Byte]())
@@ -30,7 +39,7 @@ class DeserializationResilience extends SerializationSpecification {
     an[InvalidTypePrefix] should be thrownBy ValueSerializer.deserialize(Array.fill[Byte](2)(0))
   }
 
-  property("AND/OR nested crazy deep") {
+  property("default value for max recursive call depth is checked") {
     val evilBytes = List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode))
       .toArray.flatten
     an[DeserializeCallDepthExceeded] should be thrownBy
@@ -58,7 +67,10 @@ class DeserializationResilience extends SerializationSpecification {
 
   private def traceReaderCallDepth(expr: SValue): (IndexedSeq[Int], IndexedSeq[Int]) = {
     class LoggingSigmaByteReader(r: Reader) extends
-      SigmaByteReader(r, new ConstantStore(), resolvePlaceholdersToConstants = false) {
+      SigmaByteReader(r,
+        new ConstantStore(),
+        resolvePlaceholdersToConstants = false,
+        maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
         if (v >= super.level) {
@@ -75,7 +87,10 @@ class DeserializationResilience extends SerializationSpecification {
     class ProbeException extends Exception
 
     class ThrowingSigmaByteReader(r: Reader, levels: IndexedSeq[Int], throwOnNthLevelCall: Int) extends
-      SigmaByteReader(r, new ConstantStore(), resolvePlaceholdersToConstants = false) {
+      SigmaByteReader(r,
+        new ConstantStore(),
+        resolvePlaceholdersToConstants = false,
+        maxTreeDepth = SigmaSerializer.MaxTreeDepth) {
       private var levelCall: Int = 0
       override def level_=(v: Int): Unit = {
         if (throwOnNthLevelCall == levelCall) throw new ProbeException()
@@ -135,11 +150,23 @@ class DeserializationResilience extends SerializationSpecification {
     callDepths shouldEqual IndexedSeq(1, 2, 2, 1)
   }
 
+  property("max recursive call depth is checked in reader.level for ValueSerializer calls") {
+    val expr = SizeOf(Outputs)
+    an[DeserializeCallDepthExceeded] should be thrownBy
+      ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 1))
+  }
+
   property("reader.level is updated in DataSerializer.deserialize") {
     val expr = IntConstant(1)
     val (callDepths, levels) = traceReaderCallDepth(expr)
     callDepths shouldEqual levels
     callDepths shouldEqual IndexedSeq(1, 2, 2, 1)
+  }
+
+  property("max recursive call depth is checked in reader.level for DataSerializer calls") {
+    val expr = IntConstant(1)
+    an[DeserializeCallDepthExceeded] should be thrownBy
+      ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 1))
   }
 
   property("reader.level is updated in SigmaBoolean.serializer.parse") {
@@ -148,4 +175,24 @@ class DeserializationResilience extends SerializationSpecification {
     callDepths shouldEqual levels
     callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
   }
+
+  property("max recursive call depth is checked in reader.level for SigmaBoolean.serializer calls") {
+    val expr = CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))
+    an[DeserializeCallDepthExceeded] should be thrownBy
+      ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 1))
+  }
+
+  property("reader.level is updated in TypeSerializer") {
+    val expr = Tuple(Tuple(IntConstant(1), IntConstant(1)), IntConstant(1))
+    val (callDepths, levels) = traceReaderCallDepth(expr)
+    callDepths shouldEqual levels
+    callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 3, 3, 4, 4, 3, 2, 2, 3, 3, 2, 1)
+  }
+
+  property("max recursive call depth is checked in reader.level for TypeSerializer") {
+    val expr = Tuple(Tuple(IntConstant(1), IntConstant(1)), IntConstant(1))
+    an[DeserializeCallDepthExceeded] should be thrownBy
+      ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 3))
+  }
+
 }

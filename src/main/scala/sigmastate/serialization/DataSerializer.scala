@@ -9,7 +9,6 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.eval.{Evaluation, _}
-import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import special.collection._
 import special.sigma._
 
@@ -78,8 +77,6 @@ object DataSerializer {
     * to the type descriptor `tpe`. */
   def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = {
     val depth = r.level
-    if (depth > SigmaSerializer.MaxTreeDepth)
-      throw new DeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${SigmaSerializer.MaxTreeDepth}")
     r.level = depth + 1
     val res = (tpe match {
       case SUnit => ()

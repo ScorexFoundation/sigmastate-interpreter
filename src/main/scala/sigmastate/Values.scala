@@ -35,7 +35,6 @@ import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AnyValue, AvlTree, Header, PreHeader}
 import sigmastate.lang.SourceContext
-import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
 import special.collection.Coll
 
 
@@ -628,8 +627,6 @@ object Values {
 
       override def parse(r: SigmaByteReader): SigmaBoolean = {
         val depth = r.level
-        if (depth > SigmaSerializer.MaxTreeDepth)
-          throw new DeserializeCallDepthExceeded(s"nested value deserialization call depth($depth) exceeds allowed maximum ${SigmaSerializer.MaxTreeDepth}")
         r.level = depth + 1
         val opCode = r.getByte()
         val res = opCode match {

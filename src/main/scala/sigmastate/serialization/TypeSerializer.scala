@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.charset.StandardCharsets
 
 import sigmastate._
-import sigmastate.lang.exceptions.{InvalidTypePrefix, TypeDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.InvalidTypePrefix
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 /** Serialization of types according to specification in TypeSerialization.md. */
@@ -115,8 +115,6 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   override def deserialize(r: SigmaByteReader): SType = deserialize(r, 0)
 
   private def deserialize(r: SigmaByteReader, depth: Int): SType = {
-    if (depth > SigmaSerializer.MaxTreeDepth)
-      throw new TypeDeserializeCallDepthExceeded(s"deserialize call depth exceeds ${SigmaSerializer.MaxTreeDepth}")
     val c = r.getUByte()
     if (c <= 0)
       throw new InvalidTypePrefix(s"Cannot deserialize type prefix $c. Unexpected buffer $r with bytes ${r.getBytes(r.remaining)}")
