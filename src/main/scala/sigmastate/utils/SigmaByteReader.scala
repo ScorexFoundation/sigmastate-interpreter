@@ -5,12 +5,12 @@ import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.{ConstantStore, SigmaSerializer, TypeSerializer, ValDefTypeStore, ValueSerializer}
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
                       var resolvePlaceholdersToConstants: Boolean,
-                      val maxTreeDepth: Int)
+                      val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
