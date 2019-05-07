@@ -232,6 +232,7 @@ object CostTable {
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("ModQ", "(BigInt) => BigInt", MinimalCost),
+    ("ModQArithOp", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
