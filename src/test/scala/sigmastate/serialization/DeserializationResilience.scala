@@ -2,12 +2,14 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix, DeserializeCallDepthExceeded}
-import sigmastate.serialization.OpCodes._
+import org.ergoplatform.Outputs
 import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{IntConstant, SValue}
+import sigmastate.Values.{IntConstant, SValue, SigmaBoolean}
+import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix}
+import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
-import sigmastate.{AND, EQ, OR, SBoolean}
+import sigmastate.utxo.SizeOf
+import sigmastate._
 
 import scala.collection.mutable
 
@@ -100,9 +102,9 @@ class DeserializationResilience extends SerializationSpecification {
           e.isInstanceOf[ProbeException] shouldBe true
           val stackTrace = e.getStackTrace
           val depth = stackTrace.count { se =>
-            (se.getClassName.contains("ValueSerializer") && se.getMethodName == "deserialize") ||
-              (se.getClassName.contains("DataSerializer") && se.getMethodName == "deserialize") ||
-              (se.getClassName.contains("SigmaBoolean") && se.getMethodName == "parse")
+            (se.getClassName == ValueSerializer.getClass.getName && se.getMethodName == "deserialize") ||
+              (se.getClassName == DataSerializer.getClass.getName && se.getMethodName == "deserialize") ||
+              (se.getClassName == SigmaBoolean.serializer.getClass.getName && se.getMethodName == "parse")
           }
           callDepthsBuilder += depth
       }
@@ -124,5 +126,26 @@ class DeserializationResilience extends SerializationSpecification {
       val (callDepths, levels) = traceReaderCallDepth(sigmaBool)
       callDepths shouldEqual levels
     }
+  }
+
+  property("reader.level is updated in ValueSerializer.deserialize") {
+    val expr = SizeOf(Outputs)
+    val (callDepths, levels) = traceReaderCallDepth(expr)
+    callDepths shouldEqual levels
+    callDepths shouldEqual IndexedSeq(1, 2, 2, 1)
+  }
+
+  property("reader.level is updated in DataSerializer.deserialize") {
+    val expr = IntConstant(1)
+    val (callDepths, levels) = traceReaderCallDepth(expr)
+    callDepths shouldEqual levels
+    callDepths shouldEqual IndexedSeq(1, 2, 2, 1)
+  }
+
+  property("reader.level is updated in SigmaBoolean.serializer.parse") {
+    val expr = CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get))
+    val (callDepths, levels) = traceReaderCallDepth(expr)
+    callDepths shouldEqual levels
+    callDepths shouldEqual IndexedSeq(1, 2, 3, 4, 4, 4, 4, 3, 2, 1)
   }
 }
