@@ -1643,6 +1643,16 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val v = inputC.value.modQ
         RCCostedPrim(v, opCost(v, Seq(inputC.cost), costOf(node)), SizeBigInt)
 
+      case ModQArithOp(l, r, code) =>
+        val lC = asRep[Costed[BigInt]](eval(l))
+        val rC = asRep[Costed[BigInt]](eval(r))
+        val v = code match {
+          case OpCodes.PlusModQCode => lC.value.plusModQ(rC.value)
+          case OpCodes.MinusModQCode => lC.value.minusModQ(rC.value)
+          case code => error(s"unknown code for modular arithmetic op: $code")
+        }
+        RCCostedPrim(v, opCost(v, Seq(lC.cost, rC.cost), costOf(node)), SizeBigInt)
+
       case OR(input) => input match {
         case ConcreteCollection(items, tpe) =>
           val itemsC = items.map(item => eval(adaptSigmaBoolean(item)))

@@ -214,6 +214,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case BIM.modQ(In(x)) =>
         mkModQ(x.asBigInt)
+      case BIM.plusModQ(In(l), In(r)) =>
+        mkPlusModQ(l.asBigInt, r.asBigInt)
+      case BIM.minusModQ(In(l), In(r)) =>
+        mkMinusModQ(l.asBigInt, r.asBigInt)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
