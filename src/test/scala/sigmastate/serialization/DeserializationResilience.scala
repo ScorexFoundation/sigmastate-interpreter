@@ -74,10 +74,10 @@ class DeserializationResilience extends SerializationSpecification {
       val levels: mutable.ArrayBuilder[Int] = mutable.ArrayBuilder.make[Int]()
       override def level_=(v: Int): Unit = {
         if (v >= super.level) {
-          // going deeper (save new depth to account added depth by the caller)
+          // going deeper (depth is increasing), save new depth to account added depth level by the caller
           levels += v
         } else {
-          // going up (save previous depth to account added depth be the caller)
+          // going up (depth is decreasing), save previous depth to account added depth level for the caller
           levels += super.level
         }
         super.level_=(v)
