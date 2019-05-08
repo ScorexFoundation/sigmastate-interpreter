@@ -12,7 +12,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
+import sigmastate.lang.exceptions.TyperException
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ExtractCreationInfo, Append}
 
@@ -28,7 +28,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
@@ -45,7 +44,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val st = new SigmaTree(bound)
     val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val exception = the[TyperException] thrownBy typer.typecheck(bound)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
@@ -72,9 +70,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     //    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-    // todo should be g1.exp(n1)
-    // ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
-    //    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    typecheck(env, "g1.exp(n1)") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
     typecheck(env, "p1 || p2") shouldBe SSigmaProp
     typecheck(env, "p1 && p2") shouldBe SSigmaProp
@@ -275,6 +271,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
+// TODO    typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
     typefail(env, "x[Int]", 1, 1)
     typefail(env, "arr1[Int]", 1, 1)
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
@@ -409,7 +406,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       checkTypes(t1, t2, exp)
     }
     def checkAll(ts: Seq[String], exp: Option[SType]): Unit = {
-      val types = ts.map(ty(_));
+      val types = ts.map(ty(_))
       checkAllTypes(types, exp)
     }
 

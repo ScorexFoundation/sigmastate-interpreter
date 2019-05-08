@@ -537,7 +537,7 @@ trait Context {
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
   def LastBlockUtxoRootHash: AvlTree
 
-  /**
+  /** A fixed number of last block headers in descending order (first header is the newest one)
     * @since 2.0
     */
   def headers: Coll[Header]
@@ -636,6 +636,11 @@ trait SigmaDslBuilder {
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
+  /**
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
+    * @return the generator of this Dlog group
+    */
   def groupGenerator: GroupElement
 
   @Reified("T")

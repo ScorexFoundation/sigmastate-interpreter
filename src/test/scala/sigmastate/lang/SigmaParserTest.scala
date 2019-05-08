@@ -46,6 +46,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
   def or(l: SValue, r: SValue) = MethodCallLike(l, "||", IndexedSeq(r))
+  def xor(l: SValue, r: SValue) = MethodCallLike(l, "^", IndexedSeq(r))
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -70,8 +71,11 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1==1") shouldBe EQ(1, 1)
     parse("true && true") shouldBe and(TrueLeaf, TrueLeaf)
     parse("true || false") shouldBe or(TrueLeaf, FalseLeaf)
+    parse("true ^ false") shouldBe xor(TrueLeaf, FalseLeaf)
     parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
+    parse("true || (true ^ false)") shouldBe or(TrueLeaf, xor(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
+    parse("false ^ false ^ false") shouldBe xor(xor(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
     // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
 //    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
@@ -539,6 +543,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("X[(Int, Boolean)]") shouldBe ApplyTypes(Ident("X"), Seq(STuple(SInt, SBoolean)))
     parse("X[Int, Boolean]") shouldBe ApplyTypes(Ident("X"), Seq(SInt, SBoolean))
     parse("SELF.R1[Int]") shouldBe ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt))
+    parse("SELF.getReg[Int](1)") shouldBe Apply(ApplyTypes(Select(Ident("SELF"), "getReg"), Seq(SInt)), IndexedSeq(IntConstant(1)))
     parse("SELF.R1[Int].isDefined") shouldBe Select(ApplyTypes(Select(Ident("SELF"), "R1"), Seq(SInt)),"isDefined")
     parse("f[Int](10)") shouldBe Apply(ApplyTypes(Ident("f"), Seq(SInt)), IndexedSeq(IntConstant(10)))
     parse("INPUTS.map[Int]") shouldBe ApplyTypes(Select(Ident("INPUTS"), "map"), Seq(SInt))

@@ -4,10 +4,16 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import org.scalacheck.Arbitrary._
+import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values.SigmaBoolean
 import sigmastate._
+import sigmastate.eval.Evaluation
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.AvlTree
+import SType.AnyOps
 
 class DataSerializerSpecification extends SerializationSpecification {
 
@@ -26,16 +32,27 @@ class DataSerializerSpecification extends SerializationSpecification {
 
   def testCollection[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
-    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tT = Evaluation.stypeToRType(tpe)
+    implicit val tagT = tT.classTag
+    implicit val tAny = RType.AnyType
     forAll { xs: Array[T#WrappedType] =>
-      roundtrip[SCollection[T]](xs, SCollection(tpe))
-      roundtrip[SCollection[STuple]](xs.map(x => Array[Any](x, x)), SCollection(STuple(tpe, tpe)))
-      roundtrip[SCollection[SCollection[T]]](xs.map(x => Array[T#WrappedType](x, x)), SCollection(SCollection(tpe)))
-      roundtrip[SCollection[STuple]](
-        xs.map { x =>
-          val arr = Array[T#WrappedType](x, x)
-          Array[Any](arr, arr)
-        },
+      roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
+      roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
+
+      val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
+      roundtrip(triples, SCollection(STuple(tpe, tpe, tpe)))
+
+      val quartets = xs.toColl.map(x => TupleColl(x, x, x, x)).asWrappedType
+      roundtrip(quartets, SCollection(STuple(tpe, tpe, tpe, tpe)))
+
+      val nested = xs.toColl.map(x => Colls.fromItems[T#WrappedType](x, x))
+      roundtrip[SCollection[SCollection[T]]](nested, SCollection(SCollection(tpe)))
+
+      roundtrip[SType](
+        xs.toColl.map { x =>
+          val arr = Colls.fromItems[T#WrappedType](x, x)
+          (arr, arr)
+        }.asWrappedType,
         SCollection(STuple(SCollection(tpe), SCollection(tpe)))
       )
     }
@@ -44,10 +61,15 @@ class DataSerializerSpecification extends SerializationSpecification {
   def testTuples[T <: SType](tpe: T) = {
     implicit val wWrapped = wrappedTypeGen(tpe)
     implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tAny = RType.AnyType
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
-      roundtrip[STuple](Array[Any](x, y), STuple(tpe, tpe))
-      roundtrip[STuple](Array[Any](x, y, Array[Any](x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
+      roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
+      roundtrip[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe))
+      roundtrip[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe))
+      roundtrip[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe)))
+      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe))))
     }
   }
 
@@ -60,8 +82,8 @@ class DataSerializerSpecification extends SerializationSpecification {
     forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
     forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
     forAll { x: ErgoBox => roundtrip[SBox.type](x, SBox) }
-    forAll { x: AvlTreeData => roundtrip[SAvlTree.type](x, SAvlTree) }
-    forAll { x: Array[Byte] => roundtrip[SByteArray](x, SByteArray) }
+    forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
+    forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
     forAll { t: SPredefType => testCollection(t) }
     forAll { t: SPredefType => testTuples(t) }
   }

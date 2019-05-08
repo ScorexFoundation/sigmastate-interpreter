@@ -3,14 +3,17 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox.{R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
+import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
-
+import SType.AnyOps
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -244,49 +247,50 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("Tuple as Collection operations") {
-//    test("TupColl1", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p.size == 2 }""".stripMargin,
-//    {
-//      TrueLeaf
-//    }, true)
-//    test("TupColl2", env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p(0) == 1 }""".stripMargin,
-//    {
-//      EQ(GetVarInt(intVar1).get, IntConstant(1))
-//    })
+    test("TupColl1", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p.size == 2 }""".stripMargin,
+    {
+      TrueLeaf.toSigmaProp
+    }, true)
+    test("TupColl2", env, ext,
+    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
+     |  p(0) == 1 }""".stripMargin,
+    {
+      EQ(GetVarInt(intVar1).get, IntConstant(1)).toSigmaProp
+    })
 
     val dataVar = (lastExtVar + 1).toByte
     val Colls = IR.sigmaDslBuilderValue.Colls
-    val data = Array(Array[Any](Array[Byte](1,2,3), 10L))
+    implicit val eAny = RType.AnyType
+    val data = Colls.fromItems((Array[Byte](1,2,3).toColl, 10L))
     val env1 = env + ("dataVar" -> dataVar)
     val dataType = SCollection(STuple(SByteArray, SLong))
-    val ext1 = ext :+ ((dataVar, Constant[SCollection[STuple]](data, dataType)))
-//    test("TupColl3", env1, ext1,
-//      """{
-//        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
-//        |  data.size == 1
-//        |}""".stripMargin,
-//      {
-//        val data = GetVar(dataVar, dataType).get
-//        EQ(SizeOf(data), IntConstant(1))
-//      }
-//    )
-//    test("TupColl4", env1, ext1,
-//      """{
-//        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
-//        |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
-//        |}""".stripMargin,
-//      {
-//        val data = GetVar(dataVar, dataType).get
-//        Exists(data,
-//          FuncValue(
-//            Vector((1, STuple(SByteArray, SLong))),
-//            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
-//        )
-//      }
-//    )
+    val ext1 = ext :+ ((dataVar, Constant[SType](data.asWrappedType, dataType)))
+    test("TupColl3", env1, ext1,
+      """{
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.size == 1
+        |}""".stripMargin,
+      {
+        val data = GetVar(dataVar, dataType).get
+        EQ(SizeOf(data), IntConstant(1)).toSigmaProp
+      }
+    )
+    test("TupColl4", env1, ext1,
+      """{
+        |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
+        |  data.exists({ (p: (Coll[Byte], Long)) => p._2 == 10L })
+        |}""".stripMargin,
+      {
+        val data = GetVar(dataVar, dataType).get
+        Exists(data,
+          FuncValue(
+            Vector((1, STuple(SByteArray, SLong))),
+            EQ(SelectField(ValUse(1, STuple(SByteArray, SLong)), 2), LongConstant(10)))
+        ).toSigmaProp
+      }
+    )
     test("TupColl5", env1, ext1,
       """{
         |  val data = getVar[Coll[(Coll[Byte], Long)]](dataVar).get
@@ -338,6 +342,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("ExtractRegisterAs") {
+    //TODO: uncomment and fix
 //    test("Extract1", env, ext,
 //      "{ SELF.R4[SigmaProp].get.isProven }",
 //      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
@@ -356,7 +361,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg") {
     test("Extract1", env, ext,
-      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4).toByte ).get == 1}",
+      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4)).get == 1}",
       BoolToSigmaProp(
         EQ(
           MethodCall(Self, SBox.getRegMethod,
@@ -490,6 +495,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    println(CostTableStat.costTableString)
   }
 
+  //TODO: uncomment and fix
 //  property("ZKProof") {
 //    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
 //      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
@@ -576,8 +582,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
-  ignore("Option.map") {
+  property("Option.map") {
     test("Option.map", env, ext,
       "getVar[Int](intVar1).map({(i: Int) => i + 1}).get == 2",
       null,
@@ -585,8 +590,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
-  ignore("Option.filter") {
+  property("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
       null,

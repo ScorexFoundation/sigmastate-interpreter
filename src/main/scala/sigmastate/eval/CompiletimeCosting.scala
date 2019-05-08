@@ -62,6 +62,10 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
         eval(mkOptionIsDefined(nrv))
 
+// TODO finish case for box.getReg[T](id) =>
+//      case Terms.Apply(Select(box: Value[SBox.type]@unchecked, SBox.GetReg, _), Seq(id)) if box.tpe == SBox =>
+//        eval(mkExtractRegisterAs(box, arg, ))
+
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
           case (box, SBox.Value) => eval(mkExtractAmount(box))
@@ -107,6 +111,11 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
 
       case Select(input, ModQMethod.name, _) =>
         eval(mkModQ(input.asBigInt))
+
+      case Terms.Apply(Select(l, PlusModQMethod.name, _), Seq(r)) =>
+        eval(mkPlusModQ(l.asBigInt, r.asBigInt))
+      case Terms.Apply(Select(l, MinusModQMethod.name, _), Seq(r)) =>
+        eval(mkMinusModQ(l.asBigInt, r.asBigInt))
 
       case _ =>
         super.evalNode(ctx, env, node)

@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{Constant, Value, ErgoTree, ConcreteCollection}
+import sigmastate.SType
+import sigmastate.Values.{Constant, ErgoTree, Value}
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.Append
-import sigmastate.{SGroupElement, SType}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.lang.exceptions.SerializerException
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+
 import scala.collection.mutable
 
 class ErgoTreeSerializer {
@@ -32,9 +32,11 @@ class ErgoTreeSerializer {
     val previousConstantStore = r.constantStore
     r.constantStore = new ConstantStore(cs)
     // reader with constant store attached is required (to get tpe for a constant placeholder)
-    val root = ValueSerializer.deserialize(r).asSigmaProp
+    val root = ValueSerializer.deserialize(r)
+    if (!root.tpe.isSigmaProp)
+      throw new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}")
     r.constantStore = previousConstantStore
-    ErgoTree(h, cs, root)
+    ErgoTree(h, cs, root.asSigmaProp)
   }
 
   /** Serialize header and constants section only.*/
@@ -64,81 +66,12 @@ class ErgoTreeSerializer {
     (header, constants)
   }
 
-  /** Serialize Value with ConstantSegregationHeader, constants segregated from the tree and ConstantPlaceholders
-    * referring to the segregated constants.
-    *
-    * This method uses single traverse of the tree to:
-    * 1) find and segregate all constants;
-    * 2) replace constants with ConstantPlaceholders in the `tree`;
-    * 3) write the `tree` to the Writer's buffer obtaining `treeBytes`.
-    *
-    * After the constants are collected the final byte array is composed by serializing constants and
-    * then appending `treeBytes` */
-  def serializeWithSegregation(tree: Value[SType]): Array[Byte] = {
-    val constantStore = new ConstantStore()
-    val treeWriter = SigmaSerializer.startWriter(constantStore)
-
-    // serialize tree and segregate constants into constantStore
-    ValueSerializer.serialize(tree, treeWriter)
-    val extractedConstants = constantStore.getAll
-
-    val w = SigmaSerializer.startWriter()
-    serializeHeader(ErgoTree(ErgoTree.ConstantSegregationHeader, extractedConstants, null), w)
-
-    // write tree bytes with ConstantsPlaceholders (which were injected during serialization)
-    w.putBytes(treeWriter.toBytes)
-    w.toBytes
-  }
-
   /** Deserialize header and constant sections, but output the rest of the bytes as separate array. */
   def deserializeHeaderWithTreeBytes(r: SigmaByteReader): (Byte, Array[Constant[SType]], Array[Byte]) = {
     val (header, constants) = deserializeHeader(r)
     val treeBytes = r.getBytes(r.remaining)
     (header, constants, treeBytes)
   }
-
-  def deserialize(bytes: Array[Byte], resolvePlaceholdersToConstants: Boolean = true): Value[SType] = {
-    deserialize(SigmaSerializer.startReader(bytes), resolvePlaceholdersToConstants)
-  }
-
-  /** Deserialize Value replacing placeholders with constants if the parameter is true. */
-  def deserialize(r: SigmaByteReader, resolvePlaceholdersToConstants: Boolean): Value[SType] = {
-    val (header, constants) = deserializeHeader(r)
-    require(!resolvePlaceholdersToConstants || ErgoTree.isConstantSegregation(header),
-      s"Invalid arguments of ErgoTreeSerializer.deserialize: resolvePlaceholdersToConstants=$resolvePlaceholdersToConstants, header=$header")
-
-    val previousConstantStore = r.constantStore
-    r.constantStore = new ConstantStore(constants)
-    val previousResolvePlaceholderValue = r.resolvePlaceholdersToConstants
-    r.resolvePlaceholdersToConstants = resolvePlaceholdersToConstants
-    val tree = ValueSerializer.deserialize(r)
-    r.constantStore = previousConstantStore
-    r.resolvePlaceholdersToConstants = previousResolvePlaceholderValue
-    tree
-  }
-
-  def deserializeWithConstantInjection(constantStore: ConstantStore, treeBytes: Array[Byte]): Value[SType] = {
-    val r = SigmaSerializer.startReader(treeBytes, constantStore, resolvePlaceholdersToConstants = true)
-    val tree = ValueSerializer.deserialize(r)
-    tree
-  }
-
-  def serializedPubkeyPropValue(pubkey: Value[SByteArray]): Value[SByteArray] =
-    Append(
-      Append(
-        ConcreteCollection(
-          0.toByte, // header
-          1.toByte, // const count
-          SGroupElement.typeCode // const type
-        ),
-        pubkey // const value
-      ),
-      ConcreteCollection(
-        OpCodes.ProveDlogCode,
-        OpCodes.ConstantPlaceholderIndexCode,
-        0.toByte // constant index in the store
-      )
-    )
 
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
