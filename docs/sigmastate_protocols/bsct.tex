@@ -90,27 +90,37 @@
 
 \begin{abstract}
 A widely believed tenet in the folklore says that with lack of persistent storage, UTXO model is more limited than account-based smart contracts. While in theory every UTXO blockchain with certain capabilities is able to carry over Turing-complete computations as shown in~\cite{CKM18a}, such results are not practical.
-In this work we show how to implement many useful multi-stage contracts with complex and evolving data using UTXO-based models. Some of the examples we present are a Rock-Paper-Scissors game, and an initial coin offering campaign.
+In this work we show how to implement multi-stage contracts with complex and evolving data in the UTXO model on top of the Ergo platform. The examples include a Rock-Paper-Scissors game and an Initial Coin Offering (ICO) campaign.
 \end{abstract}
 
 \section{Introduction}
 
 In Bitcoin, the most popular cryptocurrency, funds are stored in immutable one-time containers protected by a {\em spending condition}, which a spender must satisfy~\cite{Nak08}.
 %~\cite{Nak08}. 
-This is called the {\em UTXO-based} model, because the containers are called {\em unspent transaction outputs} (UTXOs). As the name suggests, UTXOs are the outputs of a transaction that are not yet spent, and can encode arbitrary conditions as long as they are expressible in the underlying script.
+This is called the {\em UTXO-based} model, because the containers are called {\em unspent transaction outputs} (UTXOs). 
+%As the name suggests, UTXOs are the outputs of a transaction that are not yet spent, and can encode arbitrary conditions as long as they are expressible in the underlying script.
 %\footnote{Bitcoin actually discourages such usage of its script, because apart from the few ``standard'' transaction types, a bitcoin core node does not propogate non-standard transactions, even though it accepts a block containing such transactions. Ergo, on the other hand is entirely about non-standard transactions.} 
 A transaction in Bitcoin spends (destroys) some UTXOs and creates new ones. %A UTXO is uniquely identified by the transaction id and the output index. Funds stored in a UTXO must be spent in entirety. 
 
 Instead of UTXOs, Ethereum
 %~\cite{wood2014ethereum} 
-uses the {\em account-based} model, where funds are stored in long-lived accounts (represented by an address) and can be transferred in fractional amounts~\cite{wood2014ethereum}. End users operate an {\em externally owned account}, whose address is (the hash of) a public key. Smart contracts, on the other hand, exist on an address derived from the creating transaction in a deterministic way. A smart contract has methods that can be invoked by sending a message from another address. 
+uses the {\em account-based} model, where funds are stored in long-lived accounts and can be transferred in fractional amounts~\cite{wood2014ethereum}. End users operate an {\em externally owned account}, whose address is (the hash of) a public key. Smart contracts, on the other hand, exist on an address derived from the creating transaction in a deterministic way. %A smart contract has methods that can be invoked by sending a message from another address. 
 %An Ethereum contract is written in a Turing complete language and 
-This model allows contracts to keep a long-lived global state. %This makes Ethereum contracts very powerful. 
+Ethereum contracts can maintain a long-lived global state, making them quite powerful. 
 
-Bitcoin also allows smart contracts but its language is highly restrictive compared to Ethereum. Ergo is similar to Bitcoin in that it uses the UTXO model. However, unlike Bitcoin, the scripting language of Ergo (called \langname) is very expressive. In particular, \langname has functional programming and allows us to 
-define the spending condition using the inputs and outputs of the spending transaction~\cite{whitepaper}. As shown in~\cite{CKM18a}, \langname does support arbitrary Turing complete computation, albeit very inefficiently via Rule 110 reduction~\cite{NW06}. In this article, we show how to create more efficient and usable contracts with evolving data. The complete code is available at the \langname repository~\cite{langrepo}.%We refer the reader to~\cite{whitepaper} for details about \langname.
+Bitcoin also allows smart contracts but its language is highly restrictive. Ergo\footnote{\url{https://ergoplatform.org}} is similar to Bitcoin in that it uses the UTXO model. However, unlike Bitcoin, the scripting language of Ergo (called \langname) is very expressive. More interestingly, \langname allows defining spending conditions using properties of the inputs and outputs of the transaction~\cite{tutorial}, which allows Turing complete computation, albeit inefficiently~\cite{CKM18a}
+%~\cite{NW06}. 
+In this work, we show via examples how complex multi-stage contracts with evolving data can be created efficiently in \langname. Specifically, we present a Rock-Paper-Scissors game, a new primitive called {\em reversible addresses} for securely storing funds and a full featured ICO.  
+%These show that \langname can cover 99\% of the use-cases in Ethereum. 
+%Due to lack of space, we don't give the fundamentals of \langname, for which 
 
-%The main structure in \langname is a \emph{box}, which is roughly like a UTXO of Bitcoin. A transaction spends (destroys) some boxes as inputs and creates new boxes (as outputs). A box is made of upto ten {\em registers} labelled $R_0, R_1,\ldots R_9$, four of which are mandatory. $R_0$ contains the monetary value, $R_1$ contains a script with the spending condition, $R_2$ contains assets (tokens) and $R_3$ contains a unique identifier of 34 bytes made up of a transaction ID (32 bytes) and an output index (2 bytes). The spender of a box must provide a `proof' of satisfying its spending condition. 
+\langname syntax is a subset of Scala's and the main structure in \langname is a \emph{box}, which is roughly like a UTXO of Bitcoin. A transaction spends some boxes and creates new boxes. A box is made of upto ten {\em registers} labelled $R_0, R_1,\ldots R_9$, four of which are mandatory. $R_0$ contains the monetary value, $R_1$ contains a script with the spending condition, $R_2$ contains assets (tokens) and $R_3$ contains a unique identifier of 34 bytes made up of a transaction ID and an output index. 
+%The spender of a box must provide a `proof' of satisfying its spending condition. 
+We refer the reader to \langname resources for details~\cite{langrepo,tutorial,advtutorial}.
+%the tutorials available online at
+%~\cite{langrepo,whitepaper}. %However, we give a brief overview below.
+
+
 %
 %The proofs are in the form of {\em Sigma-Protocols} (written $\Sigma$-protocols)\cite{Dam10}, which are interleaved with predicates on the transaction and blockchain state. \langname currently supports two such-Protocols defined on a group $G$ of prime order $q$, written here in multiplicative form. 
 %%This group is exactly the one defined by the secp256k1 curve of Bitcoin. 
@@ -122,10 +132,13 @@ define the spending condition using the inputs and outputs of the spending trans
 \section{Rock-Paper-Scissors Game}
 \label{rps}
 
-Rock-Paper-Scissors (RPS) is a 2-party game, where each party chooses a secret independently of the other and the game is decided after revealing the secrets. 
-Let $a, b\in \mathbb{Z}_3$ be the choices of two parties, Alice and Bob, with the understanding that (0, 1, 2) represent (rock, paper, scissors). If $a = b$ then the game is a draw, otherwise if $a-b \in \{1, -2\}$ then Alice wins else Bob wins. 
+Rock-Paper-Scissors is a 2-player game, where each player chooses a secret independently and the game is decided after the secrets are revealed. 
+Let $a, b\in \mathbb{Z}_3$ be the secrets of Alice, Bob, with the understanding that (0, 1, 2) represent (rock, paper, scissors). If $a = b$ then the game is a draw, otherwise if $a-b \in \{1, -2\}$ then Alice wins else Bob wins. 
+%In an ideal game, both parties reveal their secrets simultaneously, so no party can choose adaptively. In the real-world, however, having the parties reveal their secrets simultaneously is not feasible. Hence, 
+%An attack that is often overlooked here is {\em adaptive selection}, where
+The first party to reveal the secret has a disadvantage, since the other party can adaptively choose and win, an attack that is often overlooked~\cite{rps15}, and must be handled using {\em commitments}. 
 
-In an ideal game, both parties reveal their secrets simultaneously, so no party can choose adaptively. In the real-world, however, having the parties reveal their secrets simultaneously is not feasible. Hence, the party that first reveals the secret must be protected from cheating by the second party, something that is often overlooked~\cite{rps15}. The solution for such scenarios is to use {\em commitments}. 
+This game is coded in \langname as follows.
 Alice creates a commitment $k=H(a||s)$ to her secret $a$. She uses $k$ and her public key \texttt{alice} to generate \texttt{fullGameScriptHash}, the hash of the following script:
 \small{
 \begin{verbatim}
@@ -154,10 +167,10 @@ OUTPUTS.forall{(out:Box) =>
 }
 % // Bob needs to ensure that out.R5 contains bobPubKey
 
-The above code ensures that there must be two outputs, one for each player in the draw case (and going to the same player otherwise). We ignore fee in the above code and refer the reader to Sections~\ref{rps} and~\ref{ico} for code that handles fee. Register $R_7$ of the first output must contain Alice's public key (for use in the draw scenario). Bob has to make sure that $R_7$ of the second output contains his public key. Additionally, he must ensure that $R_5$ of both outputs contains his public key. We don't encode these conditions here because if Bob doesn't follow the protocol, he will lose. If Alice refuses to open her commitment before a certain deadline, then Bob automatically wins. 
+The above code ensures that there must be two outputs, one for each player in the draw case (and going to the same player otherwise). We ignore fee in the above code and refer the reader to Sections~\ref{reversible} and~\ref{ico} for code that handles fee. Register $R_7$ of the first output must contain Alice's public key (for use in the draw scenario). Bob has to make sure that $R_7$ of the second output contains his public key. Additionally, he must ensure that $R_5$ of both outputs contains his public key. We don't encode these conditions here because if Bob doesn't follow the protocol, he will lose. If Alice refuses to open her commitment before a certain deadline, then Bob automatically wins. 
 
-\section{Hot-Wallet Contracts: Reversible Addresses}
-
+\section{Reversible Addresses}
+\label{reversible}
 Our second example describes {\em reversible addresses}, which have anti-theft features in the following sense. 
 Any funds sent to a reversible address can only be spent in way that allows payments to be reversed for a certain time. The idea was proposed for Bitcoin and requires a hardfork~\cite{raddress}. In \langname, however, this can be done natively.
 
@@ -171,7 +184,11 @@ We would like that in the event of such a compromise, we are able to save all fu
 %have a 24 hour cooling-off period, during which the created boxes can only be spent by a trusted private key that is was selected {\em before} the compromise occurred. This trusted key must be different from the hot-wallet private key and should ideally be in cold storage. 
 %After 24 hours, these boxes become `normal' and can only be spent by the receiver.
 
-In \langname, this can done by storing the funds in a special type of address denoted as {\em reversible}. Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party. Note that the trusted party must be decided at the time of address generation ({\em before} the compromise occurred) and cannot be changed later. To use a different trusted party, a new address has to be generated. Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. 
+%In \langname, this can done by storing the funds in a special type of address denoted as {\em reversible}. 
+Assume that \texttt{alice} is the public key of the hot-wallet and \texttt{carol} is the public key of the trusted party. Note that the trusted party must be decided at the time of address generation.
+% ({\em before} the compromise occurred). 
+%To use a different trusted party, a new address has to be generated. 
+Let \texttt{blocksIn24h} be the estimated number of blocks in a 24 hour period. 
 %A reversible address is a P2SH address whose script encodes the following conditions:   
 %\begin{enumerate}
 %	\item This input box can only be spent by \texttt{alice}.
@@ -216,9 +233,9 @@ Normally \texttt{bob} will spend the box after roughly \texttt{blocksIn24h} bloc
 \section{An ICO Example}
 \label{ico}
 
-We consider an Initial Coin Offering (ICO) for a project wanting to collect at least a certain amount of funds (in Ergs). Once the funding threshold is crossed and funding period ends, the project is kickstarted and tokens are issued proportional to the total funding. The investors can then withdraw the tokens based on their investment amount. % during the funding period. The contract steps are briefly described below with details provided further.
+%We consider an Initial Coin Offering (ICO) for a project wanting to collect at least a certain amount of funds (in Ergs). Once the funding threshold is crossed and funding period ends, the project is kickstarted and tokens are issued proportional to the total funding. The investors can then withdraw the tokens based on their investment amount. % during the funding period. The contract steps are briefly described below with details provided further.
 
-It is not trivial to create an ICO on top of UTXO based currencies, because, in contrast to account-based models, there is no explicit persistent storage here. However, Ergo brings spending transactions into the execution context of scripts. With this small change it becomes possible to express dependencies between transaction outputs and inputs, and create complex systems such as an ICO.%execute arbitrarily complex Turing-complete programs~\cite{CKM18a}. 
+It is not trivial to create an Initial Coin Offering (ICO) on top of UTXO based currencies, because, in contrast to account-based models, there is no explicit persistent storage here. However, Ergo brings spending transactions into the execution context of scripts. With this small change it becomes possible to express dependencies between transaction outputs and inputs, and create complex systems such as an ICO.%execute arbitrarily complex Turing-complete programs~\cite{CKM18a}. 
 %In this article we will define a concrete scenario of a multi-stage contract using an ICO, where we have three stages (funding, token issuance, withdrawal).
 %Now imagine an ICO for thousands of participants. 
 
@@ -328,13 +345,13 @@ properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
 }
 %\subsection{Possible Enhancements}
 
-%Please note that there are many nuances our example contract is ignoring. For example, anyone listening to the blockchain is allowed to execute the contract and construct proper spending transactions during funding and withdrawal stages. In the real-world, additional signature from the project or a trusted arbiter may be used.
-
-%Also, there is no self-destruction case considered in the withdrawal contract, so it will live until being destroyed by miners via storage rent mechanism, potentially for decades or even centuries. For the funding stage, it would be reasonable to have an additional input from the project with the value equal to the value of the fee output. And so on.
+Please note that there are many nuances our example contract ignores. For example, anyone listening to the blockchain is allowed to create spending transactions during the funding and withdrawal stages. In the real-world, additional signature from the project or a trusted arbiter might be used. Also, there is no self-destruct after the withdrawal contract, so the box will live until being destroyed via the in-built storage rent mechanism of Ergo~\cite{tutorial}, potentially for decades or even centuries. 
+%For the funding stage, it would be reasonable to have an additional input from the project to cover the fee.
 
 \section{Conclusion}
 
-This article gave examples of how \langname can be used to create complex contracts as in Ethereum, despite having UTXO based model. We described the following contracts: (1) {\em Reversible Addresses} that have anti-theft features and can be used for running the hot-wallets of an exchange or mining pool. (2) A Rock-Papers-Scissors game similar to the one used in Ethereum tutorials. (3) A full features ICO contract that accepts funding in Ergs and has all the features found in Ethereum examples.
+We gave examples demonstrating how \langname can encode complex Ethereum-like contracts, despite a UTXO based model. In particular, we described the following: (1) {\em Reversible Addresses} with anti-theft features, (2) a Rock-Papers-Scissors game with provable fairness, and (3) a full features ICO that accepts funding in Ergs. We refer the reader to \langname repository and tutorials~\cite{langrepo,tutorial,advtutorial} for several other examples, including  Local Exchange Trading System (LETS), non-interactive mixing, cold-wallet contracts, revenue-sharing contracts, atomic swaps and many more.
+The examples are varied enough to several use-case of Ethereum and even more. 
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}

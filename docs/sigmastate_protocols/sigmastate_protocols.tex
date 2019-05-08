@@ -163,7 +163,7 @@ The main structure in \langname is a \emph{box}, which is roughly like a UTXO of
 %The set of predicates is richer than in Bitcoin, but still lean in order to allow for efficient processing even by light clients. Like in Bitcoin, we allow the use of current height of the blockchain; unlike Bitcoin, we also allow the use of information contained in the spending transaction, such as inputs it is trying to spend and outputs it is trying to create. This feature enables self-replication and sophisticated (even Turing-complete) long-term script behaviour, as described in examples below.
 
 
-The following sections present smart contracts using \langname. More details of \langname are available in the white paper~\cite{whitepaper} and the code for the below examples is available on GitHub~\cite{langrepo}. 
+The following sections present smart contracts using \langname. More details of \langname are available in the tutorial~\cite{tutorial} and the code for the below examples is available on GitHub~\cite{langrepo}. 
 \section{Basic Examples: Enhanced Spending Contracts}
 
 The examples below use P2SH address and highlight some limitations of Bitcoin. 
@@ -442,7 +442,7 @@ Figure~\ref{fig:mixname} explains the protocol.
 \end{enumerate}
 We use the non-interactive variant, where $c = H(t_0 \Vert t_1\Vert m)$. We call this \texttt{proveDHTuple}$(g, h, u, v)$. Observe that this protocol requires 4 exponentiations for verification, while \texttt{proveDlog} requires 2.
 
-We also need a variant of \texttt{proveDlog} denoted as \texttt{proveDlogH}$(h, v)$ (not yet present in \langname), that takes in 2 parameters and proves knowledge of $x$ such that $v = h^x$ for arbitrary generator $h$. Currently, this can be done as \texttt{proveDlogH}$(h, v) = $ \texttt{proveDHTuple}$(h, h, v, v)$.
+We also need a variant of \texttt{proveDlog} denoted as \texttt{proveDlogH}$(h, v)$ (not yet present in \langname), that takes in 2 parameters and proves knowledge of $x$ such that $v = h^x$ for arbitrary generator $h$. Currently, this can be done as \texttt{proveDlogH}$(h, v) = $ \texttt{proveDHTuple}$(h, h, v, v)$. A client can verify such tuples in 2 exponentiations.
  
 \subsubsection{The Basic Protocol}
 Without loss of generality, Alice will pool and Bob will mix. 
@@ -615,7 +615,7 @@ The mix step will create an additional box with two tokens spendable by the seco
 %\section{Finite-State Machine}
 \section{Conclusion}
 
-This article described smart contracts written in \langname. The examples build upon concepts from the \langname white-paper~\cite{whitepaper}. More advanced contracts will be discussed in another tutorial.
+This article described smart contracts written in \langname. The examples build upon concepts from the \langname tutorial~\cite{tutorial}. More advanced contracts will be discussed in another tutorial.
 
 \bibliographystyle{unsrt}
 \bibliography{sigmastate_protocols}
