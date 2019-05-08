@@ -3,7 +3,7 @@ package sigmastate.serialization
 import org.ergoplatform.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import org.ergoplatform._
 import sigmastate.{SType, TrivialProp}
-import sigmastate.Values.{Value, ErgoTree, Constant}
+import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.SerializerException
@@ -15,29 +15,46 @@ import scala.collection.mutable
 
 class ErgoTreeSerializer {
 
+  /** Serialize header and constants section only.*/
+  private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter): Unit = {
+    w.put(ergoTree.header)
+    if (ergoTree.isConstantSegregation) {
+      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+      w.putUInt(ergoTree.constants.length)
+      ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
+    }
+  }
+
   private def serializeWithoutSize(ergoTree: ErgoTree): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
     serializeHeader(ergoTree, w)
-    ValueSerializer.serialize(ergoTree.root, w)
+    assert(ergoTree.isRightParsed, s"Right parsed ErgoTree expected: $ergoTree")
+    ValueSerializer.serialize(ergoTree.root.right.get, w)
     w.toBytes
   }
 
-  /** Default serialization of ErgoTree. Doesn't apply any transformations and guarantee to preserve original
+  /** Default serialization of ErgoTree.
+    * Doesn't apply any transformations and guarantee to preserve original
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
-    val bytes = serializeWithoutSize(ergoTree)
-    if (ergoTree.hasSize) {
-      val w = SigmaSerializer.startWriter()
-      val header = bytes(0)
-      val contentLength = bytes.length - 1
-      val contentBytes = new Array[Byte](contentLength)
-      Array.copy(bytes, 1, contentBytes, 0, contentLength)  // TODO optimize: avoid new array by implementing putSlice(arr, from, len)
-      w.put(header)
-      w.putUInt(contentLength)
-      w.putBytes(contentBytes)
-      w.toBytes
+    val res = ergoTree.root match {
+      case Left(UnparsedErgoTree(bytes, error)) => bytes.array
+      case _ =>
+        val bytes = serializeWithoutSize(ergoTree)
+        if (ergoTree.hasSize) {
+          val w = SigmaSerializer.startWriter()
+          val header = bytes(0)
+          val contentLength = bytes.length - 1
+          val contentBytes = new Array[Byte](contentLength)
+          Array.copy(bytes, 1, contentBytes, 0, contentLength)  // TODO optimize: avoid new array by implementing putSlice(arr, from, len)
+          w.put(header)
+          w.putUInt(contentLength)
+          w.putBytes(contentBytes)
+          w.toBytes
+        }
+        else bytes
     }
-    else bytes
+    res
   }
 
   /** Default deserialization of ErgoTree (should be inverse to `serializeErgoTree`).
@@ -48,8 +65,9 @@ class ErgoTreeSerializer {
   }
 
   def deserializeErgoTree(r: SigmaByteReader): ErgoTree  = {
-    val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val startPos = r.position
+    val (h, sizeOpt) = deserializeHeaderAndSize(r)
+    val bodyPos = r.position
     val tree = try {
       val cs = deserializeConstants(h, r)
       val previousConstantStore = r.constantStore
@@ -61,13 +79,13 @@ class ErgoTreeSerializer {
       ErgoTree(h, cs, root.asSigmaProp)
     }
     catch {
-      case ve: SoftForkException =>
+      case ve: ValidationException =>
         sizeOpt match {
           case Some(treeSize) =>
-            val endPos = startPos + treeSize
-            r.position = endPos
-            val prop = TrivialProp.TrueProp.toSigmaProp
-            ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, prop, Some(ve))
+            val numBytes = bodyPos - startPos + treeSize
+            r.position = startPos
+            val bytes = r.getBytes(numBytes)
+            ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)))
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
@@ -76,21 +94,10 @@ class ErgoTreeSerializer {
     tree
   }
 
-  /** Serialize header and constants section only.*/
-  private def serializeHeader(ergoTree: ErgoTree, w: SigmaByteWriter): Unit = {
-    w.put(ergoTree.header)
-    if (ergoTree.isConstantSegregation) {
-      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
-      w.putUInt(ergoTree.constants.length)
-      ergoTree.constants.foreach(c => constantSerializer.serialize(c, w))
-    }
-  }
-
   /** Deserialize `header` and optional `size` slots only. */
   private def deserializeHeaderAndSize(r: SigmaByteReader): (Byte, Option[Int]) = {
     val header = r.getByte()
     val sizeOpt = if (ErgoTree.hasSize(header)) {
-      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
       val size = r.getUInt().toIntExact
       Some(size)
     } else

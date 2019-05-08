@@ -224,15 +224,15 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix)(implicit vs: Validat
 
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
-      case SigmaPropConstant(ProveDlogProp(d)) => P2PKAddress(d)
+      case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
       //TODO move this pattern to PredefScripts
-      case SigmaAnd(Seq(
+      case Right(SigmaAnd(Seq(
              BoolToSigmaProp(
                EQ(
                  Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
                  ByteArrayConstant(scriptHash))),
-             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => new Pay2SHAddress(scriptHash.toArray)
-      case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
+             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp)))) => new Pay2SHAddress(scriptHash.toArray)
+      case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case _ =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: $proposition")
     }

@@ -1,14 +1,14 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.CheckValidOpCode
+import org.ergoplatform.ValidationRules.{CheckValidOpCode, CheckDeserializedScriptIsSigmaProp}
 import org.ergoplatform._
-import sigmastate.Values.{NotReadyValueInt, ErgoTree, IntConstant}
+import sigmastate.Values.{NotReadyValueInt, ErgoTree, IntConstant, UnparsedErgoTree}
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, InvalidOpCode, CosterException}
+import sigmastate.lang.exceptions.{SerializerException, CosterException, InvalidOpCode}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import special.sigma.SigmaTestingData
 
@@ -50,7 +50,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       // CheckDeserializedScriptIsSigmaProp rule violated
       ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV1bytes))
     }, {
-      case e: ValidationException => e.getCause.isInstanceOf[SerializerException]
+      case se: SerializerException if se.cause.isDefined =>
+        val ve = se.cause.get.asInstanceOf[ValidationException]
+        ve.rule == CheckDeserializedScriptIsSigmaProp
       case _ => false
     })
   }
@@ -94,7 +96,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
         ErgoLikeTransaction.serializer.parse(r)
       },
       {
-        case e: SerializerException => e.getCause.isInstanceOf[ChangedRuleException]
+        case se: SerializerException if se.cause.isDefined =>
+          val ve = se.cause.get.asInstanceOf[ValidationException]
+          ve.rule == CheckValidOpCode
         case _ => false
       }
     )
@@ -104,6 +108,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     // prepare bytes using special serialization WITH `size flag` in the header
     ValueSerializer.addSerializer(Height2Code, Height2Ser)
     val tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
+    val treeBytes = tree.bytes
     val txV2 = createTransaction(createBox(100, tree, 1))
     val txV2bytes = txV2.messageToSign
     ValueSerializer.removeSerializer(Height2Code)
@@ -116,8 +121,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("propV2", tx)
 
     // also check that transaction prop was trivialized due to soft-fork
-    tx.outputs(0).ergoTree.copy(softForkException = None) shouldBe ErgoTree.fromSigmaBoolean(TrivialProp.TrueProp)
-    tx.outputs(0).ergoTree.softForkException.get.isInstanceOf[ChangedRuleException] shouldBe true
+    tx.outputs(0).ergoTree.root.left.get.bytes.array shouldBe treeBytes
+    tx.outputs(0).ergoTree.root.left.get.isInstanceOf[UnparsedErgoTree] shouldBe true
 
     // check deserialized tx is otherwise remains the same
     checkTxProp(txV2, tx)(_.inputs)
@@ -135,7 +140,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       ValueSerializer.removeSerializer(Height2Code)
       ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV2bytes))
     },{
-      case ValidationException(_, CheckValidOpCode, _, Some(_: InvalidOpCode)) => true
+      case se: SerializerException if se.cause.isDefined =>
+        val ve = se.cause.get.asInstanceOf[ValidationException]
+        ve.rule == CheckValidOpCode
       case _ => false
     })
   }

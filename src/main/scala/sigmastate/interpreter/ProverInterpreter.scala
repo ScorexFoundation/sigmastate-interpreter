@@ -130,9 +130,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
     prove(emptyEnv, exp, context, message)
 
-  def prove(env: ScriptEnv, exp: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(env: ScriptEnv, tree: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val propTree = applyDeserializeContext(ctx, exp.proposition)
+    val prop = tree.root match {
+      case Right(_) => tree.proposition
+      case Left(_) => TrueSigmaProp
+    }
+    val propTree = applyDeserializeContext(ctx, prop)
     val tried = reduceToCrypto(ctx, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 

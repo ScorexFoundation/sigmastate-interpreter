@@ -129,11 +129,15 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  def verify(env: ScriptEnv, exp: ErgoTree,
+  def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp.proposition)
+    val prop = tree.root match {
+      case Right(_) => tree.proposition
+      case Left(_) => TrueSigmaProp
+    }
+    val propTree = applyDeserializeContext(context, prop)
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {

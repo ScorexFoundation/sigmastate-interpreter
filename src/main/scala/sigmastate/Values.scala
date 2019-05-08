@@ -893,17 +893,20 @@ object Values {
   case class ErgoTree private(
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: SigmaPropValue,
-    softForkException: Option[SoftForkException]
+    root: Either[UnparsedErgoTree, SigmaPropValue]
   ) {
     assert(isConstantSegregation || constants.isEmpty)
-    lazy val proposition: SigmaPropValue = {
-      val prop = if (isConstantSegregation)
-          substConstants(root, constants).asSigmaProp
-        else
-          root
-      prop
+    lazy val proposition: SigmaPropValue = root match {
+      case Right(tree) =>
+        val prop = if (isConstantSegregation)
+            substConstants(tree, constants).asSigmaProp
+          else
+            tree
+        prop
+      case Left(UnparsedErgoTree(bytes, error)) =>
+        ???
     }
+    @inline def isRightParsed: Boolean = root.isRight
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
@@ -939,7 +942,7 @@ object Values {
     }
 
     def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
-      new ErgoTree(header, constants, root, None)
+      new ErgoTree(header, constants, Right(root))
     }
 
     val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
@@ -978,7 +981,7 @@ object Values {
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
       val header = (ErgoTree.ConstantSegregationHeader | headerFlags).toByte
-      new ErgoTree(header, extractedConstants, valueWithPlaceholders, None)
+      new ErgoTree(header, extractedConstants, Right(valueWithPlaceholders))
     }
 
     def withSegregation(value: SigmaPropValue): ErgoTree =
