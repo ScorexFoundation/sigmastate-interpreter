@@ -5,7 +5,7 @@ import java.util.{Objects, Arrays}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.{ErgoLikeContext, ValidationRules, SoftForkException}
+import org.ergoplatform.{ErgoLikeContext, ValidationException, ValidationRules, SoftForkException}
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
@@ -18,6 +18,7 @@ import sigmastate.serialization._
 import sigmastate.serialization.{OpCodes, ConstantStore}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
+import sigmastate.Values.ErgoTree.{isConstantSegregation, substConstants}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
@@ -36,6 +37,8 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AnyValue, AvlTree, PreHeader, Header}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
+
+import scala.collection.mutable
 
 
 object Values {
@@ -843,6 +846,9 @@ object Values {
   def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 
+  /** Information */
+  case class UnparsedErgoTree(bytes: mutable.WrappedArray[Byte], error: ValidationException)
+
   /** The root of ErgoScript IR. Serialized instances of this class are self sufficient and can be passed around.
     * ErgoTreeSerializer defines top-level serialization format of the scripts.
     * The interpretation of the byte array depend on the first `header` byte, which uses VLQ encoding up to 30 bits.
@@ -888,11 +894,16 @@ object Values {
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: SigmaPropValue,
-    proposition: SigmaPropValue,
     softForkException: Option[SoftForkException]
   ) {
     assert(isConstantSegregation || constants.isEmpty)
-
+    lazy val proposition: SigmaPropValue = {
+      val prop = if (isConstantSegregation)
+          substConstants(root, constants).asSigmaProp
+        else
+          root
+      prop
+    }
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
@@ -928,11 +939,7 @@ object Values {
     }
 
     def apply(header: Byte, constants: IndexedSeq[Constant[SType]], root: SigmaPropValue): ErgoTree = {
-      if (isConstantSegregation(header)) {
-        val prop = substConstants(root, constants).asSigmaProp
-        new ErgoTree(header, constants, root, prop, None)
-      } else
-        new ErgoTree(header, constants, root, root, None)
+      new ErgoTree(header, constants, root, None)
     }
 
     val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
@@ -971,7 +978,7 @@ object Values {
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp
       val header = (ErgoTree.ConstantSegregationHeader | headerFlags).toByte
-      new ErgoTree(header, extractedConstants, valueWithPlaceholders, value, None)
+      new ErgoTree(header, extractedConstants, valueWithPlaceholders, None)
     }
 
     def withSegregation(value: SigmaPropValue): ErgoTree =

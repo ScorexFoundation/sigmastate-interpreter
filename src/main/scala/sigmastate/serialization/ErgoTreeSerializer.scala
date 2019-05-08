@@ -1,7 +1,7 @@
 package sigmastate.serialization
 
 import org.ergoplatform.ValidationRules.CheckDeserializedScriptIsSigmaProp
-import org.ergoplatform.{ValidationSettings, ValidationRules, ValidationRule, SoftForkException}
+import org.ergoplatform._
 import sigmastate.{SType, TrivialProp}
 import sigmastate.Values.{Value, ErgoTree, Constant}
 import sigmastate.lang.DeserializationSigmaBuilder
@@ -61,16 +61,16 @@ class ErgoTreeSerializer {
       ErgoTree(h, cs, root.asSigmaProp)
     }
     catch {
-      case sfe: SoftForkException =>
+      case ve: SoftForkException =>
         sizeOpt match {
           case Some(treeSize) =>
             val endPos = startPos + treeSize
             r.position = endPos
             val prop = TrivialProp.TrueProp.toSigmaProp
-            ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, prop, prop, Some(sfe))
+            ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, prop, Some(ve))
           case None =>
             throw new SerializerException(
-              s"Cannot handle soft-fork, ErgoTree serialized without size bit.", None, Some(sfe))
+              s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
         }
     }
     tree

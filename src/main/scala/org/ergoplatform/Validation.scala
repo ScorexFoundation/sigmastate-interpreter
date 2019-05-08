@@ -15,6 +15,11 @@ sealed trait RuleStatus
   */
 case object EnabledRule extends RuleStatus
 
+/** This is a status of a rule which is disabled in current version
+  * and not yet altered by soft-forks.
+  */
+case object DisabledRule extends RuleStatus
+
 /** The status of the rule which is replaced by a new rule via soft-fork extensions.
   * @param newRuleId  id of a new rule which replaces the rule marked with this status
   */
@@ -41,18 +46,21 @@ case class ValidationRule(
     status match {
       case None =>
         throw new InterpreterException(s"ValidationRule $this not found in validation settings")
+      case Some(DisabledRule) =>
+        block  // if the rule is disabled we still need to execute the block of code
       case Some(status) =>
         if (condition)
           block
         else {
-          status match {
-            case EnabledRule =>
-              throw new ValidationException("Validation failed.", this, args, Option(cause))
-            case r: ReplacedRule =>
-              throw ReplacedRuleException(vs, this, r)
-            case c: ChangedRule =>
-              throw ChangedRuleException(vs, this, c)
-          }
+          throw new ValidationException("Validation failed.", this, args, Option(cause))
+//          status match {
+//            case EnabledRule =>
+//              throw new ValidationException("Validation failed.", this, args, Option(cause))
+//            case r: ReplacedRule =>
+//              throw ReplacedRuleException(vs, this, r)
+//            case c: ChangedRule =>
+//              throw ChangedRuleException(vs, this, c)
+//          }
         }
     }
   }
@@ -124,18 +132,19 @@ object ValidationRules {
     def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
       def args = Seq(ser, opCode)
-      try validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
-      catch { case e: ChangedRuleException =>
-        if (e.change.newValue.contains(opCode)) {
-          // this is correct soft-fork supported by newValue which come from block extensions
-          // rethrowing it further to be handled by the caller
-          throw e
-        } else {
-          // opcode is not supported by soft-fork
-          throw new ValidationException(s"Validation failed", this, args,
-            Some(new InvalidOpCode(msg, None, Some(e))))
-        }
-      }
+//      try
+      validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
+//      catch { case e: ChangedRuleException =>
+//        if (e.change.newValue.contains(opCode)) {
+//          // this is correct soft-fork supported by newValue which come from block extensions
+//          // rethrowing it further to be handled by the caller
+//          throw e
+//        } else {
+//          // opcode is not supported by soft-fork
+//          throw new ValidationException(s"Validation failed", this, args,
+//            Some(new InvalidOpCode(msg, None, Some(e))))
+//        }
+//      }
     }
   }
 
