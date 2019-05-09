@@ -30,5 +30,5 @@ class BuilderException(message: String, source: Option[SourceContext] = None)
 class CosterException(message: String, source: Option[SourceContext], cause: Option[Throwable] = None)
     extends SigmaException(message, source, cause)
 
-class InterpreterException(message: String, source: Option[SourceContext] = None)
-  extends SigmaException(message, source)
+class InterpreterException(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
+  extends SigmaException(message, source, cause)

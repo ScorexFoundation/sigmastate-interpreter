@@ -28,7 +28,7 @@ case class  ReplacedRule(newRuleId: Short) extends RuleStatus
 /** The status of the rule whose parameters are changed via soft-fork extensions.
   * @param newValue  new value of block extension value with key == rule.id
   */
-case class  ChangedRule(newValue: Array[Byte]) extends RuleStatus
+case class ChangedRule(newValue: Array[Byte]) extends RuleStatus
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
@@ -52,18 +52,11 @@ case class ValidationRule(
         if (condition)
           block
         else {
-          throw new ValidationException("Validation failed.", this, args, Option(cause))
-//          status match {
-//            case EnabledRule =>
-//              throw new ValidationException("Validation failed.", this, args, Option(cause))
-//            case r: ReplacedRule =>
-//              throw ReplacedRuleException(vs, this, r)
-//            case c: ChangedRule =>
-//              throw ChangedRuleException(vs, this, c)
-//          }
+          throw new ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
         }
     }
   }
+  def isSoftFork(vs: ValidationSettings, ruleId: Short, status: RuleStatus, args: Seq[Any]): Boolean = false
 }
 
 /** Base class for all exception which may be thrown by validation rules. */
@@ -95,6 +88,15 @@ abstract class ValidationSettings {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]
   def getStatus(id: Short): Option[RuleStatus]
   def updated(id: Short, newStatus: RuleStatus): ValidationSettings
+  def isSoftFork(ve: ValidationException): Boolean = isSoftFork(ve.rule.id, ve)
+  def isSoftFork(ruleId: Short, ve: ValidationException): Boolean = {
+    val infoOpt = get(ruleId)
+    infoOpt match {
+      case Some((_, ReplacedRule(newRuleId))) => true
+      case Some((rule, status)) => rule.isSoftFork(this, rule.id, status, ve.args)
+      case None => false
+    }
+  }
 }
 
 sealed class MapValidationSettings(map: Map[Short, (ValidationRule, RuleStatus)]) extends ValidationSettings {
@@ -132,19 +134,15 @@ object ValidationRules {
     def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
       def args = Seq(ser, opCode)
-//      try
       validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
-//      catch { case e: ChangedRuleException =>
-//        if (e.change.newValue.contains(opCode)) {
-//          // this is correct soft-fork supported by newValue which come from block extensions
-//          // rethrowing it further to be handled by the caller
-//          throw e
-//        } else {
-//          // opcode is not supported by soft-fork
-//          throw new ValidationException(s"Validation failed", this, args,
-//            Some(new InvalidOpCode(msg, None, Some(e))))
-//        }
-//      }
+    }
+
+    override def isSoftFork(vs: ValidationSettings,
+        ruleId: Short,
+        status: RuleStatus,
+        args: Seq[Any]): Boolean = (status, args) match {
+      case (ChangedRule(newValue), Seq(_, opCode: OpCode)) => newValue.contains(opCode)
+      case _ => false
     }
   }
 

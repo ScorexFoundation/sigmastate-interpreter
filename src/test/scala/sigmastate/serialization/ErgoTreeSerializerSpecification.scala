@@ -51,8 +51,8 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   property("failed type check on tree deserialization") {
     forAll(numExprTreeNodeGen) { numProp =>
       val bytes = DefaultSerializer.serializeErgoTree(extractConstants(numProp.asInstanceOf[SigmaPropValue]))
-      an[ValidationException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
-      an[ValidationException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
+      an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
+      an[SerializerException] should be thrownBy DefaultSerializer.deserializeErgoTree(bytes)
     }
   }
 

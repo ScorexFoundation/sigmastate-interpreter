@@ -110,12 +110,13 @@ object ErgoLikeContext {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
-            extension: ContextExtension = ContextExtension(Map())) =
+            extension: ContextExtension = ContextExtension(Map()),
+            vs: ValidationSettings = ValidationRules.currentSettings) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension)
+      boxesToSpend, spendingTransaction, self, extension, vs)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

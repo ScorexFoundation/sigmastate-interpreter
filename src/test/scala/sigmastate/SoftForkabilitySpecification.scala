@@ -28,14 +28,14 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   lazy val txV1 = createTransaction(createBox(100, propV1, 1))
   lazy val txV1bytes = txV1.messageToSign
 
-  def createContext(h: Int, tx: ErgoLikeTransaction) =
+  def createContext(h: Int, tx: ErgoLikeTransaction, vs: ValidationSettings) =
     ErgoLikeContext(h,
       AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
-      tx, fakeSelf)
+      tx, fakeSelf, vs = vs)
 
-  def verifyTx(name: String, tx: ErgoLikeTransaction) = {
+  def verifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
     val env = Map(ScriptNameProp -> name)
-    val ctx = createContext(110, tx)
+    val ctx = createContext(110, tx, vs)
     val prop = tx.outputs(0).ergoTree
     val proof1 = prover.prove(env, prop, ctx, fakeMessage).get.proof
     verifier.verify(env, prop, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
@@ -62,7 +62,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV1bytes))
 
     // validating script
-    verifyTx("propV1", tx)
+    verifyTx("propV1", tx, vs)
   }
 
   val Height2Code = (LastConstantCode + 56).toByte
@@ -118,7 +118,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
     // parse and validate tx
     val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes)(v2vs))
-    verifyTx("propV2", tx)
+    verifyTx("propV2", tx, v2vs)
 
     // also check that transaction prop was trivialized due to soft-fork
     tx.outputs(0).ergoTree.root.left.get.bytes.array shouldBe treeBytes
@@ -165,7 +165,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
     // fails evaluation of v2 script (due to the rest of the implementation is still v1)
     assertExceptionThrown({
-      verifyTx("propV2", tx)
+      verifyTx("propV2", tx, v2vs)
     },{
       case _: CosterException => true
       case _ => false

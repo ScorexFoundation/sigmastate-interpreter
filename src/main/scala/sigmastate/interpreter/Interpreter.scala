@@ -129,14 +129,24 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
+  def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
+    val prop = tree.root match {
+      case Right(_) =>
+        tree.proposition
+      case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
+        TrueSigmaProp
+      case Left(UnparsedErgoTree(_, error)) =>
+        throw new InterpreterException(
+          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
+    }
+    prop
+  }
+
   def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val prop = tree.root match {
-      case Right(_) => tree.proposition
-      case Left(_) => TrueSigmaProp
-    }
+    val prop = propositionFromErgoTree(tree, context)
     val propTree = applyDeserializeContext(context, prop)
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
