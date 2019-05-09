@@ -210,7 +210,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
       addressType match {
         case P2PKAddress.addressTypePrefix =>
-          val r = SigmaSerializer.startReader(contentBytes)(ValidationRules.currentSettings)
+          val r = SigmaSerializer.startReader(contentBytes)
           val p = GroupElementSerializer.parse(r)
           new P2PKAddress(ProveDlog(p), contentBytes)
         case Pay2SHAddress.addressTypePrefix =>

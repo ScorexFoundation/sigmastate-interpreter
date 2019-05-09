@@ -11,8 +11,7 @@ import scorex.util.Extensions._
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
-                      var resolvePlaceholdersToConstants: Boolean)
-                     (implicit val validationSettings: ValidationSettings) extends Reader {
+                      var resolvePlaceholdersToConstants: Boolean) extends Reader {
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 

@@ -92,7 +92,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     // should fail with given exceptions
     assertExceptionThrown(
       {
-        val r = SigmaSerializer.startReader(txV2_withoutSize_bytes)(v2vs)
+        val r = SigmaSerializer.startReader(txV2_withoutSize_bytes)
         ErgoLikeTransaction.serializer.parse(r)
       },
       {
@@ -117,7 +117,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
 
     // parse and validate tx
-    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes)(v2vs))
+    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
     verifyTx("propV2", tx, v2vs)
 
     // also check that transaction prop was trivialized due to soft-fork
@@ -160,7 +160,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
 
     // parse and validate tx with v2 script (since serializers were extended to v2)
-    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes)(v2vs))
+    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
     tx shouldBe txV2
 
     // fails evaluation of v2 script (due to the rest of the implementation is still v1)

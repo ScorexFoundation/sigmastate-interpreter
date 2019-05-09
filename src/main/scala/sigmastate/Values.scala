@@ -976,7 +976,7 @@ object Values {
       // serialize value and segregate constants into constantStore
       ValueSerializer.serialize(value, byteWriter)
       val extractedConstants = constantStore.getAll
-      val r = SigmaSerializer.startReader(byteWriter.toBytes)(ValidationRules.currentSettings)
+      val r = SigmaSerializer.startReader(byteWriter.toBytes)
       r.constantStore = new ConstantStore(extractedConstants)
       // deserialize value with placeholders
       val valueWithPlaceholders = ValueSerializer.deserialize(r).asSigmaProp

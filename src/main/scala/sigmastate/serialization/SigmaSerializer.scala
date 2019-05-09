@@ -20,7 +20,7 @@ object SigmaSerializer {
     * val r = Serializer.startReader(bytes, pos)
     * val obj = r.getValue()
     * obj -> r.consumed */
-  def startReader(bytes: Array[Byte], pos: Int = 0)(implicit vs: ValidationSettings): SigmaByteReader = {
+  def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
@@ -79,7 +79,7 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
 trait SigmaSerializerCompanion[TFamily] {
   type Tag
 
-  def getSerializer(opCode: Tag)(implicit vs: ValidationSettings): SigmaSerializer[TFamily, _ <: TFamily]
+  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
   def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }

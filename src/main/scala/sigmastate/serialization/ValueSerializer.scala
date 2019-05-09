@@ -150,9 +150,9 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
-  override def getSerializer(opCode: Tag)(implicit vs: ValidationSettings): ValueSerializer[_ <: Value[SType]] = {
+  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    CheckValidOpCode(vs, serializer, opCode) { serializer }
+    CheckValidOpCode(ValidationRules.currentSettings, serializer, opCode) { serializer }
   }
   def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
     serializers.add(opCode, ser)
@@ -175,7 +175,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       val opCode = v.opCode
       w.put(opCode)
       // help compiler recognize the type
-      getSerializer(opCode)(ValidationRules.currentSettings).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
+      getSerializer(opCode).asInstanceOf[ValueSerializer[v.type]].serialize(v, w)
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
@@ -193,7 +193,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     }
     else {
       val opCode = r.getByte()
-      getSerializer(opCode)(r.validationSettings).parse(r)
+      getSerializer(opCode).parse(r)
     }
     r.level = depth - 1
     v

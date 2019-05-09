@@ -99,7 +99,7 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
   *
   * These parameter changes are represented in ValidationSettings as RuleStatus.
   * Each descendant class represent a particular change in rule parameters.
-  * Rule ids are use as keys in block extension section.
+  * Rule ids are used as the keys of the values in the block extension section.
   * RuleStatus instances are deserialized from block extension values that correspond
   * to rule ids.
   *
