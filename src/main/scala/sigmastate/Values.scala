@@ -846,7 +846,9 @@ object Values {
   def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
 
-  /** Information */
+  /** This is alternative representation of ErgoTree expression when it cannot be parsed
+    * due to `error`. This is used by the nodes running old versions of code to recognize
+    * soft-fork conditions and skip validation of box propositions which are unparsable. */
   case class UnparsedErgoTree(bytes: mutable.WrappedArray[Byte], error: ValidationException)
 
   /** The root of ErgoScript IR. Serialized instances of this class are self sufficient and can be passed around.

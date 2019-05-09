@@ -179,7 +179,12 @@ object ValidationRules {
     CheckValidOpCode
   )
 
-  /** Validation settings that correspond to the latest version of the ErgoScript. */
+  /** Validation settings that correspond to the current version of the ErgoScript implementation.
+    * Different version of the code will have a different set of rules here.
+    * This variable is globally available and can be use wherever checking of the rules is necessary.
+    * This is immutable data structure, it can be augmented with RuleStates from block extension
+    * sections of the blockchain, but that augmentation is only available in stateful context.
+    */
   val currentSettings: ValidationSettings = new MapValidationSettings(
     ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
   )
