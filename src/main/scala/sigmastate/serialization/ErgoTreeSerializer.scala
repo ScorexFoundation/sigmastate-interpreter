@@ -59,7 +59,7 @@ class ErgoTreeSerializer {
 
   /** Default deserialization of ErgoTree (should be inverse to `serializeErgoTree`).
     * Doesn't apply any transformations to the parsed tree. */
-  def deserializeErgoTree(bytes: Array[Byte])(implicit vs: ValidationSettings): ErgoTree  = {
+  def deserializeErgoTree(bytes: Array[Byte]): ErgoTree  = {
     val r = SigmaSerializer.startReader(bytes)
     deserializeErgoTree(r)
   }

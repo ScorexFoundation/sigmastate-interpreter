@@ -9,7 +9,6 @@ import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 
@@ -141,7 +140,7 @@ object Pay2SHAddress {
   val addressTypePrefix: Byte = 2: Byte
 
   def apply(script: ErgoTree)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
-    val sb = DefaultSerializer.serializeErgoTree(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script)
     val sbh = ErgoAddressEncoder.hash192(sb)
     new Pay2SHAddress(sbh)
   }
@@ -168,7 +167,7 @@ object Pay2SAddress {
   val addressTypePrefix: Byte = 3: Byte
 
   def apply(script: ErgoTree)(implicit encoder: ErgoAddressEncoder): Pay2SAddress = {
-    val sb = DefaultSerializer.serializeErgoTree(script)
+    val sb = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script)
     new Pay2SAddress(script, sb)
   }
 }
@@ -216,7 +215,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
-          val tree = DefaultSerializer.deserializeErgoTree(contentBytes)(ValidationRules.currentSettings)
+          val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes)
           new Pay2SAddress(tree, contentBytes)
         case _ =>
           throw new Exception("Unsupported address type: " + addressType)
