@@ -17,15 +17,20 @@ case object EnabledRule extends RuleStatus
 
 /** This is a status of a rule which is disabled in current version
   * and not yet altered by soft-forks.
+  * The rule can be disabled via block extensions and voting process.
   */
 case object DisabledRule extends RuleStatus
 
 /** The status of the rule which is replaced by a new rule via soft-fork extensions.
+  * This is similar to DisabledRule, but in addition require the new rule to be enabled
+  * at the same time (i.e. atomically)
+  * @see `ValidationSettings.isSoftFork`
   * @param newRuleId  id of a new rule which replaces the rule marked with this status
   */
 case class  ReplacedRule(newRuleId: Short) extends RuleStatus
 
 /** The status of the rule whose parameters are changed via soft-fork extensions.
+  * The same rule can be changed many times via voting.
   * @param newValue  new value of block extension value with key == rule.id
   */
 case class ChangedRule(newValue: Array[Byte]) extends RuleStatus
@@ -83,6 +88,28 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
 
 /**
   * Configuration of validation.
+  * A new `ValidationRule` should be implemented as an `object` in the code.
+  * It then should be registered in `ValidationRules.currentSettings`.
+  * Added to `currentSettings` the rule has EnabledRule status by default,
+  * but only in a new version of the code. The value `currentSettings` represents
+  * validation settings of the current version of the code.
+  * Old versions of the code don't have access to these new rules.
+  * However, the behavior of old rules can be altered by changing their parameters
+  * in block extensions section via voting.
+  *
+  * These parameter changes are represented in ValidationSettings as RuleStatus.
+  * Each descendant class represent a particular change in rule parameters.
+  * Rule ids are use as keys in block extension section.
+  * RuleStatus instances are deserialized from block extension values that correspond
+  * to rule ids.
+  *
+  * Each rule has associated check of soft-fork condition by implementing `isSoftFork`
+  * method. If `isSoftFork` returns true, then ValidationException raised by the rule
+  * is interpreted as *soft-fork condition*. Depending on the use case, soft-fork condition
+  * allows some operations to succeed which otherwise would fail due to ValidationException
+  * raised in an old version of code.
+  * One notable use case is Box.ergoTree validation in which old code can skip
+  * ValidationExceptions under soft-fork condition (i.e. when isSoftFork returns true)
   */
 abstract class ValidationSettings {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]

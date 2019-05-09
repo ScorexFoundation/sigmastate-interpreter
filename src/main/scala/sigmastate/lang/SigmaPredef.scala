@@ -100,7 +100,7 @@ object SigmaPredef {
     def PKFunc(networkPrefix: NetworkPrefix) = PredefinedFunc("PK",
       Lambda(Vector("input" -> SString), SSigmaProp, None),
       { case (_, Seq(arg: EvaluatedValue[SString.type]@unchecked)) =>
-        ErgoAddressEncoder(networkPrefix)(ValidationRules.currentSettings).fromString(arg.value).get match {
+        ErgoAddressEncoder(networkPrefix).fromString(arg.value).get match {
           case a: P2PKAddress => SigmaPropConstant(a.pubkey)
           case a@_ => sys.error(s"unsupported address $a")
         }
