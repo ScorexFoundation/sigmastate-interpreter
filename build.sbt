@@ -77,7 +77,7 @@ val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.3"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
-val specialVersion = "master-d1624dc1-SNAPSHOT"
+val specialVersion = "master-c13ef6a8-SNAPSHOT"
 val specialCommon  = "io.github.scalan" %% "common" % specialVersion
 val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
