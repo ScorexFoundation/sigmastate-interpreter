@@ -26,6 +26,7 @@ import special.sigma._
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigma.util.Extensions.ByteOps
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
