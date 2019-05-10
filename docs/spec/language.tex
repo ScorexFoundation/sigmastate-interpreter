@@ -1,9 +1,6 @@
 \section{Language}
 \label{sec:language}
 
-\knote{Why are you talking about ErgoScript? Lets have a description of consensus-critical things
-in the main text, i.e. ErgoTree only. ErgoScript could be described in an appendix.}
-
 Here we define abstract syntax for \langname language. It is a typed
 functional language with tuples, collections, optional types and \lst{val}
 binding expressions. The semantics of \langname is specified by first
@@ -99,7 +96,8 @@ $\Low{ e }$ 	& \To &  $e$ \\
 \label{fig:lowering}
 \end{figure}
 
-\knote{the following text is broken} All $n$-ary lambdwhen $n>1$
+All $n$-ary lambdas when $n>1$ are transformed to single arguments lambdas
+using tupled arguments.
 Note that $\IfThenElse{e_{cond}}{e_1}{e_2}$ term of \langname has lazy
 evaluation of its branches whereas right-hand-side \lst{if} is a primitive
 operation and have strict evaluation of the arguments. The laziness
