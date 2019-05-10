@@ -17,7 +17,9 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
   override def apply(operId: OperationId): Int = {
     val costOpt = this.get(operId)
     costOpt match {
-      case Some(cost) => cost
+      case Some(cost) =>
+        // println(s"$operId -> $cost")
+        cost
       case None => //costToInt(MinimalCost)
         sys.error(s"Cannot find cost in CostTable for $operId")
     }
@@ -83,6 +85,8 @@ object CostTable {
   val accessBox        = 10
   val accessRegister   = 10
 
+  val OptionOp         = 10
+
   val DefaultCosts = CostTable.fromSeq(Seq(
     ("Const", "() => Unit",    constCost),
     ("Const", "() => Boolean", constCost),
@@ -139,6 +143,7 @@ object CostTable {
     ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
     ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
     ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
+    ("SCollection$.filter", "(Coll[IV],(IV) => Boolean) => Coll[IV]", collToColl),
 
     ("If", "(Boolean, T, T) => T", logicCost),
 
@@ -147,6 +152,7 @@ object CostTable {
     ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
     ("AND", "(Coll[Boolean]) => Boolean", logicCost),
     ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -226,6 +232,7 @@ object CostTable {
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("ModQ", "(BigInt) => BigInt", MinimalCost),
+    ("ModQArithOp", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
@@ -265,6 +272,9 @@ object CostTable {
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
     ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+
+    ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
+    ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),
   ))
 
   def fromSeq(items: Seq[(String, String, Int)]): CostTable = {
@@ -326,6 +336,7 @@ object CostTable {
 
     val BinOrDeclaration = 1
     val BinAndDeclaration = 1
+    val BinXorDeclaration = 1
     val IfDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/

@@ -98,8 +98,7 @@ trait SigmaBuilder {
                                                 mapper: Value[SFunc]): Value[SCollection[OV]]
 
   def mkFilter[IV <: SType](input: Value[SCollection[IV]],
-                            id: Byte,
-                            condition: Value[SBoolean.type]): Value[SCollection[IV]]
+                            condition: Value[SFunc]): Value[SCollection[IV]]
 
   def mkExists[IV <: SType](input: Value[SCollection[IV]],
                             condition: Value[SFunc]): Value[SBoolean.type]
@@ -413,9 +412,8 @@ class StdSigmaBuilder extends SigmaBuilder {
     Slice(input, from, until).withSrcCtx(currentSrcCtx.value)
 
   override def mkFilter[IV <: SType](input: Value[SCollection[IV]],
-                                     id: Byte,
-                                     condition: Value[SBoolean.type]): Value[SCollection[IV]] =
-    Filter(input, id, condition).withSrcCtx(currentSrcCtx.value)
+                                     condition: Value[SFunc]): Value[SCollection[IV]] =
+    Filter(input, condition).withSrcCtx(currentSrcCtx.value)
 
   override def mkExists[IV <: SType](input: Value[SCollection[IV]],
                                      condition: Value[SFunc]): Value[SBoolean.type] =

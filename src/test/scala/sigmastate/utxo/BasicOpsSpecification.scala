@@ -361,7 +361,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   // TODO related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg") {
     test("Extract1", env, ext,
-      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4).toByte ).get == 1}",
+      "{ SELF.getReg[Int]( (getVar[Int](intVar1).get + 4)).get == 1}",
       BoolToSigmaProp(
         EQ(
           MethodCall(Self, SBox.getRegMethod,
@@ -582,8 +582,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
-  ignore("Option.map") {
+  property("Option.map") {
     test("Option.map", env, ext,
       "getVar[Int](intVar1).map({(i: Int) => i + 1}).get == 2",
       null,
@@ -591,8 +590,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/425
-  ignore("Option.filter") {
+  property("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
       null,

@@ -316,14 +316,22 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         }
 
         case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
+          case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val (a, b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = m match {
+                case "||" => mkBinOr(a, b)
+                case "&&" => mkBinAnd(a, b)
+                case "^" => mkBinXor(a, b)
+              }
               res
             case SSigmaProp =>
-              val (a,b) = (newObj.asSigmaProp, r.asSigmaProp)
-              val res = if (m == "||") mkSigmaOr(Seq(a,b)) else mkSigmaAnd(Seq(a,b))
+              val (a, b) = (newObj.asSigmaProp, r.asSigmaProp)
+              val res = m match {
+                case "||" => mkSigmaOr(Seq(a, b))
+                case "&&" => mkSigmaAnd(Seq(a, b))
+                case "^" => throw new NotImplementedError(s"Xor operation is not defined between SigmaProps")
+              }
               res
             case _ =>
               error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}", r.sourceContext)
@@ -337,11 +345,14 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               case "||" => mkBinOr(newObj.asBoolValue, r.asBoolValue)
               case "&&" => mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               case "^" => mkBinXor(newObj.asBoolValue, r.asBoolValue)
-
             }
             case SSigmaProp =>
-              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val (a, b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
+              val res = m match {
+                case "||" => mkBinOr(a, b)
+                case "&&" => mkBinAnd(a, b)
+                case "^" => mkBinXor(a, b)
+              }
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)

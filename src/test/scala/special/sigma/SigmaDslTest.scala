@@ -395,11 +395,18 @@ class SigmaDslTest extends PropSpec
   }
 
   //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/424
-  ignore("BinXor(logical XOR) equivalence") {
+  property("BinXor(logical XOR) equivalence") {
     val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
       x => x._1 ^ x._2
     }
     forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
+  property("BinXor(logical XOR) test") {
+    val eq = checkEq(func[(Int, Boolean), Boolean]("{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }")) {
+      x => (x._1 == 0) ^ x._2
+    }
+    forAll { x: (Int, Boolean) => eq(x) }
   }
 
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
@@ -425,5 +432,23 @@ class SigmaDslTest extends PropSpec
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 
+  }
+
+  property("Coll methods equivalence") {
+    val coll = ctx.OUTPUTS
+    val eq = EqualityChecker(coll)
+    eq({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }")
+  }
+
+  property("Option methods equivalence") {
+    val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
+    val eq = EqualityChecker(opt)
+    eq({ (x: Option[Long]) => x.get })("{ (x: Option[Long]) => x.get }")
+    // TODO implement Option.isEmpty
+    //  eq({ (x: Option[Long]) => x.isEmpty })("{ (x: Option[Long]) => x.isEmpty }")
+    eq({ (x: Option[Long]) => x.isDefined })("{ (x: Option[Long]) => x.isDefined }")
+    eq({ (x: Option[Long]) => x.getOrElse(1L) })("{ (x: Option[Long]) => x.getOrElse(1L) }")
+    eq({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
+    eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
   }
 }

@@ -76,6 +76,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
       case And => Some(builder.mkBinAnd)
       case Or  => Some(builder.mkBinOr)
+      case BinaryXorOp => Some(builder.mkBinXor)
       case _ => None
     }
   }
@@ -174,6 +175,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
+      case Def(ApplyBinOp(IsLogicalBinOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
@@ -210,6 +214,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case BIM.modQ(In(x)) =>
         mkModQ(x.asBigInt)
+      case BIM.plusModQ(In(l), In(r)) =>
+        mkPlusModQ(l.asBigInt, r.asBigInt)
+      case BIM.minusModQ(In(l), In(r)) =>
+        mkMinusModQ(l.asBigInt, r.asBigInt)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
@@ -250,6 +258,9 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
+      case CollM.filter(colSym, pSym) =>
+        val Seq(col, p) = Seq(colSym, pSym).map(recurse)
+        mkFilter(col.asCollection[SType], p.asFunc)
 
       case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
@@ -278,8 +289,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         if (regId.isConst)
           mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
         else
-          builder.mkMethodCall(box, SBox.getRegMethod, IndexedSeq(recurse(regId)),
-            Map(SBox.tT -> tpe.elemType))
+          error(s"Non constant expressions (${regId.rhs}) are not supported in getReg")
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
@@ -369,7 +379,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkIf(cond, thenP, elseP)
 
       case Def(Tup(In(x), In(y))) =>
-        mkTuple(Seq(x, y))  
+        mkTuple(Seq(x, y))
       case Def(First(pair)) =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>
