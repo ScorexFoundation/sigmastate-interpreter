@@ -24,9 +24,9 @@
 
 \newcommand{\authnote}[2]{\textsf{#1 \textcolor{blue}{: #2}}}
 
-\newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti notes}}{#1}}}
+\newcommand{\knote}[1]{{\authnote{\textcolor{green}{kushti}}{#1}}}
 \newcommand{\mnote}[1]{{\authnote{\textcolor{red}{Morphic}}{#1}}}
-\newcommand{\dnote}[1]{{\authnote{\textcolor{brown}{Dima notes}}{#1}}}
+\newcommand{\dnote}[1]{{\authnote{\textcolor{brown}{Dima}}{#1}}}
 
 
 \newcommand{\ret}{\mathsf{ret}}
@@ -52,7 +52,7 @@
 \newcommand{\mypar}[1]{\smallskip\noindent\textbf{#1.}\ \ \ }
 \newcommand{\ignore}[1]{}
 
-\newcommand{\langname}{ErgoScript\xspace}
+\newcommand{\langname}{ErgoTree\xspace}
 \newcommand{\corelang}{$\lst{Core-}\lambda$\xspace}
 \newcommand{\lst}[1]{\text{\lstinline[basicstyle={\ttfamily}]$#1$}}
 
@@ -190,7 +190,7 @@
 \maketitle
 
 \begin{abstract}
-In this document we consider typed abstract syntax directed acyclic graph
+In this document we consider typed abstract syntax of the language
 called \ASDag which defines semantics of a condition which protects a closed
 box in the Ergo Platform blockchain. Serialized graph is written into a box.
 Most of Ergo users are unaware of the graph since they are developing contracts in higher-level languages, such as
@@ -217,15 +217,15 @@ classes etc.}
 \label{sec:intro}
 
 The design space of programming languages is very broad ranging from
-general-purpose languages like C,Java,Python up to specialized languages 
+general-purpose languages like C,Java,Python up to specialized languages
 like SQL, HTML, CSS, etc.
 
 Since Ergo's goal is to provide a platform for contractual money, the choice
-of the language for writing contracts is very important. 
+of the language for writing contracts is very important.
 
 First of all the language and contract execution environment should be
 \emph{deterministic}. Once created and stored in Ergo blockchain, smart
-contract should always behave predictably and deterministically, it should only depend on well-defined data context and nothing else. 
+contract should always behave predictably and deterministically, it should only depend on well-defined data context and nothing else.
 As long as data context doesn't change, any execution of the contract
 should return the same value any time it is executed, on any execution
 platform, and even on any \emph{compliant} language implementation.
@@ -240,7 +240,7 @@ support \emph{ahead-of-time cost estimation}, the fast check performed before
 contract execution to ensure the evaluation cost is within acceptable
 bounds. In general, such cost prediction is not possible, however if the
 language is simple enough (which is the case of ErgoScript) and if operations
-are carefully selected, then costing is possible and doesn't require 
+are carefully selected, then costing is possible and doesn't require
 usage of Gas~\mnote{cite etherium} and allow to avoid related problems~\mnote{cite Gas related problems}.
 
 Third, being simple, the contracts language should be \emph{expressive

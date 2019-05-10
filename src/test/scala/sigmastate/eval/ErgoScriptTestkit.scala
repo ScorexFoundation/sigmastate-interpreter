@@ -3,9 +3,9 @@ package sigmastate.eval
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 
 import scala.util.Success
-import sigmastate.{SInt, AvlTreeData, SLong, SType}
-import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
+import sigmastate.{AvlTreeData, SInt, SLong, SType}
+import sigmastate.Values.{BigIntArrayConstant, Constant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
@@ -15,6 +15,7 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.ErgoTreeSerializer
 import special.sigma.{ContractsTestkit, Context => DContext, _}
 import sigmastate.eval.Extensions._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
 
@@ -174,11 +175,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
-        val compiledTree = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
-        checkExpected(compiledTree, expectedTree, "Compiled Tree actual: %s, expected: %s")
+        val compiledProp = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
+        checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-        val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(compiledTree)
-        checkExpected(ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes), Some(compiledTree),
+        val ergoTree = compiledProp.treeWithSegregation
+        val compiledTreeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
+        checkExpected(DefaultSerializer.deserializeErgoTree(compiledTreeBytes), Some(ergoTree),
           "(de)serialization round trip actual: %s, expected: %s")
       }
 

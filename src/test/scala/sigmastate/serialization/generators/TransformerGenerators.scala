@@ -1,6 +1,6 @@
 package sigmastate.serialization.generators
 
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import org.ergoplatform.{ErgoAddressEncoder, Height, Inputs, Outputs, P2PKAddress, Self}
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.util.encode.{Base58, Base64}
@@ -278,4 +278,12 @@ trait TransformerGenerators {
   val byteArrayToLongGen: Gen[ByteArrayToLong] =
     arbByteArrayConstant.arbitrary.map { v =>
       mkByteArrayToLong(v).asInstanceOf[ByteArrayToLong] }
+
+  val ergoTreeGen: Gen[ErgoTree] = for {
+    propWithConstants <- logicalExprTreeNodeGen(Seq(AND.apply)).map(_.toSigmaProp)
+    propWithoutConstants <- Gen.oneOf(Seq[SigmaPropValue](EQ(SizeOf(Inputs), SizeOf(Outputs)).toSigmaProp))
+    prop <- Gen.oneOf(propWithConstants, propWithoutConstants)
+    treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation,
+      ErgoTree.withoutSegregation))
+  } yield treeBuilder(prop)
 }

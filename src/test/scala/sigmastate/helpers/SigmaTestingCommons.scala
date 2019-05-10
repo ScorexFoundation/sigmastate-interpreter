@@ -19,7 +19,7 @@ import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer, ValueSerializer}
 import sigmastate.{SGroupElement, SType}
 import special.sigma._
 import spire.util.Opt
@@ -49,9 +49,9 @@ trait SigmaTestingCommons extends PropSpec
   val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
-    val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
+    val compiledTreeBytes = ValueSerializer.serialize(v)
     withClue(s"(De)Serialization roundtrip failed for the tree:") {
-      ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes) shouldEqual v
+      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
     }
   }
 

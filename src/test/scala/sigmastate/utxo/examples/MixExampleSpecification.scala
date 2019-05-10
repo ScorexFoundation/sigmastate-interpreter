@@ -61,7 +61,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
       "gX" -> gX,
-      "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
+      "fullMixScriptHash" -> Blake2b256(fullMixScript.treeWithSegregation.bytes)
     )
 
     // Note that below script allows Alice to spend the half-mix output anytime before Bob spends it.
