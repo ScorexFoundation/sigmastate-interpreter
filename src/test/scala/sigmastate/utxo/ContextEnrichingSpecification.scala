@@ -73,9 +73,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     verifier.verify(env, compiledScript, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
 
-  // todo: ignored because of https://github.com/ScorexFoundation/sigmastate-interpreter/issues/419
-  // todo: and https://github.com/ScorexFoundation/sigmastate-interpreter/issues/420
-  ignore("prover enriching context - xor") {
+  property("prover enriching context - xor") {
     val v1 = Base16.decode("abcdef7865").get
     val k1 = 21: Byte
 
@@ -90,15 +88,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
 
     val env = Map("k1" -> k1.toInt, "k2" -> k2.toInt, "r" -> r)
     val compiledScript = compile(env,
-      """{
-        |
-        |  // def Xor(c1: Coll[Byte], c2: Coll[Byte]): Coll[Byte] = c1.zipWith(c2, { (x, y) => x ^ y })
-        |
-        |  def Xor(c1: Coll[Byte], c2: Coll[Byte]): Coll[Byte] = c1.zip(c2).map({ (t : (Byte, Byte)) => t._1 ^ t._2 })
-        |
-        |  Xor(getVar[Coll[Byte]](k1).get, getVar[Coll[Byte]](k2).get) == r
-        |}
-      """.stripMargin).asBoolValue.toSigmaProp
+      "{ xor(getVar[Coll[Byte]](k1).get, getVar[Coll[Byte]](k2).get) == r }").asBoolValue.toSigmaProp
 
     val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r)).toSigmaProp
     compiledScript shouldBe prop
@@ -112,7 +102,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     //context w/out extensions
     assertExceptionThrown(
       verifier.verify(env, prop, ctx, pr.proof, fakeMessage).get,
-      rootCause(_).isInstanceOf[NoSuchElementException]
+      rootCause(_).isInstanceOf[ArrayIndexOutOfBoundsException]
     )
     verifier.verify(env, prop, ctxv, pr.proof, fakeMessage).get._1 shouldBe true
   }
