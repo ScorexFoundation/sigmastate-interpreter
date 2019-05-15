@@ -87,51 +87,57 @@ trait Evaluation extends RuntimeCosting { IR =>
   /** Checks is the operation is among the allowed in costF graph, created by costing.
     * @throws StagingException if the given graph node `d` is not matched.
     */
-  def isValidCostPrimitive(d: Def[_]): Unit = d match {
-    case _: Const[_] =>
-    case _: OpCost | _: PerKbCostOf | _: Cast[_] =>
-    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
-    case _: FieldApply[_] =>
-    case _: IntPlusMonoid =>
-    case _: Lambda[_,_] =>
-    case _: ThunkDef[_] =>
-    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
-    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
+  def isValidCostPrimitive(d: Def[_]): Boolean = d match {
+    case _: Const[_] => true
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] => true
+    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] => true
+    case _: FieldApply[_] => true
+    case _: IntPlusMonoid => true
+    case _: Lambda[_,_] => true
+    case _: ThunkDef[_] => true
+    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
+    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) => true
 
     case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
-         SCM.preHeader(_) | SCM.getVar(_,_,_) =>
+         SCM.preHeader(_) | SCM.getVar(_,_,_) => true
     case SBM.propositionBytes(_) |  SBM.bytes(_) |  SBM.bytesWithoutRef(_) |  SBM.registers(_) |  SBM.getReg(_,_,_) |
-         SBM.tokens(_)  =>
-    case SSPM.propBytes(_) =>
-    case SAVM.tVal(_) | SAVM.valueSize(_) =>
-    case SizeM.dataSize(_) =>
-    case SPairM.l(_) | SPairM.r(_) =>
-    case SCollM.sizes(_) =>
-    case SOptM.sizeOpt(_) =>
-    case SFuncM.sizeEnv(_) =>
+         SBM.tokens(_)  => true
+    case SSPM.propBytes(_) => true
+    case SAVM.tVal(_) | SAVM.valueSize(_) => true
+    case SizeM.dataSize(_) => true
+    case SPairM.l(_) | SPairM.r(_) => true
+    case SCollM.sizes(_) => true
+    case SOptM.sizeOpt(_) => true
+    case SFuncM.sizeEnv(_) => true
     case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor =>
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_)  =>
-    case SigmaM.propBytes(_) =>
-    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] =>
+         ContextM.getVar(_,_,_)  => true
+    case SigmaM.propBytes(_) => true
+    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] => true
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) |
-         CollM.append(_,_) | CollM.foldLeft(_,_,_) =>
-    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_,_,_) =>
-    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
-    case _: CostOf | _: SizeOf[_] =>
-    case _: Upcast[_,_] =>
-    case _: Apply[_,_] =>
-    case SPCM.some(_) =>
-    case _ => !!!(s"Invalid primitive in Cost function: $d")
+         CollM.append(_,_) | CollM.foldLeft(_,_,_) => true
+    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) => true
+    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_,_,_) => true
+    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) => true
+    case _: CostOf | _: SizeOf[_] => true
+    case _: Upcast[_,_] => true
+    case _: Apply[_,_] => true
+    case SPCM.some(_) => true
+    case _ => false
   }
 
   /** Checks if the function (Lambda node) given by the simbol `costF` contains only allowed operations
     * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
-    Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
+    Try {
+      lam.scheduleAll.forall { te =>
+        val ok = isValidCostPrimitive(te.rhs)
+        if (!ok) !!!(s"Invalid primitive in Cost function: ${te.rhs}")
+        ok
+      }
+    }
   }
 
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */

@@ -1152,6 +1152,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
+  def isSupportedIndexExpression(i: Rep[Int]): Boolean = {
+    true
+  }
+
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1520,12 +1524,18 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
         }
 
-      case ByIndex(xs, i, default) =>
+      case ByIndex(xs, i, defaultOpt) =>
         val xsC = asRep[CostedColl[Any]](eval(xs))
         val iC = asRep[Costed[Int]](eval(i))
         val iV = iC.value
-        val size = xsC.sizes(iV)  // TO
-        default match {
+        val size = if (xs.tpe.elemType.isConstantSize)
+            constantTypeSize(xsC.elem.eItem)
+          else
+            ValidationRules.CheckIsSupportedIndexExpression(
+              ValidationRules.currentSettings, IR)(xs, i, iV) {
+              xsC.sizes(iV)
+            }
+        defaultOpt match {
           case Some(defaultValue) =>
             val defaultC = asRep[Costed[Any]](eval(defaultValue))
             val default = defaultC.value

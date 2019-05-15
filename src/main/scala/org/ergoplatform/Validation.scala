@@ -1,11 +1,14 @@
 package org.ergoplatform
 
-import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.{SerializerException, InterpreterException, InvalidOpCode}
+import sigmastate.Values.{Value, SValue, IntValue, IntConstant}
+import sigmastate.lang.exceptions.{SerializerException, InterpreterException, InvalidOpCode, SigmaException}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utxo.DeserializeContext
+import sigmastate.utxo.{GetVar, DeserializeContext, ExtractRegisterAs, OptionGet}
 import sigma.util.Extensions.ByteOps
+import sigmastate.SOption.SIntOption
+import sigmastate.eval.Evaluation
+import sigmastate.{SCollection, SOption}
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus
@@ -173,10 +176,23 @@ object ValidationRules {
     }
   }
 
+  object CheckIsSupportedIndexExpression extends ValidationRule(1003,
+    "Check the index expression for accessing collection element is supported.") {
+    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
+      def msg = s"Unsupported index expression $i when accessing collection $coll"
+      def args = Seq(coll, i)
+      validate(vs,
+        ctx.isSupportedIndexExpression(iSym),
+        new SigmaException(msg, i.sourceContext.toOption),
+        args, block)
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
-    CheckValidOpCode
+    CheckValidOpCode,
+    CheckIsSupportedIndexExpression
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
