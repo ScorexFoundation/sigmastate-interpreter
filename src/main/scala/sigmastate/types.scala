@@ -1428,9 +1428,13 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1, Some {
     case (builder, obj, method, args, tparamSubst) => GroupGenerator
   }, None)
+  val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2, Some {
+    case (builder, obj, method, Seq(l, r), tparamSubst) => Xor(l.asByteArray, r.asByteArray)
+  }, None)
 
   protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod
+    groupGeneratorMethod,
+    xorMethod
   )
   override val coster = Some(Coster(_.SigmaDslBuilderCoster))
 }

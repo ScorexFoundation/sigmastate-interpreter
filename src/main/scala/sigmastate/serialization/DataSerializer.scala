@@ -75,43 +75,49 @@ object DataSerializer {
 
   /** Reads a data value from Reader. The data value bytes is expected to confirm
     * to the type descriptor `tpe`. */
-  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = (tpe match {
-    case SUnit => ()
-    case SBoolean => r.getUByte() != 0
-    case SByte => r.getByte()
-    case SShort => r.getShort()
-    case SInt => r.getInt()
-    case SLong => r.getLong()
-    case SString =>
-      val size = r.getUInt().toInt
-      val bytes = r.getBytes(size)
-      new String(bytes, StandardCharsets.UTF_8)
-    case SBigInt =>
-      val size: Short = r.getUShort().toShort
-      val valueBytes = r.getBytes(size)
-      SigmaDsl.BigInt(new BigInteger(valueBytes))
-    case SGroupElement =>
-      SigmaDsl.GroupElement(GroupElementSerializer.parse(r))
-    case SSigmaProp =>
-      SigmaDsl.SigmaProp(SigmaBoolean.serializer.parse(r))
-    case SBox =>
-      SigmaDsl.Box(ErgoBox.sigmaSerializer.parse(r))
-    case SAvlTree =>
-      SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
-    case tColl: SCollectionType[a] =>
-      val len = r.getUShort()
-      if (tColl.elemType == SByte)
-        Colls.fromArray(r.getBytes(len))
-      else
-        deserializeColl(len, tColl.elemType, r)
-    case tuple: STuple =>
-      val arr = tuple.items.map { t =>
-        deserialize(t, r)
-      }.toArray[Any]
-      val coll = Colls.fromArray(arr)(RType.AnyType)
-      Evaluation.toDslTuple(coll, tuple)
-    case _ => sys.error(s"Don't know how to deserialize $tpe")
-  }).asInstanceOf[T#WrappedType]
+  def deserialize[T <: SType](tpe: T, r: SigmaByteReader): (T#WrappedType) = {
+    val depth = r.level
+    r.level = depth + 1
+    val res = (tpe match {
+      case SUnit => ()
+      case SBoolean => r.getUByte() != 0
+      case SByte => r.getByte()
+      case SShort => r.getShort()
+      case SInt => r.getInt()
+      case SLong => r.getLong()
+      case SString =>
+        val size = r.getUInt().toInt
+        val bytes = r.getBytes(size)
+        new String(bytes, StandardCharsets.UTF_8)
+      case SBigInt =>
+        val size: Short = r.getUShort().toShort
+        val valueBytes = r.getBytes(size)
+        SigmaDsl.BigInt(new BigInteger(valueBytes))
+      case SGroupElement =>
+        SigmaDsl.GroupElement(GroupElementSerializer.parse(r))
+      case SSigmaProp =>
+        SigmaDsl.SigmaProp(SigmaBoolean.serializer.parse(r))
+      case SBox =>
+        SigmaDsl.Box(ErgoBox.sigmaSerializer.parse(r))
+      case SAvlTree =>
+        SigmaDsl.avlTree(AvlTreeData.serializer.parse(r))
+      case tColl: SCollectionType[a] =>
+        val len = r.getUShort()
+        if (tColl.elemType == SByte)
+          Colls.fromArray(r.getBytes(len))
+        else
+          deserializeColl(len, tColl.elemType, r)
+      case tuple: STuple =>
+        val arr = tuple.items.map { t =>
+          deserialize(t, r)
+        }.toArray[Any]
+        val coll = Colls.fromArray(arr)(RType.AnyType)
+        Evaluation.toDslTuple(coll, tuple)
+      case _ => sys.error(s"Don't know how to deserialize $tpe")
+    }).asInstanceOf[T#WrappedType]
+    r.level = r.level - 1
+    res
+  }
 
   def deserializeColl[T <: SType](len: Int, tpeElem: T, r: SigmaByteReader): Coll[T#WrappedType] =
     tpeElem match {
