@@ -1,21 +1,22 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.ergoplatform.{ErgoLikeContext, ValidationException, ValidationRules, SoftForkException}
+import org.ergoplatform.ErgoLikeContext
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization._
-import sigmastate.serialization.{OpCodes, ConstantStore}
+import sigmastate.serialization.{ConstantStore, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.{isConstantSegregation, substConstants}
@@ -34,7 +35,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header}
+import special.sigma.{AnyValue, AvlTree, Header, PreHeader}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -629,6 +630,8 @@ object Values {
       }
 
       override def parse(r: SigmaByteReader): SigmaBoolean = {
+        val depth = r.level
+        r.level = depth + 1
         val opCode = r.getByte()
         val res = opCode match {
           case FalseProp.opCode => FalseProp
@@ -649,6 +652,7 @@ object Values {
             val children = (0 until n).map(_ => serializer.parse(r))
             CTHRESHOLD(k, children)
         }
+        r.level = r.level - 1
         res
       }
     }

@@ -8,10 +8,7 @@ final class InvalidTypePrefix(message: String, source: Option[SourceContext] = N
 final class InputSizeLimitExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
   extends SerializerException(message, source, cause)
 
-final class TypeDeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
-  extends SerializerException(message, source, cause)
-
-final class ValueDeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
+final class DeserializeCallDepthExceeded(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
   extends SerializerException(message, source, cause)
 
 final class InvalidOpCode(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)

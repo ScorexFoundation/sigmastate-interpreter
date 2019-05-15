@@ -23,8 +23,10 @@ object SigmaSerializer {
   def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
-        .mark()
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = MaxTreeDepth).mark()
     r
   }
 
@@ -32,8 +34,10 @@ object SigmaSerializer {
                   constantStore: ConstantStore,
                   resolvePlaceholdersToConstants: Boolean)(implicit vs: ValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf), constantStore, resolvePlaceholdersToConstants)
-      .mark()
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+      constantStore,
+      resolvePlaceholdersToConstants,
+      maxTreeDepth = MaxTreeDepth).mark()
     r
   }
 
@@ -64,7 +68,11 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
   }
 
   def parseWithGenericReader(r: Reader)(implicit vs: ValidationSettings): TFamily = {
-    parse(new SigmaByteReader(r,  new ConstantStore(), resolvePlaceholdersToConstants = false))
+    parse(
+      new SigmaByteReader(r,
+        new ConstantStore(),
+        resolvePlaceholdersToConstants = false,
+        maxTreeDepth = SigmaSerializer.MaxTreeDepth))
   }
 
   def error(msg: String) = throw new SerializerException(msg, None)

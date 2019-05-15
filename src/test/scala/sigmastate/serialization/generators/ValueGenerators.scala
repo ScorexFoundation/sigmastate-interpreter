@@ -109,7 +109,16 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     vv <- groupElementGen
   } yield ProveDHTuple(gv, hv, uv, vv)
 
-  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
+  def sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
+    left <- sigmaBooleanGen
+    right <- sigmaBooleanGen
+    node <- Gen.oneOf(
+      COR(Seq(left, right)),
+      CAND(Seq(left, right))
+    )
+  } yield node
+
+  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen, Gen.delay(sigmaTreeNodeGen))
   val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
   val sigmaPropValueGen: Gen[SigmaPropValue] =
     Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
