@@ -90,7 +90,7 @@ trait BigInt {
     */
   def plusModQ(other: BigInt): BigInt
 
-  /** Subracts this number with `other` by module Q.
+  /** Subtracts this number with `other` by module Q.
     * @since 2.0
     */
   def minusModQ(other: BigInt): BigInt
@@ -212,7 +212,7 @@ trait GroupElement {
   def negate: GroupElement
 
   /**
-    * Get an encoding of the point value, optionally in compressed format.
+    * Get an encoding of the point value.
     *
     * @return the point encoding
     */
@@ -223,6 +223,7 @@ trait GroupElement {
 @scalan.Liftable
 trait SigmaProp {
   def isValid: Boolean
+  /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
   def propBytes: Coll[Byte]
 
   /** Logical AND between this SigmaProp and other SigmaProp.
@@ -335,8 +336,8 @@ trait Box {
   */
 @scalan.Liftable
 trait AvlTree {
-  /** Returns digest of the state represent by this tree.
-    * Authenticated tree digest: root hash along with tree height
+  /** Returns digest of the state represented by this tree.
+    * Authenticated tree digest = root hash bytes ++ tree height
     * @since 2.0
     */
   def digest: Coll[Byte]
