@@ -118,7 +118,7 @@ object SigmaPredef {
             throw new InvalidArguments(s"invalid argument in $args: expected a string constant")
         }
         val bytes = Base58.decode(str).get
-        val res = ValueSerializer.deserialize(bytes)(ValidationRules.currentSettings)
+        val res = ValueSerializer.deserialize(bytes)
         if (res.tpe != tpe)
           throw new InvalidArguments(s"Wrong type after deserialization, expected $tpe, got ${res.tpe}")
         res

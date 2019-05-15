@@ -7,7 +7,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.OperationId
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, ValueDeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
@@ -203,7 +203,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     w.toBytes
   }
 
-  def deserialize(bytes: Array[Byte], pos: SigmaSerializer.Position = 0)(implicit vs: ValidationSettings): Value[SType] =
+  def deserialize(bytes: Array[Byte], pos: SigmaSerializer.Position = 0): Value[SType] =
     deserialize(SigmaSerializer.startReader(bytes, pos))
 
 }
