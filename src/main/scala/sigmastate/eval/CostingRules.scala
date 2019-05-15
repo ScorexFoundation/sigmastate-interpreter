@@ -544,18 +544,21 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
 
     def flatMap[B](fC: RCosted[T => Coll[B]]): RCostedColl[B] = {
-      val f = fC.value
-      f match {
+      val fV = fC.value
+      fV match {
         // Pattern: xs.flatMap(x => x.property)
         case Def(Lambda(l,_,_,Def(mc @ MethodCall(x, m, Nil, _)))) if x == l.x =>
-          val sObj = asSizeColl(obj.size)
-          val sizeF = asCostedFunc[T, Coll[B]](fC).sliceSize
-          val sizes: RColl[Size[B]] = sObj.sizes.flatMap(fun { s: RSize[T] =>
+          val cfC = asCostedFunc[T, Coll[B]](fC)
+          val calcF = cfC.sliceCalc
+          val sizeF = cfC.sliceSize
+          val costF = cfC.sliceCost
+          val xs = asCostedColl(obj)
+          val vals = xs.values.flatMap(calcF)
+          val sizes: RColl[Size[B]] = xs.sizes.flatMap(fun { s: RSize[T] =>
             asSizeColl(sizeF(s)).sizes
           })
-          val values = obj.value.flatMap(f)
-          val costs = colBuilder.replicate(sizes.length, 0)
-          RCCostedColl(values, costs, sizes, opCost(values, costOfArgs, costOf(method)))
+          val costs = xs.costs.zip(xs.sizes).map(costF)
+          RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
         case _ =>
           !!!(s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
       }
