@@ -1,0 +1,70 @@
+
+\begin{center}
+% const, var, tuple
+\(\begin{array}{c c c}
+	\frac{}{\Der{\Gamma}{C(\_, T)~:~T}}~\lst{(Const)}
+	& 
+	\frac{}{\Der{\Gamma,x~:~T}{x~:~T}}~\lst{(Var)}
+	&
+	\frac{
+		\Ov{\DerEnv{e_i:~T_i}}~~
+		ptype(\delta, \Ov{T_i}) :~(T_1,\dots,T_n) \to T
+	}{
+		\Apply{\delta}{\Ov{e_i}}:~T
+	}~\lst{(Prim)} \\
+	& & \\ % blank line
+\end{array}\) 
+
+
+% tuples
+\(\begin{array}{c}
+\frac{\DerEnv{e_1 :~T_1}~~\dots~~\DerEnv{e_n :~T_n}}
+     {\DerEnv{(e_1,\dots,e_n)~:~(T_1,\dots,T_n)}}~\lst{(Tuple)} \\
+\\ % blank line
+\end{array}\) 
+
+% MethodCall
+\(\begin{array}{c}
+\frac{
+		\DerEnv{e~:~I,~e_i:~T_i}~~
+		mtype(m, I, \Ov{T_i})~:~(I, T_1,\dots,T_n) \to T
+	}
+	{ \Apply{e.m}{\Ov{e_i}}:~T }~\lst{(MethodCall)} \\
+\\ % blank line
+\end{array}\) 
+
+% functions
+\(\begin{array}{c c}
+	\frac{\Der{\TEnv,\Ov{x_i:~T_i}}{e~:~T}}
+	     {\Der{\Gamma}{\TyLam{x_i}{T_i}{e}~:~(T_0,\dots,T_n) \to T}}~\lst{(FuncExpr)}
+		  & 
+	\frac{ \Der{\TEnv}{e_f:~(T_1,\dots,T_n) \to T}~~~\Ov{\Der{\TEnv}{e_i:~T_i}} }
+		 { \Der{\Gamma}{\Apply{e_f}{\Ov{e_i}}~:~T} }~\lst{(Apply)} \\
+& \\ % blank line
+\end{array}\) 
+
+% if
+\(\begin{array}{c c}
+	\frac{ \DerEnv{e_{cond} :~\lst{Boolean}}~~\DerEnv{e_1 :~T}~~\DerEnv{e_2 :~T} }
+		{ \DerEnv{\IfThenElse{e_{cond}}{e_1}{e_2}~:~T} }~\lst{(If)}
+		 & 
+		 \\
+		 & \\ % blank line
+\end{array}\) 
+\(
+	\frac{ 
+		\DerEnv{e_1 :~T_1}~\wedge~
+		\forall k\in\{2,\dots,n\}~\Der{\Gamma,x_1:~T_1,\dots,x_{k-1}:~T_{k-1}}{e_k:~T_k}~\wedge~
+        \Der{\Gamma,x_1:~T_1,\dots,x_n:~T_n}{e:~T}
+		}
+		{ \DerEnv{\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}~:~T} }~\lst{(BlockExpr)}
+\)
+% let
+% \(
+% \frac{\Der{\TEnv,x : T_1}{e_2 : T_2}}{\Der{\Gamma}{\Let{x}{e_1}{e_2} : T_2}}
+% \)
+
+
+\end{center}
+
+
