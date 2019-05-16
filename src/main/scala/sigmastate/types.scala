@@ -987,9 +987,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("from", "the lowest index to include from this collection"),
         ArgInfo("until", "the lowest index to EXCLUDE from this collection"))
 
-  val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8, Some {
-      case (builder, obj, _, Seq(l), _) => builder.mkFilter(obj.asValue[SCollection[SType]], l.asFunc)
-    }, None)
+  val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8)
+      .withIRInfo({
+        case (builder, obj, _, Seq(l), _) => builder.mkFilter(obj.asValue[SCollection[SType]], l.asFunc)
+      })
       .withInfo(Filter,
         """Selects all elements of this collection which satisfy a predicate.
          | Returns  a new collection consisting of all elements of this collection that satisfy the given
@@ -1713,9 +1714,10 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
       .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
       .withInfo(GroupGenerator, "")
-  val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2, Some {
-    case (builder, obj, method, Seq(l, r), tparamSubst) => Xor(l.asByteArray, r.asByteArray)
-  }, None)
+  val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
+      .withIRInfo({
+        case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
+      })
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,
     xorMethod

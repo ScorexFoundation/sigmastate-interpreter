@@ -1417,11 +1417,11 @@ Logical XOR of two operands See~\hyperref[sec:appendix:primops:BinXor]{\lst{^}}
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
-    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
-            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
     \hline
-          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
           \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
