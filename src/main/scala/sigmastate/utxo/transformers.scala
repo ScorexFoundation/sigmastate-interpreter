@@ -1,12 +1,9 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Shorts
-import org.ergoplatform._
-import sigmastate.SCollection.{SBooleanArray, SByteArray}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
-import sigmastate.interpreter.{InterpreterContext, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
@@ -57,8 +54,7 @@ object Slice extends ValueCompanion {
 }
 
 case class Filter[IV <: SType](input: Value[SCollection[IV]],
-                               id: Byte,
-                               condition: Value[SBoolean.type])
+                               condition: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[IV]] {
   override def companion = Filter
   override def tpe: SCollection[IV] = input.tpe

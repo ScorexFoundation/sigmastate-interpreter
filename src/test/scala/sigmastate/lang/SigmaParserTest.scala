@@ -46,6 +46,7 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
 
   def and(l: SValue, r: SValue) = MethodCallLike(l, "&&", IndexedSeq(r))
   def or(l: SValue, r: SValue) = MethodCallLike(l, "||", IndexedSeq(r))
+  def xor(l: SValue, r: SValue) = MethodCallLike(l, "^", IndexedSeq(r))
 
   property("simple expressions") {
     parse("10") shouldBe IntConstant(10)
@@ -70,11 +71,12 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
     parse("1==1") shouldBe EQ(1, 1)
     parse("true && true") shouldBe and(TrueLeaf, TrueLeaf)
     parse("true || false") shouldBe or(TrueLeaf, FalseLeaf)
+    parse("true ^ false") shouldBe xor(TrueLeaf, FalseLeaf)
     parse("true || (true && false)") shouldBe or(TrueLeaf, and(TrueLeaf, FalseLeaf))
+    parse("true || (true ^ false)") shouldBe or(TrueLeaf, xor(TrueLeaf, FalseLeaf))
     parse("false || false || false") shouldBe or(or(FalseLeaf, FalseLeaf), FalseLeaf)
+    parse("false ^ false ^ false") shouldBe xor(xor(FalseLeaf, FalseLeaf), FalseLeaf)
     parse("(1>= 0)||(3L >2L)") shouldBe or(GE(1, 0), GT(3L, 2L))
-    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
-//    parse("arr1 | arr2") shouldBe Xor(ByteArrayIdent("arr1"), ByteArrayIdent("arr2"))
     parse("arr1 ++ arr2") shouldBe MethodCallLike(Ident("arr1"), "++", IndexedSeq(Ident("arr2")))
     parse("col1 ++ col2") shouldBe MethodCallLike(Ident("col1"), "++", IndexedSeq(Ident("col2")))
     parse("ge.exp(n)") shouldBe Apply(Select(GEIdent("ge"), "exp"), Vector(BigIntIdent("n")))

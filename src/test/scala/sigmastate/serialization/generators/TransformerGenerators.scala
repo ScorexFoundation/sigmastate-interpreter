@@ -74,9 +74,8 @@ trait TransformerGenerators {
 
   val filterGen: Gen[Filter[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
-    id <- Arbitrary.arbitrary[Byte]
-    condition <- booleanConstGen
-  } yield mkFilter(col1, id, condition).asInstanceOf[Filter[SInt.type]]
+    condition <- funcValueGen
+  } yield mkFilter(col1, condition).asInstanceOf[Filter[SInt.type]]
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary

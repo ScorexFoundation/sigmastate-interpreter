@@ -780,6 +780,8 @@ object SOption extends STypeCompanion {
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
   override def typeId = OptionTypeCode
 
+  override def coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
+
   type SBooleanOption      = SOption[SBoolean.type]
   type SByteOption         = SOption[SByte.type]
   type SShortOption        = SOption[SShort.type]
@@ -953,7 +955,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          | \lst{f} to each element of this collection and collecting the results.
         """.stripMargin,
         ArgInfo("f", "the function to apply to each element"))
-        
+
   val ExistsMethod = SMethod(this, "exists", SFunc(IndexedSeq(ThisType, tPredicate), SBoolean, Seq(paramIV)), 4)
       .withInfo(Exists,
         """Tests whether a predicate holds for at least one element of this collection.
@@ -985,7 +987,9 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("from", "the lowest index to include from this collection"),
         ArgInfo("until", "the lowest index to EXCLUDE from this collection"))
 
-  val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8)
+  val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8, Some {
+      case (builder, obj, _, Seq(l), _) => builder.mkFilter(obj.asValue[SCollection[SType]], l.asFunc)
+    }, None)
       .withInfo(Filter,
         """Selects all elements of this collection which satisfy a predicate.
          | Returns  a new collection consisting of all elements of this collection that satisfy the given
@@ -1709,9 +1713,12 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
       .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
       .withInfo(GroupGenerator, "")
-
+  val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2, Some {
+    case (builder, obj, method, Seq(l, r), tparamSubst) => Xor(l.asByteArray, r.asByteArray)
+  }, None)
   protected override def getMethods() = super.getMethods() ++ Seq(
-    groupGeneratorMethod
+    groupGeneratorMethod,
+    xorMethod
   )
   override val coster = Some(Coster(_.SigmaDslBuilderCoster))
 }

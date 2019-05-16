@@ -31,13 +31,15 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   private val predefinedEnv: Map[String, SType] =
       predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
 
-  private def processGlobalMethod(srcCtx: Nullable[SourceContext], method: SMethod) = {
+  private def processGlobalMethod(srcCtx: Nullable[SourceContext],
+                                  method: SMethod,
+                                  args: IndexedSeq[SValue]) = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
       pf <- method.irInfo.irBuilder
-      res <- pf.lift((builder, global, method, IndexedSeq(), emptySubst))
+      res <- pf.lift((builder, global, method, args, emptySubst))
     } yield res
-    node.getOrElse(mkMethodCall(global, method, IndexedSeq(), emptySubst).withPropagatedSrcCtx(srcCtx))
+    node.getOrElse(mkMethodCall(global, method, args, emptySubst).withPropagatedSrcCtx(srcCtx))
   }
   /**
     * Rewrite tree to typed tree.  Checks constituent names and types.  Uses
@@ -74,7 +76,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           SGlobal.method(n) match {
             case Some(method) if method.stype.tDom.length == 1 => // this is like  `groupGenerator` without parentheses
               val srcCtx = i.sourceContext
-              processGlobalMethod(srcCtx, method)
+              processGlobalMethod(srcCtx, method, IndexedSeq())
             case _ =>
               error(s"Cannot assign type for variable '$n' because it is not found in env $env", bound.sourceContext)
           }
@@ -190,7 +192,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case a @ Apply(ident: Ident, args) if SGlobal.hasMethod(ident.name) => // example: groupGenerator()
       val method = SGlobal.method(ident.name).get
       val srcCtx = a.sourceContext
-      processGlobalMethod(srcCtx, method)
+      val newArgs = args.map(assignType(env, _))
+      processGlobalMethod(srcCtx, method, newArgs)
 
     case app @ Apply(f, args) =>
       val new_f = assignType(env, f)
@@ -316,14 +319,22 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
         }
 
         case SSigmaProp => (m, newArgs) match {
-          case ("||" | "&&", Seq(r)) => r.tpe match {
+          case ("||" | "&&" | "^", Seq(r)) => r.tpe match {
             case SBoolean =>
-              val (a,b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val (a, b) = (Select(newObj, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue, r.asBoolValue)
+              val res = m match {
+                case "||" => mkBinOr(a, b)
+                case "&&" => mkBinAnd(a, b)
+                case "^" => mkBinXor(a, b)
+              }
               res
             case SSigmaProp =>
-              val (a,b) = (newObj.asSigmaProp, r.asSigmaProp)
-              val res = if (m == "||") mkSigmaOr(Seq(a,b)) else mkSigmaAnd(Seq(a,b))
+              val (a, b) = (newObj.asSigmaProp, r.asSigmaProp)
+              val res = m match {
+                case "||" => mkSigmaOr(Seq(a, b))
+                case "&&" => mkSigmaAnd(Seq(a, b))
+                case "^" => throw new NotImplementedError(s"Xor operation is not defined between SigmaProps")
+              }
               res
             case _ =>
               error(s"Invalid argument type for $m, expected $SSigmaProp but was ${r.tpe}", r.sourceContext)
@@ -337,11 +348,14 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               case "||" => mkBinOr(newObj.asBoolValue, r.asBoolValue)
               case "&&" => mkBinAnd(newObj.asBoolValue, r.asBoolValue)
               case "^" => mkBinXor(newObj.asBoolValue, r.asBoolValue)
-
             }
             case SSigmaProp =>
-              val (a,b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
-              val res = if (m == "||") mkBinOr(a,b) else mkBinAnd(a,b)
+              val (a, b) = (newObj.asBoolValue, Select(r, SSigmaProp.IsProven, Some(SBoolean)).asBoolValue)
+              val res = m match {
+                case "||" => mkBinOr(a, b)
+                case "&&" => mkBinAnd(a, b)
+                case "^" => mkBinXor(a, b)
+              }
               res
             case _ =>
               error(s"Invalid argument type for $m, expected ${newObj.tpe} but was ${r.tpe}", r.sourceContext)

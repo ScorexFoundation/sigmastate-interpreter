@@ -656,5 +656,7 @@ trait SigmaDslBuilder {
 
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
+
+  def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 
