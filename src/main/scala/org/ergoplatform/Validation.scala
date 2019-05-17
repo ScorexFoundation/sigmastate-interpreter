@@ -188,11 +188,25 @@ object ValidationRules {
     }
   }
 
+  object CheckCostFunc extends ValidationRule(1004,
+    "Cost function should contain only operations from specified list.") {
+    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
+      def msg = s"Invalid cost function $costF"
+      def args = Seq(costF)
+      lazy val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
+      validate(vs,
+        verification.isSuccess,
+        verification.toEither.left.get,
+        args, block)
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
     CheckValidOpCode,
-    CheckIsSupportedIndexExpression
+    CheckIsSupportedIndexExpression,
+    CheckCostFunc
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

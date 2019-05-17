@@ -104,11 +104,11 @@ trait Interpreter extends ScorexLogging {
     * @return
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    import IR._; import Size._; import Context._; import SigmaProp._
+    import IR._;
     val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
     IR.onCostingResult(env, exp, costingRes)
 
-    verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
+    CheckCostFunc(context.validationSettings, IR)(asRep[Any => Int](costF)) { }
 
     verifyIsProven(calcF).fold(t => throw t, x => x)
 
