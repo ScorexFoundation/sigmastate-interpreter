@@ -16,6 +16,7 @@ import sigmastate.lang.exceptions.{InterpreterException, CosterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
+import sigmastate.constants.SigmaConstants
 import org.ergoplatform.ValidationRules._
 
 import scala.util.Try
@@ -28,7 +29,7 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  final val MaxByteArrayLength = 10000
+  final val MaxByteArrayLength = SigmaConstants.MaxByteArrayLength.value
 
   /**
     * Max cost of a script interpreter can accept
@@ -37,6 +38,7 @@ trait Interpreter extends ScorexLogging {
 
   def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
+      println("DUMP:", d)
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
@@ -205,7 +207,11 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
+    println(s"EXPR: $exp")
+    println(s"CTX: $context")
+    println(s"PROV: $proverResult")
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
+    println(s"ENRICH: $ctxv")
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 

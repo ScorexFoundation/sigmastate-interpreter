@@ -16,6 +16,7 @@ import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.constants.SigmaConstants
 
 import scala.runtime.ScalaRunTime
 
@@ -99,7 +100,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  val MaxBoxSize: Int = 64 * 1024
+  val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
@@ -133,9 +134,9 @@ object ErgoBox {
   val TokensRegId: MandatoryRegisterId = R2
   val ReferenceRegId: MandatoryRegisterId = R3
 
-  val MaxTokens: Byte = 4
+  val MaxTokens: Byte = SigmaConstants.MaxTokens.value
 
-  val maxRegisters = 10
+  val maxRegisters = SigmaConstants.MaxRegisters.value
   val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
   val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
   val startingNonMandatoryIndex: Byte = nonMandatoryRegisters.head.number

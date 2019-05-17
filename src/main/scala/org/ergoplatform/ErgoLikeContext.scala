@@ -14,6 +14,7 @@ import special.sigma
 import special.sigma.{AnyValue, Box, PreHeader, Header}
 import sigmastate.SType._
 import scalan.RType._
+import sigmastate.constants.SigmaConstants
 import special.sigma.{Header, Box, AnyValue, PreHeader}
 import SType._
 import RType._
@@ -61,6 +62,9 @@ class ErgoLikeContext(val currentHeight: Height,
   }
   assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
+  checkCorrectness()
+  checkExtensionValidity(extension.values)
+
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
@@ -95,6 +99,35 @@ class ErgoLikeContext(val currentHeight: Height,
       isCost)
   }
 
+  def checkCorrectness(): Boolean = {
+    if (currentHeight < 0)
+      return false
+    if (headers.length > SigmaConstants.MaxHeaders.value)
+      return false
+    for (box <- boxesToSpend) if (box.dataSize > SigmaConstants.MaxBoxSize.value) return false
+    for (box <- dataBoxes) if (box.dataSize > SigmaConstants.MaxBoxSize.value) return false
+
+    true
+  }
+
+  def checkExtensionValidity(extension: Map[Byte, AnyValue]): Boolean = {
+    for ((id, item) <- extension) {
+      item match {
+        case (cl: ConcreteCollection[t]) =>
+          if (cl.bytes.length > SigmaConstants.MaxCollectionSize.value)
+            return false
+        case (tup: Tuple) =>
+          if (tup.asTuple.length > SigmaConstants.MaxTupleLength.value)
+            return false
+        case _ => {
+          println(item)
+          return false
+        }
+      }
+    }
+    true
+  }
+
 }
 
 object ErgoLikeContext {
@@ -107,7 +140,7 @@ object ErgoLikeContext {
   val dummyPreHeader: PreHeader = null
 
   /** Maximimum number of headers in `headers` collection of the context. */
-  val MaxHeaders = 10
+  val MaxHeaders = SigmaConstants.MaxHeaders.value
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,

@@ -33,6 +33,8 @@ import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.utxo.ByIndex
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval._
+import sigmastate.eval.SigmaDsl
+import sigmastate.constants.SigmaConstants
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -579,7 +581,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = 32L
+  val MaxSizeInBytes: Long = SigmaConstants.MaxSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -1060,7 +1062,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength = 255
+  val MaxTupleLength = SigmaConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)

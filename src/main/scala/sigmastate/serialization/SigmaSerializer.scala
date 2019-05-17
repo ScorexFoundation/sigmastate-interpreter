@@ -7,13 +7,14 @@ import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.constants.SigmaConstants
 
 object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = 1024 * 1024 * 1
-  val MaxTreeDepth: Int = 110
+  val MaxInputSize: Int = SigmaConstants.MaxInputSize.value
+  val MaxTreeDepth: Int = SigmaConstants.MaxTreeDepth.value
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
