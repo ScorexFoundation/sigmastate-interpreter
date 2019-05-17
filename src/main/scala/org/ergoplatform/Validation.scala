@@ -1,7 +1,7 @@
 package org.ergoplatform
 
 import sigmastate.Values.{Value, SValue, IntValue, IntConstant}
-import sigmastate.lang.exceptions.{SerializerException, InterpreterException, InvalidOpCode, SigmaException}
+import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, InvalidOpCode}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{GetVar, DeserializeContext, ExtractRegisterAs, OptionGet}
@@ -205,4 +205,12 @@ object ValidationRules {
     ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
   )
 
+  def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: ValidationSettings): T = {
+    try block
+    catch {
+      case ve: ValidationException =>
+        if (vs.isSoftFork(ve)) whenSoftFork
+        else throw ve
+    }
+  }
 }

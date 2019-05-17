@@ -4,7 +4,6 @@ import java.util
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.ergoplatform.ValidationRules
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
@@ -129,6 +128,8 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
+  /** Extracts proposition for ErgoTree handing soft-fork condition.
+    * @note soft-fork handler */
   def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
     val prop = tree.root match {
       case Right(_) =>
@@ -147,7 +148,13 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
     val prop = propositionFromErgoTree(tree, context)
-    val propTree = applyDeserializeContext(context, prop)
+    implicit val vs = context.validationSettings
+    val propTree = trySoftForkable[BoolValue](whenSoftFork = TrueLeaf) {
+      applyDeserializeContext(context, prop)
+    }
+
+    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+    // and the rest of the verification is also trivial
     val (cProp, cost) = reduceToCrypto(context, env, propTree).get
 
     val checkingResult = cProp match {
