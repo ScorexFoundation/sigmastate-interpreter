@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Nullable, MutableLazy, Lazy, RType, SigmaLibrary}
+import scalan.{Nullable, MutableLazy, Lazy, RType, AVHashMap, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -35,6 +35,9 @@ import special.collection.CollType
 import special.Types._
 import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
+import ValidationRules._
+
+import scala.collection.mutable
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
   import Context._;
@@ -795,6 +798,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     Seq(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
         _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
         .foreach(_.reset())
+    _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
   import Cost._
@@ -1152,8 +1156,30 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
+  private val InitDependantNodes = 10000
+  private[this] var _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
+
+  def isContextDependant(sym: Sym): Boolean =
+    if (sym.isConst) true
+    else {
+      _contextDependantNodes(sym.rhs.nodeId)
+    }
+
+  override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): TableEntry[T] = {
+    val res = super.createDefinition(optScope, s, d)
+    res.rhs match {
+      case d if d.selfType.isInstanceOf[ContextElem[_]] =>
+        _contextDependantNodes += (d.nodeId)
+      case d =>
+        val allArgs = d.getDeps.forall(isContextDependant)
+        if (allArgs)
+          _contextDependantNodes += (d.nodeId)
+    }
+    res
+  }
+
   def isSupportedIndexExpression(i: Rep[Int]): Boolean = {
-    true
+    isContextDependant(i)
   }
 
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
@@ -1531,8 +1557,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         val size = if (xs.tpe.elemType.isConstantSize)
             constantTypeSize(xsC.elem.eItem)
           else
-            ValidationRules.CheckIsSupportedIndexExpression(
-              ValidationRules.currentSettings, IR)(xs, i, iV) {
+            CheckIsSupportedIndexExpression(currentSettings, IR)(xs, i, iV) {
               xsC.sizes(iV)
             }
         defaultOpt match {
