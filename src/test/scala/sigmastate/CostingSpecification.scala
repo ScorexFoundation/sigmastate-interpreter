@@ -15,6 +15,7 @@ import sigmastate.utxo.CostTable._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.sigma.{SigmaTestingData, AvlTree}
+import Sized._
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -102,6 +103,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ val cond = getVar[Boolean](2).get; cond || cond }") shouldBe (ContextVarAccess + logicCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
   }
 
@@ -124,6 +126,10 @@ class CostingSpecification extends SigmaTestingData {
 
   property("Global operations cost") {
     // TODO cost("{ groupGenerator.isIdentity > 0 }") shouldBe (selectField + selectField + GTConstCost)
+
+    val sizeOfArgs = Seq(sizeOf(key1), sizeOf(key1)).foldLeft(0L)(_ + _.dataSize)
+    val xorCost = constCost + perKbCostOf(sizeOfArgs, hashPerKb / 2)
+    cost("{ xor(key1, key1).size > 0 }") shouldBe (xorCost + LengthGTConstCost)
   }
 
   property("Context operations cost") {
@@ -180,7 +186,6 @@ class CostingSpecification extends SigmaTestingData {
   def perKbCostOf(dataSize: Long, opCost: Int) = {
     ((dataSize / 1024L).toInt + 1) * opCost
   }
-  import Sized._
 
   property("AvlTree operations cost") {
     val rootTree = "LastBlockUtxoRootHash"

@@ -395,11 +395,18 @@ class SigmaDslTest extends PropSpec
   }
 
   //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/424
-  ignore("BinXor(logical XOR) equivalence") {
+  property("BinXor(logical XOR) equivalence") {
     val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
       x => x._1 ^ x._2
     }
     forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
+  property("BinXor(logical XOR) test") {
+    val eq = checkEq(func[(Int, Boolean), Boolean]("{ (x: (Int, Boolean)) => (x._1 == 0) ^ x._2 }")) {
+      x => (x._1 == 0) ^ x._2
+    }
+    forAll { x: (Int, Boolean) => eq(x) }
   }
 
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
@@ -423,6 +430,15 @@ class SigmaDslTest extends PropSpec
       val eq = EqualityChecker(n)
       // TODO      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
+    }
+
+    {
+      val eq = checkEq(func[(Coll[Byte], Coll[Byte]), Coll[Byte]](
+        "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }"))
+        { x => Global.xor(x._1, x._2) }
+      forAll(bytesGen, bytesGen) { (l, r) =>
+        eq(Builder.DefaultCollBuilder.fromArray(l), Builder.DefaultCollBuilder.fromArray(r))
+      }
     }
 
   }

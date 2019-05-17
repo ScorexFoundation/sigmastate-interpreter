@@ -16,7 +16,7 @@ class ErgoTreeSerializer {
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
     val w = SigmaSerializer.startWriter()
     serializeHeader(ergoTree, w)
-    ValueSerializer.serialize(ergoTree.root, w)
+    w.putValue(ergoTree.root)
     w.toBytes
   }
 
@@ -91,7 +91,7 @@ class ErgoTreeSerializer {
         // we need to get newVal's serialized constant value (see ProveDlogSerializer for example)
         val constantStore = new ConstantStore()
         val valW = SigmaSerializer.startWriter(constantStore)
-        ValueSerializer.serialize(newVal, valW)
+        valW.putValue(newVal)
         val newConsts = constantStore.getAll
         assert(newConsts.length == 1)
         val newConst = newConsts.head

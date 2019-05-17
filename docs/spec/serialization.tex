@@ -1,0 +1,11 @@
+\section{Serialization}
+\label{sec:serialization}
+
+Terms of the language described in Section~\ref{sec:language} can be
+serialized to array of bytes to be stored in Ergo blockchain (e.g. as
+Box.propositionBytes).
+
+When the guarding script of an input box of a transaction is validated the \lst{propositionBytes} array is deserialized to an \langname term, which can be evaluated as it is specified in Section~\ref{sec:evaluation}.
+
+Here we specify the serialization procedure and the format of \langname terms and types.
+
