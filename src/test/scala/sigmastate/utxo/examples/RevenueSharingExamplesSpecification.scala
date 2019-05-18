@@ -14,16 +14,10 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
     val spenders = Coll(
-      blake2b256(alice.pubKey.propBytes),
-      blake2b256(bob.pubKey.propBytes),
-      blake2b256(carol.pubKey.propBytes)
-    )
-    val spenderz = Coll(
       (blake2b256(alice.pubKey.propBytes), 50),
       (blake2b256(bob.pubKey.propBytes), 30),
       (blake2b256(carol.pubKey.propBytes), 20)
     )
-    val ratios = Coll(50, 30, 20)
 
     val miner = alice  // put some other entity here
     val feeProp = miner.pubKey
@@ -32,8 +26,6 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
     lazy val contractEnv = Env(
       "spenders" -> spenders,
-      "spenderz" -> spenderz,
-      "ratios" -> ratios,
       "feePropBytesHash" -> feePropBytesHash,
       "fee" -> fee,
       "feeProp" -> feeProp,
@@ -47,7 +39,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       val feeBox = OUTPUTS(0)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       val amt = SELF.value - fee
-      val validOuts = spenderz.map({
+      val validOuts = spenders.map({
         (e:(Coll[Byte], Int)) =>
           val share = amt / 100 * e._2
           val pkh = e._1
@@ -63,7 +55,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |      val feeBox = OUTPUTS(0)
       |      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       |      val amt = SELF.value - fee
-      |      val validOuts = spenderz.map({
+      |      val validOuts = spenders.map({
       |        (e:(Coll[Byte], Int)) =>
       |           val share = amt / 100 * e._2
       |           val pkh = e._1
