@@ -27,7 +27,7 @@ trait SizedLowPriority {
       else if (xs.tItem.isConstantSize)
         Colls.replicate(xs.length, Sized.sizeOf(xs(0)))
       else
-        xs.map(Sized[T].size)
+        new CViewColl(xs, Sized[T].size)
     new CSizeColl(sizes)
   }
   implicit def optionIsSized[T: Sized]: Sized[Option[T]] = (xs: Option[T]) => new CSizeOption(xs.map(Sized[T].size))

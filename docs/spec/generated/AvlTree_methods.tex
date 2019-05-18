@@ -1,0 +1,247 @@
+
+\subsubsection{\lst{AvlTree.digest} method (Code 100.1)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.enabledOperations} method (Code 100.2)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Byte} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.keyLength} method (Code 100.3)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.valueLengthOpt} method (Code 100.4)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Option[Int]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.isInsertAllowed} method (Code 100.5)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.isUpdateAllowed} method (Code 100.6)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.isRemoveAllowed} method (Code 100.7)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.updateOperations} method (Code 100.8)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Byte} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{AvlTree} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.contains} method (Code 100.9)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.get} method (Code 100.10)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[Coll[Byte]]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.getMany} method (Code 100.11)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Coll[Byte]]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Option[Coll[Byte]]]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.insert} method (Code 100.12)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[(Coll[Byte],Coll[Byte])]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[AvlTree]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.update} method (Code 100.13)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[(Coll[Byte],Coll[Byte])]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[AvlTree]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.remove} method (Code 100.14)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Coll[Byte]]} & \text{// } \\
+\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[AvlTree]} \\
+  \hline
+\end{tabularx}
+
+
+
+\subsubsection{\lst{AvlTree.updateDigest} method (Code 100.15)}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Byte]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{AvlTree} \\
+  \hline
+\end{tabularx}

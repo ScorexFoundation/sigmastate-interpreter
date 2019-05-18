@@ -105,5 +105,8 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = SpecialPredef.rewritableMethod
+
+  @NeverInline
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] = Colls.xor(l, r)
 }
 

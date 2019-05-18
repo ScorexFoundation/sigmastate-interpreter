@@ -432,12 +432,22 @@ class SigmaDslTest extends PropSpec
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 
+    {
+      val eq = checkEq(func[(Coll[Byte], Coll[Byte]), Coll[Byte]](
+        "{ (x: (Coll[Byte], Coll[Byte])) => xor(x._1, x._2) }"))
+        { x => Global.xor(x._1, x._2) }
+      forAll(bytesGen, bytesGen) { (l, r) =>
+        eq(Builder.DefaultCollBuilder.fromArray(l), Builder.DefaultCollBuilder.fromArray(r))
+      }
+    }
+
   }
 
   property("Coll methods equivalence") {
     val coll = ctx.OUTPUTS
     val eq = EqualityChecker(coll)
     eq({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }")
+    eq({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) })("{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }")
   }
 
   property("Option methods equivalence") {

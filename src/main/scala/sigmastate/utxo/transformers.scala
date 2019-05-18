@@ -1,18 +1,13 @@
 package sigmastate.utxo
 
-import com.google.common.primitives.Shorts
-import org.ergoplatform._
-import sigmastate.SCollection.{SBooleanArray, SByteArray}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
-import sigmastate.interpreter.{InterpreterContext, Interpreter}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.{R3, RegisterId}
-import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
-import special.sigma.InvalidType
+import org.ergoplatform.ErgoBox.RegisterId
+import sigmastate.lang.exceptions.InterpreterException
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
