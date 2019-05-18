@@ -110,7 +110,7 @@ trait Interpreter extends ScorexLogging {
 
     CheckCostFunc(context.validationSettings, IR)(asRep[Any => Int](costF)) { }
 
-    verifyIsProven(calcF).fold(t => throw t, x => x)
+    CheckCalcFunc(context.validationSettings, IR)(calcF) { }
 
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)

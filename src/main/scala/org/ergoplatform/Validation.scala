@@ -201,12 +201,26 @@ object ValidationRules {
     }
   }
 
+  object CheckCalcFunc extends ValidationRule(1005,
+    "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
+    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
+      def msg = s"Invalid calc function $calcF"
+      def args = Seq(calcF)
+      lazy val verification = ctx.verifyIsProven(calcF)
+      validate(vs,
+        verification.isSuccess,
+        verification.toEither.left.get,
+        args, block)
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
     CheckValidOpCode,
     CheckIsSupportedIndexExpression,
-    CheckCostFunc
+    CheckCostFunc,
+    CheckCalcFunc
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
