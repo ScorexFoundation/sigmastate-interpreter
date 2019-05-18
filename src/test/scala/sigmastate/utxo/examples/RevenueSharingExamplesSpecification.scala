@@ -21,7 +21,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
     val ratios = Coll(50, 30, 20)
 
     val miner = alice  // put some other entity here
-  val feeProp = miner.pubKey
+    val feeProp = miner.pubKey
     val fee = 10
     val feePropBytesHash = blake2b256(feeProp.propBytes)
 
@@ -37,27 +37,30 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
     )
     lazy val prop = proposition("revenueContract", { CONTEXT: Context =>
       import CONTEXT._
+
       val feeBox = OUTPUTS(spenders.size)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       val amt = SELF.value - fee
-      val validOuts = spenders.indices.forall({
+      val indices = Coll(0, 1, 2)
+      val validOuts: Coll[Boolean] = indices.map({
         (i:Int) =>
-          val spender = spenders(i)
+          val pubKeyHash = spenders(i)
           val ratio = ratios(i)
           val box = OUTPUTS(i)
           val share = amt / 100 * ratio
-          blake2b256(box.propositionBytes) == spender && box.value == share
+          blake2b256(box.propositionBytes) == pubKeyHash && box.value == share
       }
       )
+      val isValidOuts = validOuts.forall(_)
+      //isValidOuts
       miner.pubKey
-
-      //validOuts || allOf(spenders)
     },
     """{
       |      val feeBox = OUTPUTS(spenders.size)
       |      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       |      val amt = SELF.value - fee
-      |      val validOuts = spenders.indices.forall({
+      |      val indices = Coll(0, 1, 2)
+      |      val validOuts: Coll[Boolean] = indices.map({
       |        (i:Int) =>
       |          val pubKeyHash = spenders(i)
       |          val ratio = ratios(i)
@@ -66,7 +69,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |          blake2b256(box.propositionBytes) == pubKeyHash && box.value == share
       |      }
       |      )
-      |      validOuts
+      |      validOuts.fold(true, { (l1: Boolean, l2: Boolean) => l1 && l2 })
       |}
     """.stripMargin)
 
