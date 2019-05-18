@@ -13,7 +13,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   (alice: Spec#ProvingParty, bob: Spec#ProvingParty, carol:Spec#ProvingParty)
   (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    val spenders:Coll[Coll[Byte]] = Coll(
+    val spenders = Coll(
       blake2b256(alice.pubKey.propBytes),
       blake2b256(bob.pubKey.propBytes),
       blake2b256(carol.pubKey.propBytes)
@@ -38,38 +38,24 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
     lazy val prop = proposition("revenueContract", { CONTEXT: Context =>
       import CONTEXT._
 
-      val feeBox = OUTPUTS(spenders.size)
+      val feeBox = OUTPUTS(3)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       val amt = SELF.value - fee
-      val indices = Coll(0, 1, 2)
-      val validOuts: Coll[Boolean] = indices.map({
-        (i:Int) =>
-          val pubKeyHash = spenders(i)
-          val ratio = ratios(i)
-          val box = OUTPUTS(i)
-          val share = amt / 100 * ratio
-          blake2b256(box.propositionBytes) == pubKeyHash && box.value == share
-      }
-      )
-      val isValidOuts = validOuts.forall(_)
-      //isValidOuts
-      miner.pubKey
+      val validOuts =
+        blake2b256(OUTPUTS(0).propositionBytes) == spenders(0) && OUTPUTS(0).value == amt / 100 * ratios(0) &&
+        blake2b256(OUTPUTS(1).propositionBytes) == spenders(1) && OUTPUTS(1).value == amt / 100 * ratios(1) &&
+        blake2b256(OUTPUTS(2).propositionBytes) == spenders(2) && OUTPUTS(2).value == amt / 100 * ratios(2)
+      validOuts && validFeeBox
+      miner.pubKey // dummy line because above doesn't work
     },
     """{
-      |      val feeBox = OUTPUTS(spenders.size)
+      |      val feeBox = OUTPUTS(3)
       |      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       |      val amt = SELF.value - fee
-      |      val indices = getVar[Coll[Int]](1).get
-      |      val validOuts = indices.map({
-      |        (i:Int) =>
-      |          val pubKeyHash = spenders(i)
-      |          val ratio = ratios(i)
-      |          val box = OUTPUTS(i)
-      |          val share = amt / 100 * ratio
-      |          blake2b256(box.propositionBytes) == pubKeyHash && box.value == share
-      |      }
-      |      )
-      |      validOuts.fold(true, { (l1: Boolean, l2: Boolean) => l1 && l2 })
+      |      val validOuts = blake2b256(OUTPUTS(0).propositionBytes) == spenders(0) && OUTPUTS(0).value == amt / 100 * ratios(0) &&
+      |                      blake2b256(OUTPUTS(1).propositionBytes) == spenders(1) && OUTPUTS(1).value == amt / 100 * ratios(1) &&
+      |                      blake2b256(OUTPUTS(2).propositionBytes) == spenders(2) && OUTPUTS(2).value == amt / 100 * ratios(2)
+      |      validOuts && validFeeBox
       |}
     """.stripMargin)
 
