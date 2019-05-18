@@ -105,12 +105,13 @@ trait Interpreter extends ScorexLogging {
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._;
+    implicit val vs = context.validationSettings
     val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
     IR.onCostingResult(env, exp, costingRes)
 
-    CheckCostFunc(context.validationSettings, IR)(asRep[Any => Int](costF)) { }
+    CheckCostFunc(vs, IR)(asRep[Any => Int](costF)) { }
 
-    CheckCalcFunc(context.validationSettings, IR)(calcF) { }
+    CheckCalcFunc(vs, IR)(calcF) { }
 
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
