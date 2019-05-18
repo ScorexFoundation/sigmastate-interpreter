@@ -4,7 +4,7 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import sigmastate.eval.Extensions
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.Context
+import special.sigma.{Box, Context}
 
 class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -18,6 +18,11 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       blake2b256(bob.pubKey.propBytes),
       blake2b256(carol.pubKey.propBytes)
     )
+    val spenderz = Coll(
+      (blake2b256(alice.pubKey.propBytes), 50),
+      (blake2b256(bob.pubKey.propBytes), 30),
+      (blake2b256(carol.pubKey.propBytes), 20)
+    )
     val ratios = Coll(50, 30, 20)
 
     val miner = alice  // put some other entity here
@@ -27,6 +32,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
     lazy val contractEnv = Env(
       "spenders" -> spenders,
+      "spenderz" -> spenderz,
       "ratios" -> ratios,
       "feePropBytesHash" -> feePropBytesHash,
       "fee" -> fee,
@@ -38,24 +44,35 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
     lazy val prop = proposition("revenueContract", { CONTEXT: Context =>
       import CONTEXT._
 
-      val feeBox = OUTPUTS(3)
+      val feeBox = OUTPUTS(0)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       val amt = SELF.value - fee
-      val validOuts =
-        blake2b256(OUTPUTS(0).propositionBytes) == spenders(0) && OUTPUTS(0).value == amt / 100 * ratios(0) &&
-        blake2b256(OUTPUTS(1).propositionBytes) == spenders(1) && OUTPUTS(1).value == amt / 100 * ratios(1) &&
-        blake2b256(OUTPUTS(2).propositionBytes) == spenders(2) && OUTPUTS(2).value == amt / 100 * ratios(2)
-      validOuts && validFeeBox
+      val validOuts = spenderz.map({
+        (e:(Coll[Byte], Int)) =>
+          val share = amt / 100 * e._2
+          val pkh = e._1
+          OUTPUTS.exists({(b:Box) =>
+            b.value == share && blake2b256(b.propositionBytes) == pkh
+          }
+          )
+      })
+      //validOuts.foldLeft(true)({(l:Boolean, r:Boolean) => l && r}) && validFeeBox
       miner.pubKey // dummy line because above doesn't work
     },
     """{
-      |      val feeBox = OUTPUTS(3)
+      |      val feeBox = OUTPUTS(0)
       |      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
       |      val amt = SELF.value - fee
-      |      val validOuts = blake2b256(OUTPUTS(0).propositionBytes) == spenders(0) && OUTPUTS(0).value == amt / 100 * ratios(0) &&
-      |                      blake2b256(OUTPUTS(1).propositionBytes) == spenders(1) && OUTPUTS(1).value == amt / 100 * ratios(1) &&
-      |                      blake2b256(OUTPUTS(2).propositionBytes) == spenders(2) && OUTPUTS(2).value == amt / 100 * ratios(2)
-      |      validOuts && validFeeBox
+      |      val validOuts = spenderz.map({
+      |        (e:(Coll[Byte], Int)) =>
+      |           val share = amt / 100 * e._2
+      |           val pkh = e._1
+      |           OUTPUTS.exists({(b:Box) =>
+      |             b.value == share && blake2b256(b.propositionBytes) == pkh
+      |           }
+      |           )
+      |      })
+      |      validOuts.fold(true, {(l:Boolean, r:Boolean) => l && r}) && validFeeBox
       |}
     """.stripMargin)
 
