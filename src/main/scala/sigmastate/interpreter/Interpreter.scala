@@ -106,24 +106,24 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._;
     implicit val vs = context.validationSettings
-    val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
-    IR.onCostingResult(env, exp, costingRes)
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+      val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
+      IR.onCostingResult(env, exp, costingRes)
 
-    CheckCostFunc(vs, IR)(asRep[Any => Int](costF)) { }
+      CheckCostFunc(vs, IR)(asRep[Any => Int](costF)) { }
 
-    CheckCalcFunc(vs, IR)(calcF) { }
+      CheckCalcFunc(vs, IR)(calcF) { }
 
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
-      .fold(t => throw new CosterException(
-        s"Script cannot be executed $exp: ", exp.sourceContext.toList.headOption, Some(t)), identity)
+      val costingCtx = context.toSigmaContext(IR, isCost = true)
+      val estimatedCost = CheckCostWithContext(vs, IR)(costingCtx, exp, costF, maxCost)
 
-//    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
-    
-    // check calc
-    val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val res = calcResult(calcCtx, calcF)
-    SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      //    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
+
+      // check calc
+      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val res = calcResult(calcCtx, calcF)
+      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+    }
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =

@@ -39,7 +39,7 @@ import ValidationRules._
 
 import scala.collection.mutable
 
-trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
+trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;

@@ -16,7 +16,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.SigmaTyper
 
-trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
+trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import Liftables._
   import Context._
   import SigmaProp._

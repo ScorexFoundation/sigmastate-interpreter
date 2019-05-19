@@ -1,14 +1,13 @@
 package org.ergoplatform
 
-import sigmastate.Values.{Value, SValue, IntValue, IntConstant}
-import sigmastate.lang.exceptions.{SerializerException, SigmaException, InterpreterException, InvalidOpCode}
+import sigmastate.Values.{Value, SValue, IntValue}
+import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
-import sigmastate.utxo.{GetVar, DeserializeContext, ExtractRegisterAs, OptionGet}
+import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
-import sigmastate.SOption.SIntOption
-import sigmastate.eval.Evaluation
-import sigmastate.{SCollection, SOption}
+import sigmastate.eval.IRContext
+import sigmastate.{SCollection, SType}
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus
@@ -178,7 +177,7 @@ object ValidationRules {
 
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
     "Check the index expression for accessing collection element is supported.") {
-    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
       def msg = s"Unsupported index expression $i when accessing collection $coll"
       def args = Seq(coll, i)
       validate(vs,
@@ -190,7 +189,7 @@ object ValidationRules {
 
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
-    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
       def msg = s"Invalid cost function $costF"
       def args = Seq(costF)
       lazy val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
@@ -203,7 +202,7 @@ object ValidationRules {
 
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
-    def apply[Ctx <: Evaluation, T](vs: ValidationSettings, ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
       def msg = s"Invalid calc function $calcF"
       def args = Seq(calcF)
       lazy val verification = ctx.verifyIsProven(calcF)
@@ -214,13 +213,31 @@ object ValidationRules {
     }
   }
 
+  object CheckCostWithContext extends ValidationRule(1006,
+    "Contract execution cost in a given context is limited by given maximum value.") {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)
+        (costingCtx: ctx.Context.SContext, exp: Value[SType],
+            costF: ctx.Rep[((ctx.Context, (Int, ctx.Size[ctx.Context]))) => Int], maxCost: Long): Int = {
+      def args = Seq(costingCtx, exp, costF, maxCost)
+      lazy val estimatedCostTry = ctx.checkCostWithContext(costingCtx, exp, costF, maxCost)
+      validate(vs,
+        estimatedCostTry.isSuccess,
+        {
+          val t = estimatedCostTry.toEither.left.get
+          new CosterException(s"Script cannot be executed due to high cost $exp: ", exp.sourceContext.toList.headOption, Some(t))
+        },
+        args, estimatedCostTry.get)
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
     CheckValidOpCode,
     CheckIsSupportedIndexExpression,
     CheckCostFunc,
-    CheckCalcFunc
+    CheckCalcFunc,
+    CheckCostWithContext,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

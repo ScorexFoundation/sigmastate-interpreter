@@ -214,8 +214,10 @@ class SpamSpecification extends SigmaTestingCommons {
     terminated shouldBe true
     assertExceptionThrown(
       res.fold(t => throw t, identity),
-      t => {
-        rootCause(t).isInstanceOf[CosterException] && t.getMessage.contains("Script cannot be executed")
+      {
+        case ve: ValidationException =>
+          ve.rule == ValidationRules.CheckCostWithContext &&
+          rootCause(ve).isInstanceOf[CosterException]
       }
     )
 

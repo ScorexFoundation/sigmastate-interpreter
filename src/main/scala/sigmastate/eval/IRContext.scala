@@ -44,25 +44,15 @@ trait IRContext extends Evaluation with TreeBuilding {
     Pair(calcF, costF)
   }
 
-  def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean)
-                 (implicit vs: ValidationSettings): RCostingResultEx[Any] = {
+  def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
     def buildGraph(env: ScriptEnv, exp: SValue) = {
       val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
       asRep[Costed[Context] => Costed[Any]](costed)
     }
-    trySoftForkable[RCostingResultEx[Any]](
-      whenSoftFork = {
-        val g = buildGraph(Interpreter.emptyEnv, TrueSigmaProp)
-        val calcF = g.sliceCalc(okRemoveIsProven)
-        val costF = g.sliceCostEx
-        Pair(calcF, costF)
-      }
-    ) {
-      val g = buildGraph(env, typed)
-      val calcF = g.sliceCalc(okRemoveIsProven)
-      val costF = g.sliceCostEx
-      Pair(calcF, costF)
-    }
+    val g = buildGraph(env, typed)
+    val calcF = g.sliceCalc(okRemoveIsProven)
+    val costF = g.sliceCostEx
+    Pair(calcF, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */

@@ -25,7 +25,7 @@ import special.Types._
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
-trait Evaluation extends RuntimeCosting { IR =>
+trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import Context._
   import SigmaProp._
   import Coll._
