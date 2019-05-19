@@ -448,6 +448,7 @@ class SigmaDslTest extends PropSpec
     val eq = EqualityChecker(coll)
     eq({ (x: Coll[Box]) => x.filter({ (b: Box) => b.value > 1 }) })("{ (x: Coll[Box]) => x.filter({(b: Box) => b.value > 1 }) }")
     eq({ (x: Coll[Box]) => x.flatMap({ (b: Box) => b.propositionBytes }) })("{ (x: Coll[Box]) => x.flatMap({(b: Box) => b.propositionBytes }) }")
+    eq({ (x: Coll[Box]) => x.zip(x) })("{ (x: Coll[Box]) => x.zip(x) }")
   }
 
   property("Option methods equivalence") {
