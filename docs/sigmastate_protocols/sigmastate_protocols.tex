@@ -187,6 +187,40 @@ Any funds deposited to this address can only be spent if the spending transactio
 Observe that if the transaction is not mined before height $i$ then the transaction becomes invalid. When paying at a coffee shop, for example, Alice can set $i$ close to the height $h$ at the time of broadcast, for instance, $i = h + 10$. 
 Alice can still send non-timed payments by making $i$ very large. Since the context variables are part of the message in constructing the zero-knowledge proof, a miner cannot change it (to make this transaction valid). 
 
+\subsection{Revenue Sharing Contracts}
+
+Assume that Alice, Bob and Carol agree to share revenue in the ratios of 50\%, 30\% and 20\% respectively. Let \texttt{alice}, \texttt{bob} and \texttt{carol} be their public keys. The following describes how to create an address that automatically enforces this for any coins sent to it. First define a collection: 
+\begin{verbatim}
+val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
+\end{verbatim}
+
+Let \texttt{feePropBytesHash} to be the hash of the script for a box that pays transaction fees and let \texttt{fee} be the specified fee. 
+% There may be advantages of storing the public keys in a register rather than hardwiring them to address
+The revenue sharing address is the P2SH address of the following script: 
+
+\begin{verbatim}
+val feeBox = OUTPUTS(0)             // assume that first output pays fee
+val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
+val amt = SELF.value - fee          // balance remaining after deducting fee
+val ratios = spenders.map({(e:(Coll[Byte], Int)) => e._2})
+val total = ratios.fold(0, {(l:Int, r:Int) => l + r})
+val validOuts = spenders.map({(e:(Coll[Byte], Int)) =>
+  val pubKeyHash = e._1             // hash of a public key
+  val ratio = e._2                  // ratio of funds to be paid to public key
+  val share = amt / total * total   // actual amount based on ratio
+  OUTPUTS.exists({(b:Box) => 
+    b.value == share && blake2b256(b.propositionBytes) == pubKeyHash
+  })
+})
+validOuts.fold(true, {(l:Boolean, r:Boolean) => l && r}) && validFeeBox
+\end{verbatim}
+
+Any funds sent to this address can only be spent in a transaction that creats boxes paying to Alice, Bob and Carol in the ratios defined above (after deducting transaction fee).
+
+%\subsection{Automated Salary Contracts}
+%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
+
+
 \subsection{Reversible Addresses}
 
 We create a useful primitives called {\em reversible addresses}, designed for storing funds in a hot-wallet. %These addresses have anti-theft features in the following sense:
@@ -283,50 +317,6 @@ Spending from this address is done in periods of 24 hours or more such that the 
 %	\item For two keys the amount is 10\% or 1000 Ergs (whichever is higher).
 %	\item If all three two keys are spending then there are no restrictions. 
 %\end{enumerate}
-\ignore{
-\subsection{Revenue Sharing Contracts}
-
-Assume that Alice, Bob and Carol agree to share revenue with a 50\%, 30\% and 20\% ratio respectively. The following describes a contract that automatically enforces this for any coins sent to it. Let \texttt{outputScriptHash} be the hash of the following script:
-		
-%First create a script and compute its hash:
-% There may be advantages of storing the public keys in a register rather than hardwiring them to address
-%First add the public keys \texttt{alice}, \texttt{bob}  and \texttt{carol} of type \texttt{proveDlog} into the environment \texttt{env}. First create a script. 
-
-%First create an outputScript = 
-
-\begin{verbatim}
-val spenders = SELF.R4[Coll[(SigmaProp, Int)]].get
-val index = getVar[Int](1).get // index of current spender 
-val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
-val ratio:Int = spenders(index)._2 // ratio of current spender
-val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
-val balance = SELF.value - SELF.value / total * ratio
-val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
-val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
-val validOut = OUTPUTS(0).propositionBytes == SELF.propositionBytes &&
-               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
-pubKey && (outSpenders.size == 0 || validOut)
-\end{verbatim}
-
-The revenue sharing contract is encoded in the P2SH address of the following script: 
-\begin{verbatim}
-val spenders = Coll((alice, 50), (bob, 30), (carol, 20))
-val index = getVar[Int](1).get // index of current spender 
-val pubKey:SigmaProp = spenders(index)._1 // pub key of current spender
-val ratio:Int = spenders(index)._2 // ratio of current spender
-val balance = SELF.value - SELF.value / 100 * ratio  // Assume total is 100
-val remainingSpenders = spenders.filter({(s:(SigmaProp, Int)) => s._1 != pubKey})
-val outSpenders = OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get
-val validOut = OUTPUTS(0).propositionBytes == outputScriptHash &&
-               OUTPUTS(0).value >= balance && remainingSpenders == outSpenders
-pubKey && validOut
-\end{verbatim}
-
-For any funds sent to this address, each party can spend only its share and must create another box with the balance amount that enforces the same condition for the remaining spenders.
-
-%\subsection{Automated Salary Contracts}
-%further improvements. Can we reduce offchain data size, do multiple mixes offchain?
-}
 
 \section{Two-party Protocols}
 
