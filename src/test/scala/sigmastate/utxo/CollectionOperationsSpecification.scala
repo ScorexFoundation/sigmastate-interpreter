@@ -519,13 +519,11 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("zip") {
-    assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
+    assertProof("OUTPUTS.zip(INPUTS).size == 2",
       EQ(
         SizeOf(MethodCall(Outputs,
-          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SInt)),
-          Vector(
-            ConcreteCollection(IntConstant(1), IntConstant(2))
-          ),
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBox)),
+          Vector(Inputs),
           Map()).asCollection[STuple]),
         IntConstant(2)),
       IndexedSeq(1L, 2L))
