@@ -63,13 +63,13 @@ trait SigmaTestingCommons extends PropSpec
     tree
   }
 
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
                 additionalTokens: Seq[(Digest32, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)

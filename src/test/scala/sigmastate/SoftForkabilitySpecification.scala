@@ -17,34 +17,53 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext
   lazy val prover = new ErgoLikeTestProvingInterpreter()
   lazy val verifier = new ErgoLikeTestInterpreter
-  lazy val invalidPropV1 = compile(Interpreter.emptyEnv,
+  val deadline = 100
+  val boxAmt = 100L
+  lazy val invalidPropV1 = compile(Interpreter.emptyEnv + ("deadline" -> deadline),
     """{
-     |  HEIGHT > 100 && OUTPUTS.size == 1
+     |  HEIGHT > deadline && OUTPUTS.size == 1
      |}""".stripMargin).asBoolValue
-  lazy val invalidTxV1 = createTransaction(createBox(100, invalidPropV1.asSigmaProp, 1))
+  lazy val invalidTxV1 = createTransaction(createBox(boxAmt, invalidPropV1.asSigmaProp, 1))
   lazy val invalidTxV1bytes = invalidTxV1.messageToSign
 
   lazy val propV1 = invalidPropV1.toSigmaProp
-  lazy val txV1 = createTransaction(createBox(100, propV1, 1))
+  lazy val txV1 = createTransaction(createBox(boxAmt, propV1, 1))
   lazy val txV1bytes = txV1.messageToSign
+
+  val blockHeight = 110
 
   def createContext(h: Int, tx: ErgoLikeTransaction, vs: ValidationSettings) =
     ErgoLikeContext(h,
       AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
       tx, fakeSelf, vs = vs)
 
-  def verifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
     val env = Map(ScriptNameProp -> name)
-    val ctx = createContext(110, tx, vs)
+    val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
     val proof1 = prover.prove(env, prop, ctx, fakeMessage).get.proof
     verifier.verify(env, prop, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
   }
 
+  def proveTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+    val env = Map(ScriptNameProp -> (name + "_prove"))
+    val ctx = createContext(blockHeight, tx, vs)
+    val prop = tx.outputs(0).ergoTree
+    val proof1 = prover.prove(env, prop, ctx, fakeMessage).get.proof
+    proof1
+  }
+
+  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: Array[Byte], vs: ValidationSettings) = {
+    val env = Map(ScriptNameProp -> (name + "_verify"))
+    val ctx = createContext(blockHeight, tx, vs)
+    val prop = tx.outputs(0).ergoTree
+    verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+  }
+
   def checkTxProp[T <: ErgoLikeTransaction, R](tx1: T, tx2: T)(p: T => R) = {
     p(tx1) shouldBe p(tx2)
   }
-  
+
   property("node v1, received tx with script v1, incorrect script") {
     assertExceptionThrown({
       // CheckDeserializedScriptIsSigmaProp rule violated
@@ -62,7 +81,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV1bytes))
 
     // validating script
-    verifyTx("propV1", tx, vs)
+    proveAndVerifyTx("propV1", tx, vs)
   }
 
   val Height2Code = (LastConstantCode + 56).toByte
@@ -73,21 +92,39 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
   val Height2Ser = CaseObjectSerialization(Height2Code, Height2)
 
-  lazy val prop = GT(Height2, IntConstant(100))
-  lazy val invalidTxV2 = createTransaction(createBox(100, prop.asSigmaProp, 1))
+  // prepare soft-fork settings for v2
+  val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
+
+  /** Runs the block as if on the v2 node. */
+  def runOnV2Node[T](block: => T): T = {
+    ValueSerializer.addSerializer(Height2Code, Height2Ser)
+    val res = block
+    ValueSerializer.removeSerializer(Height2Code)
+    res
+  }
+
+  lazy val prop = GT(Height2, IntConstant(deadline))
+  lazy val invalidTxV2 = createTransaction(createBox(boxAmt, prop.asSigmaProp, 1))
 
 
   lazy val propV2 = prop.toSigmaProp
+  // prepare bytes using special serialization WITH `size flag` in the header
+  lazy val propV2tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
+  lazy val propV2treeBytes = runOnV2Node {
+    propV2tree.bytes
+  }
+
+  lazy val txV2 = createTransaction(createBox(boxAmt, propV2tree, 1))
+  lazy val txV2messageToSign = runOnV2Node {
+    txV2.messageToSign
+  }
 
   property("node v1, soft-fork up to v2, script v2 without size") {
     // prepare bytes using default serialization without `size bit` in the header
-    ValueSerializer.addSerializer(Height2Code, Height2Ser)
-    val txV2_withoutSize = createTransaction(createBox(100, ErgoTree.fromProposition(propV2), 1))
-    val txV2_withoutSize_bytes = txV2_withoutSize.messageToSign
-    ValueSerializer.removeSerializer(Height2Code)
-
-    // prepare soft-fork settings
-    val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
+    val (txV2_withoutSize, txV2_withoutSize_bytes) = runOnV2Node {
+      val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(propV2), 1))
+      (tx, tx.messageToSign)
+    }
 
     // should fail with given exceptions
     assertExceptionThrown(
@@ -105,20 +142,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("node v1, soft-fork up to v2, script v2 with `size bit`") {
-    // prepare bytes using special serialization WITH `size flag` in the header
-    ValueSerializer.addSerializer(Height2Code, Height2Ser)
-    val tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
-    val treeBytes = tree.bytes
-    val txV2 = createTransaction(createBox(100, tree, 1))
-    val txV2bytes = txV2.messageToSign
-    ValueSerializer.removeSerializer(Height2Code)
+    val treeBytes = propV2treeBytes
+    val txV2bytes = txV2messageToSign
 
-    // prepare soft-fork settings
-    val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
-
-    // parse and validate tx
+    // parse and validate tx with v2 settings
     val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
-    verifyTx("propV2", tx, v2vs)
+    proveAndVerifyTx("propV2", tx, v2vs)
 
     // also check that transaction prop was trivialized due to soft-fork
     tx.outputs(0).ergoTree.root.left.get.bytes.array shouldBe treeBytes
@@ -135,9 +164,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   property("node v1, no soft-fork, received script v2, raise error") {
     assertExceptionThrown({
-      ValueSerializer.addSerializer(Height2Code, Height2Ser)
-      val invalidTxV2bytes = invalidTxV2.messageToSign
-      ValueSerializer.removeSerializer(Height2Code)
+      val invalidTxV2bytes = runOnV2Node { invalidTxV2.messageToSign }
       ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(invalidTxV2bytes))
     },{
       case se: SerializerException if se.cause.isDefined =>
@@ -148,30 +175,31 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("our node v2, was soft-fork up to v2, received script v2") {
-    // make node v2
-    ValueSerializer.addSerializer(Height2Code, Height2Ser)
-
-    // prepare bytes using special serialization WITH `size flag` in the header
-    val tree = ErgoTree.withSegregation(ErgoTree.SizeFlag,  propV2)
-    val txV2 = createTransaction(createBox(100, tree, 1))
     val txV2bytes = txV2.messageToSign
 
-    // prepare soft-fork settings
-    val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
+    // run as on node v2
+    runOnV2Node {
 
-    // parse and validate tx with v2 script (since serializers were extended to v2)
-    val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
-    tx shouldBe txV2
+      // parse and validate tx with v2 script (since serializers were extended to v2)
+      val tx = ErgoLikeTransaction.serializer.parse(SigmaSerializer.startReader(txV2bytes))
+      tx shouldBe txV2
 
-    // fails evaluation of v2 script (due to the rest of the implementation is still v1)
-    assertExceptionThrown({
-      verifyTx("propV2", tx, v2vs)
-    },{
-      case _: CosterException => true
-      case _ => false
-    })
+      // fails evaluation of v2 script (due to the rest of the implementation is still v1)
+      assertExceptionThrown({
+        proveAndVerifyTx("propV2", tx, v2vs)
+      },{
+        case _: CosterException => true
+        case _ => false
+      })
+    }
+  }
+  
+  property("our node v1, was soft-fork up to v2, received v1 script, DeserializeContext of v2 script") {
+    val txV2bytes = txV2.messageToSign
 
-    ValueSerializer.removeSerializer(Height2Code)
+    val prop = GT(Height, IntConstant(deadline)).toSigmaProp
+    val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(prop), 1))
+
   }
 
 }
