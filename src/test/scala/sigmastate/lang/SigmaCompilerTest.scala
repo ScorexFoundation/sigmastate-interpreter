@@ -348,45 +348,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         Map())
   }
 
-  property("SCollection.segmentLength") {
-    comp("OUTPUTS.segmentLength({ (out: Box) => out.value >= 1L }, 0)") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.SegmentLengthMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
-        Vector(
-          FuncValue(
-            Vector((1, SBox)),
-            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-          IntConstant(0)
-        ),
-        Map())
-  }
-
-  property("SCollection.indexWhere") {
-    comp("OUTPUTS.indexWhere({ (out: Box) => out.value >= 1L }, 0)") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.IndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
-        Vector(
-          FuncValue(
-            Vector((1, SBox)),
-            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-          IntConstant(0)
-        ),
-        Map())
-  }
-
-  property("SCollection.lastIndexWhere") {
-    comp("OUTPUTS.lastIndexWhere({ (out: Box) => out.value >= 1L }, 1)") shouldBe
-      mkMethodCall(Outputs,
-        SCollection.LastIndexWhereMethod.withConcreteTypes(Map(SCollection.tIV -> SBox)),
-        Vector(
-          FuncValue(
-            Vector((1, SBox)),
-            GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-          IntConstant(1)
-        ),
-        Map())
-  }
-
   property("SCollection.patch") {
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
@@ -528,18 +489,6 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
         SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
         Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
       )
-  }
-
-  property("SCollection.partition") {
-    comp("Coll(1, 2).partition({ (i: Int) => i > 0 })") shouldBe
-      mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
-        SCollection.PartitionMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(FuncValue(
-          Vector((1, SInt)),
-          GT(ValUse(1, SInt), IntConstant(0))
-        )),
-        Map())
   }
 
   // TODO 1) implement method for special.collection.Coll 2) add rule to CollCoster

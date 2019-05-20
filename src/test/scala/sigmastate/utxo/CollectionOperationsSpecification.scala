@@ -478,48 +478,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
-  property("segmentLength") {
-    assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
-      EQ(
-        MethodCall(Outputs,
-          SegmentLengthMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(0)
-          ),
-          Map()),
-        IntConstant(1)),
-      IndexedSeq(1L, 2L))
-  }
-
-  property("indexWhere") {
-    assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
-      EQ(
-        MethodCall(Outputs,
-          IndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(0)
-          ),
-          Map()),
-        IntConstant(0)),
-      IndexedSeq(1L, 2L))
-  }
-
-  property("lastIndexWhere") {
-    assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
-      EQ(
-        MethodCall(Outputs,
-          LastIndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(1)
-          ),
-          Map()),
-        IntConstant(0)),
-      IndexedSeq(1L, 2L))
-  }
-
   property("zip") {
     assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
       EQ(
@@ -530,24 +488,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           ),
           Map()).asCollection[STuple]),
         IntConstant(2)),
-      IndexedSeq(1L, 2L))
-  }
-
-  property("partition") {
-    assertProof("OUTPUTS.partition({ (box: Box) => box.value < 2L})._1.size == 1",
-      EQ(
-        SizeOf(
-          SelectField(
-            MethodCall(Outputs,
-              PartitionMethod.withConcreteTypes(Map(tIV -> SBox)),
-              Vector(
-                FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
-              ),
-              Map()).asValue[STuple],
-            1
-          ).asCollection[SType]
-        ),
-        IntConstant(1)),
       IndexedSeq(1L, 2L))
   }
 

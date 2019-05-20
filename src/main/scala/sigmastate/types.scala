@@ -223,7 +223,7 @@ trait STypeCompanion {
   def methods: Seq[SMethod]
 
   def getMethodById(methodId: Byte): SMethod =
-    methods.filter(_.objType == this).apply(methodId - 1)
+    methods.find(m => m.objType == this && m.methodId == methodId).get
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -879,15 +879,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       tOVColl,
       Seq(paramIV, paramOV)),
     15, MethodCallIrBuilder, None)
-  val SegmentLengthMethod = SMethod(this, "segmentLength",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    16, MethodCallIrBuilder, None)
-  val IndexWhereMethod = SMethod(this, "indexWhere",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    17, MethodCallIrBuilder, None)
-  val LastIndexWhereMethod = SMethod(this, "lastIndexWhere",
-    SFunc(IndexedSeq(ThisType, tPredicate, SInt), SInt, Seq(paramIV)),
-    18, MethodCallIrBuilder, None)
   val PatchMethod = SMethod(this, "patch",
     SFunc(IndexedSeq(ThisType, SInt, ThisType, SInt), ThisType, Seq(paramIV)),
     19, MethodCallIrBuilder, None)
@@ -930,9 +921,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val EndsWithMethod = SMethod(this, "endsWith",
     SFunc(IndexedSeq(ThisType, ThisType), SBoolean, Seq(paramIV)),
     32, MethodCallIrBuilder, None)
-  val PartitionMethod = SMethod(this, "partition",
-    SFunc(IndexedSeq(ThisType, tPredicate), STuple(ThisType, ThisType), Seq(paramIV)),
-    33, MethodCallIrBuilder, None)
   val MapReduceMethod = SMethod(this, "mapReduce",
     SFunc(
       IndexedSeq(ThisType, SFunc(tIV, STuple(tK, tV)), SFunc(STuple(tV, tV), tV)),
@@ -956,9 +944,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     BitShiftRightZeroedMethod,
     IndicesMethod,
     FlatMapMethod,
-    SegmentLengthMethod,
-    IndexWhereMethod,
-    LastIndexWhereMethod,
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
@@ -973,7 +958,6 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,
-    PartitionMethod,
     MapReduceMethod,
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
