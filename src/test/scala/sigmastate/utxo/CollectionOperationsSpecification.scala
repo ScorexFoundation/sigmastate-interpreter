@@ -440,9 +440,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/423
-  // TODO costing rule in CollCoster
-  ignore("flatMap") {
+  property("flatMap") {
     assertProof("OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })(0) == 0.toByte",
       EQ(
         ByIndex(
@@ -472,7 +470,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/421
   property("indices") {
     assertProof("OUTPUTS.indices == Coll(0, 1)",
       EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),

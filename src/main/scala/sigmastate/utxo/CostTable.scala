@@ -134,6 +134,7 @@ object CostTable {
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
+    ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
     ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
     ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
@@ -152,6 +153,7 @@ object CostTable {
     ("SigmaPropBytes", "SigmaProp => Coll[Byte]", logicCost),
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
+    ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
     ("AND", "(Coll[Boolean]) => Boolean", logicCost),
     ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
@@ -231,6 +233,7 @@ object CostTable {
     ("%_per_item", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("ModQ", "(BigInt) => BigInt", MinimalCost),
+    ("ModQArithOp", "(BigInt, BigInt) => BigInt", MinimalCost),
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
@@ -334,6 +337,7 @@ object CostTable {
 
     val BinOrDeclaration = 1
     val BinAndDeclaration = 1
+    val BinXorDeclaration = 1
     val IfDeclaration = 1
 
     /**PropLeaf declaration cost, wrapped script cost to be added as well.*/

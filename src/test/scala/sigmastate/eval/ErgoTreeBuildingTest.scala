@@ -56,6 +56,11 @@ class ErgoTreeBuildingTest extends BaseCtxTests
         Vector(ValDef(1, List(), SizeOf(Outputs))),
         BinOr(GT(ValUse(1, SInt), IntConstant(1)), LT(ValUse(1, SInt), IntConstant(1))))
     )
+    build(emptyEnv, "logical4", "OUTPUTS.size > 1 ^ OUTPUTS.size < 1",
+      BlockValue(
+        Vector(ValDef(1, List(), SizeOf(Outputs))),
+        BinXor(GT(ValUse(1, SInt), IntConstant(1)), LT(ValUse(1, SInt), IntConstant(1))))
+    )
   }
 
   test("context data") {

@@ -112,6 +112,11 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       case Select(input, ModQMethod.name, _) =>
         eval(mkModQ(input.asBigInt))
 
+      case Terms.Apply(Select(l, PlusModQMethod.name, _), Seq(r)) =>
+        eval(mkPlusModQ(l.asBigInt, r.asBigInt))
+      case Terms.Apply(Select(l, MinusModQMethod.name, _), Seq(r)) =>
+        eval(mkMinusModQ(l.asBigInt, r.asBigInt))
+
       case _ =>
         super.evalNode(ctx, env, node)
     }
