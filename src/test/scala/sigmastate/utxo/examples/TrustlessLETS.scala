@@ -13,6 +13,7 @@ class TrustlessLETS extends SigmaTestingCommons {
 
     val rateTokenID = Blake2b256("rate")
     val letsTokenID = Blake2b256("lets")
+    val minErgsToJoin = 100L // to prevent spam and DDoS attacks
     val memberBoxEnv = Map(
       ScriptNameProp -> "memberBoxScriptEnv",
       "rateTokenID" -> rateTokenID,
@@ -35,8 +36,12 @@ class TrustlessLETS extends SigmaTestingCommons {
         |val totalInBalance = letsInputs.map({(b:Box) => b.R4[Long].get}).fold(0L, {(l:Long, r:Long) => l + r})
         |val totalOutBalance = letsOutputs.map({(b:Box) => b.R4[Long].get}).fold(0L, {(l:Long, r:Long) => l + r})
         |
-        |// negative LETS balance must be backed by ergs
-        |val correctErgs = outBalance > 0 || OUTPUTS(index).value == outBalance * rate
+        |// sender box can contain less amount of ergs (sender may withdraw ergs provided that any
+        |// negative LETS balance of sender is backed by sufficient ergs
+        |// for receiver, we don't touch the erg balance, since a receiver is not actively involved
+        |// in the transaction
+        |
+        |val correctErgs = outBalance > 0 || OUTPUTS(index).value >= -outBalance * rate
         |
         |SELF.tokens(0)._1 == letsTokenID &&
         |OUTPUTS(index).tokens(0)._1 == letsTokenID &&
@@ -52,6 +57,7 @@ class TrustlessLETS extends SigmaTestingCommons {
       ScriptNameProp -> "tokenBoxEnv",
       "rateTokenID" -> rateTokenID,
       "letsTokenID" -> letsTokenID,
+      "minErgsToJoin" -> minErgsToJoin,
       "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
     )
 
@@ -62,7 +68,8 @@ class TrustlessLETS extends SigmaTestingCommons {
         |   // A LETS box must have 1 membership token in tokens(0)
         |   b.tokens(0)._1 == letsTokenID && b.tokens(0)._2 == 1 &&
         |   blake2b256(b.propositionBytes) == memberBoxScriptHash &&
-        |   SELF.R4[Long].get == 0 // start box with zero LETS balance
+        |   SELF.R4[Long].get == 0 && // start box with zero LETS balance
+        |   b.value >= minErgsToJoin
         |}
         |val numLetsBoxes = OUTPUTS.filter({(b:Box) => isLets(b)}).size
         |tokenBox.tokens(0)._1 == SELF.tokens(0)._1 &&

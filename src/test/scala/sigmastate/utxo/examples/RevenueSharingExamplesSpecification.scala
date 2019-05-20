@@ -47,17 +47,15 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |      val amt = SELF.value - fee
       |      val ratios = spenders.map({(e:(Coll[Byte], Int)) => e._2})
       |      val total = ratios.fold(0, {(l:Int, r:Int) => l + r})
-      |      val validOuts = spenders.map({
-      |        (e:(Coll[Byte], Int)) =>
-      |           val ratio = e._2
-      |           val pubKeyHash = e._1
+      |      val validOuts = spenders.zip(OUTPUTS).forall({
+      |        (e:((Coll[Byte], Int), Box)) =>
+      |           val ratio = e._1._2
+      |           val pubKeyHash = e._1._1
+      |           val box = e._2
       |           val share = amt / total * ratio
-      |           OUTPUTS.exists({(b:Box) =>
-      |             b.value == share && blake2b256(b.propositionBytes) == pubKeyHash
-      |           }
-      |           )
+      |           box.value >= share && blake2b256(box.propositionBytes) == pubKeyHash
       |      })
-      |      validOuts.fold(true, {(l:Boolean, r:Boolean) => l && r}) && validFeeBox
+      |      validOuts && validFeeBox
       |}
     """.stripMargin)
 
