@@ -1,16 +1,18 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.{CheckValidOpCode, CheckDeserializedScriptIsSigmaProp}
+import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckValidOpCode}
 import org.ergoplatform._
 import sigmastate.Values.{NotReadyValueInt, ErgoTree, IntConstant, UnparsedErgoTree}
+import sigmastate.eval.Evaluation
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, CosterException, InvalidOpCode}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
-import special.sigma.SigmaTestingData
+import sigmastate.utxo.DeserializeContext
+import special.sigma.{SigmaTestingData, TestValue}
 
 class SoftForkabilitySpecification extends SigmaTestingData {
 
@@ -37,27 +39,24 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
       tx, fakeSelf, vs = vs)
 
-  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
-    val env = Map(ScriptNameProp -> name)
-    val ctx = createContext(blockHeight, tx, vs)
-    val prop = tx.outputs(0).ergoTree
-    val proof1 = prover.prove(env, prop, ctx, fakeMessage).get.proof
-    verifier.verify(env, prop, ctx, proof1, fakeMessage).map(_._1).getOrElse(false) shouldBe true
-  }
-
-  def proveTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+  def proveTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings): ProverResult = {
     val env = Map(ScriptNameProp -> (name + "_prove"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
-    val proof1 = prover.prove(env, prop, ctx, fakeMessage).get.proof
+    val proof1 = prover.prove(env, prop, ctx, fakeMessage).get
     proof1
   }
 
-  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: Array[Byte], vs: ValidationSettings) = {
+  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: ProverResult, vs: ValidationSettings) = {
     val env = Map(ScriptNameProp -> (name + "_verify"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
     verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+  }
+
+  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+    val proof = proveTx(name, tx, vs)
+    verifyTx(name, tx, proof, vs)
   }
 
   def checkTxProp[T <: ErgoLikeTransaction, R](tx1: T, tx2: T)(p: T => R) = {
@@ -197,9 +196,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   property("our node v1, was soft-fork up to v2, received v1 script, DeserializeContext of v2 script") {
     val txV2bytes = txV2.messageToSign
 
-    val prop = GT(Height, IntConstant(deadline)).toSigmaProp
+    val prop = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
     val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(prop), 1))
-
+//    val bindings = extensions.mapValues { case v: TestValue[a] =>
+//      IR.builder.mkConstant(txV, Evaluation.rtypeToSType(v.tA))
+//    }
+//    verifyTx("deserialize", tx, new ProverResult(Array.emptyByteArray, ContextExtension(bindings)), v2vs)
   }
 
 }
