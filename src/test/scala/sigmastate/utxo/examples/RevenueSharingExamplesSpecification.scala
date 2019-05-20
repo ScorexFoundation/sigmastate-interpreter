@@ -38,18 +38,8 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
       val feeBox = OUTPUTS(0)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
-      val amt = SELF.value - fee
-      val validOuts = spenders.map({
-        (e:(Coll[Byte], Int)) =>
-          val share = amt / 100 * e._2
-          val pkh = e._1
-          OUTPUTS.exists({(b:Box) =>
-            b.value == share && blake2b256(b.propositionBytes) == pkh
-          }
-          )
-      })
-      //validOuts.foldLeft(true)({(l:Boolean, r:Boolean) => l && r}) && validFeeBox
-      miner.pubKey // dummy line because above doesn't work
+      validFeeBox
+      // miner.pubKey // dummy line because above doesn't work
     },
     """{
       |      val feeBox = OUTPUTS(0)
