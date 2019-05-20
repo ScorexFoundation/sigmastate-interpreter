@@ -38,6 +38,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
+  private def assertProof(code: String,
+                          outputBoxValues: IndexedSeq[Long],
+                          boxesToSpendValues: IndexedSeq[Long]) = {
+    val (prover, verifier, prop, ctx) = buildEnv(code, None, outputBoxValues, boxesToSpendValues)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+  }
+
   private def assertProverFail(code: String,
                                expectedComp: SigmaPropValue,
                                outputBoxValues: IndexedSeq[Long],
@@ -49,14 +57,22 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   private def buildEnv(code: String,
                        expectedComp: Value[SType],
                        outputBoxValues: IndexedSeq[Long],
-                       boxesToSpendValues: IndexedSeq[Long]) = {
+                       boxesToSpendValues: IndexedSeq[Long]):
+  (ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaPropValue, ErgoLikeContext) =
+    buildEnv(code, Some(expectedComp), outputBoxValues, boxesToSpendValues)
+
+  private def buildEnv(code: String,
+                       expectedComp: Option[Value[SType]],
+                       outputBoxValues: IndexedSeq[Long],
+                       boxesToSpendValues: IndexedSeq[Long]):
+  (ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaPropValue, ErgoLikeContext) = {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val prop = compile(Map(), code).asBoolValue.toSigmaProp
 
-    prop shouldBe expectedComp
+    expectedComp.foreach(prop shouldBe _)
     val ctx = context(boxesToSpendValues.map(ErgoBox(_, pubkey, 0)),
       outputBoxValues.map(ErgoBox(_, pubkey, 0)))
     (prover, verifier, prop, ctx)
@@ -519,16 +535,23 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   }
 
   property("zip") {
-    assertProof("OUTPUTS.zip(Coll(1,2)).size == 2",
+    assertProof("OUTPUTS.zip(INPUTS).size == 2",
       EQ(
         SizeOf(MethodCall(Outputs,
-          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SInt)),
-          Vector(
-            ConcreteCollection(IntConstant(1), IntConstant(2))
-          ),
+          SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBox)),
+          Vector(Inputs),
           Map()).asCollection[STuple]),
         IntConstant(2)),
-      IndexedSeq(1L, 2L))
+      IndexedSeq(1L, 2L), IndexedSeq(3L, 4L))
+  }
+
+  property("zip (nested)") {
+    assertProof(
+      """OUTPUTS.zip(INPUTS).zip(OUTPUTS).zip(INPUTS)
+        | .map({ (t: (((Box, Box), Box), Box)) =>
+        | t._1._2.value + t._2.value
+        | }).fold(0L, { (a: Long, v: Long) => a + v }) == 10""".stripMargin,
+      IndexedSeq(1L, 2L), IndexedSeq(3L, 4L))
   }
 
   property("partition") {

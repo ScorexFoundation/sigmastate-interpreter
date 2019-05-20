@@ -216,6 +216,9 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $coll.flatMap({ (b: Box) => b.propositionBytes }).size > 0 }") shouldBe
       (lambdaCost + accessBox + extractCost + selectField +
         accessBox  * tx.outputs.length + collToColl + LengthGTConstCost)
+    cost(s"{ $coll.zip(OUTPUTS).size > 0 }") shouldBe
+      (selectField + accessBox * tx.outputs.length +
+        accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
   }
 
   property("Option operations cost") {
