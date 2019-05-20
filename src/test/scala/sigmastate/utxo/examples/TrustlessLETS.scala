@@ -1,44 +1,14 @@
 
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
-import scorex.utils.Random
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
-import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
 
 class TrustlessLETS extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
-  /** XOR game:
-
-     Alice creates a XOR game of "playAmount" ergs by creating a Half-game UTXO called the "halfGameOutput" output below.
-     Another player (Bob) then sends a transaction spending Alice's UTXO and creating another output called "fullGameOutput" (a "Full game" UTXO).
-     After Alice opens her commitment (see below), the fullGameOutput can be spent by the winner.
-     The transactions encode the following protocol.
-
-     protocol:
-       Step 1: Alice commits to secret bit a as follows:
-                  Generate random s and compute h = Hash(s||a)
-                  h is the commitment to a
-               Alice also selects the "play amount", the amount each player must spend to participate.
-               She generates a halfGameOutput encoding h and some spending condition given below by halfGameScript
-       Step 2: Bob chooses random bit b (public) and creates a new tx spending Alice's UTXO along with
-               some others and creating one output that has the spending conditions given by fullGameScript.
-               (one of the conditions being that the amount of that output is >= twice the play amount.)
-       Step 3: Alice reveals (s, a) to open her commitment and wins if a == b. Otherwise Bob wins.
-               If Alice fails to open her commitment before some deadline then Bob automatically wins.
-
-    For simplicity, we will use following bytes to designate bits
-        0x00 = false
-        0x01 = true
-
-    */
   property("Evaluation - LETS Example") {
 
     val rateTokenID = Blake2b256("rate")
@@ -85,9 +55,6 @@ class TrustlessLETS extends SigmaTestingCommons {
       "memberBoxScriptHash" -> Blake2b256(memberBoxScript.treeWithSegregation.bytes)
     )
 
-    // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
-    // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
-    // before some minimum height.
     val tokenScript = compile(tokenBoxEnv,
       """{
         |val tokenBox = OUTPUTS(0) // first output should contain remaining LETS tokens
@@ -102,13 +69,6 @@ class TrustlessLETS extends SigmaTestingCommons {
         |tokenBox.tokens(0)._2 == SELF.tokens(0)._2 - numLetsBoxes
         |}
       """.stripMargin).asSigmaProp
-
-    /////////////////////////////////////////////////////////
-    //// Alice starts creating a Half-Game
-    /////////////////////////////////////////////////////////
-
-    // she creates a transaction that outputs a box with halfGame script.
-    // In the example, we don't create the transaction; we just create a box below
 
     val tokenBoxCreationHeight = 70
     val tokenAmount = 10      // LongConstant(10)
