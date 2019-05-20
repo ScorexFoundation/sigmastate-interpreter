@@ -38,8 +38,8 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
       val feeBox = OUTPUTS(0)
       val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
-      validFeeBox
-      // miner.pubKey // dummy line because above doesn't work
+      //validFeeBox
+      miner.pubKey // dummy line because above doesn't work
     },
     """{
       |      val feeBox = OUTPUTS(0)
