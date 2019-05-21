@@ -3,9 +3,10 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
+import org.ergoplatform.ValidationRules.CheckCostFuncOperation
 import org.ergoplatform._
 import sigmastate._
-import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
+import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
 import sigmastate.lang.Terms.OperationId
 import sigmastate.utxo.CostTableStat
 
@@ -17,11 +18,14 @@ import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CosterException
+import sigmastate.serialization.OpCodes
 import special.SpecialPredef
 import special.Types._
+
+import scala.collection.immutable.HashSet
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
@@ -60,6 +64,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import CSizeBox._
   import SizeContext._
   import CSizeContext._
+  import OpCodes._
 
   val okPrintEvaluatedEntries: Boolean = false
 
@@ -127,15 +132,75 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => false
   }
 
+  private val _allowedOpCodesInCosting = HashSet[OpCode](
+    Undefined,
+    InputsCode,
+    OutputsCode,
+    TupleCode,
+    SelectFieldCode,
+  )
+
+  def isAllowedOpCodeInCosting(opCode: OpCode): Boolean = {
+    // todo implement
+//    true
+    _allowedOpCodesInCosting.contains(opCode)
+  }
+
+
+  private def getOpCode(d: Def[_]): OpCode = d match {
+      // todo implement
+//    case _: Const[_] => true
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] => Undefined
+    case _: Tup[_, _] => TupleCode
+    case _: First[_, _] | _: Second[_, _] => SelectFieldCode
+//    case _: FieldApply[_] => true
+//    case _: IntPlusMonoid => true
+//    case _: Lambda[_, _] => true
+//    case _: ThunkDef[_] => true
+//    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
+//    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_], _, _) => true
+
+    case SCM.inputs(_) => InputsCode
+    case SCM.outputs(_) => OutputsCode
+
+//         | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
+//         SCM.preHeader(_) | SCM.getVar(_, _, _) => true
+//    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) | SBM.getReg(_, _, _) |
+//         SBM.tokens(_) => true
+//    case SSPM.propBytes(_) => true
+//    case SAVM.tVal(_) | SAVM.valueSize(_) => true
+//    case SizeM.dataSize(_) => true
+//    case SPairM.l(_) | SPairM.r(_) => true
+//    case SCollM.sizes(_) => true
+//    case SOptM.sizeOpt(_) => true
+//    case SFuncM.sizeEnv(_) => true
+//    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+//         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
+//    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
+//         ContextM.getVar(_, _, _) => true
+//    case SigmaM.propBytes(_) => true
+//    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
+//    case CollM.length(_) | CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) | CollM.apply(_, _) |
+//         CollM.append(_, _) | CollM.foldLeft(_, _, _) => true
+//    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
+//    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_, _, _) => true
+//    case OM.get(_) | OM.getOrElse(_, _) | OM.fold(_, _, _) | OM.isDefined(_) => true
+//    case _: CostOf | _: SizeOf[_] => true
+//    case _: Upcast[_, _] => true
+//    case _: Apply[_, _] => true
+//    case SPCM.some(_) => true
+    case _ => error(s"Unknown opCode for $d}")
+  }
+
   /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
     * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       lam.scheduleAll.forall { te =>
-        val ok = isValidCostPrimitive(te.rhs)
-        if (!ok) !!!(s"Invalid primitive in Cost function: ${te.rhs}")
-        ok
+        val isValidCostPrim = isValidCostPrimitive(te.rhs)
+        if (!isValidCostPrim) !!!(s"Invalid primitive in Cost function: ${te.rhs}")
+        CheckCostFuncOperation(ValidationRules.currentSettings, this)(getOpCode(te.rhs)) { isValidCostPrim }
       }
     }
   }

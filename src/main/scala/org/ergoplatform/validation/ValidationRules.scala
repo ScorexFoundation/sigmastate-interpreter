@@ -2,6 +2,10 @@ package org.ergoplatform.validation
 
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
+import sigma.util.Extensions.ByteOps
+import sigmastate.Values.{IntValue, SValue, Value}
+import sigmastate.eval.IRContext
+import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -163,6 +167,24 @@ object ValidationRules {
     }
   }
 
+  object CheckCostFuncOperation extends ValidationRule(1007,
+    "Check the opcode is allowed in cost function") {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(opCode: OpCode)(block: => T): T = {
+      def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
+      def args = Seq(opCode)
+      validate(vs, ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
+    }
+
+    override def isSoftFork(vs: ValidationSettings,
+                            ruleId: Short,
+                            status: RuleStatus,
+                            args: Seq[Any]): Boolean = (status, args) match {
+      case (ChangedRule(newValue), Seq(_, opCode: OpCode)) => newValue.contains(opCode)
+      case _ => false
+    }
+  }
+
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -178,6 +200,8 @@ object ValidationRules {
     CheckTypeWithMethods,
     CheckAndGetMethod,
     CheckHeaderSizeBit,
+    CheckMethod,
+    CheckCostFuncOperation,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
