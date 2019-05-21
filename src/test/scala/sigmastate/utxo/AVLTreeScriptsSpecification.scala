@@ -239,24 +239,15 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
     val proofId = 0: Byte
     val elementId = 1: Byte
 
-    val prop = AND(
-      GE(GetVarLong(elementId).get, LongConstant(120)),
-      IR.builder.mkMethodCall(
-        ExtractRegisterAs[SAvlTree.type](Self, reg1).get, SAvlTree.containsMethod,
-        IndexedSeq(CalcBlake2b256(LongToByteArray(GetVarLong(elementId).get)), GetVarByteArray(proofId).get)
-      ).asBoolValue
-    ).toSigmaProp
     val env = Map("proofId" -> proofId.toLong, "elementId" -> elementId.toLong)
-    val propCompiled = compile(env,
+    val prop = compile(env,
       """{
-        |  val tree = SELF.R3[AvlTree].get
+        |  val tree = SELF.R4[AvlTree].get
         |  val proof = getVar[Coll[Byte]](proofId).get
         |  val element = getVar[Long](elementId).get
         |  val elementKey = blake2b256(longToByteArray(element))
-        |  element >= 120 && tree.contains(elementKey, proof)
+        |  element >= 120L && tree.contains(elementKey, proof)
         |}""".stripMargin).asBoolValue.toSigmaProp
-
-    //TODO: propCompiled shouldBe prop
 
     val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(SigmaDsl.avlTree(treeData))))
@@ -283,7 +274,7 @@ class AVLTreeScriptsSpecification extends SigmaTestingCommons { suite =>
       .withContextExtender(proofId, ByteArrayConstant(smallLeafTreeProof))
       .withContextExtender(elementId, LongConstant(elements.head))
     smallProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
-    // TODO check that verifier return false for incorrect proofs?
+    // TODO coverage: check that verifier return false for incorrect proofs?
   }
 
   property("avl tree - prover provides proof") {

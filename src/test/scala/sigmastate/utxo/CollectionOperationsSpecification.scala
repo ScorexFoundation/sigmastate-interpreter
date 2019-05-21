@@ -18,7 +18,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
     {
-      // TODO this means the context is not totally correct
       val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
       ergoplatform.ErgoLikeContext(
         currentHeight = 50,
@@ -92,7 +91,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
-    //todo: finish
+
+    //TODO coverage: add negative case for `exists`
   }
 
   property("forall") {
@@ -123,7 +123,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
-    //todo: finish
   }
 
 

@@ -59,8 +59,8 @@ object CostTable {
   val avlTreeOp = hashPerKb * 2
 
   val collAccess = 5
-  val collLength  = 5 // TODO should be >= selectField
-  val collByIndex = 5 // TODO should be >= selectField
+  val collLength  = 5 // TODO costing: should be >= selectField
+  val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
 
@@ -75,7 +75,7 @@ object CostTable {
   val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
   val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
 
-  val castOp = 5  // TODO should be >= selectField
+  val castOp = 5  // TODO costing: should be >= selectField
 
   val treeOp = 1000
 

@@ -96,7 +96,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val reducedHashSize = 31
     val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)).take(reducedHashSize))
 
-    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
+    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger
 
     val oracleBox = ErgoBox(
       value = 1L,
