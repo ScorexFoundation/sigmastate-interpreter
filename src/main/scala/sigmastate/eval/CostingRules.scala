@@ -602,7 +602,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def updateMany(indexes: RCosted[Coll[Int]], values: RCosted[Coll[T]]): RCosted[Coll[T]] = {
       val xsC = asCostedColl(obj)
       val v = xsC.value.updateMany(indexes.value, values.value)
-      val c = opCost(v, costOfArgs, perKbCostOf(method, values.size.dataSize))  // TODO costing rule should be more accurate with sizes
+      val c = opCost(v, costOfArgs, perKbCostOf(method, values.size.dataSize))
       RCCostedColl(v, xsC.costs, xsC.sizes, c)
     }
 

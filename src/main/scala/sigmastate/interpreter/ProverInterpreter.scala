@@ -139,25 +139,11 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     def errorReducedToFalse = error("Script reduced to false")
 
     val proofTree = reducedProp match {
-      case BooleanConstant(boolResult) =>
-        if (boolResult) NoProof
-        else errorReducedToFalse
-      case sigmaBoolean: SigmaBoolean =>
-        sigmaBoolean match {
-          case TrueProp => NoProof
-          case FalseProp => errorReducedToFalse
-          case _ =>
-            val unprovenTree = convertToUnproven(sigmaBoolean)
-            prove(unprovenTree, message)
-        }
-      case _ =>
-        error(s"Unexpected result of reduceToCrypto($ctx, $env, $propTree)")
-      // TODO this case should be removed, because above cases should cover all possible variants
-      //        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
-      //          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
-      //          .get
-      //        val ct = convertToUnproven(sigmaBoolean)
-      //        prove(ct, message)
+      case TrueProp => NoProof
+      case FalseProp => errorReducedToFalse
+      case sigmaTree =>
+        val unprovenTree = convertToUnproven(sigmaTree)
+        prove(unprovenTree, message)
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
