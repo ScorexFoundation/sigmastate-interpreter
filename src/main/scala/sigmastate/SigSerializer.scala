@@ -3,7 +3,7 @@ package sigmastate
 import org.bouncycastle.util.BigIntegers
 import sigmastate.basics.DLogProtocol.{SecondDLogProverMessage, ProveDlog}
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.Values.{Value, SigmaBoolean}
+import sigmastate.Values.SigmaBoolean
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Helpers
 import Helpers.xor

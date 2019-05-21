@@ -72,7 +72,7 @@ trait InChainAtomicSwap extends SigmaContract {
   def templateForBob(ctx: Context) = verifyZK {
     (pkB && ctx.HEIGHT > deadline) ||
         allOf( Collection(
-          ctx.OUTPUTS(1).value >= 100,
+          ctx.OUTPUTS(1).value >= 100L,
           ctx.OUTPUTS(1).propositionBytes == pkB.propBytes
         ))
   }

@@ -272,8 +272,8 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
           case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
             typeSubst
-          case (mth @ SCollection.ZipMethod, Seq(coll: EvaluatedCollection[_, _])) =>
-            val typeSubst = Map(SCollection.tOV -> coll.elementType)
+          case (mth @ SCollection.ZipMethod, Seq(coll)) =>
+            val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
           case (mth, _) => SigmaTyper.emptySubst
         }
