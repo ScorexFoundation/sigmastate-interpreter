@@ -167,12 +167,12 @@ object ValidationRules {
     }
   }
 
-  object CheckCostFuncOperation extends ValidationRule(1007,
+  object CheckCostFuncOperation extends ValidationRule(1008,
     "Check the opcode is allowed in cost function") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(opCode: OpCode)(block: => T): T = {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCode)(block: => T): T = {
       def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
       def args = Seq(opCode)
-      validate(vs, ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
+      validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
     }
 
     override def isSoftFork(vs: ValidationSettings,

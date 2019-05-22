@@ -167,7 +167,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       lam.scheduleAll.forall { te =>
-        CheckCostFuncOperation(ValidationRules.currentSettings, this)(getOpCode(te.rhs)) { true }
+        CheckCostFuncOperation(this)(getOpCode(te.rhs)) { true }
       }
     }
   }
