@@ -96,6 +96,13 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     TupleCode,
     SelectFieldCode,
     SizeOfCode,
+    PlusCode,
+    MinusCode,
+    MultiplyCode,
+    MaxCode,
+    MinCode,
+    DivisionCode,
+    ModuloCode,
   )
 
   def isAllowedOpCodeInCosting(opCode: OpCode): Boolean = _allowedOpCodesInCosting.contains(opCode)
@@ -111,7 +118,15 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //    case _: Lambda[_, _] => true
 //    case _: ThunkDef[_] => true
 //    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
-//    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_], _, _) => true
+    case ApplyBinOp(op, _, _) => op match {
+      case _: NumericPlus[_] => PlusCode
+      case _: NumericMinus[_] => MinusCode
+      case _: NumericTimes[_] => MultiplyCode
+      case _: IntegralDivide[_] => DivisionCode
+      case _: IntegralMod[_] => ModuloCode
+      case _: OrderingMax[_] => MaxCode
+      case _: OrderingMin[_] => MinCode
+    }
 
     case SCM.inputs(_) => InputsCode
     case SCM.outputs(_) => OutputsCode
@@ -134,7 +149,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //    case SigmaM.propBytes(_) => true
 //    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
     case CollM.length(_) => SizeOfCode
-//    case CollM.length(_) | CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) | CollM.apply(_, _) |
+//    case CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) | CollM.apply(_, _) |
 //         CollM.append(_, _) | CollM.foldLeft(_, _, _) => true
 //    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
 //    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_, _, _) => true
