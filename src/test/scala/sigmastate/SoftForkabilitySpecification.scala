@@ -1,7 +1,8 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckValidOpCode, trySoftForkable, CheckTupleType}
+import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
 import org.ergoplatform._
+import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
@@ -11,6 +12,7 @@ import sigmastate.serialization._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, CosterException}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 
@@ -210,25 +212,51 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("deserialize", tx, proof, v2vs)
   }
 
-  property("CheckTupleType rule") {
-    val exp = SelectField(Tuple(IntConstant(1), IntConstant(2), IntConstant(3)), 3)
-
+  def checkRule(rule: ValidationRule, v2vs: ValidationSettings, action: => Unit) = {
     // try SoftForkable block using current vs (v1 version)
     assertExceptionThrown({
       trySoftForkable(false) {
-        IR.doCosting(emptyEnv, exp)
+        action
         true
       }
     }, {
-      case ve: ValidationException if ve.rule == CheckTupleType => true
+      case ve: ValidationException if ve.rule == rule => true
       case _ => false
     })
 
-    val v2vs = vs.updated(CheckTupleType.id, ReplacedRule(0))
     val res = trySoftForkable(false)({
-      IR.doCosting(emptyEnv, exp)
+      action
       true
     })(v2vs)
     res shouldBe false
   }
+
+  property("CheckTupleType rule") {
+    val exp = SelectField(Tuple(IntConstant(1), IntConstant(2), IntConstant(3)), 3)
+    val v2vs = vs.updated(CheckTupleType.id, ReplacedRule(0))
+    checkRule(CheckTupleType, v2vs, {
+      IR.doCosting(emptyEnv, exp)
+    })
+  }
+
+  property("CheckPrimitiveTypeCode rule") {
+    val typeBytes = Array[Byte](MaxPrimTypeCode)
+    val v2vs = vs.updated(CheckPrimitiveTypeCode.id, ChangedRule(Array[Byte](MaxPrimTypeCode)))
+    checkRule(CheckPrimitiveTypeCode, v2vs, {
+      val r = SigmaSerializer.startReader(typeBytes)
+      TypeSerializer.deserialize(r)
+    })
+  }
+
+  property("CheckTypeCode rule") {
+    val newTypeCode = (SGlobal.typeCode + 1).toByte
+    val typeBytes = Array[Byte](newTypeCode)
+    val v2vs = vs.updated(CheckTypeCode.id, ChangedRule(Array[Byte](newTypeCode)))
+    checkRule(CheckTypeCode, v2vs, {
+      val r = SigmaSerializer.startReader(typeBytes)
+      TypeSerializer.deserialize(r)
+    })
+  }
+
+
 }

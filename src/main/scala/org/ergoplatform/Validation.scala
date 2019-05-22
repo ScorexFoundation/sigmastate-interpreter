@@ -7,6 +7,7 @@ import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
 import sigmastate.eval.IRContext
+import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.{SCollection, SType}
 
 /** Base trait for rule status information. */
@@ -55,6 +56,16 @@ trait SoftForkWhenReplaced extends SoftForkChecker {
       status: RuleStatus,
       args: Seq[Any]): Boolean = (status, args) match {
     case (ReplacedRule(_), _) => true
+    case _ => false
+  }
+}
+
+trait SoftForkWhenCodeAdded extends SoftForkChecker {
+  override def isSoftFork(vs: ValidationSettings,
+      ruleId: Short,
+      status: RuleStatus,
+      args: Seq[Any]): Boolean = (status, args) match {
+    case (ChangedRule(newValue), Seq(code: Byte)) => newValue.contains(code)
     case _ => false
   }
 }
@@ -180,19 +191,12 @@ object ValidationRules {
   }
 
   object CheckValidOpCode extends ValidationRule(1002,
-    "Check the opcode is supported by registered serializer or is added via soft-fork") {
+    "Check the opcode is supported by registered serializer or is added via soft-fork")
+    with SoftForkWhenCodeAdded {
     def apply[T](ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
-      def args = Seq(ser, opCode)
+      def args = Seq(opCode)
       validate(ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
-    }
-
-    override def isSoftFork(vs: ValidationSettings,
-        ruleId: Short,
-        status: RuleStatus,
-        args: Seq[Any]): Boolean = (status, args) match {
-      case (ChangedRule(newValue), Seq(_, opCode: OpCode)) => newValue.contains(opCode)
-      case _ => false
     }
   }
 
@@ -268,6 +272,8 @@ object ValidationRules {
     CheckCalcFunc,
     CheckCostWithContext,
     CheckTupleType,
+    CheckPrimitiveTypeCode,
+    CheckTypeCode,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
