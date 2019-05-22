@@ -19,19 +19,11 @@ import special.sigma._
 import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.reflect.{ClassTag, classTag}
-import scalan.meta.ScalanAst.STypeArgAnnotation
-import sigmastate.SBoolean.typeCode
-import sigmastate.SByte.typeCode
 import sigmastate.SMethod.MethodCallIrBuilder
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
+import sigmastate.utxo.ExtractCreationInfo
 import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
-import sigmastate.utxo.ByIndex
-import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval._
 
 /** Base type for all AST nodes of sigma lang. */

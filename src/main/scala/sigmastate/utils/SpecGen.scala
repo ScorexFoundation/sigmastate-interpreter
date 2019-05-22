@@ -2,8 +2,7 @@ package sigmastate.utils
 
 import sigmastate._
 import sigmastate.eval.Evaluation._
-import sigmastate.eval.{Zero, Sized, Evaluation}
-import SType._
+import sigmastate.eval.{Zero, Sized}
 import scalan.util.FileUtil
 import scalan.meta.PrintExtensions._
 
