@@ -1285,14 +1285,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         OptionCoster(_opt, SOption.GetOrElseMethod, Seq(_default))
 
       case SelectField(In(_tup), fieldIndex) =>
-        _tup.elem.eVal.asInstanceOf[Elem[_]] match {
-          case se: StructElem[_] =>
-            val tup = asRep[Costed[Struct]](_tup)
-            val fn = STuple.componentNameByIndex(fieldIndex - 1)
-            val v = tup.value.getUntyped(fn)
-            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
-            val s: RSize[Any] = ??? // TODO soft-forkable: implement similar to Pair case
-            RCCostedPrim(v, c, s)
+        val eTuple = _tup.elem.eVal.asInstanceOf[Elem[_]]
+        CheckTupleType(currentSettings, IR)(eTuple) {}
+        eTuple match {
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
             implicit val ea = pe.eFst
@@ -1303,6 +1298,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             else
               attachCost(pair.r, pair.accCost, selectFieldCost)
             res
+// TODO soft-fork: implement similar to Pair case
+//          case se: StructElem[_] =>
+//            val tup = asRep[Costed[Struct]](_tup)
+//            val fn = STuple.componentNameByIndex(fieldIndex - 1)
+//            val v = tup.value.getUntyped(fn)
+//            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
+//            val s: RSize[Any] = ???
+//            RCCostedPrim(v, c, s)
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>

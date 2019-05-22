@@ -37,6 +37,28 @@ case class  ReplacedRule(newRuleId: Short) extends RuleStatus
   */
 case class ChangedRule(newValue: Array[Byte]) extends RuleStatus
 
+/** Interface implemented by objects cable of checking soft-fork conditions. */
+trait SoftForkChecker {
+  /** Check soft-fork condition.
+    * @param vs       ValidationSettings actualized from blockchain extension sections
+    * @param ruleId   id of the rule which raised ValidationException
+    * @param status   status of the rule in the blockchain (agreed upon via voting)
+    * @param args     arguments of Validation rule with which the rule has risen the exception
+    * @return         true if `args` and `status` can be interpreted as valid soft-fork condition.
+    */
+  def isSoftFork(vs: ValidationSettings, ruleId: Short, status: RuleStatus, args: Seq[Any]): Boolean = false
+}
+
+trait SoftForkWhenReplaced extends SoftForkChecker {
+  override def isSoftFork(vs: ValidationSettings,
+      ruleId: Short,
+      status: RuleStatus,
+      args: Seq[Any]): Boolean = (status, args) match {
+    case (ReplacedRule(_), _) => true
+    case _ => false
+  }
+}
+
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
   * Validation logic is implemented by `apply` methods of derived classes.
@@ -44,7 +66,7 @@ case class ChangedRule(newValue: Array[Byte]) extends RuleStatus
 case class ValidationRule(
   id: Short,
   description: String
-) {
+) extends SoftForkChecker {
   /** Can be used in derived classes to implemented validation logic. */
   protected def validate[T](
         vs: ValidationSettings, condition: => Boolean,
@@ -63,7 +85,6 @@ case class ValidationRule(
         }
     }
   }
-  def isSoftFork(vs: ValidationSettings, ruleId: Short, status: RuleStatus, args: Seq[Any]): Boolean = false
 }
 
 /** Base class for all exception which may be thrown by validation rules. */
@@ -230,6 +251,18 @@ object ValidationRules {
     }
   }
 
+  object CheckTupleType extends ValidationRule(1007,
+    "Supported tuple type.") with SoftForkWhenReplaced {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(e: ctx.Elem[_])(block: => T): T = {
+      def msg = s"Invalid tuple type $e"
+      lazy val condition = e match {
+        case pe: ctx.PairElem[_,_] => true
+        case _ => false
+      }
+      validate(vs, condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -238,6 +271,7 @@ object ValidationRules {
     CheckCostFunc,
     CheckCalcFunc,
     CheckCostWithContext,
+    CheckTupleType,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
@@ -246,9 +280,11 @@ object ValidationRules {
     * This is immutable data structure, it can be augmented with RuleStates from block extension
     * sections of the blockchain, but that augmentation is only available in stateful context.
     */
-  val currentSettings: ValidationSettings = new MapValidationSettings(
-    ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
-  )
+  val currentSettings: ValidationSettings = new MapValidationSettings({
+    val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
+    assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
+    map
+  })
 
   def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: ValidationSettings): T = {
     try block

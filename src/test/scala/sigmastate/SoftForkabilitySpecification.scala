@@ -1,17 +1,17 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckValidOpCode}
+import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckValidOpCode, trySoftForkable, CheckTupleType}
 import org.ergoplatform._
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
-import sigmastate.interpreter.Interpreter.ScriptNameProp
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, CosterException}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
-import sigmastate.utxo.DeserializeContext
+import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 
 class SoftForkabilitySpecification extends SigmaTestingData {
@@ -21,7 +21,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   lazy val verifier = new ErgoLikeTestInterpreter
   val deadline = 100
   val boxAmt = 100L
-  lazy val invalidPropV1 = compile(Interpreter.emptyEnv + ("deadline" -> deadline),
+  lazy val invalidPropV1 = compile(emptyEnv + ("deadline" -> deadline),
     """{
      |  HEIGHT > deadline && OUTPUTS.size == 1
      |}""".stripMargin).asBoolValue
@@ -210,4 +210,25 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("deserialize", tx, proof, v2vs)
   }
 
+  property("CheckTupleType rule") {
+    val exp = SelectField(Tuple(IntConstant(1), IntConstant(2), IntConstant(3)), 3)
+
+    // try SoftForkable block using current vs (v1 version)
+    assertExceptionThrown({
+      trySoftForkable(false) {
+        IR.doCosting(emptyEnv, exp)
+        true
+      }
+    }, {
+      case ve: ValidationException if ve.rule == CheckTupleType => true
+      case _ => false
+    })
+
+    val v2vs = vs.updated(CheckTupleType.id, ReplacedRule(0))
+    val res = trySoftForkable(false)({
+      IR.doCosting(emptyEnv, exp)
+      true
+    })(v2vs)
+    res shouldBe false
+  }
 }
