@@ -103,6 +103,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     MinCode,
     DivisionCode,
     ModuloCode,
+    ByIndexCode,
+    GetVarCode,
+    ExtractScriptBytesCode,
+    ExtractBytesWithNoRefCode,
+    ExtractRegisterAs,
+    SelfCode,
+    MethodCallCode,
+    LastBlockUtxoRootHashCode,
   )
 
   def isAllowedOpCodeInCosting(opCode: OpCode): Boolean = _allowedOpCodesInCosting.contains(opCode)
@@ -127,14 +135,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case _: OrderingMax[_] => MaxCode
       case _: OrderingMin[_] => MinCode
     }
-
-    case SCM.inputs(_) => InputsCode
-    case SCM.outputs(_) => OutputsCode
-
-//         | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
-//         SCM.preHeader(_) | SCM.getVar(_, _, _) => true
-//    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) | SBM.getReg(_, _, _) |
-//         SBM.tokens(_) => true
+    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_)
+         | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) | SCM.preHeader(_)
+         | SCM.getVar(_, _, _) => Undefined
+    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_)
+         | SBM.registers(_) | SBM.getReg(_, _, _)
+         | SBM.tokens(_) => Undefined
 //    case SSPM.propBytes(_) => true
 //    case SAVM.tVal(_) | SAVM.valueSize(_) => true
 //    case SizeM.dataSize(_) => true
@@ -144,15 +150,22 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //    case SFuncM.sizeEnv(_) => true
 //    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
 //         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
-//    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-//         ContextM.getVar(_, _, _) => true
+    case ContextM.SELF(_) => SelfCode
+    case ContextM.OUTPUTS(_) => OutputsCode
+    case ContextM.INPUTS(_) => InputsCode
+    case ContextM.dataInputs(_) => MethodCallCode
+    case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
+    case ContextM.getVar(_, _, _) => GetVarCode
 //    case SigmaM.propBytes(_) => true
 //    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
     case CollM.length(_) => SizeOfCode
-//    case CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) | CollM.apply(_, _) |
+    case CollM.apply(_, _) => ByIndexCode
+//    case CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) |
 //         CollM.append(_, _) | CollM.foldLeft(_, _, _) => true
 //    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
-//    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_, _, _) => true
+    case BoxM.propositionBytes(_) => ExtractScriptBytesCode
+    case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
+    case BoxM.getReg(_, _, _) => ExtractRegisterAs
 //    case OM.get(_) | OM.getOrElse(_, _) | OM.fold(_, _, _) | OM.isDefined(_) => true
 //    case _: CostOf | _: SizeOf[_] => true
 //    case _: Upcast[_, _] => true
