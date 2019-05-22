@@ -2,17 +2,17 @@ package sigmastate
 
 import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckValidOpCode}
 import org.ergoplatform._
-import sigmastate.Values.{NotReadyValueInt, ErgoTree, IntConstant, UnparsedErgoTree}
-import sigmastate.eval.Evaluation
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, CosterException, InvalidOpCode}
+import sigmastate.lang.exceptions.{SerializerException, CosterException}
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.utxo.DeserializeContext
-import special.sigma.{SigmaTestingData, TestValue}
+import special.sigma.SigmaTestingData
 
 class SoftForkabilitySpecification extends SigmaTestingData {
 
@@ -51,7 +51,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val env = Map(ScriptNameProp -> (name + "_verify"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
-    verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).getOrElse(false) shouldBe true
+    verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).fold(t => throw t, identity) shouldBe true
   }
 
   def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
@@ -194,14 +194,20 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
   
   property("our node v1, was soft-fork up to v2, received v1 script, DeserializeContext of v2 script") {
-    val txV2bytes = txV2.messageToSign
+    // script bytes for context variable containing v2 operation
+    val propBytes = runOnV2Node {
+      ValueSerializer.serialize(prop)
+    }
 
-    val prop = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
-    val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(prop), 1))
-//    val bindings = extensions.mapValues { case v: TestValue[a] =>
-//      IR.builder.mkConstant(txV, Evaluation.rtypeToSType(v.tA))
-//    }
-//    verifyTx("deserialize", tx, new ProverResult(Array.emptyByteArray, ContextExtension(bindings)), v2vs)
+    // v1 main script which deserializes from context v2 script
+    val mainProp = BinAnd(GT(Height, IntConstant(deadline)), DeserializeContext(1, SBoolean)).toSigmaProp
+
+    val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(mainProp), 1))
+    val bindings = Map(1.toByte -> ByteArrayConstant(Colls.fromArray(propBytes)))
+    val proof = new ProverResult(Array.emptyByteArray, ContextExtension(bindings))
+
+    // verify transaction on v1 node using v2 validation settings
+    verifyTx("deserialize", tx, proof, v2vs)
   }
 
 }
