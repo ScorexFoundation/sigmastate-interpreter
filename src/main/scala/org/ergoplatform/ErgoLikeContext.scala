@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Height
+import scalan.RType
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
@@ -13,6 +14,10 @@ import special.sigma
 import special.sigma.{AnyValue, Box, PreHeader, Header}
 import sigmastate.SType._
 import scalan.RType._
+import special.sigma.{Header, Box, AnyValue, PreHeader}
+import SType._
+import RType._
+import special.sigma.Extensions._
 
 import scala.util.Try
 
@@ -117,6 +122,18 @@ object ErgoLikeContext {
       dummyPreHeader,
       noBoxes,
       boxesToSpend, spendingTransaction, self, extension, vs)
+
+  def apply(currentHeight: Height,
+            lastBlockUtxoRoot: AvlTreeData,
+            minerPubkey: Array[Byte],
+            dataBoxes: IndexedSeq[ErgoBox],
+            boxesToSpend: IndexedSeq[ErgoBox],
+            spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
+            self: ErgoBox) =
+    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
+      noHeaders,
+      dummyPreHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension(Map()))
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

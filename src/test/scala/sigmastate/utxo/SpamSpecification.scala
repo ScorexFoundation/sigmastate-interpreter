@@ -45,7 +45,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("huge byte array") {
-    //todo: make value dependent on CostTable constants, not magic constant
+    //TODO coverage: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
 
     val id = 11: Byte

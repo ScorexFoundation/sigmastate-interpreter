@@ -11,6 +11,7 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
+import special.collection.Coll
 
 import scala.util.Try
 
@@ -223,16 +224,22 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
     }
   }
 
+  object IsPay2SHAddress {
+    def unapply(exp: SigmaPropValue): Option[Coll[Byte]] = exp match {
+      case SigmaAnd(Seq(
+            BoolToSigmaProp(
+              EQ(
+                Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
+                ByteArrayConstant(scriptHash))),
+            DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => Some(scriptHash)
+      case _ => None
+    }
+  }
+
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
       case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
-      //TODO move this pattern to PredefScripts
-      case Right(SigmaAnd(Seq(
-             BoolToSigmaProp(
-               EQ(
-                 Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
-                 ByteArrayConstant(scriptHash))),
-             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp)))) => new Pay2SHAddress(scriptHash.toArray)
+      case Right(IsPay2SHAddress(scriptHash)) => new Pay2SHAddress(scriptHash.toArray)
       case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case _ =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: $proposition")

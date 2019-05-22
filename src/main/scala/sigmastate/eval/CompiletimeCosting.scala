@@ -62,10 +62,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
         eval(mkOptionIsDefined(nrv))
 
-// TODO finish case for box.getReg[T](id) =>
-//      case Terms.Apply(Select(box: Value[SBox.type]@unchecked, SBox.GetReg, _), Seq(id)) if box.tpe == SBox =>
-//        eval(mkExtractRegisterAs(box, arg, ))
-
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {
           case (box, SBox.Value) => eval(mkExtractAmount(box))

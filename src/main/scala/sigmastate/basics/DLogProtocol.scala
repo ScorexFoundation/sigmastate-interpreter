@@ -24,9 +24,7 @@ object DLogProtocol {
   /** Construct a new SigmaBoolean value representing public key of discrete logarithm signature protocol. */
   case class ProveDlog(value: EcPointType)
     extends SigmaProofOfKnowledgeTree[DLogSigmaProtocol, DLogProverInput] {
-
     override val opCode: OpCode = OpCodes.ProveDlogCode
-    //todo: fix, we should consider that class parameter could be not evaluated
     lazy val h: EcPointType = value
     lazy val pkBytes: Array[Byte] = GroupElementSerializer.toBytes(h)
   }

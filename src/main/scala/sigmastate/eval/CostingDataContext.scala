@@ -224,7 +224,7 @@ class EvalSizeBox(
     val foundSize = varSize.asInstanceOf[SizeOption[AnyValue]].sizeOpt
     val regSize = foundSize match {
       case Some(varSize: SizeAnyValue) =>
-        assert(varSize.tVal == tT, s"Unexpected register type found ${varSize.tVal}: expected $tT")
+        assert(varSize.tVal == tT, s"Unexpected register type found at register #$id: ${varSize.tVal}, expected $tT")
         val regSize = varSize.valueSize.asInstanceOf[Size[T]]
         regSize
       case _ =>
@@ -453,7 +453,7 @@ class CCostModel extends CostModel {
 
   def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
 
   def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
