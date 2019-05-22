@@ -8,9 +8,9 @@ import scalan.util.FileUtil
 import scalan.meta.PrintExtensions._
 
 object SpecGen extends App {
-  val tT = STypeIdent("T")
-  val tT1 = STypeIdent("T_1")
-  val tTn = STypeIdent("T_n")
+  val tT = STypeVar("T")
+  val tT1 = STypeVar("T_1")
+  val tTn = STypeVar("T_n")
 
   def printTypes(companions: Seq[STypeCompanion]) = {
     val lines = for { tc <- companions.sortBy(_.typeId) } yield {

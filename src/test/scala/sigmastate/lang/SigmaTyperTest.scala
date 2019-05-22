@@ -268,7 +268,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("type parameters") {
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
-    typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
     // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
     //  typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
@@ -306,7 +307,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val t1 = ty(s1); val t2 = ty(s2)
       checkTypes(t1, t2, exp)
     }
-    def unify(s1: String, s2: String, subst: (STypeIdent, SType)*): Unit =
+    def unify(s1: String, s2: String, subst: (STypeVar, SType)*): Unit =
       check(s1, s2, Some(subst.toMap))
 
     unifyTypes(NoType, NoType) shouldBe None
@@ -618,9 +619,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.tokens") shouldBe ErgoBox.STokensRegType
   }
 
-  property("SOption.toColl") {
-    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
-  }
+// TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+//  property("SOption.toColl") {
+//    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
+//  }
 
   property("SContext.dataInputs") {
     typecheck(env, "CONTEXT.dataInputs") shouldBe SCollection(SBox)

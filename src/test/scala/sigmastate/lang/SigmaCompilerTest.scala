@@ -292,12 +292,12 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       mkMethodCall(Self, SBox.tokensMethod, IndexedSeq())
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SOption.toColl") {
-    comp("getVar[Int](1).toColl") shouldBe
-      mkMethodCall(GetVarInt(1),
-        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq(), Map())
-  }
+//TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+//  property("SOption.toColl") {
+//    comp("getVar[Int](1).toColl") shouldBe
+//      mkMethodCall(GetVarInt(1),
+//        SOption.ToCollMethod.withConcreteTypes(Map(SOption.tT -> SInt)), IndexedSeq(), Map())
+//  }
 
   property("SContext.dataInputs") {
     comp("CONTEXT.dataInputs") shouldBe
@@ -336,17 +336,17 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGen
       )
   }
 
-  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ignore("SOption.flatMap") {
-    comp("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})") shouldBe
-      mkMethodCall(GetVarInt(1),
-        SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
-        IndexedSeq(Terms.Lambda(
-          Vector(("i", SInt)),
-          SOption(SInt),
-          Some(GetVarInt(2)))),
-        Map())
-  }
+// TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+//  property("SOption.flatMap") {
+//    comp("getVar[Int](1).flatMap({(i: Int) => getVar[Int](2)})") shouldBe
+//      mkMethodCall(GetVarInt(1),
+//        SOption.FlatMapMethod.withConcreteTypes(Map(SOption.tT -> SInt, SOption.tR -> SInt)),
+//        IndexedSeq(Terms.Lambda(
+//          Vector(("i", SInt)),
+//          SOption(SInt),
+//          Some(GetVarInt(2)))),
+//        Map())
+//  }
 
   property("SCollection.patch") {
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe

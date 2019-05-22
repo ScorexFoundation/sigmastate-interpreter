@@ -114,7 +114,8 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ SELF.creationInfo._1 > 0 }") shouldBe (accessBox + accessRegister + selectField + GTConstCost)
     cost("{ SELF.R5[Int].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
 
-// TODO   cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+    // TODO coverage: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    // cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
   }
 
   lazy val OutputsCost = selectField + accessBox * tx.outputs.length
@@ -125,7 +126,8 @@ class CostingSpecification extends SigmaTestingData {
   lazy val AccessHeaderCost = selectField + collByIndex + constCost
 
   property("Global operations cost") {
-    // TODO cost("{ groupGenerator.isIdentity > 0 }") shouldBe (selectField + selectField + GTConstCost)
+    // TODO costing: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // cost("{ groupGenerator.isIdentity > 0 }") shouldBe (selectField + selectField + GTConstCost)
 
     val sizeOfArgs = Seq(sizeOf(key1), sizeOf(key1)).foldLeft(0L)(_ + _.dataSize)
     val xorCost = constCost + perKbCostOf(sizeOfArgs, hashPerKb / 2)

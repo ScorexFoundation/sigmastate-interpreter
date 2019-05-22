@@ -23,12 +23,12 @@ case class ValDefSerializer(override val opCode: OpCode) extends ValueSerializer
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val id = r.getUInt().toInt
-    val tpeArgs: Seq[STypeIdent] = opCode match {
+    val tpeArgs: Seq[STypeVar] = opCode match {
       case FunDefCode =>
         val tpeArgsCount = r.getByte()
-        val inputsBuilder = mutable.ArrayBuilder.make[STypeIdent]()
+        val inputsBuilder = mutable.ArrayBuilder.make[STypeVar]()
         for (_ <- 0 until tpeArgsCount) {
-          inputsBuilder += r.getType().asInstanceOf[STypeIdent]
+          inputsBuilder += r.getType().asInstanceOf[STypeVar]
         }
         inputsBuilder.result()
       case ValDefCode =>

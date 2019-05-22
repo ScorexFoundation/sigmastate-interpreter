@@ -128,8 +128,8 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
   *  and should not contain challenges, responses, or the real/simulated flag for any node.
   *
   */
-// todo: write a test that restores the tree from this string and check that the result is equal,
-// todo: in order to make sure this conversion is unambiguous
+// TODO coverage: write a test that restores the tree from this string and check that the result is equal,
+// in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte

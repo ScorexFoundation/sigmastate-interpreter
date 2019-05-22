@@ -453,7 +453,7 @@ class CCostModel extends CostModel {
 
   def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
 
   def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
