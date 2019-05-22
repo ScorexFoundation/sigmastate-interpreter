@@ -74,7 +74,7 @@ class ErgoTreeSerializer {
       r.constantStore = new ConstantStore(cs)
       // reader with constant store attached is required (to get tpe for a constant placeholder)
       val root = ValueSerializer.deserialize(r)
-      CheckDeserializedScriptIsSigmaProp(ValidationRules.currentSettings, root) {}
+      CheckDeserializedScriptIsSigmaProp(root) {}
       r.constantStore = previousConstantStore
       ErgoTree(h, cs, root.asSigmaProp)
     }

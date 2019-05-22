@@ -69,9 +69,9 @@ case class ValidationRule(
 ) extends SoftForkChecker {
   /** Can be used in derived classes to implemented validation logic. */
   protected def validate[T](
-        vs: ValidationSettings, condition: => Boolean,
+        condition: => Boolean,
         cause: => Throwable, args: Seq[Any], block: => T): T = {
-    val status = vs.getStatus(this.id)
+    val status = ValidationRules.currentSettings.getStatus(this.id)
     status match {
       case None =>
         throw new InterpreterException(s"ValidationRule $this not found in validation settings")
@@ -162,8 +162,8 @@ object ValidationRules {
 
   object CheckDeserializedScriptType extends ValidationRule(1000,
     "Deserialized script should have expected type") {
-    def apply[T](vs: ValidationSettings, d: DeserializeContext[_], script: SValue)(block: => T): T =
-      validate(vs, d.tpe == script.tpe,
+    def apply[T](d: DeserializeContext[_], script: SValue)(block: => T): T =
+      validate(d.tpe == script.tpe,
         new InterpreterException(s"Failed context deserialization of $d: \n" +
         s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"),
         Seq[Any](d, script), block
@@ -172,8 +172,8 @@ object ValidationRules {
 
   object CheckDeserializedScriptIsSigmaProp extends ValidationRule(1001,
     "Deserialized script should have SigmaProp type") {
-    def apply[T](vs: ValidationSettings, root: SValue)(block: => T): T =
-      validate(vs, root.tpe.isSigmaProp,
+    def apply[T](root: SValue)(block: => T): T =
+      validate(root.tpe.isSigmaProp,
         new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}"),
         Seq(root), block
       )
@@ -181,10 +181,10 @@ object ValidationRules {
 
   object CheckValidOpCode extends ValidationRule(1002,
     "Check the opcode is supported by registered serializer or is added via soft-fork") {
-    def apply[T](vs: ValidationSettings, ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
+    def apply[T](ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
       def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
       def args = Seq(ser, opCode)
-      validate(vs, ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
+      validate(ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
     }
 
     override def isSoftFork(vs: ValidationSettings,
@@ -198,11 +198,10 @@ object ValidationRules {
 
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
     "Check the index expression for accessing collection element is supported.") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
       def msg = s"Unsupported index expression $i when accessing collection $coll"
       def args = Seq(coll, i)
-      validate(vs,
-        ctx.isSupportedIndexExpression(iSym),
+      validate(ctx.isSupportedIndexExpression(iSym),
         new SigmaException(msg, i.sourceContext.toOption),
         args, block)
     }
@@ -210,12 +209,11 @@ object ValidationRules {
 
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
       def msg = s"Invalid cost function $costF"
       def args = Seq(costF)
       lazy val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
-      validate(vs,
-        verification.isSuccess,
+      validate(verification.isSuccess,
         verification.toEither.left.get,
         args, block)
     }
@@ -223,12 +221,11 @@ object ValidationRules {
 
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
       def msg = s"Invalid calc function $calcF"
       def args = Seq(calcF)
       lazy val verification = ctx.verifyIsProven(calcF)
-      validate(vs,
-        verification.isSuccess,
+      validate(verification.isSuccess,
         verification.toEither.left.get,
         args, block)
     }
@@ -236,13 +233,12 @@ object ValidationRules {
 
   object CheckCostWithContext extends ValidationRule(1006,
     "Contract execution cost in a given context is limited by given maximum value.") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)
+    def apply[Ctx <: IRContext, T](ctx: Ctx)
         (costingCtx: ctx.Context.SContext, exp: Value[SType],
             costF: ctx.Rep[((ctx.Context, (Int, ctx.Size[ctx.Context]))) => Int], maxCost: Long): Int = {
       def args = Seq(costingCtx, exp, costF, maxCost)
       lazy val estimatedCostTry = ctx.checkCostWithContext(costingCtx, exp, costF, maxCost)
-      validate(vs,
-        estimatedCostTry.isSuccess,
+      validate(estimatedCostTry.isSuccess,
         {
           val t = estimatedCostTry.toEither.left.get
           new CosterException(s"Script cannot be executed due to high cost $exp: ", exp.sourceContext.toList.headOption, Some(t))
@@ -253,13 +249,13 @@ object ValidationRules {
 
   object CheckTupleType extends ValidationRule(1007,
     "Supported tuple type.") with SoftForkWhenReplaced {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(e: ctx.Elem[_])(block: => T): T = {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_])(block: => T): T = {
       def msg = s"Invalid tuple type $e"
       lazy val condition = e match {
         case pe: ctx.PairElem[_,_] => true
         case _ => false
       }
-      validate(vs, condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
+      validate(condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
     }
   }
 

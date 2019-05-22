@@ -41,7 +41,7 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
             val script = ValueSerializer.deserialize(eba.value.toArray)
-            CheckDeserializedScriptType(context.validationSettings, d, script) {
+            CheckDeserializedScriptType(d, script) {
               Some(script)
             }
           case _ => None
@@ -110,12 +110,12 @@ trait Interpreter extends ScorexLogging {
       val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
       IR.onCostingResult(env, exp, costingRes)
 
-      CheckCostFunc(vs, IR)(asRep[Any => Int](costF)) { }
+      CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
 
-      CheckCalcFunc(vs, IR)(calcF) { }
+      CheckCalcFunc(IR)(calcF) { }
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = CheckCostWithContext(vs, IR)(costingCtx, exp, costF, maxCost)
+      val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
 
       //    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
 

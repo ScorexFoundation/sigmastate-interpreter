@@ -1286,7 +1286,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
       case SelectField(In(_tup), fieldIndex) =>
         val eTuple = _tup.elem.eVal.asInstanceOf[Elem[_]]
-        CheckTupleType(currentSettings, IR)(eTuple) {}
+        CheckTupleType(IR)(eTuple) {}
         eTuple match {
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
@@ -1476,7 +1476,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val size = if (xs.tpe.elemType.isConstantSize)
             constantTypeSize(xsC.elem.eItem)
           else
-            CheckIsSupportedIndexExpression(currentSettings, IR)(xs, i, iV) {
+            CheckIsSupportedIndexExpression(IR)(xs, i, iV) {
               xsC.sizes(iV)
             }
         defaultOpt match {

@@ -152,7 +152,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    CheckValidOpCode(ValidationRules.currentSettings, serializer, opCode) { serializer }
+    CheckValidOpCode(serializer, opCode) { serializer }
   }
   def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
     serializers.add(opCode, ser)
