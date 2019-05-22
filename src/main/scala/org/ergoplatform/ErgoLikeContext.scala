@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ValidationRules.CheckMaxBoxSize
 import scalan.RType
 import sigmastate.Values._
 import sigmastate._
@@ -11,7 +12,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, PreHeader, Header}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import sigmastate.SType._
 import scalan.RType._
 import sigmastate.constants.SigmaConstants
@@ -82,6 +83,8 @@ class ErgoLikeContext(val currentHeight: Height,
     implicit val IRForBox: Evaluation = IR
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
+    for (input <- inputs) CheckMaxBoxSize(validationSettings, this)
+    for ()
     val outputs = if (spendingTransaction == null)
         noOutputs.toColl
       else

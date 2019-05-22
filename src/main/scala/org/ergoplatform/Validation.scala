@@ -8,7 +8,7 @@ import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
 import sigmastate.eval.IRContext
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{SCollection, SType}
+import sigmastate.{SCollection, SType, SBox}
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus
@@ -148,6 +148,8 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
 abstract class ValidationSettings {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]
   def getStatus(id: Short): Option[RuleStatus]
+  def getConstant(id: Short): Option[(_ <: AbstractConstant[_], ConstantStatus)]
+  def getConstantStatus(id: Short): Option[ConstantStatus]
   def updated(id: Short, newStatus: RuleStatus): ValidationSettings
   def isSoftFork(ve: ValidationException): Boolean = isSoftFork(ve.rule.id, ve)
   def isSoftFork(ruleId: Short, ve: ValidationException): Boolean = {
@@ -168,6 +170,16 @@ sealed class MapValidationSettings(map: Map[Short, (ValidationRule, RuleStatus)]
     new MapValidationSettings(map.updated(id, (rule, newStatus)))
   }
 }
+
+/*
+object ValidationConstants {
+  object MaxBoxSize extends ValidationRule(2000,
+  "Represents upper border for box size") {
+    def apply[T](vs: ValidationSettings)(block: => T): T = {
+      validate(vs, )
+    }
+  }
+}*/
 
 object ValidationRules {
 
@@ -260,6 +272,18 @@ object ValidationRules {
         case _ => false
       }
       validate(condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
+    }
+  }
+
+  // WIP, is not code of good quality
+  object CheckBoxSize extends ValidationRule(1007,
+    "Box size in a given context is limited by given maximum value.") {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: ctx.Box)(block: => T): T = {
+      def args = Seq(box)
+      val size = ctx.sizeAnyElement(box)
+      validate(vs, ctx.sizeAnyElement(box) == vs.get(3001), new SigmaException(s"Box size cannot be greater than specified value"),
+        args, block
+      )
     }
   }
 

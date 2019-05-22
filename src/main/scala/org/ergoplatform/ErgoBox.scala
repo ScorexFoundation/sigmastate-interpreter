@@ -100,8 +100,6 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value
-
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
   val SReferenceRegType: STuple = ExtractCreationInfo.ResultType
