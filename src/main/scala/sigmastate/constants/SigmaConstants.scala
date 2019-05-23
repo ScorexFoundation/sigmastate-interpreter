@@ -16,7 +16,7 @@ object SigmaConstants {
   }
 
   object MaxTreeDepth extends SizeConstant[Int](110, 2,
-    "Max depth should not be greater then provided value") {
+    "Max tree depth should not be greater then provided value") {
   }
 
   object MaxByteArrayLength extends SizeConstant[Int](10000, 3,
@@ -35,7 +35,7 @@ object SigmaConstants {
     "Box size should not be greater than provided value") {
   }
 
-  object MaxSizeInBytes extends SizeConstant[Long](32L, 9,
+  object MaxBigIntBytes extends SizeConstant[Long](32L, 9,
     "BigInt size in bytes should not be greater than provided value") {
   }
 
@@ -47,23 +47,23 @@ object SigmaConstants {
     "Headers count should not be greater than provided value") {
   }
 
-  object MaxChildrenCount extends SizeConstant[Int](255, 12,
+  object MaxChildrenCountForAtLeastOp extends SizeConstant[Int](255, 12,
     "Max children count should not be greater than provided value") {
   }
 
   object MaxCollectionSize extends SizeConstant[Long](1024, 13,
   "Max collection size")
 
-  val constSpecs: Seq[SizeConstant[_]] = Seq(
+  val ConstTable: Seq[SizeConstant[_]] = Seq(
     MaxInputSize,
     MaxTreeDepth,
     MaxByteArrayLength,
     MaxTokens,
     MaxRegisters,
     MaxBoxSize,
-    MaxSizeInBytes,
+    MaxBigIntBytes,
     MaxTupleLength,
     MaxHeaders,
-    MaxChildrenCount
+    MaxChildrenCountForAtLeastOp
   )
 }

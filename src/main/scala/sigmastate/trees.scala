@@ -240,7 +240,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast {
 
-  val MaxChildrenCount = SigmaConstants.MaxChildrenCount.value
+  val MaxChildrenCount = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))

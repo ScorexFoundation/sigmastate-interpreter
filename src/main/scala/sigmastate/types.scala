@@ -581,7 +581,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = SigmaConstants.MaxSizeInBytes.value
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
