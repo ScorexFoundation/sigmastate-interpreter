@@ -257,7 +257,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- unsignedShortGen
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Byte](0, 4.toByte) //ErgoBox.MaxTokens) // TODO: change to real amount of tokens
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
@@ -270,7 +270,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Byte](0, 4.toByte) //ErgoBox.MaxTokens) // TODO: change to real amount of tokens
     tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- Gen.chooseNum(0, 100000)
