@@ -214,11 +214,7 @@ trait Interpreter extends ScorexLogging {
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
-    println(s"EXPR: $exp")
-    println(s"CTX: $context")
-    println(s"PROV: $proverResult")
     val ctxv = context.withExtension(proverResult.extension).asInstanceOf[CTX]
-    println(s"ENRICH: $ctxv")
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
