@@ -310,7 +310,7 @@ object ValidationRules {
     }
   }
 
-  object CheckBoxSize extends ValidationRule(1008,
+  object CheckBoxSize extends ValidationRule(1010,
     "Box size in a given context is limited by given maximum value.") {
     def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
       def args = Seq(box)
@@ -324,7 +324,7 @@ object ValidationRules {
     }
   }
 
-  object CheckTokensCount extends ValidationRule(1009,
+  object CheckTokensCount extends ValidationRule(1011,
   "Amount of tokens associated with the box is limited by given maximum value.") {
     def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
       def args = Seq(box)
