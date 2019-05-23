@@ -66,6 +66,14 @@ object Constants {
     }
   }
 
+  object MaxTokensConstant extends MandatoryConstant(2001,
+  "Amount of tokens in the box") {
+    def apply[T](vs: ValidationSettings): Byte = {
+      validate(vs, {
+        4.toByte
+      })
+    }
+  }
 
   val constantSpecs: Seq[ValidationConstant] = Seq(
 /*
@@ -74,5 +82,6 @@ object Constants {
   )
   val mandatoryConstantSpecs: Seq[MandatoryConstant] = Seq(
     MaxBoxSizeConstant,
+    MaxTokensConstant,
   )
 }

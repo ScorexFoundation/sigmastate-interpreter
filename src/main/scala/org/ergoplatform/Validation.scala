@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import org.ergoplatform.Constants.MaxBoxSizeConstant
+import org.ergoplatform.Constants.{MaxBoxSizeConstant, MaxTokensConstant}
 import sigmastate.Values.{IntValue, SValue, Value}
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
@@ -201,17 +201,22 @@ sealed class MapValidationSettings(
   }
 }
 
-/*
-object ValidationConstants {
-  object MaxBoxSize extends ValidationRule(2000,
-  "Represents upper border for box size") {
-    def apply[T](vs: ValidationSettings)(block: => T): T = {
-      validate(vs, )
-    }
-  }
-}*/
-
 object ValidationRules {
+  def checkCtxBoxes[Ctx <: IRContext, T](ctx: Ctx)(costingCtx: ctx.Context.SContext, check: Box => T): T = {
+    var i = 0
+    val inputsLength = costingCtx.INPUTS.length
+    while (i < inputsLength) {
+      check(costingCtx.INPUTS(i))
+      i += 1
+    }
+    i = 0
+    val outputsLength = costingCtx.OUTPUTS.length
+    while (i < outputsLength) {
+      check(costingCtx.OUTPUTS(i))
+      i += 1
+    }
+    check(costingCtx.SELF)
+  }
 
   object CheckDeserializedScriptType extends ValidationRule(1000,
     "Deserialized script should have expected type") {
@@ -320,6 +325,21 @@ object ValidationRules {
     }
   }
 
+  object CheckTokensCount extends ValidationRule(1008,
+  "Amount of tokens associated with the box is limited by given maximum value.") {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
+      def args = Seq(box)
+      val maxTokensCount: Byte = MaxTokensConstant(vs)
+      val tokensInBox = box.tokens.length
+      validate(vs, {
+        tokensInBox <= maxTokensCount
+      }, {
+        new SigmaException(s"Amount of tokens in box exceeds maximum value: evaluated = $tokensInBox while maximum =" +
+          s" $maxTokensCount")
+      }, args, { tokensInBox })
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -332,6 +352,7 @@ object ValidationRules {
     CheckTupleType,
     CheckPrimitiveTypeCode,
     CheckTypeCode,
+    CheckTokensCount,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

@@ -2,17 +2,18 @@ package sigmastate.interpreter
 
 import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.ValidationRules
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.{InterpreterException, CosterException}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.lang.exceptions.{CosterException, InterpreterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -117,7 +118,12 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF) { }
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      CheckBoxSize(vs, IR)(costingCtx.SELF)
+      ValidationRules.checkCtxBoxes(IR)(costingCtx, {
+        box => CheckBoxSize(vs, IR)(box)
+      })
+      ValidationRules.checkCtxBoxes(IR)(costingCtx, {
+        box => CheckTokensCount(vs, IR)(box)
+      })
       val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
 
       //    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
