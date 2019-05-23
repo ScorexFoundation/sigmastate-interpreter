@@ -1,6 +1,7 @@
 package sigmastate.utxo.examples
 
 import com.google.common.primitives.Longs
+import java.io._
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform._
@@ -374,52 +375,71 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
 
   property("simple ico example - fundraising stage only") {
-    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
-    val digest = avlProver.digest
-    val initTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
+    val file = new File("dataset.csv")
+    val bw = new BufferedWriter(new FileWriter(file))
+    var funderBoxCount = 0
+    val maxBorder = 20001
+    while (funderBoxCount < maxBorder) {
+      if (funderBoxCount < 10000)
+        funderBoxCount += 1
+      else
+        funderBoxCount += 20
 
-    val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
+      val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+      val digest = avlProver.digest
+      val initTreeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
 
-    val funderBoxCount = 2000
+      val projectBoxBefore = ErgoBox(10, fundingScript, 0, Seq(),
+        Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(initTreeData)))
 
-    val funderBoxes = (1 to funderBoxCount).map { _ =>
-      ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
-        Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
+      //val funderBoxCount = 200
+
+      val funderBoxes = (1 to funderBoxCount).map { _ =>
+        ErgoBox(10, Values.TrueLeaf.asSigmaProp, 0, Seq(),
+          Map(R4 -> ByteArrayConstant(Array.fill(32)(Random.nextInt(Byte.MaxValue).toByte))))
+      }
+
+      val inputBoxes = IndexedSeq(projectBoxBefore) ++ funderBoxes
+
+      inputBoxes.tail.foreach { b =>
+        val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value.toArray
+        val v = Longs.toByteArray(b.value)
+        avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
+      }
+
+      val proof = avlProver.generateProof()
+      val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
+
+      val projectBoxAfter = ErgoBox(funderBoxCount * 10 - 1, fundingScript, 0, Seq(),
+        Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
+      val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
+
+      val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, feeBox))
+
+      val fundingContext = ErgoLikeContext(
+        currentHeight = 1000,
+        lastBlockUtxoRoot = AvlTreeData.dummy,
+        minerPubkey = ErgoLikeContext.dummyPubkey,
+        boxesToSpend = inputBoxes,
+        spendingTransaction = fundingTx,
+        self = projectBoxBefore)
+
+      val projectProver = new ContextEnrichingTestProvingInterpreter()
+        .withContextExtender(1, ByteArrayConstant(proof))
+
+      val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
+      val cost_ = res.cost
+      val length_ = proof.length
+      bw.write(s"$funderBoxCount,$cost_,$length_ \n")
+      if (funderBoxCount % 100 == 0) {
+        println(funderBoxCount)
+        bw.flush()
+      }
+      //println("funding script cost: " + res.cost)
+      //println("lookup proof size: " + proof.length)
     }
 
-    val inputBoxes = IndexedSeq(projectBoxBefore) ++ funderBoxes
-
-    inputBoxes.tail.foreach { b =>
-      val k = b.get(R4).get.asInstanceOf[CollectionConstant[SByte.type]].value.toArray
-      val v = Longs.toByteArray(b.value)
-      avlProver.performOneOperation(Insert(ADKey @@ k, ADValue @@ v))
-    }
-
-    val proof = avlProver.generateProof()
-    val endTree = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.AllOperationsAllowed, 32, None))
-
-    val projectBoxAfter = ErgoBox(funderBoxCount * 10 - 1, fundingScript, 0, Seq(),
-      Map(R4 -> ByteArrayConstant(Array.fill(1)(0: Byte)), R5 -> AvlTreeConstant(endTree)))
-    val feeBox = ErgoBox(1, feeProp, 0, Seq(), Map())
-
-    val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, feeBox))
-
-    val fundingContext = ErgoLikeContext(
-      currentHeight = 1000,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = inputBoxes,
-      spendingTransaction = fundingTx,
-      self = projectBoxBefore)
-
-    val projectProver = new ContextEnrichingTestProvingInterpreter()
-      .withContextExtender(1, ByteArrayConstant(proof))
-
-    val res = projectProver.prove(env, fundingScript, fundingContext, fakeMessage).get
-    println("funding script cost: " + res.cost)
-    println("lookup proof size: " + proof.length)
-
+    bw.close()
     //todo: test switching to fixing stage
   }
 

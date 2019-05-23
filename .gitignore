@@ -34,3 +34,4 @@ project/plugins/project/
 
 # ergo's checkout location for integration testing
 ergo-tests/
+data/.ipynb_checkpoints/
