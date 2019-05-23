@@ -7,6 +7,7 @@ import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
 import sigmastate.eval.IRContext
+import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.{SCollection, SType}
 
@@ -274,6 +275,7 @@ object ValidationRules {
     CheckTupleType,
     CheckPrimitiveTypeCode,
     CheckTypeCode,
+    CheckSerializableTypeCode,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

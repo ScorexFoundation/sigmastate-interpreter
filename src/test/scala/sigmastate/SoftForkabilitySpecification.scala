@@ -11,6 +11,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{SerializerException, CosterException}
+import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.utxo.{DeserializeContext, SelectField}
@@ -255,6 +256,16 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     checkRule(CheckTypeCode, v2vs, {
       val r = SigmaSerializer.startReader(typeBytes)
       TypeSerializer.deserialize(r)
+    })
+  }
+
+  property("CheckSerializableTypeCode rule") {
+    val newType = SFunc(SInt, SInt)
+    val dataBytes = Array[Byte](1, 2, 3) // any random bytes will work
+    val v2vs = vs.updated(CheckSerializableTypeCode.id, ReplacedRule(0))
+    checkRule(CheckSerializableTypeCode, v2vs, {
+      val r = SigmaSerializer.startReader(dataBytes)
+      DataSerializer.deserialize(newType, r)
     })
   }
 
