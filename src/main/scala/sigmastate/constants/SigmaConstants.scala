@@ -3,6 +3,9 @@ package sigmastate.constants
 import org.ergoplatform.ErgoLikeContext
 import sigmastate.{AtLeast, SBigInt, SPrimType}
 
+/*
+  THIS FILE IS OBSOLETE AND TO BE REMOVED IN FUTURE
+ */
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
 }
 
