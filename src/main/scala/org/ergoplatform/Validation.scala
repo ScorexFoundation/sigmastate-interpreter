@@ -1,14 +1,16 @@
 package org.ergoplatform
 
-import sigmastate.Values.{Value, SValue, IntValue}
+import org.ergoplatform.Constants.MaxBoxSizeConstant
+import sigmastate.Values.{IntValue, SValue, Value}
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigma.util.Extensions.ByteOps
 import sigmastate.eval.IRContext
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{SCollection, SType, SBox}
+import sigmastate.{SBox, SCollection, SType}
+import special.sigma.Box
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus
@@ -148,9 +150,12 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
 abstract class ValidationSettings {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]
   def getStatus(id: Short): Option[RuleStatus]
-  def getConstant(id: Short): Option[(_ <: AbstractConstant[_], ConstantStatus)]
-  def getConstantStatus(id: Short): Option[ConstantStatus]
   def updated(id: Short, newStatus: RuleStatus): ValidationSettings
+  def getMandatoryConstant(id: Short): Option[(MandatoryConstant, ConstantStatus)]
+  def getConstant(id: Short): Option[(ValidationConstant, ConstantStatus)]
+  def getMandatoryConstantStatus(id: Short): Option[ConstantStatus]
+  def getConstantStatus(id: Short): Option[ConstantStatus]
+  def updatedConstant(id: Short, newStatus: ConstantStatus): ValidationSettings
   def isSoftFork(ve: ValidationException): Boolean = isSoftFork(ve.rule.id, ve)
   def isSoftFork(ruleId: Short, ve: ValidationException): Boolean = {
     val infoOpt = get(ruleId)
@@ -162,12 +167,37 @@ abstract class ValidationSettings {
   }
 }
 
-sealed class MapValidationSettings(map: Map[Short, (ValidationRule, RuleStatus)]) extends ValidationSettings {
-  override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
-  override def getStatus(id: Short): Option[RuleStatus] = map.get(id).map(_._2)
+sealed class MapValidationSettings(
+  rulesMap: Map[Short, (ValidationRule, RuleStatus)],
+  constantsMap: Map[Short, (ValidationConstant, ConstantStatus)],
+  mandatoryConstantsMap: Map[Short, (MandatoryConstant, ConstantStatus)]
+) extends ValidationSettings {
+  override def get(id: Short): Option[(ValidationRule, RuleStatus)] = rulesMap.get(id)
+  override def getStatus(id: Short): Option[RuleStatus] = rulesMap.get(id).map(_._2)
   override def updated(id: Short, newStatus: RuleStatus): MapValidationSettings = {
-    val (rule,_) = map(id)
-    new MapValidationSettings(map.updated(id, (rule, newStatus)))
+    val (rule,_) = rulesMap(id)
+    new MapValidationSettings(rulesMap.updated(id, (rule, newStatus)), constantsMap, mandatoryConstantsMap)
+  }
+
+  override def getMandatoryConstant(id: Short): Option[(MandatoryConstant, ConstantStatus)] = {
+    mandatoryConstantsMap.get(id)
+  }
+
+  override def getConstant(id: Short): Option[(ValidationConstant, ConstantStatus)] = {
+    constantsMap.get(id)
+  }
+
+  override def getConstantStatus(id: Short): Option[ConstantStatus] = {
+    constantsMap.get(id).map(_._2)
+  }
+
+  override def updatedConstant(id: Short, newStatus: ConstantStatus): ValidationSettings = {
+    val (constant,_) = constantsMap(id)
+    new MapValidationSettings(rulesMap, constantsMap.updated(id, (constant, newStatus)), mandatoryConstantsMap)
+  }
+
+  override def getMandatoryConstantStatus(id: Short): Option[ConstantStatus] = {
+    mandatoryConstantsMap.get(id).map(_._2)
   }
 }
 
@@ -278,12 +308,15 @@ object ValidationRules {
   // WIP, is not code of good quality
   object CheckBoxSize extends ValidationRule(1007,
     "Box size in a given context is limited by given maximum value.") {
-    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: ctx.Box)(block: => T): T = {
+    def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
       def args = Seq(box)
-      val size = ctx.sizeAnyElement(box)
-      validate(vs, ctx.sizeAnyElement(box) == vs.get(3001), new SigmaException(s"Box size cannot be greater than specified value"),
-        args, block
-      )
+      val maxBoxSize: Long = MaxBoxSizeConstant(vs)
+      lazy val estimatedSize: Long = SBox.dataSize(box.asInstanceOf[SType#WrappedType])
+      validate(vs, {
+        estimatedSize <= maxBoxSize
+      }, {
+        new SigmaException(s"Box exceeds maximum size: evaluated = $estimatedSize while maximum = $maxBoxSize")
+      }, args, { estimatedSize })
     }
   }
 
@@ -295,6 +328,7 @@ object ValidationRules {
     CheckCostFunc,
     CheckCalcFunc,
     CheckCostWithContext,
+    CheckBoxSize,
     CheckTupleType,
     CheckPrimitiveTypeCode,
     CheckTypeCode,
@@ -310,7 +344,8 @@ object ValidationRules {
     val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
     assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
     map
-  })
+  }, Constants.constantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap,
+    Constants.mandatoryConstantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap)
 
   def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: ValidationSettings): T = {
     try block

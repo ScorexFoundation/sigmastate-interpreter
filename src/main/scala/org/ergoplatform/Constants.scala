@@ -1,5 +1,8 @@
 package org.ergoplatform
 
+import sigmastate.SBox
+import sigmastate.Values.Value
+import sigmastate.eval.IRContext
 import sigmastate.lang.exceptions.InterpreterException
 
 sealed trait ConstantStatus
@@ -12,39 +15,64 @@ case class ReplacedConstant(newConstantId: Short) extends ConstantStatus
 
 case class ChangedConstant(newValue: Array[Byte]) extends ConstantStatus
 
-abstract class AbstractConstant[T] {
-  def get(vs: ValidationSettings): Option[T]
+abstract class AbstractConstant {
+  protected def validate[T](vs: ValidationSettings, block: => T): T
+  def getId: Short
   def isSoftFork(vs: ValidationSettings, constantId: Short, status: ConstantStatus, args: Seq[Any]): Boolean = false
 }
 
-case class MandatoryConstant[T](id: Short, description: String) extends AbstractConstant[T] {
-  override def get(vs: ValidationSettings): Option[T] = {
-    val status = vs.getConstantStatus(this.id)
+case class MandatoryConstant(id: Short, description: String) extends AbstractConstant {
+  override def validate[T](vs: ValidationSettings, block: => T): T = {
+    val status = vs.getMandatoryConstantStatus(this.id)
     status match {
       case None =>
         throw new InterpreterException(s"Constant $this not found in validation settings")
       case Some(DisabledConstant) =>
         throw new MandatoryConstantRemovalException(vs, this)
       case Some(status) =>
-        vs.getConstant(this.id).get._1()
+        block
     }
   }
+
+  override def getId: Short = id
 }
 
-case class ValidationConstant[T](id: Short, description: String) extends AbstractConstant[T] {
-  override def get(vs: ValidationSettings): Option[T] = {
+case class ValidationConstant(id: Short, description: String) extends AbstractConstant {
+  override def validate[T](vs: ValidationSettings, block: => T): T = {
     val status = vs.getConstantStatus(this.id)
     status match {
       case None =>
         throw new InterpreterException(s"Constant $this not found in validation settings")
       case Some(DisabledConstant) =>
-        None
-      case Some(status) =>
-        vs.getConstant(this.id).get._1()
+        block
     }
   }
+
+  override def getId: Short = id
 }
 
 
-case class MandatoryConstantRemovalException(vs: ValidationSettings, removedConstant: MandatoryConstant[_])
+case class MandatoryConstantRemovalException(vs: ValidationSettings, removedConstant: MandatoryConstant)
   extends SoftForkException(s"Mandatory constant ${removedConstant.id} was removed")
+
+
+object Constants {
+  object MaxBoxSizeConstant extends MandatoryConstant(2000,
+  "Box size shouldn't exceed specified value") {
+    def apply[T](vs: ValidationSettings): Long = {
+      validate(vs, {
+        64 * 1024
+      })
+    }
+  }
+
+
+  val constantSpecs: Seq[ValidationConstant] = Seq(
+/*
+    MaxBoxSizeConstant,
+*/
+  )
+  val mandatoryConstantSpecs: Seq[MandatoryConstant] = Seq(
+    MaxBoxSizeConstant,
+  )
+}

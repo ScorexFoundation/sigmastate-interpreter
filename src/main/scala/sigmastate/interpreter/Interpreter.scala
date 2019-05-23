@@ -116,9 +116,8 @@ trait Interpreter extends ScorexLogging {
 
       CheckCalcFunc(IR)(calcF) { }
 
-      CheckBoxSize(vs, IR)(context, exp) { }
-
       val costingCtx = context.toSigmaContext(IR, isCost = true)
+      CheckBoxSize(vs, IR)(costingCtx.SELF)
       val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
 
       //    println(s"reduceToCrypto: estimatedCost: $estimatedCost")

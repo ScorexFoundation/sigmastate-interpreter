@@ -1,6 +1,7 @@
 package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.ValidationRules.CheckBoxSize
 import org.ergoplatform.ValidationRules.CheckMaxBoxSize
 import scalan.RType
 import sigmastate.Values._
@@ -63,9 +64,6 @@ class ErgoLikeContext(val currentHeight: Height,
   }
   assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
-  checkCorrectness()
-  checkExtensionValidity(extension.values)
-
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
@@ -83,8 +81,6 @@ class ErgoLikeContext(val currentHeight: Height,
     implicit val IRForBox: Evaluation = IR
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
-    for (input <- inputs) CheckMaxBoxSize(validationSettings, this)
-    for ()
     val outputs = if (spendingTransaction == null)
         noOutputs.toColl
       else
@@ -101,36 +97,6 @@ class ErgoLikeContext(val currentHeight: Height,
       vars,
       isCost)
   }
-
-  def checkCorrectness(): Boolean = {
-    if (currentHeight < 0)
-      return false
-    if (headers.length > SigmaConstants.MaxHeaders.value)
-      return false
-    for (box <- boxesToSpend) if (box.dataSize > SigmaConstants.MaxBoxSize.value) return false
-    for (box <- dataBoxes) if (box.dataSize > SigmaConstants.MaxBoxSize.value) return false
-
-    true
-  }
-
-  def checkExtensionValidity(extension: Map[Byte, AnyValue]): Boolean = {
-    for ((id, item) <- extension) {
-      item match {
-        case (cl: ConcreteCollection[t]) =>
-          if (cl.bytes.length > SigmaConstants.MaxCollectionSize.value)
-            return false
-        case (tup: Tuple) =>
-          if (tup.asTuple.length > SigmaConstants.MaxTupleLength.value)
-            return false
-        case _ => {
-          println(item)
-          return false
-        }
-      }
-    }
-    true
-  }
-
 }
 
 object ErgoLikeContext {
