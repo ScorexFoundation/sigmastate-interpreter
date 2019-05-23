@@ -310,14 +310,13 @@ object ValidationRules {
     }
   }
 
-  // WIP, is not code of good quality
-  object CheckBoxSize extends ValidationRule(1007,
+  object CheckBoxSize extends ValidationRule(1008,
     "Box size in a given context is limited by given maximum value.") {
     def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
       def args = Seq(box)
       val maxBoxSize: Long = MaxBoxSizeConstant(vs)
       lazy val estimatedSize: Long = SBox.dataSize(box.asInstanceOf[SType#WrappedType])
-      validate(vs, {
+      validate({
         estimatedSize <= maxBoxSize
       }, {
         new SigmaException(s"Box exceeds maximum size: evaluated = $estimatedSize while maximum = $maxBoxSize")
@@ -325,13 +324,13 @@ object ValidationRules {
     }
   }
 
-  object CheckTokensCount extends ValidationRule(1008,
+  object CheckTokensCount extends ValidationRule(1009,
   "Amount of tokens associated with the box is limited by given maximum value.") {
     def apply[Ctx <: IRContext, T](vs: ValidationSettings, ctx: Ctx)(box: Box): Long = {
       def args = Seq(box)
       val maxTokensCount: Byte = MaxTokensConstant(vs)
       val tokensInBox = box.tokens.length
-      validate(vs, {
+      validate({
         tokensInBox <= maxTokensCount
       }, {
         new SigmaException(s"Amount of tokens in box exceeds maximum value: evaluated = $tokensInBox while maximum =" +
