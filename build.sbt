@@ -193,7 +193,7 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "sigma-v2.1"
+  val ergoBranch = "sigma-soft-forkability"
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
