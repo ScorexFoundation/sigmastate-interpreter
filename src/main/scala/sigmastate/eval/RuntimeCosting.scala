@@ -641,7 +641,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             }
         )
         RCCostedPrim(resV, resC, resS)
-        
+
       case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
         opCost(values, Seq(accCost), costs.sum(intPlusMonoid))
       case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>

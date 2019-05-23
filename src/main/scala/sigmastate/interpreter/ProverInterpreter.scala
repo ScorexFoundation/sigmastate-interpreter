@@ -4,7 +4,6 @@ import java.util
 
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 import Values._
@@ -12,6 +11,7 @@ import scalan.util.CollectionUtil._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.EnabledRule
 import scalan.util.CollectionUtil._
