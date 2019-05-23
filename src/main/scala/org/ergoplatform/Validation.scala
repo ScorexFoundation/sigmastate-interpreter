@@ -1,6 +1,6 @@
 package org.ergoplatform
 
-import org.ergoplatform.Constants.{MaxBoxSizeConstant, MaxTokensConstant}
+import org.ergoplatform.ErgoConstants.{MaxBoxSizeConstant, MaxTokensConstant}
 import sigmastate.Values.{IntValue, SValue, Value}
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.OpCode
@@ -365,8 +365,10 @@ object ValidationRules {
     val map = ruleSpecs.map(r => r.id -> (r, EnabledRule)).toMap
     assert(map.size == ruleSpecs.size, s"Duplicate ruleIds ${ruleSpecs.groupBy(_.id).filter(g => g._2.length > 1)}")
     map
-  }, Constants.constantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap,
-    Constants.mandatoryConstantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap)
+  },
+    ErgoConstants.constantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap,
+    ErgoConstants.mandatoryConstantSpecs.map(c => c.getId -> (c, EnabledConstant)).toMap
+  )
 
   def trySoftForkable[T](whenSoftFork: => T)(block: => T)(implicit vs: ValidationSettings): T = {
     try block

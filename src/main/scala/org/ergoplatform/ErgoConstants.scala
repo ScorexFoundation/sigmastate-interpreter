@@ -1,8 +1,5 @@
 package org.ergoplatform
 
-import sigmastate.SBox
-import sigmastate.Values.Value
-import sigmastate.eval.IRContext
 import sigmastate.lang.exceptions.InterpreterException
 
 sealed trait ConstantStatus
@@ -56,7 +53,7 @@ case class MandatoryConstantRemovalException(vs: ValidationSettings, removedCons
   extends SoftForkException(s"Mandatory constant ${removedConstant.id} was removed")
 
 
-object Constants {
+object ErgoConstants {
   object MaxBoxSizeConstant extends MandatoryConstant(2000,
   "Box size shouldn't exceed specified value") {
     def apply[T](vs: ValidationSettings): Long = {
