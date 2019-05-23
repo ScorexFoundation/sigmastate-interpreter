@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ValidationRules.CheckBoxSize
-import org.ergoplatform.ValidationRules.CheckMaxBoxSize
 import scalan.RType
 import sigmastate.Values._
 import sigmastate._
