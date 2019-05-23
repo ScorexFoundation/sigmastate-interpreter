@@ -91,86 +91,105 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
   private val _allowedOpCodesInCosting = HashSet[OpCode](
     Undefined,
-    InputsCode,
-    OutputsCode,
-    TupleCode,
-    SelectFieldCode,
-    SizeOfCode,
-    PlusCode,
-    MinusCode,
-    MultiplyCode,
-    MaxCode,
-    MinCode,
-    DivisionCode,
-    ModuloCode,
+    AppendCode,
     ByIndexCode,
-    GetVarCode,
-    ExtractScriptBytesCode,
+    ConstantCode,
+    DivisionCode,
+    DowncastCode,
     ExtractBytesWithNoRefCode,
     ExtractRegisterAs,
-    SelfCode,
-    MethodCallCode,
+    ExtractScriptBytesCode,
+    FoldCode,
+    FuncApplyCode,
+    FuncValueCode,
+    GetVarCode,
+    InputsCode,
     LastBlockUtxoRootHashCode,
+    MapCollectionCode,
+    MaxCode,
+    MethodCallCode,
+    MinCode,
+    MinusCode,
+    ModuloCode,
+    MultiplyCode,
+    OptionGetCode,
+    OptionGetOrElseCode,
+    OptionIsDefinedCode,
+    OutputsCode,
+    PlusCode,
+    SelectFieldCode,
+    SelfCode,
+    SigmaPropBytesCode,
+    SizeOfCode,
+    SliceCode,
+    TupleCode,
+    UpcastCode,
   )
 
   def isAllowedOpCodeInCosting(opCode: OpCode): Boolean = _allowedOpCodesInCosting.contains(opCode)
 
+  object isNonSerializable {
+    def unapply(op: Def[_]): Option[Unit] = op match {
+      case _: OpCost | _: PerKbCostOf | _: Cast[_] => Some()
+      case _: IntPlusMonoid => Some()
+      case _: ThunkDef[_] => Some()
+      case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
+           SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => Some()
+      case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
+           SBM.getReg(_, _, _) | SBM.tokens(_) => Some()
+      case SSPM.propBytes(_) => Some()
+      case SAVM.tVal(_) | SAVM.valueSize(_) => Some()
+      case SizeM.dataSize(_) => Some()
+      case SPairM.l(_) | SPairM.r(_) => Some()
+      case SCollM.sizes(_) => Some()
+      case SOptM.sizeOpt(_) => Some()
+      case SFuncM.sizeEnv(_) => Some()
+      case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+           _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => Some()
+      case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => Some()
+      case CollM.sum(_, _) => Some()
+      case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => Some()
+      case _: CostOf | _: SizeOf[_] => Some()
+      case SPCM.some(_) => Some()
+      case _ => None
+    }
+  }
+
   private def getOpCode(d: Def[_]): OpCode = d match {
-      // todo implement
-//    case _: Const[_] => true
-    case _: OpCost | _: PerKbCostOf | _: Cast[_] => Undefined
+    case isNonSerializable(_) => Undefined
+    case _: Const[_] => ConstantCode
     case _: Tup[_, _] => TupleCode
     case _: First[_, _] | _: Second[_, _] => SelectFieldCode
-//    case _: FieldApply[_] => true
-//    case _: IntPlusMonoid => true
-//    case _: Lambda[_, _] => true
-//    case _: ThunkDef[_] => true
-//    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
-    case ApplyBinOp(op, _, _) => op match {
-      case _: NumericPlus[_] => PlusCode
-      case _: NumericMinus[_] => MinusCode
-      case _: NumericTimes[_] => MultiplyCode
-      case _: IntegralDivide[_] => DivisionCode
-      case _: IntegralMod[_] => ModuloCode
-      case _: OrderingMax[_] => MaxCode
-      case _: OrderingMin[_] => MinCode
+    case _: FieldApply[_] => SelectFieldCode
+    case _: Lambda[_, _] => FuncValueCode
+    case _: Apply[_, _] => FuncApplyCode
+    case _: Upcast[_, _] => UpcastCode
+    case ApplyBinOp(IsArithOp(opCode), _, _) => opCode
+    case ApplyUnOp(op, _) => op match {
+      case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
+      case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
     }
-    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_)
-         | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) | SCM.preHeader(_)
-         | SCM.getVar(_, _, _) => Undefined
-    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_)
-         | SBM.registers(_) | SBM.getReg(_, _, _)
-         | SBM.tokens(_) => Undefined
-//    case SSPM.propBytes(_) => true
-//    case SAVM.tVal(_) | SAVM.valueSize(_) => true
-//    case SizeM.dataSize(_) => true
-//    case SPairM.l(_) | SPairM.r(_) => true
-    case SCollM.sizes(_) => Undefined
-//    case SOptM.sizeOpt(_) => true
-//    case SFuncM.sizeEnv(_) => true
-//    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-//         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
     case ContextM.SELF(_) => SelfCode
     case ContextM.OUTPUTS(_) => OutputsCode
     case ContextM.INPUTS(_) => InputsCode
     case ContextM.dataInputs(_) => MethodCallCode
     case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
     case ContextM.getVar(_, _, _) => GetVarCode
-//    case SigmaM.propBytes(_) => true
-//    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
+    case SigmaM.propBytes(_) => SigmaPropBytesCode
     case CollM.length(_) => SizeOfCode
     case CollM.apply(_, _) => ByIndexCode
-//    case CollM.map(_, _) | CollM.sum(_, _) | CollM.zip(_, _) | CollM.slice(_, _, _) |
-//         CollM.append(_, _) | CollM.foldLeft(_, _, _) => true
-//    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
+    case CollM.map(_, _) => MapCollectionCode
+    case CollM.zip(_, _) => MethodCallCode
+    case CollM.slice(_, _, _) => SliceCode
+    case CollM.append(_, _) => AppendCode
+    case CollM.foldLeft(_, _, _) => FoldCode
     case BoxM.propositionBytes(_) => ExtractScriptBytesCode
     case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
     case BoxM.getReg(_, _, _) => ExtractRegisterAs
-//    case OM.get(_) | OM.getOrElse(_, _) | OM.fold(_, _, _) | OM.isDefined(_) => true
-//    case _: CostOf | _: SizeOf[_] => true
-//    case _: Upcast[_, _] => true
-//    case _: Apply[_, _] => true
-//    case SPCM.some(_) => true
+    case OM.get(_) => OptionGetCode
+    case OM.getOrElse(_, _) => OptionGetOrElseCode
+    case OM.fold(_, _, _) => MethodCallCode
+    case OM.isDefined(_) => OptionIsDefinedCode
     case _ => error(s"Unknown opCode for $d}")
   }
 
