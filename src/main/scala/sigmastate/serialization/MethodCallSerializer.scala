@@ -17,16 +17,19 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
       assert(mc.args.nonEmpty)
       w.putValues(mc.args)
     }
-//    mc.method.stype match {
-//      case genType: SGenericType if mc.typeSubst.nonEmpty =>
-//        w.putUByte(mc.typeSubst.size)
-//        genType.substitutedTypeParams.foreach { tp =>
-//          w.putType(mc.typeSubst(tp.ident))
-//        }
-//      case _ => w.putUByte(0)
-//    }
   }
 
+  /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
+    * but a valid ErgoTree should have SMethod instances specialized for specific types
+    * of `obj` and `args` using `specializeFor`.
+    * This means, if we save typeId, methodId, and we save all the arguments,
+    * we can restore the specialized SMethod instance.
+    * This work by induction, if we assume all arguments are monomorphic,
+    * then we can make MethodCall monomorphic. Thus, all ErgoTree is monomorphic by construction.
+    * This is limitation of MethodCall, because we cannot use it to represent for example
+    * def Box.getReg[T](id: Int): Option[T], which require serialization of expected type `T`
+    * However it can be implemented using separate node type (new type code) and can be added via soft-fork.
+    */
   override def parse(r: SigmaByteReader): Value[SType] = {
     val typeId = r.getByte()
     val methodId = r.getByte()
@@ -34,19 +37,6 @@ case class MethodCallSerializer(opCode: Byte, cons: (Value[SType], SMethod, Inde
     val args = if (opCode == OpCodes.MethodCallCode) r.getValues() else IndexedSeq()
     val method = SMethod.fromIds(typeId, methodId)
     val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
-//    val typeSubst: STypeSubst = method.stype match {
-//      case genType: SGenericType =>
-//        val typeSubstSize = r.getUByte()
-//        val xs = new Array[(STypeIdent, SType)](typeSubstSize)
-//        for (i <- 0 until typeSubstSize) {
-//          val ti = genType.substitutedTypeParams(i).ident
-//          xs(i) = (ti, r.getType())
-//        }
-//        xs.toMap
-//      case _ =>
-//        r.getUByte() // read 0
-//        Map()
-//    }
     cons(obj, specMethod, args, Map())
   }
 }
