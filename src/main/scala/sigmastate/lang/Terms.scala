@@ -134,7 +134,7 @@ object Terms {
   case class MethodCall(obj: Value[SType],
                         method: SMethod,
                         args: IndexedSeq[Value[SType]],
-                        typeSubst: Map[STypeIdent, SType]) extends Value[SType] {
+                        typeSubst: Map[STypeVar, SType]) extends Value[SType] {
     override val opCode: OpCode = if (args.isEmpty) OpCodes.PropertyCallCode else OpCodes.MethodCallCode
     override def opType: SFunc = SFunc(obj.tpe +: args.map(_.tpe), tpe)
     override val tpe: SType = method.stype match {
@@ -143,12 +143,12 @@ object Terms {
     }
   }
 
-  case class STypeParam(ident: STypeIdent, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
+  case class STypeParam(ident: STypeVar, upperBound: Option[SType] = None, lowerBound: Option[SType] = None) {
     assert(upperBound.isEmpty && lowerBound.isEmpty, s"Type parameters with bounds are not supported, but found $this")
     override def toString = ident.toString + upperBound.fold("")(u => s" <: $u") + lowerBound.fold("")(l => s" >: $l")
   }
   object STypeParam {
-    implicit def typeIdentToTypeParam(id: STypeIdent): STypeParam = STypeParam(id)
+    implicit def typeIdentToTypeParam(id: STypeVar): STypeParam = STypeParam(id)
   }
 
   /** Frontend implementation of lambdas. Should be transformed to FuncValue. */

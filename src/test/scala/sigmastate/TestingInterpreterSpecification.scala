@@ -164,7 +164,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = box1.R5[Coll[Boolean]].get
         |  allOf(arr) == false
         |}""".stripMargin)
-
     testEval(
       """{
         |  val arr = Coll(1, 2, 3)
@@ -185,13 +184,14 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = Coll(1, 2, 3)
         |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
         |}""".stripMargin)
-    //    // TODO uncomment when Costing for where is implemented
-    //    testEval("""{
-    //              |  val arr = Array(1, 2, 3)
-    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-    //              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
+        |}""".stripMargin)
   }
 
+// TODO coverage: implement it as negative test
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
 //              |  val arr = Array(dk1, dk2)

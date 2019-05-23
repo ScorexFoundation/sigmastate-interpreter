@@ -104,7 +104,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         // `Tuple` type with more than 4 items `(Int, Byte, Box, Boolean, Int)`
         serializeTuple(tup, w)
     }
-    case typeIdent: STypeIdent => {
+    case typeIdent: STypeVar => {
       w.put(typeIdent.typeCode)
       val bytes = typeIdent.name.getBytes(StandardCharsets.UTF_8)
       w.putUByte(bytes.length)
@@ -184,10 +184,10 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SGlobal.typeCode => SGlobal
         case SHeader.typeCode => SHeader
         case SPreHeader.typeCode => SPreHeader
-        case STypeIdent.TypeCode => {
+        case STypeVar.TypeCode => {
           val nameLength = r.getUByte()
           val name = new String(r.getBytes(nameLength), StandardCharsets.UTF_8)
-          STypeIdent(name)
+          STypeVar(name)
         }
         case _ =>
           sys.error(s"Cannot deserialize type starting from code $c")

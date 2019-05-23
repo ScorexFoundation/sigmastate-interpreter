@@ -58,7 +58,8 @@ class SigmaDslTest extends PropSpec
   property("Boolean methods equivalence") {
     lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))(x => x.toByte)
     forAll { x: Boolean =>
-      x.toByte
+      //TODO soft-fork: for new operation below
+      //toByte(x)
     }
   }
 
@@ -67,17 +68,15 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
+
+    //TODO soft-fork: for new 4 operations below
     lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Byte,Coll[Boolean]]("{ (x: Byte) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
 
     forAll { x: Byte =>
-      Seq(toInt, toLong, toBigInt).foreach(_(x))
-//TODO toBytes, toBits, toAbs
-    }
-    forAll { x: (Byte, Byte) =>
-//TODO  compareTo(x)
+      Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
     }
   }
 
@@ -101,13 +100,13 @@ class SigmaDslTest extends PropSpec
         toShort(x)
       }
       Seq(toInt, toLong, toBigInt).foreach(_(x))
-      //TODO toBytes, toBits, toAbs
+      //TODO soft-fork: toBytes, toBits, toAbs
     }
     forAll { x: (Int, Int) =>
-      //TODO  compareTo(x)
+      //TODO soft-fork: compareTo(x)
     }
   }
-  // TODO add tests for Short, Long, BigInt operations
+  // TODO soft-fork: add tests for Short, Long, BigInt operations
 
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
@@ -116,10 +115,12 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(ge)
-// TODO uncomment when isIdentity implemented  eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
       eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
       eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
+
+      //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+      // eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
     }
 
     {
@@ -132,27 +133,6 @@ class SigmaDslTest extends PropSpec
       eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
     }
   }
-
-// TODO uncomment when switch to sigma.types will be finished
-//  property("sigma.types.Byte methods equivalence") {
-//    import sigma.types._
-//    val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
-//    forAll { x: Byte =>
-//      Seq(toInt).foreach(_(x))
-//    }
-//  }
-//  property("sigma.types.Int methods equivalence") {
-//    import sigma.types._
-//    val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
-//    lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
-//    forAll { in: scala.Int =>
-//      whenever(scala.Byte.MinValue <= in && in <= scala.Byte.MaxValue) {
-//        val x = CInt(in)
-//        toByte(x)
-//      }
-//    }
-//  }
-
 
   property("AvlTree properties equivalence") {
     val doDigest = checkEq(func[AvlTree, Coll[Byte]]("{ (t: AvlTree) => t.digest }")) { (t: AvlTree) => t.digest }
@@ -266,15 +246,14 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
+  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/427
   // TODO costing: expression t._1(t._2) cannot be costed because t is lambda argument
-  ignore("Func context variable") {
-//    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
-//    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
-//    val ctx = ErgoLikeContext.dummy(fakeSelf)
-//    doApply((CFunc[Int, Int](ctx, code), 10))
-  }
-
+  //  ignore("Func context variable") {
+  //    val doApply = checkEq(func[(Int => Int, Int), Int]("{ (t: (Int => Int, Int)) => t._1(t._2) }")) { (t: (Int => Int, Int)) => t._1(t._2) }
+  //    val code = compileWithCosting(emptyEnv, s"{ (x: Int) => x + 1 }")
+  //    val ctx = ErgoLikeContext.dummy(fakeSelf)
+  //    doApply((CFunc[Int, Int](ctx, code), 10))
+  //  }
 
   lazy val ctx = ergoCtx.toSigmaContext(IR, false)
 
@@ -288,8 +267,6 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Box) => x.bytesWithoutRef })("{ (x: Box) => x.bytesWithoutRef }")
     eq({ (x: Box) => x.creationInfo })("{ (x: Box) => x.creationInfo }")
     eq({ (x: Box) => x.tokens })("{ (x: Box) => x.tokens }")
-// TODO
-//    checkEq(func[Box, Coll[(Coll[Byte], Long)]]("{ (x: Box) => x.registers }"))({ (x: Box) => x.registers })(box)
   }
 
 
@@ -411,7 +388,6 @@ class SigmaDslTest extends PropSpec
 
   // TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
   ignore("Box.getReg equivalence") {
-    // TODO implement in SigmaDsl (interpreter test passes in BasicOpsSpec.Box.getReg test)
 //    val eq = checkEq(func[Box, Int]("{ (x: Box) => x.getReg[Int](1).get }")) { x => x.getReg(1).get }
 //    forAll { x: Box => eq(x) }
   }
@@ -428,7 +404,6 @@ class SigmaDslTest extends PropSpec
 
     {
       val eq = EqualityChecker(n)
-      // TODO      eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
       eq({ (n: BigInt) => groupGenerator.exp(n) })("{ (n: BigInt) => groupGenerator.exp(n) }")
     }
 

@@ -1,8 +1,7 @@
-package spu.device.config
+package special.sigma.config
 
 import special.library.config.SpecialLibraryConfig
-
-import scalan.{FunctorType, ContainerType, Liftable}
+import scalan.Liftable
 import scalan.meta.ScalanAst.WrapperConf
 import scalan.meta.{LibraryConfig, ConfMap, TargetModuleConf, SourceModuleConf}
 
@@ -33,12 +32,10 @@ class SigmaLibraryConfig extends LibraryConfig {
       .addUnit("special/sigma/wrappers/WrappersSpec.scala", wrapperConfigs)
       .addUnit("special/sigma/SigmaDsl.scala")
       .addUnit("special/sigma/CostedObjects.scala")
- //     .addUnit("special/sigma/SigmaExamples.scala")   // TODO move to downstream library
 
   val ImplModule = new SourceModuleConf(baseDir, "sigma-impl")
       .moduleDependencies(specialLibrary.ApiModule, specialLibrary.ImplModule)
       .addUnit("special/sigma/SigmaDslOverArrays.scala")
-//      .addUnit("special/sigma/TestContracts.scala")  // TODO move to downstream library
       .addUnit("special/sigma/SigmaDslCosted.scala")
       .dependsOn(ApiModule)
 

@@ -775,7 +775,7 @@ object Values {
     * This representation is more compact in serialized form.
     * @param id unique identifier of the variable in the current scope. */
   case class ValDef(override val id: Int,
-                    tpeArgs: Seq[STypeIdent],
+                    tpeArgs: Seq[STypeVar],
                     override val rhs: SValue) extends BlockItem {
     require(id >= 0, "id must be >= 0")
     val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
@@ -788,7 +788,7 @@ object Values {
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
   }
   object FunDef {
-    def unapply(d: BlockItem): Option[(Int, Seq[STypeIdent], SValue)] = d match {
+    def unapply(d: BlockItem): Option[(Int, Seq[STypeVar], SValue)] = d match {
       case ValDef(id, targs, rhs) if !d.isValDef => Some((id, targs, rhs))
       case _ => None
     }
