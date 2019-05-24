@@ -121,6 +121,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     txV2.messageToSign
   }
 
+  val newTypeCode = (SGlobal.typeCode + 1).toByte
+
   property("node v1, soft-fork up to v2, script v2 without size") {
     // prepare bytes using default serialization without `size bit` in the header
     val (txV2_withoutSize, txV2_withoutSize_bytes) = runOnV2Node {
@@ -250,7 +252,6 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("CheckTypeCode rule") {
-    val newTypeCode = (SGlobal.typeCode + 1).toByte
     val typeBytes = Array[Byte](newTypeCode)
     val v2vs = vs.updated(CheckTypeCode.id, ChangedRule(Array[Byte](newTypeCode)))
     checkRule(CheckTypeCode, v2vs, {
@@ -269,5 +270,22 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     })
   }
 
+  property("CheckTypeWithMethods rule") {
+    val freeMethodId = 1.toByte
+    val mcBytes = Array[Byte](OpCodes.PropertyCallCode, newTypeCode, freeMethodId, Outputs.opCode)
+    val v2vs = vs.updated(CheckTypeWithMethods.id, ChangedRule(Array(newTypeCode)))
+    checkRule(CheckTypeWithMethods, v2vs, {
+      ValueSerializer.deserialize(mcBytes)
+    })
+  }
+
+  property("CheckMethod rule") {
+    val freeMethodId = 16.toByte
+    val mcBytes = Array[Byte](OpCodes.PropertyCallCode, SCollection.typeId, freeMethodId, Outputs.opCode)
+    val v2vs = vs.updated(CheckMethod.id, ChangedRule(Array(SCollection.typeId, freeMethodId)))
+    checkRule(CheckMethod, v2vs, {
+      ValueSerializer.deserialize(mcBytes)
+    })
+  }
 
 }

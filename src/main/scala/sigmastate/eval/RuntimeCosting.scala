@@ -190,13 +190,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   }
 
   def costOf(method: SMethod): Rep[Int] = {
-    val methodTemplate = method.objType.getMethodById(method.methodId)
+    val methodTemplate = method.objType.methodById(method.methodId)
     val opId = methodTemplate.opId
     costOf(opId.name, opId.opType.copy(tpeParams = Nil), substFromCostTable)
   }
 
   def perKbCostOf(method: SMethod, dataSize: Rep[Long]): Rep[Int] = {
-    val methodTemplate = method.objType.getMethodById(method.methodId)
+    val methodTemplate = method.objType.methodById(method.methodId)
     val opId = methodTemplate.opId
     perKbCostOf(opId.name, opId.opType.copy(tpeParams = Nil), dataSize)
   }

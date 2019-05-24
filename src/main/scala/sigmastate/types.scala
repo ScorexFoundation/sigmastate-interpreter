@@ -1,8 +1,9 @@
 package sigmastate
 
 import java.math.BigInteger
+import java.util
 
-import org.ergoplatform.{ErgoLikeContext, ErgoBox, ErgoBoxCandidate}
+import org.ergoplatform._
 import scalan.RType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
@@ -29,6 +30,8 @@ import sigmastate.utxo.ExtractCreationInfo
 import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval._
+import sigmastate.lang.exceptions.SerializerException
+import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode.validate
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -221,8 +224,21 @@ trait STypeCompanion {
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
-  def getMethodById(methodId: Byte): SMethod =
-    methods.find(m => m.objType == this && m.methodId == methodId).get
+  lazy val _methodsMap = methods
+    .groupBy(_.objType.typeId)
+    .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
+
+  def hasMethodWithId(methodId: Byte): Boolean =
+    getMethodById(methodId).isDefined
+
+  @inline def getMethodById(methodId: Byte): Option[SMethod] =
+    _methodsMap.get(typeId)
+        .flatMap(ms => ms.get(methodId))
+
+  def methodById(methodId: Byte): SMethod = {
+    val method = CheckMethod(this, methodId) { m => m }
+    method
+  }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -336,6 +352,34 @@ case class SMethod(
     this.copy(docInfo = docInfo.map(i => i.copy(isOpcode = value)))
 }
 
+object CheckTypeWithMethods extends ValidationRule(1011,
+  "Check the type (given by type code) supports methods")
+    with SoftForkWhenCodeAdded {
+  def apply[T](typeCode: Byte, cond: => Boolean)(block: => T): T = {
+    val ucode = typeCode.toUByte
+    def msg = s"Type with code $ucode doesn't support methods."
+    validate(cond, new SerializerException(msg), Seq(typeCode), block)
+  }
+}
+
+object CheckMethod extends ValidationRule(1012,
+  "Check the type has the declared method.") {
+  def apply[T](objType: STypeCompanion, methodId: Byte)(block: SMethod => T): T = {
+    def msg = s"The method with code $methodId doesn't declared in the type $objType."
+    lazy val methodOpt = objType.getMethodById(methodId)
+    validate(methodOpt.isDefined, new SerializerException(msg), Seq(objType, methodId), block(methodOpt.get))
+  }
+  override def isSoftFork(vs: ValidationSettings,
+      ruleId: Short,
+      status: RuleStatus,
+      args: Seq[Any]): Boolean = (status, args) match {
+    case (ChangedRule(newValue), Seq(objType: STypeCompanion, methodId: Byte)) =>
+      val key = Array(objType.typeId, methodId)
+      newValue.grouped(2).exists(util.Arrays.equals(_, key))
+    case _ => false
+  }
+}
+
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
   val MethodCallIrBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]] = Some {
@@ -347,8 +391,10 @@ object SMethod {
     SMethod(objType, name, stype, methodId, None, None)
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = SType.types.getOrElse(typeId, sys.error(s"Cannot find STypeCompanion instance for typeId=$typeId"))
-    val method = typeCompanion.getMethodById(methodId)
+    val typeCompanion = CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
+      SType.types(typeId)
+    }
+    val method = typeCompanion.methodById(methodId)
     method
   }
 }

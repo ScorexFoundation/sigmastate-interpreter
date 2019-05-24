@@ -9,7 +9,7 @@ import sigma.util.Extensions.ByteOps
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{SCollection, SType}
+import sigmastate.{SCollection, CheckTypeWithMethods, SType, CheckMethod}
 
 /** Base trait for rule status information. */
 sealed trait RuleStatus
@@ -276,6 +276,8 @@ object ValidationRules {
     CheckPrimitiveTypeCode,
     CheckTypeCode,
     CheckSerializableTypeCode,
+    CheckTypeWithMethods,
+    CheckMethod
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
