@@ -7,6 +7,9 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
   def get: T = value
 }
 
+/**
+  * Fundamental constants that are used in sigma's logic and checks
+  */
 object ErgoConstants {
 
   object MaxInputSize extends SizeConstant[Int](1024 * 1024 * 1, 1,
