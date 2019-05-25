@@ -52,9 +52,6 @@ object ErgoConstants {
     "Max children count should not be greater than provided value") {
   }
 
-  object MaxCollectionSize extends SizeConstant[Long](1024, 13,
-    "Max collection size")
-
   val ConstTable: Seq[SizeConstant[_]] = Seq(
     MaxInputSize,
     MaxTreeDepth,
