@@ -621,7 +621,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = 32L
+  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.get
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -1102,7 +1102,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength = 255
+  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.get
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)
