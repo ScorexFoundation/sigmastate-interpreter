@@ -9,30 +9,18 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
 
 object ErgoConstants {
 
-  /**
-    * Serialization & deserialization usage
-    */
   object MaxInputSize extends SizeConstant[Int](1024 * 1024 * 1, 1,
     "Input size should not be greater then provided value") {
   }
 
-  /**
-    * Serialization & deserialization usage
-    */
   object MaxTreeDepth extends SizeConstant[Int](110, 2,
     "Max tree depth should not be greater then provided value") {
   }
 
-  /**
-    * No checks performed in sigma, placed in Interpreter section only
-    */
   object MaxByteArrayLength extends SizeConstant[Int](10000, 3,
     "Max bytearray length") {
   }
 
-  /**
-    * Used in tests and in ergo
-    */
   object MaxTokens extends SizeConstant[Byte](4, 6,
     "Tokens count should not be greater than provided value") {
   }
@@ -41,9 +29,6 @@ object ErgoConstants {
     "Registers count should not be greater than provided value") {
   }
 
-  /**
-    * Not used and not checked in sigma
-    */
   object MaxBoxSize extends SizeConstant[Int](64 * 1024, 8,
     "Box size should not be greater than provided value") {
   }
