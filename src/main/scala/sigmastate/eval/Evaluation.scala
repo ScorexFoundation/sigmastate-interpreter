@@ -175,6 +175,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case ContextM.dataInputs(_) => MethodCallCode
     case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
     case ContextM.getVar(_, _, _) => GetVarCode
+    // todo add ALL op codes
+    case ContextM.HEIGHT(_) => HeightCode
     case SigmaM.propBytes(_) => SigmaPropBytesCode
     case CollM.length(_) => SizeOfCode
     case CollM.apply(_, _) => ByIndexCode

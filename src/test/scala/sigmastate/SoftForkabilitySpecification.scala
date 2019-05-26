@@ -1,19 +1,22 @@
 package sigmastate
 
 import org.ergoplatform.validation.ValidationRules._
+import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCostFuncOperation, CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree}
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.interpreter.{ContextExtension, Interpreter, ProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, CosterException}
+import sigmastate.lang.exceptions.{CosterException, SerializerException}
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
@@ -313,4 +316,13 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     })
   }
 
+  property("CheckCostFuncOperation rule") {
+    val exp = Height
+    val v2vs = vs.updated(CheckCostFuncOperation.id, ChangedRule(Array(Height.opCode)))
+    checkRule(CheckCostFuncOperation, v2vs, {
+      val IR.Pair(calcF, _) = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
+      // use calcF as costing function to have not allowed op (Height) in the costing function
+      CheckCostFunc(IR)(IR.asRep[Any => Int](calcF)) { }
+    })
+  }
 }

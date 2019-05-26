@@ -48,8 +48,15 @@ case class ValidationRule(
       case Some(DisabledRule) =>
         block  // if the rule is disabled we still need to execute the block of code
       case Some(_) =>
-        if (condition) block
-        else throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+        if (condition) {
+          block
+        }
+        else if (cause.isInstanceOf[ValidationException]) {
+          throw cause
+        }
+        else {
+          throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+        }
     }
   }
 }
@@ -173,14 +180,6 @@ object ValidationRules {
       def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
       def args = Seq(opCode)
       validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
-    }
-
-    override def isSoftFork(vs: ValidationSettings,
-                            ruleId: Short,
-                            status: RuleStatus,
-                            args: Seq[Any]): Boolean = (status, args) match {
-      case (ChangedRule(newValue), Seq(_, opCode: OpCode)) => newValue.contains(opCode)
-      case _ => false
     }
   }
 
