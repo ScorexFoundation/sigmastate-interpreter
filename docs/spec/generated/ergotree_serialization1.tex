@@ -177,13 +177,6 @@ Compare equality of \lst{left} and \lst{right} arguments See~\hyperref[sec:appen
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
-    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
-    \hline
-            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
-    \hline
-          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
-    \hline
-      
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
             ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
@@ -206,13 +199,6 @@ Compare inequality of \lst{left} and \lst{right} arguments See~\hyperref[sec:app
     \hline
         \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
          
-    \multicolumn{4}{l}{~~\lst{with}~$(Constant(l, Boolean), Constant(r, Boolean))$ } \\
-    \hline
-            ~~~~ $ opCode $ & \lst{Byte} & 1 & always contains OpCode 133 \\
-    \hline
-          ~~~~ $ (l,r) $ & \lst{Bits} & 1 & two higher bits in a byte \\
-    \hline
-      
     \multicolumn{4}{l}{~~\lst{otherwise} } \\
     \hline
             ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
@@ -638,26 +624,6 @@ Selects an interval of elements.  The returned collection is made up
            $ from $ & \lst{Expr} & [1, *] & the lowest index to include from this collection \\
     \hline
            $ until $ & \lst{Expr} & [1, *] & the lowest index to EXCLUDE from this collection \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{TreeLookup} operation (OpCode 183)}
-\label{sec:serialization:operation:TreeLookup}
-
- See~\hyperref[sec:appendix:primops:TreeLookup]{\lst{treeLookup}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ tree $ & \lst{Expr} & [1, *] & tree to lookup the key \\
-    \hline
-           $ key $ & \lst{Expr} & [1, *] & a key of an item in the \lst{tree} to lookup \\
-    \hline
-           $ proof $ & \lst{Expr} & [1, *] & proof to perform verification of the operation \\
     \hline
       
 \end{tabularx}\)
@@ -1169,58 +1135,6 @@ Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} other
 \end{tabularx}\)
        
 
-\subsubsection{\lst{ModQ} operation (OpCode 231)}
-\label{sec:serialization:operation:ModQ}
-
-Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. See~\hyperref[sec:type:BigInt:modQ]{\lst{BigInt.modQ}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ this $ & \lst{Expr} & [1, *] & this instance \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{PlusModQ} operation (OpCode 232)}
-\label{sec:serialization:operation:PlusModQ}
-
-Adds this number with \lst{other} by module Q. See~\hyperref[sec:type:BigInt:plusModQ]{\lst{BigInt.plusModQ}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ this $ & \lst{Expr} & [1, *] & this instance \\
-    \hline
-           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{MinusModQ} operation (OpCode 233)}
-\label{sec:serialization:operation:MinusModQ}
-
-Subtracts \lst{other} number from this by module Q. See~\hyperref[sec:type:BigInt:minusModQ]{\lst{BigInt.minusModQ}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ this $ & \lst{Expr} & [1, *] & this instance \\
-    \hline
-           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
-    \hline
-      
-\end{tabularx}\)
-       
-
 \subsubsection{\lst{SigmaAnd} operation (OpCode 234)}
 \label{sec:serialization:operation:SigmaAnd}
 
@@ -1348,152 +1262,6 @@ Negates numeric value \lst{x} by returning \lst{-x}. See~\hyperref[sec:appendix:
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitInversion} operation (OpCode 241)}
-\label{sec:serialization:operation:BitInversion}
-
-Invert every bit of the numeric value. See~\hyperref[sec:appendix:primops:BitInversion]{\lst{unary_~}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitOr} operation (OpCode 242)}
-\label{sec:serialization:operation:BitOr}
-
-Bitwise OR of two numeric operands. See~\hyperref[sec:appendix:primops:BitOr]{\lst{bit_|}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitAnd} operation (OpCode 243)}
-\label{sec:serialization:operation:BitAnd}
-
-Bitwise AND of two numeric operands. See~\hyperref[sec:appendix:primops:BitAnd]{\lst{bit_&}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BinXor} operation (OpCode 244)}
-\label{sec:serialization:operation:BinXor}
-
-Logical XOR of two operands See~\hyperref[sec:appendix:primops:BinXor]{\lst{^}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
-         
-    \multicolumn{4}{l}{~~\lst{otherwise} } \\
-    \hline
-            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-          \multicolumn{4}{l}{\lst{end match}} \\
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitXor} operation (OpCode 245)}
-\label{sec:serialization:operation:BitXor}
-
-Bitwise XOR of two numeric operands. See~\hyperref[sec:appendix:primops:BitXor]{\lst{bit_^}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitShiftRight} operation (OpCode 246)}
-\label{sec:serialization:operation:BitShiftRight}
-
-Right shift of bits. See~\hyperref[sec:appendix:primops:BitShiftRight]{\lst{bit_>>}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitShiftLeft} operation (OpCode 247)}
-\label{sec:serialization:operation:BitShiftLeft}
-
-Left shift of bits. See~\hyperref[sec:appendix:primops:BitShiftLeft]{\lst{bit_<<}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
-    \hline
-      
-\end{tabularx}\)
-       
-
-\subsubsection{\lst{BitShiftRightZeroed} operation (OpCode 248)}
-\label{sec:serialization:operation:BitShiftRightZeroed}
-
-Right shift of bits. See~\hyperref[sec:appendix:primops:BitShiftRightZeroed]{\lst{bit_>>>}}
-
-\noindent
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-         $ left $ & \lst{Expr} & [1, *] & left operand \\
-    \hline
-           $ right $ & \lst{Expr} & [1, *] & right operand \\
     \hline
       
 \end{tabularx}\)

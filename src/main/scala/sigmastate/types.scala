@@ -29,7 +29,7 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.utxo.ExtractCreationInfo
 import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.utxo._
-import special.sigma.{Header, Box, wrapperType, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
+import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval.Evaluation.stypeToRType

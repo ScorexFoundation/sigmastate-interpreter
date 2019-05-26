@@ -22,7 +22,7 @@ object SpecGenUtils {
 
 trait SpecGen {
   import SpecGenUtils._
-  val tT = STypeIdent("T")
+  val tT = STypeVar("T")
 
   case class OpInfo(
       opDesc: ValueCompanion,
