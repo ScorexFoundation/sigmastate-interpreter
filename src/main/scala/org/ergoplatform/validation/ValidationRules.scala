@@ -167,7 +167,7 @@ object ValidationRules {
     }
   }
 
-  object CheckCostFuncOperation extends ValidationRule(1010,
+  object CheckCostFuncOperation extends ValidationRule(1013,
     "Check the opcode is allowed in cost function") {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCode)(block: => T): T = {
       def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
