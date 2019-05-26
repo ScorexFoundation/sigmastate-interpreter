@@ -89,7 +89,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  protected def allowedOpCodesInCosting: HashSet[OpCode] = HashSet[OpCode](
+  private val _allowedOpCodesInCosting = HashSet[OpCode](
     AppendCode,
     ByIndexCode,
     ConstantCode,
@@ -124,6 +124,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     TupleCode,
     UpcastCode,
   )
+
+  protected def allowedOpCodesInCosting: HashSet[OpCode] = _allowedOpCodesInCosting
 
   def isAllowedOpCodeInCosting(opCode: OpCode): Boolean =
     (opCode == Undefined) || allowedOpCodesInCosting.contains(opCode)
