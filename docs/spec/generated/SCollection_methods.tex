@@ -9,16 +9,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
-       
+
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SizeOf]{\lst{SizeOf}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -40,10 +40,10 @@
   \hline
   \bf{Result} & \lst{IV} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -67,10 +67,10 @@
   \hline
   \bf{Result} & \lst{Coll[OV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MapCollection]{\lst{MapCollection}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -93,10 +93,10 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Exists]{\lst{Exists}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -118,10 +118,10 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
   \hline
   \bf{Result} & \lst{OV} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Fold]{\lst{Fold}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -145,10 +145,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ForAll]{\lst{ForAll}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -175,10 +175,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Slice]{\lst{Slice}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -202,10 +202,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Filter]{\lst{Filter}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -226,10 +226,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Append]{\lst{Append}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -255,10 +255,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{IV} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -280,7 +280,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
 \end{tabularx}
 
 
@@ -302,7 +302,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
 \end{tabularx}
 
 
@@ -324,7 +324,7 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[Boolean]} \\
   \hline
-  
+
 \end{tabularx}
 
 
@@ -341,16 +341,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
-       
+
   \hline
   \bf{Result} & \lst{Coll[Int]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -377,93 +377,10 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Result} & \lst{Coll[OV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
-\end{tabularx}
 
-
-
-\subsubsection{\lst{SCollection.segmentLength} method (Code 12.16)}
-\label{sec:type:SCollection:segmentLength}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Computes length of longest segment whose elements all satisfy some predicate.
- Returns the length of the longest segment of this collection starting from index \lst{from}
- such that every element of the segment satisfies the predicate \lst{p}.
-         \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
-\lst{from} & \lst{: Int} & \text{// the index where the search starts.} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{SCollection.indexWhere} method (Code 12.17)}
-\label{sec:type:SCollection:indexWhere}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Finds index of the first element satisfying some predicate after or at some start index.
- Returns the index \lst{>= from} of the first element of this collection that satisfies the predicate \lst{p},
- or \lst{-1}, if none exists.
-         \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
-\lst{from} & \lst{: Int} & \text{// the start index} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{SCollection.lastIndexWhere} method (Code 12.18)}
-\label{sec:type:SCollection:lastIndexWhere}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Finds index of last element satisfying some predicate before or at given end index.
- Return the index \lst{<= end} of the last element of this collection that satisfies the predicate \lst{p},
- or \lst{-1}, if none exists.
-         \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
 \end{tabularx}
 
 
@@ -478,16 +395,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -502,16 +419,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -526,16 +443,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -550,16 +467,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -574,16 +491,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -598,16 +515,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -622,16 +539,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -646,16 +563,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -670,16 +587,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -694,16 +611,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -718,16 +635,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[(IV,OV)]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -742,16 +659,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
-       
+
   \hline
   \bf{Result} & \lst{Coll[IV]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -766,16 +683,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}
 
 
@@ -790,40 +707,16 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
-\end{tabularx}
 
-
-
-\subsubsection{\lst{SCollection.partition} method (Code 12.33)}
-\label{sec:type:SCollection:partition}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{(Coll[IV],Coll[IV])} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
-  \hline
-       
 \end{tabularx}
 
 
@@ -838,14 +731,14 @@ holds for all elements of this collection, otherwise \lst{false}.
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         
+
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[(K,V)]} \\
   \hline
-  
+
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
   \hline
-       
+
 \end{tabularx}

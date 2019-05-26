@@ -2,11 +2,11 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.Outputs
-import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{IntConstant, SValue, SigmaBoolean, Tuple}
+import org.ergoplatform.{Outputs, ValidationException}
+import scorex.util.serialization.{VLQByteBufferReader, Reader}
+import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
 import sigmastate._
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix}
+import sigmastate.lang.exceptions.{InvalidTypePrefix, InputSizeLimitExceeded, InvalidOpCode, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
@@ -61,7 +61,7 @@ class DeserializationResilience extends SerializationSpecification {
   }
 
   property("invalid op code") {
-    an[InvalidOpCode] should be thrownBy
+    an[ValidationException] should be thrownBy
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
   }
 

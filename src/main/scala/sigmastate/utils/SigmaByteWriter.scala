@@ -99,7 +99,7 @@ class SigmaByteWriter(val w: Writer,
 
   @inline def putShortString(s: String): this.type = { w.putShortString(s); this }
 
-  // todo move to Writer
+  // TODO refactor: move to Writer
   @inline def toBytes: Array[Byte] = w match {
     case wr: VLQByteStringWriter => wr.result().asByteBuffer.array()
     case wr: VLQByteBufferWriter => wr.toBytes

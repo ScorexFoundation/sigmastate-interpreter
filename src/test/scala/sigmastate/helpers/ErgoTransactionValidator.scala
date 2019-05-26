@@ -14,7 +14,6 @@ class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit
 class ErgoTransactionValidator(implicit IR: IRContext) {
   val verifier = new ErgoLikeTestInterpreter()
 
-  //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
                minerPubkey: Array[Byte],

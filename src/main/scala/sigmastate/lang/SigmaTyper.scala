@@ -26,7 +26,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
   private implicit val implicitPredefFuncRegistry: PredefinedFuncRegistry = predefFuncRegistry
 
-  private val tT = STypeIdent("T") // to be used in typing rules
+  private val tT = STypeVar("T") // to be used in typing rules
 
   private val predefinedEnv: Map[String, SType] =
       predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
@@ -611,8 +611,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
 object SigmaTyper {
 
-  type STypeSubst = Map[STypeIdent, SType]
-  val emptySubst = Map.empty[STypeIdent, SType]
+  type STypeSubst = Map[STypeVar, SType]
+  val emptySubst = Map.empty[STypeVar, SType]
 
   /** Performs pairwise type unification making sure each type variable is equally
     * substituted in all items. */
@@ -638,9 +638,9 @@ object SigmaTyper {
 
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
-    case (_ @ STypeIdent(n1), _ @ STypeIdent(n2)) =>
+    case (_ @ STypeVar(n1), _ @ STypeVar(n2)) =>
       if (n1 == n2) unifiedWithoutSubst else None
-    case (id1 @ STypeIdent(_), _) =>
+    case (id1 @ STypeVar(_), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
@@ -670,7 +670,7 @@ object SigmaTyper {
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
       val substRule = rule[SType] {
-        case id: STypeIdent if subst.contains(id) => subst(id)
+        case id: STypeVar if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)
   }

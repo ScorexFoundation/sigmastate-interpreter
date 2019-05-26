@@ -1,5 +1,6 @@
 package sigmastate
 
+import org.ergoplatform.ValidationSettings
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
 import sigmastate.SCollection.{SIntArray, SByteArray}
@@ -333,8 +334,8 @@ trait NumericCastCompanion extends ValueCompanion {
 object Upcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.UpcastCode
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
-  val tT = STypeIdent("T")
-  val tR = STypeIdent("R")
+  val tT = STypeVar("T")
+  val tR = STypeVar("R")
 }
 
 /**
@@ -351,8 +352,8 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
 object Downcast extends NumericCastCompanion {
   override def opCode: OpCode = OpCodes.DowncastCode
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
-  val tT = STypeIdent("T")
-  val tR = STypeIdent("R")
+  val tT = STypeVar("T")
+  val tR = STypeVar("R")
 }
 
 /**
@@ -461,11 +462,11 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
 
 object SubstConstants extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SubstConstantsCode
-  val tT = STypeIdent("T")
+  val tT = STypeVar("T")
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Value[SType]]): Array[Byte] =
+           newVals: Array[Value[SType]])(implicit vs: ValidationSettings): Array[Byte] =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 
@@ -662,7 +663,7 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
   with NotReadyValueBoolean
 
 trait SimpleRelation[T <: SType] extends Relation[T, T] {
-  val tT = STypeIdent("T")
+  val tT = STypeVar("T")
   override val opType = SFunc(Vector(tT, tT), SBoolean)
 }
 
@@ -828,7 +829,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
   override def argInfos: Seq[ArgInfo] = IfInfo.argInfos
-  val tT = STypeIdent("T")
+  val tT = STypeVar("T")
 }
 
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {

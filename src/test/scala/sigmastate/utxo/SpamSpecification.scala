@@ -32,7 +32,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 4000000).foreach(_ => hf(block))
+    (1 to 6000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -45,7 +45,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("huge byte array") {
-    //todo: make value dependent on CostTable constants, not magic constant
+    //TODO coverage: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
 
     val id = 11: Byte
@@ -214,8 +214,10 @@ class SpamSpecification extends SigmaTestingCommons {
     terminated shouldBe true
     assertExceptionThrown(
       res.fold(t => throw t, identity),
-      t => {
-        rootCause(t).isInstanceOf[CosterException] && t.getMessage.contains("Script cannot be executed")
+      {
+        case ve: ValidationException =>
+          ve.rule == ValidationRules.CheckCostWithContext &&
+          rootCause(ve).isInstanceOf[CosterException]
       }
     )
 

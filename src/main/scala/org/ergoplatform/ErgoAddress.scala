@@ -8,9 +8,10 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlog, ProveDlogProp}
+import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
+import special.collection.Coll
 
 import scala.util.Try
 
@@ -215,24 +216,31 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
-          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes), contentBytes)
+          val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes)
+          new Pay2SAddress(tree, contentBytes)
         case _ =>
           throw new Exception("Unsupported address type: " + addressType)
       }
     }
   }
 
+  object IsPay2SHAddress {
+    def unapply(exp: SigmaPropValue): Option[Coll[Byte]] = exp match {
+      case SigmaAnd(Seq(
+            BoolToSigmaProp(
+              EQ(
+                Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
+                ByteArrayConstant(scriptHash))),
+            DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => Some(scriptHash)
+      case _ => None
+    }
+  }
+
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
-      case SigmaPropConstant(ProveDlogProp(d)) => P2PKAddress(d)
-      //TODO move this pattern to PredefScripts
-      case SigmaAnd(Seq(
-             BoolToSigmaProp(
-               EQ(
-                 Slice(_: CalcHash, ConstantNode(0, SInt), ConstantNode(24, SInt)),
-                 ByteArrayConstant(scriptHash))),
-             DeserializeContext(Pay2SHAddress.scriptId, SSigmaProp))) => new Pay2SHAddress(scriptHash.toArray)
-      case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
+      case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
+      case Right(IsPay2SHAddress(scriptHash)) => new Pay2SHAddress(scriptHash.toArray)
+      case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)
       case _ =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: $proposition")
     }

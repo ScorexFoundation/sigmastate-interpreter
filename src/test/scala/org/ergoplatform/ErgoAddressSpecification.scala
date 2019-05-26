@@ -17,8 +17,8 @@ class ErgoAddressSpecification extends PropSpec
   with ValueGenerators
   with PropertyChecks
   with Matchers
-  with TryValues {
-
+  with TryValues
+  with ValidationSpecification {
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
 

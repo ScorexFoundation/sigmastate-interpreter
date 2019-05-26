@@ -1,5 +1,6 @@
 package sigmastate.serialization
 
+import org.ergoplatform.ValidationRules.CheckValidOpCode
 import java.util.Properties
 
 import org.ergoplatform._
@@ -155,10 +156,14 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
-    val serializer = serializers(opCode)
-    if (serializer == null)
-      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - LastConstantCode}")
-    serializer
+    val serializer = serializers.get(opCode)
+    CheckValidOpCode(serializer, opCode) { serializer }
+  }
+  def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
+    serializers.add(opCode, ser)
+  }
+  def removeSerializer(opCode: OpCode) = {
+    serializers.remove(opCode)
   }
 
   type ChildrenMap = mutable.ArrayBuffer[(String, Scope)]

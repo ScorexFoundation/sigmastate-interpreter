@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress, ValidationRules}
 import scalan.Nullable
 import scorex.util.encode.{Base64, Base58}
 import sigmastate.SCollection.{SIntArray, SByteArray}
@@ -46,11 +46,11 @@ object SigmaPredef {
     import builder._
 
     /** Type variable used in the signatures of global functions below. */
-    private val tT = STypeIdent("T")
-    private val tK = STypeIdent("K")
-    private val tL = STypeIdent("L")
-    private val tR = STypeIdent("R")
-    private val tO = STypeIdent("O")
+    private val tT = STypeVar("T")
+    private val tK = STypeVar("K")
+    private val tL = STypeVar("L")
+    private val tR = STypeVar("R")
+    private val tO = STypeVar("O")
 
     private val undefined: IrBuilderFunc =
       PartialFunction.empty[(SValue, Seq[SValue]), SValue]

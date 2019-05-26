@@ -20,6 +20,17 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValues(mc.args, ArgInfo("args", "arguments of the method call"))
   }
 
+  /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
+    * but a valid ErgoTree should have SMethod instances specialized for specific types
+    * of `obj` and `args` using `specializeFor`.
+    * This means, if we save typeId, methodId, and we save all the arguments,
+    * we can restore the specialized SMethod instance.
+    * This work by induction, if we assume all arguments are monomorphic,
+    * then we can make MethodCall monomorphic. Thus, all ErgoTree is monomorphic by construction.
+    * This is limitation of MethodCall, because we cannot use it to represent for example
+    * def Box.getReg[T](id: Int): Option[T], which require serialization of expected type `T`
+    * However it can be implemented using separate node type (new type code) and can be added via soft-fork.
+    */
   override def parse(r: SigmaByteReader): Value[SType] = {
     val typeId = r.getByte()
     val methodId = r.getByte()

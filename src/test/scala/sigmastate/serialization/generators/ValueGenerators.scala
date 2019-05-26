@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-trait ValueGenerators extends TypeGenerators {
+trait ValueGenerators extends TypeGenerators with ValidationSpecification {
 
   import sigmastate.lang.TransformingSigmaBuilder._
 

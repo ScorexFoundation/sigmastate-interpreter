@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
@@ -9,7 +9,6 @@ import sigmastate.lang.LangTests
 import scalan.util.BenchmarkUtil._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests
@@ -58,8 +57,6 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
-  // TODO Caused by: java.lang.AssertionError: assertion failed:
-  //  Invalid cast Cast(SizeCollElem<SizeColl[Coll[Int], Int]>, s1572): interface special.collection.SizeColl is not assignable from class special.collection.CSizePrim
   test("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
