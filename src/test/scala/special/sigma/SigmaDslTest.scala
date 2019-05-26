@@ -64,6 +64,7 @@ class SigmaDslTest extends PropSpec
   }
 
   property("Byte methods equivalence") {
+    val toByte = checkEq(func[Byte, Byte]("{ (x: Byte) => x.toByte }"))(x => x.toByte)
     val toShort = checkEq(func[Byte,Short]("{ (x: Byte) => x.toShort }"))(x => x.toShort)
     val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
@@ -76,7 +77,7 @@ class SigmaDslTest extends PropSpec
     lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
 
     forAll { x: Byte =>
-      Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
+      Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
     }
   }
 
@@ -106,7 +107,107 @@ class SigmaDslTest extends PropSpec
       //TODO soft-fork: compareTo(x)
     }
   }
-  // TODO soft-fork: add tests for Short, Long, BigInt operations
+
+  property("Short methods equivalence") {
+    val toByte = checkEq(func[Short,Byte]("{ (x: Short) => x.toByte }"))(x => x.toByte)
+    val toShort = checkEq(func[Short,Short]("{ (x: Short) => x.toShort }"))(x => x.toShort)
+    val toInt = checkEq(func[Short,Int]("{ (x: Short) => x.toInt }"))(x => x.toInt)
+    val toLong = checkEq(func[Short,Long]("{ (x: Short) => x.toLong }"))(x => x.toLong)
+    val toBigInt = checkEq(func[Short,BigInt]("{ (x: Short) => x.toBigInt }"))(x => x.toBigInt)
+    lazy val toBytes = checkEq(func[Short,Coll[Byte]]("{ (x: Short) => x.toBytes }"))(x => x.toBytes)
+    lazy val toBits = checkEq(func[Short,Coll[Boolean]]("{ (x: Short) => x.toBits }"))(x => x.toBits)
+    // TODO: Implement Short.toAbs
+    // lazy val toAbs = checkEq(func[Short,Short]("{ (x: Short) => x.toAbs }"))((x: Short) => x.toAbs)
+    lazy val compareTo = checkEq(func[(Short, Short), Int]("{ (x: (Short, Short)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+
+    forAll { x: Short =>
+      whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
+        toByte(x)
+      }
+      Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
+      //TODO soft-fork: toBytes, toBits, toAbs
+    }
+    forAll { x: (Short, Short) =>
+      //TODO soft-fork: compareTo(x)
+    }
+  }
+
+  property("Long methods equivalence") {
+    val toByte = checkEq(func[Long,Byte]("{ (x: Long) => x.toByte }"))(x => x.toByte)
+    val toShort = checkEq(func[Long,Short]("{ (x: Long) => x.toShort }"))(x => x.toShort)
+    val toInt = checkEq(func[Long,Int]("{ (x: Long) => x.toInt }"))(x => x.toInt)
+    val toLong = checkEq(func[Long,Long]("{ (x: Long) => x.toLong }"))(x => x.toLong)
+    // TODO: Implement Long.toBigInt, toBytes, toBits and toAbs
+    /*
+      val toBigInt = checkEq(func[Long,BigInt]("{ (x: Long) => x.toBigInt }"))(x => x.toBigInt)
+      lazy val toBytes = checkEq(func[Long,Coll[Byte]]("{ (x: Long) => x.toBytes }"))(x => x.toBytes)
+      lazy val toBits = checkEq(func[Long,Coll[Boolean]]("{ (x: Long) => x.toBits }"))(x => x.toBits)
+      lazy val toAbs = checkEq(func[Long,Long]("{ (x: Long) => x.toAbs }"))(x => x.toAbs)
+    */
+    lazy val compareTo = checkEq(func[(Long, Long), Int]("{ (x: (Long, Long)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+
+    forAll { x: Long =>
+      whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
+        toByte(x)
+      }
+      whenever(Short.MinValue <= x && x <= Short.MaxValue) {
+        toShort(x)
+      }
+      whenever(Int.MinValue <= x && x <= Int.MaxValue) {
+        toInt(x)
+      }
+      Seq(toLong/*, toBigInt*/).foreach(_(x))
+      //TODO soft-fork: toBytes, toBits, toAbs
+    }
+    forAll { x: (Long, Long) =>
+      //TODO soft-fork: compareTo(x)
+    }
+  }
+/*
+
+  property("BigInt methods equivalence") {
+    val toByte = checkEq(func[BigInt,Byte]("{ (x: BigInt) => x.toByte }"))(x => x.toByte)
+    val toShort = checkEq(func[BigInt,Short]("{ (x: BigInt) => x.toShort }"))(x => x.toShort)
+    val toInt = checkEq(func[BigInt,Int]("{ (x: BigInt) => x.toInt }"))(x => x.toInt)
+    val toLong = checkEq(func[BigInt,Long]("{ (x: BigInt) => x.toLong }"))(x => x.toLong)
+    // TODO: implement
+    //    val toBigInt = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toBigInt }"))(x => x.toBigInt)
+    lazy val toBytes = checkEq(func[BigInt,Coll[Byte]]("{ (x: BigInt) => x.toBytes }"))(x => x.toBytes)
+    lazy val toBits = checkEq(func[BigInt,Coll[Boolean]]("{ (x: BigInt) => x.toBits }"))(x => x.toBits)
+    lazy val toAbs = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toAbs }"))(x => x.toAbs)
+    lazy val compareTo = checkEq(func[(BigInt, BigInt), Int]("{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
+
+    forAll { x: BigInt =>
+      whenever(Byte.MinValue.toBigInt <= x && x <= scala.Byte.MaxValue.toBigInt) {
+        toByte(x)
+      }
+      whenever(Short.MinValue.toBigInt <= x && x <= Short.MaxValue.toBigInt) {
+        toShort(x)
+      }
+      whenever(Int.MinValue.toBigInt <= x && x <= Int.MaxValue.toBigInt) {
+        toInt(x)
+      }
+      whenever(Long.MinValue.toBigInt <= x && x <= Long.MaxValue.toBigInt) {
+        toLong(x)
+      }
+      Seq(toBigInt).foreach(_(x))
+      //TODO soft-fork: toBytes, toBits, toAbs
+    }
+    forAll { x: (BigInt, BigInt) =>
+      //TODO soft-fork: compareTo(x)
+    }
+  }
+*/
+
+  // TODO: Boolean.toByte misses costing
+  ignore("Boolean operations equivalence") {
+    val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))((x: Boolean) => x.toByte)
+    forAll { x: Boolean =>
+      Seq(toByte).foreach(_(x))
+    }
+  }
+
+
 
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
@@ -371,7 +472,6 @@ class SigmaDslTest extends PropSpec
     forAll { x: BigInt => negBigInteger(x) }
   }
 
-  //TODO: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/424
   property("BinXor(logical XOR) equivalence") {
     val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x: (Boolean, Boolean)) => x._1 ^ x._2 }")) {
       x => x._1 ^ x._2
@@ -426,6 +526,7 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Coll[Box]) => x.zip(x) })("{ (x: Coll[Box]) => x.zip(x) }")
   }
 
+  // TODO: test fold method
   property("Option methods equivalence") {
     val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
     val eq = EqualityChecker(opt)
@@ -437,4 +538,7 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
     eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
   }
+
+  // TODO: Test colls
+  //TODO: test registers
 }
