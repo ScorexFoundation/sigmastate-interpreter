@@ -168,7 +168,7 @@ object ValidationRules {
   }
 
   object CheckCostFuncOperation extends ValidationRule(1013,
-    "Check the opcode is allowed in cost function") {
+    "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCode)(block: => T): T = {
       def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
       def args = Seq(opCode)
