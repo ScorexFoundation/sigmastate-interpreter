@@ -89,8 +89,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  private val _allowedOpCodesInCosting = HashSet[OpCode](
-    Undefined,
+  protected def allowedOpCodesInCosting: HashSet[OpCode] = HashSet[OpCode](
     AppendCode,
     ByIndexCode,
     ConstantCode,
@@ -126,37 +125,35 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     UpcastCode,
   )
 
-  def isAllowedOpCodeInCosting(opCode: OpCode): Boolean = _allowedOpCodesInCosting.contains(opCode)
+  def isAllowedOpCodeInCosting(opCode: OpCode): Boolean =
+    (opCode == Undefined) || allowedOpCodesInCosting.contains(opCode)
 
-  object isNonSerializable {
-    def unapply(op: Def[_]): Option[Unit] = op match {
-      case _: OpCost | _: PerKbCostOf | _: Cast[_] => Some()
-      case _: IntPlusMonoid => Some()
-      case _: ThunkDef[_] => Some()
-      case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
-           SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => Some()
-      case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
-           SBM.getReg(_, _, _) | SBM.tokens(_) => Some()
-      case SSPM.propBytes(_) => Some()
-      case SAVM.tVal(_) | SAVM.valueSize(_) => Some()
-      case SizeM.dataSize(_) => Some()
-      case SPairM.l(_) | SPairM.r(_) => Some()
-      case SCollM.sizes(_) => Some()
-      case SOptM.sizeOpt(_) => Some()
-      case SFuncM.sizeEnv(_) => Some()
-      case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-           _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => Some()
-      case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => Some()
-      case CollM.sum(_, _) => Some()
-      case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => Some()
-      case _: CostOf | _: SizeOf[_] => Some()
-      case SPCM.some(_) => Some()
-      case _ => None
-    }
+  def isNonSerializable(d: Def[_]): Boolean = d match {
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] => true
+    case _: IntPlusMonoid => true
+    case _: ThunkDef[_] => true
+    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
+         SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => true
+    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
+         SBM.getReg(_, _, _) | SBM.tokens(_) => true
+    case SSPM.propBytes(_) => true
+    case SAVM.tVal(_) | SAVM.valueSize(_) => true
+    case SizeM.dataSize(_) => true
+    case SPairM.l(_) | SPairM.r(_) => true
+    case SCollM.sizes(_) => true
+    case SOptM.sizeOpt(_) => true
+    case SFuncM.sizeEnv(_) => true
+    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
+    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
+    case CollM.sum(_, _) => true
+    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
+    case _: CostOf | _: SizeOf[_] => true
+    case SPCM.some(_) => true
+    case _ => false
   }
 
-  private def getOpCode(d: Def[_]): OpCode = d match {
-    case isNonSerializable(_) => Undefined
+  def getOpCode(d: Def[_]): OpCode = if (isNonSerializable(d)) Undefined else d match {
     case _: Const[_] => ConstantCode
     case _: Tup[_, _] => TupleCode
     case _: First[_, _] | _: Second[_, _] => SelectFieldCode
@@ -164,7 +161,15 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: Lambda[_, _] => FuncValueCode
     case _: Apply[_, _] => FuncApplyCode
     case _: Upcast[_, _] => UpcastCode
-    case ApplyBinOp(IsArithOp(opCode), _, _) => opCode
+    case ApplyBinOp(op, _, _) => op match {
+      case _: NumericPlus[_] => PlusCode
+      case _: NumericMinus[_] => MinusCode
+      case _: NumericTimes[_] => MultiplyCode
+      case _: IntegralDivide[_] => DivisionCode
+      case _: IntegralMod[_] => ModuloCode
+      case _: OrderingMin[_] => MinCode
+      case _: OrderingMax[_] => MaxCode
+    }
     case ApplyUnOp(op, _) => op match {
       case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
       case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
