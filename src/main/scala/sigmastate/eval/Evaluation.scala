@@ -161,6 +161,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: Lambda[_, _] => FuncValueCode
     case _: Apply[_, _] => FuncApplyCode
     case _: Upcast[_, _] => UpcastCode
+    case _: Downcast[_, _] => DowncastCode
     case ApplyBinOp(op, _, _) => op match {
       case _: NumericPlus[_] => PlusCode
       case _: NumericMinus[_] => MinusCode
@@ -169,19 +170,26 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case _: IntegralMod[_] => ModuloCode
       case _: OrderingMin[_] => MinCode
       case _: OrderingMax[_] => MaxCode
+      case _: Equals[_]       => EqCode
+      case _: NotEquals[_]    => NeqCode
+      case _: OrderingGT[_]   => GtCode
+      case _: OrderingLT[_]   => LtCode
+      case _: OrderingGTEQ[_] => GeCode
+      case _: OrderingLTEQ[_] => LeCode
     }
     case ApplyUnOp(op, _) => op match {
       case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
       case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
     }
+    case _: IfThenElseLazy[_] => IfCode
     case ContextM.SELF(_) => SelfCode
     case ContextM.OUTPUTS(_) => OutputsCode
     case ContextM.INPUTS(_) => InputsCode
     case ContextM.dataInputs(_) => MethodCallCode
     case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
     case ContextM.getVar(_, _, _) => GetVarCode
-    // todo add ALL op codes
     case ContextM.HEIGHT(_) => HeightCode
+    case ContextM.minerPubKey(_) => MinerPubkeyCode
     case SigmaM.propBytes(_) => SigmaPropBytesCode
     case CollM.length(_) => SizeOfCode
     case CollM.apply(_, _) => ByIndexCode
@@ -190,6 +198,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case CollM.slice(_, _, _) => SliceCode
     case CollM.append(_, _) => AppendCode
     case CollM.foldLeft(_, _, _) => FoldCode
+    case CollM.exists(_, _) => ExistsCode
+    case CollM.forall(_, _) => ForAllCode
     case BoxM.propositionBytes(_) => ExtractScriptBytesCode
     case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
     case BoxM.getReg(_, _, _) => ExtractRegisterAs
@@ -197,6 +207,18 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case OM.getOrElse(_, _) => OptionGetOrElseCode
     case OM.fold(_, _, _) => MethodCallCode
     case OM.isDefined(_) => OptionIsDefinedCode
+    case SDBM.substConstants(_, _, _, _, _) => SubstConstantsCode
+    case SDBM.longToByteArray(_, _) => LongToByteArrayCode
+    case SDBM.byteArrayToBigInt(_, _) => ByteArrayToBigIntCode
+    case SDBM.byteArrayToLong(_, _) => ByteArrayToLongCode
+    case SDBM.groupGenerator(_) => GroupGeneratorCode
+    case SDBM.allOf(_, _) => AndCode
+    case SDBM.anyOf(_, _) => OrCode
+    case SDBM.atLeast(_, _, _) => AtLeastCode
+    case SDBM.anyZK(_, _) => ExistsCode
+    case SDBM.allZK(_, _) => ForAllCode
+    case CBM.xor(_, _, _) => XorCode
+
     case _ => error(s"Unknown opCode for $d}")
   }
 
