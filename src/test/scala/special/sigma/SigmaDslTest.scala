@@ -2,8 +2,9 @@ package special.sigma
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform._
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
@@ -15,13 +16,13 @@ import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigma.util.Extensions._
 import sigmastate.Values.{BooleanConstant, EvaluatedValue, IntConstant}
 import sigmastate._
+import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import special.collection.{Builder, Coll}
-import org.ergoplatform.ErgoConstants
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -374,6 +375,34 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Box) => x.tokens })("{ (x: Box) => x.tokens }")
   }
 
+  property("Advanced Box test") {
+    val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
+    avlProver.generateProof()
+
+    val digest = avlProver.digest
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
+    val box = ctx.dataInputs(0)
+
+    val s = ErgoBox(20, TrueProp, 0, Seq(),Map(
+      ErgoBox.nonMandatoryRegisters(0) -> ByteConstant(1.toByte),
+      ErgoBox.nonMandatoryRegisters(1) -> ShortConstant(1024.toShort),
+      ErgoBox.nonMandatoryRegisters(2) -> IntConstant(1024 * 1024),
+      ErgoBox.nonMandatoryRegisters(3) -> LongConstant(1024.toLong),
+      ErgoBox.nonMandatoryRegisters(4) -> BigIntConstant(222L),
+      ErgoBox.nonMandatoryRegisters(5) -> AvlTreeConstant(treeData)
+    ))
+    lazy val byteCheck = checkEq(func[Box,Byte]("{ (x: Box) => x.R4[Byte].get }"))((x: Box) => x.R4[Byte].get)
+    lazy val shortCheck = checkEq(func[Box,Short]("{ (x: Box) => x.R5[Short].get }"))((x: Box) => x.R5[Short].get)
+    lazy val intCheck = checkEq(func[Box,Int]("{ (x: Box) => x.R6[Int].get }"))((x: Box) => x.R6[Int].get)
+    lazy val longCheck = checkEq(func[Box,Long]("{ (x: Box) => x.R7[Long].get }"))((x: Box) => x.R7[Long].get)
+    lazy val BigIntCheck = checkEq(func[Box,BigInt]("{ (x: Box) => x.R8[BigInt].get }"))((x: Box) => x.R8[BigInt].get)
+    byteCheck(s)
+    shortCheck(s)
+    intCheck(s)
+    longCheck(s)
+    BigIntCheck(s)
+  }
+
   property("PreHeader properties equivalence") {
     val h = ctx.preHeader
     val eq = EqualityChecker(h)
@@ -419,6 +448,8 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Context) => x.SELF })("{ (x: Context) => x.SELF }")
     eq({ (x: Context) => x.INPUTS.map { (b: Box) => b.value } })("{ (x: Context) => x.INPUTS.map { (b: Box) => b.value } }")
     eq({ (x: Context) => x.selfBoxIndex })("{ (x: Context) => x.selfBoxIndex }")
+    eq({ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed })("{ (x: Context) => x.LastBlockUtxoRootHash.isUpdateAllowed }")
+    eq({ (x: Context) => x.minerPubKey })("{ (x: Context) => x.minerPubKey }")
     eq({ (x: Context) =>
       x.INPUTS.map { (b: Box) => (b.value, b.value) }
     })(
@@ -441,6 +472,8 @@ class SigmaDslTest extends PropSpec
      |    (pk, value)
      |  }
      |}""".stripMargin)
+
+    // getVar
   }
 
   property("xorOf equivalence") {
