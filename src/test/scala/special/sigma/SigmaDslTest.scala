@@ -340,32 +340,6 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("ByteArrayToBigInt: big int should always be positive") {
-    val eq = checkEq(func[Coll[Byte], Boolean]("{ (x: Coll[Byte]) => byteArrayToBigInt(x) > 0 }")){ x =>
-      true
-    }
-    eq(Builder.DefaultCollBuilder.fromArray(Array[Byte](-1.toByte)))
-  }
-
-  property("ByteArrayToBigInt: simple checks") {
-    var eq = checkEq(func[Coll[Byte], BigInt]("{ (x: Coll[Byte]) => byteArrayToBigInt(x)}")){ x =>
-      BigInt(5).bigInteger
-    }
-    eq(Builder.DefaultCollBuilder.fromArray(Array[Byte](5.toByte)))
-    eq = checkEq(func[Coll[Byte], BigInt]("{ (x: Coll[Byte]) => byteArrayToBigInt(x)}")){ x =>
-      BigInt(200).bigInteger
-    }
-    eq(Builder.DefaultCollBuilder.fromArray(Array[Byte](200.toByte)))
-    eq = checkEq(func[Coll[Byte], BigInt]("{ (x: Coll[Byte]) => byteArrayToBigInt(x)}")){ x =>
-      BigInt(256).bigInteger
-    }
-    eq(Builder.DefaultCollBuilder.fromArray(Array[Byte](1.toByte, 0.toByte)))
-    eq = checkEq(func[Coll[Byte], BigInt]("{ (x: Coll[Byte]) => byteArrayToBigInt(x)}")){ x =>
-      BigInt(612).bigInteger
-    }
-    eq(Builder.DefaultCollBuilder.fromArray(Array[Byte](2.toByte, 100.toByte)))
-  }
-
   property("byteArrayToLong equivalence") {
     val eq = checkEq(func[Coll[Byte],Long]("{ (x: Coll[Byte]) => byteArrayToLong(x) }")){ x =>
       byteArrayToLong(x)
@@ -573,7 +547,4 @@ class SigmaDslTest extends PropSpec
     val eq = EqualityChecker(opt)
     eq({ (x: Option[Long]) => x.fold(5.toLong)( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.fold(5, { (v: Long) => v + 1 }) }")
   }
-
-  // TODO: Test colls
-  //TODO: test registers
 }
