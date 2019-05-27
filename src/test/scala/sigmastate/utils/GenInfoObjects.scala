@@ -1,11 +1,8 @@
 package sigmastate.utils
 
-import sigmastate.Values.ValueCompanion
-import sigmastate.{ArgInfo, SMethod}
+import sigmastate.SMethod
 import scalan.meta.PrintExtensions._
-
 import scala.util.Try
-import sigmastate.lang.SigmaPredef.PredefinedFunc
 
 /** Generate as a console output all InfoObject objects.
   * Those provide stable identifiers to access metadata information.

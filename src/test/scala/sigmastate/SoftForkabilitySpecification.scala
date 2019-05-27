@@ -6,7 +6,7 @@ import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
