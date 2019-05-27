@@ -240,8 +240,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ (a: Int) => { val b = a + 1; b } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ (a: Int, box: Box) => a + box.value }") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SLong)
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
+      */
     typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isProven }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
@@ -490,7 +492,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, """ "a" + "b" """) shouldBe SString
   }
 
-  property("modular arith ops") {
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("modular arith ops") {
     typecheck(env, "10.toBigInt.modQ") shouldBe SBigInt
     typecheck(env, "10.toBigInt.plusModQ(2.toBigInt)") shouldBe SBigInt
     typecheck(env, "10.toBigInt.minusModQ(2.toBigInt)") shouldBe SBigInt
