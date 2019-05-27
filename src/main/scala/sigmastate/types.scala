@@ -516,10 +516,13 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def typeId = typeCode
   override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  protected override def getMethods() = super.getMethods()
+  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ++ Seq(
     SMethod(this, ToByte, SFunc(this, SByte), 1)
       .withInfo("Convert true to 1 and false to 0"),
   )
+  */
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
@@ -660,12 +663,15 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withInfo("Subtracts \\lst{other} number from this by module Q.", MethodArgInfo("other", "Number to subtract from this."))
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4, MethodCallIrBuilder, None)
       .withInfo("Multiply this number with \\lst{other} by module Q.", MethodArgInfo("other", "Number to multiply with this."))
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  protected override def getMethods() = super.getMethods()
+  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ++ Seq(
     ModQMethod,
     PlusModQMethod,
     MinusModQMethod,
     MultModQMethod,
   )
+  */
 }
 
 /** NOTE: this descriptor both type and type companion */
@@ -686,8 +692,10 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
         .withInfo("Checks if this value is identity element of the eliptic curve group."),
+    */
     SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2, MethodCallIrBuilder, None)
         .withInfo("Get an encoding of the point value."),
     SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3, Some {
@@ -831,7 +839,9 @@ object SOption extends STypeCompanion {
     IsDefinedMethod,
     GetMethod,
     GetOrElseMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     FoldMethod,
+    */
     MapMethod,
     FilterMethod,
   )
