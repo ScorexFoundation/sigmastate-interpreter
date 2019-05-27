@@ -17,7 +17,7 @@ jdk:
   - oraclejdk9
 
 script:
-  - sbt -jvm-opts .travis.jvmopts test
+  - sbt -jvm-opts .travis.jvmopts test ergoUnitTest
 
 after_success:
   - sbt -jvm-opts .travis.jvmopts publish
