@@ -50,8 +50,10 @@ case class ValidationException(message: String, rule: ValidationRule, args: Seq[
     extends Exception(message, cause.orNull)
 
 object ValidationRules {
+  /** The id of the first validation rule. Can be used as the beginning of the rules id range. */
+  val FirstRuleId = 1000.toShort
 
-  object CheckDeserializedScriptType extends ValidationRule(1000,
+  object CheckDeserializedScriptType extends ValidationRule(FirstRuleId,
     "Deserialized script should have expected type") {
     def apply[T](d: DeserializeContext[_], script: SValue)(block: => T): T =
       validate(d.tpe == script.tpe,
