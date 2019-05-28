@@ -2,6 +2,7 @@ package special.sigma
 
 import java.math.BigInteger
 
+import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
@@ -21,7 +22,7 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.ScriptEnv
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
 import special.collection.{Builder, Coll}
 
 
@@ -489,8 +490,13 @@ class SigmaDslTest extends PropSpec
      |    (pk, value)
      |  }
      |}""".stripMargin)
+  }
 
-    // getVar
+  property("getVar equivalence") {
+    val eq = checkEq(func[Int,Int]("{ (x: Int) => getVar[Int](2).get }", 2.toByte -> IntConstant(10))) { x =>
+      10
+    }
+    eq(1)
   }
 
   property("xorOf equivalence") {
