@@ -3,8 +3,8 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import org.ergoplatform.ValidationRules.CheckCostFuncOperation
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.CheckCostFuncOperation
 import sigmastate._
 import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
 import sigmastate.lang.Terms.OperationId
