@@ -198,26 +198,20 @@ class SigmaDslTest extends PropSpec
     lazy val toAbs = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(BigInt, BigInt), Int]("{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
-    def checkBigIntBorder(min: BigInt, max: BigInt, item: BigInt): Boolean = {
-      return (min.min(item) == min) && (max.max(item) == max)
+    /* TODO: Check why this fails:
+    forAll { x: Byte =>
+      toByte(x.toBigInt)
     }
-
+    forAll { x: Short =>
+      toShort(x.toBigInt)
+    }
+    forAll { x: Int =>
+      toInt(x.toBigInt)
+    }
+    forAll { x: Long =>
+      toLong(BigInt(x).bigInteger)
+    }*/
     forAll { x: BigInt =>
-      /*
-      whenever(checkBigIntBorder(Byte.MinValue.toBigInt, Byte.MaxValue.toBigInt, x)) {
-        toByte(x)
-      }
-      whenever(checkBigIntBorder(Short.MinValue.toBigInt, Short.MaxValue.toBigInt, x)) {
-        println(x)
-        toShort(x)
-      }
-      whenever(checkBigIntBorder(Int.MinValue.toBigInt, Int.MaxValue.toBigInt, x)) {
-        toInt(x)
-      }
-      whenever(checkBigIntBorder(BigInt(Long.MinValue).bigInteger, BigInt(Long.MaxValue).bigInteger, x)) {
-        toLong(x)
-      }
-      */
       Seq(toBigInt).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
@@ -345,9 +339,6 @@ class SigmaDslTest extends PropSpec
       doRemove((preRemoveTree, (removeKeys, removeProof)))
     }
   }
-
-  // updateDigest
-  // updateoperations
 
   property("longToByteArray equivalence") {
     val eq = checkEq(func[Long, Coll[Byte]]("{ (x: Long) => longToByteArray(x) }")){ x =>
