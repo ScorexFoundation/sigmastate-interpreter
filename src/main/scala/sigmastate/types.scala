@@ -1146,28 +1146,38 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     ForallMethod,
     SliceMethod,
     FilterMethod,
+    /* TODO: check
     AppendMethod,
+    */
     ApplyMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     BitShiftLeftMethod,
     BitShiftRightMethod,
     BitShiftRightZeroedMethod,
+    */
     IndicesMethod,
     FlatMapMethod,
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
+    /*TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     UnionSetsMethod,
     DiffMethod,
     IntersectMethod,
     PrefixLengthMethod,
+    */
     IndexOfMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     LastIndexOfMethod,
     FindMethod,
+    */
     ZipMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,
     MapReduceMethod,
+    */
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -1412,7 +1422,9 @@ case object SBox extends SProduct with SPredefType with SMonoType {
     SMethod(this, Id, SFunc(SBox, SByteArray), 5)
         .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
     creationInfoMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     getRegMethod,
+    */
     tokensMethod
   ) ++ registers(8)
   override val coster = Some(Coster(_.BoxCoster))

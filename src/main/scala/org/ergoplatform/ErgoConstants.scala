@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.ergoplatform.ErgoLikeContext
 import sigmastate.{AtLeast, SBigInt, SPrimType}
 
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
