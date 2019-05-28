@@ -95,7 +95,7 @@ case class ValidationRule(
   }
 }
 
-/** Base class for all exception which may be thrown by validation rules. */
+/** Base class for all exceptions which may be thrown by validation rules. */
 case class ValidationException(message: String, rule: ValidationRule, args: Seq[Any], cause: Option[Throwable] = None)
   extends Exception(message, cause.orNull)
 
@@ -129,12 +129,12 @@ case class ChangedRuleException(vs: ValidationSettings, changedRule: ValidationR
   * in block extensions section via voting.
   *
   * These parameter changes are represented in ValidationSettings as RuleStatus.
-  * Each descendant class represent a particular change in rule parameters.
+  * Each descendant class represents a particular change in rule parameters.
   * Rule ids are used as the keys of the values in the block extension section.
   * RuleStatus instances are deserialized from block extension values that correspond
   * to rule ids.
   *
-  * Each rule has associated check of soft-fork condition by implementing `isSoftFork`
+  * Each rule has associated check for a soft-fork condition by implementing `isSoftFork`
   * method. If `isSoftFork` returns true, then ValidationException raised by the rule
   * is interpreted as *soft-fork condition*. Depending on the use case, soft-fork condition
   * allows some operations to succeed which otherwise would fail due to ValidationException

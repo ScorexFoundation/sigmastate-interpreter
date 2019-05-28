@@ -5,7 +5,7 @@ import java.util.{Arrays, Objects}
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.{ErgoLikeContext, ValidationException, ValidationRules, SoftForkException}
+import org.ergoplatform.ValidationException
 import org.ergoplatform.ErgoLikeContext
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
