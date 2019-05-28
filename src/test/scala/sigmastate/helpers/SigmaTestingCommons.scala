@@ -104,7 +104,7 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def func[A: RType, B: RType](func: String)(implicit IR: IRContext): A => B = {
+  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
     import IR._
     import IR.Context._;
     val tA = RType[A]
@@ -130,8 +130,9 @@ trait SigmaTestingCommons extends PropSpec
     (in: A) => {
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
-      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
-        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val context =
+        ErgoLikeContext.dummy(createBox(0, TrueProp))
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val (res, _) = valueFun(calcCtx)
       res.asInstanceOf[B]
