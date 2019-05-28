@@ -2,11 +2,10 @@ package sigmastate
 
 import java.math.BigInteger
 import java.util
-import java.util.{Objects, Arrays}
+import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
@@ -17,16 +16,14 @@ import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization._
-import sigmastate.serialization.{OpCodes, ConstantStore}
+import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values.ErgoTree.{substConstants, isConstantSegregation}
+import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-import special.sigma._
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -37,7 +34,7 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, PreHeader, Header}
+import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
@@ -906,22 +903,36 @@ object Values {
     root: Either[UnparsedErgoTree, SigmaPropValue]
   ) {
     assert(isConstantSegregation || constants.isEmpty)
-    /** When isConstantSegregation == false this is the same as root.
-      * Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants. */
-    lazy val proposition: SigmaPropValue = root match {
-      case Right(tree) =>
-        val prop = if (isConstantSegregation)
-            substConstants(tree, constants).asSigmaProp
-          else
-            tree
-        prop
-      case Left(UnparsedErgoTree(bytes, error)) =>
-        ???
-    }
+
+    /** Then it throws the error from UnparsedErgoTree.
+      * It does so on every usage of `proposition` because the lazy value remains uninitialized.
+      */
+    @deprecated("Use toProposition instead", "v2.1")
+    lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
+
     @inline def isRightParsed: Boolean = root.isRight
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+
+    /** Get proposition expression from this contract.
+      * When root.isRight then
+      *   if replaceConstants == false this is the same as `root.right.get`.
+      *   Otherwise, it is equivalent to `root.right.get` where all placeholders are replaced by Constants.
+      * When root.isLeft then
+      *   throws the error from UnparsedErgoTree.
+      *   It does so on every usage of `proposition` because the lazy value remains uninitialized.
+      */
+    def toProposition(replaceConstants: Boolean): SigmaPropValue = root match {
+      case Right(tree) =>
+        val prop = if (replaceConstants)
+          substConstants(tree, constants).asSigmaProp
+        else
+          tree
+        prop
+      case Left(UnparsedErgoTree(_, error)) =>
+        throw error
+    }
   }
 
   object ErgoTree {
