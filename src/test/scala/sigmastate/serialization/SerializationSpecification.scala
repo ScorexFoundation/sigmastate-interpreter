@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import org.ergoplatform.{ValidationSettings, ValidationRules, ValidationSpecification}
+import org.ergoplatform.ValidationSpecification
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, TableDrivenPropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}

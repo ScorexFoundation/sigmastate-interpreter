@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import java.nio.charset.StandardCharsets
 
-import org.ergoplatform.{SoftForkWhenCodeAdded, ValidationRule, ValidationException}
+import org.ergoplatform.validation.{ValidationRule, SoftForkWhenCodeAdded}
 import sigmastate._
 import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InvalidOpCode}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}

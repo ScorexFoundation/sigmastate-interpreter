@@ -14,9 +14,10 @@ import special.sigma
 import special.sigma.{AnyValue, Box, PreHeader, Header}
 import sigmastate.SType._
 import scalan.RType._
-import special.sigma.{Header, Box, AnyValue, PreHeader}
+import special.sigma.{AnyValue, Box, PreHeader, Header}
 import SType._
 import RType._
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import special.sigma.Extensions._
 
 import scala.util.Try
@@ -49,7 +50,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       override val extension: ContextExtension = ContextExtension(Map()),
-                      val validationSettings: ValidationSettings = ValidationRules.currentSettings
+                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -116,7 +117,7 @@ object ErgoLikeContext {
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
             extension: ContextExtension = ContextExtension(Map()),
-            vs: ValidationSettings = ValidationRules.currentSettings) =
+            vs: SigmaValidationSettings = ValidationRules.currentSettings) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,

@@ -35,7 +35,7 @@ import special.collection.CollType
 import special.Types._
 import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
-import ValidationRules._
+import org.ergoplatform.validation.ValidationRules._
 
 import scala.collection.mutable
 
@@ -1089,7 +1089,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     }
   }
 
+  /** Initial capacity of the hash set, large enough to avoid many rebuidings
+    * and small enough to not consume too much memory. */
   private val InitDependantNodes = 10000
+
+  /** Mutable IR context state, make sure it is reset in onReset() to its initial state. */
   private[this] var _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
 
   def isContextDependant(sym: Sym): Boolean =
@@ -1098,19 +1102,34 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       _contextDependantNodes(sym.rhs.nodeId)
     }
 
+  /** Here we hook into graph building process at the point where each new graph node is added to the graph.
+    * First, we call `super.createDefinition`, which adds the new node `d` to the graph (`s` is the node's symbol).
+    * Next, we update context dependence analysis information (see isSupportedIndexExpression)
+    * The graph node is `context-dependent` if:
+    * 1) it is the node of Context type
+    * 2) all nodes it depends on are `context-dependent`
+    *
+    * @see super.createDefinition, isSupportedIndexExpression
+    */
   override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): TableEntry[T] = {
     val res = super.createDefinition(optScope, s, d)
     res.rhs match {
       case d if d.selfType.isInstanceOf[ContextElem[_]] =>
+        // the node is of Context type  => `context-dependent`
         _contextDependantNodes += (d.nodeId)
       case d =>
         val allArgs = d.getDeps.forall(isContextDependant)
-        if (allArgs)
+        if (allArgs) {
+          // all arguments are `context-dependent`  =>  d is `context-dependent`
           _contextDependantNodes += (d.nodeId)
+        }
     }
     res
   }
 
+  /** Checks that index expression sub-graph (which root is `i`) consists of `context-dependent` nodes.
+    * This is used in the validation rule for the costing of ByIndex operation.
+    * @see RuntimeCosting, CheckIsSupportedIndexExpression */
   def isSupportedIndexExpression(i: Rep[Int]): Boolean = {
     isContextDependant(i)
   }

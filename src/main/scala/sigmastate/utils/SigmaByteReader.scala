@@ -4,12 +4,12 @@ import scorex.util.Extensions._
 import scorex.util.serialization.Reader
 import java.nio.ByteBuffer
 
-import org.ergoplatform.ValidationSettings
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.serialization.{VLQByteBufferReader, Reader}
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
-import sigmastate.serialization.{ConstantStore, SigmaSerializer, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer, SigmaSerializer}
 import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
 import scorex.util.Extensions._
 

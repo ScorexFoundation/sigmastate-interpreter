@@ -1,7 +1,8 @@
 package sigmastate.serialization
 
-import org.ergoplatform.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import org.ergoplatform._
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
 import sigmastate.{SType, TrivialProp}
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
@@ -131,7 +132,7 @@ class ErgoTreeSerializer {
 
   def substituteConstants(scriptBytes: Array[Byte],
                           positions: Array[Int],
-                          newVals: Array[Value[SType]])(implicit vs: ValidationSettings): Array[Byte] = {
+                          newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] = {
     require(positions.length == newVals.length,
       s"expected positions and newVals to have the same length, got: positions: ${positions.toSeq},\n newVals: ${newVals.toSeq}")
     val r = SigmaSerializer.startReader(scriptBytes)

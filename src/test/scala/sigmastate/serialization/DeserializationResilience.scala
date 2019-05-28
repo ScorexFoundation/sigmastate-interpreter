@@ -2,11 +2,12 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.{Outputs, ValidationException}
+import org.ergoplatform.Outputs
+import org.ergoplatform.validation.ValidationException
 import scorex.util.serialization.{VLQByteBufferReader, Reader}
 import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
 import sigmastate._
-import sigmastate.lang.exceptions.{InvalidTypePrefix, InputSizeLimitExceeded, InvalidOpCode, DeserializeCallDepthExceeded}
+import sigmastate.lang.exceptions.{InvalidTypePrefix, InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf

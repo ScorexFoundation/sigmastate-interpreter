@@ -4,6 +4,7 @@ import java.math.BigInteger
 import java.util
 
 import org.ergoplatform._
+import org.ergoplatform.validation._
 import scalan.RType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
@@ -369,7 +370,7 @@ object CheckMethod extends ValidationRule(1012,
     lazy val methodOpt = objType.getMethodById(methodId)
     validate(methodOpt.isDefined, new SerializerException(msg), Seq(objType, methodId), block(methodOpt.get))
   }
-  override def isSoftFork(vs: ValidationSettings,
+  override def isSoftFork(vs: SigmaValidationSettings,
       ruleId: Short,
       status: RuleStatus,
       args: Seq[Any]): Boolean = (status, args) match {

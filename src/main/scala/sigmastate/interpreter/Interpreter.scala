@@ -16,7 +16,7 @@ import sigmastate.lang.exceptions.{InterpreterException, CosterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
-import org.ergoplatform.ValidationRules._
+import org.ergoplatform.validation.ValidationRules._
 
 import scala.util.Try
 
@@ -116,8 +116,6 @@ trait Interpreter extends ScorexLogging {
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
       val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
-
-      //    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
 
       // check calc
       val calcCtx = context.toSigmaContext(IR, isCost = false)

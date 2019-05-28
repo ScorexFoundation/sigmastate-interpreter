@@ -1,7 +1,8 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
+import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
 import org.ergoplatform._
+import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
 import sigmastate.eval.Colls
@@ -37,12 +38,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val blockHeight = 110
 
-  def createContext(h: Int, tx: ErgoLikeTransaction, vs: ValidationSettings) =
+  def createContext(h: Int, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) =
     ErgoLikeContext(h,
       AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
       tx, fakeSelf, vs = vs)
 
-  def proveTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings): ProverResult = {
+  def proveTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings): ProverResult = {
     val env = Map(ScriptNameProp -> (name + "_prove"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
@@ -50,14 +51,14 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     proof1
   }
 
-  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: ProverResult, vs: ValidationSettings) = {
+  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: ProverResult, vs: SigmaValidationSettings) = {
     val env = Map(ScriptNameProp -> (name + "_verify"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
     verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).fold(t => throw t, identity) shouldBe true
   }
 
-  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) = {
     val proof = proveTx(name, tx, vs)
     verifyTx(name, tx, proof, vs)
   }
@@ -215,7 +216,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("deserialize", tx, proof, v2vs)
   }
 
-  def checkRule(rule: ValidationRule, v2vs: ValidationSettings, action: => Unit) = {
+  def checkRule(rule: ValidationRule, v2vs: SigmaValidationSettings, action: => Unit) = {
     // try SoftForkable block using current vs (v1 version)
     assertExceptionThrown({
       trySoftForkable(false) {
