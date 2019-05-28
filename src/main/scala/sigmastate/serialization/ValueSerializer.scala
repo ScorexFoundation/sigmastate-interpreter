@@ -237,7 +237,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     override def toString = s"OptionScope($name, $children)"
   }
 
-  val collectSerInfo: Boolean = true
+  val collectSerInfo: Boolean = false
   val serializerInfo: mutable.Map[OpCode, SerScope] = mutable.HashMap.empty
   private var scopeStack: List[Scope] = Nil
 
@@ -249,63 +249,88 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   def optional(name: String)(block: => Unit): Unit = {
-    val parent = scopeStack.head
-    val scope = parent.provideScope(name, OptionalScope(parent, name, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val scope = parent.provideScope(name, OptionalScope(parent, name, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    block
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      block
+      scopeStack = scopeStack.tail
+    } else {
+      block
+    }
   }
 
   def cases(matchExpr: String)(block: => Unit): Unit = {
-    val parent = scopeStack.head
-    val scope = parent.provideScope(matchExpr, CasesScope(parent, matchExpr, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val scope = parent.provideScope(matchExpr, CasesScope(parent, matchExpr, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    block
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      block
+      scopeStack = scopeStack.tail
+    } else {
+      block
+    }
   }
 
   def when(pos: Int, condition: String)(block: => Unit): Unit = {
-    val parent = scopeStack.head
-    val scope = parent.provideScope(condition, WhenScope(parent, pos, condition, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val scope = parent.provideScope(condition, WhenScope(parent, pos, condition, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    block
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      block
+      scopeStack = scopeStack.tail
+    } else {
+      block
+    }
   }
 
   val otherwiseCondition = "otherwise"
 
   def otherwise(block: => Unit): Unit = {
-    val parent = scopeStack.head
-    val scope = parent.provideScope(otherwiseCondition, WhenScope(parent, Int.MaxValue, otherwiseCondition, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val scope = parent.provideScope(otherwiseCondition, WhenScope(parent, Int.MaxValue, otherwiseCondition, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    block
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      block
+      scopeStack = scopeStack.tail
+    } else {
+      block
+    }
   }
 
   def foreach[T](sizeVar: String, seq: Seq[T])(f: T => Unit): Unit = {
-    val parent = scopeStack.head
-    val forName = sizeVar + "*"
-    val scope = parent.provideScope(forName, ForScope(parent, forName, sizeVar, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val forName = sizeVar + "*"
+      val scope = parent.provideScope(forName, ForScope(parent, forName, sizeVar, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    seq.foreach(f)
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      seq.foreach(f)
+      scopeStack = scopeStack.tail
+    } else {
+      seq.foreach(f)
+    }
   }
 
   def opt[T](w: SigmaByteWriter, name: String, o: Option[T])(f: (SigmaByteWriter, T) => Unit): Unit = {
-    val parent = scopeStack.head
-    val scope = parent.provideScope(name, OptionScope(parent, name, mutable.ArrayBuffer.empty))
+    if (scopeStack.nonEmpty) {
+      val parent = scopeStack.head
+      val scope = parent.provideScope(name, OptionScope(parent, name, mutable.ArrayBuffer.empty))
 
-    scopeStack ::= scope
-    w.putOption(o)(f)
-    scopeStack = scopeStack.tail
+      scopeStack ::= scope
+      w.putOption(o)(f)
+      scopeStack = scopeStack.tail
+    } else {
+      w.putOption(o)(f)
+    }
   }
 
-  def addArgInfo[T](prop: DataInfo[T]) = {
+  def addArgInfo[T](prop: DataInfo[T]): Unit = {
+    if (scopeStack.isEmpty) return
     val scope = scopeStack.head
     scope.get(prop.info.name) match {
       case None =>
