@@ -127,7 +127,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => false
   }
 
-  /** Checks if the function (Lambda node) given by the simbol `costF` contains only allowed operations
+  /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
     * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
