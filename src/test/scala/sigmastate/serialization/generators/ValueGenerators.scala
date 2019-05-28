@@ -4,6 +4,7 @@ import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}

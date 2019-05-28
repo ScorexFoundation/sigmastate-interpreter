@@ -1,6 +1,4 @@
-package org.ergoplatform
-
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+package org.ergoplatform.validation
 
 trait ValidationSpecification {
   implicit val vs: SigmaValidationSettings = ValidationRules.currentSettings

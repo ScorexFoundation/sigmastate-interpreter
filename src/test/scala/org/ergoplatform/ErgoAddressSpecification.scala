@@ -11,6 +11,7 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import org.ergoplatform.ErgoScriptPredef._
+import org.ergoplatform.validation.ValidationSpecification
 import sigmastate.Values.ErgoTree
 
 class ErgoAddressSpecification extends PropSpec

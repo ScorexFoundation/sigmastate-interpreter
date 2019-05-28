@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
 import sigmastate.{SInt, AvlTreeData, SLong, SType}
