@@ -19,7 +19,7 @@ import sigmastate.serialization._
 import sigmastate.serialization.{ConstantStore, OpCodes}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
-import sigmastate.Values.ErgoTree.{isConstantSegregation, substConstants}
+import sigmastate.Values.ErgoTree.substConstants
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
