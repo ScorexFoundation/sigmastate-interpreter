@@ -6,7 +6,6 @@ import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
-import org.ergoplatform.ValidationException
 import org.ergoplatform.ErgoLikeContext
 import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}

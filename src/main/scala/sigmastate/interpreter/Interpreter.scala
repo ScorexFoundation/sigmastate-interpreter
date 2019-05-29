@@ -132,7 +132,7 @@ trait Interpreter extends ScorexLogging {
   def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
     val prop = tree.root match {
       case Right(_) =>
-        tree.proposition
+        tree.toProposition(tree.isConstantSegregation)
       case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
         TrueSigmaProp
       case Left(UnparsedErgoTree(_, error)) =>
