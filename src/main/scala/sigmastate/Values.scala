@@ -1,22 +1,23 @@
 package sigmastate
 
 import java.math.BigInteger
-import java.util.{Arrays, Objects}
+import java.util
+import java.util.Objects
 
 import org.bitbucket.inkytonik.kiama.relation.Tree
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, everywherebu}
 import org.ergoplatform.ValidationException
 import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.validation.ValidationException
 import scalan.{Nullable, RType}
 import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.SByteArray
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization._
-import sigmastate.serialization.{ConstantStore, OpCodes}
+import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
 import sigmastate.Values.ErgoTree.substConstants
@@ -24,7 +25,6 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
-import special.sigma._
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -36,12 +36,11 @@ import sigmastate.lang.DefaultSigmaBuilder._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.{AnyValue, AvlTree, Header, PreHeader}
+import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
 import sigmastate.lang.SourceContext
 import special.collection.Coll
 
 import scala.collection.mutable
-
 
 object Values {
 
@@ -177,7 +176,7 @@ object Values {
       case _ => false
     }))
 
-    override def hashCode(): Int = Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(value.asInstanceOf[AnyRef], tpe))
 
     override def toString: String = tpe.asInstanceOf[SType] match {
       case SGroupElement if value.isInstanceOf[GroupElement] =>
@@ -936,37 +935,58 @@ object Values {
     *  consistency. In case of any inconsistency the serializer throws exception.
     *  
     *  @param header      the first byte of serialized byte array which determines interpretation of the rest of the array
+    *
     *  @param constants   If isConstantSegregation == true contains the constants for which there may be
     *                     ConstantPlaceholders in the tree.
     *                     If isConstantSegregation == false this array should be empty and any placeholder in
     *                     the tree will lead to exception.
-    *  @param root        if isConstantSegregation == true contains ConstantPlaceholder instead of some Constant nodes.
-    *                     Otherwise may not contain placeholders.
+    *
+    *  @param root        On the right side it has valid expression of `SigmaProp` type. Or alternatively,
+    *                     on the left side, it has unparsed bytes along with the ValidationException,
+    *                     which caused the deserializer to fail.
+    *                     `Right(tree)` if isConstantSegregation == true contains ConstantPlaceholder
+    *                     instead of some Constant nodes. Otherwise, it may not contain placeholders.
     *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
     *                     there should be a constant in `constants` array.
-    *  @param proposition When isConstantSegregation == false this is the same as root.
-    *                     Otherwise, it is equivalent to `root` where all placeholders are replaced by Constants
-    * */
+    */
   case class ErgoTree private(
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue]
   ) {
-    assert(isConstantSegregation || constants.isEmpty)
-    lazy val proposition: SigmaPropValue = root match {
-      case Right(tree) =>
-        val prop = if (isConstantSegregation)
-            substConstants(tree, constants).asSigmaProp
-          else
-            tree
-        prop
-      case Left(UnparsedErgoTree(bytes, error)) =>
-        ???
-    }
+    require(isConstantSegregation || constants.isEmpty)
+    require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
+
+    /** Then it throws the error from UnparsedErgoTree.
+      * It does so on every usage of `proposition` because the lazy value remains uninitialized.
+      */
+    @deprecated("Use toProposition instead", "v2.1")
+    lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
+
+    @inline def version: Byte = ErgoTree.getVersion(header)
     @inline def isRightParsed: Boolean = root.isRight
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+
+    /** Get proposition expression from this contract.
+      * When root.isRight then
+      *   if replaceConstants == false this is the same as `root.right.get`.
+      *   Otherwise, it is equivalent to `root.right.get` where all placeholders are replaced by Constants.
+      * When root.isLeft then
+      *   throws the error from UnparsedErgoTree.
+      *   It does so on every usage of `proposition` because the lazy value remains uninitialized.
+      */
+    def toProposition(replaceConstants: Boolean): SigmaPropValue = root match {
+      case Right(tree) =>
+        val prop = if (replaceConstants)
+          substConstants(tree, constants).asSigmaProp
+        else
+          tree
+        prop
+      case Left(UnparsedErgoTree(_, error)) =>
+        throw error
+    }
   }
 
   object ErgoTree {
@@ -980,13 +1000,17 @@ object Values {
     val ConstantSegregationFlag: Byte = 0x10
 
     /** Header flag to indicate that whole size of ErgoTree should be saved before tree content. */
-    val SizeFlag: Byte = 0x8
+    val SizeFlag: Byte = 0x08
+
+    /** Header mask to extract version bits. */
+    val VersionMask: Byte = 0x07
 
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
     @inline def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+    @inline def getVersion(header: Byte): Byte = (header & VersionMask).toByte
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)

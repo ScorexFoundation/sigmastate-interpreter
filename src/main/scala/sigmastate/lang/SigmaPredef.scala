@@ -1,7 +1,7 @@
 package sigmastate.lang
 
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress, ValidationRules}
+import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
 import scalan.Nullable
 import scorex.util.encode.{Base64, Base58}
 import sigmastate.SCollection.{SIntArray, SByteArray}

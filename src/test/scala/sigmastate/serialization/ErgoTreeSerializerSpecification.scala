@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-import org.ergoplatform.ValidationException
 import sigmastate.Values.{ErgoTree, IntConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.eval.IRContext

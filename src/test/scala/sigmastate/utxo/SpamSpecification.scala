@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
+import org.ergoplatform.validation.{ValidationRules, ValidationException}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}

@@ -13,7 +13,7 @@ import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.ergoplatform.EnabledRule
+import org.ergoplatform.validation.EnabledRule
 import scalan.util.CollectionUtil._
 import scorex.util.encode.Base16
 import sigmastate.Values._

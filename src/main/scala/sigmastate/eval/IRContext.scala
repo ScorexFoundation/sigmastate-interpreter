@@ -1,11 +1,10 @@
 package sigmastate.eval
 
-import org.ergoplatform.{ValidationRules, ValidationSettings}
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.SType
 import sigmastate.Values.{Value, SValue, TrueSigmaProp}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
-import ValidationRules._
 import sigmastate.interpreter.Interpreter
 
 import scala.util.Try
