@@ -1114,7 +1114,9 @@ object STuple extends STypeCompanion {
 
   lazy val colMethods = {
     val subst = Map(SCollection.tIV -> SAny)
-    SCollection.methods.filter(m => Set(1.toByte, 10.toByte).contains(m.methodId)).map { m =>
+    // TODO: implement other
+    val activeMethods = Set(1.toByte, 10.toByte)
+    SCollection.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
       m.copy(stype = SigmaTyper.applySubst(m.stype, subst).asFunc)
     }
   }
