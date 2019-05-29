@@ -1,10 +1,6 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
-import java.util.Properties
-import org.ergoplatform.ValidationRules.CheckValidOpCode
-
-import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
