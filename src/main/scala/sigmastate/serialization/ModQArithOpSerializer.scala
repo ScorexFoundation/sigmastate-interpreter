@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{BigIntValue, Value, ValueCompanion}
+import sigmastate.Values.{BigIntValue, Value}
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{SType, ModQArithOp, ModQArithOpCompanion}

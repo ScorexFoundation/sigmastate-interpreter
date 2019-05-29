@@ -2,9 +2,8 @@ package sigmastate.serialization
 
 import sigmastate.Values.{BoolValue, SigmaPropValue}
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.{BoolToSigmaProp, SType, Values, LogicalNot}
+import sigmastate.{BoolToSigmaProp, SType, Values}
 
 case class BoolToSigmaPropSerializer(cons: BoolValue => SigmaPropValue) extends ValueSerializer[BoolToSigmaProp] {
   import sigmastate.Operations.BoolToSigmaPropInfo._

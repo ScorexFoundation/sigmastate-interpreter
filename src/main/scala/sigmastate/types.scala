@@ -22,20 +22,14 @@ import sigmastate.eval.RuntimeCosting
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
 import sigmastate.SMethod.MethodCallIrBuilder
-import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.ProveDHTuple
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex}
-import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
+import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
-import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.utxo._
 import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeader}
 import sigmastate.lang.SigmaTyper.STypeSubst
-import sigmastate.SSigmaProp.{IsProven, PropBytes}
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
 import sigmastate.lang.exceptions.SerializerException
-import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode.validate
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -340,8 +334,7 @@ case class OperationInfo(opDesc: ValueCompanion, description: String, args: Seq[
 }
 
 /** Meta information connecting SMethod with ErgoTree.
-  * @param  irBuilder  optional recognizer and ErgoTree node builder.
-  * @param  opDesc     */
+  * @param  irBuilder  optional recognizer and ErgoTree node builder.    */
 case class MethodIRInfo(
     irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]]
 )

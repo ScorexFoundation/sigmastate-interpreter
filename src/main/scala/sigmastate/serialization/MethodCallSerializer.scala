@@ -3,10 +3,8 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaTyper.STypeSubst
-import sigmastate.lang.Terms.{MethodCall, STypeParam}
+import sigmastate.lang.Terms.MethodCall
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import ValueSerializer._
-import sigma.util.Extensions._
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {

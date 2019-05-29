@@ -1,15 +1,10 @@
 package sigmastate.utils
 
-import scorex.util.Extensions._
 import scorex.util.serialization.Reader
-import java.nio.ByteBuffer
-
-import org.ergoplatform.ValidationSettings
-import scorex.util.serialization.{VLQByteBufferReader, Reader}
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
-import sigmastate.serialization.{ConstantStore, SigmaSerializer, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
 import scorex.util.Extensions._
 

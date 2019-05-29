@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import org.ergoplatform.ValidationRules.CheckDeserializedScriptIsSigmaProp
 import org.ergoplatform._
-import sigmastate.{SType, TrivialProp}
+import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
