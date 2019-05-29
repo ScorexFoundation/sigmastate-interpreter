@@ -3,7 +3,6 @@ package sigmastate.serialization
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms.Apply
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ApplySerializer(cons: (Value[SType], IndexedSeq[Value[SType]]) => Value[SType])

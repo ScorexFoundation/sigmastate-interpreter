@@ -12,7 +12,7 @@ case class PropertyCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value
 
   override def serialize(mc: MethodCall, w: SigmaByteWriter): Unit = {
     w.put(mc.method.objType.typeId, ArgInfo("typeCode", "type of the method (see Table~\\ref{table:predeftypes})"))
-    w.put(mc.method.methodId, ArgInfo("methodCode", "a code of the proprty"))
+    w.put(mc.method.methodId, ArgInfo("methodCode", "a code of the property"))
     w.putValue(mc.obj, ArgInfo("obj", "receiver object of this property call"))
   }
 

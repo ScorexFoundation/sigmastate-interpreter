@@ -4,6 +4,8 @@ import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.{ValDefTypeStore, TypeSerializer, ValueSerializer, ConstantStore}
 import sigmastate.serialization._
 import scorex.util.Extensions._
 

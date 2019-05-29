@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigmastate.Values.{Value, ValueCompanion}
+import sigmastate.Values.Value
 import sigmastate.lang.Terms._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{TwoArgumentsOperation, SType, TwoArgumentOperationCompanion}

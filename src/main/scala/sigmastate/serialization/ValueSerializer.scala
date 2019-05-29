@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import java.util.Properties
+import org.ergoplatform.ValidationRules.CheckValidOpCode
 
 import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
@@ -9,19 +10,18 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
-import sigmastate.lang.Terms.{OperationId, PropertyCall, MethodCall}
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, DeserializeCallDepthExceeded}
+import sigmastate.lang.Terms.OperationId
+import sigmastate.lang.exceptions.InputSizeLimitExceeded
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
-import sigmastate.utils.SigmaByteWriter.{DataInfo, FormatDescriptor}
+import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils._
 import sigmastate.utxo.CostTable._
 import sigmastate.utxo._
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions

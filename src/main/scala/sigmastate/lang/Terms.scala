@@ -153,7 +153,7 @@ object Terms {
     * we can restore the specialized SMethod instance.
     * This work by induction, if we assume all arguments are monomorphic,
     * then we can make MethodCall monomorphic.
-    * Thus, all ErgoTree is monomorphic by construction.
+    * Thus, all ErgoTree instances are monomorphic by construction.
     *
     * @param obj object on which method will be invoked
     * @param method method to be invoked

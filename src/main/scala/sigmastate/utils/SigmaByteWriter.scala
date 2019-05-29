@@ -5,7 +5,6 @@ import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
 import sigmastate.Values.{Value, SValue}
 import sigmastate.serialization.{TypeSerializer, ValueSerializer, ConstantStore}
-import sigmastate.utils.SigmaByteWriter._
 
 class SigmaByteWriter(val w: Writer,
                       val constantExtractionStore: Option[ConstantStore]) extends Writer {

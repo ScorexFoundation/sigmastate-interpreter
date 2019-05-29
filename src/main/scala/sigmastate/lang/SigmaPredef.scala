@@ -8,7 +8,6 @@ import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption._
 import sigmastate.Values.{StringConstant, Constant, EvaluatedValue, SValue, IntValue, SigmaPropConstant, ConstantPlaceholder, BoolValue, Value, ByteArrayConstant, SigmaPropValue, ValueCompanion}
 import sigmastate._
-import sigmastate.lang.SigmaPredef.PredefinedFunc
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InvalidArguments
 import sigmastate.serialization.ValueSerializer
@@ -21,7 +20,6 @@ object SigmaPredef {
   /** Metadata for predefined function.
     * @param irBuilder Builder of SigmaIR node which is equivalent to function application
     *                  Rule: Apply(f, args) -->  irBuilder(f, args)
-    * @param opDesc    ErgoTree node descriptor
     */
   case class PredefFuncInfo(irBuilder: IrBuilderFunc)
 

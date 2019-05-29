@@ -784,9 +784,6 @@ sealed trait Quadruple[IV1 <: SType, IV2 <: SType, IV3 <: SType, OV <: SType] ex
   val opType = SFunc(Vector(first.tpe, second.tpe, third.tpe), tpe)
 }
 
-sealed trait Relation3[IV1 <: SType, IV2 <: SType, IV3 <: SType]
-  extends Quadruple[IV1, IV2, IV3, SBoolean.type] with NotReadyValueBoolean
-
 /**
   * Perform a lookup of key `key` in a tree with root `tree` using proof `proof`.
   * Throws exception if proof is incorrect
