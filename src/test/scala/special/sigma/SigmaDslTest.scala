@@ -729,9 +729,16 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Tuple filter method equivalnce") {
+  property("Tuple size method equivalence") {
     val eq = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x.size }")) { x => 2 }
     eq((-1, 1))
+  }
+
+  property("Tuple apply method equivalence") {
+    val eq1 = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x(0) }")) { x => -1 }
+    val eq2 = checkEq(func[(Int, Int),Int]("{ (x: (Int, Int)) => x(1) }")) { x => 1 }
+    eq1((-1, 1))
+    eq2((-1, 1))
   }
 
   property("Coll map method equivalnce") {
