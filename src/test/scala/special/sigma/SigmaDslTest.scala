@@ -708,13 +708,13 @@ class SigmaDslTest extends PropSpec
   }
 
   property("Coll apply method equivalnce") {
-    val eqApply = checkEq(func[Coll[Int],Int]("{ (x: Coll[Int]) => x(0) }"))
+    val eqApply = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1(x._2) }"))
     { x =>
-      x(0)
+      x._1(x._2)
     }
     forAll { x: Array[Int] =>
-      whenever (0 < x.length) {
-        eqApply(Builder.DefaultCollBuilder.fromArray(x))
+      whenever (0 < x.size) {
+        eqApply(Builder.DefaultCollBuilder.fromArray(x), getRandomIndex(x.size))
       }
     }
   }
