@@ -283,8 +283,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   property("CheckMethod rule") {
     val freeMethodId = 16.toByte
     val mcBytes = Array[Byte](OpCodes.PropertyCallCode, SCollection.typeId, freeMethodId, Outputs.opCode)
-    val v2vs = vs.updated(CheckMethod.id, ChangedRule(Array(SCollection.typeId, freeMethodId)))
-    checkRule(CheckMethod, v2vs, {
+    val v2vs = vs.updated(CheckAndGetMethod.id, ChangedRule(Array(SCollection.typeId, freeMethodId)))
+    checkRule(CheckAndGetMethod, v2vs, {
       ValueSerializer.deserialize(mcBytes)
     })
   }

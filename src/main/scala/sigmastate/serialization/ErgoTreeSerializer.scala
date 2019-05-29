@@ -1,9 +1,8 @@
 package sigmastate.serialization
 
 import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
-import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationException}
-import sigmastate.{SType, TrivialProp}
+import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
+import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
@@ -14,6 +13,69 @@ import sigmastate.Values.ErgoTree.EmptyConstants
 
 import scala.collection.mutable
 
+/**
+  * Rationale for soft-forkable ErgoTree serialization.
+  * There are 2 points:
+  *
+  * 1) we can make size bit obligatory, i.e. always save total size of script body
+  * (in this case we don't need size bit in the header). This will allow to
+  * always skip right number of bytes in case of any exception (including
+  * ValidationException) thrown during deserialization and produce
+  * UnparsedErgoTree. The decision about soft-fork can be done later.
+  * But is looks like this is not necessary if we do as described below.
+  *
+  * 2) we can also strictly check during deserialization the content of the script
+  * against version number in the header. Thus if the header have vK, then
+  * script is allowed to have instructions from versions from v1 to vK. On a node vN, N >
+  * K, this should also be enforced, i.e. vN node will reject scripts as invalid
+  * if the script has vK in header and vK+1 instruction in body.
+  *
+  * Keeping this in mind, if we have a vN node and a script with vS in its header then:
+  * During script deserialization:
+  * 1) if vN >= vS then
+  *   the node knows all the instructions and should check that only instructions
+  *   up to vS are used in the script.
+  *   It either parses successfully or throws MalformedScriptException.
+  *   If during the process some unknown instruction is encountered (i.e. ValidationException is thrown),
+  *   this cannot be a soft-fork, because vN >= vS guarantees that all instructions are known,
+  *   thus the script is malformed.
+  *
+  * 2) if vN < vS then
+  *   the vN node is expecting unknown instructions.
+  *   If the script is parsed successfully, then
+  *     vN subset of the language is used and script is accepted for execution
+  *   else if ValidationException is thrown then
+  *     UnparsedErgoTree is created, delaying decision about soft-fork until stateful validation.
+  *     if bodySize is stored then
+  *       script body is skipped and whole TX deserialization continues.
+  *     otherwise
+  *       we cannot skip the body which leads to whole TX to be rejected (CannotSkipScriptException)
+  *   else if some other exception is thrown then
+  *     the whole TX is rejected due to said exception.
+  *
+  * In the stateful context:
+  *   if vN >= vS then
+  *     we can execute script, but we do additional check
+  *     if vS > the current version of protocol (vP) then
+  *       the script is rejected as invalid because its version exceeds
+  *       the current consensus version of the protocol
+  *     else
+  *       the script can be executed
+  *   if vN < vS then
+  *     if we have Right(tree)
+  *       the script is executed
+  *     if Left(UnparsedErgoTree()) then check soft fork and either execute of throw
+  *
+  * Proposition:
+  *   CannotSkipScriptException can only happen on < 10% of the nodes, which is safe for consensus.
+  * Proof.
+  *   If follows from the fact that vN >= vS nodes will reject the script
+  *   until new vP is upgraded to vS, which means the majority has upgraded to at least vS
+  *   Thus, before vP is upgraded to vS, majority reject (either because they cannot parse, or because vP is not actualized)
+  *   after that majority accept (however old nodes still reject but they are < 10%)
+  * End of proof.
+  *
+  */
 class ErgoTreeSerializer {
 
   /** Serialize header and constants section only.*/
@@ -65,7 +127,7 @@ class ErgoTreeSerializer {
     deserializeErgoTree(r)
   }
 
-  def deserializeErgoTree(r: SigmaByteReader): ErgoTree  = {
+  def deserializeErgoTree(r: SigmaByteReader): ErgoTree = {
     val startPos = r.position
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position

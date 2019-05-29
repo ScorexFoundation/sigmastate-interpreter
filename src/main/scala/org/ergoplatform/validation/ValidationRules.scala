@@ -8,7 +8,7 @@ import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{CheckMethod, SCollection, CheckTypeWithMethods, SType}
+import sigmastate.{CheckAndGetMethod, SCollection, CheckTypeWithMethods, SType}
 import sigma.util.Extensions.ByteOps
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -158,7 +158,7 @@ object ValidationRules {
     CheckTypeCode,
     CheckSerializableTypeCode,
     CheckTypeWithMethods,
-    CheckMethod
+    CheckAndGetMethod
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

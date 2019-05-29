@@ -225,21 +225,25 @@ trait STypeCompanion {
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
 
-  lazy val _methodsMap = methods
+  lazy val _methodsMap: Map[Byte, Map[Byte, SMethod]] = methods
     .groupBy(_.objType.typeId)
     .map { case (typeId, ms) => (typeId -> ms.map(m => m.methodId -> m).toMap) }
 
   def hasMethodWithId(methodId: Byte): Boolean =
     getMethodById(methodId).isDefined
 
+  /** Lookup method by its id in this type. */
   @inline def getMethodById(methodId: Byte): Option[SMethod] =
     _methodsMap.get(typeId)
         .flatMap(ms => ms.get(methodId))
 
-  def methodById(methodId: Byte): SMethod = {
-    val method = CheckMethod(this, methodId) { m => m }
-    method
-  }
+  /** Lookup method in this type by method's id or throw ValidationException.
+    * This method can be used in trySoftForkable section to either obtain valid method
+    * or catch ValidatioinException which can be checked for soft-fork condition.
+    * It delegate to getMethodById to lookup method.
+    * @see getMethodById
+    */
+  def methodById(methodId: Byte): SMethod = CheckAndGetMethod(this, methodId) { m => m }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -363,7 +367,7 @@ object CheckTypeWithMethods extends ValidationRule(1011,
   }
 }
 
-object CheckMethod extends ValidationRule(1012,
+object CheckAndGetMethod extends ValidationRule(1012,
   "Check the type has the declared method.") {
   def apply[T](objType: STypeCompanion, methodId: Byte)(block: SMethod => T): T = {
     def msg = s"The method with code $methodId doesn't declared in the type $objType."
