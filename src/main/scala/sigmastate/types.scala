@@ -912,7 +912,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val FilterMethod = SMethod(this, "filter", SFunc(IndexedSeq(ThisType, tPredicate), ThisType, Seq(paramIV)), 8, Some {
     case (builder, obj, _, Seq(l), _) => builder.mkFilter(obj.asValue[SCollection[SType]], l.asFunc)
   }, None)
-  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
+  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9, Some {
+    case (builder, obj, _, Seq(xs), _) =>
+      builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
+  }, None)
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
   val BitShiftLeftMethod = SMethod(this, "<<",
     SFunc(IndexedSeq(ThisType, SInt), ThisType, Seq(paramIV)), 11)
@@ -985,9 +988,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     ForallMethod,
     SliceMethod,
     FilterMethod,
-    /* TODO: check
     AppendMethod,
-    */
     ApplyMethod,
     /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     BitShiftLeftMethod,
