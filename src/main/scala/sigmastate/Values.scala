@@ -902,7 +902,8 @@ object Values {
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue]
   ) {
-    assert(isConstantSegregation || constants.isEmpty)
+    require(isConstantSegregation || constants.isEmpty)
+    require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
 
     /** Then it throws the error from UnparsedErgoTree.
       * It does so on every usage of `proposition` because the lazy value remains uninitialized.
@@ -910,6 +911,7 @@ object Values {
     @deprecated("Use toProposition instead", "v2.1")
     lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
+    @inline def version: Byte = ErgoTree.getVersion(header)
     @inline def isRightParsed: Boolean = root.isRight
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
@@ -946,13 +948,17 @@ object Values {
     val ConstantSegregationFlag: Byte = 0x10
 
     /** Header flag to indicate that whole size of ErgoTree should be saved before tree content. */
-    val SizeFlag: Byte = 0x8
+    val SizeFlag: Byte = 0x08
+
+    /** Header mask to extract version bits. */
+    val VersionMask: Byte = 0x07
 
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
     @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
     @inline def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+    @inline def getVersion(header: Byte): Byte = (header & VersionMask).toByte
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)
