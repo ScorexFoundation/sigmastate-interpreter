@@ -1,9 +1,10 @@
 package sigmastate
 
-import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
+import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
+import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
@@ -124,26 +125,47 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val newTypeCode = (SGlobal.typeCode + 1).toByte
 
-  property("node v1, soft-fork up to v2, script v2 without size") {
-    // prepare bytes using default serialization without `size bit` in the header
-    val (txV2_withoutSize, txV2_withoutSize_bytes) = runOnV2Node {
-      val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(propV2), 1))
-      (tx, tx.messageToSign)
+  property("node v1, soft-fork up to v2, script v2 without size bit") {
+    // try prepare v2 script without `size bit` in the header
+    assertExceptionThrown({
+      ErgoTree(1.toByte, EmptyConstants, propV2)
+    }, {
+      case e: IllegalArgumentException  => true
+      case _ => false
+    } )
+
+    // prepare bytes using default serialization and then replacing version in the header
+    val v2tree_withoutSize_bytes = runOnV2Node {
+      val tree = ErgoTree.fromProposition(propV2)
+      val bytes = tree.bytes
+      bytes(0) = 1.toByte  // set version to v2, we cannot do this using ErgoTree constructor
+      bytes
     }
 
-    // should fail with given exceptions
+    // v1 node should fail
     assertExceptionThrown(
       {
-        val r = SigmaSerializer.startReader(txV2_withoutSize_bytes)
-        ErgoLikeTransaction.serializer.parse(r)
+        val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
       },
       {
-        case se: SerializerException if se.cause.isDefined =>
-          val ve = se.cause.get.asInstanceOf[ValidationException]
-          ve.rule == CheckValidOpCode
+        case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
         case _ => false
       }
     )
+
+    // v2 node should fail
+    runOnV2Node {
+      assertExceptionThrown(
+        {
+          val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+        },
+        {
+          case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
+          case _ => false
+        } )
+    }
   }
 
   property("node v1, soft-fork up to v2, script v2 with `size bit`") {
