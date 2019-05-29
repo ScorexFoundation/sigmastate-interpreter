@@ -159,9 +159,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, 2L).size") shouldBe SInt
     typecheck(env, "(1, 2L)(0)") shouldBe SInt
     typecheck(env, "(1, 2L)(1)") shouldBe SLong
+    typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
+  }
+
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("tuple advanced operations") {
     typecheck(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
     typecheck(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
-    typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
 
   property("types") {
