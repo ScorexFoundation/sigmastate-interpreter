@@ -540,6 +540,7 @@ object SNumericType extends STypeCompanion {
           """.stripMargin)
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
+  override val coster = Some(Coster(_.SNumericTypeCoster))
 }
 
 trait SLogical extends SType {

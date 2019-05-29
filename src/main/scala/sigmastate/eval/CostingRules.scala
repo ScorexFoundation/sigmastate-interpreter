@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoLikeContext
-import scalan.{SigmaLibrary, MutableLazy}
+import scalan.{MutableLazy, SigmaLibrary}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
@@ -626,5 +626,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   object SigmaDslBuilderCoster extends CostingHandler[SigmaDslBuilder]((obj, m, costedArgs, args) => new SigmaDslBuilderCoster(obj, m, costedArgs, args))
+
+  /** Costing rules for SNumericType methods */
+  class SNumericTypeCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[AnyVal](obj, method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      obj.value.elem match {
+          // todo add implementations
+//        case ByteElement => ???
+//        case ShortElement => ???
+//        case IntElement => ???
+        case _ =>
+          val inputC = asRep[Costed[Long]](obj)
+          val res = sigmaDslBuilder.longToByteArray(inputC.value)
+          val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+          mkCostedColl(res, 8, cost)
+      }
+    }
+  }
+
+  object SNumericTypeCoster extends CostingHandler[AnyVal]((obj, m, costedArgs, args) => new SNumericTypeCoster(obj, m, costedArgs, args))
 
 }
