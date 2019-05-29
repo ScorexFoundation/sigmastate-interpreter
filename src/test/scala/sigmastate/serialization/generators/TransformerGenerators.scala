@@ -1,17 +1,16 @@
 package sigmastate.serialization.generators
 
-import org.ergoplatform.{ErgoAddressEncoder, Height, Inputs, Outputs, P2PKAddress, Self}
+import org.ergoplatform._
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import scorex.util.encode.{Base58, Base64}
-import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
+import scorex.util.encode.{Base64, Base58}
 import sigmastate._
-import sigmastate.Values._
+import sigmastate.Values.{TrueLeaf, Value, IntConstant, _}
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
-import sigmastate.lang.Terms._
 
-trait TransformerGenerators {
+trait TransformerGenerators extends ValidationSpecification {
   self: ValueGenerators with ConcreteCollectionGenerators =>
 
   import TransformingSigmaBuilder._

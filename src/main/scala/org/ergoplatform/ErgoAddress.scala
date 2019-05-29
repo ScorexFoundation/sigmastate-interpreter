@@ -9,6 +9,7 @@ import scorex.util.encode.Base58
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlogProp, ProveDlog}
+import sigmastate.lang.exceptions.SigmaException
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, Slice}
 import special.collection.Coll
@@ -216,7 +217,8 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
         case Pay2SHAddress.addressTypePrefix =>
           new Pay2SHAddress(contentBytes)
         case Pay2SAddress.addressTypePrefix =>
-          new Pay2SAddress(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes), contentBytes)
+          val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(contentBytes)
+          new Pay2SAddress(tree, contentBytes)
         case _ =>
           throw new Exception("Unsupported address type: " + addressType)
       }
@@ -237,9 +239,11 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
     proposition.root match {
-      case SigmaPropConstant(ProveDlogProp(d)) => P2PKAddress(d)
-      case IsPay2SHAddress(scriptHash) => new Pay2SHAddress(scriptHash.toArray)
-      case b: Value[SSigmaProp.type]@unchecked if b.tpe == SSigmaProp => Pay2SAddress(proposition)
+      case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
+      case Right(IsPay2SHAddress(scriptHash)) => new Pay2SHAddress(scriptHash.toArray)
+      case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)
+      case Left(unparsedErgoTree) =>
+        throw new SigmaException(s"Cannot create ErgoAddress form unparsed ergo tree: $unparsedErgoTree")
       case _ =>
         throw new RuntimeException(s"Cannot create ErgoAddress form proposition: $proposition")
     }
@@ -247,7 +251,6 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
 }
 
 object ErgoAddressEncoder {
-
   type NetworkPrefix = Byte
   val MainnetNetworkPrefix: NetworkPrefix = 0.toByte
   val TestnetNetworkPrefix: NetworkPrefix = 16.toByte

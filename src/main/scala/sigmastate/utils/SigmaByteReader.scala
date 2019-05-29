@@ -1,11 +1,11 @@
 package sigmastate.utils
 
-import scorex.util.Extensions._
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.SValue
 import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
-import sigmastate.serialization.{ConstantStore, SigmaSerializer, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.serialization._
+import scorex.util.Extensions._
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,

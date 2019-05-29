@@ -5,7 +5,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.language.existentials
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Nullable, MutableLazy, Lazy, RType, SigmaLibrary}
+import scalan.{Nullable, MutableLazy, Lazy, RType, AVHashMap, SigmaLibrary}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -35,8 +35,11 @@ import special.collection.CollType
 import special.Types._
 import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
+import org.ergoplatform.validation.ValidationRules._
 
-trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Evaluation =>
+import scala.collection.mutable
+
+trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
@@ -187,13 +190,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
   }
 
   def costOf(method: SMethod): Rep[Int] = {
-    val methodTemplate = method.objType.getMethodById(method.methodId)
+    val methodTemplate = method.objType.methodById(method.methodId)
     val opId = methodTemplate.opId
     costOf(opId.name, opId.opType.copy(tpeParams = Nil), substFromCostTable)
   }
 
   def perKbCostOf(method: SMethod, dataSize: Rep[Long]): Rep[Int] = {
-    val methodTemplate = method.objType.getMethodById(method.methodId)
+    val methodTemplate = method.objType.methodById(method.methodId)
     val opId = methodTemplate.opId
     perKbCostOf(opId.name, opId.opType.copy(tpeParams = Nil), dataSize)
   }
@@ -638,7 +641,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             }
         )
         RCCostedPrim(resV, resC, resS)
-        
+
       case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
         opCost(values, Seq(accCost), costs.sum(intPlusMonoid))
       case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>
@@ -783,6 +786,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     Seq(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
         _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
         .foreach(_.reset())
+    _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
 
   import Cost._
@@ -1085,6 +1089,51 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
     }
   }
 
+  /** Initial capacity of the hash set, large enough to avoid many rebuidings
+    * and small enough to not consume too much memory. */
+  private val InitDependantNodes = 10000
+
+  /** Mutable IR context state, make sure it is reset in onReset() to its initial state. */
+  private[this] var _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
+
+  def isContextDependant(sym: Sym): Boolean =
+    if (sym.isConst) true
+    else {
+      _contextDependantNodes(sym.rhs.nodeId)
+    }
+
+  /** Here we hook into graph building process at the point where each new graph node is added to the graph.
+    * First, we call `super.createDefinition`, which adds the new node `d` to the graph (`s` is the node's symbol).
+    * Next, we update context dependence analysis information (see isSupportedIndexExpression)
+    * The graph node is `context-dependent` if:
+    * 1) it is the node of Context type
+    * 2) all nodes it depends on are `context-dependent`
+    *
+    * @see super.createDefinition, isSupportedIndexExpression
+    */
+  override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): TableEntry[T] = {
+    val res = super.createDefinition(optScope, s, d)
+    res.rhs match {
+      case d if d.selfType.isInstanceOf[ContextElem[_]] =>
+        // the node is of Context type  => `context-dependent`
+        _contextDependantNodes += (d.nodeId)
+      case d =>
+        val allArgs = d.getDeps.forall(isContextDependant)
+        if (allArgs) {
+          // all arguments are `context-dependent`  =>  d is `context-dependent`
+          _contextDependantNodes += (d.nodeId)
+        }
+    }
+    res
+  }
+
+  /** Checks that index expression sub-graph (which root is `i`) consists of `context-dependent` nodes.
+    * This is used in the validation rule for the costing of ByIndex operation.
+    * @see RuntimeCosting, CheckIsSupportedIndexExpression */
+  def isSupportedIndexExpression(i: Rep[Int]): Boolean = {
+    isContextDependant(i)
+  }
+
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1255,14 +1304,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
         OptionCoster(_opt, SOption.GetOrElseMethod, Seq(_default))
 
       case SelectField(In(_tup), fieldIndex) =>
-        _tup.elem.eVal.asInstanceOf[Elem[_]] match {
-          case se: StructElem[_] =>
-            val tup = asRep[Costed[Struct]](_tup)
-            val fn = STuple.componentNameByIndex(fieldIndex - 1)
-            val v = tup.value.getUntyped(fn)
-            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
-            val s: RSize[Any] = ??? // TODO soft-forkable: implement similar to Pair case
-            RCCostedPrim(v, c, s)
+        val eTuple = _tup.elem.eVal.asInstanceOf[Elem[_]]
+        CheckTupleType(IR)(eTuple) {}
+        eTuple match {
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
             implicit val ea = pe.eFst
@@ -1273,6 +1317,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             else
               attachCost(pair.r, pair.accCost, selectFieldCost)
             res
+// TODO soft-fork: implement similar to Pair case
+//          case se: StructElem[_] =>
+//            val tup = asRep[Costed[Struct]](_tup)
+//            val fn = STuple.componentNameByIndex(fieldIndex - 1)
+//            val v = tup.value.getUntyped(fn)
+//            val c = opCost(v, Seq(tup.cost), costedBuilder.SelectFieldCost)
+//            val s: RSize[Any] = ???
+//            RCCostedPrim(v, c, s)
         }
 
       case Values.Tuple(InSeq(Seq(x, y))) =>
@@ -1436,12 +1488,17 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: Ev
             RCCostedPrim(v, opCost(v, Seq(xsC.cost), costOf(node)), SizeInt)
         }
 
-      case ByIndex(xs, i, default) =>
+      case ByIndex(xs, i, defaultOpt) =>
         val xsC = asRep[CostedColl[Any]](eval(xs))
         val iC = asRep[Costed[Int]](eval(i))
         val iV = iC.value
-        val size = xsC.sizes(iV)  // TO
-        default match {
+        val size = if (xs.tpe.elemType.isConstantSize)
+            constantTypeSize(xsC.elem.eItem)
+          else
+            CheckIsSupportedIndexExpression(IR)(xs, i, iV) {
+              xsC.sizes(iV)
+            }
+        defaultOpt match {
           case Some(defaultValue) =>
             val defaultC = asRep[Costed[Any]](eval(defaultValue))
             val default = defaultC.value

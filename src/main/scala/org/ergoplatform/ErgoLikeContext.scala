@@ -14,9 +14,10 @@ import special.sigma
 import special.sigma.{AnyValue, Box, PreHeader, Header}
 import sigmastate.SType._
 import scalan.RType._
-import special.sigma.{Header, Box, AnyValue, PreHeader}
+import special.sigma.{AnyValue, Box, PreHeader, Header}
 import SType._
 import RType._
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import special.sigma.Extensions._
 
 import scala.util.Try
@@ -48,7 +49,8 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      override val extension: ContextExtension = ContextExtension(Map())
+                      override val extension: ContextExtension = ContextExtension(Map()),
+                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -63,12 +65,12 @@ class ErgoLikeContext(val currentHeight: Height,
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension)
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension)
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings)
 
   import ErgoLikeContext._
   import Evaluation._
@@ -114,12 +116,13 @@ object ErgoLikeContext {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
-            extension: ContextExtension = ContextExtension(Map())) =
+            extension: ContextExtension = ContextExtension(Map()),
+            vs: SigmaValidationSettings = ValidationRules.currentSettings) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension)
+      boxesToSpend, spendingTransaction, self, extension, vs)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,

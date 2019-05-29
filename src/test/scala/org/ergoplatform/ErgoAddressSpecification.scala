@@ -11,14 +11,15 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ValueGenerators
 import org.ergoplatform.ErgoScriptPredef._
+import org.ergoplatform.validation.ValidationSpecification
 import sigmastate.Values.ErgoTree
 
 class ErgoAddressSpecification extends PropSpec
   with ValueGenerators
   with PropertyChecks
   with Matchers
-  with TryValues {
-
+  with TryValues
+  with ValidationSpecification {
   private implicit val ergoAddressEncoder: ErgoAddressEncoder =
     new ErgoAddressEncoder(TestnetNetworkPrefix)
 

@@ -1,5 +1,6 @@
 package sigmastate
 
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
@@ -405,7 +406,7 @@ object SubstConstants {
 
   def eval(scriptBytes: Array[Byte],
            positions: Array[Int],
-           newVals: Array[Value[SType]]): Array[Byte] =
+           newVals: Array[Value[SType]])(implicit vs: SigmaValidationSettings): Array[Byte] =
     ErgoTreeSerializer.DefaultSerializer.substituteConstants(scriptBytes, positions, newVals)
 }
 

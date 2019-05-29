@@ -1,12 +1,13 @@
 package sigmastate.serialization
 
+import org.ergoplatform.validation.ValidationRules.CheckValidOpCode
 import org.ergoplatform._
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.OperationId
-import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode}
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, InvalidOpCode, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
@@ -151,9 +152,13 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers.get(opCode)
-    if (serializer == null)
-      throw new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - LastConstantCode}")
-    serializer
+    CheckValidOpCode(serializer, opCode) { serializer }
+  }
+  def addSerializer(opCode: OpCode, ser: ValueSerializer[_ <: Value[SType]]) = {
+    serializers.add(opCode, ser)
+  }
+  def removeSerializer(opCode: OpCode) = {
+    serializers.remove(opCode)
   }
 
   override def serialize(v: Value[SType], w: SigmaByteWriter): Unit = serializable(v) match {

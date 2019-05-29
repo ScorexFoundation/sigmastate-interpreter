@@ -5,6 +5,7 @@ import java.util
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
@@ -462,6 +463,8 @@ class CCostModel extends CostModel {
 
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   dsl =>
+  implicit val validationSettings = ValidationRules.currentSettings
+
   override val Costing: CostedBuilder = new CCostedBuilder {
 
     import RType._

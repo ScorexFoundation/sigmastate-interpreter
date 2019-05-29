@@ -5,17 +5,25 @@ import java.util
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import sigmastate._
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import Values._
+import scalan.util.CollectionUtil._
+
+import scala.util.Try
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.ergoplatform.validation.EnabledRule
 import scalan.util.CollectionUtil._
 import scorex.util.encode.Base16
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
+import sigmastate.basics.{ProveDHTuple, SigmaProtocolPrivateInput, DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
 
 import scala.util.Try
 
@@ -125,9 +133,10 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   def prove(exp: ErgoTree, context: CTX, message: Array[Byte]): Try[CostedProverResult] =
     prove(emptyEnv, exp, context, message)
 
-  def prove(env: ScriptEnv, exp: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
+  def prove(env: ScriptEnv, tree: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val propTree = applyDeserializeContext(ctx, exp.proposition)
+    val prop = propositionFromErgoTree(tree, ctx)
+    val propTree = applyDeserializeContext(ctx, prop)
     val tried = reduceToCrypto(ctx, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
