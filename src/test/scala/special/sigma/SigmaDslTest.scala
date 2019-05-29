@@ -766,14 +766,7 @@ class SigmaDslTest extends PropSpec
     eq(Builder.DefaultCollBuilder.fromArray(arr), (0, 2))
   }
 
-  /*
-  line 5: sliced.append(toAppend)
-               ^
-  Don't know how to evalNode(Select(Ident(sliced,Coll[SInt$]),append,Some((Coll[SInt$]) => Coll[SInt$])))
-  sigmastate.lang.exceptions.CosterException:
-  line 5: sliced.append(toAppend)
-   */
-  ignore("Coll append method equivalnce") {
+  property("Coll append method equivalence") {
     val eq = checkEq(func[(Coll[Int], (Int, Int)),Coll[Int]](
       """{ (x: (Coll[Int], (Int, Int))) =>
         |val sliced: Coll[Int] = x._1.slice(x._2._1, x._2._2)

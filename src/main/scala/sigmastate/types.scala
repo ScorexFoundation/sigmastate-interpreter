@@ -1034,10 +1034,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."))
 
-  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
+  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9, Some {
+    case (builder, obj, _, Seq(xs), _) =>
+      builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
+  }, None)
       .withInfo(Append, "Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)",
         ArgInfo("other", "the collection to append at the end of this"))
-
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
       .withInfo(ByIndex,
         """The element at given index.
@@ -1146,9 +1148,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     ForallMethod,
     SliceMethod,
     FilterMethod,
-    /* TODO: check
     AppendMethod,
-    */
     ApplyMethod,
     /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     BitShiftLeftMethod,
