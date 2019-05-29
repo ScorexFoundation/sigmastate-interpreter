@@ -3,12 +3,12 @@ package org.ergoplatform.validation
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.Values.{Value, SValue, IntValue}
+import sigmastate.Values.{Value, SValue, IntValue, ErgoTree}
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{CheckAndGetMethod, SCollection, CheckTypeWithMethods, SType}
+import sigmastate.{SCollection, CheckTypeWithMethods, SType, CheckAndGetMethod}
 import sigma.util.Extensions.ByteOps
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -19,14 +19,29 @@ case class ValidationRule(
     id: Short,
     description: String
 ) extends SoftForkChecker {
-  /** Can be used in derived classes to implemented validation logic. */
+
+  /** Generic helper method to implement validation rules.
+    * It executes the given `block` only when this rule is disabled of `condition` is satisfied.
+    * Should be used in derived classes to implemented validation logic.
+    *
+    * @tparam  T  type of the result produced by `block`
+    * @param   condition  executes condition to be checked and returns its result
+    * @param   cause      executed only when condition returns false, attached as `cause` parameter when Validation exception
+    * @param   args       parameters which should be attached to ValidationException
+    * @param   block      executed only when condition returns true, its result become a result of `validate` call.
+    * @return    result produced by the `block` if condition is true
+    * @throws    SigmaException if this rule is not found in ValidationRules.currentSettings
+    * @throws    ValidationException if the `condition` is not true.
+    *
+    * @see ValidationRules
+    */
   protected def validate[T](
       condition: => Boolean,
       cause: => Throwable, args: Seq[Any], block: => T): T = {
     val status = ValidationRules.currentSettings.getStatus(this.id)
     status match {
       case None =>
-        throw new InterpreterException(s"ValidationRule $this not found in validation settings")
+        throw new SigmaException(s"ValidationRule $this not found in validation settings")
       case Some(DisabledRule) =>
         block  // if the rule is disabled we still need to execute the block of code
       case Some(status) =>
@@ -145,6 +160,15 @@ object ValidationRules {
     }
   }
 
+  object CheckHeaderSizeBit extends ValidationRule(1013,
+    "For version greater then 0, size bit should be set.") with SoftForkWhenReplaced {
+    def apply(header: Byte): Unit = {
+      validate(
+        ErgoTree.getVersion(header) == 0 || ErgoTree.hasSize(header),
+        new SigmaException(s"Invalid ErgoTreeHeader $header, size bit is expected"), Seq(header), {})
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -158,7 +182,8 @@ object ValidationRules {
     CheckTypeCode,
     CheckSerializableTypeCode,
     CheckTypeWithMethods,
-    CheckAndGetMethod
+    CheckAndGetMethod,
+    CheckHeaderSizeBit,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

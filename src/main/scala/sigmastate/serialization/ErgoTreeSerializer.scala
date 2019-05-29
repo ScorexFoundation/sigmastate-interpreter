@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import org.ergoplatform.validation.ValidationRules.CheckDeserializedScriptIsSigmaProp
+import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
 import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
 import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
@@ -160,6 +160,7 @@ class ErgoTreeSerializer {
   /** Deserialize `header` and optional `size` slots only. */
   private def deserializeHeaderAndSize(r: SigmaByteReader): (Byte, Option[Int]) = {
     val header = r.getByte()
+    CheckHeaderSizeBit(header)
     val sizeOpt = if (ErgoTree.hasSize(header)) {
       val size = r.getUInt().toIntExact
       Some(size)
