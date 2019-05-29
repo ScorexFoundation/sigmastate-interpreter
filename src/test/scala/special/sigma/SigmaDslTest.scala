@@ -189,31 +189,43 @@ class SigmaDslTest extends PropSpec
     }
   }
   property("BigInt methods equivalence") {
-    val toByte = checkEq(func[BigInt,Byte]("{ (x: BigInt) => x.toByte }"))(x => x.toByte)
-    val toShort = checkEq(func[BigInt,Short]("{ (x: BigInt) => x.toShort }"))(x => x.toShort)
-    val toInt = checkEq(func[BigInt,Int]("{ (x: BigInt) => x.toInt }"))(x => x.toInt)
-    val toLong = checkEq(func[BigInt,Long]("{ (x: BigInt) => x.toLong }"))(x => x.toLong)
-    val toBigInt = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toBigInt }"))(x => x)
+    val toByte = checkEq(func[(Byte, BigInt),Boolean]("{ (x: (Byte, BigInt)) => x._2.toByte == x._1 }")) { x =>
+      x._2.toByte == x._1
+    }
+    val toShort = checkEq(func[(Short, BigInt),Boolean]("{ (x: (Short, BigInt)) => x._2.toShort == x._1 }")) { x =>
+      x._2.toShort == x._1
+    }
+    val toInt = checkEq(func[(Int, BigInt),Boolean]("{ (x: (Int, BigInt)) => x._2.toInt == x._1 }")) { x =>
+      x._2.toInt == x._1
+    }
+    val toLong = checkEq(func[(Long, BigInt),Boolean]("{ (x: (Long, BigInt)) => x._2.toLong == x._1 }")) { x =>
+      x._2.toLong == x._1
+    }
+    val toBigInt = checkEq(func[(BigInt, BigInt),Boolean]("{ (x: (BigInt, BigInt)) => x._2.toBigInt == x._1 }")) { x =>
+      x._2 == x._1
+    }
+
     lazy val toBytes = checkEq(func[BigInt,Coll[Byte]]("{ (x: BigInt) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[BigInt,Coll[Boolean]]("{ (x: BigInt) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[BigInt,BigInt]("{ (x: BigInt) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(BigInt, BigInt), Int]("{ (x: (BigInt, BigInt)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
-    /* TODO: Check why this fails:
+    /*
     forAll { x: Byte =>
-      toByte(x.toBigInt)
+      toByte((x, x.toBigInt))
     }
     forAll { x: Short =>
-      toShort(x.toBigInt)
+      toShort((x, x.toBigInt))
     }
     forAll { x: Int =>
-      toInt(x.toBigInt)
+      toInt((x, x.toBigInt))
     }
     forAll { x: Long =>
-      toLong(BigInt(x).bigInteger)
-    }*/
+      toLong((x, BigInt(x).bigInteger))
+    }
+    */
     forAll { x: BigInt =>
-      Seq(toBigInt).foreach(_(x))
+      Seq(toBigInt).foreach(_((x, x)))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
     forAll { x: (BigInt, BigInt) =>
@@ -257,15 +269,18 @@ class SigmaDslTest extends PropSpec
     val updateAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isUpdateAllowed }")) { (t: AvlTree) => t.isUpdateAllowed }
     val removeAllowed = checkEq(func[AvlTree, Boolean]("{ (t: AvlTree) => t.isRemoveAllowed }")) { (t: AvlTree) => t.isRemoveAllowed }
 
-    val tree = sampleAvlTree
+    val newTree = sampleAvlTree.updateOperations(1.toByte)
+    val trees = Array(sampleAvlTree, newTree)
 
-    doDigest(tree)
-    doEnabledOps(tree)
-    doKeyLength(tree)
-    doValueLength(tree)
-    insertAllowed(tree)
-    updateAllowed(tree)
-    removeAllowed(tree)
+    for (tree <- trees) {
+      doDigest(tree)
+      doEnabledOps(tree)
+      doKeyLength(tree)
+      doValueLength(tree)
+      insertAllowed(tree)
+      updateAllowed(tree)
+      removeAllowed(tree)
+    }
   }
 
   property("AvlTree.{contains, get, getMany} equivalence") {
