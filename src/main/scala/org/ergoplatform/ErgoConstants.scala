@@ -24,7 +24,7 @@ object ErgoConstants {
     "Max bytearray length") {
   }
 
-  object MaxTokens extends SizeConstant[Byte](4, 6,
+  object MaxTokens extends SizeConstant[Byte](255, 6,
     "Tokens count should not be greater than provided value") {
   }
 

@@ -133,8 +133,6 @@ object ErgoBox {
   val TokensRegId: MandatoryRegisterId = R2
   val ReferenceRegId: MandatoryRegisterId = R3
 
-  val MaxTokens: Byte = ErgoConstants.MaxTokens.get
-
   val maxRegisters: Int = ErgoConstants.MaxRegisters.get
   val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
   val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)

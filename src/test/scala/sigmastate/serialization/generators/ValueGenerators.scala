@@ -3,6 +3,7 @@ package sigmastate.serialization.generators
 import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.ErgoConstants
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.scalacheck.Arbitrary._
@@ -258,7 +259,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- unsignedShortGen
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Byte](0, ErgoConstants.MaxTokens.get)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
@@ -271,7 +272,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Byte](0, ErgoConstants.MaxTokens.get)
     tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- Gen.chooseNum(0, 100000)
