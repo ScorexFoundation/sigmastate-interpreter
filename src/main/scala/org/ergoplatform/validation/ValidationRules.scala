@@ -199,7 +199,6 @@ object ValidationRules {
     CheckTypeWithMethods,
     CheckAndGetMethod,
     CheckHeaderSizeBit,
-    CheckMethod,
     CheckCostFuncOperation,
   )
 
