@@ -1,6 +1,7 @@
 package sigmastate.serialization
 
 import sigmastate.basics.ProveDHTuple
+import sigmastate.utils.GenSerializers
 import sigmastate.utxo.CostTableStat
 
 class PDHTSerializerSpecification extends SerializationSpecification {
@@ -11,7 +12,9 @@ class PDHTSerializerSpecification extends SerializationSpecification {
     }
     // In IntelliJ IDEA this test is executed last, at this point all statistics has been collected
     // We output it here in the console
-    println(CostTableStat.costTableString)
+//    println(CostTableStat.costTableString)
+//    println(ValueSerializer.printSerInfo())
+//    GenSerializers.generateSerSpec()
   }
 
 }

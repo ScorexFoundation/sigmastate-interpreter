@@ -1,24 +1,18 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-
 import scala.language.implicitConversions
 import scala.language.existentials
-import org.bouncycastle.math.ec.ECPoint
-import scalan.{Nullable, MutableLazy, Lazy, RType, AVHashMap, SigmaLibrary}
+import scalan.{Nullable, MutableLazy, Lazy, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigmastate.eval._
-import sigma.util.Extensions._
-import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
 import scalan.RType._
@@ -28,16 +22,14 @@ import sigmastate.lang.{Terms, SourceContext}
 import scalan.staged.Slicing
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import sigmastate.eval.Evaluation.rtypeToSType
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
 import special.Types._
-import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
+import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
-import ValidationRules._
+import org.ergoplatform.validation.ValidationRules._
 
-import scala.collection.mutable
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
   import Context._;
@@ -54,8 +46,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import SigmaProp._;
   import Box._
   import CollOverArrayBuilder._;
-  import CostedBuilder._
-  import SizeBuilder._
   import CCostedBuilder._
   import CSizeBuilder._
   import Size._;
@@ -64,13 +54,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import SizeOption._;
   import SizePair._;
   import SizeContext._
-  import CSizeContext._
   import CSizePrim._
   import CSizePair._
   import CSizeColl._
-  import CSizeOption._
   import Costed._;
-  import CostedPrim._;
   import CCostedPrim._;
   import CostedPair._;
   import CCostedPair._;
@@ -83,15 +70,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import CCostedOption._
   import SigmaDslBuilder._
   import MonoidBuilder._
-  import MonoidBuilderInst._
   import AvlTree._
-  import Monoid._
   import IntPlusMonoid._
   import LongPlusMonoid._
   import WSpecialPredef._
   import TestSigmaDslBuilder._
   import CostModel._
-  import Liftables._
 
   override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
@@ -1089,7 +1073,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     }
   }
 
+  /** Initial capacity of the hash set, large enough to avoid many rebuidings
+    * and small enough to not consume too much memory. */
   private val InitDependantNodes = 10000
+
+  /** Mutable IR context state, make sure it is reset in onReset() to its initial state. */
   private[this] var _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
 
   def isContextDependant(sym: Sym): Boolean =
@@ -1098,19 +1086,34 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       _contextDependantNodes(sym.rhs.nodeId)
     }
 
+  /** Here we hook into graph building process at the point where each new graph node is added to the graph.
+    * First, we call `super.createDefinition`, which adds the new node `d` to the graph (`s` is the node's symbol).
+    * Next, we update context dependence analysis information (see isSupportedIndexExpression)
+    * The graph node is `context-dependent` if:
+    * 1) it is the node of Context type
+    * 2) all nodes it depends on are `context-dependent`
+    *
+    * @see super.createDefinition, isSupportedIndexExpression
+    */
   override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): TableEntry[T] = {
     val res = super.createDefinition(optScope, s, d)
     res.rhs match {
       case d if d.selfType.isInstanceOf[ContextElem[_]] =>
+        // the node is of Context type  => `context-dependent`
         _contextDependantNodes += (d.nodeId)
       case d =>
         val allArgs = d.getDeps.forall(isContextDependant)
-        if (allArgs)
+        if (allArgs) {
+          // all arguments are `context-dependent`  =>  d is `context-dependent`
           _contextDependantNodes += (d.nodeId)
+        }
     }
     res
   }
 
+  /** Checks that index expression sub-graph (which root is `i`) consists of `context-dependent` nodes.
+    * This is used in the validation rule for the costing of ByIndex operation.
+    * @see RuntimeCosting, CheckIsSupportedIndexExpression */
   def isSupportedIndexExpression(i: Rep[Int]): Boolean = {
     isContextDependant(i)
   }
@@ -1677,7 +1680,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val c = opCost(v, Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
-      case neg: Negation[t] =>
+      case neg: Negation[SNumericType]@unchecked =>
         val tpe = neg.input.tpe
         val et = stypeToElem(tpe)
         val op = NumericNegate(elemToNumeric(et))(et)

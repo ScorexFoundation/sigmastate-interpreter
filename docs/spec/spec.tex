@@ -2,7 +2,7 @@
 
 \usepackage{fullpage}
 
-\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu,stmaryrd,tabularx,verbatim}
+\usepackage{mathtools,color,xcolor,hyperref,graphicx,wrapfig,listings,array,xspace,tabu,stmaryrd,tabularx,verbatim,longtable}
 
 % "define" Scala
 \lstdefinelanguage{scala}{
@@ -61,7 +61,7 @@
 \newcommand{\tnode}{\ensuremath{\mathsf{THRESHOLD}}}
 \newcommand{\GF}{\ensuremath{\mathrm{GF}}}
 
-\newcommand{\asdag}{ErgoTree}
+\newcommand{\ASDag}{ErgoTree\xspace}
 
 \newcommand{\I}[1]{\mathit{#1}}
 \newcommand{\B}[1]{\mathbf{#1}}
@@ -164,6 +164,17 @@
 \newcommand{\View}[2]{#1\sphericalangle #2}
 \newcommand{\This}{\text{\lst{this}}}
 \newcommand{\Section}[1]{Section~\ref{section:#1}}
+\newcommand{\MaxVlqSize}{VLQ_{max}}
+\newcommand{\MaxBits}{Bits_{max}}
+\newcommand{\MaxBytes}{Bytes_{max}}
+\newcommand{\MaxTypeSize}{Type_{max}}
+\newcommand{\MaxDataSize}{Data_{max}}
+\newcommand{\MaxBox}{Box_{max}}
+\newcommand{\MaxSigmaProp}{SigmaProp_{max}}
+\newcommand{\MaxAvlTree}{AvlTree_{max}}
+\newcommand{\MaxConstSize}{Const_{max}}
+\newcommand{\MaxExprSize}{Expr_{max}}
+\newcommand{\MaxErgoTreeSize}{ErgoTree_{max}}
 
 \newtheorem{definition}{Definition}
 
@@ -180,7 +191,7 @@
 
 \begin{abstract}
 In this document we consider typed abstract syntax of the language
-called \asdag which defines semantics of a condition which protects a closed
+called \ASDag which defines semantics of a condition which protects a closed
 box in the Ergo Platform blockchain. Serialized graph is written into a box.
 Most of Ergo users are unaware of the graph since they are developing contracts in higher-level languages, such as
 ErgoScript. However, for developers of alternative higher-level languages, client libraries and clients knowledge of
@@ -205,6 +216,62 @@ classes etc.}
 \section{Introduction}
 \label{sec:intro}
 
+The design space of programming languages is very broad ranging from
+general-purpose languages like C,Java,Python up to specialized languages
+like SQL, HTML, CSS, etc.
+
+Since Ergo's goal is to provide a platform for contractual money, the choice
+of the language for writing contracts is very important.
+
+First of all the language and contract execution environment should be
+\emph{deterministic}. Once created and stored in Ergo blockchain, smart
+contract should always behave predictably and deterministically, it should only depend on well-defined data context and nothing else.
+As long as data context doesn't change, any execution of the contract
+should return the same value any time it is executed, on any execution
+platform, and even on any \emph{compliant} language implementation.
+No general purpose programming language is deterministic because
+all of them provide non-deterministic operations. ErgoScript doesn't have
+non-deterministic operations.
+
+Second, the language should be \emph{spam-resistant}, meaning it should
+facilitate in defending against attacks when malicious contracts can overload
+network nodes and bring the blockchain down. To fullfill this goal ErgoScript
+support \emph{ahead-of-time cost estimation}, the fast check performed before
+contract execution to ensure the evaluation cost is within acceptable
+bounds. In general, such cost prediction is not possible, however if the
+language is simple enough (which is the case of ErgoScript) and if operations
+are carefully selected, then costing is possible and doesn't require
+usage of Gas~\mnote{cite etherium} and allow to avoid related problems~\mnote{cite Gas related problems}.
+
+Third, being simple, the contracts language should be \emph{expressive
+enough}. It should be possible to implement most of the practical scenarios,
+which is the case of ErgoScript. In our experience expressivity of contracts
+language comes hand in hand with design and capabilities of Ergo blockchain
+platform itself, making the whole system \emph{turing-complete} as we
+demonstrated in \mnote{cite TuringPaper}.
+
+Forth, simplicity and expressivity are often characteristics of
+domain-specific languages~\mnote{cite DSL}. From this perspective ErgoScript
+is a DSL for writing smart contracts. The language directly captures the
+Ubiquites Language~\cite{UbiqLang} of smart contracts
+domain directly manipulating with first-class Boxes, Tokens, Zero-Knowledge
+Sigma-Propostions etc., these are the novel features Ergo aims to provide as a platform/service
+for custom user applicatons. Domain-specific nature nature of ErgoScript also fasilitates spam-resistance,
+because operations of ErgoScript are all carefully selected to be \emph{costing
+friendly}.
+
+And last, but not the least, we wanted our new language to be, nevertheless,
+\emph{familiar to the most} since we aim to address as large audience of
+programmers as possible with minimum surprise and WTF ratio
+\cite{WTFLang}.
+The syntax of ErgoScript is inspired by Scala/Kotlin, but in fact it shares a
+common subset with Java and C\#, thus if you are proficient in any of these
+languages you will be right at home with ErgoScript as well.
+
+Guided by this requirements we designed ErgoScript as a new yet familiar
+looking language which directly support all novel features of Ergo blockchain.
+We also implemented reference implementation of the specification described in this document.
+
 \include{language}
 
 \include{types}
@@ -219,11 +286,14 @@ classes etc.}
 
 
 \bibliographystyle{alpha}
-\bibliography{sigma.bib}
+\bibliography{spec.bib}
 
 \appendix
 
 \include{appendix_predeftypes}
 \include{appendix_primops}
+\include{appendix_ergotree_serialization}
+\include{appendix_motivation}
+\include{appendix_integer_encoding}
 
 \end{document}

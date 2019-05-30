@@ -3,7 +3,8 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
-import org.ergoplatform.{SoftForkWhenReplaced, ErgoBox, ValidationRule}
+import org.ergoplatform.ErgoBox
+import org.ergoplatform.validation.{ValidationRule, SoftForkWhenReplaced}
 import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -13,6 +14,7 @@ import sigmastate.lang.exceptions.SerializerException
 import special.collection._
 import special.sigma._
 import sigma.util.Extensions.ByteOps
+
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
@@ -125,7 +127,9 @@ object DataSerializer {
         val coll = Colls.fromArray(arr)(RType.AnyType)
         Evaluation.toDslTuple(coll, tuple)
       case t =>
-        CheckSerializableTypeCode(t.typeCode) { null }
+        CheckSerializableTypeCode(t.typeCode) {
+          throw new SerializerException(s"Not defined DataSerializer for type $t")
+        }
     }).asInstanceOf[T#WrappedType]
     r.level = r.level - 1
     res

@@ -33,7 +33,7 @@ object SigmaSerializer {
 
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean)(implicit vs: ValidationSettings): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean)(implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
       constantStore,
@@ -68,7 +68,7 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
     serialize(obj, new SigmaByteWriter(w, None))
   }
 
-  def parseWithGenericReader(r: Reader)(implicit vs: ValidationSettings): TFamily = {
+  def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
     parse(
       new SigmaByteReader(r,
         new ConstantStore(),

@@ -5,7 +5,6 @@ import sigmastate.Values.{Value, SigmaPropValue}
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.serialization._
 
@@ -34,14 +33,14 @@ case class CreateProveDHTupleSerializer(cons: (Value[SGroupElement.type],
     Value[SGroupElement.type],
     Value[SGroupElement.type]) => SigmaPropValue)
     extends ValueSerializer[CreateProveDHTuple] {
-
-  override val opCode: OpCode = OpCodes.ProveDiffieHellmanTupleCode
+  import sigmastate.Operations.CreateProveDHTupleInfo._
+  override def opDesc = CreateProveDHTuple
 
   override def serialize(obj: CreateProveDHTuple, w: SigmaByteWriter): Unit = {
-    w.putValue(obj.gv)
-    w.putValue(obj.hv)
-    w.putValue(obj.uv)
-    w.putValue(obj.vv)
+    w.putValue(obj.gv, gArg)
+    w.putValue(obj.hv, hArg)
+    w.putValue(obj.uv, uArg)
+    w.putValue(obj.vv, vArg)
   }
 
   override def parse(r: SigmaByteReader) = {

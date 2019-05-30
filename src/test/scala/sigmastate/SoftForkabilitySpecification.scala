@@ -1,12 +1,15 @@
 package sigmastate
 
-import org.ergoplatform.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
+import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform._
+import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
+import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
@@ -37,12 +40,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val blockHeight = 110
 
-  def createContext(h: Int, tx: ErgoLikeTransaction, vs: ValidationSettings) =
+  def createContext(h: Int, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) =
     ErgoLikeContext(h,
       AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
       tx, fakeSelf, vs = vs)
 
-  def proveTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings): ProverResult = {
+  def proveTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings): ProverResult = {
     val env = Map(ScriptNameProp -> (name + "_prove"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
@@ -50,14 +53,14 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     proof1
   }
 
-  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: ProverResult, vs: ValidationSettings) = {
+  def verifyTx(name: String, tx: ErgoLikeTransaction, proof: ProverResult, vs: SigmaValidationSettings) = {
     val env = Map(ScriptNameProp -> (name + "_verify"))
     val ctx = createContext(blockHeight, tx, vs)
     val prop = tx.outputs(0).ergoTree
     verifier.verify(env, prop, ctx, proof, fakeMessage).map(_._1).fold(t => throw t, identity) shouldBe true
   }
 
-  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: ValidationSettings) = {
+  def proveAndVerifyTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) = {
     val proof = proveTx(name, tx, vs)
     verifyTx(name, tx, proof, vs)
   }
@@ -88,11 +91,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val Height2Code = (LastConstantCode + 56).toByte
   /** Same as Height, but new opcode to test soft-fork */
-  case object Height2 extends NotReadyValueInt {
+  case object Height2 extends NotReadyValueInt with ValueCompanion {
+    override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
     def opType = SFunc(SContext, SInt)
   }
-  val Height2Ser = CaseObjectSerialization(Height2Code, Height2)
+  val Height2Ser = CaseObjectSerialization(Height2, Height2)
 
   // prepare soft-fork settings for v2
   val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))
@@ -123,26 +127,47 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val newTypeCode = (SGlobal.typeCode + 1).toByte
 
-  property("node v1, soft-fork up to v2, script v2 without size") {
-    // prepare bytes using default serialization without `size bit` in the header
-    val (txV2_withoutSize, txV2_withoutSize_bytes) = runOnV2Node {
-      val tx = createTransaction(createBox(boxAmt, ErgoTree.fromProposition(propV2), 1))
-      (tx, tx.messageToSign)
+  property("node v1, soft-fork up to v2, script v2 without size bit") {
+    // try prepare v2 script without `size bit` in the header
+    assertExceptionThrown({
+      ErgoTree(1.toByte, EmptyConstants, propV2)
+    }, {
+      case e: IllegalArgumentException  => true
+      case _ => false
+    } )
+
+    // prepare bytes using default serialization and then replacing version in the header
+    val v2tree_withoutSize_bytes = runOnV2Node {
+      val tree = ErgoTree.fromProposition(propV2)
+      val bytes = tree.bytes
+      bytes(0) = 1.toByte  // set version to v2, we cannot do this using ErgoTree constructor
+      bytes
     }
 
-    // should fail with given exceptions
+    // v1 node should fail
     assertExceptionThrown(
       {
-        val r = SigmaSerializer.startReader(txV2_withoutSize_bytes)
-        ErgoLikeTransaction.serializer.parse(r)
+        val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
       },
       {
-        case se: SerializerException if se.cause.isDefined =>
-          val ve = se.cause.get.asInstanceOf[ValidationException]
-          ve.rule == CheckValidOpCode
+        case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
         case _ => false
       }
     )
+
+    // v2 node should fail
+    runOnV2Node {
+      assertExceptionThrown(
+        {
+          val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
+          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+        },
+        {
+          case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
+          case _ => false
+        } )
+    }
   }
 
   property("node v1, soft-fork up to v2, script v2 with `size bit`") {
@@ -215,7 +240,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     verifyTx("deserialize", tx, proof, v2vs)
   }
 
-  def checkRule(rule: ValidationRule, v2vs: ValidationSettings, action: => Unit) = {
+  def checkRule(rule: ValidationRule, v2vs: SigmaValidationSettings, action: => Unit) = {
     // try SoftForkable block using current vs (v1 version)
     assertExceptionThrown({
       trySoftForkable(false) {
@@ -282,8 +307,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   property("CheckMethod rule") {
     val freeMethodId = 16.toByte
     val mcBytes = Array[Byte](OpCodes.PropertyCallCode, SCollection.typeId, freeMethodId, Outputs.opCode)
-    val v2vs = vs.updated(CheckMethod.id, ChangedRule(Array(SCollection.typeId, freeMethodId)))
-    checkRule(CheckMethod, v2vs, {
+    val v2vs = vs.updated(CheckAndGetMethod.id, ChangedRule(Array(SCollection.typeId, freeMethodId)))
+    checkRule(CheckAndGetMethod, v2vs, {
       ValueSerializer.deserialize(mcBytes)
     })
   }

@@ -1,20 +1,18 @@
 package sigmastate.serialization
 
+import sigmastate.Operations.SelectFieldInfo
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes._
-import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.SelectField
 import sigmastate.{STuple, SType}
 
 case class SelectFieldSerializer(cons: (Value[STuple], Byte) => Value[SType]) extends ValueSerializer[SelectField] {
-
-  override val opCode: Byte = SelectFieldCode
+  override def opDesc = SelectField
 
   override def serialize(obj: SelectField, w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .put(obj.fieldIndex)
+    w.putValue(obj.input, SelectFieldInfo.inputArg)
+      .put(obj.fieldIndex, SelectFieldInfo.fieldIndexArg)
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val tuple = r.getValue().asValue[STuple]

@@ -7,13 +7,13 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.{SCollection, SType, SubstConstants}
 
 object SubstConstantsSerializer extends ValueSerializer[SubstConstants[SType]] {
-
-  override val opCode: Byte = OpCodes.SubstConstantsCode
+  import sigmastate.Operations.SubstConstantsInfo._
+  override def opDesc = SubstConstants
 
   def serialize(obj: SubstConstants[SType], w: SigmaByteWriter): Unit = {
-    w.putValue(obj.scriptBytes)
-    w.putValue(obj.positions)
-    w.putValue(obj.newValues)
+    w.putValue(obj.scriptBytes, scriptBytesArg)
+    w.putValue(obj.positions, positionsArg)
+    w.putValue(obj.newValues, newValuesArg)
   }
 
   def parse(r: SigmaByteReader): Value[SType] = {
