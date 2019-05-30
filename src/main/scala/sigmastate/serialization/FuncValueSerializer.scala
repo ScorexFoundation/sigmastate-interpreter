@@ -2,21 +2,23 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
 import scorex.util.Extensions._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import ValueSerializer._
 
 import scala.collection.mutable
 
 case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) => Value[SType])
   extends ValueSerializer[FuncValue] {
-
-  override val opCode: OpCode = FuncValueCode
+  override def opDesc = FuncValue
 
   override def serialize(obj: FuncValue, w: SigmaByteWriter): Unit = {
-    w.putUInt(obj.args.length)
-    obj.args.foreach{ case (idx, tpe) => w.putUInt(idx).putType(tpe) }
-    w.putValue(obj.body)
+    w.putUInt(obj.args.length, ArgInfo("numArgs", "number of function arguments"))
+    foreach("numArgs", obj.args) { case (idx, tpe) =>
+      w.putUInt(idx, ArgInfo("id_i", "identifier of the i-th argument"))
+        .putType(tpe, ArgInfo("type_i", "type of the i-th argument"))
+    }
+    w.putValue(obj.body, ArgInfo("body", "function body, which is parameterized by arguments"))
   }
 
   override def parse(r: SigmaByteReader): Value[SType] = {

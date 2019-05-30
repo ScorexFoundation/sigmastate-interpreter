@@ -1,44 +1,78 @@
 
 \subsubsection{\lst{BigInt.toByte} method (Code 106.1)}
+\label{sec:type:BigInt:toByte}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Byte}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Byte} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.modQ} method (Code 6.1)}
+\label{sec:type:BigInt:modQ}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ModQ]{\lst{ModQ}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toShort} method (Code 106.2)}
+\label{sec:type:BigInt:toShort}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Short}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Short} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.plusModQ} method (Code 6.2)}
+\label{sec:type:BigInt:plusModQ}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -53,24 +87,40 @@
   \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PlusModQ]{\lst{PlusModQ}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toInt} method (Code 106.3)}
+\label{sec:type:BigInt:toInt}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Int}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Int} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.minusModQ} method (Code 6.3)}
+\label{sec:type:BigInt:minusModQ}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -85,24 +135,40 @@
   \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MinusModQ]{\lst{MinusModQ}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toLong} method (Code 106.4)}
+\label{sec:type:BigInt:toLong}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Long}, throwing exception if overflow. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Long} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.multModQ} method (Code 6.4)}
+\label{sec:type:BigInt:multModQ}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -117,46 +183,85 @@
   \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toBigInt} method (Code 106.5)}
+\label{sec:type:BigInt:toBigInt}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{BigInt} \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{BigInt} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toBytes} method (Code 106.6)}
+\label{sec:type:BigInt:toBytes}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Returns a big-endian representation of this numeric value in a collection of bytes.
- For example, the Int value \lst{0x12131415} would yield the
- byte array  \lst{[0x12, 0x13, 0x14, 0x15]}. \\
+   \bf{Description} &  Returns a big-endian representation of this numeric value in a collection of bytes.
+ For example, the \lst{Int} value \lst{0x12131415} would yield the
+ collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
+           \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{BigInt.toBits} method (Code 106.7)}
+\label{sec:type:BigInt:toBits}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Returns a big-endian representation of this numeric in a collection of Booleans.
- Each boolean corresponds to one bit. \\
+   \bf{Description} &  Returns a big-endian representation of this numeric in a collection of Booleans.
+  Each boolean corresponds to one bit.
+           \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[Boolean]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}

@@ -41,7 +41,7 @@ object OpCodes extends ValueCodes {
   // variables
   val TaggedVariableCode: OpCode = (LastConstantCode + 1).toByte
   val ValUseCode: OpCode = (LastConstantCode + 2).toByte
-  val ConstantPlaceholderIndexCode: OpCode = (LastConstantCode + 3).toByte
+  val ConstantPlaceholderCode: OpCode = (LastConstantCode + 3).toByte
   val SubstConstantsCode: OpCode = (LastConstantCode + 4).toByte // reserved 5 - 9 (5)
 
   val LongToByteArrayCode  : OpCode = (LastConstantCode + 10).toByte
@@ -125,7 +125,7 @@ object OpCodes extends ValueCodes {
   val CalcBlake2b256Code         : OpCode = (LastConstantCode + 91).toByte
   val CalcSha256Code             : OpCode = (LastConstantCode + 92).toByte
   val ProveDlogCode              : OpCode = (LastConstantCode + 93).toByte
-  val ProveDiffieHellmanTupleCode: OpCode = (LastConstantCode + 94).toByte
+  val ProveDHTupleCode           : OpCode = (LastConstantCode + 94).toByte
   val SigmaPropIsProvenCode      : OpCode = (LastConstantCode + 95).toByte
   val SigmaPropBytesCode         : OpCode = (LastConstantCode + 96).toByte
   val BoolToSigmaPropCode        : OpCode = (LastConstantCode + 97).toByte

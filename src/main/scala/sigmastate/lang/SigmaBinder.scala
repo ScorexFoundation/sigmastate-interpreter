@@ -12,7 +12,6 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
-import sigma.util.Extensions._
 
 object SrcCtxCallbackRewriter extends CallbackRewriter {
   override def rewriting[T](oldTerm: T, newTerm: T): T = (oldTerm, newTerm) match {
@@ -113,7 +112,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         None
 
     case a @ Apply(PKFunc.symNoType, args) =>
-      Some(PKFunc.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
+      Some(PKFunc.irInfo.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
   })))(e)
 

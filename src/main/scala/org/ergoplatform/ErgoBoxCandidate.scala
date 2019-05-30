@@ -38,7 +38,7 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  def proposition: BoolValue = ergoTree.proposition.asBoolValue
+  def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
   lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 

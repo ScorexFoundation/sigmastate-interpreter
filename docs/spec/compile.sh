@@ -10,11 +10,9 @@ if [[ "$?" != 0 ]]; then
     exit 1;
 fi
 
-pdflatex spec
+pdflatex -output-directory=out spec
 bibtex spec
-pdflatex spec
-pdflatex spec
-rm spec.aux
-rm spec.out
-rm spec.toc
-rm spec.log
+pdflatex -output-directory=out spec
+pdflatex -output-directory=out spec
+
+./cleanout.sh

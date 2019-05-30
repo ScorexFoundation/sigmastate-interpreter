@@ -1,24 +1,18 @@
 package sigmastate.eval
 
-import java.math.BigInteger
-
 import scala.language.implicitConversions
 import scala.language.existentials
-import org.bouncycastle.math.ec.ECPoint
-import scalan.{Nullable, MutableLazy, Lazy, RType, AVHashMap, SigmaLibrary}
+import scalan.{Nullable, MutableLazy, Lazy, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.interpreter.{CryptoConstants, CryptoFunctions}
+import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
-import sigmastate.eval._
-import sigma.util.Extensions._
-import ErgoLikeContext._
 import scalan.compilation.GraphVizConfig
 import SType._
 import scalan.RType._
@@ -28,16 +22,14 @@ import sigmastate.lang.{Terms, SourceContext}
 import scalan.staged.Slicing
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
-import sigmastate.eval.Evaluation.rtypeToSType
+import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.CollType
 import special.Types._
-import special.sigma.{GroupElementRType, TestGroupElement, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
+import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 
-import scala.collection.mutable
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
   import Context._;
@@ -54,8 +46,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import SigmaProp._;
   import Box._
   import CollOverArrayBuilder._;
-  import CostedBuilder._
-  import SizeBuilder._
   import CCostedBuilder._
   import CSizeBuilder._
   import Size._;
@@ -64,13 +54,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import SizeOption._;
   import SizePair._;
   import SizeContext._
-  import CSizeContext._
   import CSizePrim._
   import CSizePair._
   import CSizeColl._
-  import CSizeOption._
   import Costed._;
-  import CostedPrim._;
   import CCostedPrim._;
   import CostedPair._;
   import CCostedPair._;
@@ -83,15 +70,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import CCostedOption._
   import SigmaDslBuilder._
   import MonoidBuilder._
-  import MonoidBuilderInst._
   import AvlTree._
-  import Monoid._
   import IntPlusMonoid._
   import LongPlusMonoid._
   import WSpecialPredef._
   import TestSigmaDslBuilder._
   import CostModel._
-  import Liftables._
 
   override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
@@ -1696,7 +1680,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val c = opCost(v, Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
-      case neg: Negation[t] =>
+      case neg: Negation[SNumericType]@unchecked =>
         val tpe = neg.input.tpe
         val et = stypeToElem(tpe)
         val op = NumericNegate(elemToNumeric(et))(et)

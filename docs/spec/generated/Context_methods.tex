@@ -1,135 +1,6 @@
 
 \subsubsection{\lst{Context.dataInputs} method (Code 101.1)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.headers} method (Code 101.2)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Coll[Header]} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.preHeader} method (Code 101.3)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{PreHeader} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.INPUTS} method (Code 101.4)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.OUTPUTS} method (Code 101.5)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Coll[Box]} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.HEIGHT} method (Code 101.6)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.SELF} method (Code 101.7)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Box} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.selfBoxIndex} method (Code 101.8)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.LastBlockUtxoRootHash} method (Code 101.9)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.minerPubKey} method (Code 101.10)}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-  
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
-  \hline
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Context.getVar} method (Code 101.11)}
+\label{sec:type:Context:dataInputs}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -138,10 +9,222 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Byte} & \text{// } \\
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Box]} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.headers} method (Code 101.2)}
+\label{sec:type:Context:headers}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Header]} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.preHeader} method (Code 101.3)}
+\label{sec:type:Context:preHeader}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{PreHeader} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.INPUTS} method (Code 101.4)}
+\label{sec:type:Context:INPUTS}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Box]} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.OUTPUTS} method (Code 101.5)}
+\label{sec:type:Context:OUTPUTS}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Box]} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.HEIGHT} method (Code 101.6)}
+\label{sec:type:Context:HEIGHT}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.SELF} method (Code 101.7)}
+\label{sec:type:Context:SELF}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Box} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.selfBoxIndex} method (Code 101.8)}
+\label{sec:type:Context:selfBoxIndex}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.LastBlockUtxoRootHash} method (Code 101.9)}
+\label{sec:type:Context:LastBlockUtxoRootHash}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{AvlTree} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.minerPubKey} method (Code 101.10)}
+\label{sec:type:Context:minerPubKey}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Context.getVar} method (Code 101.11)}
+\label{sec:type:Context:getVar}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Context} & \text{// } \\
+\lst{arg1} & \lst{: Byte} & \text{// } \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[T]} \\
   \hline
+  
 \end{tabularx}

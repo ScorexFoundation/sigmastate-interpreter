@@ -27,6 +27,7 @@ import sigmastate.utxo._
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigma.util.Extensions.ByteOps
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -47,11 +48,11 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
-    def companion: ValueCompanion =
-      sys.error(s"Companion object is not defined for AST node ${this.getClass}")
+    def companion: ValueCompanion /*=
+      sys.error(s"Companion object is not defined for AST node ${this.getClass}")*/
 
     /** Unique id of the node class used in serialization of ErgoTree. */
-    val opCode: OpCode
+    def opCode: OpCode = companion.opCode
 
     /** The type of the value represented by this node. If the value is an operation it is
       * the type of operation result. */
@@ -97,9 +98,6 @@ object Values {
       }
   }
 
-  trait ValueCompanion extends SigmaNodeCompanion {
-  }
-
   object Value {
     type PropositionCode = Byte
 
@@ -127,6 +125,29 @@ object Values {
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
   }
 
+  trait ValueCompanion extends SigmaNodeCompanion {
+    import ValueCompanion._
+    /** Unique id of the node class used in serialization of ErgoTree. */
+    def opCode: OpCode
+
+    override def toString: Idn = s"${this.getClass.getSimpleName}(${opCode.toUByte})"
+
+    def typeName: String = this.getClass.getSimpleName.replace("$", "")
+
+    def init() {
+      if (this.opCode != 0 && _allOperations.contains(this.opCode))
+        throw sys.error(s"Operation $this already defined")
+      _allOperations += (this.opCode -> this)
+    }
+
+    init()
+
+  }
+  object ValueCompanion {
+    private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty
+    lazy val allOperations = _allOperations.toMap
+  }
+
   trait EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
@@ -146,7 +167,7 @@ object Values {
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     assert(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
     override def companion: ValueCompanion = Constant
-    override val opCode: OpCode = ConstantCode
+    override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
 
     override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
@@ -170,6 +191,7 @@ object Values {
   }
 
   object Constant extends ValueCompanion {
+    override def opCode: OpCode = ConstantCode
     def apply[S <: SType](value: S#WrappedType, tpe: S): Constant[S] = ConstantNode(value, tpe)
     def unapply[S <: SType](v: EvaluatedValue[S]): Option[(S#WrappedType, S)] = v match {
       case ConstantNode(value, tpe) => Some((value, tpe))
@@ -212,7 +234,10 @@ object Values {
   /** Placeholder for a constant in ErgoTree. Zero based index in ErgoTree.constants array. */
   case class ConstantPlaceholder[S <: SType](id: Int, override val tpe: S) extends Value[S] {
     def opType = SFunc(SInt, tpe)
-    override val opCode: OpCode = ConstantPlaceholderIndexCode
+    override def companion: ValueCompanion = ConstantPlaceholder
+  }
+  object ConstantPlaceholder extends ValueCompanion {
+    override def opCode: OpCode = ConstantPlaceholderCode
   }
 
   trait NotReadyValue[S <: SType] extends Value[S] {
@@ -229,19 +254,23 @@ object Values {
 
   case class TaggedVariableNode[T <: SType](varId: Byte, override val tpe: T)
     extends TaggedVariable[T] {
-    override val opCode: OpCode = TaggedVariableCode
+    override def companion = TaggedVariable
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
 
-  object TaggedVariable {
+  object TaggedVariable extends ValueCompanion {
+    override def opCode: OpCode = TaggedVariableCode
     def apply[T <: SType](varId: Byte, tpe: T): TaggedVariable[T] =
       TaggedVariableNode(varId, tpe)
   }
 
   case class UnitConstant() extends EvaluatedValue[SUnit.type] {
-    override val opCode = UnitConstantCode
     override def tpe = SUnit
     val value = ()
+    override def companion: ValueCompanion = UnitConstant
+  }
+  object UnitConstant extends ValueCompanion {
+    override val opCode = UnitConstantCode
   }
 
   type BoolValue = Value[SBoolean.type]
@@ -557,16 +586,13 @@ object Values {
     override def tpe = SAvlTree
   }
 
-  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] {
-
-    override val opCode: OpCode = OpCodes.GroupGeneratorCode
-
-    import CryptoConstants.dlogGroup
-
+  case object GroupGenerator extends EvaluatedValue[SGroupElement.type] with ValueCompanion {
+    override def opCode: OpCode = OpCodes.GroupGeneratorCode
     override def tpe = SGroupElement
-
-    override val value = SigmaDsl.GroupElement(dlogGroup.generator)
+    override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
+    override def companion = this
   }
+
 
   trait NotReadyValueGroupElement extends NotReadyValue[SGroupElement.type] {
     override def tpe = SGroupElement
@@ -583,8 +609,15 @@ object Values {
     }
   }
 
-  val TrueLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](true, SBoolean)
-  val FalseLeaf: Constant[SBoolean.type] = Constant[SBoolean.type](false, SBoolean)
+  object TrueLeaf extends ConstantNode[SBoolean.type](true, SBoolean) with ValueCompanion {
+    override def companion = this
+    override def opCode: OpCode = TrueCode
+  }
+
+  object FalseLeaf extends ConstantNode[SBoolean.type](false, SBoolean) with ValueCompanion {
+    override def companion = this
+    override def opCode: OpCode = FalseCode
+  }
 
   trait NotReadyValueBoolean extends NotReadyValue[SBoolean.type] {
     override def tpe = SBoolean
@@ -635,7 +668,7 @@ object Values {
           case FalseProp.opCode => FalseProp
           case TrueProp.opCode  => TrueProp
           case ProveDlogCode => dlogSerializer.parse(r)
-          case ProveDiffieHellmanTupleCode => dhtSerializer.parse(r)
+          case ProveDHTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
             val children = (0 until n).map(_ => serializer.parse(r))
@@ -661,7 +694,7 @@ object Values {
   }
 
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
-    override val opCode: OpCode = TupleCode
+    override def companion = Tuple
     override def elementType = SAny
     lazy val tpe = STuple(items.map(_.tpe))
     lazy val value = {
@@ -670,7 +703,8 @@ object Values {
     }
   }
 
-  object Tuple {
+  object Tuple extends ValueCompanion {
+    override def opCode: OpCode = TupleCode
     def apply(items: Value[SType]*): Tuple = Tuple(items.toIndexedSeq)
   }
 
@@ -678,24 +712,29 @@ object Values {
   }
 
   case class SomeValue[T <: SType](x: Value[T]) extends OptionValue[T] {
-    override val opCode = SomeValueCode
+    override def companion = SomeValue
     val tpe = SOption(x.tpe)
     def opType = SFunc(x.tpe, tpe)
   }
+  object SomeValue extends ValueCompanion {
+    override val opCode = SomeValueCode
+  }
 
   case class NoneValue[T <: SType](elemType: T) extends OptionValue[T] {
-    override val opCode = NoneValueCode
+    override def companion = NoneValue
     val tpe = SOption(elemType)
     def opType = SFunc(elemType, tpe)
+  }
+  object NoneValue extends ValueCompanion {
+    override val opCode = NoneValueCode
   }
 
   case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
-    override val opCode: OpCode =
-      if (elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]]))
-        ConcreteCollectionBooleanConstantCode
-      else
-        ConcreteCollectionCode
+    private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
+    override def companion =
+      if (isBooleanConstants) ConcreteCollectionBooleanConstant
+      else ConcreteCollection
 
     val tpe = SCollection[V](elementType)
 
@@ -705,12 +744,16 @@ object Values {
       Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
     }
   }
-  object ConcreteCollection {
+  object ConcreteCollection extends ValueCompanion {
+    override def opCode: OpCode = ConcreteCollectionCode
     def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items.toIndexedSeq, tV)
 
     def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items.toIndexedSeq, tV)
+  }
+  object ConcreteCollectionBooleanConstant extends ValueCompanion {
+    override def opCode: OpCode = ConcreteCollectionBooleanConstantCode
   }
 
   trait LazyCollection[V <: SType] extends NotReadyValue[SCollection[V]]
@@ -780,16 +823,18 @@ object Values {
                     tpeArgs: Seq[STypeVar],
                     override val rhs: SValue) extends BlockItem {
     require(id >= 0, "id must be >= 0")
-    val opCode: OpCode = if (tpeArgs.isEmpty) ValDefCode else FunDefCode
+    override def companion = if (tpeArgs.isEmpty) ValDef else FunDef
     def tpe: SType = rhs.tpe
     def isValDef: Boolean = tpeArgs.isEmpty
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
-  object ValDef {
+  object ValDef extends ValueCompanion {
+    def opCode: OpCode = ValDefCode
     def apply(id: Int, rhs: SValue): ValDef = ValDef(id, Nil, rhs)
   }
-  object FunDef {
+  object FunDef extends ValueCompanion {
+    def opCode: OpCode = FunDefCode
     def unapply(d: BlockItem): Option[(Int, Seq[STypeVar], SValue)] = d match {
       case ValDef(id, targs, rhs) if !d.isValDef => Some((id, targs, rhs))
       case _ => None
@@ -798,9 +843,12 @@ object Values {
 
   /** Special node which represents a reference to ValDef in was introduced as result of CSE. */
   case class ValUse[T <: SType](valId: Int, tpe: T) extends NotReadyValue[T] {
-    override val opCode: OpCode = ValUseCode
+    override def companion = ValUse
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
+  }
+  object ValUse extends ValueCompanion {
+    override def opCode: OpCode = ValUseCode
   }
 
   /** The order of ValDefs in the block is used to assign ids to ValUse(id) nodes
@@ -811,23 +859,26 @@ object Values {
     * in a fixed well defined order.
     */
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
-    val opCode: OpCode = BlockValueCode
+    override def companion = BlockValue
     def tpe: SType = result.tpe
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
   }
-
+  object BlockValue extends ValueCompanion {
+    override def opCode: OpCode = BlockValueCode
+  }
   /**
     * @param args parameters list, where each parameter has an id and a type.
     * @param body expression, which refers function parameters with ValUse.
     */
   case class FuncValue(args: IndexedSeq[(Int,SType)], body: Value[SType]) extends NotReadyValue[SFunc] {
+    override def companion = FuncValue
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
-    val opCode: OpCode = FuncValueCode
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(Vector(), tpe)
   }
-  object FuncValue {
+  object FuncValue extends ValueCompanion {
+    override def opCode: OpCode = FuncValueCode
     def apply(argId: Int, tArg: SType, body: SValue): FuncValue =
       FuncValue(IndexedSeq((argId,tArg)), body)
   }

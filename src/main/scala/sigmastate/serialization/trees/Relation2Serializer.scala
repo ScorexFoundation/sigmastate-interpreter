@@ -6,22 +6,31 @@ import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import scorex.util.Extensions._
-
+import sigmastate.serialization.ValueSerializer._
+import sigma.util.Extensions._
 
 case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.type]]
-(override val opCode: Byte,
+(override val opDesc: RelationCompanion,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
+  import SigmaByteWriter._
 
   override def serialize(obj: R, w: SigmaByteWriter): Unit = {
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
-    (typedRel.left, typedRel.right) match {
-      case (Constant(left, ltpe), Constant(right, rtpe)) if ltpe == SBoolean && rtpe == SBoolean =>
-        w.put(ConcreteCollectionBooleanConstantCode)
-        w.putBits(Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]))
-      case _ =>
-        w.putValue(typedRel.left)
-        w.putValue(typedRel.right)
+    cases("(left, right)") {
+      (typedRel.left, typedRel.right) match {
+        case (Constant(left, lTpe), Constant(right, rTpe)) if lTpe == SBoolean && rTpe == SBoolean =>
+          when(1, "(Constant(l, Boolean), Constant(r, Boolean))") {
+            w.put(ConcreteCollectionBooleanConstantCode, ArgInfo("opCode", s"always contains OpCode ${ConcreteCollectionBooleanConstantCode.toUByte}"))
+            w.putBits(
+              Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]),
+              maxBitsInfo("(l,r)", 2, "two higher bits in a byte"))
+          }
+        case _ =>
+          otherwise {
+            w.putValue(typedRel.left, opDesc.argInfos(0))
+            w.putValue(typedRel.right, opDesc.argInfos(1))
+          }
+      }
     }
   }
 

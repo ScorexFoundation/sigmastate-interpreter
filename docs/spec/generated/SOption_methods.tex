@@ -1,146 +1,228 @@
 
 \subsubsection{\lst{SOption.isEmpty} method (Code 36.1)}
+\label{sec:type:SOption:isEmpty}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Option[T]} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
+  
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.isDefined} method (Code 36.2)}
+\label{sec:type:SOption:isDefined}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} otherwise. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionIsDefined]{\lst{OptionIsDefined}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.get} method (Code 36.3)}
+\label{sec:type:SOption:get}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the option's value. The option must be nonempty. Throws exception if the option is empty. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{T} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGet]{\lst{OptionGet}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.getOrElse} method (Code 36.4)}
+\label{sec:type:SOption:getOrElse}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the option's value if the option is nonempty, otherwise
+return the result of evaluating \lst{default}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: T} & \text{// } \\
+         \lst{default} & \lst{: T} & \text{// the default value} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{T} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGetOrElse]{\lst{OptionGetOrElse}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.fold} method (Code 36.5)}
+\label{sec:type:SOption:fold}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the result of applying \lst{f} to this option's
+  value if the option is nonempty.  Otherwise, evaluates
+  expression \lst{ifEmpty}.
+  This is equivalent to \lst{option map f getOrElse ifEmpty}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: R} & \text{// } \\
-\lst{arg1} & \lst{: (T) => R} & \text{// } \\
+         \lst{ifEmpty} & \lst{: R} & \text{// the expression to evaluate if empty} \\
+\lst{f} & \lst{: (T) => R} & \text{// the function to apply if nonempty} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{R} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.toColl} method (Code 36.6)}
+\label{sec:type:SOption:toColl}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Convert this Option to a collection with zero or one element. \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
   \hline
   \bf{Result} & \lst{Coll[T]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.map} method (Code 36.7)}
+\label{sec:type:SOption:map}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns a \lst{Some} containing the result of applying \lst{f} to this option's
+   value if this option is nonempty.
+   Otherwise return \lst{None}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => R} & \text{// } \\
+         \lst{f} & \lst{: (T) => R} & \text{// the function to apply} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[R]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.filter} method (Code 36.8)}
+\label{sec:type:SOption:filter}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns this option if it is nonempty and applying the predicate \lst{p} to
+  this option's value returns true. Otherwise, return \lst{None}.
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => Boolean} & \text{// } \\
+         \lst{p} & \lst{: (T) => Boolean} & \text{// the predicate used for testing} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[T]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{SOption.flatMap} method (Code 36.9)}
+\label{sec:type:SOption:flatMap}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns the result of applying \lst{f} to this option's value if
+   this option is nonempty.
+   Returns \lst{None} if this option is empty.
+   Slightly different from \lst{map} in that \lst{f} is expected to
+   return an option (which could be \lst{one}).
+         \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: (T) => Option[R]} & \text{// } \\
+         \lst{f} & \lst{: (T) => Option[R]} & \text{// the function to apply} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[R]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+       
 \end{tabularx}

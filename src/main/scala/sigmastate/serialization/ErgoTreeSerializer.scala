@@ -64,7 +64,7 @@ import scala.collection.mutable
   *   if vN < vS then
   *     if we have Right(tree)
   *       the script is executed
-  *     if Left(UnparsedErgoTree()) then check soft fork and either execute of throw
+  *     if Left(UnparsedErgoTree()) then check soft fork and either execute or throw
   *
   * Proposition:
   *   CannotSkipScriptException can only happen on < 10% of the nodes, which is safe for consensus.
@@ -224,6 +224,7 @@ class ErgoTreeSerializer {
     w.putBytes(treeBytes)
     w.toBytes
   }
+
 }
 
 object ErgoTreeSerializer {

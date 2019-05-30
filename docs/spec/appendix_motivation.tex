@@ -1,0 +1,127 @@
+\section{Motivations}
+\label{sec:appendix:motivation}
+
+\subsection{Type Serialization format rationale}
+\label{sec:appendix:motivation:type}
+
+Some operations of \ASDag have type parameters, for which concrete types
+should be specified (since \ASDag is monomorphic IR). When the operation
+(such as \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}}) is serialized those types should also be
+serialized as part of operation. The following encoding is designed to
+minimize a number of bytes required to represent type in the serialization
+format of \ASDag.
+
+In most cases type term serialises into a single byte. In the intermediate
+representation of ErgoTree each type is represented by a tree of nodes where
+leaves are primitive types and other nodes are type constructors.
+Simple (but sub-optimal) way to serialize a type would be to give each
+primitive type and each type constructor a unique type code. Then, to
+serialize a node, we need to emit its code and then perform recursive descent
+to serialize all children. 
+However, to save storage space, we use special encoding schema to save bytes
+for the types that are used more often.
+
+We assume the most frequently used types are:
+\begin{itemize}
+    \item primitive types (\lst{Int, Byte, Boolean, BigInt, GroupElement,
+    Box, AvlTree})
+    \item  Collections of primitive types (\lst{Coll[Byte]} etc)
+    \item  Options of primitive types (\lst{Option[Int]} etc.)
+    \item Nested arrays of primitive types (\lst{Coll[Coll[Int]]} etc.)
+    \item Functions of primitive types (\lst{Box => Boolean} etc.)
+    \item First biased pair of types (\lst{(_, Int)} when we know the first
+    component is a primitive type).
+    \item Second biased pair of types (\lst{(Int, _)} when we know the second
+    component is a primitive type)
+    \item Symmetric pair of types (\lst{(Int, Int)} when we know both types are
+    the same)
+\end{itemize}
+
+All the types above should be represented in an optimized way (preferable by a single byte).
+For other types, we do recursive descent down the type tree as it is defined in section~\ref{sec:ser:type}
+
+\subsection{Constant Segregation rationale}
+
+\subsubsection{Massive script validation}
+
+Consider a transaction \lst{tx} which have \lst{INPUTS} collection of boxes to
+spend. Every input box can have a script protecting it (\lst{propostionBytes}
+property). This script should be executed in a context of the current
+transaction. The simplest transaction have 1 input box. Thus if we want to
+have a sustained block validation of 1000 transactions per second we need to
+be able to validate 1000 scripts per second.
+
+For every script (of input \lst{box}) the following is done in order to
+validate it:
+\begin{enumerate}
+    \item Context is created with \lst{SELF} = box
+    \item The script is deserialized into ErgoTree 
+    \item ErgoTree is traversed to build costGraph and calcGraph, two graphs for
+    cost estimation function and script calculation function.
+    \item Cost estimation is computed by evaluating costGraph with current context data
+    \item If cost and data size limits are not exceeded, calcGraph is
+    evaluated using context data to obtain sigma proposition (see
+    \hyperref[sec:type:SigmaProp]{\lst{SigmaProp}})
+    \item Verification procedure is executed
+\end{enumerate}
+
+\subsubsection{Potential for Script processing optimization}
+
+Before an \langname contract can be stored in a blockchain it should be first
+compiled from its source text into ErgoTree and then serialized into byte
+array.
+
+Because the language is purely functional and IR is graph-based, the
+compilation process has an effect of normalization/unification. This means
+that different original scripts may have identical ErgoTrees and as the
+result identical serialized bytes.
+
+Because of normalization, and also because of script reusability, the number
+of conceptually (or logically) different scripts is much less than the number
+of individual scripts in a blockchain. For example we may have 1000s of
+different scripts in a blockchain with millions of boxes.
+
+The average reusability ratio is 1000 in this case. And even those different
+scripts may have different usage frequency. Having big reusability ratio we
+can optimize script evaluation by performing steps 1 - 4 only once per unique
+script.
+
+The compiled calcGraph can be cached in \lst{Map[Array[Byte], Context =>
+SigmaBoolean]}. Every script extracted from an input box can be used as a key
+in this map to obtain ready to execute graph.
+
+However, we have a problem with constants embedded in contracts. There is one
+obstacle to the optimization by caching. In many cases it is very natural to
+embed constants in the script body, most notable scenario is when public keys
+are embedded. As result two functionally identical scripts may serialize to
+different byte arrays because they have different embedded constants.
+
+\subsubsection{Constant-less ErgoTree}
+
+The solution to the problem with embedded constants is simple, we don't need
+to embed constants. Each constant in the body of \ASDag can be replaced
+with indexed placeholder (see \hyperref[sec:appendix:primops:ConstantPlaceholder]{\lst{ConstantPlaceholder}}).
+Each placeholder have an index field. The index of the placeholder is
+assigned by breadth-first topological order of the graph traversal.
+
+The transformation is part of compilation and is performed ahead of time.
+Each \ASDag have an array of all the constants extracted from its body. Each
+placeholder refers to the constant by the constant's index in the array.
+
+Thus the format of serialized script is shown in Figure~\ref{fig:ser:ergotree} which contains:
+\begin{enumerate}
+    \item number of constants
+    \item constants collection
+    \item script expression with placeholders
+\end{enumerate}
+
+The constants collection contains serialized constant data (using
+ConstantSerializer) one after another.
+The script expression is a serialized ErgoTree with placeholders.
+
+Using this new script format we can use script expression part as a key in
+the cache. An observation is that after the constants are extracted, what
+remains is a template. Thus instead of applying steps 1-4 to
+\emph{constant-full} scripts we can apply them to \emph{constant-less}
+templates. Before applying steps 4 and 5 we need to bind placeholders with
+actual values taken from the cconstants collection.

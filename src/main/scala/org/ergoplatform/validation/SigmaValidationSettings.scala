@@ -21,7 +21,7 @@ package org.ergoplatform.validation
   * RuleStatus type. Each descendant class represent a particular change in the
   * rule status. Rule ids are used as keys of the status values stored in the
   * block extension section. RuleStatus instances are deserialized from the
-  * block extension values. Deserialized (ruleId,status) pairs are joined with
+  * block extension values. Deserialized (ruleId, status) pairs are joined with
   * the (ruleId,status) pairs in `currentSettings`, and for matching ruleIds the
   * default statues stored in `currentSettings` are replaced with the new
   * statuses obtained from the blockchain. Deserialized (ruleId,status) pairs

@@ -6,9 +6,10 @@ import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
 import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ProverResult, ContextExtension, Interpreter}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization._
 import sigmastate.lang.Terms._
@@ -90,11 +91,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   val Height2Code = (LastConstantCode + 56).toByte
   /** Same as Height, but new opcode to test soft-fork */
-  case object Height2 extends NotReadyValueInt {
+  case object Height2 extends NotReadyValueInt with ValueCompanion {
+    override def companion = this
     override val opCode: OpCode = Height2Code // use reserved code
     def opType = SFunc(SContext, SInt)
   }
-  val Height2Ser = CaseObjectSerialization(Height2Code, Height2)
+  val Height2Ser = CaseObjectSerialization(Height2, Height2)
 
   // prepare soft-fork settings for v2
   val v2vs = vs.updated(CheckValidOpCode.id, ChangedRule(Array(Height2Code)))

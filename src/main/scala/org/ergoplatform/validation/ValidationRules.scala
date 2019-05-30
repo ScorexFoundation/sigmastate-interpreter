@@ -3,12 +3,12 @@ package org.ergoplatform.validation
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.Values.{Value, SValue, IntValue, ErgoTree}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{SCollection, CheckTypeWithMethods, SType, CheckAndGetMethod}
+import sigmastate.{CheckAndGetMethod, CheckTypeWithMethods, SCollection, SType}
 import sigma.util.Extensions.ByteOps
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
@@ -36,20 +36,16 @@ case class ValidationRule(
     * @see ValidationRules
     */
   protected def validate[T](
-      condition: => Boolean,
-      cause: => Throwable, args: Seq[Any], block: => T): T = {
-    val status = ValidationRules.currentSettings.getStatus(this.id)
-    status match {
+        condition: => Boolean,
+        cause: => Throwable, args: Seq[Any], block: => T): T = {
+    ValidationRules.currentSettings.getStatus(this.id) match {
       case None =>
         throw new SigmaException(s"ValidationRule $this not found in validation settings")
       case Some(DisabledRule) =>
         block  // if the rule is disabled we still need to execute the block of code
-      case Some(status) =>
-        if (condition)
-          block
-        else {
-          throw new ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
-        }
+      case Some(_) =>
+        if (condition) block
+        else throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
     }
   }
 }
@@ -111,7 +107,6 @@ object ValidationRules {
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
-      def msg = s"Invalid cost function $costF"
       def args = Seq(costF)
       lazy val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
       validate(verification.isSuccess,
@@ -123,7 +118,6 @@ object ValidationRules {
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
-      def msg = s"Invalid calc function $calcF"
       def args = Seq(calcF)
       lazy val verification = ctx.verifyIsProven(calcF)
       validate(verification.isSuccess,
@@ -153,7 +147,7 @@ object ValidationRules {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_])(block: => T): T = {
       def msg = s"Invalid tuple type $e"
       lazy val condition = e match {
-        case pe: ctx.PairElem[_,_] => true
+        case _: ctx.PairElem[_,_] => true
         case _ => false
       }
       validate(condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
