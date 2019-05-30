@@ -1,6 +1,7 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoConstants, ValidationSettings}
+import org.ergoplatform.ErgoConstants
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.crypto.hash.{Blake2b256, CryptographicHash32, Sha256}
 import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.SOption.SIntOption
