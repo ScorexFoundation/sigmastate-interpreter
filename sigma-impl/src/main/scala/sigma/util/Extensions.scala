@@ -3,8 +3,8 @@ package sigma.util
 import java.math.BigInteger
 import java.nio.ByteBuffer
 
-import special.collection.{Coll, Builder}
-import com.google.common.primitives.Ints
+import special.collection.{Builder, Coll}
+import com.google.common.primitives.{Ints, Longs, Shorts}
 import scalan.{Nullable, RType}
 
 import scala.language.higherKinds
@@ -47,7 +47,7 @@ object Extensions {
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
       * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
-      * @since 2.0
+      * @since 2.1
       */
     def toBytes: Coll[Byte] = Builder.DefaultCollBuilder.fromItems(b)
 
@@ -95,6 +95,13 @@ object Extensions {
         throw new ArithmeticException("Short overflow")
       r.toShort
     }
+
+    /** Returns a big-endian representation of this Int in a collection of bytes.
+      * For example, the Int value {@code 0x12131415} would yield the
+      * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
+      * @since 2.1
+      */
+    def toBytes: Coll[Byte] = Builder.DefaultCollBuilder.fromArray(Shorts.toByteArray(x))
   }
 
   implicit class IntOps(val x: Int) extends AnyVal {
@@ -110,10 +117,10 @@ object Extensions {
       x.toShort
     }
 
-    /** Returns a big-endian representation of this Int in a collection of bytes.
+/** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
       * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
-      * @since 2.0
+      * @since 2.1
       */
     def toBytes: Coll[Byte] = Builder.DefaultCollBuilder.fromArray(Ints.toByteArray(x))
 
@@ -152,6 +159,13 @@ object Extensions {
         throw new ArithmeticException("Int overflow")
       x.toInt
     }
+
+    /** Returns a big-endian representation of this Int in a collection of bytes.
+      * For example, the Int value {@code 0x12131415} would yield the
+      * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
+      * @since 2.0
+      */
+    def toBytes: Coll[Byte] = Builder.DefaultCollBuilder.fromArray(Longs.toByteArray(x))
   }
 
   implicit class BigIntegerOps(val x: BigInteger) extends AnyVal {

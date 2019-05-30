@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoLikeContext
-import scalan.{SigmaLibrary, MutableLazy}
+import scalan.{MutableLazy, SigmaLibrary}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
@@ -627,4 +627,56 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object SigmaDslBuilderCoster extends CostingHandler[SigmaDslBuilder]((obj, m, costedArgs, args) => new SigmaDslBuilderCoster(obj, m, costedArgs, args))
 
+  object SNumericTypeCoster extends CostingHandler[AnyVal]((obj, m, costedArgs, args) =>
+    elemToSType(obj.value.elem ) match {
+      case SByte => new ByteCoster(obj.asRep[Costed[Byte]], m, costedArgs, args)
+      case SShort => new ShortCoster(obj.asRep[Costed[Short]], m, costedArgs, args)
+      case SInt => new IntCoster(obj.asRep[Costed[Int]], m, costedArgs, args)
+      case SLong => new LongCoster(obj.asRep[Costed[Long]], m, costedArgs, args)
+      case t => !!!(s"Missing coster for $t}")
+    })
+
+  /** Costing rules for SNumericType methods for Long */
+  class LongCoster(obj: RCosted[Long], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 8, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Int */
+  class IntCoster(obj: RCosted[Int], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(4, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 4, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Short */
+  class ShortCoster(obj: RCosted[Short], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(6, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 2, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Byte */
+  class ByteCoster(obj: RCosted[Byte], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(7, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 1, cost)
+    }
+  }
 }
