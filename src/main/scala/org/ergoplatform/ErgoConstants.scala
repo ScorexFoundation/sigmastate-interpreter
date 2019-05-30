@@ -24,8 +24,8 @@ object ErgoConstants {
     "Max bytearray length") {
   }
 
-  object MaxTokens extends SizeConstant[Int](255, 6,
-    "Tokens count should not be greater than provided value") {
+  object MaxBoxAdditionalTokens extends SizeConstant[Byte](4, 6,
+    "Tokens count in the box should not be greater than provided value") {
   }
 
   object MaxRegisters extends SizeConstant[Int](10, 7,
@@ -56,7 +56,7 @@ object ErgoConstants {
     MaxInputSize,
     MaxTreeDepth,
     MaxByteArrayLength,
-    MaxTokens,
+    MaxBoxAdditionalTokens,
     MaxRegisters,
     MaxBoxSize,
     MaxBigIntSizeInBytes,

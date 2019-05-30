@@ -105,6 +105,8 @@ object ErgoBox {
   val STokensRegType = SCollection(STokenType)
   val SReferenceRegType: STuple = ExtractCreationInfo.ResultType
 
+  val MaxTokens: Byte = ErgoConstants.MaxBoxAdditionalTokens.get
+
   type Amount = Long
 
   trait RegisterId {
