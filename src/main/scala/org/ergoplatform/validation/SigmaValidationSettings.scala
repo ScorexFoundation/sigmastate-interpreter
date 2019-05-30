@@ -39,7 +39,7 @@ package org.ergoplatform.validation
   * code.
   * @see SoftForkWhenCodeAdded
   */
-abstract class SigmaValidationSettings {
+abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule, RuleStatus))] {
   def get(id: Short): Option[(ValidationRule, RuleStatus)]
   def getStatus(id: Short): Option[RuleStatus]
   def updated(id: Short, newStatus: RuleStatus): SigmaValidationSettings
@@ -55,12 +55,22 @@ abstract class SigmaValidationSettings {
 }
 
 /** Default representation of validation settings. */
-sealed class MapSigmaValidationSettings(map: Map[Short, (ValidationRule, RuleStatus)]) extends SigmaValidationSettings {
+sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationRule, RuleStatus)]) extends SigmaValidationSettings {
+  override def iterator: Iterator[(Short, (ValidationRule, RuleStatus))] = map.iterator
   override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
   override def getStatus(id: Short): Option[RuleStatus] = map.get(id).map(_._2)
   override def updated(id: Short, newStatus: RuleStatus): MapSigmaValidationSettings = {
     val (rule,_) = map(id)
     new MapSigmaValidationSettings(map.updated(id, (rule, newStatus)))
   }
+
+  override def canEqual(that: Any): Boolean = that.isInstanceOf[MapSigmaValidationSettings]
+
+  override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) || (obj match {
+    case that: MapSigmaValidationSettings => map == that.map
+    case _ => false
+  })
+
+  override def hashCode(): Int = map.hashCode()
 }
 
