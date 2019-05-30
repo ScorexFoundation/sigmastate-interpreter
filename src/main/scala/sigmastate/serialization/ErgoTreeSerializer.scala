@@ -1,6 +1,5 @@
 package sigmastate.serialization
 
-
 import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
 import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
 import sigmastate.SType
