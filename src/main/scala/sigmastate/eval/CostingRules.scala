@@ -629,16 +629,16 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object SNumericTypeCoster extends CostingHandler[AnyVal]((obj, m, costedArgs, args) =>
     elemToSType(obj.value.elem ) match {
-      case SByte => new ByteCoster(obj, m, costedArgs, args)
-      case SShort => new ShortCoster(obj, m, costedArgs, args)
-      case SInt => new IntCoster(obj, m, costedArgs, args)
-      case SLong => new LongCoster(obj, m, costedArgs, args)
+      case SByte => new ByteCoster(obj.asRep[Costed[Byte]], m, costedArgs, args)
+      case SShort => new ShortCoster(obj.asRep[Costed[Short]], m, costedArgs, args)
+      case SInt => new IntCoster(obj.asRep[Costed[Int]], m, costedArgs, args)
+      case SLong => new LongCoster(obj.asRep[Costed[Long]], m, costedArgs, args)
       case t => !!!(s"Missing coster for $t}")
     })
 
   /** Costing rules for SNumericType methods for Long */
-  class LongCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
-    extends Coster[AnyVal](obj, method, costedArgs, args) {
+  class LongCoster(obj: RCosted[Long], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
     def toBytes: RCostedColl[Byte] = {
       val inputC = asRep[Costed[Long]](obj)
       val res = sigmaDslBuilder.longToByteArray(inputC.value)
@@ -648,8 +648,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   /** Costing rules for SNumericType methods for Int */
-  class IntCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
-    extends Coster[AnyVal](obj, method, costedArgs, args) {
+  class IntCoster(obj: RCosted[Int], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
     def toBytes: RCostedColl[Byte] = {
       val inputC = asRep[Costed[Long]](obj)
       val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(4, 9)
@@ -659,8 +659,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   /** Costing rules for SNumericType methods for Short */
-  class ShortCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
-    extends Coster[AnyVal](obj, method, costedArgs, args) {
+  class ShortCoster(obj: RCosted[Short], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
     def toBytes: RCostedColl[Byte] = {
       val inputC = asRep[Costed[Long]](obj)
       val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(6, 9)
@@ -670,8 +670,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   /** Costing rules for SNumericType methods for Byte */
-  class ByteCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
-    extends Coster[AnyVal](obj, method, costedArgs, args) {
+  class ByteCoster(obj: RCosted[Byte], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj.asRep[Costed[AnyVal]], method, costedArgs, args) {
     def toBytes: RCostedColl[Byte] = {
       val inputC = asRep[Costed[Long]](obj)
       val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(7, 9)
