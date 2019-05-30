@@ -629,6 +629,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object SNumericTypeCoster extends CostingHandler[AnyVal]((obj, m, costedArgs, args) =>
     elemToSType(obj.value.elem ) match {
+      case SByte => new ByteCoster(obj, m, costedArgs, args)
+      case SShort => new ShortCoster(obj, m, costedArgs, args)
+      case SInt => new IntCoster(obj, m, costedArgs, args)
       case SLong => new LongCoster(obj, m, costedArgs, args)
       case t => !!!(s"Missing coster for $t}")
     })
@@ -641,6 +644,39 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val res = sigmaDslBuilder.longToByteArray(inputC.value)
       val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
       mkCostedColl(res, 8, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Int */
+  class IntCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj, method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(4, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 4, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Short */
+  class ShortCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj, method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(6, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 2, cost)
+    }
+  }
+
+  /** Costing rules for SNumericType methods for Byte */
+  class ByteCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj, method, costedArgs, args) {
+    def toBytes: RCostedColl[Byte] = {
+      val inputC = asRep[Costed[Long]](obj)
+      val res = sigmaDslBuilder.longToByteArray(inputC.value).slice(7, 9)
+      val cost = opCost(res, Seq(inputC.cost), selectFieldCost)
+      mkCostedColl(res, 1, cost)
     }
   }
 }

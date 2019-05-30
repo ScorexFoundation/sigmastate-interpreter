@@ -96,14 +96,15 @@ class SigmaDslTest extends PropSpec
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
 
-    //TODO soft-fork: for new 4 operations below
     lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
+    //TODO soft-fork: for new 3 operations below
     lazy val toBits = checkEq(func[Byte,Coll[Boolean]]("{ (x: Byte) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[Byte,Byte]("{ (x: Byte) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
 
     forAll { x: Byte =>
       Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
+      toBytes(x)
     }
   }
 
@@ -127,7 +128,8 @@ class SigmaDslTest extends PropSpec
         toShort(x)
       }
       Seq(toInt, toLong, toBigInt).foreach(_(x))
-      //TODO soft-fork: toBytes, toBits, toAbs
+      toBytes(x)
+      //TODO soft-fork: toBits, toAbs
     }
     forAll { x: (Int, Int) =>
       //TODO soft-fork: compareTo(x)
@@ -151,7 +153,8 @@ class SigmaDslTest extends PropSpec
         toByte(x)
       }
       Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
-      //TODO soft-fork: toBytes, toBits, toAbs
+      toBytes(x)
+      //TODO soft-fork: toBits, toAbs
     }
     forAll { x: (Short, Short) =>
       //TODO soft-fork: compareTo(x)
