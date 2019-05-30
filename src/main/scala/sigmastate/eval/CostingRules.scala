@@ -627,9 +627,15 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   object SigmaDslBuilderCoster extends CostingHandler[SigmaDslBuilder]((obj, m, costedArgs, args) => new SigmaDslBuilderCoster(obj, m, costedArgs, args))
 
+  object SNumericTypeCoster extends CostingHandler[AnyVal]((obj, m, costedArgs, args) =>
+    elemToSType(obj.value.elem ) match {
+      case SLong => new LongCoster(obj, m, costedArgs, args)
+      case t => !!!(s"Missing coster for $t}")
+    })
+
   /** Costing rules for SNumericType methods for Long */
-  class LongCoster(obj: RCosted[Long], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
-    extends Coster[Long](obj, method, costedArgs, args) {
+  class LongCoster(obj: RCosted[AnyVal], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym])
+    extends Coster[AnyVal](obj, method, costedArgs, args) {
     def toBytes: RCostedColl[Byte] = {
       val inputC = asRep[Costed[Long]](obj)
       val res = sigmaDslBuilder.longToByteArray(inputC.value)
@@ -637,7 +643,4 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       mkCostedColl(res, 8, cost)
     }
   }
-
-  object LongCoster extends CostingHandler[Long]((obj, m, costedArgs, args) => new LongCoster(obj, m, costedArgs, args))
-
 }

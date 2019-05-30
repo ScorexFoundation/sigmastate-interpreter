@@ -540,6 +540,7 @@ object SNumericType extends STypeCompanion {
           """.stripMargin)
   )
   val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
+  override val coster = Some(Coster(_.SNumericTypeCoster))
 }
 
 trait SLogical extends SType {
@@ -655,7 +656,6 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
     case l: Long => l
     case _ => sys.error(s"Cannot downcast value $v to the type $this")
   }
-  override val coster = Some(Coster(_.LongCoster))
 }
 
 /** Type of 256 bit integet values. Implemented using [[java.math.BigInteger]]. */
