@@ -11,15 +11,14 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, PreHeader, Header}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import sigmastate.SType._
 import scalan.RType._
-import special.sigma.{AnyValue, Box, PreHeader, Header}
-import special.sigma.{Header, Box, AnyValue, PreHeader}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import SType._
 import RType._
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
-import special.sigma.Extensions._
 
 import scala.util.Try
 

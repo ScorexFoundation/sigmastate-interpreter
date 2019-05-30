@@ -3,12 +3,12 @@ package org.ergoplatform.validation
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.Values.{Value, SValue, IntValue, ErgoTree}
-import sigmastate.serialization.{ValueSerializer, OpCodes}
+import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
+import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
-import sigmastate.{SCollection, CheckTypeWithMethods, SType, CheckAndGetMethod}
+import sigmastate.{CheckAndGetMethod, CheckTypeWithMethods, SCollection, SType}
 import sigma.util.Extensions.ByteOps
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.

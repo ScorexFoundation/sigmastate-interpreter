@@ -18,9 +18,9 @@ object RuleStatusSerializer extends SigmaSerializer[RuleStatus, RuleStatus] {
   /** The general format for RuleStatuses
     * field      | Format  | #bytes         |  Description
     * ----------------------------------------------------------------------
-    * dataSize   | UShort  | 1..2 bytes     | number of bytes for  dataBytes
+    * dataSize   | UShort  | 1..2 bytes     | number of bytes for dataBytes
     * statusCode | Byte    | 1 byte         | code of the status type
-    * dataBytes  |  Bytes  | dataSize bytes | serialized byte if status value
+    * dataBytes  | Bytes   | dataSize bytes | serialized byte if status value
     */
   override def serialize(status: RuleStatus, w: SigmaByteWriter): Unit = status match {
     case EnabledRule | DisabledRule =>
