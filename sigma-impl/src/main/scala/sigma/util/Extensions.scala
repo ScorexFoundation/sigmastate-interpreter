@@ -47,7 +47,7 @@ object Extensions {
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
       * byte array {@code {0x12, 0x13, 0x14, 0x15}}.
-      * @since 2.0
+      * @since 2.1
       */
     def toBytes: Coll[Byte] = Builder.DefaultCollBuilder.fromItems(b)
 
