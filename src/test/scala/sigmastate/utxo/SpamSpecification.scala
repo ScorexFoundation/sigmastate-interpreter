@@ -85,7 +85,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
 
-    val bigSubScript = (1 to 100).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
+    val bigSubScript = (1 to 59).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
     }
 

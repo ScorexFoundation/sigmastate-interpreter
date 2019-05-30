@@ -142,7 +142,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
       }
   }
 
-  def additionalTokensGen(cnt: Byte): Seq[Gen[(Digest32, Long)]] =
+  def additionalTokensGen(cnt: Int): Seq[Gen[(Digest32, Long)]] =
     (0 until cnt).map { _ =>
       for {
         id <- Digest32 @@ boxIdGen
@@ -259,7 +259,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     tId <- Gen.listOfN(32, arbByte.arbitrary)
     boxId <- unsignedShortGen
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoConstants.MaxTokens.get)
+    tokensCount <- Gen.chooseNum[Int](0, ErgoConstants.MaxTokens.get)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
@@ -272,7 +272,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoConstants.MaxTokens.get)
+    tokensCount <- Gen.chooseNum[Int](0, ErgoConstants.MaxTokens.get)
     tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- Gen.chooseNum(0, 100000)
