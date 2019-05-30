@@ -3,7 +3,7 @@ package sigmastate.serialization
 import java.nio.ByteBuffer
 
 import org.ergoplatform.ErgoConstants
-import org.ergoplatform.ValidationSettings
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
