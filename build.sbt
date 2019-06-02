@@ -164,7 +164,7 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
     .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
       libraryDependencies ++= Seq(
-        specialCommon, meta, libraryapi, macroCompat, scrypto, bouncycastleBcprov
+        specialCommon, libraryapi, macroCompat, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
