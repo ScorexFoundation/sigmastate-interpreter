@@ -38,11 +38,13 @@ class CostingSpecification extends SigmaTestingData {
   val avlTreeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags.AllOperationsAllowed, 32, None)
   val avlTree: AvlTree = CAvlTree(avlTreeData)
 
-  val env: ScriptEnv = Map(
+  lazy val env: ScriptEnv = Map(
     ScriptNameProp -> s"filename_verify",
     "key1" -> key1,
     "keys" -> keys,
-    "lookupProof" -> lookupProof
+    "lookupProof" -> lookupProof,
+    "pkA" -> pkA,
+    "pkB" -> pkB,
   )
 
   val extension: ContextExtension = ContextExtension(Map(
@@ -105,6 +107,52 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
+  }
+
+  property("atLeast costs") {
+    val concrCollCost = proveDlogEvalCost
+    cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }") shouldBe
+      (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + constCost)
+  }
+
+  property("allZK costs") {
+    val concrCollCost = proveDlogEvalCost
+    cost("{ pkA && pkB }") shouldBe (concrCollCost + sigmaAndCost * 2)
+  }
+
+  property("anyZK costs") {
+    val concrCollCost = proveDlogEvalCost
+    cost("{ pkA || pkB }") shouldBe (concrCollCost + sigmaOrCost * 2)
+  }
+
+  property("blake2b256 costs") {
+    cost("{ blake2b256(key1).size > 0 }") shouldBe (constCost + hashPerKb + LengthGTConstCost)
+  }
+
+  property("sha256 costs") {
+    cost("{ sha256(key1).size > 0 }") shouldBe (constCost + hashPerKb + LengthGTConstCost)
+  }
+
+  property("byteArrayToBigInt") {
+    cost("{ byteArrayToBigInt(Coll[Byte](1.toByte)) > 0 }") shouldBe
+      (constCost // byte const
+        + concreteCollCost // concrete collection
+        + constCost * 1 // build from array cost
+        + castOp + newBigIntPerItem + comparisonBigInt + constCost)
+  }
+
+  property("byteArrayToLong") {
+    cost("{ byteArrayToLong(Coll[Byte](1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte)) > 0 }") shouldBe
+      (constCost // byte const
+        + concreteCollCost // concrete collection
+        + constCost * 8 // build from array cost
+        + castOp + GTConstCost)
+  }
+
+  property("longToByteArray") {
+    cost("{ longToByteArray(1L).size > 0 }") shouldBe (constCost + castOp + LengthGTConstCost)
   }
 
   property("SELF box operations cost") {
