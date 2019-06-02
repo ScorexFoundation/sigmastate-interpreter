@@ -1,9 +1,7 @@
 package sigmastate.utils
 
 import scalan.util.FileUtil
-import scalan.meta.PrintExtensions._
-import sigmastate.serialization.OpCodes.OpCode
-import sigma.util.Extensions.ByteOps
+import scalan.util.PrintExtensions._
 
 object GenPredefFuncsApp extends SpecGen {
 
