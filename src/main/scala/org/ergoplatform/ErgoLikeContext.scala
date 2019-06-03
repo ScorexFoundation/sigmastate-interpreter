@@ -108,7 +108,7 @@ object ErgoLikeContext {
   val dummyPreHeader: PreHeader = null
 
   /** Maximimum number of headers in `headers` collection of the context. */
-  val MaxHeaders = 10
+  val MaxHeaders = ErgoConstants.MaxHeaders.get
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,

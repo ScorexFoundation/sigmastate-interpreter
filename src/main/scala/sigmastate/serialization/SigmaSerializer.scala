@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import org.ergoplatform.ErgoConstants
 import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
@@ -12,8 +13,8 @@ object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = 1024 * 1024 * 1
-  val MaxTreeDepth: Int = 110
+  val MaxInputSize: Int = ErgoConstants.MaxInputSize.get
+  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
