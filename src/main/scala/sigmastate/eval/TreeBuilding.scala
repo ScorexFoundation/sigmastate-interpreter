@@ -266,7 +266,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym).asCollection[SType]
-        val colTpe = col.tpe // elemToSType(colSym.elem).asCollection
+        val colTpe = col.tpe
         val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
         val typeSubst = (method, args) match {
           case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
