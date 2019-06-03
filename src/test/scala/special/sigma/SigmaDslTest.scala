@@ -107,7 +107,6 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-
   property("Int methods equivalence") {
     val toByte = checkEq(func[Int,Byte]("{ (x: Int) => x.toByte }"))(x => x.toByte)
     val toShort = checkEq(func[Int,Short]("{ (x: Int) => x.toShort }"))(x => x.toShort)
