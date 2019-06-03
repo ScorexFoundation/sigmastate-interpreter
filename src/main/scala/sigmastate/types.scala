@@ -708,15 +708,13 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-  protected override def getMethods() = super.getMethods()
-  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ++ Seq(
+  protected override def getMethods() = super.getMethods() ++ Seq(
     ModQMethod,
     PlusModQMethod,
     MinusModQMethod,
-    MultModQMethod,
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // MultModQMethod,
   )
-  */
 }
 
 /** NOTE: this descriptor both type and type companion */
@@ -1034,10 +1032,11 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         """.stripMargin,
         ArgInfo("p", "the predicate used to test elements."))
 
-  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9, Some {
+  val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
+  .withIRInfo({
     case (builder, obj, _, Seq(xs), _) =>
       builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
-  }, None)
+  })
       .withInfo(Append, "Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)",
         ArgInfo("other", "the collection to append at the end of this"))
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
@@ -1424,9 +1423,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
     SMethod(this, Id, SFunc(SBox, SByteArray), 5)
         .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
     creationInfoMethod,
-    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     getRegMethod,
-    */
     tokensMethod
   ) ++ registers(8)
   override val coster = Some(Coster(_.BoxCoster))
