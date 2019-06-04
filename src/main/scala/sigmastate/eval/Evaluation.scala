@@ -125,6 +125,48 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     UpcastCode,
     // OpCodeExtra
     OpCostCode,
+    PerKbCostOfCode,
+    CastCode,
+    IntPlusMonoidCode,
+    ThunkDefCode,
+    SCMInputsCode,
+    SCMOutputsCode,
+    SCMDataInputsCode,
+    SCMSelfBoxCode,
+    SCMLastBlockUtxoRootHashCode,
+    SCMHeadersCode,
+    SCMPreHeaderCode,
+    SCMGetVarCode,
+    SBMPropositionBytesCode,
+    SBMBytesCode,
+    SBMBytesWithoutRefCode,
+    SBMRegistersCode,
+    SBMGetRegCode,
+    SBMTokensCode,
+    SSPMPropBytesCode,
+    SAVMTValCode,
+    SAVMValueSizeCode,
+    SizeMDataSizeCode,
+    SPairLCode,
+    SPairRCode,
+    SCollMSizesCode,
+    SOptMSizeOptCode,
+    SFuncMSizeEnvCode,
+    CSizePairCtorCode,
+    CSizeFuncCtorCode,
+    CSizeOptionCtorCode,
+    CSizeCollCtorCode,
+    CSizeBoxCtorCode,
+    CSizeContextCtorCode,
+    CSizeAnyValueCtorCode,
+    CReplCollCtorCode,
+    PairOfColsCtorCode,
+    CollMSumCode,
+    CBMReplicateCode,
+    CBMFromItemsCode,
+    CostOfCode,
+    UOSizeOfCode,
+    SPCMSomeCode,
   )
 
   /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.
@@ -219,28 +261,48 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: MethodCall => MethodCallCode
     // OpCodeExtra
     case _: OpCost => OpCostCode
-    // TODO issue unique codes
-    case _: OpCost | _: PerKbCostOf | _: Cast[_] => OpCostCode
-    case _: IntPlusMonoid => OpCostCode
-    case _: ThunkDef[_] => OpCostCode
-    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
-         SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => OpCostCode
-    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
-         SBM.getReg(_, _, _) | SBM.tokens(_) => OpCostCode
-    case SSPM.propBytes(_) => OpCostCode
-    case SAVM.tVal(_) | SAVM.valueSize(_) => OpCostCode
-    case SizeM.dataSize(_) => OpCostCode
-    case SPairM.l(_) | SPairM.r(_) => OpCostCode
-    case SCollM.sizes(_) => OpCostCode
-    case SOptM.sizeOpt(_) => OpCostCode
-    case SFuncM.sizeEnv(_) => OpCostCode
-    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => OpCostCode
-    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => OpCostCode
-    case CollM.sum(_, _) => OpCostCode
-    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => OpCostCode
-    case _: CostOf | _: SizeOf[_] => OpCostCode
-    case SPCM.some(_) => OpCostCode
+    case _: PerKbCostOf => PerKbCostOfCode
+    case _: Cast[_] => CastCode
+    case _: IntPlusMonoid => IntPlusMonoidCode
+    case _: ThunkDef[_] => ThunkDefCode
+    case SCM.inputs(_) => SCMInputsCode
+    case SCM.outputs(_) => SCMOutputsCode
+    case SCM.dataInputs(_) => SCMDataInputsCode
+    case SCM.selfBox(_) => SCMSelfBoxCode
+    case SCM.lastBlockUtxoRootHash(_) => SCMLastBlockUtxoRootHashCode
+    case SCM.headers(_) => SCMHeadersCode
+    case SCM.preHeader(_) => SCMPreHeaderCode
+    case SCM.getVar(_, _, _) => SCMGetVarCode
+    case SBM.propositionBytes(_) => SBMPropositionBytesCode
+    case SBM.bytes(_) => SBMBytesCode
+    case SBM.bytesWithoutRef(_) => SBMBytesWithoutRefCode
+    case SBM.registers(_) => SBMRegistersCode
+    case SBM.getReg(_, _, _) => SBMGetRegCode
+    case SBM.tokens(_) => SBMTokensCode
+    case SSPM.propBytes(_) => SSPMPropBytesCode
+    case SAVM.tVal(_) => SAVMTValCode
+    case SAVM.valueSize(_) => SAVMValueSizeCode
+    case SizeM.dataSize(_) => SizeMDataSizeCode
+    case SPairM.l(_) => SPairLCode
+    case SPairM.r(_) => SPairRCode
+    case SCollM.sizes(_) => SCollMSizesCode
+    case SOptM.sizeOpt(_) => SOptMSizeOptCode
+    case SFuncM.sizeEnv(_) => SFuncMSizeEnvCode
+    case _: CSizePairCtor[_, _] => CSizePairCtorCode
+    case _: CSizeFuncCtor[_, _, _] => CSizeFuncCtorCode
+    case _: CSizeOptionCtor[_] => CSizeOptionCtorCode
+    case _: CSizeCollCtor[_] => CSizeCollCtorCode
+    case _: CSizeBoxCtor => CSizeBoxCtorCode
+    case _: CSizeContextCtor => CSizeContextCtorCode
+    case _: CSizeAnyValueCtor => CSizeAnyValueCtorCode
+    case _: CReplCollCtor[_] => CReplCollCtorCode
+    case _: PairOfColsCtor[_, _] => PairOfColsCtorCode
+    case CollM.sum(_, _) => CollMSumCode
+    case CBM.replicate(_, _, _) => CBMReplicateCode
+    case CBM.fromItems(_, _, _) => CBMFromItemsCode
+    case _: CostOf => CostOfCode
+    case _: SizeOf[_] => UOSizeOfCode
+    case SPCM.some(_) => SPCMSomeCode
     case _ => error(s"Unknown opCode for $d}")
   }
 
