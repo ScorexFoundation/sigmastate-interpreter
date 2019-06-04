@@ -174,6 +174,14 @@ object ValidationRules {
     }
   }
 
+  /** For CheckCostFuncOperation we use 1-511 range op codes. Thus
+   * `ChangedRule.newValue` should be parsed as a sequence of `getUShort`
+   * values and then the exOpCode should be checked against that parsed
+   * sequence.
+   * Note, we don't need to store a number of items in a sequence,
+   * because at the time of parsing we may assume that `ChangedRule.newValue`
+   * has correct length, so we just parse it until end of bytes (of cause
+   * checking consistency). */
   object CheckCostFuncOperation extends ValidationRule(1014,
     "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCode)(block: => T): T = {

@@ -125,6 +125,11 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     UpcastCode,
   )
 
+  /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.
+    * This may include both ErgoTree codes (from OpCodes) and also additional non-ErgoTree codes
+    * from OpCodesExtra.
+    * Any IR graph node can be uniquely assigned to extended op code value
+    * from OpCodes + OpCodesExtra combined range. (See getOpCodeEx) */
   protected def allowedOpCodesInCosting: HashSet[OpCode] = _allowedOpCodesInCosting
 
   def isAllowedOpCodeInCosting(opCode: OpCode): Boolean =
@@ -155,6 +160,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => false
   }
 
+  /** Returns extended op code assigned to the given IR graph node.
+    */
+  // TODO refactor: reimplement this association using metadata-driven design
   def getOpCode(d: Def[_]): OpCode = if (isNonSerializable(d)) Undefined else d match {
     case _: Const[_] => ConstantCode
     case _: Tup[_, _] => TupleCode

@@ -31,6 +31,24 @@ trait ValueCodes extends TypeCodes {
   val LastConstantCode: Byte = (LastDataType + 1).toByte
 }
 
+/** The set of all possible IR graph nodes can be split in two subsets:
+  * 1) operations which may appear in ErgoTree (these are defined by `OpCodes` below)
+  * 2) operations which are not valid to be in ErgoTree, but serve special purposes. (these are defined by `OpCodesExtra`)
+  * We can assume they are both Byte-sized codes, and store as a single byte, but as long as we can differentiate them
+  * from context (Where we cannot, we should use special encoding).
+  *
+  * The general extended encoding is like the following:
+  * 0-255 - range of OpCodes
+  * 256-511 - range of OpCodesExtra
+  * Thus, any code in an extended code range of 0-511 can be saved using `putUShort`.
+  * We use Byte to represent OpCodes and OpCodesExtra.
+  * We use Short to represent any op code from extended code range.
+  * And we use VLQ to serialize Short values of extended codes.
+  *
+  * Examples:
+  * 1) For validation rule CheckValidOpCode we use OpCodes range, so we use single byte encoding.
+  * 2) For CheckCostFuncOperation we use 1-511 range and extended encoding (see docs)
+  */
 object OpCodes extends ValueCodes {
 
   type OpCode = Byte
