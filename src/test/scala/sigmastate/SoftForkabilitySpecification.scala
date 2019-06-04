@@ -13,7 +13,7 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CosterException, SerializerException}
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
@@ -313,7 +313,6 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("CheckCostFuncOperation rule") {
-    // TODO add a test for OpCodeExtra
     val exp = Height
     val v2vs = vs.updated(CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(Height.opCode))))
@@ -321,6 +320,21 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       val IR.Pair(calcF, _) = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
       CheckCostFunc(IR)(IR.asRep[Any => Int](calcF)) { }
+    })
+  }
+
+  property("CheckCostFuncOperation rule (OpCodeExtra") {
+    class TestingIRContextEmptyCodes extends TestingIRContext {
+      override def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = false
+    }
+    val tIR = new TestingIRContextEmptyCodes
+    val v2vs = vs.updated(CheckCostFuncOperation.id,
+      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
+    checkRule(CheckCostFuncOperation, v2vs, {
+      implicit val intType = tIR.IntElement
+      implicit val anyType = tIR.toLazyElem(tIR.AnyElement)
+      val costF = tIR.fun[Any, Int] {_ => tIR.reifyObject(tIR.OpCost(1, Seq(tIR.toRep(1)), tIR.toRep(1))) }
+      CheckCostFunc(tIR)(tIR.asRep[Any => Int](costF)) { }
     })
   }
 }
