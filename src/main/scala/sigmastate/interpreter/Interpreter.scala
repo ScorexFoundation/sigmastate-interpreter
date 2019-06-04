@@ -2,17 +2,18 @@ package sigmastate.interpreter
 
 import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
+import org.ergoplatform.ErgoConstants
+import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
+import sigmastate.lang.exceptions.{CosterException, InterpreterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -28,7 +29,7 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  final val MaxByteArrayLength = 10000
+  final val MaxByteArrayLength = ErgoConstants.MaxByteArrayLength.get
 
   /**
     * Max cost of a script interpreter can accept

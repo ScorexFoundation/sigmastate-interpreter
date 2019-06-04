@@ -560,10 +560,13 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def typeId = typeCode
   override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
-  protected override def getMethods() = super.getMethods() ++ Seq(
+  protected override def getMethods() = super.getMethods()
+  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ++ Seq(
     SMethod(this, ToByte, SFunc(this, SByte), 1)
       .withInfo(PropertyCall, "Convert true to 1 and false to 0"),
   )
+  */
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
@@ -665,7 +668,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = 32L
+  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.get
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -709,7 +712,8 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
     ModQMethod,
     PlusModQMethod,
     MinusModQMethod,
-    MultModQMethod,
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // MultModQMethod,
   )
 }
 
@@ -731,8 +735,10 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
         .withInfo(PropertyCall, "Checks if this value is identity element of the eliptic curve group."),
+    */
     SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
         .withIRInfo(MethodCallIrBuilder)
         .withInfo(PropertyCall, "Get an encoding of the point value."),
@@ -906,7 +912,9 @@ object SOption extends STypeCompanion {
     IsDefinedMethod,
     GetMethod,
     GetOrElseMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     FoldMethod,
+    */
     MapMethod,
     FilterMethod,
   )
@@ -1025,9 +1033,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
         ArgInfo("p", "the predicate used to test elements."))
 
   val AppendMethod = SMethod(this, "append", SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 9)
+  .withIRInfo({
+    case (builder, obj, _, Seq(xs), _) =>
+      builder.mkAppend(obj.asCollection[SType], xs.asCollection[SType])
+  })
       .withInfo(Append, "Puts the elements of other collection after the elements of this collection (concatenation of 2 collections)",
         ArgInfo("other", "the collection to append at the end of this"))
-
   val ApplyMethod = SMethod(this, "apply", SFunc(IndexedSeq(ThisType, SInt), tIV, Seq(tIV)), 10)
       .withInfo(ByIndex,
         """The element at given index.
@@ -1138,26 +1149,34 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     FilterMethod,
     AppendMethod,
     ApplyMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     BitShiftLeftMethod,
     BitShiftRightMethod,
     BitShiftRightZeroedMethod,
+    */
     IndicesMethod,
     FlatMapMethod,
     PatchMethod,
     UpdatedMethod,
     UpdateManyMethod,
+    /*TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     UnionSetsMethod,
     DiffMethod,
     IntersectMethod,
     PrefixLengthMethod,
+    */
     IndexOfMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     LastIndexOfMethod,
     FindMethod,
+    */
     ZipMethod,
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     DistinctMethod,
     StartsWithMethod,
     EndsWithMethod,
     MapReduceMethod,
+    */
   )
   def apply[T <: SType](elemType: T): SCollection[T] = SCollectionType(elemType)
   def apply[T <: SType](implicit elemType: T, ov: Overload1): SCollection[T] = SCollectionType(elemType)
@@ -1255,7 +1274,9 @@ object STuple extends STypeCompanion {
 
   lazy val colMethods = {
     val subst = Map(SCollection.tIV -> SAny)
-    SCollection.methods.map { m =>
+    // TODO: implement other
+    val activeMethods = Set(1.toByte, 10.toByte)
+    SCollection.methods.filter(m => activeMethods.contains(m.methodId)).map { m =>
       m.copy(stype = SigmaTyper.applySubst(m.stype, subst).asFunc)
     }
   }
@@ -1263,7 +1284,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength = 255
+  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.get
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)
