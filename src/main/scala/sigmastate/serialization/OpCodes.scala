@@ -52,6 +52,7 @@ trait ValueCodes extends TypeCodes {
 object OpCodes extends ValueCodes {
 
   type OpCode = Byte
+  type OpCodeExtra = Short
 
   // serialization is not required
   val Undefined: OpCode = 0: Byte
@@ -205,4 +206,12 @@ object OpCodes extends ValueCodes {
 
   val ContextCode             : OpCode = (LastConstantCode + 142).toByte
   val XorOfCode               : OpCode = (LastConstantCode + 143).toByte // equals to 255
+
+  // OpCodesExtra (range of 256-511)
+
+  val FirstOpCodeExtraCode = 256
+
+  val OpCostCode: OpCodeExtra = (FirstOpCodeExtraCode + 1).toShort
 }
+
+

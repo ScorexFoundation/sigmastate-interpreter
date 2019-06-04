@@ -1,19 +1,25 @@
 package org.ergoplatform.validation
 
+import java.nio.ByteBuffer
+
+import scorex.util.ByteArrayBuilder
+import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigma.util.Extensions.ByteOps
 import sigmastate.Values.{IntValue, SValue, Value}
 import sigmastate.eval.IRContext
 import sigmastate.lang.exceptions._
-import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.{CheckAndGetMethod, CheckTypeWithMethods, SCollection, SType}
-import sigma.util.Extensions.ByteOps
+import sigma.util.Extensions._
+
+import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
@@ -184,10 +190,37 @@ object ValidationRules {
    * checking consistency). */
   object CheckCostFuncOperation extends ValidationRule(1014,
     "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCode)(block: => T): T = {
-      def msg = s"Not allowed opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode} in cost function"
-      def args = Seq(opCode)
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra)(block: => T): T = {
+      def msg = s"Not allowed opCode $opCode in cost function"
+      def args = Seq(unsignedOpCode(opCode))
       validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
+    }
+
+    override def isSoftFork(vs: SigmaValidationSettings,
+                            ruleId: Short,
+                            status: RuleStatus, args: Seq[Any]): Boolean = (status, args) match {
+      case (ChangedRule(newValue), Seq(code: OpCodeExtra)) =>
+        decodeVLQUShort(newValue).contains(code)
+      case _ => false
+    }
+
+    @inline
+    private def unsignedOpCode(opCode: OpCodeExtra): Short =
+      if (opCode < 0) opCode.toByte.toUByte.toShort else opCode
+
+    def encodeVLQUShort(opCodes: Seq[OpCodeExtra]): Array[Byte] = {
+      val w = new VLQByteBufferWriter(new ByteArrayBuilder())
+      opCodes.foreach(o => w.putUShort(unsignedOpCode(o)))
+      w.toBytes
+    }
+
+    def decodeVLQUShort(bytes: Array[Byte]): Seq[OpCodeExtra] = {
+      val r = new VLQByteBufferReader(ByteBuffer.wrap(bytes))
+      val builder = mutable.ArrayBuilder.make[OpCodeExtra]()
+      while(r.remaining > 0) {
+        builder += r.getUShort().toShort
+      }
+      builder.result()
     }
   }
 

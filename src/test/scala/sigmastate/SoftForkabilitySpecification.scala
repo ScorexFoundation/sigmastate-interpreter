@@ -1,25 +1,21 @@
 package sigmastate
 
-import org.ergoplatform.validation.ValidationRules._
-import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCostFuncOperation, CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable}
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCostFuncOperation, CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable, _}
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree}
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
-import sigmastate.interpreter.{ContextExtension, Interpreter, ProverResult}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization._
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CosterException, SerializerException}
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
+import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 
@@ -317,8 +313,10 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("CheckCostFuncOperation rule") {
+    // TODO add a test for OpCodeExtra
     val exp = Height
-    val v2vs = vs.updated(CheckCostFuncOperation.id, ChangedRule(Array(Height.opCode)))
+    val v2vs = vs.updated(CheckCostFuncOperation.id,
+      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(Height.opCode))))
     checkRule(CheckCostFuncOperation, v2vs, {
       val IR.Pair(calcF, _) = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function

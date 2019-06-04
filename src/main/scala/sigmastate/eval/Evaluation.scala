@@ -89,7 +89,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  private val _allowedOpCodesInCosting = HashSet[OpCode](
+  private val _allowedOpCodesInCosting = HashSet[OpCodeExtra](
     AppendCode,
     ByIndexCode,
     ConstantCode,
@@ -123,6 +123,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     SliceCode,
     TupleCode,
     UpcastCode,
+    // OpCodeExtra
+    OpCostCode,
   )
 
   /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.
@@ -130,40 +132,13 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     * from OpCodesExtra.
     * Any IR graph node can be uniquely assigned to extended op code value
     * from OpCodes + OpCodesExtra combined range. (See getOpCodeEx) */
-  protected def allowedOpCodesInCosting: HashSet[OpCode] = _allowedOpCodesInCosting
+  protected def allowedOpCodesInCosting: HashSet[OpCodeExtra] = _allowedOpCodesInCosting
 
-  def isAllowedOpCodeInCosting(opCode: OpCode): Boolean =
-    (opCode == Undefined) || allowedOpCodesInCosting.contains(opCode)
-
-  def isNonSerializable(d: Def[_]): Boolean = d match {
-    case _: OpCost | _: PerKbCostOf | _: Cast[_] => true
-    case _: IntPlusMonoid => true
-    case _: ThunkDef[_] => true
-    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
-         SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => true
-    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
-         SBM.getReg(_, _, _) | SBM.tokens(_) => true
-    case SSPM.propBytes(_) => true
-    case SAVM.tVal(_) | SAVM.valueSize(_) => true
-    case SizeM.dataSize(_) => true
-    case SPairM.l(_) | SPairM.r(_) => true
-    case SCollM.sizes(_) => true
-    case SOptM.sizeOpt(_) => true
-    case SFuncM.sizeEnv(_) => true
-    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
-    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => true
-    case CollM.sum(_, _) => true
-    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => true
-    case _: CostOf | _: SizeOf[_] => true
-    case SPCM.some(_) => true
-    case _ => false
-  }
+  def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = allowedOpCodesInCosting.contains(opCode)
 
   /** Returns extended op code assigned to the given IR graph node.
     */
-  // TODO refactor: reimplement this association using metadata-driven design
-  def getOpCode(d: Def[_]): OpCode = if (isNonSerializable(d)) Undefined else d match {
+  def getOpCodeEx(d: Def[_]): OpCodeExtra = d match {
     case _: Const[_] => ConstantCode
     case _: Tup[_, _] => TupleCode
     case _: First[_, _] | _: Second[_, _] => SelectFieldCode
@@ -180,10 +155,10 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case _: IntegralMod[_] => ModuloCode
       case _: OrderingMin[_] => MinCode
       case _: OrderingMax[_] => MaxCode
-      case _: Equals[_]       => EqCode
-      case _: NotEquals[_]    => NeqCode
-      case _: OrderingGT[_]   => GtCode
-      case _: OrderingLT[_]   => LtCode
+      case _: Equals[_] => EqCode
+      case _: NotEquals[_] => NeqCode
+      case _: OrderingGT[_] => GtCode
+      case _: OrderingLT[_] => LtCode
       case _: OrderingGTEQ[_] => GeCode
       case _: OrderingLTEQ[_] => LeCode
     }
@@ -242,6 +217,30 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case SDBM.xorOf(_, _) => XorOfCode
     case CBM.xor(_, _, _) => XorCode
     case _: MethodCall => MethodCallCode
+    // OpCodeExtra
+    case _: OpCost => OpCostCode
+    // TODO issue unique codes
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] => OpCostCode
+    case _: IntPlusMonoid => OpCostCode
+    case _: ThunkDef[_] => OpCostCode
+    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) |
+         SCM.headers(_) | SCM.preHeader(_) | SCM.getVar(_, _, _) => OpCostCode
+    case SBM.propositionBytes(_) | SBM.bytes(_) | SBM.bytesWithoutRef(_) | SBM.registers(_) |
+         SBM.getReg(_, _, _) | SBM.tokens(_) => OpCostCode
+    case SSPM.propBytes(_) => OpCostCode
+    case SAVM.tVal(_) | SAVM.valueSize(_) => OpCostCode
+    case SizeM.dataSize(_) => OpCostCode
+    case SPairM.l(_) | SPairM.r(_) => OpCostCode
+    case SCollM.sizes(_) => OpCostCode
+    case SOptM.sizeOpt(_) => OpCostCode
+    case SFuncM.sizeEnv(_) => OpCostCode
+    case _: CSizePairCtor[_, _] | _: CSizeFuncCtor[_, _, _] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => OpCostCode
+    case _: CReplCollCtor[_] | _: PairOfColsCtor[_, _] => OpCostCode
+    case CollM.sum(_, _) => OpCostCode
+    case CBM.replicate(_, _, _) | CBM.fromItems(_, _, _) => OpCostCode
+    case _: CostOf | _: SizeOf[_] => OpCostCode
+    case SPCM.some(_) => OpCostCode
     case _ => error(s"Unknown opCode for $d}")
   }
 
@@ -251,7 +250,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       lam.scheduleAll.forall { te =>
-        CheckCostFuncOperation(this)(getOpCode(te.rhs)) { true }
+        CheckCostFuncOperation(this)(getOpCodeEx(te.rhs)) { true }
       }
     }
   }
