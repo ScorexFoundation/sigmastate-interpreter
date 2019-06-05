@@ -119,7 +119,10 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 
-scalacOptions ++= Seq("-feature", "-deprecation")
+scalacOptions ++= Seq("-feature", "-deprecation",
+  // to fix NoSuchMethodError for various ByteBuffer methods (see https://github.com/eclipse/jetty.project/issues/3244)
+  "-release", "8")
+
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
