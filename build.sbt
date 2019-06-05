@@ -106,6 +106,8 @@ lazy val testSettings = Seq(
   publishArtifact in Test := true,
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
+  // TODO: fix this workaround for compiler crash with "-release 8" (see https://github.com/scala/community-builds/issues/796#issuecomment-423395500)
+  publishArtifact in(Compile, packageDoc) := false,
   test in assembly := {})
 
 libraryDependencies ++= Seq(
