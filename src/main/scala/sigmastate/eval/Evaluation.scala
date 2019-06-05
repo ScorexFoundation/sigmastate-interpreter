@@ -13,19 +13,19 @@ import scala.reflect.ClassTag
 import scala.util.Try
 import sigmastate.SType._
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.InvalidType
 import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import scorex.util.Extensions._
 import sigmastate.lang.exceptions.CosterException
 import special.SpecialPredef
-import special.collection.Coll
+import special.Types._
 
-trait Evaluation extends RuntimeCosting { IR =>
+/** This is a slice in IRContext cake which implements evaluation of graphs.
+  */
+trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import Context._
   import SigmaProp._
   import Coll._
@@ -36,8 +36,6 @@ trait Evaluation extends RuntimeCosting { IR =>
   import AvlTree._
   import CollBuilder._
   import SigmaDslBuilder._
-  import CostedBuilder._
-  import MonoidBuilder._
   import WBigInteger._
   import WArray._
   import WOption._
@@ -86,66 +84,74 @@ trait Evaluation extends RuntimeCosting { IR =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  def isValidCostPrimitive(d: Def[_]): Unit = d match {
-    case _: Const[_] =>
-    case _: OpCost | _: Cast[_] =>
-    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] =>
-    case _: FieldApply[_] =>
-    case _: IntPlusMonoid =>
-    case _: Lambda[_,_] =>
-    case _: ThunkDef[_] =>
-    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) =>
-    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) =>
+  /** Checks is the operation is among the allowed in costF graph, created by costing.
+    * @throws StagingException if the given graph node `d` is not matched.
+    */
+  def isValidCostPrimitive(d: Def[_]): Boolean = d match {
+    case _: Const[_] => true
+    case _: OpCost | _: PerKbCostOf | _: Cast[_] => true
+    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] => true
+    case _: FieldApply[_] => true
+    case _: IntPlusMonoid => true
+    case _: Lambda[_,_] => true
+    case _: ThunkDef[_] => true
+    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
+    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) => true
 
     case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
-         SCM.preHeader(_) | SCM.getVar(_,_,_) =>
+         SCM.preHeader(_) | SCM.getVar(_,_,_) => true
     case SBM.propositionBytes(_) |  SBM.bytes(_) |  SBM.bytesWithoutRef(_) |  SBM.registers(_) |  SBM.getReg(_,_,_) |
-         SBM.tokens(_)  =>
-    case SSPM.propBytes(_) =>
-    case SAVM.tVal(_) | SAVM.valueSize(_) =>
-    case SizeM.dataSize(_) =>
-    case SPairM.l(_) | SPairM.r(_) =>
-    case SCollM.sizes(_) =>
-    case SOptM.sizeOpt(_) =>
-    case SFuncM.sizeEnv(_) =>
+         SBM.tokens(_)  => true
+    case SSPM.propBytes(_) => true
+    case SAVM.tVal(_) | SAVM.valueSize(_) => true
+    case SizeM.dataSize(_) => true
+    case SPairM.l(_) | SPairM.r(_) => true
+    case SCollM.sizes(_) => true
+    case SOptM.sizeOpt(_) => true
+    case SFuncM.sizeEnv(_) => true
     case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor =>
+         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
     case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_) /*| ContextM.cost(_) | ContextM.dataSize(_)*/ =>
-    case SigmaM.propBytes(_) =>
-    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] =>
+         ContextM.getVar(_,_,_)  => true
+    case SigmaM.propBytes(_) => true
+    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] => true
     case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) |
-         CollM.append(_,_) | CollM.foldLeft(_,_,_) =>
-    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) =>
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) /*| BoxM.cost(_) | BoxM.dataSize(_)*/ | BoxM.getReg(_,_,_) =>
-//    case AvlM.dataSize(_) =>
-    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) =>
-    case _: CostOf | _: SizeOf[_] =>
-    case _: Upcast[_,_] =>
-    case _: Apply[_,_] =>
-    case SPCM.some(_) =>
-    case _ => !!!(s"Invalid primitive in Cost function: $d")
+         CollM.append(_,_) | CollM.foldLeft(_,_,_) => true
+    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) => true
+    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_,_,_) => true
+    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) => true
+    case _: CostOf | _: SizeOf[_] => true
+    case _: Upcast[_,_] => true
+    case _: Apply[_,_] => true
+    case SPCM.some(_) => true
+    case _ => false
   }
 
-  def verifyCalcFunc[A](f: Rep[Context => A], eA: Elem[A]) = {
-    if (f.elem.eRange != eA)
-      !!!(s"Expected function of type ${f.elem.eDom.name} => ${eA.name}, but was $f: ${f.elem.name}")
-  }
-
+  /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
+    * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
-    Try { lam.scheduleAll.foreach(te => isValidCostPrimitive(te.rhs)) }
+    Try {
+      lam.scheduleAll.forall { te =>
+        val ok = isValidCostPrimitive(te.rhs)
+        if (!ok) !!!(s"Invalid primitive in Cost function: ${te.rhs}")
+        ok
+      }
+    }
   }
 
+  /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val ok = lam.scheduleAll.find(te => te.rhs match {
+    val s = lam.scheduleAll.find(te => te.rhs match {
       case SigmaM.isValid(_) => true
       case _ => false
     }).map(_.sym)
-    ok
+    s
   }
 
+  /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
+    * then it is the last operation. */
   def verifyIsProven[T](f: Rep[Context => T]): Try[Unit] = {
     val isProvenOpt = findIsProven(f)
     Try {
@@ -156,12 +162,14 @@ trait Evaluation extends RuntimeCosting { IR =>
       }
     }
   }
+
   object IsTupleFN {
     def unapply(fn: String): Nullable[Byte] = {
       if (fn.startsWith("_")) Nullable[Byte](fn.substring(1).toByte)
       else Nullable.None.asInstanceOf[Nullable[Byte]]
     }
   }
+
   import sigmastate._
   import special.sigma.{Context => SigmaContext}
 
@@ -171,31 +179,33 @@ trait Evaluation extends RuntimeCosting { IR =>
   val costedBuilderValue: special.collection.CostedBuilder
   val monoidBuilderValue: special.collection.MonoidBuilder
 
+  /** Constructs a new data environment for evaluation of graphs using `compile` method.
+    * This environment contains global variables. */
   def getDataEnv: DataEnv = {
     val env = Map[Sym, AnyRef](
-      RWSpecialPredef -> SpecialPredef,
+      specialPredef   -> SpecialPredef,
       sigmaDslBuilder -> sigmaDslBuilderValue,
-      sigmaDslBuilder.Colls -> sigmaDslBuilderValue.Colls,
-      costedBuilder -> costedBuilderValue,
-      costedBuilder.monoidBuilder -> monoidBuilderValue,
-      costedBuilder.monoidBuilder.intPlusMonoid -> monoidBuilderValue.intPlusMonoid,
-      costedBuilder.monoidBuilder.longPlusMonoid -> monoidBuilderValue.longPlusMonoid
+      colBuilder      -> sigmaDslBuilderValue.Colls,
+      costedBuilder   -> costedBuilderValue,
+      monoidBuilder   -> monoidBuilderValue,
+      intPlusMonoid   -> monoidBuilderValue.intPlusMonoid,
+      longPlusMonoid  -> monoidBuilderValue.longPlusMonoid
     )
     env
   }
 
   case class EvaluatedEntry(env: DataEnv, sym: Sym, value: AnyRef)
 
-  def printEnvEntry(sym: Sym, value: AnyRef) = {
+  protected def printEnvEntry(sym: Sym, value: AnyRef) = {
     def trim[A](arr: Array[A]) = arr.take(arr.length min 100)
     def show(x: Any) = x match {
       case arr: Array[_] => s"Array(${trim(arr).mkString(",")})"
       case col: special.collection.Coll[_] => s"Coll(${trim(col.toArray).mkString(",")})"
       case p: SGroupElement => p.showToString
-      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${showECPoint(g)})"
+      case ProveDlog(GroupElementConstant(g)) => s"ProveDlog(${g.showToString})"
       case ProveDHTuple(
               GroupElementConstant(g), GroupElementConstant(h), GroupElementConstant(u), GroupElementConstant(v)) =>
-        s"ProveDHT(${showECPoint(g)},${showECPoint(h)},${showECPoint(u)},${showECPoint(v)})"
+        s"ProveDHT(${g.showToString},${h.showToString},${u.showToString},${v.showToString})"
       case _ => x.toString
     }
     sym match {
@@ -218,17 +228,19 @@ trait Evaluation extends RuntimeCosting { IR =>
   def msgCostLimitError(cost: Int, limit: Long) = s"Estimated expression complexity $cost exceeds the limit $limit"
 
   /** Incapsulate simple monotonic (add only) counter with reset. */
-  class CostCounter(initialCost: Int) {
+  class CostCounter(val initialCost: Int) {
     private var _currentCost: Int = initialCost
 
     @inline def += (n: Int) = {
+      // println(s"${_currentCost} + $n")
       this._currentCost += n
     }
     @inline def currentCost: Int = _currentCost
     @inline def resetCost() = { _currentCost = initialCost }
   }
 
-  /** Implements finite state machine with stack of graph blocks (lambdas and thunks).
+  /** Implements finite state machine with stack of graph blocks (scopes),
+    * which correspond to lambdas and thunks.
     * It accepts messages: startScope(), endScope(), add(), reset()
     * At any time `totalCost` is the currently accumulated cost. */
   class CostAccumulator(initialCost: Int, costLimit: Option[Long]) {
@@ -240,28 +252,37 @@ trait Evaluation extends RuntimeCosting { IR =>
     @inline def currentScope: Scope = _scopeStack.head
     @inline private def getCostFromEnv(dataEnv: DataEnv, s: Sym): Int = getFromEnv(dataEnv, s).asInstanceOf[Int]
 
+    /** Represents a single scope during execution of the graph.
+      * The lifetime of each instance is bound to scope execution.
+      * When the evaluation enters a new scope (e.g. calling a lambda) a new Scope instance is created and pushed
+      * to _scopeStack, then is starts receiving `add` method calls.
+      * When the evaluation leaves the scope, the top is popped off the stack. */
     class Scope(visitiedOnEntry: Set[Sym], initialCost: Int) extends CostCounter(initialCost) {
       private var _visited: Set[Sym] = visitiedOnEntry
-      @inline def visited = _visited
-      @inline def add(op: OpCost, opCost: Int, dataEnv: DataEnv) = {
+      @inline def visited: Set[Sym] = _visited
+      @inline def add(s: Sym, op: OpCost, opCost: Int, dataEnv: DataEnv): Unit = {
         for (arg <- op.args) {
           if (!_visited.contains(arg)) {
             val argCost = getCostFromEnv(dataEnv, arg)
+//            println(s"${this.currentCost} + $argCost ($arg <- $op)")
             this += argCost
             _visited += arg
           }
         }
-        this += opCost
-        _visited += op.opCost
+        if (!_visited.contains(op.opCost)) {
+//          println(s"${this.currentCost} + $opCost (${op.opCost} <- $op)")
+          this += opCost
+        }
+        _visited += s
       }
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
-      * if isCosting then delegate to the currentScope */
-    def add(op: OpCost, dataEnv: DataEnv) = {
+      * if costLimit is defined then delegates to currentScope. */
+    def add(s: Sym, op: OpCost, dataEnv: DataEnv): Int = {
       val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
       if (costLimit.isDefined) {
-        currentScope.add(op, opCost, dataEnv)
+        currentScope.add(s, op, opCost, dataEnv)
         // check that we are still withing the limit
         val cost = currentScope.currentCost
         val limit = costLimit.get
@@ -278,9 +299,9 @@ trait Evaluation extends RuntimeCosting { IR =>
 
     /** Called after all operations of a scope are executed (lambda or thunk)*/
     def endScope() = {
-      val cost = currentScope.currentCost
+      val deltaCost = currentScope.currentCost - currentScope.initialCost
       _scopeStack = _scopeStack.tail
-      _scopeStack.head += cost
+      _scopeStack.head += deltaCost
     }
 
     /** Resets this accumulator into initial state to be ready for new graph execution. */
@@ -305,34 +326,18 @@ trait Evaluation extends RuntimeCosting { IR =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
-        var startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
+        val startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
         val res: (DataEnv, Sym) = te.rhs match {
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInCtx = invokeUnlifted(ctx.elem, mc, dataEnv)
-            val data = valueInCtx match {
-              case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, ctxObj.isCost)(IR))
-              case opt @ Some(v) => opt
-              case None => None
-              case _ => throw new InvalidType(s"Expected Constant($declaredTpe) but found $valueInCtx")
-            }
-            out(data)
+            out(valueInCtx)
           case d @ BoxM.getReg(box, _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
             val valueInReg = invokeUnlifted(box.elem, mc, dataEnv)
-            val data = valueInReg match {
-              case Some(Constant(v, `declaredTpe`)) =>
-                Some(Evaluation.toDslData(v, declaredTpe, false)(IR))
-              case Some(v) =>
-                valueInReg
-              case None => None
-              case _ => throw new InvalidType(
-                s"Expected Some(Constant($declaredTpe)) but found $valueInReg value of register: $d")
-            }
-            out(data)
+            out(valueInReg)
           case Const(x) => out(x.asInstanceOf[AnyRef])
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
@@ -361,7 +366,7 @@ trait Evaluation extends RuntimeCosting { IR =>
               case Nullable(v) => v
               case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
             })
-            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)
+            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)(sigmaDslBuilderValue.validationSettings)
             out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
 
           case AM.length(In(arr: Array[_])) => out(arr.length)
@@ -376,7 +381,7 @@ trait Evaluation extends RuntimeCosting { IR =>
             val dataRes = obj.elem match {
               case _: CollElem[_, _] => mc match {
                 case CollMethods.flatMap(xs, f) =>
-                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange)(mc.selfType, mc.isAdapterCall)
+                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange.eItem)(mc.selfType, mc.isAdapterCall)
                   invokeUnlifted(obj.elem, newMC, dataEnv)
                 case _ =>
                   invokeUnlifted(obj.elem, mc, dataEnv)
@@ -491,8 +496,10 @@ trait Evaluation extends RuntimeCosting { IR =>
 
           case costOp: CostOf =>
             out(costOp.eval)
+          case op @ PerKbCostOf(_,In(size: Long)) =>
+            out(op.eval(size))
           case op: OpCost =>
-            val c = costAccumulator.add(op, dataEnv)
+            val c = costAccumulator.add(te.sym, op, dataEnv)
             out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
@@ -519,13 +526,13 @@ trait Evaluation extends RuntimeCosting { IR =>
           case Downcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)
-              out(sigmaDslBuilderValue.BigInt(SBigInt.downcast(from.asInstanceOf[AnyVal])))
+              out(SBigInt.downcast(from.asInstanceOf[AnyVal]))
             else
               out(tpe.downcast(from.asInstanceOf[AnyVal]))
           case Upcast(In(from), eTo) =>
             val tpe = elemToSType(eTo).asNumType
             if (tpe == SBigInt)
-              out(sigmaDslBuilderValue.BigInt(SBigInt.upcast(from.asInstanceOf[AnyVal])))
+              out(SBigInt.upcast(from.asInstanceOf[AnyVal]))
             else
               out(tpe.upcast(from.asInstanceOf[AnyVal]))
 
@@ -579,9 +586,11 @@ trait Evaluation extends RuntimeCosting { IR =>
 object Evaluation {
   import special.sigma._
   import special.collection._
-  import ErgoLikeContext._
-  
-  def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {
+
+  /** Transforms a serializable ErgoTree type descriptor to the corresponding RType descriptor of SigmaDsl,
+    * which is used during evaluation.
+    */
+  def stypeToRType[T <: SType](t: T): RType[T#WrappedType] = (t match {  // TODO optimize using memoization
     case SBoolean => BooleanType
     case SByte => ByteType
     case SShort => ShortType
@@ -589,9 +598,11 @@ object Evaluation {
     case SLong => LongType
     case SString => StringType
     case SAny => AnyType
+    case SUnit => UnitType
     case SBigInt => BigIntRType
     case SBox => BoxRType
     case SContext => ContextRType
+    case SGlobal => SigmaDslBuilderRType
     case SHeader => HeaderRType
     case SPreHeader => PreHeaderRType
     case SGroupElement => GroupElementRType
@@ -608,7 +619,10 @@ object Evaluation {
     case _ => sys.error(s"Don't know how to convert SType $t to RType")
   }).asInstanceOf[RType[T#WrappedType]]
 
-  def rtypeToSType[T](t: RType[T]): SType = t match {
+  /** Transforms RType descriptor of SigmaDsl, which is used during evaluation,
+    * to the corresponding serializable ErgoTree type descriptor,
+    */
+  def rtypeToSType[T](t: RType[T]): SType = t match { // TODO optimize using memoization
     case BooleanType => SBoolean
     case ByteType => SByte
     case ShortType => SShort
@@ -616,6 +630,7 @@ object Evaluation {
     case LongType => SLong
     case StringType => SString
     case AnyType => SAny
+    case UnitType => SUnit
 
     case BigIntegerRType => SBigInt
     case BigIntRType => SBigInt
@@ -627,6 +642,7 @@ object Evaluation {
     case ot: OptionType[_] => sigmastate.SOption(rtypeToSType(ot.tA))
     case BoxRType => SBox
     case ContextRType => SContext
+    case SigmaDslBuilderRType => SGlobal
     case HeaderRType => SHeader
     case PreHeaderRType => SPreHeader
     case SigmaPropRType => SSigmaProp
@@ -654,123 +670,48 @@ object Evaluation {
     case coll: Coll[_] => collRType(coll.tItem)
     
     // all primitive types
-    case v: Boolean => BooleanType
-    case v: Byte  => ByteType
-    case v: Short => ShortType
-    case v: Int   => IntType
-    case v: Long  => LongType
-    case v: Char  => CharType
-    case v: Float  => FloatType
-    case v: Double  => DoubleType
-    case v: String  => StringType
-    case v: Unit  => UnitType
+    case _: Boolean => BooleanType
+    case _: Byte  => ByteType
+    case _: Short => ShortType
+    case _: Int   => IntType
+    case _: Long  => LongType
+    case _: Char  => CharType
+    case _: Float  => FloatType
+    case _: Double  => DoubleType
+    case _: String  => StringType
+    case _: Unit  => UnitType
 
-    case v: BigInteger => BigIntegerRType
-    case n: special.sigma.BigInt => BigIntRType
+    case _: BigInteger => BigIntegerRType
+    case _: special.sigma.BigInt => BigIntRType
 
-    case v: ECPoint => ECPointRType
-    case ge: GroupElement => GroupElementRType
+    case _: ECPoint => ECPointRType
+    case _: GroupElement => GroupElementRType
 
-    case b: ErgoBox => ErgoBoxRType
-    case b: Box => BoxRType
+    case _: ErgoBox => ErgoBoxRType
+    case _: Box => BoxRType
 
-    case avl: AvlTreeData => AvlTreeDataRType
-    case avl: AvlTree => AvlTreeRType
+    case _: AvlTreeData => AvlTreeDataRType
+    case _: AvlTree => AvlTreeRType
 
-    case sb: SigmaBoolean => SigmaBooleanRType
-    case p: SigmaProp => SigmaPropRType
-
+    case _: SigmaBoolean => SigmaBooleanRType
+    case _: SigmaProp => SigmaPropRType
+    case _: Context => ContextRType
     case _ =>
       sys.error(s"Don't know how to compute typeOf($value)")
   }}
 
-  /** Generic translation of any ErgoDsl type to the corresponding type used in ErgoTree. */
-  def toErgoTreeType(dslType: RType[_]): RType[_] = dslType match {
-    case p: PrimitiveType[_] => p
-    case w: WrapperType[_] =>
-      w match {
-        case BigIntRType => BigIntegerRType
-        case GroupElementRType => ECPointRType
-        case SigmaPropRType => SigmaBooleanRType
-        case BoxRType => ErgoBoxRType
-        case AvlTreeRType => AvlTreeDataRType
-        case ContextRType => ErgoLikeContextRType
-        case _ => sys.error(s"Unknown WrapperType: $w")
-      }
-    case p: ArrayType[_] => arrayRType(toErgoTreeType(p.tA))
-    case p: OptionType[_] => optionRType(toErgoTreeType(p.tA))
-    case p: CollType[_] => arrayRType(toErgoTreeType(p.tItem))
-    case p: PairType[_,_] => tupleRType(Array(toErgoTreeType(p.tFst), toErgoTreeType(p.tSnd)))
-    case p: EitherType[_,_] => eitherRType(toErgoTreeType(p.tLeft), toErgoTreeType(p.tRight))
-    case p: FuncType[_,_] => funcRType(toErgoTreeType(p.tDom), toErgoTreeType(p.tRange))
-    case t: TupleType => tupleRType(t.items.map(x => toErgoTreeType(x)))
-    case HeaderRType | PreHeaderRType => dslType
-    case AnyType | AnyRefType | NothingType | StringType => dslType
-    case _ =>
-      sys.error(s"Don't know how to toErgoTreeType($dslType)")
-  }
-
-  /** Generic converter from types used in SigmaDsl to types used in ErgoTree values.
-    * @param tRes should describe ErgoTree type (i.e. it can be obtained using toErgoTreeType method)*/
-  def fromDslData[T](value: Any, tRes: RType[T]): T = {
-    val res = (value, tRes) match {
-      case (w: WrapperOf[_], _) => w.wrappedValue
-      case (coll: Coll[a], tarr: ArrayType[a1]) =>
-        val tItem = tarr.tA
-        coll.map[a1](x => fromDslData(x, tItem))(tItem).toArray
-      case (tup: Tuple2[a,b], tTup: TupleType) =>
-        val x = fromDslData(tup._1, tTup.items(0))
-        val y = fromDslData(tup._2, tTup.items(1))
-        Array[Any](x, y)
-      case _ => value
-    }
-    res.asInstanceOf[T]
-  }
-
-  /** Convert SigmaDsl representation of tuple to ErgoTree representation. */
-  def fromDslTuple(value: Any, tupleTpe: STuple): Array[Any] = value match {
-    case t: Tuple2[_,_] => Array[Any](t._1, t._2)
-    case a: Array[Any] => a
+  /** Convert SigmaDsl representation of tuple to ErgoTree serializable representation. */
+  def fromDslTuple(value: Any, tupleTpe: STuple): Coll[Any] = value match {
+    case t: Tuple2[_,_] => TupleColl(t._1, t._2)
+    case a: Coll[Any]@unchecked if a.tItem == RType.AnyType => a
     case _ =>
       sys.error(s"Cannot execute fromDslTuple($value, $tupleTpe)")
   }
 
-  /** Generic converter from types used in ErgoTree values to types used in ErgoDsl. */
-  def toDslData(value: Any, tpe: SType, isCost: Boolean)(implicit IR: Evaluation): Any = {
-    val dsl = IR.sigmaDslBuilderValue
-    (value, tpe) match {
-      case (c: Constant[_], tpe) => toDslData(c.value, c.tpe, isCost)
-      case (_, STuple(Seq(tpeA, tpeB))) =>
-        value match {
-          case tup: Tuple2[_,_] =>
-            val valA = toDslData(tup._1, tpeA, isCost)
-            val valB = toDslData(tup._2, tpeB, isCost)
-            (valA, valB)
-          case arr: Array[Any] =>
-            val valA = toDslData(arr(0), tpeA, isCost)
-            val valB = toDslData(arr(1), tpeB, isCost)
-            (valA, valB)
-        }
-      case (arr: Array[a], STuple(items)) =>
-        val res = arr.zip(items).map { case (x, t) => toDslData(x, t, isCost)}
-        dsl.Colls.fromArray(res)(RType.AnyType)
-      case (arr: Array[a], SCollectionType(elemType)) =>
-        implicit val elemRType: RType[SType#WrappedType] = Evaluation.stypeToRType(elemType)
-        elemRType.asInstanceOf[RType[_]] match {
-          case _: CollType[_] | _: TupleType | _: PairType[_,_] | _: WrapperType[_] =>
-            val testArr = arr.map(x => toDslData(x, elemType, isCost).asWrappedType).toArray(elemRType.classTag)
-            dsl.Colls.fromArray(testArr.asInstanceOf[Array[SType#WrappedType]])
-          case _ =>
-            dsl.Colls.fromArray(arr.asInstanceOf[Array[SType#WrappedType]])
-        }
-      case (b: ErgoBox, SBox) => b.toTestBox(isCost)
-      case (n: BigInteger, SBigInt) =>
-        dsl.BigInt(n)
-      case (p: ECPoint, SGroupElement) => dsl.GroupElement(p)
-      case (t: SigmaBoolean, SSigmaProp) => dsl.SigmaProp(t)
-      case (t: AvlTreeData, SAvlTree) => CAvlTree(t)
-      case (x, _) => x
-    }
+  /** Convert ErgoTree serializable representation of tuple to SigmaDsl representation. */
+  def toDslTuple(value: Coll[Any], tupleTpe: STuple): Any = tupleTpe match {
+    case t if t.items.length == 2 => (value(0), value(1))
+    case _ => value
   }
 
 }

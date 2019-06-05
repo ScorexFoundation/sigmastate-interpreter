@@ -8,6 +8,7 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, DLogProverInput, F
 import sigmastate.basics.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
+import sigmastate.lang.Terms._
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
@@ -57,7 +58,8 @@ class CrowdFundingKernelContract(
     val c2 = Array(
       ctx.currentHeight < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
-        out.value >= minToRaise && util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.bytes)
+        out.value >= minToRaise &&
+          util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.treeWithSegregation.bytes)
       })
     ).forall(identity)
     var proof: projectProver.ProofT = null

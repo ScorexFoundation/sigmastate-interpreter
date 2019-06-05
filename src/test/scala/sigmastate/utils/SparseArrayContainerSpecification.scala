@@ -23,14 +23,14 @@ class SparseArrayContainerSpecification extends PropSpec
 
   property("get") {
     forAll(distinctCodeValuePairsGen) { codeValuePairs =>
-      val c = new SparseArrayContainer(codeValuePairs)
+      val cont = new SparseArrayContainer(codeValuePairs)
       codeValuePairs.foreach { case (code, v) =>
-          c.get(code) shouldBe v
+          cont(code) shouldBe v
       }
       val mappedValues = codeValuePairs.toMap
       (Byte.MinValue to Byte.MaxValue).foreach { i =>
         if (mappedValues.get(i.toByte).isEmpty)
-          c.get(i.toByte) shouldBe null.asInstanceOf[Long]
+          cont(i.toByte) shouldBe null.asInstanceOf[Long]
       }
     }
   }

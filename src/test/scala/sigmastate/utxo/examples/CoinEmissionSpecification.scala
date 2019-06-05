@@ -10,6 +10,7 @@ import sigmastate.lang.Terms._
 import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons._
 import sigmastate.utxo._
 import sigmastate._
+import sigmastate.eval._
 
 /**
   * An example of currency emission contract.
@@ -21,7 +22,9 @@ import sigmastate._
 class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   // don't use TestingIRContext, this suite also serves the purpose of testing the RuntimeIRContext
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
+    // uncomment if you want to log script evaluation
     // override val okPrintEvaluatedEntries = true
+    saveGraphsInFile = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head
@@ -81,7 +84,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val lastCoins = LE(ExtractAmount(Self), s.oneEpochReduction)
 
     val prop = BinOr(
-      AND(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect),
+      AND(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed),
       BinAnd(heightIncreased, lastCoins)
     ).toSigmaProp
 
@@ -100,7 +103,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         |    val heightIncreased = HEIGHT > SELF.R4[Int].get
         |    val heightCorrect = out.R4[Int].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
-        |    allOf(Coll(heightIncreased, sameScriptRule, correctCoinsConsumed, heightCorrect)) || (heightIncreased && lastCoins)
+        |    allOf(Coll(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed)) || (heightIncreased && lastCoins)
         |}""".stripMargin).asBoolValue.toSigmaProp
 
     prop1 shouldEqual prop
@@ -113,8 +116,9 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     val initBlock = FullBlock(IndexedSeq(createTransaction(initialBoxCandidate)), minerPubkey)
     val genesisState = ValidationState.initialState(initBlock)
     val fromState = genesisState.boxesReader.byId(genesisState.boxesReader.allIds.head).get
-    val initialBox = ErgoBox(initialBoxCandidate.value, initialBoxCandidate.ergoTree, 0,
-      initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters, initBlock.txs.head.id)
+    val initialBox = new ErgoBox(initialBoxCandidate.value, initialBoxCandidate.ergoTree,
+      initialBoxCandidate.additionalTokens, initialBoxCandidate.additionalRegisters,
+      initBlock.txs.head.id, 0, 0)
     initialBox shouldBe fromState
 
     def genCoinbaseLikeTransaction(state: ValidationState,
@@ -122,17 +126,17 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                                    height: Int): ErgoLikeTransaction = {
       assert(state.state.currentHeight == height - 1)
       val ut = if (emissionBox.value > s.oneEpochReduction) {
-        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Seq(), Map())
+        val minerBox = new ErgoBoxCandidate(emissionAtHeight(height), minerProp, height, Colls.emptyColl, Map())
         val newEmissionBox: ErgoBoxCandidate =
-          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Seq(), Map(register -> IntConstant(height)))
+          new ErgoBoxCandidate(emissionBox.value - minerBox.value, prop, height, Colls.emptyColl, Map(register -> IntConstant(height)))
 
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(newEmissionBox, minerBox)
         )
       } else {
-        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Seq(), Map(register -> IntConstant(height)))
-        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Seq(), Map(register -> IntConstant(height)))
+        val minerBox1 = new ErgoBoxCandidate(emissionBox.value - 1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
+        val minerBox2 = new ErgoBoxCandidate(1, minerProp, height, Colls.emptyColl, Map(register -> IntConstant(height)))
         UnsignedErgoLikeTransaction(
           IndexedSeq(new UnsignedInput(emissionBox.id)),
           IndexedSeq(minerBox1, minerBox2)

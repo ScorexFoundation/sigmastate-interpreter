@@ -2,6 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.Values.{BooleanConstant, Constant, IntConstant}
 import sigmastate._
+import sigmastate.eval.Extensions._
 import sigmastate.serialization.OpCodes._
 import scorex.util.encode.ZigZagEncoder.encodeZigZagInt
 
@@ -13,7 +14,7 @@ class AndSerializerSpecification extends TableSerializationSpecification {
     ("object", "bytes"),
     (AND(boolConst(true), boolConst(false)),
       Array[Byte](AndCode, ConcreteCollectionBooleanConstantCode, 2, 1)),
-    (AND(Constant[SCollection[SBoolean.type]](Array[Boolean](false, true), SCollection(SBoolean))),
+    (AND(Constant[SCollection[SBoolean.type]](Array[Boolean](false, true).toColl, SCollection(SBoolean))),
       Array[Byte](AndCode, SBoolean.embedIn(SCollectionType.CollectionTypeCode), 2, 2)),
     (AND(boolConst(true), EQ(IntConstant(1), IntConstant(1))),
       Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode, // collection type

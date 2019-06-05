@@ -96,7 +96,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "blocksIn24h" -> blocksIn24h,
       "maxFee" -> 10L,
       "feePropositionBytes" -> feeProposition.bytes,
-      "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
+      "withdrawScriptHash" -> Blake2b256(withdrawScript.treeWithSegregation.bytes)
     )
 
     val depositScript = compile(depositEnv,
@@ -107,11 +107,9 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
         |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
         |
-        |  val totalFee = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (b.propositionBytes == feePropositionBytes) acc + b.value else acc })
         |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
         |
-        |  alice && OUTPUTS.forall(isValidOut) && totalFee <= maxFee // works
-        |  //alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee // gives error
+        |  alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally

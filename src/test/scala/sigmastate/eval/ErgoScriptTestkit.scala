@@ -1,11 +1,12 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
 import sigmastate.{SInt, AvlTreeData, SLong, SType}
-import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, BigIntArrayConstant}
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, ErgoTree, BigIntArrayConstant}
+import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
@@ -14,11 +15,13 @@ import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.ErgoTreeSerializer
 import special.sigma.{ContractsTestkit, Context => DContext, _}
-import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
 
-trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
+trait ErgoScriptTestkit extends ContractsTestkit with LangTests
+    with ValidationSpecification { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting
@@ -46,15 +49,15 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
   }
 
 
-  val boxA1 = newAliceBox(1, 100)
-  val boxA2 = newAliceBox(2, 200)
+  lazy val boxA1 = newAliceBox(1, 100)
+  lazy val boxA2 = newAliceBox(2, 200)
 
   def contract(canOpen: DContext => Boolean) = new NoEnvContract(canOpen)
 
   lazy val dsl = sigmaDslBuilder
   lazy val dslValue = sigmaDslBuilderValue
   lazy val bigSym = liftConst(dslValue.BigInt(big))
-  lazy val n1Sym = liftConst(dslValue.BigInt(n1))
+  lazy val n1Sym = liftConst(n1)
 
   val timeout = 100
   val minToRaise = 1000L
@@ -127,7 +130,13 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         val x = block
         x shouldBe expected.get
       }
-//          String.format(messageFmt, x.asInstanceOf[AnyRef], expected.get.asInstanceOf[AnyRef]))
+    }
+
+    def checkExpectedFunc[A,B](block: => Rep[A => B], expected: Option[Rep[A => B]], messageFmt: String) = {
+      if (expected.isDefined) {
+        val x = block
+        assert(alphaEqual(x, expected.get), messageFmt)
+      }
     }
 
     def pairify(xs: Seq[Sym]): Sym = xs match {
@@ -156,9 +165,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
         val graphs = Seq(str, strExp)
         emit(name, graphs:_*)
       }
-      checkExpected(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
-      checkExpected(costF, expectedCostF, "Cost function actual: %s, expected: %s")
-      checkExpected(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
+      checkExpectedFunc(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
+      checkExpectedFunc(costF, expectedCostF, "Cost function actual: %s, expected: %s")
+      checkExpectedFunc(sizeF, expectedSizeF, "Size function actual: %s, expected: %s")
       res
     }
 
@@ -168,11 +177,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxT
       verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
-        val compiledTree = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
-        checkExpected(compiledTree, expectedTree, "Compiled Tree actual: %s, expected: %s")
+        val compiledProp = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
+        checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
-        val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(compiledTree)
-        checkExpected(ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes), Some(compiledTree),
+        val ergoTree = compiledProp.treeWithSegregation
+        val compiledTreeBytes = DefaultSerializer.serializeErgoTree(ergoTree)
+        checkExpected(DefaultSerializer.deserializeErgoTree(compiledTreeBytes), Some(ergoTree),
           "(de)serialization round trip actual: %s, expected: %s")
       }
 

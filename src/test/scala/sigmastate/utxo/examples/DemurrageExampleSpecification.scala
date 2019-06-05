@@ -1,7 +1,5 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, SigmaPropConstant, TaggedBox}
-import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
@@ -12,7 +10,6 @@ import sigmastate.lang.Terms._
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
     * Demurrage currency example.
@@ -54,7 +51,6 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       "regScript" -> regScript
     )
 
-    //todo: add condition on
     val prop = compile(env,
       """{
         | val outIdx = getVar[Short](127).get
@@ -75,26 +71,6 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | anyOf(Coll(regScript, c1, c2))
         | }
       """.stripMargin).asSigmaProp
-
-    /*
-    todo: fix / uncomment
-    val reg1 = ErgoBox.nonMandatoryRegisters.head
-    val propTree = BinOr(
-      SigmaPropConstant(regScript).isProven,
-      AND(
-        GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
-        Exists(Outputs, 21,
-          BinAnd(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)),
-            LE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Height),
-            GE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Minus(Height, 50L))
-          )
-        )
-      )
-    )
-    prop shouldBe propTree
-    */
 
     val inHeight = 0
     val outValue = 100

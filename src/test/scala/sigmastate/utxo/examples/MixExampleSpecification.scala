@@ -13,6 +13,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestI
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
+import sigmastate.eval._
 
 class MixExampleSpecification extends SigmaTestingCommons {
   private implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -24,9 +25,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // Alice is first player, who initiates the mix
     val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
 
-    val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
+    val x: BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
     val gX = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
     // Alternative 1:
@@ -60,7 +61,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
       "gX" -> gX,
-      "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
+      "fullMixScriptHash" -> Blake2b256(fullMixScript.treeWithSegregation.bytes)
     )
 
     // Note that below script allows Alice to spend the half-mix output anytime before Bob spends it.
@@ -112,9 +113,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // If Alice wants to abort the mix, she can take Bob's role and spend her Half-Mix output
 
     val bob = new ContextEnrichingTestProvingInterpreter
-    val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
+    val bobPubKey: ProveDlog = bob.dlogSecrets.head.publicImage
 
-    val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
+    val y: BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
     val gY = GroupElementConstant(bobPubKey.h) // g^y
     val gY_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
@@ -180,7 +181,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // some 3rd person that will be paid
     val carol = new ContextEnrichingTestProvingInterpreter
-    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+    val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
     val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
@@ -198,7 +199,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     fullMixOutput0_R4 shouldBe c0
     fullMixOutput0_R5 shouldBe c1
 
-    val r4X = dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x) // R4^x
+    val r4X = SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x)) // R4^x
 
     // if R4^x == R5 then this fullMixOutput0 is Alice's output else its Bob's output.
     val (aliceAnonBox, bobAnonBox) = if (r4X == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
@@ -206,7 +207,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
       (fullMixOutput0, fullMixOutput1)
     } else {
       println("First output is Bob's")
-      dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
+      SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x)) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
       (fullMixOutput1, fullMixOutput0)
     }
 

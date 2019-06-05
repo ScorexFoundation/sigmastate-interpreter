@@ -3,8 +3,8 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox._
-import scorex.util.encode.Base16
 import scorex.crypto.hash.Digest32
+import scorex.util.encode.Base16
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -12,9 +12,10 @@ import sigmastate.SType.AnyOps
 import sigmastate.lang.Terms._
 import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigmastate.utxo.CostTable.Cost
+import special.collection.Coll
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
-import scala.collection.mutable.WrappedArray.ofByte
 import scala.runtime.ScalaRunTime
 
 /**
@@ -34,33 +35,26 @@ import scala.runtime.ScalaRunTime
 class ErgoBoxCandidate(val value: Long,
                        val ergoTree: ErgoTree,
                        val creationHeight: Int,
-                       val additionalTokens: Seq[(TokenId, Long)] = Seq(),
+                       val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  def proposition: BoolValue = ergoTree.proposition.asBoolValue
-
-  def dataSize: Long = bytesWithNoRef.length.toLong
-
-  lazy val cost: Int = (dataSize / 1024 + 1).toInt * Cost.BoxPerKilobyte
+  def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
   lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
   def toBox(txId: ModifierId, boxIndex: Short) =
-    ErgoBox(value, ergoTree, creationHeight, additionalTokens, additionalRegisters, txId, boxIndex)
+    new ErgoBox(value, ergoTree, additionalTokens, additionalRegisters, txId, boxIndex, creationHeight)
 
   def get(identifier: RegisterId): Option[Value[SType]] = {
     identifier match {
       case ValueRegId => Some(LongConstant(value))
       case ScriptRegId => Some(ByteArrayConstant(propositionBytes))
       case TokensRegId =>
-        val tokenTuples = additionalTokens.map { case (id, amount) =>
-          Array(id, amount)
-        }.toArray
-        Some(Constant(tokenTuples.asWrappedType, STokensRegType))
+        Some(Constant(additionalTokens.map { case (id, v) => (id.toColl, v) }.asWrappedType, STokensRegType))  // TODO optimize using mapFirst
       case ReferenceRegId =>
-        val tupleVal = Array(creationHeight, Array.fill(34)(0: Byte))
+        val tupleVal = (creationHeight, ErgoBoxCandidate.UndefinedBoxRef)
         Some(Constant(tupleVal.asWrappedType, SReferenceRegType))
       case n: NonMandatoryRegisterId =>
         additionalRegisters.get(n)
@@ -78,16 +72,16 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 
 object ErgoBoxCandidate {
-
+  val UndefinedBoxRef = Array.fill(34)(0: Byte).toColl
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
-                                        tokensInTx: Option[Array[ofByte]],
+                                        tokensInTx: Option[Coll[TokenId]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
       w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
@@ -95,7 +89,7 @@ object ErgoBoxCandidate {
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
         if (tokensInTx.isDefined) {
-          val tokenIndex = tokensInTx.get.indexOf(new ofByte(id))
+          val tokenIndex = tokensInTx.get.indexWhere(v => util.Arrays.equals(v, id), 0)
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
           w.putUInt(tokenIndex)
         } else {
@@ -127,7 +121,7 @@ object ErgoBoxCandidate {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
-    def parseBodyWithIndexedDigests(digestsInTx: Option[Array[Digest32]], r: SigmaByteReader): ErgoBoxCandidate = {
+    def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val value = r.getULong()
       val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
       val creationHeight = r.getUInt().toInt
@@ -135,13 +129,14 @@ object ErgoBoxCandidate {
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {
           val digestIndex = r.getUInt().toInt
-          if (!digestsInTx.get.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
-          digestsInTx.get.apply(digestIndex)
+          val digests = digestsInTx.get
+          if (!digests.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
+          digests(digestIndex)
         } else {
-          Digest32 @@ r.getBytes(TokenId.size)
+          r.getBytes(TokenId.size)
         }
         val amount = r.getULong()
-        tokenId -> amount
+        Digest32 @@ tokenId -> amount
       }
       val regsCount = r.getByte()
       val regs = (0 until regsCount).map { iReg =>
@@ -150,7 +145,7 @@ object ErgoBoxCandidate {
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
-      new ErgoBoxCandidate(value, tree, creationHeight, addTokens, regs)
+      new ErgoBoxCandidate(value, tree, creationHeight, addTokens.toColl, regs)
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {

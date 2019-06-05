@@ -34,9 +34,9 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
         val ctx = testingContext(h)
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
 
         {
           val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
@@ -54,7 +54,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         }
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case sb: SigmaBoolean => }
+          res should matchPattern { case _: SigmaBoolean => }
         }
       }
     }
@@ -164,7 +164,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = box1.R5[Coll[Boolean]].get
         |  allOf(arr) == false
         |}""".stripMargin)
-
     testEval(
       """{
         |  val arr = Coll(1, 2, 3)
@@ -185,13 +184,14 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = Coll(1, 2, 3)
         |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
         |}""".stripMargin)
-    //    // TODO uncomment when Costing for where is implemented
-    //    testEval("""{
-    //              |  val arr = Array(1, 2, 3)
-    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-    //              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
+        |}""".stripMargin)
   }
 
+// TODO coverage: implement it as negative test
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
 //              |  val arr = Array(dk1, dk2)
@@ -304,7 +304,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
     verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop4 = GT(Height, LongConstant(100)).toSigmaProp
+    val prop4 = GT(Height, IntConstant(100)).toSigmaProp
     verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
   }
 

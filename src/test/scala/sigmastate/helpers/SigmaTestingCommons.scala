@@ -5,24 +5,27 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoBox, ErgoBoxCandidate, ErgoLikeContext, ErgoLikeTransaction}
+import org.ergoplatform._
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{Nullable, RType, TestContexts, TestUtils}
-import scorex.crypto.hash.Blake2b256
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import scalan.{TestUtils, TestContexts, Nullable, RType}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
-import sigma.types.{IsPrimView, PrimViewType, View}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigma.types.{PrimViewType, IsPrimView, View}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import special.sigma._
 import spire.util.Opt
+import sigmastate.eval._
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -30,24 +33,26 @@ import scala.language.implicitConversions
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers with TestUtils with TestContexts {
-
+  with Matchers with TestUtils with TestContexts with ValidationSpecification {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
+
+  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
 
-  implicit def grElemConvert(leafConstant: GroupElementConstant): CryptoConstants.EcPointType = leafConstant.value
+  implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
+    SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
 
   def checkSerializationRoundTrip(v: SValue): Unit = {
-    val compiledTreeBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(v)
+    val compiledTreeBytes = ValueSerializer.serialize(v)
     withClue(s"(De)Serialization roundtrip failed for the tree:") {
-      ErgoTreeSerializer.DefaultSerializer.deserialize(compiledTreeBytes) shouldEqual v
+      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
     }
   }
 
@@ -59,13 +64,13 @@ trait SigmaTestingCommons extends PropSpec
     tree
   }
 
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(TokenId, Long)] = Seq(),
+                additionalTokens: Seq[(Digest32, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
@@ -85,7 +90,7 @@ trait SigmaTestingCommons extends PropSpec
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
-        case Some(name: String) =>
+        case Some(name: String) if saveGraphsInFile =>
           emit(name, res)
         case _ =>
       }
@@ -99,7 +104,7 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def func[A: RType, B: RType](func: String)(implicit IR: IRContext): A => B = {
+  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
     import IR._
     import IR.Context._;
     val tA = RType[A]
@@ -125,70 +130,14 @@ trait SigmaTestingCommons extends PropSpec
     (in: A) => {
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
-      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
-        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val context =
+        ErgoLikeContext.dummy(createBox(0, TrueProp))
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val (res, _) = valueFun(calcCtx)
       res.asInstanceOf[B]
-//      (TransformingSigmaBuilder.unliftAny(res) match {
-//        case Nullable(x) => // x is a value extracted from Constant
-//          tB match {
-//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
-//              View.mkPrimView(x) match {
-//                case Opt(pv) => pv
-//                case _ => x // cannot wrap, so just return as is
-//              }
-//            case _ => Evaluation.toDslData(x, tpeB, isCost = false) // don't need to wrap
-//          }
-//        case _ => Evaluation.toDslData(res, tpeB, isCost = false)
-//      }).asInstanceOf[B]
     }
   }
-
-//  def func2[A: RType, B: RType, R: RType](func: String)(implicit IR: IRContext): (A, B) => R = {
-//    val tA = RType[A]
-//    val tB = RType[B]
-//    val tR = RType[R]
-//    val tpeA = Evaluation.rtypeToSType(tA)
-//    val tpeB = Evaluation.rtypeToSType(tB)
-//    val tpeR = Evaluation.rtypeToSType(tR)
-//    val code =
-//      s"""{
-//         |  val func = $func
-//         |  val res = func(getVar[${tA.name}](1).get, getVar[${tB.name}](2).get)
-//         |  res
-//         |}
-//      """.stripMargin
-//    val env = Interpreter.emptyEnv
-//    val interProp = compiler.typecheck(env, code)
-//    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-//    val valueFun = IR.compile[tpeR.type](IR.getDataEnv, IR.asRep[IR.Context => tpeR.WrappedType](calcF))
-//
-//    (in1: A, in2: B) => {
-//      implicit val cA = tA.classTag
-//      implicit val cB = tB.classTag
-//      val x = fromPrimView(in1)
-//      val y = fromPrimView(in2)
-//      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
-//        .withBindings(
-//          1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA),
-//          2.toByte -> Constant[SType](y.asInstanceOf[SType#WrappedType], tpeB))
-//      val calcCtx = context.toSigmaContext(IR, isCost = false)
-//      val res = valueFun(calcCtx)
-//      (TransformingSigmaBuilder.unliftAny(res) match {
-//        case Nullable(x) => // x is a value extracted from Constant
-//          tB match {
-//            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
-//              View.mkPrimView(x) match {
-//                case Opt(pv) => pv
-//                case _ => x // cannot wrap, so just return as is
-//              }
-//            case _ => x // don't need to wrap
-//          }
-//        case _ => res
-//      }).asInstanceOf[R]
-//    }
-//  }
 
   def assertExceptionThrown(fun: => Any, assertion: Throwable => Boolean): Unit = {
     try {

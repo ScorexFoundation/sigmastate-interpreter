@@ -1,0 +1,437 @@
+
+\subsubsection{\lst{Box.value} method (Code 99.1)}
+\label{sec:type:Box:value}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure) \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Long} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractAmount]{\lst{ExtractAmount}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.propositionBytes} method (Code 99.2)}
+\label{sec:type:Box:propositionBytes}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Serialized bytes of guarding script, which should be evaluated to true in order to
+ open this box. (aka spend it in a transaction) \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractScriptBytes]{\lst{ExtractScriptBytes}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.bytes} method (Code 99.3)}
+\label{sec:type:Box:bytes}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Serialized bytes of this box's content, including proposition bytes. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractBytes]{\lst{ExtractBytes}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.bytesWithoutRef} method (Code 99.4)}
+\label{sec:type:Box:bytesWithoutRef}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Serialized bytes of this box's content, excluding transactionId and index of output. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractBytesWithNoRef]{\lst{ExtractBytesWithNoRef}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.id} method (Code 99.5)}
+\label{sec:type:Box:id}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Blake2b256 hash of this box's content, basically equals to \lst{blake2b256(bytes)} \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractId]{\lst{ExtractId}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.creationInfo} method (Code 99.6)}
+\label{sec:type:Box:creationInfo}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
+ is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
+ identifier followed by box index in the transaction outputs.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{(Int,Coll[Byte])} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractCreationInfo]{\lst{ExtractCreationInfo}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.getReg} method (Code 99.7)}
+\label{sec:type:Box:getReg}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  Extracts register by id and type.
+ Type param \lst{T} expected type of the register.
+ Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{regId} & \lst{: Int} & \text{// zero-based identifier of the register.} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.tokens} method (Code 99.8)}
+\label{sec:type:Box:tokens}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Secondary tokens \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[(Coll[Byte],Long)]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R0} method (Code 99.9)}
+\label{sec:type:Box:R0}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Monetary value, in Ergo tokens \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R1} method (Code 99.10)}
+\label{sec:type:Box:R1}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Guarding script \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R2} method (Code 99.11)}
+\label{sec:type:Box:R2}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Secondary tokens \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R3} method (Code 99.12)}
+\label{sec:type:Box:R3}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Reference to transaction and output id where the box was created \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R4} method (Code 99.13)}
+\label{sec:type:Box:R4}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R5} method (Code 99.14)}
+\label{sec:type:Box:R5}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R6} method (Code 99.15)}
+\label{sec:type:Box:R6}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R7} method (Code 99.16)}
+\label{sec:type:Box:R7}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R8} method (Code 99.17)}
+\label{sec:type:Box:R8}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}
+
+
+
+\subsubsection{\lst{Box.R9} method (Code 99.18)}
+\label{sec:type:Box:R9}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Non-mandatory register \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
+  \hline
+       
+\end{tabularx}

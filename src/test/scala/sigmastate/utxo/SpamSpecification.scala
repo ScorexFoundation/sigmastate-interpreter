@@ -1,6 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
+import org.ergoplatform.validation.{ValidationRules, ValidationException}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -11,6 +12,7 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.lang.exceptions.CosterException
@@ -31,7 +33,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 3000000).foreach(_ => hf(block))
+    (1 to 6000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -44,7 +46,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("huge byte array") {
-    //todo: make value dependent on CostTable constants, not magic constant
+    //TODO coverage: make value dependent on CostTable constants, not magic constant
     val ba = Random.randomBytes(10000000)
 
     val id = 11: Byte
@@ -119,9 +121,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven)).toSigmaProp
 
-    val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    val pt = System.currentTimeMillis()
 
     val (_, terminated) = termination(() =>
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, proof, fakeMessage)
@@ -146,7 +146,9 @@ class SpamSpecification extends SigmaTestingCommons {
         FuncValue(Vector((1, SBox)),
           AND(
             GE(ExtractAmount(ValUse(1, SBox)), LongConstant(10)),
-            EQ(ExtractScriptBytes(ValUse(1, SBox)), ByteArrayConstant(propToCompare.bytes))
+            EQ(
+              ExtractScriptBytes(ValUse(1, SBox)),
+              ByteArrayConstant(propToCompare.treeWithSegregation.bytes))
           )
         )
       ).toSigmaProp
@@ -171,7 +173,6 @@ class SpamSpecification extends SigmaTestingCommons {
 
   property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
-      this.useAlphaEquality = true
       override val okPrintEvaluatedEntries = false
       override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
         if (okPrintEvaluatedEntries)
@@ -214,15 +215,17 @@ class SpamSpecification extends SigmaTestingCommons {
     terminated shouldBe true
     assertExceptionThrown(
       res.fold(t => throw t, identity),
-      t => {
-        rootCause(t).isInstanceOf[CosterException] && t.getMessage.contains("Script cannot be executed")
+      {
+        case ve: ValidationException =>
+          ve.rule == ValidationRules.CheckCostWithContext &&
+          rootCause(ve).isInstanceOf[CosterException]
       }
     )
 
     // measure time required to execute the script itself and it is more then timeout
     val (_, calcTime) = BenchmarkUtil.measureTime {
       import limitlessProver.IR._
-      val costingRes @ Pair(calcF, costF) = doCostingEx(emptyEnv, prop, true)
+      val Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }
@@ -257,7 +260,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println("proof size: " + proof.length)
 
-    val treeData = new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(digest, AvlTreeFlags.ReadOnly, 32, None))
 
     val key1 = genKey("key1")
     val value1 = genValue("value1")

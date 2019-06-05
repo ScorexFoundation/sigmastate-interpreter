@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import org.ergoplatform.ErgoBox.TokenId
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.util.Random
@@ -8,6 +9,9 @@ import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
+import sigmastate.SType._
 
 class ErgoLikeTransactionSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
@@ -24,8 +28,10 @@ class ErgoLikeTransactionSpec extends PropSpec
     forAll { txIn: ErgoLikeTransaction =>
       whenever(txIn.outputCandidates.head.additionalTokens.nonEmpty) {
         val out = txIn.outputCandidates.head
+        // clone tokenIds so that same id have different references
+        val tokens = out.additionalTokens.map(v => (v._1.clone().asInstanceOf[TokenId], v._2))
         val outputs = (0 until 10).map { i =>
-          new ErgoBoxCandidate(out.value, out.ergoTree, i, out.additionalTokens, out.additionalRegisters)
+          new ErgoBoxCandidate(out.value, out.ergoTree, i, tokens, out.additionalRegisters)
         }
         val tx = new ErgoLikeTransaction(txIn.inputs, txIn.dataInputs, txIn.outputCandidates ++ outputs)
         roundTripTestWithPos(tx)(ErgoLikeTransaction.serializer)
@@ -35,9 +41,9 @@ class ErgoLikeTransactionSpec extends PropSpec
         ErgoLikeTransaction.serializer.serialize(tx, w)
         val bytes = w.toBytes
 
-        tx.outputCandidates.flatMap(_.additionalTokens).foreach { token =>
-          bytes.indexOfSlice(token._1) should not be -1
-          bytes.indexOfSlice(token._1) shouldBe bytes.lastIndexOfSlice(token._1)
+        tx.outputCandidates.toColl.flatMap(_.additionalTokens).foreach { (tokenId, _) =>
+          bytes.indexOfSlice(tokenId) should not be -1
+          bytes.indexOfSlice(tokenId) shouldBe bytes.lastIndexOfSlice(tokenId)
         }
       }
     }

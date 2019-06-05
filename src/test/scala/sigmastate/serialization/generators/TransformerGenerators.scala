@@ -1,17 +1,16 @@
 package sigmastate.serialization.generators
 
-import org.ergoplatform.{ErgoAddressEncoder, P2PKAddress}
+import org.ergoplatform._
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import scorex.util.encode.{Base58, Base64}
-import sigmastate.Values.{FalseLeaf, IntConstant, TrueLeaf, Value}
+import scorex.util.encode.{Base64, Base58}
 import sigmastate._
-import sigmastate.Values._
+import sigmastate.Values.{TrueLeaf, Value, IntConstant, _}
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.utxo._
-import sigmastate.lang.Terms._
 
-trait TransformerGenerators {
+trait TransformerGenerators extends ValidationSpecification {
   self: ValueGenerators with ConcreteCollectionGenerators =>
 
   import TransformingSigmaBuilder._
@@ -74,9 +73,8 @@ trait TransformerGenerators {
 
   val filterGen: Gen[Filter[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
-    id <- Arbitrary.arbitrary[Byte]
-    condition <- booleanConstGen
-  } yield mkFilter(col1, id, condition).asInstanceOf[Filter[SInt.type]]
+    condition <- funcValueGen
+  } yield mkFilter(col1, condition).asInstanceOf[Filter[SInt.type]]
 
   val appendGen: Gen[Append[SInt.type]] = for {
     col1 <- arbCCOfIntConstant.arbitrary
@@ -102,7 +100,6 @@ trait TransformerGenerators {
   val extractRegisterAsGen: Gen[ExtractRegisterAs[SInt.type]] = for {
     input <- arbTaggedBox.arbitrary
     r <- arbRegisterIdentifier.arbitrary
-    dvInt <- arbIntConstants.arbitrary
   } yield ExtractRegisterAs(input, r)(SInt)
   val extractCreationInfoGen: Gen[ExtractCreationInfo] =
     arbTaggedBox.arbitrary.map { b => mkExtractCreationInfo(b).asInstanceOf[ExtractCreationInfo] }
@@ -262,8 +259,6 @@ trait TransformerGenerators {
     body <- logicalExprTreeNodeGen(Seq(AND.apply))
   } yield FuncValue(args, body)
 
-  val sigmaPropValueGen: Gen[SigmaPropValue] = sigmaBooleanGen.map(SigmaPropConstant(_))
-
   val sigmaAndGen: Gen[SigmaAnd] = for {
     num <- Gen.chooseNum(1, 10)
     items <- Gen.listOfN(num, sigmaPropValueGen)
@@ -281,4 +276,12 @@ trait TransformerGenerators {
   val byteArrayToLongGen: Gen[ByteArrayToLong] =
     arbByteArrayConstant.arbitrary.map { v =>
       mkByteArrayToLong(v).asInstanceOf[ByteArrayToLong] }
+
+  val ergoTreeGen: Gen[ErgoTree] = for {
+    propWithConstants <- logicalExprTreeNodeGen(Seq(AND.apply)).map(_.toSigmaProp)
+    propWithoutConstants <- Gen.oneOf(Seq[SigmaPropValue](EQ(SizeOf(Inputs), SizeOf(Outputs)).toSigmaProp))
+    prop <- Gen.oneOf(propWithConstants, propWithoutConstants)
+    treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation,
+      ErgoTree.withoutSegregation))
+  } yield treeBuilder(prop)
 }

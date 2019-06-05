@@ -12,7 +12,7 @@ import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
-import sigmastate.lang.exceptions.{NonApplicableMethod, TyperException, InvalidBinaryOperationParameters, MethodNotFound}
+import sigmastate.lang.exceptions.TyperException
 import sigmastate.serialization.generators.ValueGenerators
 import sigmastate.utxo.{ExtractCreationInfo, Append}
 
@@ -28,7 +28,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
       val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
       val bound = binder.bind(parsed)
-      val st = new SigmaTree(bound)
       val typer = new SigmaTyper(builder, predefinedFuncRegistry)
       val typed = typer.typecheck(bound)
       assertSrcCtxForAllNodes(typed)
@@ -45,7 +44,6 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     val predefinedFuncRegistry = new PredefinedFuncRegistry(builder)
     val binder = new SigmaBinder(env, builder, TestnetNetworkPrefix, predefinedFuncRegistry)
     val bound = binder.bind(parsed)
-    val st = new SigmaTree(bound)
     val typer = new SigmaTyper(builder, predefinedFuncRegistry)
     val exception = the[TyperException] thrownBy typer.typecheck(bound)
     withClue(s"Exception: $exception, is missing source context:") { exception.source shouldBe defined }
@@ -68,13 +66,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "INPUTS", Inputs) shouldBe SCollection(SBox)
     typecheck(env, "INPUTS.size") shouldBe SInt
     typecheck(env, "INPUTS.size > 1", GT(Select(Inputs, "size", Some(SInt)), 1)) shouldBe SBoolean
-    // todo: restore in https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324
-    //    typecheck(env, "arr1 | arr2", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
+    typecheck(env, "xor(arr1, arr2)", Xor(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "arr1 ++ arr2", Append(ByteArrayConstant(arr1), ByteArrayConstant(arr2))) shouldBe SByteArray
     typecheck(env, "col1 ++ col2") shouldBe SCollection(SLong)
-    // todo should be g1.exp(n1)
-    // ( see https://github.com/ScorexFoundation/sigmastate-interpreter/issues/324 )
-    //    typecheck(env, "g1 ^ n1") shouldBe SGroupElement
+    typecheck(env, "g1.exp(n1)") shouldBe SGroupElement
     typecheck(env, "g1 * g2") shouldBe SGroupElement
     typecheck(env, "p1 || p2") shouldBe SSigmaProp
     typecheck(env, "p1 && p2") shouldBe SSigmaProp
@@ -164,9 +159,13 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "(1, 2L).size") shouldBe SInt
     typecheck(env, "(1, 2L)(0)") shouldBe SInt
     typecheck(env, "(1, 2L)(1)") shouldBe SLong
+    typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
+  }
+
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("tuple advanced operations") {
     typecheck(env, "(1, 2L).getOrElse(2, 3)") shouldBe SAny
     typecheck(env, "(1, 2L).slice(0, 2)") shouldBe SCollection(SAny)
-    typecheck(env, "{ (a: Int) => (1, 2L)(a) }") shouldBe SFunc(IndexedSeq(SInt), SAny)
   }
 
   property("types") {
@@ -245,8 +244,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ (a: Int) => { val b = a + 1; b } }") shouldBe SFunc(IndexedSeq(SInt), SInt)
     typecheck(env, "{ (a: Int, box: Box) => a + box.value }") shouldBe
       SFunc(IndexedSeq(SInt, SBox), SLong)
+    /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     typecheck(env, "{ (p: (Int, GroupElement), box: Box) => p._1 > box.value && p._2.isIdentity }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SGroupElement), SBox), SBoolean)
+      */
     typecheck(env, "{ (p: (Int, SigmaProp), box: Box) => p._1 > box.value && p._2.isProven }") shouldBe
       SFunc(IndexedSeq(STuple(SInt, SSigmaProp), SBox), SBoolean)
 
@@ -273,8 +274,11 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
   property("type parameters") {
     typecheck(env, "SELF.R1[Int]") shouldBe SOption(SInt)
     typecheck(env, "SELF.R1[Int].isDefined") shouldBe SBoolean
-    typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // typecheck(env, "SELF.R1[Int].isEmpty") shouldBe SBoolean
     typecheck(env, "SELF.R1[Int].get") shouldBe SInt
+    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
+    //  typecheck(env, "SELF.getReg[Int](1)") shouldBe SOption.SIntOption
     typefail(env, "x[Int]", 1, 1)
     typefail(env, "arr1[Int]", 1, 1)
     typecheck(env, "SELF.R1[(Int,Boolean)]") shouldBe SOption(STuple(SInt, SBoolean))
@@ -309,7 +313,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       val t1 = ty(s1); val t2 = ty(s2)
       checkTypes(t1, t2, exp)
     }
-    def unify(s1: String, s2: String, subst: (STypeIdent, SType)*): Unit =
+    def unify(s1: String, s2: String, subst: (STypeVar, SType)*): Unit =
       check(s1, s2, Some(subst.toMap))
 
     unifyTypes(NoType, NoType) shouldBe None
@@ -409,7 +413,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       checkTypes(t1, t2, exp)
     }
     def checkAll(ts: Seq[String], exp: Option[SType]): Unit = {
-      val types = ts.map(ty(_));
+      val types = ts.map(ty(_))
       checkAllTypes(types, exp)
     }
 
@@ -587,21 +591,24 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typefail(env, "true >>> false", 1, 1)
   }
 
-  property("Collection.BitShiftLeft") {
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("Collection.BitShiftLeft") {
     typecheck(env, "Coll(1,2) << 2") shouldBe SCollection(SInt)
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << true")
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << 2L")
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) << (2L, 3)")
   }
 
-  property("Collection.BitShiftRight") {
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("Collection.BitShiftRight") {
     typecheck(env, "Coll(1,2) >> 2") shouldBe SCollection(SInt)
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> 2L")
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> true")
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >> (2L, 3)")
   }
 
-  property("Collection.BitShiftRightZeroed") {
+  // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+  ignore("Collection.BitShiftRightZeroed") {
     typecheck(env, "Coll(true, false) >>> 2") shouldBe SCollection(SBoolean)
     an [TyperException] should be thrownBy typecheck(env, "Coll(1,2) >>> 2")
     an [TyperException] should be thrownBy typecheck(env, "Coll(true, false) >>> true")
@@ -621,9 +628,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "SELF.tokens") shouldBe ErgoBox.STokensRegType
   }
 
-  property("SOption.toColl") {
-    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
-  }
+// TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+//  property("SOption.toColl") {
+//    typecheck(env, "getVar[Int](1).toColl") shouldBe SIntArray
+//  }
 
   property("SContext.dataInputs") {
     typecheck(env, "CONTEXT.dataInputs") shouldBe SCollection(SBox)

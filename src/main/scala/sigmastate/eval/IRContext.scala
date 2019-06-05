@@ -1,11 +1,11 @@
 package sigmastate.eval
 
-import java.lang.reflect.Method
-
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{Value, SValue, TrueSigmaProp}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.interpreter.Interpreter
 
 import scala.util.Try
 
@@ -44,10 +44,13 @@ trait IRContext extends Evaluation with TreeBuilding {
   }
 
   def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
-    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    val f = asRep[Costed[Context] => Costed[Any]](costed)
-    val calcF = f.sliceCalc(okRemoveIsProven)
-    val costF = f.sliceCostEx
+    def buildGraph(env: ScriptEnv, exp: SValue) = {
+      val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
+      asRep[Costed[Context] => Costed[Any]](costed)
+    }
+    val g = buildGraph(env, typed)
+    val calcF = g.sliceCalc(okRemoveIsProven)
+    val costF = g.sliceCostEx
     Pair(calcF, costF)
   }
 
@@ -92,14 +95,9 @@ trait IRContext extends Evaluation with TreeBuilding {
 
 /** IR context to be used by blockchain nodes to validate transactions. */
 class RuntimeIRContext extends IRContext with CompiletimeCosting {
-//  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
-//  override def shouldUnpack(e: Elem[_]): Boolean = true
 }
 
 /** IR context to be used by script development tools to compile ErgoScript into ErgoTree bytecode. */
 class CompiletimeIRContext extends IRContext with CompiletimeCosting {
-//  override def invokeAll: Boolean = true
-//  override def isInvokeEnabled(d: Def[_], m: Method): Boolean = invokeAll
-//  override def shouldUnpack(e: Elem[_]): Boolean = true
 }
 

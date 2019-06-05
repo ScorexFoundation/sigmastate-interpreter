@@ -10,9 +10,11 @@ import org.scalatest.Matchers
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.ProveDHTuple
-import sigmastate.eval.CostingSigmaDslBuilder
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
+import special.sigma._
+import sigmastate.eval._
+import special.collection.Coll
 
 trait LangTests extends Matchers {
 
@@ -41,9 +43,9 @@ trait LangTests extends Matchers {
   val g3 = CostingSigmaDslBuilder.GroupElement(ecp3.asInstanceOf[ECPoint])
   val g4 = CostingSigmaDslBuilder.GroupElement(ecp4.asInstanceOf[ECPoint])
 
-  protected val n1: BigInteger = BigInt(10).underlying()
-  protected val n2: BigInteger = BigInt(20).underlying()
-  protected val bigIntegerArr1: Array[BigInteger] = Array(n1, n2)
+  protected val n1: BigInt = BigInt(10).underlying()
+  protected val n2: BigInt = BigInt(20).underlying()
+  protected val bigIntegerArr1: Coll[BigInt] = Colls.fromItems(n1, n2)
   protected val big: BigInteger = BigInt(Long.MaxValue).underlying().pow(2)
   protected val p1: SigmaBoolean = ProveDlog(ecp1)
   protected val p2: SigmaBoolean = ProveDlog(ecp2)

@@ -18,6 +18,10 @@ object AvlTreeFlags {
 
   lazy val AllOperationsAllowed = AvlTreeFlags(insertAllowed = true, updateAllowed = true, removeAllowed = true)
 
+  lazy val InsertOnly = AvlTreeFlags(insertAllowed = true, updateAllowed = false, removeAllowed = false)
+
+  lazy val RemoveOnly = AvlTreeFlags(insertAllowed = false, updateAllowed = false, removeAllowed = true)
+
   def apply(serializedFlags: Byte): AvlTreeFlags = {
     val insertAllowed = (serializedFlags & 0x01) != 0
     val updateAllowed = (serializedFlags & 0x02) != 0
@@ -70,8 +74,10 @@ object AvlTreeData {
   val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
-  val dummy =
-    new AvlTreeData(ADDigest @@ Array.fill(DigestSize)(0:Byte), AvlTreeFlags.AllOperationsAllowed, keyLength = 32)
+  val dummy = new AvlTreeData(
+    ADDigest @@ Array.fill(DigestSize)(0:Byte),
+    AvlTreeFlags.AllOperationsAllowed,
+    keyLength = 32)
 
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 

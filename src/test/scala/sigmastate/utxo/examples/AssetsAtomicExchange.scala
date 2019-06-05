@@ -41,13 +41,12 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
   """{
    |  (HEIGHT > deadline && pkA) || {
    |    val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
-   |    val c = allOf(Coll(
+   |    allOf(Coll(
    |      tokenData._1 == tokenId,
    |      tokenData._2 >= 60L,
    |      OUTPUTS(0).propositionBytes == pkA.propBytes,
    |      OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
    |    ))
-   |    c
    |  }
    |}
   """.stripMargin)
@@ -57,7 +56,7 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
     (HEIGHT > deadline && pkB) || {
       val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
       allOf(Coll(
-        OUTPUTS(1).value >= 100,
+        OUTPUTS(1).value >= 100L,
         knownBoxId,
         OUTPUTS(1).propositionBytes == pkB.propBytes
       ))
@@ -66,9 +65,9 @@ case class AssetsAtomicExchange[Spec <: ContractSpec]
   """{
    |  (HEIGHT > deadline && pkB) ||
    |    allOf(Coll(
-   |      OUTPUTS(1).value >= 100,
-   |      OUTPUTS(1).R4[Coll[Byte]].get == SELF.id,
-   |      OUTPUTS(1).propositionBytes == pkB.propBytes
+   |      OUTPUTS(1).value >= 100L,
+   |      OUTPUTS(1).propositionBytes == pkB.propBytes,
+   |      OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
    |    ))
    |}
   """.stripMargin)

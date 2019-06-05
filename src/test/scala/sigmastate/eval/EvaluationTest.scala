@@ -1,7 +1,7 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
+import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
@@ -9,7 +9,7 @@ import sigmastate.lang.LangTests
 import scalan.util.BenchmarkUtil._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -57,8 +57,6 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "value", "SELF.value + 1L", ctx, 11L)
   }
 
-  // TODO Caused by: java.lang.AssertionError: assertion failed:
-  //  Invalid cast Cast(SizeCollElem<SizeColl[Coll[Int], Int]>, s1572): interface special.collection.SizeColl is not assignable from class special.collection.CSizePrim
   test("lambdas") {
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }", ctx, true)
@@ -127,18 +125,19 @@ class EvaluationTest extends BaseCtxTests
 //  }
 
   test("SubstConst") {
-    def script(pk: ProveDlog): Value[SType] = AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven)
+    def script(pk: ProveDlog): SigmaPropValue =
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
     val script2 = script(pk2)
-    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script1)
+    val inputBytes = DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
     val positions = IntArrayConstant(Array[Int](2))
     // in ergo we have only byte array of a serialized group element
     val newVals = ConcreteCollection(Vector[SigmaPropValue](CreateProveDlog(DecodePoint(pk2.pkBytes))), SSigmaProp)
 
-    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script2)
+    val expectedBytes = DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "SubstConst",
       EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),

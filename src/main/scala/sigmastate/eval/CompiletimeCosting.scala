@@ -14,7 +14,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.lang.Terms
 import sigma.util.Extensions._
 
-trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
+trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
   import builder._
 
   override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
@@ -107,6 +107,11 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
 
       case Select(input, ModQMethod.name, _) =>
         eval(mkModQ(input.asBigInt))
+
+      case Terms.Apply(Select(l, PlusModQMethod.name, _), Seq(r)) =>
+        eval(mkPlusModQ(l.asBigInt, r.asBigInt))
+      case Terms.Apply(Select(l, MinusModQMethod.name, _), Seq(r)) =>
+        eval(mkMinusModQ(l.asBigInt, r.asBigInt))
 
       case _ =>
         super.evalNode(ctx, env, node)

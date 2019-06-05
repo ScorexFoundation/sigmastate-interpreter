@@ -3,7 +3,8 @@ package sigmastate.serialization.generators
 import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoScriptPredef.{TrueProp, FalseProp}
+import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
+import org.ergoplatform.validation._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -15,12 +16,16 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
+import special.collection.Coll
+import special.sigma._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-trait ValueGenerators extends TypeGenerators {
+trait ValueGenerators extends TypeGenerators with ValidationSpecification {
 
   import sigmastate.lang.TransformingSigmaBuilder._
 
@@ -43,12 +48,17 @@ trait ValueGenerators extends TypeGenerators {
   implicit val arbRegisterIdentifier: Arbitrary[RegisterId] = Arbitrary(registerIdentifierGen)
 
 
-  implicit val arbBigInteger = Arbitrary(arbBigInt.arbitrary.map(_.bigInteger))
-  implicit val arbGroupElement = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
+  implicit val arbBigInteger = Arbitrary(Arbitrary.arbBigInt.arbitrary.map(_.bigInteger))
+  implicit val arbBigInt = Arbitrary(arbBigInteger.arbitrary.map(SigmaDsl.BigInt(_)))
+  implicit val arbEcPointType = Arbitrary(Gen.const(()).flatMap(_ => CryptoConstants.dlogGroup.createRandomGenerator()))
+  implicit val arbGroupElement = Arbitrary(arbEcPointType.arbitrary.map(SigmaDsl.GroupElement(_)))
   implicit val arbSigmaBoolean: Arbitrary[SigmaBoolean] = Arbitrary(Gen.oneOf(proveDHTGen, proveDHTGen))
-  implicit val arbSigmaProp: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropGen)
-  implicit val arbBox = Arbitrary(ergoBoxGen)
+  implicit val arbSigmaProp: Arbitrary[SigmaProp] = Arbitrary(sigmaPropGen)
+  implicit val arbSigmaPropValue: Arbitrary[SigmaPropValue] = Arbitrary(sigmaPropValueGen)
+  implicit val arbErgoBox = Arbitrary(ergoBoxGen)
+  implicit val arbBox = Arbitrary(ergoBoxGen.map(SigmaDsl.Box))
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
+  implicit val arbAvlTree = Arbitrary(avlTreeGen)
   implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
   implicit val arbTransaction = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
@@ -68,7 +78,7 @@ trait ValueGenerators extends TypeGenerators {
   val stringConstGen: Gen[StringConstant] =
     arbString.arbitrary.map { v => mkConstant[SString.type](v, SString) }
   val bigIntConstGen: Gen[BigIntConstant] =
-    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v.bigInteger, SBigInt) }
+    arbBigInt.arbitrary.map { v => mkConstant[SBigInt.type](v, SBigInt) }
   val byteArrayConstGen: Gen[CollectionConstant[SByte.type]] = for {
     length <- Gen.chooseNum(1, 100)
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
@@ -100,8 +110,18 @@ trait ValueGenerators extends TypeGenerators {
     vv <- groupElementGen
   } yield ProveDHTuple(gv, hv, uv, vv)
 
-  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
-  val sigmaPropGen: Gen[SigmaPropValue] =
+  def sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
+    left <- sigmaBooleanGen
+    right <- sigmaBooleanGen
+    node <- Gen.oneOf(
+      COR(Seq(left, right)),
+      CAND(Seq(left, right))
+    )
+  } yield node
+
+  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen, Gen.delay(sigmaTreeNodeGen))
+  val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
+  val sigmaPropValueGen: Gen[SigmaPropValue] =
     Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
 
   val registerIdentifierGen: Gen[RegisterId] = Gen.oneOf(R0, R1, R2, R3, R4, R5, R6, R7, R8, R9)
@@ -121,7 +141,7 @@ trait ValueGenerators extends TypeGenerators {
       }
   }
 
-  def additionalTokensGen(cnt: Byte): Seq[Gen[(TokenId, Long)]] =
+  def additionalTokensGen(cnt: Byte): Seq[Gen[(Digest32, Long)]] =
     (0 until cnt).map { _ =>
       for {
         id <- Digest32 @@ boxIdGen
@@ -190,7 +210,9 @@ trait ValueGenerators extends TypeGenerators {
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
   } yield AvlTreeData(ADDigest @@ digest, flags, keyLength, vl)
 
-  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeDataGen.map { v => AvlTreeConstant(v) }
+  def avlTreeGen: Gen[AvlTree] = avlTreeDataGen.map(SigmaDsl.avlTree)
+
+  def avlTreeConstantGen: Gen[AvlTreeConstant] = avlTreeGen.map { v => AvlTreeConstant(v) }
 
   implicit def arrayGen[T: Arbitrary : ClassTag]: Gen[Array[T]] = for {
     length <- Gen.chooseNum(1, 100)
@@ -203,11 +225,11 @@ trait ValueGenerators extends TypeGenerators {
     case SShort => arbShort
     case SInt => arbInt
     case SLong => arbLong
-    case SBigInt => arbBigInteger
+    case SBigInt => arbBigInt
     case SGroupElement => arbGroupElement
-    case SSigmaProp => arbSigmaBoolean
+    case SSigmaProp => arbSigmaProp
     case SBox => arbBox
-    case SAvlTree => arbAvlTreeData
+    case SAvlTree => arbAvlTree
     case SAny => arbAnyVal
     case SUnit => arbUnit
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
@@ -243,7 +265,7 @@ trait ValueGenerators extends TypeGenerators {
     creationHeight <- Gen.choose(-1, Int.MaxValue)
   } yield ergoplatform.ErgoBox(l, b, creationHeight, tokens.asScala, ar.asScala.toMap, tId.toArray.toModifierId, boxId)
 
-  def ergoBoxCandidateGen(availableTokens: Seq[TokenId]): Gen[ErgoBoxCandidate] = for {
+  def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     p <- proveDlogGen
     b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
@@ -253,15 +275,15 @@ trait ValueGenerators extends TypeGenerators {
     tokens <- Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- Gen.chooseNum(0, 100000)
-  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.zip(tokenAmounts), ar.asScala.toMap)
+  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
 
-  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(v) }
+  val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(false, v)) }
 
-  val tokenIdGen: Gen[TokenId] = for {
+  val tokenIdGen: Gen[Digest32] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
   } yield Digest32 @@ bytes
 
-  val tokensGen: Gen[Seq[TokenId]] = for {
+  val tokensGen: Gen[Seq[Digest32]] = for {
     count <- Gen.chooseNum(10, 50)
     tokens <- Gen.listOfN(count, tokenIdGen)
   } yield tokens
@@ -294,4 +316,26 @@ trait ValueGenerators extends TypeGenerators {
       }
     }
   }
+
+  val byteArrayGen: Gen[Array[Byte]] = for {
+    length <- Gen.chooseNum(1, 10)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+  } yield bytes.toArray
+
+  import ValidationRules._
+
+  val numRules = currentSettings.size
+
+  val replacedRuleIdGen = Gen.chooseNum((FirstRuleId + numRules).toShort, Short.MaxValue)
+
+  val ruleIdGen = Gen.chooseNum(FirstRuleId, (FirstRuleId + numRules - 1).toShort)
+
+  val statusGen: Gen[RuleStatus] = Gen.oneOf(
+    Gen.oneOf(EnabledRule, DisabledRule),
+    replacedRuleIdGen.map(id => ReplacedRule(id)),
+    byteArrayGen.map(xs => ChangedRule(xs))
+  )
+
+  implicit val statusArb: Arbitrary[RuleStatus] = Arbitrary(statusGen)
+
 }

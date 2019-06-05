@@ -1,6 +1,5 @@
 package sigmastate.crypto
 
-import org.ergoplatform.ErgoLikeContext
 import scorex.util.encode.Base16
 import sigmastate.AtLeast
 import sigmastate.basics.DLogProtocol.DLogProverInput
@@ -9,8 +8,6 @@ import sigmastate.interpreter.{ContextExtension, ProverResult}
 
 class SigningSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-
-  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   property("simple signature test vector") {
 
@@ -53,11 +50,14 @@ class SigningSpecification extends SigmaTestingCommons {
 
     val sk = proverA.dlogSecrets.head
     val prop = sk.publicImage
-    val prove = proverA.prove(prop, fakeContext, msg).get
+    val tree = prop.toSigmaProp.treeWithSegregation
+    val prove = proverA.prove(tree, fakeContext, msg).get
 
     println(s"Message: ${Base16.encode(msg)}")
     println(s"sk: ${sk.w}")
+    println(s"sk(Base16): ${Base16.encode(sk.w.toByteArray)}")
     println(s"pkBytes: ${Base16.encode(prop.pkBytes)}")
+    println(s"treeBytes: ${Base16.encode(tree.bytes)}")
     println(s"Signature: ${Base16.encode(prove.proof)}")
   }
 

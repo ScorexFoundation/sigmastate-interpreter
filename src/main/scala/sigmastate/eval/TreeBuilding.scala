@@ -1,32 +1,22 @@
 package sigmastate.eval
 
-import scala.collection.mutable.ArrayBuffer
-import sigmastate._
-import sigmastate.Values.{BlockValue, BoolValue, BooleanConstant, ConcreteCollection, Constant, ConstantNode, EvaluatedCollection, FalseLeaf, FuncValue, GroupElementConstant, SValue, SigmaBoolean, SigmaPropConstant, ValDef, ValUse, Value}
-import sigmastate.serialization.OpCodes._
+
+import sigmastate.Values.{BlockValue, BoolValue, Constant, ConstantNode, EvaluatedCollection, SValue, SigmaPropConstant, ValDef, ValUse, Value}
 import org.ergoplatform._
-import java.math.BigInteger
 
 import org.ergoplatform.{Height, Inputs, Outputs, Self}
 import sigmastate._
-import sigmastate.lang.Terms.{OperationId, ValueOps}
+import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.OpCodes._
-import sigmastate.serialization.{ConstantStore, ValueSerializer}
-import sigmastate.utxo.{CostTable, ExtractAmount, SizeOf}
-import ErgoLikeContext._
+import sigmastate.serialization.ConstantStore
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.reflect.{ClassTag, classTag}
-import scala.util.Try
 import SType._
-import org.bouncycastle.math.ec.ECPoint
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.lang.{SigmaBuilder, SigmaTyper}
+import sigmastate.lang.SigmaTyper
 
-trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
+trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import Liftables._
   import Context._
   import SigmaProp._
@@ -86,6 +76,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
     def unapply(op: BinOp[_,_]): Option[(BoolValue, BoolValue) => Value[SBoolean.type]] = op match {
       case And => Some(builder.mkBinAnd)
       case Or  => Some(builder.mkBinOr)
+      case BinaryXorOp => Some(builder.mkBinXor)
       case _ => None
     }
   }
@@ -141,6 +132,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
                  defId: Int,
                  constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
+    import TestSigmaDslBuilder._
     def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
@@ -172,17 +164,18 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         }
       case Def(wc: LiftedConst[a,_]) =>
         val tpe = elemToSType(s.elem)
-        val t = Evaluation.stypeToRType(tpe)
-        val tRes = Evaluation.toErgoTreeType(t)
-        val v = Evaluation.fromDslData(wc.constValue, tRes)
-        mkConstant[tpe.type](v.asInstanceOf[tpe.WrappedType], tpe)
+        mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
 
       case Def(IsContextProperty(v)) => v
+      case Def(TestSigmaDslBuilderCtor()) => Global
 
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
       case Def(ApplyBinOp(IsRelationOp(mkNode), xSym, ySym)) =>
+        val Seq(x, y) = Seq(xSym, ySym).map(recurse)
+        mkNode(x, y)
+      case Def(ApplyBinOp(IsLogicalBinOp(mkNode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkNode(x, y)
       case Def(ApplyBinOpLazy(IsLogicalBinOp(mkNode), xSym, ySym)) =>
@@ -221,6 +214,10 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkArith(x.asNumValue, y.asNumValue, MaxCode)
       case BIM.modQ(In(x)) =>
         mkModQ(x.asBigInt)
+      case BIM.plusModQ(In(l), In(r)) =>
+        mkPlusModQ(l.asBigInt, r.asBigInt)
+      case BIM.minusModQ(In(l), In(r)) =>
+        mkMinusModQ(l.asBigInt, r.asBigInt)
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
         mkArith(x.asNumValue, y.asNumValue, opCode)
@@ -261,19 +258,22 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
       case CollM.foldLeft(colSym, zeroSym, pSym) =>
         val Seq(col, zero, p) = Seq(colSym, zeroSym, pSym).map(recurse)
         mkFold(col, zero, p.asFunc)
+      case CollM.filter(colSym, pSym) =>
+        val Seq(col, p) = Seq(colSym, pSym).map(recurse)
+        mkFilter(col.asCollection[SType], p.asFunc)
 
       case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym).asCollection[SType]
-        val colTpe = col.tpe // elemToSType(colSym.elem).asCollection
+        val colTpe = col.tpe
         val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
         val typeSubst = (method, args) match {
           case (mth @ SCollection.FlatMapMethod, Seq(f)) =>
             val typeSubst = Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType)
             typeSubst
-          case (mth @ SCollection.ZipMethod, Seq(coll: EvaluatedCollection[_, _])) =>
-            val typeSubst = Map(SCollection.tOV -> coll.elementType)
+          case (mth @ SCollection.ZipMethod, Seq(coll)) =>
+            val typeSubst = Map(SCollection.tOV -> coll.asCollection[SType].tpe.elemType)
             typeSubst
           case (mth, _) => SigmaTyper.emptySubst
         }
@@ -289,8 +289,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         if (regId.isConst)
           mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
         else
-          builder.mkMethodCall(box, SBox.getRegMethod, IndexedSeq(recurse(regId)),
-            Map(SBox.tT -> tpe.elemType))
+          error(s"Non constant expressions (${regId.rhs}) are not supported in getReg")
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
@@ -380,7 +379,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         mkIf(cond, thenP, elseP)
 
       case Def(Tup(In(x), In(y))) =>
-        mkTuple(Seq(x, y))  
+        mkTuple(Seq(x, y))
       case Def(First(pair)) =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>

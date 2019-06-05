@@ -1,0 +1,29 @@
+\[\begin{tabular}{@{}l c l l l} 
+\hline
+Set Name				&  			& Syntax	& Mnemonic 		& Description \\
+\hline
+$\mathcal{T} \ni T$	& ::= 		& \lst{P} 	& \lst{SPredefType}	& predefined types (see Appendix~\ref{sec:appendix:predeftypes}) \\
+
+			&	$\mid$	& $\tau$	& \lst{STypeVar} & type variable \\
+			&	$\mid$	& $(T_1, \dots ,T_n) $	& \lst{STuple} & tuple of $n$ elements (see \lst{Tuple} type)\\
+
+			&   $\mid$  & $(T_1,\dots,T_n) \to T $	& \lst{SFunc} & function of $n$ arguments (see \lst{Func} type) \\
+			&   $\mid$  & $\text{\lst{Coll}}[T]$			& \lst{SCollection} & collection of elements of type $T$   \\
+			&   $\mid$  & $\text{\lst{Option}}[T]$		& \lst{SOption} & optional value of type $T$  \\
+			& 	     	&									& 				&		\\
+
+$Term\ni e$	& ::= 		&   $C(v, T)$				& \lst{Constant} & typed constants  \\
+			& 	$\mid$ 	& 	$x$ 					& \lst{ValUse} & variables  \\
+			& 	$\mid$ 	& 	$\TyLam{x_i}{T_i}{e}$ 		& \lst{FuncExpr} & lambda expression \\
+			& 	$\mid$ 	& 	$\Apply{e_f}{\Ov{e_i}}$ 	& \lst{Apply} & application of functional expression \\
+			& 	$\mid$ 	& 	$\Apply{e.m}{\Ov{e_i}}$		& \lst{MethodCall} & method invocation  \\
+			& 	$\mid$ 	&   $\Tup{e_1, \dots ,e_n}$ 	& \lst{Tuple} & constructor of tuple with $n$ items \\
+			& 	$\mid$ 	& 	$\Apply{\delta}{\Ov{e_i}}$ 	& & primitive application (see Appendix~\ref{sec:appendix:primops}) \\
+			& 	$\mid$ 	& 	\lst{if} $(e_{cond})$ $e_1$ \lst{else} $e_2$ & \lst{If} & if-then-else expression \\
+			& 	$\mid$ 	&   $\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}$  & \lst{BlockExpr} & block expression \\
+			& 	     	&										& &				\\
+$cd$   		& ::= 		& 	$\Trait{I}{\Ov{ms_i}}$				& \lst{STypeCompanion} & interface declaration    \\
+			& 	     	&										& &				\\
+$ms$	   	& ::= 	& $\MSig{m[\Ov{\tau_i}]}{\overline{x_i : T_i}}{T}$ 	& \lst{SMethod} & method signature declaration   \\
+\end{tabular}\] 
+

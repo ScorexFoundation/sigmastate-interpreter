@@ -1,8 +1,9 @@
 package sigmastate.serialization
 
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks, TableDrivenPropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
+import org.scalatest.prop.{PropertyChecks, TableDrivenPropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
 import org.scalacheck.Arbitrary._
 import sigmastate.Values._
 import sigmastate.SType
@@ -17,7 +18,8 @@ trait SerializationSpecification extends PropSpec
   with ConcreteCollectionGenerators
   with OpcodesGen
   with TransformerGenerators
-  with RelationGenerators {
+  with RelationGenerators
+  with ValidationSpecification {
 
   protected def roundTripTest[V <: Value[_ <: SType]](v: V): Assertion = {
     val bytes = ValueSerializer.serialize(v)
@@ -27,7 +29,8 @@ trait SerializationSpecification extends PropSpec
 
   protected def predefinedBytesTest[V <: Value[_ <: SType]](v: V, bytes: Array[Byte]): Assertion = {
     ValueSerializer.serialize(v) shouldEqual bytes
-    ValueSerializer.deserialize(bytes) shouldEqual v
+    val dv = ValueSerializer.deserialize(bytes)
+    dv shouldEqual v
   }
 
   //check that pos and consumed are being implented correctly

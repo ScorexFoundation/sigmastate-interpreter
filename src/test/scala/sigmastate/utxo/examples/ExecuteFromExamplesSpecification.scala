@@ -4,7 +4,7 @@ import org.ergoplatform._
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.helpers.SigmaTestingCommons
 import special.sigma.Context
-import special.sigma.Extensions._
+import sigmastate.eval.Extensions._
 
 class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
@@ -41,7 +41,7 @@ class ExecuteFromExamplesSpecification extends SigmaTestingCommons { suite =>
 
   lazy val alice = spec.ProvingParty("Alice")
 
-  //todo: fix the test
+  // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/443
   ignore("Execute from var example (ErgoDsl)") {
     val contract = OracleContract[spec.type](alice)(spec)
     import contract.spec._

@@ -10,29 +10,23 @@ import scala.reflect.{ClassTag, classTag}
 
 package sigma {
 
-  case class WrapperType[Wrapper](cWrapper: ClassTag[Wrapper]) extends RType[Wrapper] {
-    override def classTag: ClassTag[Wrapper] = cWrapper
-    override def toString: String = cWrapper.toString
-    override def name: String = cWrapper.runtimeClass.getSimpleName
+  case class ArgType(override val name: String) extends RType[Any] {
+    override def classTag: ClassTag[Any] = ClassTag.Any
     override def isConstantSize: Boolean = false  // pessimistic but safe default
   }
-
 }
 
 package object sigma {
-  def wrapperType[W: ClassTag]: RType[W] = WrapperType(classTag[W])
-
-  // TODO make these types into GeneralType (same as Header and PreHeader)
-  implicit val BigIntRType: RType[BigInt] = new WrapperType(classTag[BigInt]) {
+  implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
     override def isConstantSize: Boolean = true
   }
-  implicit val GroupElementRType: RType[GroupElement] = new WrapperType(classTag[GroupElement]) {
+  implicit val GroupElementRType: RType[GroupElement] = new GeneralType(classTag[GroupElement]) {
     override def isConstantSize: Boolean = true
   }
-  implicit val SigmaPropRType: RType[SigmaProp] = wrapperType[SigmaProp]
-  implicit val BoxRType: RType[Box] = wrapperType[Box]
-  implicit val AvlTreeRType: RType[AvlTree] = wrapperType[AvlTree]
-  implicit val ContextRType: RType[Context] = wrapperType[Context]
+  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
+  implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
+  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(classTag[AvlTree])
+  implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
   // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)
   // and no conversion is necessary
@@ -63,4 +57,6 @@ package object sigma {
   implicit val SizeBoxRType: RType[SizeBox] = RType.fromClassTag(classTag[SizeBox])
   implicit val SizeContextRType: RType[SizeContext] = RType.fromClassTag(classTag[SizeContext])
   implicit val SizeBuilderRType: RType[SizeBuilder] = RType.fromClassTag(classTag[SizeBuilder])
+
+  def argRType(name: String): RType[Any] = ArgType(name)
 }

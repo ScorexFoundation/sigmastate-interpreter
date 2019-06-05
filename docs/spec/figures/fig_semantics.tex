@@ -1,0 +1,30 @@
+\begin{center}
+\(\begin{array}{c}
+\multicolumn{1}{l}{\text{Reduction contexts of \langname}}\\
+\\
+\begin{tabular}{@{}l c l l}
+$\Ctx$ 	& ::= 		&	$\Hole$ 	&  hole \\
+		& $\mid$ 	&	$\delta~\Ov{v}~\Ctx~\Ov{e}$	&  \\
+		& $\mid$ 	&	$\Ctx~e$				&  \\
+		& $\mid$ 	&	$(\Lam{x}{e})\Ctx$ 	&  \\
+		& & \\
+\end{tabular} \\
+\multicolumn{1}{l}{\text{Call-by-value evaluation relation}}\\
+\\
+\begin{tabular}{@{}l c l r}
+$[(\Lam{x}{e})~v]\Ctx$					& $\mapsto$	& 	$[[v/x]e]\Ctx$					    & (1)     \\
+$[$ \lst{let} $x = v$ \lst{in} $e]\Ctx$	& $\mapsto$	& 	$[[v/x]e]\Ctx$					    & (2)     \\
+$[$\lst{case} $k~\Ov{v}$ \lst{of} \{ $k_i~\overline{x_i}$ $\rightarrow$ $e_i$  \}$]\Ctx$   & $\mapsto$ 	& 	$[[\overline{v}/\overline{x_j}]e_j]\Ctx$, if $k = k_j$	& (2)    \\
+$\Apply{\Ctx}{\IfThenElse{v}{e_1}{e_2}}$   & $\mapsto$ 	& \begin{tabular}{ l l}
+													$\Apply{\Ctx}{e_1}$ & if $v = true$ \\
+													$\Apply{\Ctx}{e_2}$ & otherwise
+												  \end{tabular} & (3)    \\
+$[\delta~\overline{v}]\Ctx$   & $\mapsto$ 	& 	$[l]\Ctx$, if $l = |[\Prim|]\overline{v}$					    & (4)     \\
+
+\end{tabular}
+\end{array}\)
+\end{center}
+% \begin{center}
+% \small{Here $\mu\B{\alpha}.\B{T}$ stands for isorecursive type \cite{wiki_recursive_data_type}. 
+% Note that types are described using \emph{phantom types} notation~\cite{JamesCheney2003,wiki_phantom_types}}
+% \end{center} 
