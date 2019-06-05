@@ -192,7 +192,7 @@ object ValidationRules {
     "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
     def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra)(block: => T): T = {
       def msg = s"Not allowed opCode $opCode in cost function"
-      def args = Seq(unsignedOpCode(opCode))
+      def args = Seq(opCode)
       validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
     }
 
@@ -205,12 +205,24 @@ object ValidationRules {
     }
 
     @inline
-    private def unsignedOpCode(opCode: OpCodeExtra): Short =
-      if (opCode < 0) opCode.toByte.toUByte.toShort else opCode
+    private def shiftOpCodeToUnsigned(opCode: OpCodeExtra): Short = {
+      if (opCode < 0)
+        // It's OpCode(Byte, -128 to 127), so shift it to positive 0-255 range
+        opCode.toByte.toUByte.toShort
+      else
+        opCode
+    }
+
+    @inline
+    private def shiftOpCodeToSigned(opCode: OpCodeExtra): Short = {
+      if (opCode <= 0xFF)
+        // it was originally an OpCode(Byte, -128 to 127, shifted to 0-255), so shift it back to signed byte range
+        opCode.toByte.toShort else opCode
+    }
 
     def encodeVLQUShort(opCodes: Seq[OpCodeExtra]): Array[Byte] = {
       val w = new VLQByteBufferWriter(new ByteArrayBuilder())
-      opCodes.foreach(o => w.putUShort(unsignedOpCode(o)))
+      opCodes.foreach(o => w.putUShort(shiftOpCodeToUnsigned(o)))
       w.toBytes
     }
 
@@ -218,7 +230,7 @@ object ValidationRules {
       val r = new VLQByteBufferReader(ByteBuffer.wrap(bytes))
       val builder = mutable.ArrayBuilder.make[OpCodeExtra]()
       while(r.remaining > 0) {
-        builder += r.getUShort().toShort
+        builder += shiftOpCodeToSigned(r.getUShort().toShort)
       }
       builder.result()
     }
