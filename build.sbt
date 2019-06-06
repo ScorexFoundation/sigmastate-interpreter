@@ -106,8 +106,6 @@ lazy val testSettings = Seq(
   publishArtifact in Test := true,
   publishArtifact in(Test, packageSrc) := true,
   publishArtifact in(Test, packageDoc) := false,
-  // TODO: fix this workaround for compiler crash with "-release 8" (see https://github.com/scala/community-builds/issues/796#issuecomment-423395500)
-  publishArtifact in(Compile, packageDoc) := false,
   test in assembly := {})
 
 libraryDependencies ++= Seq(
@@ -121,10 +119,15 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 
-scalacOptions ++= Seq("-feature", "-deprecation",
-  // to fix NoSuchMethodError for various ByteBuffer methods (see https://github.com/eclipse/jetty.project/issues/3244)
-  "-release", "8")
+scalacOptions ++= Seq("-feature", "-deprecation")
 
+
+// set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
+// see https://github.com/eclipse/jetty.project/issues/3244
+// these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
+// see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
+javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
+scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
