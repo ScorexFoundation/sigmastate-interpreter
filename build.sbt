@@ -121,6 +121,14 @@ libraryDependencies ++= Seq(
 
 scalacOptions ++= Seq("-feature", "-deprecation")
 
+
+// set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
+// see https://github.com/eclipse/jetty.project/issues/3244
+// these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
+// see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
+javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
+scalacOptions in(Compile, compile) ++= Seq("-release", "8")
+
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
 
