@@ -8,6 +8,7 @@ import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {
   type Position = Int
@@ -86,9 +87,8 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
 }
 
 trait SigmaSerializerCompanion[TFamily] {
-  type Tag
 
-  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
+  def getSerializer(opCode: OpCode): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
   def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }

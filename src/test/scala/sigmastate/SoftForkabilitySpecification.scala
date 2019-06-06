@@ -88,7 +88,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     proveAndVerifyTx("propV1", tx, vs)
   }
 
-  val Height2Code = (LastConstantCode + 56).toByte
+  val Height2Code: OpCode = OpCode @@ (LastConstantCode + 56).toByte
   /** Same as Height, but new opcode to test soft-fork */
   case object Height2 extends NotReadyValueInt with ValueCompanion {
     override def companion = this

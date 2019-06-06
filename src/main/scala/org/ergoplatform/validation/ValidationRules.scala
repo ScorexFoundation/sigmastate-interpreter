@@ -199,30 +199,14 @@ object ValidationRules {
     override def isSoftFork(vs: SigmaValidationSettings,
                             ruleId: Short,
                             status: RuleStatus, args: Seq[Any]): Boolean = (status, args) match {
-      case (ChangedRule(newValue), Seq(code: OpCodeExtra)) =>
+      case (ChangedRule(newValue), Seq(code: Short)) =>
         decodeVLQUShort(newValue).contains(code)
       case _ => false
     }
 
-    @inline
-    private def shiftOpCodeToUnsigned(opCode: OpCodeExtra): Short = {
-      if (opCode < 0)
-        // It's OpCode(Byte, -128 to 127), so shift it to positive 0-255 range
-        opCode.toByte.toUByte.toShort
-      else
-        opCode
-    }
-
-    @inline
-    private def shiftOpCodeToSigned(opCode: OpCodeExtra): Short = {
-      if (opCode <= 0xFF)
-        // it was originally an OpCode(Byte, -128 to 127, shifted to 0-255), so shift it back to signed byte range
-        opCode.toByte.toShort else opCode
-    }
-
     def encodeVLQUShort(opCodes: Seq[OpCodeExtra]): Array[Byte] = {
       val w = new VLQByteBufferWriter(new ByteArrayBuilder())
-      opCodes.foreach(o => w.putUShort(shiftOpCodeToUnsigned(o)))
+      opCodes.foreach(w.putUShort(_))
       w.toBytes
     }
 
@@ -230,7 +214,7 @@ object ValidationRules {
       val r = new VLQByteBufferReader(ByteBuffer.wrap(bytes))
       val builder = mutable.ArrayBuilder.make[OpCodeExtra]()
       while(r.remaining > 0) {
-        builder += shiftOpCodeToSigned(r.getUShort().toShort)
+        builder += OpCodeExtra @@ r.getUShort().toShort
       }
       builder.result()
     }
