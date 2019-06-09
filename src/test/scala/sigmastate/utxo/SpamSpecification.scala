@@ -216,16 +216,17 @@ class SpamSpecification extends SigmaTestingCommons {
     assertExceptionThrown(
       res.fold(t => throw t, identity),
       {
-        case ve: ValidationException =>
-          ve.rule == ValidationRules.CheckCostWithContext &&
-          rootCause(ve).isInstanceOf[CosterException]
+        case se: IR.StagingException =>
+          val cause = rootCause(se)
+          cause.isInstanceOf[CosterException] && cause.getMessage.contains("Estimated expression complexity")
+        case _ => false
       }
     )
 
     // measure time required to execute the script itself and it is more then timeout
     val (_, calcTime) = BenchmarkUtil.measureTime {
       import limitlessProver.IR._
-      val Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
+      val Pair(calcF, _) = doCostingEx(emptyEnv + (ScriptNameProp -> "compute"), prop, true)
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }

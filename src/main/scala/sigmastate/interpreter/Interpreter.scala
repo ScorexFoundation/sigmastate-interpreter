@@ -13,7 +13,7 @@ import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.lang.exceptions.{InterpreterException, CosterException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -28,8 +28,6 @@ trait Interpreter extends ScorexLogging {
   type CTX <: InterpreterContext
 
   type ProofT = UncheckedTree
-
-  final val MaxByteArrayLength = ErgoConstants.MaxByteArrayLength.get
 
   /**
     * Max cost of a script interpreter can accept
@@ -118,8 +116,10 @@ trait Interpreter extends ScorexLogging {
 
       CheckCalcFunc(IR)(calcF) { }
 
+      CheckCostWithContextIsActive(context.validationSettings)
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
+              .fold(t => throw t, identity)
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 

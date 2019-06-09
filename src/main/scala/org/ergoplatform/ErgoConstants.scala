@@ -19,8 +19,8 @@ object ErgoConstants {
     "Max tree depth should not be greater then provided value") {
   }
 
-  object MaxByteArrayLength extends SizeConstant[Int](10000, 3,
-    "Max bytearray length") {
+  object MaxPropositionBytes extends SizeConstant[Int](4 * 1024, 3,
+    "Max length of Box.propositionBytes collection") {
   }
 
   object MaxTokens extends SizeConstant[Byte](4, 6,
@@ -54,7 +54,7 @@ object ErgoConstants {
   val ConstTable: Seq[SizeConstant[_]] = Seq(
     MaxInputSize,
     MaxTreeDepth,
-    MaxByteArrayLength,
+    MaxPropositionBytes,
     MaxTokens,
     MaxRegisters,
     MaxBoxSize,

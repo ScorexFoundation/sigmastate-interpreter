@@ -6,6 +6,7 @@ import sigmastate.Values.{Value, SValue, TrueSigmaProp}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.interpreter.Interpreter
+import sigmastate.lang.exceptions.CosterException
 
 import scala.util.Try
 
@@ -112,7 +113,7 @@ trait IRContext extends Evaluation with TreeBuilding {
                     getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
     if (estimatedCost > maxCost) {
-      throw new Error(msgCostLimitError(estimatedCost, maxCost))
+      throw new CosterException(msgCostLimitError(estimatedCost, maxCost), None)
     }
     estimatedCost
   }

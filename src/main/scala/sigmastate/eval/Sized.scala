@@ -7,6 +7,7 @@ import sigmastate._
 import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
 import SType.AnyOps
+import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, MaxBoxSize}
 import sigmastate.interpreter.CryptoConstants
 
 /** Type-class to give types a capability to build a Size structure. */
@@ -102,10 +103,16 @@ object Sized extends SizedLowPriority {
     new CSizeColl(b.registers.map(sizeOfAnyValue))
   }
 
+  val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
+  val SizeToken = new CSizePair(SizeTokenId, SizeLong)
+  val SizePropositionBytes = new CSizeColl(Colls.replicate(MaxPropositionBytes.value, SizeByte))
+  val SizeBoxBytes = new CSizeColl(Colls.replicate(MaxBoxSize.value, SizeByte))
+  val SizeBoxBytesWithoutRefs = new CSizeColl(
+    Colls.replicate(MaxBoxSize.value - (CryptoConstants.hashLength + 4),
+    SizeByte))
+
   private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
-    val sId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
-    val sToken = new CSizePair(sId, SizeLong)
-    new CSizeColl(Colls.replicate(b.tokens.length, sToken))
+    new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
   }
 
   implicit val sigmaPropIsSized: Sized[SigmaProp] = (b: SigmaProp) => {
@@ -113,9 +120,9 @@ object Sized extends SizedLowPriority {
   }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
     new EvalSizeBox(
-      sizeOf(b.propositionBytes),
-      sizeOf(b.bytes),
-      sizeOf(b.bytesWithoutRef),
+      SizePropositionBytes,
+      SizeBoxBytes,
+      SizeBoxBytesWithoutRefs,
       sizeOfRegisters(b),
       sizeOfTokens(b)
       )
