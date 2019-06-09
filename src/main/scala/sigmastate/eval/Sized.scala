@@ -7,7 +7,7 @@ import sigmastate._
 import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
 import SType.AnyOps
-import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, MaxBoxSize}
+import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxPropositionBytes, MaxTokens}
 import sigmastate.interpreter.CryptoConstants
 
 /** Type-class to give types a capability to build a Size structure. */
@@ -104,12 +104,16 @@ object Sized extends SizedLowPriority {
   }
 
   val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
-  val SizeToken = new CSizePair(SizeTokenId, SizeLong)
+  val SizeToken: Size[(Coll[Byte], Long)] = new CSizePair(SizeTokenId, SizeLong)
+  val SizeTokens = new CSizeColl(Colls.replicate(MaxTokens.value.toInt, SizeToken))
+
   val SizePropositionBytes = new CSizeColl(Colls.replicate(MaxPropositionBytes.value, SizeByte))
   val SizeBoxBytes = new CSizeColl(Colls.replicate(MaxBoxSize.value, SizeByte))
   val SizeBoxBytesWithoutRefs = new CSizeColl(
     Colls.replicate(MaxBoxSize.value - (CryptoConstants.hashLength + 4),
     SizeByte))
+
+
 
   private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
     new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
@@ -124,11 +128,16 @@ object Sized extends SizedLowPriority {
       SizeBoxBytes,
       SizeBoxBytesWithoutRefs,
       sizeOfRegisters(b),
-      sizeOfTokens(b)
+      SizeTokens
       )
   }
-  implicit val headerIsSized: Sized[Header] = (_: Header) => new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
-  implicit val preHeaderIsSized: Sized[PreHeader] = (_: PreHeader) => new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+
+  val SizeHeader = new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
+  implicit val headerIsSized: Sized[Header] = (_: Header) => SizeHeader
+
+  val SizePreHeader = new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+  implicit val preHeaderIsSized: Sized[PreHeader] = (_: PreHeader) => SizePreHeader
+
   implicit val contextIsSized: Sized[Context] = (ctx: Context) => {
     val outputs = sizeOf(ctx.OUTPUTS)
     val inputs = sizeOf(ctx.INPUTS)

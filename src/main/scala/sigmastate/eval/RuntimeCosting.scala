@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{Nullable, MutableLazy, Lazy, RType}
+import scalan.{Lazy, MutableLazy, Nullable, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -15,6 +15,7 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import scalan.compilation.GraphVizConfig
 import SType._
+import org.ergoplatform.ErgoConstants._
 import scalan.RType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -1514,23 +1515,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         mkCostedColl(id, Blake2b256.DigestSize, opCost(id, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        val sBox = tryCast[SizeBox](boxC.size)
         val v = boxC.value.bytesWithoutRef
-        mkCostedColl(v, sBox.bytesWithoutRef.dataSize.toInt, opCost(v, Seq(boxC.cost), costOf(node)))
+        mkCostedColl(v, MaxBoxSizeWithoutRefs.value, opCost(v, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractAmount(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val v = boxC.value.value
         withConstantSize(v, opCost(v, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        val sBox = tryCast[SizeBox](boxC.size)
         val bytes = boxC.value.propositionBytes
-        mkCostedColl(bytes, sBox.propositionBytes.dataSize.toInt, opCost(bytes, Seq(boxC.cost), costOf(node)))
+        mkCostedColl(bytes, MaxPropositionBytes.value, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
-        val sBox = tryCast[SizeBox](boxC.size)
         val bytes = boxC.value.bytes
-        mkCostedColl(bytes, sBox.bytes.dataSize.toInt, opCost(bytes, Seq(boxC.cost), costOf(node)))
+        mkCostedColl(bytes, MaxBoxSize.value, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractCreationInfo(In(box)) =>
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>

@@ -1,6 +1,7 @@
 package org.ergoplatform
 
-import sigmastate.{AtLeast, SBigInt, SPrimType}
+import sigmastate.interpreter.CryptoConstants
+import scalan.util.CollectionUtil._
 
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
   def get: T = value
@@ -35,32 +36,40 @@ object ErgoConstants {
     "Box size should not be greater than provided value") {
   }
 
-  object MaxBigIntSizeInBytes extends SizeConstant[Long](32L, 9,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](MaxBoxSize.value - (CryptoConstants.hashLength + 4), 9,
+    "Box size should not be greater than provided value") {
+  }
+
+  object MaxBigIntSizeInBytes extends SizeConstant[Long](32L, 10,
     "BigInt size in bytes should not be greater than provided value") {
   }
 
-  object MaxTupleLength extends SizeConstant[Int](255, 10,
+  object MaxTupleLength extends SizeConstant[Int](255, 11,
     "Tuple length should not be greater than provided value") {
   }
 
-  object MaxHeaders extends SizeConstant[Int](10, 11,
+  object MaxHeaders extends SizeConstant[Int](10, 12,
     "Headers count should not be greater than provided value") {
   }
 
-  object MaxChildrenCountForAtLeastOp extends SizeConstant[Int](255, 12,
+  object MaxChildrenCountForAtLeastOp extends SizeConstant[Int](255, 13,
     "Max children count should not be greater than provided value") {
   }
 
-  val ConstTable: Seq[SizeConstant[_]] = Seq(
-    MaxInputSize,
-    MaxTreeDepth,
-    MaxPropositionBytes,
-    MaxTokens,
-    MaxRegisters,
-    MaxBoxSize,
-    MaxBigIntSizeInBytes,
-    MaxTupleLength,
-    MaxHeaders,
-    MaxChildrenCountForAtLeastOp
-  )
+  val ConstTable: Seq[SizeConstant[_]] = {
+    val rows = Seq(
+      MaxInputSize,
+      MaxTreeDepth,
+      MaxPropositionBytes,
+      MaxTokens,
+      MaxRegisters,
+      MaxBoxSize,
+      MaxBigIntSizeInBytes,
+      MaxTupleLength,
+      MaxHeaders,
+      MaxChildrenCountForAtLeastOp
+    )
+    require(rows.length == rows.distinctBy(_.id).length, s"Duplicate constant id in $rows")
+    rows
+  }
 }
