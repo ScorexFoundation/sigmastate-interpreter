@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import java.lang.reflect.Constructor
 import scala.language.implicitConversions
 import scala.language.existentials
 import scalan.{Lazy, MutableLazy, Nullable, RType}
@@ -30,6 +31,7 @@ import special.Types._
 import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType, ECPointRType, BigIntRType, SigmaPropRType}
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
+import scalan.util.ReflectionUtil
 
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
@@ -475,44 +477,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     (calcF, costF, sizeF)
   }
 
-//  def splitCostedOptionFunc[A,B](f: RCostedOptionFunc[A,B]): (Rep[A=>WOption[B]], Rep[((A, (Int, Long))) => (WOption[Int], Int)], Rep[((A, Long)) => WOption[Long]]) = {
-//    implicit val eA = f.elem.eDom.eVal
-//    val calcF = f.sliceValues
-//    val costF = f.sliceCosts
-//    val sizeF = f.sliceSizes
-//    (calcF, costF, sizeF)
-//  }
-
   object CostedFoldExtractors {
     val CM = CostedMethods
     val COM = CostedOptionMethods
     val WOM = WOptionMethods
     type Result = (ROption[A], Th[B], RFunc[A, Costed[B]]) forSome {type A; type B}
-
-//    object IsGetCost {
-//      def unapply(d: Def[_]): Nullable[Result] = d match {
-//        case CM.cost(COM.get(WOM.fold(opt, th, f))) =>
-//          val res = (opt, th, f).asInstanceOf[Result]
-//          Nullable(res)
-//        case _ => Nullable.None
-//      }
-//    }
-//    object IsGetDataSize {
-//      def unapply(d: Def[_]): Nullable[Result] = d match {
-//        case CM.dataSize(COM.get(WOM.fold(opt, th, f))) =>
-//          val res = (opt, th, f).asInstanceOf[Result]
-//          Nullable(res)
-//        case _ => Nullable.None
-//      }
-//    }
-//    object IsGet {
-//      def unapply(d: Def[_]): Nullable[Result] = d match {
-//        case COM.get(WOM.fold(opt, th, f)) =>
-//          val res = (opt, th, f).asInstanceOf[Result]
-//          Nullable(res)
-//        case _ => Nullable.None
-//      }
-//    }
   }
 
   object IsConstSizeCostedColl {
@@ -548,7 +517,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   type CostedTh[T] = Th[Costed[T]]
 
   class ElemAccessor[T](prop: Rep[T] => Elem[_]) {
-    def unapply(s: Sym): Option[Elem[_]] = { val sR = asRep[T](s); Some(prop(sR)) }
+    def unapply(s: Sym): Nullable[Elem[_]] = { val sR = asRep[T](s); Nullable(prop(sR)) }
   }
   object ElemAccessor {
     def apply[T](prop: Rep[T] => Elem[_]): ElemAccessor[T] = new ElemAccessor(prop)
@@ -556,7 +525,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
   val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]](_.elem.eItem.eVal)
 
-  override def rewriteDef[T](d: Def[T]): Rep[_] = {
+  private object Methods {
     val CBM = CollBuilderMethods
     val SigmaM = SigmaPropMethods
     val CCM = CostedCollMethods
@@ -570,6 +539,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     val SDBM = SigmaDslBuilderMethods
     val SM = SizeMethods
     val SBM = SizeBoxMethods
+  }
+
+  override def rewriteDef[T](d: Def[T]): Rep[_] = {
+    import Methods._
 
     d match {
       // Rule: cast(eTo, x) if x.elem <:< eTo  ==>  x
@@ -587,6 +560,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         ys.map(fun { y: Rep[b] => f(Pair(x, y))})
 
       case WArrayM.length(Def(arrC: WArrayConst[_,_])) => arrC.constValue.length
+
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict
@@ -690,6 +664,28 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         }
       case _ => super.rewriteDef(d)
     }
+  }
+
+  override def getOwnerParameterType(constructor: Constructor[_]): OwnerParameter = {
+    val paramTypes = constructor.getParameterTypes
+    val ownerParam =
+      if (paramTypes.length == 0)
+        NoOwner
+      else {
+        val firstParamClazz = paramTypes(0)
+        if (firstParamClazz.getSuperclass == classOf[EntityObject]) {
+          val firstParamTpe = ReflectionUtil.classToSymbol(firstParamClazz).toType
+          getEntityObject(firstParamTpe.typeSymbol.name.toString) match {
+            case Nullable(obj) =>
+              EntityObjectOwner(obj)
+            case _ =>
+              !!!(s"Unknown owner type $firstParamTpe")
+          }
+        } else {
+          ScalanOwner
+        }
+      }
+    ownerParam
   }
 
   def costedPrimToColl[A](coll: Rep[Coll[A]], c: Rep[Int], s: RSize[Coll[A]]): RCostedColl[A] = s.elem.asInstanceOf[Any] match {

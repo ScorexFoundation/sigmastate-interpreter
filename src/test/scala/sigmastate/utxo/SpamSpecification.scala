@@ -209,7 +209,9 @@ class SpamSpecification extends SigmaTestingCommons {
 
     // check that execution terminated within timeout due to costing exception and cost limit
     val pt0 = System.currentTimeMillis()
-    val (res, terminated) = termination(() => prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage))
+    val (res, terminated) = termination(() =>
+      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage)
+    )
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
     terminated shouldBe true

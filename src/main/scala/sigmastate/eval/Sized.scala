@@ -113,8 +113,6 @@ object Sized extends SizedLowPriority {
     Colls.replicate(MaxBoxSize.value - (CryptoConstants.hashLength + 4),
     SizeByte))
 
-
-
   private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
     new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
   }
