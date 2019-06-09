@@ -2,18 +2,18 @@ package sigmastate.interpreter
 
 import java.util
 
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, rule, strategy}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.ErgoConstants
-import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, FirstDLogProverMessage}
+import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
-import sigmastate.interpreter.Interpreter.{ScriptEnv, VerificationResult}
-import sigmastate.lang.exceptions.{CosterException, InterpreterException}
+import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -71,7 +71,8 @@ trait Interpreter extends ScorexLogging {
   }
 
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
-    import IR.Size._; import IR.Context._;
+    import IR.Size._
+    import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
@@ -82,7 +83,9 @@ trait Interpreter extends ScorexLogging {
   }
 
   def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
-    import IR._; import Context._; import SigmaProp._
+    import IR._
+    import Context._
+    import SigmaProp._
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
       case _: SigmaPropElem[_] =>
         val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
@@ -117,6 +120,8 @@ trait Interpreter extends ScorexLogging {
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
       val estimatedCost = CheckCostWithContext(IR)(costingCtx, exp, costF, maxCost)
+
+      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
       // check calc
       val calcCtx = context.toSigmaContext(IR, isCost = false)
