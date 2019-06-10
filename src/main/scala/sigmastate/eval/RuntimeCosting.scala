@@ -165,8 +165,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   }
 
   def costOf(costOp: CostOf, doEval: Boolean): Rep[Int] = {
-    val res = if (doEval) toRep(costOp.eval)
-    else (costOp: Rep[Int])
+    val res = if (doEval) {
+      val c = Const(costOp.eval)
+      // optimized hot-spot: here we avoid rewriting which is done by reifyObject
+      findOrCreateDefinition(c, c.self)
+    }
+    else {
+      // optimized hot-spot: here we avoid rewriting which is done by reifyObject
+      findOrCreateDefinition(costOp, costOp.self)
+    }
     res
   }
 
@@ -1118,6 +1125,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     isContextDependant(i)
   }
 
+  // This type descriptors are used quite often here and there.
+  // Explicit usage of this values saves lookup time in elemCache.
+  val eCollByte = collElement(ByteElement)
+  val ePairOfCollByte = pairElement(eCollByte, eCollByte)
+
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1125,8 +1137,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     class InColl[T: Elem] { def unapply(v: SValue): Nullable[Rep[CostedColl[T]]] = Nullable(tryCast[CostedColl[T]](evalNode(ctx, env, v))) }
     val InCollByte = new InColl[Byte]; val InCollAny = new InColl[Any]()(AnyElement); val InCollInt = new InColl[Int]
 
-    val InCollCollByte = new InColl[Coll[Byte]]
-    val InPairCollByte = new InColl[(Coll[Byte], Coll[Byte])]
+    val InCollCollByte = new InColl[Coll[Byte]]()(eCollByte)
+    val InPairCollByte = new InColl[(Coll[Byte], Coll[Byte])]()(ePairOfCollByte)
 
     object InSeq { def unapply(items: Seq[SValue]): Nullable[Seq[RCosted[Any]]] = {
       val res = items.map { x: SValue =>
