@@ -12,7 +12,7 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
   */
 object ErgoConstants {
 
-  object MaxInputSize extends SizeConstant[Int](1024 * 1024 * 1, 1,
+  object MaxInputSize extends SizeConstant[Int](4 * 1024, 1,
     "Input size should not be greater then provided value") {
   }
 

@@ -77,10 +77,14 @@ object Sized extends SizedLowPriority {
     case _ => sys.error(s"Don't know how to compute Sized for type $t")
   }).asInstanceOf[Sized[T]]
 
+  val SizeNullValue: SizeAnyValue = {
+    val size = new CSizePrim[Any](0L, NothingType.asInstanceOf[RType[Any]])
+    new CSizeAnyValue(NothingType.asInstanceOf[RType[Any]], size)
+  }
+
   implicit val anyValueIsSized: Sized[AnyValue] = (x: AnyValue) => {
     if (x.tVal == null) {
-      val size = new CSizePrim[Any](0L, NothingType.asInstanceOf[RType[Any]])
-      new CSizeAnyValue(NothingType.asInstanceOf[RType[Any]], size)
+      SizeNullValue
     } else {
       assert(x.value != null, s"Invalid AnyValue: non-null type ${x.tVal} and null value.")
       val sized = typeToSized(x.tVal)
@@ -93,8 +97,10 @@ object Sized extends SizedLowPriority {
     new CSizeColl(Colls.replicate(xs.length, SizeByte))
   }
 
+  private val SizeOptionAnyValueNone = new CSizeOption[AnyValue](None)
+
   private def sizeOfAnyValue(v: AnyValue): Size[Option[AnyValue]] = {
-    if (v == null) return new CSizeOption[AnyValue](None)
+    if (v == null) return SizeOptionAnyValueNone
     val size = sizeOf(v)
     new CSizeOption[AnyValue](Some(size))
   }
@@ -102,6 +108,9 @@ object Sized extends SizedLowPriority {
   private def sizeOfRegisters(b: Box): Size[Coll[Option[AnyValue]]] = {
     new CSizeColl(b.registers.map(sizeOfAnyValue))
   }
+
+  val SizeHash = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
+  val SizeCreationInfo: Size[(Int, Coll[Byte])] = new CSizePair(SizeInt, SizeHash)
 
   val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
   val SizeToken: Size[(Coll[Byte], Long)] = new CSizePair(SizeTokenId, SizeLong)

@@ -103,10 +103,23 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
   @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
 
+  private val _hashLength: LazyRep[Int] = MutableLazy {
+    CryptoConstants.hashLength: Rep[Int]
+  }
+  @inline def HashLength: Rep[Int] = _hashLength.value
+
+  private val _sizesOfHashBytes: LazyRep[Coll[Size[Byte]]] = MutableLazy {
+    colBuilder.replicate(HashLength, SizeByte)
+  }
+  @inline def SizesOfHashBytes: RColl[Size[Byte]] = _sizesOfHashBytes.value
+
+  private val _costsOfHashBytes: LazyRep[Coll[Int]] = MutableLazy {
+    colBuilder.replicate(HashLength, 0)
+  }
+  @inline def CostsOfHashBytes: RColl[Int] = _costsOfHashBytes.value
+
   private val _sizeHashBytes: LazyRep[Size[Coll[Byte]]] = MutableLazy {
-    val len: Rep[Int] = CryptoConstants.hashLength
-    val sizes = colBuilder.replicate(len, SizeByte)
-    costedBuilder.mkSizeColl(sizes)
+    costedBuilder.mkSizeColl(SizesOfHashBytes)
   }
   @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
 
@@ -118,10 +131,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   protected override def onReset(): Unit = {
     super.onReset()
-    // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
+    // WARNING: every lazy value should be listed here, otherwise behavior after resetContext is undefined
+    // and may lead to subtle bugs.
     Array(_selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
       _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
-      _sizeHashBytes, _sizeToken)
+      _hashLength, _sizesOfHashBytes, _costsOfHashBytes, _sizeHashBytes, _sizeToken)
         .foreach(_.reset())
   }
 
@@ -222,7 +236,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
 
     def digest32PropertyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
-      knownLengthCollPropertyAccess(prop, CryptoConstants.hashLength)
+      knownLengthCollPropertyAccess(prop, HashLength)
 
     def groupElementPropertyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
       knownSizePropertyAccess(prop, SizeGroupElement)
@@ -395,8 +409,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
-      val l = RCCostedPrim(info._1, 0, SizeInt)
-      val r = mkCostedColl(info._2, CryptoConstants.hashLength, 0)
+      val l = RCCostedPrim(info._1, ZeroInt, SizeInt)
+      val r = RCCostedColl(info._2, CostsOfHashBytes, SizesOfHashBytes, ZeroInt)
       val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
