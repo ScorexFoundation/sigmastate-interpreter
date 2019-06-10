@@ -673,28 +673,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     }
   }
 
-  override def getOwnerParameterType(constructor: Constructor[_]): OwnerParameter = {
-    val paramTypes = constructor.getParameterTypes
-    val ownerParam =
-      if (paramTypes.length == 0)
-        NoOwner
-      else {
-        val firstParamClazz = paramTypes(0)
-        if (firstParamClazz.getSuperclass == classOf[EntityObject]) {
-          val firstParamTpe = ReflectionUtil.classToSymbol(firstParamClazz).toType
-          getEntityObject(firstParamTpe.typeSymbol.name.toString) match {
-            case Nullable(obj) =>
-              EntityObjectOwner(obj)
-            case _ =>
-              !!!(s"Unknown owner type $firstParamTpe")
-          }
-        } else {
-          ScalanOwner
-        }
-      }
-    ownerParam
-  }
-
   def costedPrimToColl[A](coll: Rep[Coll[A]], c: Rep[Int], s: RSize[Coll[A]]): RCostedColl[A] = s.elem.asInstanceOf[Any] match {
     case se: SizeElem[_,_] if se.eVal.isInstanceOf[CollElem[_,_]] =>
       val sizes = asSizeColl(s).sizes
