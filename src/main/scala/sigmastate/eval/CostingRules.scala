@@ -110,11 +110,18 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
   @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
 
+  private val _sizeToken: LazyRep[Size[(Coll[Byte], Long)]] = MutableLazy {
+    val sToken = mkSizePair(SizeHashBytes, SizeLong)
+    sToken
+  }
+  @inline def SizeToken: RSize[(Coll[Byte], Long)] = _sizeToken.value
+
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
     Array(_selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
-      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp, _sizeHashBytes)
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
+      _sizeHashBytes, _sizeToken)
         .foreach(_.reset())
   }
 
@@ -397,12 +404,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def tokens() = {
       val tokens = obj.value.tokens
       val sTokens = asSizeColl(asSizeBox(obj.size).tokens).sizes
-      val sTokenId = SizeHashBytes
-      val sToken = mkSizePair(sTokenId, SizeLong)
       val len = sTokens.length
-      val sInfo = mkSizeColl(len, sToken)
       val costs = colBuilder.replicate(len, 0)
-      val sizes = colBuilder.replicate(len, sToken)
+      val sizes = colBuilder.replicate(len, SizeToken)
       RCCostedColl(tokens, costs, sizes, opCost(tokens, Seq(obj.cost), costOf(method)))
     }
 
