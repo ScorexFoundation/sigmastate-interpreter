@@ -10,12 +10,12 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.Transformer
 
 import scala.util.Random
 
-class SigSerializerSpecification extends SigmaTestingCommons with ValueGenerators {
+class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerators {
   implicit lazy val IR = new TestingIRContext
   private lazy implicit val arbExprGen: Arbitrary[SigmaBoolean] = Arbitrary(exprTreeGen)
 
