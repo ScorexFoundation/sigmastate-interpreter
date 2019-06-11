@@ -19,7 +19,7 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
   */
 object ErgoConstants {
 
-  object MaxBoxSize extends SizeConstant[Int](64 * 1024, 1,
+  object MaxBoxSize extends SizeConstant[Int](4 * 1024, 1,
     "Box size should not be greater than provided value") {
   }
 

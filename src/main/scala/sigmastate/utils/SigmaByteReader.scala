@@ -81,4 +81,10 @@ class SigmaByteReader(val r: Reader,
     }
     xs.toIndexedSeq
   }
+
+  private var positionLmt: Int = 0
+  @inline def positionLimit: Int = positionLmt
+  @inline def positionLimit_=(v: Int): Unit = {
+    positionLmt = v
+  }
 }
