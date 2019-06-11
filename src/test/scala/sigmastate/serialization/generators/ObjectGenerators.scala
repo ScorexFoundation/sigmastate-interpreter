@@ -28,6 +28,8 @@ import scala.reflect.ClassTag
 
 trait ObjectGenerators extends TypeGenerators with ValidationSpecification with ConcreteCollectionGenerators {
 
+  val ThresholdLimit = 10
+
   implicit lazy val statusArb: Arbitrary[RuleStatus] = Arbitrary(statusGen)
   implicit lazy val arbMapCollection: Arbitrary[MapCollection[SInt.type, SInt.type]] = Arbitrary(mapCollectionGen)
   implicit lazy val arbExists: Arbitrary[Exists[SInt.type]] = Arbitrary(existsGen)
@@ -129,16 +131,28 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     vv <- groupElementGen
   } yield ProveDHTuple(gv, hv, uv, vv)
 
-  def sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
-    left <- sigmaBooleanGen
-    right <- sigmaBooleanGen
+  lazy val sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
+    itemsNum <- Gen.choose(2, ThresholdLimit)
+    items <- if (itemsNum <= 3) {
+      Gen.listOfN(itemsNum, sigmaBooleanGen)
+    } else {
+      Gen.listOfN(itemsNum, nonRecursiveSigmaBoolean)
+    }
+    threshold <- Gen.choose(1, itemsNum)
     node <- Gen.oneOf(
-      COR(Seq(left, right)),
-      CAND(Seq(left, right))
+      CTHRESHOLD(threshold, items),
+      COR(items),
+      CAND(items)
     )
   } yield node
 
-  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen, Gen.delay(sigmaTreeNodeGen))
+  val nonRecursiveSigmaBoolean: Gen[SigmaBoolean] = Gen.oneOf(proveDlogGen, proveDHTGen)
+
+  val sigmaBooleanGen: Gen[SigmaBoolean] = Gen.oneOf(
+    nonRecursiveSigmaBoolean,
+    Gen.delay(sigmaTreeNodeGen)
+  )
+
   val sigmaPropGen: Gen[SigmaProp] = sigmaBooleanGen.map(SigmaDsl.SigmaProp)
   val sigmaPropValueGen: Gen[SigmaPropValue] =
     Gen.oneOf(proveDlogGen.map(SigmaPropConstant(_)), proveDHTGen.map(SigmaPropConstant(_)))
@@ -284,8 +298,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
 
   def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
-    p <- proveDlogGen
-    b <- Gen.oneOf(TrueProp, FalseProp, ErgoTree.fromSigmaBoolean(p))
+    b <- ergoTreeGen
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
     tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
@@ -575,14 +588,21 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   } yield FuncValue(args, body)
 
   val sigmaAndGen: Gen[SigmaAnd] = for {
-    num <- Gen.chooseNum(1, 10)
+    num <- Gen.chooseNum(1, ThresholdLimit)
     items <- Gen.listOfN(num, sigmaPropValueGen)
   } yield mkSigmaAnd(items).asInstanceOf[SigmaAnd]
 
   val sigmaOrGen: Gen[SigmaOr] = for {
-    num <- Gen.chooseNum(1, 10)
+    num <- Gen.chooseNum(1, ThresholdLimit)
     items <- Gen.listOfN(num, sigmaPropValueGen)
   } yield mkSigmaOr(items).asInstanceOf[SigmaOr]
+
+  val sigmaThresholdGen: Gen[CTHRESHOLD] = for {
+    num <- Gen.chooseNum(1, ThresholdLimit)
+    threshold <- Gen.choose(0, num)
+    items: Seq[SigmaBoolean] <- Gen.listOfN(num, sigmaBooleanGen).map(_.toSeq)
+  } yield CTHRESHOLD(threshold, items)
+
 
   val boolToSigmaPropGen: Gen[BoolToSigmaProp] = for {
     b <- booleanConstGen
@@ -594,9 +614,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     }
 
   val ergoTreeGen: Gen[ErgoTree] = for {
-    propWithConstants <- logicalExprTreeNodeGen(Seq(AND.apply)).map(_.toSigmaProp)
-    propWithoutConstants <- Gen.oneOf(Seq[SigmaPropValue](EQ(SizeOf(Inputs), SizeOf(Outputs)).toSigmaProp))
-    prop <- Gen.oneOf(propWithConstants, propWithoutConstants)
+    sigmaBoolean <- Gen.delay(sigmaBooleanGen)
+    propWithConstants <- Gen.delay(logicalExprTreeNodeGen(Seq(AND.apply, OR.apply, XorOf.apply)).map(_.toSigmaProp))
+    prop <- Gen.oneOf(propWithConstants, sigmaBoolean.toSigmaProp)
     treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation,
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
