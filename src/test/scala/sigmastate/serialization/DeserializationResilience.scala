@@ -23,7 +23,6 @@ class DeserializationResilience extends SerializationSpecification {
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
       maxTreeDepth = maxTreeDepth).mark()
-    r.positionLimit = r.position + r.remaining
     r
   }
 
@@ -105,7 +104,6 @@ class DeserializationResilience extends SerializationSpecification {
 
     val bytes = ValueSerializer.serialize(expr)
     val loggingR = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
-    loggingR.positionLimit = loggingR.position + loggingR.remaining
     val _ = ValueSerializer.deserialize(loggingR)
     val levels = loggingR.levels.result()
     levels.nonEmpty shouldBe true
@@ -115,7 +113,6 @@ class DeserializationResilience extends SerializationSpecification {
       val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
         levels,
         throwOnNthLevelCall = levelIndex).mark()
-      throwingR.positionLimit = throwingR.position + throwingR.remaining
       try {
         val _ = ValueSerializer.deserialize(throwingR)
       } catch {
