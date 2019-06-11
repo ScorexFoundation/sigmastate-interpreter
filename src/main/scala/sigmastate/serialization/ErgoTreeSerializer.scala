@@ -135,8 +135,9 @@ class ErgoTreeSerializer {
     val tree = try {
       val cs = deserializeConstants(h, r)
       val previousConstantStore = r.constantStore
-      r.constantStore = new ConstantStore(cs)
       // reader with constant store attached is required (to get tpe for a constant placeholder)
+      r.constantStore = new ConstantStore(cs)
+      r.positionLimit = r.position + SigmaSerializer.MaxPropositionSize
       val root = ValueSerializer.deserialize(r)
       CheckDeserializedScriptIsSigmaProp(root) {}
       r.constantStore = previousConstantStore
