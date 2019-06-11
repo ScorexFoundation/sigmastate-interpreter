@@ -377,8 +377,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
-    if (r.position > r.positionLimit)
-      throw new InputSizeLimitExceeded(s"read bytes position limit ${r.positionLimit} is reached at position ${r.position}")
     val depth = r.level
     r.level = depth + 1
     val firstByte = r.peekByte().toUByte
