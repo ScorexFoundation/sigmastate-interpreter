@@ -64,6 +64,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
     * the expression is re-evaluated. Each value should be reset in onReset() method. */
+  private val _intZero = MutableLazy(0: Rep[Int])
+  @inline def IntZero = _intZero.value
+
+  private val _someIntZero = MutableLazy(SOME(IntZero))
+  @inline def SomeIntZero = _someIntZero.value
+
   private val _selectFieldCost = MutableLazy(sigmaDslBuilder.CostModel.SelectField)
   @inline def selectFieldCost = _selectFieldCost.value
 
@@ -72,7 +78,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   private val _sizeUnit: LazyRep[Size[Unit]] = MutableLazy(costedBuilder.mkSizePrim(0L, UnitElement))
   @inline def SizeUnit: RSize[Unit] = _sizeUnit.value
-  
+
   private val _sizeBoolean: LazyRep[Size[Boolean]] = MutableLazy(costedBuilder.mkSizePrim(1L, BooleanElement))
   @inline def SizeBoolean: RSize[Boolean] = _sizeBoolean.value
 
@@ -114,7 +120,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   @inline def SizesOfHashBytes: RColl[Size[Byte]] = _sizesOfHashBytes.value
 
   private val _costsOfHashBytes: LazyRep[Coll[Int]] = MutableLazy {
-    colBuilder.replicate(HashLength, 0)
+    colBuilder.replicate(HashLength, IntZero)
   }
   @inline def CostsOfHashBytes: RColl[Int] = _costsOfHashBytes.value
 
@@ -133,7 +139,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise behavior after resetContext is undefined
     // and may lead to subtle bugs.
-    Array(_selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
+    Array(_intZero, _someIntZero,
+      _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
       _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
       _hashLength, _sizesOfHashBytes, _costsOfHashBytes, _sizeHashBytes, _sizeToken)
         .foreach(_.reset())
@@ -206,7 +213,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     costedBuilder.mkCostedOption(value, costOpt, sizeOpt, accCost)
 
   def mkCostedFunc[A,R](f: RFuncCosted[A,R], cost: Rep[Int], codeSize: Rep[Long], eArg: Elem[A], eRes: Elem[R]): Rep[CostedFunc[Unit, A, R]] = {
-    val envC = RCCostedPrim((), 0, SizeUnit)
+    val envC = RCCostedPrim((), IntZero, SizeUnit)
     val sFunc = costedBuilder.mkSizeFunc(SizeUnit, codeSize, eArg, eRes)
     RCCostedFunc(envC, f, cost, sFunc)
   }
@@ -293,7 +300,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def digest() = knownLengthCollPropertyAccess(_.digest, AvlTreeData.DigestSize)
     def enabledOperations() = constantSizePropertyAccess(_.enabledOperations)
     def keyLength() = constantSizePropertyAccess(_.keyLength)
-    def valueLengthOpt() = defaultOptionPropertyAccess(_.valueLengthOpt, _ => mkSizeOption(SizeInt), 0)
+    def valueLengthOpt() =
+        defaultOptionPropertyAccess(_.valueLengthOpt, _ => mkSizeOption(SizeInt), IntZero)
     def isInsertAllowed() = constantSizePropertyAccess(_.isInsertAllowed)
     def isUpdateAllowed() = constantSizePropertyAccess(_.isUpdateAllowed)
     def isRemoveAllowed() = constantSizePropertyAccess(_.isRemoveAllowed)
@@ -315,7 +323,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val size = sizeOfArgs
       val c = opCost(value, costOfArgs, perKbCostOf(method, size))
       val res = RCCostedOption(value,
-        specialPredef.some(0),
+        SomeIntZero,
         specialPredef.some(proof.size),
         c)
       res
@@ -326,7 +334,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val nKeys = keysC.sizes.length
 
       val value = obj.value.getMany(keysC.value, proofC.value)
-      val costs = colBuilder.replicate(nKeys, 0)
+      val costs = colBuilder.replicate(nKeys, IntZero)
       val valuesCost = opCost(value, costOfArgs, perKbCostOf(method, sizeOfArgs))
 
       val treeValueLengthPerKey = proofC.sizes.length div nKeys
@@ -341,7 +349,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val value = meth(obj.value)
       val size = sizeOfArgs
       RCCostedOption(value,
-        specialPredef.some(0),
+        specialPredef.some(IntZero),
         SOME(obj.size), opCost(value, costOfArgs, perKbCostOf(method, size)))
     }
 
@@ -409,8 +417,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
-      val l = RCCostedPrim(info._1, ZeroInt, SizeInt)
-      val r = RCCostedColl(info._2, CostsOfHashBytes, SizesOfHashBytes, ZeroInt)
+      val l = RCCostedPrim(info._1, IntZero, SizeInt)
+      val r = RCCostedColl(info._2, CostsOfHashBytes, SizesOfHashBytes, IntZero)
       val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
@@ -419,7 +427,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val tokens = obj.value.tokens
       val sTokens = asSizeColl(asSizeBox(obj.size).tokens).sizes
       val len = sTokens.length
-      val costs = colBuilder.replicate(len, 0)
+      val costs = colBuilder.replicate(len, IntZero)
       val sizes = colBuilder.replicate(len, SizeToken)
       RCCostedColl(tokens, costs, sizes, opCost(tokens, Seq(obj.cost), costOf(method)))
     }
@@ -429,7 +437,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       implicit val elem = tT.eA
       val valueOpt = obj.value.getReg(i.value)(elem)
       val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
-      RCCostedOption(valueOpt, SOME(0), sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), getRegisterCost))
+      RCCostedOption(valueOpt, SomeIntZero, sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), getRegisterCost))
     }
   }
 
@@ -630,7 +638,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costF = f.sliceCost
       val vals = xs.values.filter(calcF)
       val costs = xs.costs.zip(xs.sizes).map(costF)
-      val zeros = colBuilder.replicate(xs.costs.length, 0)
+      val zeros = colBuilder.replicate(xs.costs.length, IntZero)
       RCCostedColl(vals, zeros, xs.sizes, opCost(vals, costOfArgs, costOf(method) + costs.sum(intPlusMonoid)))
     }
   }

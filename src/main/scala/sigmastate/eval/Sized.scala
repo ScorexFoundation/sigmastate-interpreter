@@ -114,13 +114,17 @@ object Sized extends SizedLowPriority {
 
   val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
   val SizeToken: Size[(Coll[Byte], Long)] = new CSizePair(SizeTokenId, SizeLong)
-  val SizeTokens = new CSizeColl(Colls.replicate(MaxTokens.value.toInt, SizeToken))
+  val SizeTokensMax = new CSizeColl(Colls.replicate(MaxTokens.value.toInt, SizeToken))
 
-  val SizePropositionBytes = new CSizeColl(Colls.replicate(MaxPropositionBytes.value, SizeByte))
-  val SizeBoxBytes = new CSizeColl(Colls.replicate(MaxBoxSize.value, SizeByte))
-  val SizeBoxBytesWithoutRefs = new CSizeColl(
-    Colls.replicate(MaxBoxSize.value - (CryptoConstants.hashLength + 4),
-    SizeByte))
+  val SizePropositionBytesMax = {
+    val sizeValue = SizeLong.dataSize.toInt
+    val len = MaxBoxSize.value - sizeValue - SizeTokensMax.dataSize.toInt - SizeCreationInfo.dataSize.toInt
+    new CSizeColl(Colls.replicate(len, SizeByte))
+  }
+  val SizeBoxBytesMax = new CSizeColl(Colls.replicate(MaxBoxSize.value, SizeByte))
+  val SizeOfInputRefBytes = CryptoConstants.hashLength + SizeShort.dataSize.toInt
+  val SizeBoxBytesWithoutRefsMax = new CSizeColl(
+    Colls.replicate(MaxBoxSize.value - SizeOfInputRefBytes, SizeByte))
 
   private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
     new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
@@ -131,11 +135,11 @@ object Sized extends SizedLowPriority {
   }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
     new EvalSizeBox(
-      SizePropositionBytes,
-      SizeBoxBytes,
-      SizeBoxBytesWithoutRefs,
+      SizePropositionBytesMax,
+      SizeBoxBytesMax,
+      SizeBoxBytesWithoutRefsMax,
       sizeOfRegisters(b),
-      SizeTokens
+      SizeTokensMax
       )
   }
 

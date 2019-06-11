@@ -13,7 +13,7 @@ object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = ErgoConstants.MaxInputSize.get
+  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.get
   val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
 
     /** Helper function to be use in serializers.

@@ -30,7 +30,7 @@ class DeserializationResilience extends SerializationSpecification {
   }
 
   property("max size limit") {
-    val bytes = Array.fill[Byte](SigmaSerializer.MaxInputSize + 1)(1)
+    val bytes = Array.fill[Byte](SigmaSerializer.MaxPropositionSize + 1)(1)
     an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes)
     an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(SigmaSerializer.startReader(bytes, 0))
   }

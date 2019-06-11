@@ -59,7 +59,7 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
   implicit val arbBox = Arbitrary(ergoBoxGen.map(SigmaDsl.Box))
   implicit val arbAvlTreeData = Arbitrary(avlTreeDataGen)
   implicit val arbAvlTree = Arbitrary(avlTreeGen)
-  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(tokensGen.sample.get))
+  implicit val arbBoxCandidate = Arbitrary(ergoBoxCandidateGen(availableTokensGen.sample.get))
   implicit val arbTransaction = Arbitrary(ergoTransactionGen)
   implicit val arbContextExtension = Arbitrary(contextExtensionGen)
   implicit val arbSerializedProverResult = Arbitrary(serializedProverResultGen)
@@ -283,17 +283,17 @@ trait ValueGenerators extends TypeGenerators with ValidationSpecification {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
   } yield Digest32 @@ bytes
 
-  val tokensGen: Gen[Seq[Digest32]] = for {
+  val availableTokensGen: Gen[Seq[Digest32]] = for {
     count <- Gen.chooseNum(10, 50)
     tokens <- Gen.listOfN(count, tokenIdGen)
   } yield tokens
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputs <- Gen.nonEmptyListOf(inputGen)
-    tokens <- tokensGen
+    availableTokens <- availableTokensGen
     dataInputs <- Gen.listOf(dataInputGen)
     outputsCount <- Gen.chooseNum(50, 200)
-    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(availableTokens))
   } yield new ErgoLikeTransaction(inputs.toIndexedSeq, dataInputs.toIndexedSeq, outputCandidates.toIndexedSeq)
 
   // distinct list of elements from a given generator

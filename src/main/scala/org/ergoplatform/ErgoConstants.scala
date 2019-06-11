@@ -2,26 +2,29 @@ package org.ergoplatform
 
 import sigmastate.interpreter.CryptoConstants
 import scalan.util.CollectionUtil._
+import sigmastate.eval.Sized
 
 case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
   def get: T = value
 }
 
-/**
-  * Fundamental constants that are used in sigma's logic and checks
+/** Constants facade that provide access to the values used in sigma's logic and checks.
+  * All the constants are collected in a sequence.
+  * Each constant has id, value and description.
+  * The constant ids are stable and never change.
+  * Some constant values may be defined in terms of other more fundamental values.
+  * In the future versions of sigma, the values may change,
+  * but due to versioned execution, all versions of the values should be
+  * available simultaneously.
   */
 object ErgoConstants {
 
-  object MaxInputSize extends SizeConstant[Int](4 * 1024, 1,
-    "Input size should not be greater then provided value") {
+  object MaxBoxSize extends SizeConstant[Int](4 * 1024, 1,
+    "Box size should not be greater than provided value") {
   }
 
   object MaxTreeDepth extends SizeConstant[Int](110, 2,
     "Max tree depth should not be greater then provided value") {
-  }
-
-  object MaxPropositionBytes extends SizeConstant[Int](4 * 1024, 3,
-    "Max length of Box.propositionBytes collection") {
   }
 
   object MaxTokens extends SizeConstant[Byte](4, 6,
@@ -32,11 +35,11 @@ object ErgoConstants {
     "Registers count should not be greater than provided value") {
   }
 
-  object MaxBoxSize extends SizeConstant[Int](64 * 1024, 8,
-    "Box size should not be greater than provided value") {
+  object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 3,
+    "Max length of Box.propositionBytes collection") {
   }
 
-  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](MaxBoxSize.value - (CryptoConstants.hashLength + 4), 9,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](Sized.SizeBoxBytesWithoutRefsMax.dataSize.toInt, 9,
     "Box size should not be greater than provided value") {
   }
 
@@ -58,12 +61,11 @@ object ErgoConstants {
 
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
-      MaxInputSize,
+      MaxBoxSize,
       MaxTreeDepth,
       MaxPropositionBytes,
       MaxTokens,
       MaxRegisters,
-      MaxBoxSize,
       MaxBigIntSizeInBytes,
       MaxTupleLength,
       MaxHeaders,

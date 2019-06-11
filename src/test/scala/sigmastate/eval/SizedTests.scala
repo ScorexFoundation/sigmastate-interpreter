@@ -1,23 +1,22 @@
 package sigmastate.eval
 
 import scalan.BaseCtxTests
-import Sized._
-import org.ergoplatform.ErgoConstants.MaxTokens
-import sigmastate.interpreter.CryptoConstants._
+import sigmastate.eval.Sized._
 import special.collection.Size
 
-class EvaluationTest extends BaseCtxTests {
+class SizedTests extends BaseCtxTests {
 
   def check[T](size: Size[T], expectedSize: Int) = {
-    size.dataSize shouldBe expectedSize
+    size.dataSize.toInt shouldBe expectedSize
   }
 
-  test("Data sizes specification") {
-    check(SizeHash, hashLength)
-    check(SizeCreationInfo, 4 + hashLength)
-    check(SizeTokenId, hashLength)
-    check(SizeToken, hashLength + 8)
-    check(SizeTokens, SizeToken.dataSize.toInt * MaxTokens.value)
+  test("Data sizes expected values") {
+    check(SizeHash, 32)
+    check(SizeCreationInfo, 4 + 32)
+    check(SizeTokenId, 32)
+    check(SizeToken, 32 + 8)
+    check(SizeTokensMax, (32 + 8) * 4)
+    check(SizePropositionBytesMax, 4 * 1024 - 8 - (32 + 8) * 4 - (4 + 32))
   }
 
 }

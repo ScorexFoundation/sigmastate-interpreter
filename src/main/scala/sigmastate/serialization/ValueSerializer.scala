@@ -378,8 +378,8 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
     val bytesRemaining = r.remaining
-    if (bytesRemaining > SigmaSerializer.MaxInputSize)
-      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ SigmaSerializer.MaxInputSize}")
+    if (bytesRemaining > SigmaSerializer.MaxPropositionSize)
+      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ SigmaSerializer.MaxPropositionSize}")
     val depth = r.level
     r.level = depth + 1
     val firstByte = r.peekByte().toUByte
