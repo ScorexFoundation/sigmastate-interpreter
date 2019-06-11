@@ -4,7 +4,7 @@ import sigmastate.Values.{ErgoTree, IntConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.SerializerException
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, SerializerException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
@@ -87,4 +87,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     }
   }
 
+  property("max ergo tree byte size check") {
+    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
+    an[InputSizeLimitExceeded] should be thrownBy DefaultSerializer.deserializeErgoTree(r, 1)
+  }
 }
