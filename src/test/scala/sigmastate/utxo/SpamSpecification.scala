@@ -4,16 +4,17 @@ import org.ergoplatform._
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate._
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.exceptions.CosterException
 
 
@@ -43,6 +44,54 @@ class SpamSpecification extends SigmaTestingCommons {
     val t = System.currentTimeMillis()
     (res, (t - t0) < Timeout)
   }
+
+  property("nested loops") {
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = Coll(1,2,3).map({(i:Int) =>
+        |     INPUTS.map({(iBox:Box) =>
+        |         iBox.value != i
+        |       }
+        |     )
+        |     val b = blake2b256(out.propositionBytes)
+        |     out.propositionBytes == SELF.propositionBytes && b != SELF.propositionBytes
+        |   }
+        |  )
+        |  valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+
+    //todo: make value dependent on CostTable constants, not magic constant
+    val ba = Random.randomBytes(10000000)
+
+    val id = 11: Byte
+    val id2 = 12: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10)
+      .withContextExtender(id, ByteArrayConstant(ba))
+      .withContextExtender(id2, ByteArrayConstant(ba))
+
+    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
+
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (res, terminated) = termination(() =>
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
+    )
+
+    //res.isFailure shouldBe true
+    terminated shouldBe true
+  }
+
 
   property("huge byte array") {
     //todo: make value dependent on CostTable constants, not magic constant
