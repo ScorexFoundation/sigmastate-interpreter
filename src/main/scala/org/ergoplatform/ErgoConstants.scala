@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import sigmastate.interpreter.CryptoConstants
 import scalan.util.CollectionUtil._
 import sigmastate.eval.Sized
 

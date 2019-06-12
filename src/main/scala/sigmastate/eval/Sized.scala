@@ -7,7 +7,7 @@ import sigmastate._
 import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
 import SType.AnyOps
-import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxPropositionBytes, MaxTokens}
+import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxTokens}
 import sigmastate.interpreter.CryptoConstants
 
 /** Type-class to give types a capability to build a Size structure. */
@@ -34,6 +34,7 @@ trait SizedLowPriority {
   implicit def optionIsSized[T: Sized]: Sized[Option[T]] = (xs: Option[T]) => new CSizeOption(xs.map(Sized[T].size))
   implicit def pairIsSized[A: Sized, B: Sized]: Sized[(A,B)] = (in: (A,B)) => new CSizePair(Sized[A].size(in._1), Sized[B].size(in._2))
 }
+
 object Sized extends SizedLowPriority {
   def apply[T](implicit sz: Sized[T]): Sized[T] = sz
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)

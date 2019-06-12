@@ -7,7 +7,7 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, IntConstant, ErgoTree}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
