@@ -13,7 +13,7 @@ class SigmaByteReader(val r: Reader,
                       val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
-  private def checkPositionLimit(): Unit =
+  @inline private def checkPositionLimit(): Unit =
     if (position > positionLimit)
       throw new InputSizeLimitExceeded(s"read bytes position limit $positionLimit is reached at position $position")
 
@@ -103,14 +103,8 @@ class SigmaByteReader(val r: Reader,
     this
   }
 
-  @inline def getType(): SType = {
-    checkPositionLimit()
-    TypeSerializer.deserialize(this)
-  }
-  @inline def getValue(): SValue = {
-    checkPositionLimit()
-    ValueSerializer.deserialize(this)
-  }
+  @inline def getType(): SType = TypeSerializer.deserialize(this)
+  @inline def getValue(): SValue = ValueSerializer.deserialize(this)
 
   private var lvl: Int = 0
   @inline def level: Int = lvl

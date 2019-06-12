@@ -51,7 +51,7 @@ class DeserializationResilience extends SerializationSpecification {
     val b = new ErgoBoxCandidate(1L, bigTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
-    ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes))
+    ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)) shouldEqual b
   }
 
   property("zeroes (invalid type code in constant deserialization path") {
