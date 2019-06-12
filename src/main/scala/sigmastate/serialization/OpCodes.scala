@@ -4,8 +4,6 @@ import sigma.util.Extensions.ByteOps
 import sigmastate.serialization.OpCodes.OpCode
 import supertagged.TaggedType
 
-import scala.language.implicitConversions
-
 /** Encoding of types for serialization. */
 trait TypeCodes {
   /** Decoding of types depends on the first byte and in general is a recursive procedure
@@ -63,7 +61,7 @@ object OpCodes extends ValueCodes {
   object OpCodeExtra extends TaggedType[Short]
   type OpCodeExtra = OpCodeExtra.Type
 
-  implicit def opCodeToOpCodeExtra(oc: OpCode): OpCodeExtra = OpCodeExtra @@ oc.toUByte.toShort
+  def toExtra(oc: OpCode): OpCodeExtra = OpCodeExtra @@ oc.toUByte.toShort
   private def newOpCode(shift: Short): OpCode = OpCode @@ (LastConstantCode + shift).toByte
 
   // serialization is not required

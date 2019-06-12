@@ -89,7 +89,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  private val _allowedOpCodesInCosting = HashSet[OpCodeExtra](
+  private val _allowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
     AppendCode,
     ByIndexCode,
     ConstantCode,
@@ -123,7 +123,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     SliceCode,
     TupleCode,
     UpcastCode,
-    // OpCodeExtra
+  ).map(toExtra) ++ HashSet[OpCodeExtra](
     OpCostCode,
     PerKbCostOfCode,
     CastCode,
@@ -181,85 +181,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Returns extended op code assigned to the given IR graph node.
     */
   def getOpCodeEx(d: Def[_]): OpCodeExtra = d match {
-    case _: Const[_] => ConstantCode
-    case _: Tup[_, _] => TupleCode
-    case _: First[_, _] | _: Second[_, _] => SelectFieldCode
-    case _: FieldApply[_] => SelectFieldCode
-    case _: Lambda[_, _] => FuncValueCode
-    case _: Apply[_, _] => FuncApplyCode
-    case _: Upcast[_, _] => UpcastCode
-    case _: Downcast[_, _] => DowncastCode
-    case ApplyBinOp(op, _, _) => op match {
-      case _: NumericPlus[_] => PlusCode
-      case _: NumericMinus[_] => MinusCode
-      case _: NumericTimes[_] => MultiplyCode
-      case _: IntegralDivide[_] => DivisionCode
-      case _: IntegralMod[_] => ModuloCode
-      case _: OrderingMin[_] => MinCode
-      case _: OrderingMax[_] => MaxCode
-      case _: Equals[_] => EqCode
-      case _: NotEquals[_] => NeqCode
-      case _: OrderingGT[_] => GtCode
-      case _: OrderingLT[_] => LtCode
-      case _: OrderingGTEQ[_] => GeCode
-      case _: OrderingLTEQ[_] => LeCode
-    }
-    case ApplyUnOp(op, _) => op match {
-      case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
-      case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
-    }
-    case _: IfThenElseLazy[_] => IfCode
-    case ContextM.SELF(_) => SelfCode
-    case ContextM.OUTPUTS(_) => OutputsCode
-    case ContextM.INPUTS(_) => InputsCode
-    case ContextM.dataInputs(_) => MethodCallCode
-    case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
-    case ContextM.getVar(_, _, _) => GetVarCode
-    case ContextM.HEIGHT(_) => HeightCode
-    case ContextM.minerPubKey(_) => MinerPubkeyCode
-    case SigmaM.propBytes(_) => SigmaPropBytesCode
-    case SigmaM.isValid(_) => SigmaPropIsProvenCode
-    case CollM.length(_) => SizeOfCode
-    case CollM.apply(_, _) => ByIndexCode
-    case CollM.map(_, _) => MapCollectionCode
-    case CollM.zip(_, _) => MethodCallCode
-    case CollM.slice(_, _, _) => SliceCode
-    case CollM.append(_, _) => AppendCode
-    case CollM.foldLeft(_, _, _) => FoldCode
-    case CollM.exists(_, _) => ExistsCode
-    case CollM.forall(_, _) => ForAllCode
-    case CollM.filter(_, _) => FilterCode
-    case BoxM.propositionBytes(_) => ExtractScriptBytesCode
-    case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
-    case BoxM.getReg(_, _, _) => ExtractRegisterAs
-    case BoxM.value(_) => ExtractAmountCode
-    case BoxM.bytes(_) => ExtractBytesCode
-    case BoxM.id(_) => ExtractIdCode
-    case BoxM.creationInfo(_) => ExtractCreationInfoCode
-    case OM.get(_) => OptionGetCode
-    case OM.getOrElse(_, _) => OptionGetOrElseCode
-    case OM.fold(_, _, _) => MethodCallCode
-    case OM.isDefined(_) => OptionIsDefinedCode
-    case SDBM.substConstants(_, _, _, _, _) => SubstConstantsCode
-    case SDBM.longToByteArray(_, _) => LongToByteArrayCode
-    case SDBM.byteArrayToBigInt(_, _) => ByteArrayToBigIntCode
-    case SDBM.byteArrayToLong(_, _) => ByteArrayToLongCode
-    case SDBM.groupGenerator(_) => GroupGeneratorCode
-    case SDBM.allOf(_, _) => AndCode
-    case SDBM.anyOf(_, _) => OrCode
-    case SDBM.atLeast(_, _, _) => AtLeastCode
-    case SDBM.anyZK(_, _) => ExistsCode
-    case SDBM.allZK(_, _) => ForAllCode
-    case SDBM.blake2b256(_, _) => CalcBlake2b256Code
-    case SDBM.sha256(_, _) => CalcSha256Code
-    case SDBM.proveDlog(_, _) => ProveDlogCode
-    case SDBM.proveDHTuple(_, _, _, _, _) => ProveDHTupleCode
-    case SDBM.sigmaProp(_, _) => BoolToSigmaPropCode
-    case SDBM.decodePoint(_, _) => DecodePointCode
-    case SDBM.xorOf(_, _) => XorOfCode
-    case CBM.xor(_, _, _) => XorCode
-    case _: MethodCall => MethodCallCode
-    // OpCodeExtra
     case _: OpCost => OpCostCode
     case _: PerKbCostOf => PerKbCostOfCode
     case _: Cast[_] => CastCode
@@ -303,7 +224,87 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: CostOf => CostOfCode
     case _: SizeOf[_] => UOSizeOfCode
     case SPCM.some(_) => SPCMSomeCode
-    case _ => error(s"Unknown opCode for $d}")
+    case dSer => toExtra(dSer match {
+      case _: Const[_] => ConstantCode
+      case _: Tup[_, _] => TupleCode
+      case _: First[_, _] | _: Second[_, _] => SelectFieldCode
+      case _: FieldApply[_] => SelectFieldCode
+      case _: Lambda[_, _] => FuncValueCode
+      case _: Apply[_, _] => FuncApplyCode
+      case _: Upcast[_, _] => UpcastCode
+      case _: Downcast[_, _] => DowncastCode
+      case ApplyBinOp(op, _, _) => op match {
+        case _: NumericPlus[_] => PlusCode
+        case _: NumericMinus[_] => MinusCode
+        case _: NumericTimes[_] => MultiplyCode
+        case _: IntegralDivide[_] => DivisionCode
+        case _: IntegralMod[_] => ModuloCode
+        case _: OrderingMin[_] => MinCode
+        case _: OrderingMax[_] => MaxCode
+        case _: Equals[_] => EqCode
+        case _: NotEquals[_] => NeqCode
+        case _: OrderingGT[_] => GtCode
+        case _: OrderingLT[_] => LtCode
+        case _: OrderingGTEQ[_] => GeCode
+        case _: OrderingLTEQ[_] => LeCode
+      }
+      case ApplyUnOp(op, _) => op match {
+        case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
+        case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
+      }
+      case _: IfThenElseLazy[_] => IfCode
+      case ContextM.SELF(_) => SelfCode
+      case ContextM.OUTPUTS(_) => OutputsCode
+      case ContextM.INPUTS(_) => InputsCode
+      case ContextM.dataInputs(_) => MethodCallCode
+      case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
+      case ContextM.getVar(_, _, _) => GetVarCode
+      case ContextM.HEIGHT(_) => HeightCode
+      case ContextM.minerPubKey(_) => MinerPubkeyCode
+      case SigmaM.propBytes(_) => SigmaPropBytesCode
+      case SigmaM.isValid(_) => SigmaPropIsProvenCode
+      case CollM.length(_) => SizeOfCode
+      case CollM.apply(_, _) => ByIndexCode
+      case CollM.map(_, _) => MapCollectionCode
+      case CollM.zip(_, _) => MethodCallCode
+      case CollM.slice(_, _, _) => SliceCode
+      case CollM.append(_, _) => AppendCode
+      case CollM.foldLeft(_, _, _) => FoldCode
+      case CollM.exists(_, _) => ExistsCode
+      case CollM.forall(_, _) => ForAllCode
+      case CollM.filter(_, _) => FilterCode
+      case BoxM.propositionBytes(_) => ExtractScriptBytesCode
+      case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
+      case BoxM.getReg(_, _, _) => ExtractRegisterAs
+      case BoxM.value(_) => ExtractAmountCode
+      case BoxM.bytes(_) => ExtractBytesCode
+      case BoxM.id(_) => ExtractIdCode
+      case BoxM.creationInfo(_) => ExtractCreationInfoCode
+      case OM.get(_) => OptionGetCode
+      case OM.getOrElse(_, _) => OptionGetOrElseCode
+      case OM.fold(_, _, _) => MethodCallCode
+      case OM.isDefined(_) => OptionIsDefinedCode
+      case SDBM.substConstants(_, _, _, _, _) => SubstConstantsCode
+      case SDBM.longToByteArray(_, _) => LongToByteArrayCode
+      case SDBM.byteArrayToBigInt(_, _) => ByteArrayToBigIntCode
+      case SDBM.byteArrayToLong(_, _) => ByteArrayToLongCode
+      case SDBM.groupGenerator(_) => GroupGeneratorCode
+      case SDBM.allOf(_, _) => AndCode
+      case SDBM.anyOf(_, _) => OrCode
+      case SDBM.atLeast(_, _, _) => AtLeastCode
+      case SDBM.anyZK(_, _) => ExistsCode
+      case SDBM.allZK(_, _) => ForAllCode
+      case SDBM.blake2b256(_, _) => CalcBlake2b256Code
+      case SDBM.sha256(_, _) => CalcSha256Code
+      case SDBM.proveDlog(_, _) => ProveDlogCode
+      case SDBM.proveDHTuple(_, _, _, _, _) => ProveDHTupleCode
+      case SDBM.sigmaProp(_, _) => BoolToSigmaPropCode
+      case SDBM.decodePoint(_, _) => DecodePointCode
+      case SDBM.xorOf(_, _) => XorOfCode
+      case CBM.xor(_, _, _) => XorCode
+      case _: MethodCall => MethodCallCode
+      case _ => error(s"Unknown opCode for $d}")
+    })
   }
 
   /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
