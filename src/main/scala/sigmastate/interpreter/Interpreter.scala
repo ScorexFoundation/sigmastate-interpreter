@@ -29,8 +29,6 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  final val MaxByteArrayLength = ErgoConstants.MaxByteArrayLength.get
-
   def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
