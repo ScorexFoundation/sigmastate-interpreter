@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
-import org.ergoplatform.validation.{ValidationRules, ValidationException}
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -15,6 +15,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.exceptions.CosterException
 
 
@@ -205,7 +206,8 @@ class SpamSpecification extends SigmaTestingCommons {
       preHeader = ErgoLikeContext.dummyPreHeader,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = inputs(0))
+      self = inputs(0),
+      extension = ContextExtension.empty)
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 

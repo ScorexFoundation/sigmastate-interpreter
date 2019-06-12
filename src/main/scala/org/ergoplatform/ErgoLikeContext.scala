@@ -49,7 +49,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      val extension: ContextExtension = ContextExtension(Map()),
+                      val extension: ContextExtension,
                       val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings,
                       val costLimit: Long = ErgoConstants.ScriptCostLimit.value
                  ) extends InterpreterContext {
