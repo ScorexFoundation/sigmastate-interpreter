@@ -125,7 +125,7 @@ object ErgoBoxCandidate {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()
-      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
       val creationHeight = r.getUInt().toInt
       val addTokensCount = r.getUByte()
       val addTokens = (0 until addTokensCount).map { _ =>

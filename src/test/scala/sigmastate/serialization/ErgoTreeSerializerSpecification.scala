@@ -97,7 +97,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
     val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
     r.positionLimit = 1
-    DefaultSerializer.deserializeErgoTree(r) shouldEqual tree
+    DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize) shouldEqual tree
     r.positionLimit shouldBe 1
   }
 }
