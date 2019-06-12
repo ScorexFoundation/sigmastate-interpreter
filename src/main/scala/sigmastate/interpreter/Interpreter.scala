@@ -31,11 +31,6 @@ trait Interpreter extends ScorexLogging {
 
   final val MaxByteArrayLength = ErgoConstants.MaxByteArrayLength.get
 
-  /**
-    * Max cost of a script interpreter can accept
-    */
-  def maxCost: Long
-
   def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
@@ -73,6 +68,7 @@ trait Interpreter extends ScorexLogging {
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._; import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val maxCost = context.costLimit
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
@@ -107,6 +103,7 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._
     implicit val vs = context.validationSettings
+    val maxCost = context.costLimit
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
       val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
       IR.onCostingResult(env, exp, costingRes)
@@ -143,6 +140,8 @@ trait Interpreter extends ScorexLogging {
     prop
   }
 
+  /** Executes the script in a given context and verifies the proof.
+    * @param costLimit   Max cost of a script interpreter can accept */
   def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],

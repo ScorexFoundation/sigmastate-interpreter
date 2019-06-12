@@ -199,8 +199,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 2)
-    val verifier = new ErgoLikeTestInterpreter(CostTable.ScriptLimit * 2)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val verifier = new ErgoLikeTestInterpreter()
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -222,7 +222,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head)
+        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 2)
 
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
