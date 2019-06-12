@@ -95,5 +95,5 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
     self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension(Map()))
+    extension = ContextExtension.empty)
 }
