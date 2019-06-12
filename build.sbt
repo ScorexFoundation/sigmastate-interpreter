@@ -201,7 +201,9 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "sigma-validation-settings"
+  val ergoBranch = "master"
+  val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
+  
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
@@ -211,14 +213,15 @@ def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
   s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
 
+
   log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
-  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, sbtEnvVars: _*) !
 
   log.info("Updated Ergo lock.sbt:")
   Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
 
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
-  val res = Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  val res = Process(Seq("sbt", task), ergoPath, sbtEnvVars: _*) !
 
   if (res != 0) sys.error(s"Ergo $task failed!")
 }

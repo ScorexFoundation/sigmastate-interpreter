@@ -3,10 +3,10 @@ package sigmastate.utils
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 
 class SparseArrayContainerSpecification extends PropSpec
-  with ValueGenerators
+  with ObjectGenerators
   with PropertyChecks
   with Matchers {
 

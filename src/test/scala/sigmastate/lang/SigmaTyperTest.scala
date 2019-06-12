@@ -13,10 +13,10 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
 import sigmastate.lang.exceptions.TyperException
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ExtractCreationInfo, Append}
 
-class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ValueGenerators {
+class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ObjectGenerators {
 
   private val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   import predefFuncRegistry._
