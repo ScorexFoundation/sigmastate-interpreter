@@ -126,7 +126,7 @@ object ValidationRules {
     }
   }
 
-  /** Throws soft-forkable ValidationException when this rules has status other that EnabledRule. */
+  /** Throws soft-forkable ValidationException when this rule has status other than EnabledRule. */
   object CheckCostWithContextIsActive extends ValidationRule(1006,
     "Contract execution cost in a given context is limited by given maximum value.")
       with SoftForkWhenReplaced {
