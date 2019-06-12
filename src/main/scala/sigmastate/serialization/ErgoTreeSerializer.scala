@@ -125,11 +125,10 @@ class ErgoTreeSerializer {
     * Doesn't apply any transformations to the parsed tree. */
   def deserializeErgoTree(bytes: Array[Byte]): ErgoTree  = {
     val r = SigmaSerializer.startReader(bytes)
-    deserializeErgoTree(r)
+    deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
   }
 
-  def deserializeErgoTree(r: SigmaByteReader,
-                          maxTreeSizeBytes: Int = SigmaSerializer.MaxPropositionSize): ErgoTree = {
+  def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int): ErgoTree = {
     val startPos = r.position
     val previousPositionLimit = r.positionLimit
     r.positionLimit = r.position + maxTreeSizeBytes
