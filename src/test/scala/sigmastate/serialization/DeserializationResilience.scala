@@ -221,10 +221,8 @@ class DeserializationResilience extends SerializationSpecification {
     val bigTree = new SigmaAnd(
       Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
         proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
-    val tokensCount = 250
-    val tokens = Gen.listOfN(tokensCount, Gen.oneOf(availableTokensGen.sample.get)).sample.get.toColl
-    val tokenAmounts = Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)).sample.get.toColl
-    val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens.zip(tokenAmounts))
+    val tokens = additionalTokensGen(127).sample.get.map(_.sample.get).toColl
+    val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
     val bytes = w.toBytes
