@@ -7,7 +7,7 @@ import sigmastate.utxo.CostTable
 
 import scala.util.{Failure, Success}
 
-class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext) extends ErgoLikeInterpreter(maxCost) {
+class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
 }
 

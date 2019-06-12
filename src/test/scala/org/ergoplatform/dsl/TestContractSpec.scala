@@ -3,7 +3,7 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ProverResult, CostedProverResult}
+import sigmastate.interpreter.{ProverResult, CostedProverResult, ContextExtension}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
@@ -86,7 +86,8 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
-        self = utxoBox.ergoBox)
+        self = utxoBox.ergoBox,
+        extension = ContextExtension.empty)
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {

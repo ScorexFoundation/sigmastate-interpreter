@@ -49,8 +49,9 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      override val extension: ContextExtension = ContextExtension(Map()),
-                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
+                      val extension: ContextExtension,
+                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings,
+                      val costLimit: Long = ErgoConstants.ScriptCostLimit.value
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -62,15 +63,20 @@ class ErgoLikeContext(val currentHeight: Height,
   }
   assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
+  override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, newCostLimit)
+
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings)
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings, costLimit)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings)
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings, costLimit)
 
   import ErgoLikeContext._
   import Evaluation._

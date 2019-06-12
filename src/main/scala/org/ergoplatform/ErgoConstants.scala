@@ -59,6 +59,10 @@ object ErgoConstants {
     "Max children count should not be greater than provided value") {
   }
 
+  object ScriptCostLimit extends SizeConstant[Int](1000000, 13,
+    "Maximum execution cost of a script") {
+  }
+
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,

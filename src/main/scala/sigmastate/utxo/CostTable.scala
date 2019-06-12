@@ -1,8 +1,10 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
+
 import scala.collection.mutable
 
 case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
@@ -283,7 +285,7 @@ object CostTable {
   }
 
   //Maximum cost of a script
-  val ScriptLimit = 1000000
+  val ScriptLimit = ErgoConstants.ScriptCostLimit.value
 
   //Maximum number of expressions in initial(non-reduced script)
   val MaxExpressions = 300

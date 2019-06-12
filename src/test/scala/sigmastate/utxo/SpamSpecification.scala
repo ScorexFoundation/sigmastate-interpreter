@@ -1,7 +1,7 @@
 package sigmastate.utxo
 
 import org.ergoplatform._
-import org.ergoplatform.validation.{ValidationRules, ValidationException}
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -15,6 +15,7 @@ import sigmastate._
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.exceptions.CosterException
 
 
@@ -52,7 +53,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val id = 11: Byte
     val id2 = 12: Byte
 
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10)
+    val prover = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(id, ByteArrayConstant(ba))
       .withContextExtender(id2, ByteArrayConstant(ba))
 
@@ -60,7 +61,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(CostTable.ScriptLimit * 10), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, terminated) = termination(() =>
@@ -83,7 +84,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val id = 21: Byte
 
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10).withContextExtender(id, ByteArrayConstant(ba))
+    val prover = new ContextEnrichingTestProvingInterpreter().withContextExtender(id, ByteArrayConstant(ba))
 
     val bigSubScript = (1 to 100).foldLeft(CalcBlake2b256(GetVarByteArray(id).get)) { case (script, _) =>
       CalcBlake2b256(script)
@@ -91,7 +92,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val spamScript = NEQ(bigSubScript, CalcBlake2b256(ByteArrayConstant(Array.fill(32)(0: Byte)))).toSigmaProp
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContext.dummy(fakeSelf).withCostLimit(CostTable.ScriptLimit * 10)
 
     val prt = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage)
     prt.isSuccess shouldBe true
@@ -108,7 +109,7 @@ class SpamSpecification extends SigmaTestingCommons {
   }
 
   property("ring signature - maximum ok ring size") {
-    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 2)
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val verifier = new ErgoLikeTestInterpreter
     val secret = prover.dlogSecrets.head
 
@@ -116,7 +117,7 @@ class SpamSpecification extends SigmaTestingCommons {
       new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     }
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContext.dummy(fakeSelf).withCostLimit(CostTable.ScriptLimit * 2)
 
     val publicImages = secret.publicImage +: simulated
     val prop = OR(publicImages.map(image => SigmaPropConstant(image).isProven)).toSigmaProp
@@ -134,7 +135,7 @@ class SpamSpecification extends SigmaTestingCommons {
       whenever(orCnt > 10 && outCnt > 200) {
     val orCnt = 10
     val outCnt = 5
-    val prover = new ContextEnrichingTestProvingInterpreter(maxCost = CostTable.ScriptLimit * 1000000L)
+    val prover = new ContextEnrichingTestProvingInterpreter()
 
     val propToCompare = OR((1 to orCnt).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
 
@@ -156,7 +157,9 @@ class SpamSpecification extends SigmaTestingCommons {
     val txOutputs = ((1 to outCnt) map (_ => ErgoBox(11, spamProp, 0))) :+ ErgoBox(11, propToCompare, 0)
     val tx = createTransaction(txOutputs)
 
-    val ctx = ErgoLikeContext.dummy(createBox(0, propToCompare)).withTransaction(tx)
+    val ctx = ErgoLikeContext.dummy(createBox(0, propToCompare))
+      .withTransaction(tx)
+      .withCostLimit(CostTable.ScriptLimit * 1000000L)
 
     val pt0 = System.currentTimeMillis()
     val proof = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
@@ -180,7 +183,7 @@ class SpamSpecification extends SigmaTestingCommons {
       }
     }
     val prover = new ContextEnrichingTestProvingInterpreter()
-    val limitlessProver = new ContextEnrichingTestProvingInterpreter(maxCost = Long.MaxValue)
+    val limitlessProver = new ContextEnrichingTestProvingInterpreter()
 
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
@@ -203,7 +206,8 @@ class SpamSpecification extends SigmaTestingCommons {
       preHeader = ErgoLikeContext.dummyPreHeader,
       boxesToSpend = inputs,
       spendingTransaction = tx,
-      self = inputs(0))
+      self = inputs(0),
+      extension = ContextExtension.empty)
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 
@@ -241,7 +245,7 @@ class SpamSpecification extends SigmaTestingCommons {
     def genKey(str: String): ADKey = ADKey @@ Blake2b256("key: " + str)
     def genValue(str: String): ADValue = ADValue @@ Blake2b256("val: " + str)
 
-    val prover = new ContextEnrichingTestProvingInterpreter(Long.MaxValue)
+    val prover = new ContextEnrichingTestProvingInterpreter()
     val verifier = new ErgoLikeTestInterpreter
 
     val pubkey = prover.dlogSecrets.head.publicImage
@@ -293,7 +297,7 @@ class SpamSpecification extends SigmaTestingCommons {
       spendingTransaction,
       self = s)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
     println("Cost: " + pr.cost)
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).isFailure shouldBe true
   }
