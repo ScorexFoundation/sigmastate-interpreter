@@ -186,6 +186,7 @@ trait SigmaTestingCommons extends PropSpec
     val randomBytesCount = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
     val bytes = serializer.toBytes(v)
+    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
     serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
   }
 
