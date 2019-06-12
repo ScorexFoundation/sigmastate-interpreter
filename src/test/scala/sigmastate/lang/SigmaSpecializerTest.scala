@@ -10,7 +10,7 @@ import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ObjectGenerators}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -18,7 +18,7 @@ class SigmaSpecializerTest extends PropSpec
   with PropertyChecks
   with Matchers
   with LangTests
-  with ValueGenerators
+  with ObjectGenerators
   with ConcreteCollectionGenerators
   with TransformerGenerators {
 

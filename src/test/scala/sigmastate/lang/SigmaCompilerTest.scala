@@ -10,11 +10,11 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.Terms.{Lambda, MethodCall, ZKProofBlock, Apply, Ident}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{GetVar, ExtractAmount, ByIndex, SelectField}
 import sigmastate.eval._
 
-class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ValueGenerators {
+class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGenerators {
   import CheckingSigmaBuilder._
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
     beginPass(noConstPropagationPass)
