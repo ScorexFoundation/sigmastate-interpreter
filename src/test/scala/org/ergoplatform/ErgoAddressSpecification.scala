@@ -9,13 +9,13 @@ import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.DLogProverInput
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.ValueSerializer
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import org.ergoplatform.ErgoScriptPredef._
 import org.ergoplatform.validation.ValidationSpecification
 import sigmastate.Values.ErgoTree
 
 class ErgoAddressSpecification extends PropSpec
-  with ValueGenerators
+  with ObjectGenerators
   with PropertyChecks
   with Matchers
   with TryValues

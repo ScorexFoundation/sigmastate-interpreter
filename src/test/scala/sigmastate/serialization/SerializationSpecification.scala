@@ -14,7 +14,7 @@ trait SerializationSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
-  with ValueGenerators
+  with ObjectGenerators
   with ConcreteCollectionGenerators
   with OpcodesGen
   with TransformerGenerators
