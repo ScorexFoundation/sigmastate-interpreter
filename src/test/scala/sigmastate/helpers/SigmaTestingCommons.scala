@@ -169,7 +169,10 @@ trait SigmaTestingCommons extends PropSpec
     // using default sigma reader/writer
     val bytes = serializer.toBytes(v)
     bytes.nonEmpty shouldBe true
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    val r = SigmaSerializer.startReader(bytes)
+    val positionLimitBefore = r.positionLimit
+    serializer.parse(r) shouldBe v
+    r.positionLimit shouldBe positionLimitBefore
 
     // using ergo's(scorex) reader/writer
     val w = new VLQByteStringWriter()
@@ -183,7 +186,6 @@ trait SigmaTestingCommons extends PropSpec
     val randomBytesCount = Gen.chooseNum(1, 20).sample.get
     val randomBytes = Gen.listOfN(randomBytesCount, arbByte.arbitrary).sample.get.toArray
     val bytes = serializer.toBytes(v)
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
     serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
   }
 

@@ -92,4 +92,12 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
     an[InputSizeLimitExceeded] should be thrownBy DefaultSerializer.deserializeErgoTree(r, 1)
   }
+
+  property("restore reader's positionLimit") {
+    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
+    r.positionLimit = 1
+    DefaultSerializer.deserializeErgoTree(r) shouldEqual tree
+    r.positionLimit shouldBe 1
+  }
 }
