@@ -2,10 +2,10 @@ package sigmastate.utils
 
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import Helpers._
 
-class HelpersTests extends PropSpec with PropertyChecks with Matchers with ValueGenerators {
+class HelpersTests extends PropSpec with PropertyChecks with Matchers with ObjectGenerators {
   property("xorU") {
     forAll(arrayGen[Byte]) { arr =>
 

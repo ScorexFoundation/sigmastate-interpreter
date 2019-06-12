@@ -5,7 +5,7 @@ import sigmastate.Values.{FalseLeaf, TrueLeaf}
 import sigmastate.{If, SInt, TreeLookup}
 
 trait RelationGenerators {
-  this: ValueGenerators with ConcreteCollectionGenerators =>
+  this: ObjectGenerators with ConcreteCollectionGenerators =>
 
   val treeLookupGen: Gen[TreeLookup] = for {
     t <- arbTaggedAvlTree.arbitrary

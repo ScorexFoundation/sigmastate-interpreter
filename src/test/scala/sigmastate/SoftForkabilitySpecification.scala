@@ -148,7 +148,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     assertExceptionThrown(
       {
         val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
-        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
       },
       {
         case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
@@ -161,7 +161,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       assertExceptionThrown(
         {
           val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
-          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
         },
         {
           case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true

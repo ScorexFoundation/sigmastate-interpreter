@@ -14,7 +14,7 @@ trait SerializationSpecification extends PropSpec
   with GeneratorDrivenPropertyChecks
   with TableDrivenPropertyChecks
   with Matchers
-  with ValueGenerators
+  with ObjectGenerators
   with ConcreteCollectionGenerators
   with OpcodesGen
   with TransformerGenerators
@@ -29,8 +29,11 @@ trait SerializationSpecification extends PropSpec
 
   protected def predefinedBytesTest[V <: Value[_ <: SType]](v: V, bytes: Array[Byte]): Assertion = {
     ValueSerializer.serialize(v) shouldEqual bytes
-    val dv = ValueSerializer.deserialize(bytes)
+    val r = SigmaSerializer.startReader(bytes)
+    val positionLimitBefore = r.positionLimit
+    val dv = ValueSerializer.deserialize(r)
     dv shouldEqual v
+    r.positionLimit shouldBe positionLimitBefore
   }
 
   //check that pos and consumed are being implented correctly
