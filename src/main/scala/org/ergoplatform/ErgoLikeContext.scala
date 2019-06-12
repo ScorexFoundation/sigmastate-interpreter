@@ -11,14 +11,15 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, Header, PreHeader}
+import special.sigma.{AnyValue, Box, PreHeader, Header}
 import sigmastate.SType._
 import scalan.RType._
-import special.sigma.{AnyValue, Box, Header, PreHeader}
-import special.sigma.{AnyValue, Box, Header, PreHeader}
+import special.sigma.{AnyValue, Box, PreHeader, Header}
+import special.sigma.{AnyValue, Box, PreHeader, Header}
 import SType._
 import RType._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
 
 import scala.util.Try
 
@@ -50,8 +51,8 @@ class ErgoLikeContext(val currentHeight: Height,
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
                       val extension: ContextExtension,
-                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings,
-                      val costLimit: Long = ErgoConstants.ScriptCostLimit.value
+                      val validationSettings: SigmaValidationSettings,
+                      val costLimit: Long
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -128,7 +129,7 @@ object ErgoLikeContext {
       noHeaders,
       dummyPreHeader,
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension, vs)
+      boxesToSpend, spendingTransaction, self, extension, vs, ScriptCostLimit.value)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -140,7 +141,7 @@ object ErgoLikeContext {
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty)
+      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

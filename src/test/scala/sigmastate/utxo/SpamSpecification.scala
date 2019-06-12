@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
@@ -207,7 +208,9 @@ class SpamSpecification extends SigmaTestingCommons {
       boxesToSpend = inputs,
       spendingTransaction = tx,
       self = inputs(0),
-      extension = ContextExtension.empty)
+      extension = ContextExtension.empty,
+      validationSettings = ValidationRules.currentSettings,
+      costLimit = ScriptCostLimit.value)
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 

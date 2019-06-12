@@ -3,10 +3,11 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ProverResult, CostedProverResult, ContextExtension}
+import sigmastate.interpreter.{ProverResult, ContextExtension, CostedProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, noHeaders}
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
@@ -14,6 +15,7 @@ import scorex.crypto.hash.Digest32
 import scala.util.Try
 import org.ergoplatform.{ErgoLikeContext, ErgoBox}
 import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
@@ -87,7 +89,9 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
         self = utxoBox.ergoBox,
-        extension = ContextExtension.empty)
+        extension = ContextExtension.empty,
+        validationSettings = ValidationRules.currentSettings,
+        costLimit = ScriptCostLimit.value)
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {
