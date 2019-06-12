@@ -2,7 +2,6 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform._
-import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -35,7 +34,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 6000000).foreach(_ => hf(block))
+    (1 to 4000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -216,23 +215,26 @@ class SpamSpecification extends SigmaTestingCommons {
 
     // check that execution terminated within timeout due to costing exception and cost limit
     val pt0 = System.currentTimeMillis()
-    val (res, terminated) = termination(() => prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage))
+    val (res, terminated) = termination(() =>
+      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage)
+    )
     val pt = System.currentTimeMillis()
     println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
     terminated shouldBe true
     assertExceptionThrown(
       res.fold(t => throw t, identity),
       {
-        case ve: ValidationException =>
-          ve.rule == ValidationRules.CheckCostWithContext &&
-          rootCause(ve).isInstanceOf[CosterException]
+        case se: IR.StagingException =>
+          val cause = rootCause(se)
+          cause.isInstanceOf[CosterException] && cause.getMessage.contains("Estimated expression complexity")
+        case _ => false
       }
     )
 
     // measure time required to execute the script itself and it is more then timeout
     val (_, calcTime) = BenchmarkUtil.measureTime {
       import limitlessProver.IR._
-      val Pair(calcF, _) = doCostingEx(emptyEnv, prop, true)
+      val Pair(calcF, _) = doCostingEx(emptyEnv + (ScriptNameProp -> "compute"), prop, true)
       val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
       limitlessProver.calcResult(calcCtx, calcF)
     }

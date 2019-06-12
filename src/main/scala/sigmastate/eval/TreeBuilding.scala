@@ -48,7 +48,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   type DefEnv = Map[Sym, (Int, SType)]
 
   object IsArithOp {
-    def unapply(op: EndoBinOp[_]): Option[Byte] = op match {
+    def unapply(op: EndoBinOp[_]): Option[OpCode] = op match {
       case _: NumericPlus[_]    => Some(PlusCode)
       case _: NumericMinus[_]   => Some(MinusCode)
       case _: NumericTimes[_]   => Some(MultiplyCode)

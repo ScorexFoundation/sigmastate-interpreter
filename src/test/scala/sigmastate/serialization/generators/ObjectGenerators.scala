@@ -133,7 +133,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
 
   lazy val sigmaTreeNodeGen: Gen[SigmaBoolean] = for {
     itemsNum <- Gen.choose(2, ThresholdLimit)
-    items <- if (itemsNum <= 3) {
+    items <- if (itemsNum <= 2) {
       Gen.listOfN(itemsNum, sigmaBooleanGen)
     } else {
       Gen.listOfN(itemsNum, nonRecursiveSigmaBoolean)

@@ -1,15 +1,25 @@
 package org.ergoplatform.validation
 
+import java.nio.ByteBuffer
+
+import scorex.util.ByteArrayBuilder
+import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
-import sigmastate.serialization.OpCodes.OpCode
+import sigma.util.Extensions.ByteOps
+import sigmastate.Values.{IntValue, SValue, Value}
+import sigmastate.eval.IRContext
+import sigmastate.lang.exceptions._
+import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.{CheckAndGetMethod, CheckTypeWithMethods, SCollection, SType}
-import sigma.util.Extensions.ByteOps
+import sigma.util.Extensions._
+
+import scala.collection.mutable
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.
@@ -44,8 +54,15 @@ case class ValidationRule(
       case Some(DisabledRule) =>
         block  // if the rule is disabled we still need to execute the block of code
       case Some(_) =>
-        if (condition) block
-        else throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+        if (condition) {
+          block
+        }
+        else if (cause.isInstanceOf[ValidationException]) {
+          throw cause
+        }
+        else {
+          throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+        }
     }
   }
 }
@@ -126,19 +143,16 @@ object ValidationRules {
     }
   }
 
-  object CheckCostWithContext extends ValidationRule(1006,
-    "Contract execution cost in a given context is limited by given maximum value.") {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)
-        (costingCtx: ctx.Context.SContext, exp: Value[SType],
-            costF: ctx.Rep[((ctx.Context, (Int, ctx.Size[ctx.Context]))) => Int], maxCost: Long): Int = {
-      def args = Seq(costingCtx, exp, costF, maxCost)
-      lazy val estimatedCostTry = ctx.checkCostWithContext(costingCtx, exp, costF, maxCost)
-      validate(estimatedCostTry.isSuccess,
-        {
-          val t = estimatedCostTry.toEither.left.get
-          new CosterException(s"Script cannot be executed due to high cost $exp: ", exp.sourceContext.toList.headOption, Some(t))
-        },
-        args, estimatedCostTry.get)
+  /** Throws soft-forkable ValidationException when this rules has status other that EnabledRule. */
+  object CheckCostWithContextIsActive extends ValidationRule(1006,
+    "Contract execution cost in a given context is limited by given maximum value.")
+      with SoftForkWhenReplaced {
+    def apply(vs: SigmaValidationSettings): Unit = {
+      val enabled = vs.getStatus(this.id) match {
+        case Some(EnabledRule) => true
+        case _ => false
+      }
+      validate(enabled, new CosterException(s"ValidationRule is disabled $this: ", None, None), Nil, {})
     }
   }
 
@@ -163,6 +177,47 @@ object ValidationRules {
     }
   }
 
+  /** For CheckCostFuncOperation we use 1-511 range op codes. Thus
+   * `ChangedRule.newValue` should be parsed as a sequence of `getUShort`
+   * values and then the exOpCode should be checked against that parsed
+   * sequence.
+   * Note, we don't need to store a number of items in a sequence,
+   * because at the time of parsing we may assume that `ChangedRule.newValue`
+   * has correct length, so we just parse it until end of bytes (of cause
+   * checking consistency). */
+  object CheckCostFuncOperation extends ValidationRule(1014,
+    "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
+    def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra)(block: => T): T = {
+      def msg = s"Not allowed opCode $opCode in cost function"
+      def args = Seq(opCode)
+      validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
+    }
+
+    override def isSoftFork(vs: SigmaValidationSettings,
+                            ruleId: Short,
+                            status: RuleStatus, args: Seq[Any]): Boolean = (status, args) match {
+      case (ChangedRule(newValue), Seq(code: Short)) =>
+        decodeVLQUShort(newValue).contains(code)
+      case _ => false
+    }
+
+    def encodeVLQUShort(opCodes: Seq[OpCodeExtra]): Array[Byte] = {
+      val w = new VLQByteBufferWriter(new ByteArrayBuilder())
+      opCodes.foreach(w.putUShort(_))
+      w.toBytes
+    }
+
+    def decodeVLQUShort(bytes: Array[Byte]): Seq[OpCodeExtra] = {
+      val r = new VLQByteBufferReader(ByteBuffer.wrap(bytes))
+      val builder = mutable.ArrayBuilder.make[OpCodeExtra]()
+      while(r.remaining > 0) {
+        builder += OpCodeExtra @@ r.getUShort().toShort
+      }
+      builder.result()
+    }
+  }
+
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -170,7 +225,7 @@ object ValidationRules {
     CheckIsSupportedIndexExpression,
     CheckCostFunc,
     CheckCalcFunc,
-    CheckCostWithContext,
+    CheckCostWithContextIsActive,
     CheckTupleType,
     CheckPrimitiveTypeCode,
     CheckTypeCode,
@@ -178,6 +233,7 @@ object ValidationRules {
     CheckTypeWithMethods,
     CheckAndGetMethod,
     CheckHeaderSizeBit,
+    CheckCostFuncOperation,
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.
