@@ -14,7 +14,7 @@ object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = ErgoConstants.MaxInputSize.get
+  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.get
   val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
 
     /** Helper function to be use in serializers.
@@ -70,11 +70,11 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
   }
 
   def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
-    parse(
-      new SigmaByteReader(r,
-        new ConstantStore(),
-        resolvePlaceholdersToConstants = false,
-        maxTreeDepth = SigmaSerializer.MaxTreeDepth))
+    val sigmaByteReader = new SigmaByteReader(r,
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = SigmaSerializer.MaxTreeDepth)
+    parse(sigmaByteReader)
   }
 
   def error(msg: String) = throw new SerializerException(msg, None)

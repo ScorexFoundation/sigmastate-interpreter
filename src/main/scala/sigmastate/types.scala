@@ -6,6 +6,7 @@ import java.util
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scalan.RType
+import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
@@ -115,7 +116,9 @@ object SType {
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
   implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
-  implicit val AvlTreeDataRType: RType[AvlTreeData] = RType.fromClassTag(classTag[AvlTreeData])
+  implicit val AvlTreeDataRType: RType[AvlTreeData] = new GeneralType(classTag[AvlTreeData]) {
+    override def isConstantSize: Boolean = true
+  }
   implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
@@ -1435,7 +1438,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override def typeId = typeCode
   override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = AvlTreeData.TreeDataSize
-  override def isConstantSize = false
+  override def isConstantSize = true
   def ancestors = Nil
 
   import SOption._

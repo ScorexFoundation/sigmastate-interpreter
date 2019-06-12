@@ -1,7 +1,7 @@
 package sigmastate.utils
 
 import scalan.util.FileUtil
-import scalan.meta.PrintExtensions._
+import scalan.util.PrintExtensions._
 import sigmastate.serialization.ValueSerializer._
 import sigma.util.Extensions.ByteOps
 import sigmastate.lang.Terms.{PropertyCall, MethodCall}
