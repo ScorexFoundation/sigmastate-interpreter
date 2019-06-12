@@ -2,6 +2,7 @@ package sigmastate.utxo
 
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.{ADKey, ADValue}
