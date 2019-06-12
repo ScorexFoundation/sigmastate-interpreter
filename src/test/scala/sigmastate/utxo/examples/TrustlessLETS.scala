@@ -26,43 +26,50 @@ class TrustlessLETS1 extends SigmaTestingCommons {
       """{
         |val validRateOracle = CONTEXT.dataInputs(0).tokens(0)._1 == rateTokenID
         |val rate = CONTEXT.dataInputs(0).R4[Int].get
-        |val inBalance = SELF.R4[Long].get
-        |val pubKey = SELF.R5[SigmaProp].get
-        |val createdAt = SELF.R6[Long].get
+        |val inBalance = SELF.R4[Long].get    // LETS balance of current input
+        |val pubKey = SELF.R5[SigmaProp].get  // owner of the current input
+        |val createdAt = SELF.R6[Long].get    // height at which current input was mined
         |
-        |val index = getVar[Int](0).get
-        |val outBalance = OUTPUTS(index).R4[Long].get
+        |val index = getVar[Int](0).get       // index of the corresponding output
+        |val outBalance = OUTPUTS(index).R4[Long].get // LETS balance of the output
         |
+        |// A LETS box is one that has the same script as the current box
         |val isMemberBox = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
-        |val letsInputs = INPUTS.filter(isMemberBox)
-        |val letsOutputs = OUTPUTS.filter(isMemberBox)
+        |val letsInputs = INPUTS.filter(isMemberBox)    // all LETS input boxes
+        |val letsOutputs = OUTPUTS.filter(isMemberBox)  // all LETS output boxes
         |
-        |// receiver box will contain same amount of ergs.
-        |val receiver = outBalance > inBalance && OUTPUTS(index).value == SELF.value
-        |val getLetsBalance = {(b:Box) => b.R4[Long].get}
+        |// The current input belongs to the receiver if its LETS balance increases
+        |// There may be some ergs in receiver's input box. We need to ensure that
+        |// the receiver's output box also contains the same amount of ergs as input
+        |val receiver = outBalance > inBalance &&
+        |               OUTPUTS(index).value == SELF.value
+        |
+        |val getLetsBalance = {(b:Box) => b.R4[Long].get}   // returns LETS balance of a box
         |
         |val letsBalIn = letsInputs.map(getLetsBalance).fold(0L, {(l:Long, r:Long) => l + r})
         |val letsBalOut = letsOutputs.map(getLetsBalance).fold(0L, {(l:Long, r:Long) => l + r})
         |
         |// sender box can contain less amount of ergs (sender may withdraw ergs provided that any
-        |// negative LETS balance of sender is backed by sufficient ergs
-        |// for receiver, we don't touch the erg balance, since a receiver is not actively involved
-        |// in the transaction
-        |
+        |// negative LETS balance of sender is backed by sufficient ergs)
         |val correctErgs = OUTPUTS(index).value >= -outBalance * rate && (
         |  OUTPUTS(index).value >= SELF.value || SELF.R6[Long].get + minWithdrawTime > HEIGHT
         |)
         |
-        |inBalance != outBalance && // some transaction should occur
-        |SELF.tokens(0)._1 == letsTokenID &&
-        |OUTPUTS(index).tokens(0)._1 == letsTokenID &&
-        |validRateOracle &&
-        |letsBalIn == letsBalOut &&
-        |letsInputs.size == 2 && letsOutputs.size == 2 &&
-        |OUTPUTS(index).propositionBytes == SELF.propositionBytes &&
-        |OUTPUTS(index).R5[SigmaProp].get == pubKey &&
-        |OUTPUTS(index).R6[Long].get == SELF.R6[Long].get && // creation height
-        |(receiver || (pubKey && correctErgs))
+        |// for receiver, we don't touch the erg balance, since a receiver is not actively involved
+        |// in the transaction
+        |
+        |inBalance != outBalance &&       // some transaction should occur and balance must change
+        |SELF.tokens(0)._1 == letsTokenID &&            // the current input has the right token
+        |OUTPUTS(index).tokens(0)._1 == letsTokenID &&  // corresponding output has the right token
+        |validRateOracle &&               // oracle providing rate has the correct "rate token"
+        |letsBalIn == letsBalOut &&       // total LETS balance is preserved in the transaction
+        |letsInputs.size == 2 && letsOutputs.size == 2 &&   // only two LETS inputs and outputs
+        |OUTPUTS(index).propositionBytes == SELF.propositionBytes &&  // output is a LETS box ...
+        |OUTPUTS(index).R5[SigmaProp].get == pubKey &&                // ... with the right pub key
+        |OUTPUTS(index).R6[Long].get == SELF.R6[Long].get &&          // ... and creation height
+        |(receiver ||               // either current input box belongs to receiver ...
+        |  (pubKey && correctErgs)  // ... or a signature is present and output box has correct ergs
+        |)
         |}""".stripMargin
     ).asSigmaProp
 
@@ -76,19 +83,24 @@ class TrustlessLETS1 extends SigmaTestingCommons {
 
     val tokenScript = compile(tokenBoxEnv,
       """{
+        |// a tokenBox stores the membership tokens.
         |val tokenBox = OUTPUTS(0) // first output should contain remaining LETS tokens
         |def isLets(b:Box) = {
-        |   // A LETS box must have 1 membership token in tokens(0)
+        |   // A LETS box must have exactly 1 membership token in tokens(0)
         |   b.tokens(0)._1 == letsTokenID && b.tokens(0)._2 == 1 &&
         |   blake2b256(b.propositionBytes) == memberBoxScriptHash &&
-        |   SELF.R4[Long].get == 0 && // start box with zero LETS balance
-        |   b.value >= minErgsToJoin &&
+        |   SELF.R4[Long].get == 0 && // start the box with zero LETS balance
+        |   b.value >= minErgsToJoin && // the box must contain some min number of ergs
         |	  b.R6[Long].get <= HEIGHT // store the creation height in R6
         |}
+        |
+        |// how many lets boxes creared in the tx
         |val numLetsBoxes = OUTPUTS.filter({(b:Box) => isLets(b)}).size
-        |tokenBox.tokens(0)._1 == SELF.tokens(0)._1 &&
-        |tokenBox.tokens(0)._2 == SELF.tokens(0)._2 - numLetsBoxes &&
-        |tokenBox.propositionBytes == SELF.propositionBytes
+        |
+        |                                                             // In the transaction...
+        |tokenBox.tokens(0)._1 == SELF.tokens(0)._1 &&                //  token id is preserved
+        |tokenBox.tokens(0)._2 == SELF.tokens(0)._2 - numLetsBoxes && //  quantity is preserved
+        |tokenBox.propositionBytes == SELF.propositionBytes           //  script is preserved
         |}
       """.stripMargin).asSigmaProp
 
@@ -202,7 +214,6 @@ class TrustlessLETS2 extends SigmaTestingCommons {
   }
 
 }
-
 
 class TrustlessLETS3 extends SigmaTestingCommons {
   // LETS3
@@ -336,19 +347,23 @@ class TrustlessLETS4 extends SigmaTestingCommons {
 
     val memberBoxScript = compile(memberBoxEnv,
       """{
-        |val inBalance = SELF.R4[Long].get
-        |val pubKey = SELF.R5[SigmaProp].get
+        |val inBalance = SELF.R4[Long].get    // LETS balance of current input
+        |val pubKey = SELF.R5[SigmaProp].get  // Owner of the current input
         |
-        |val index = getVar[Int](0).get
-        |val outBalance = OUTPUTS(index).R4[Long].get
+        |val index = getVar[Int](0).get       // index of the corresponding output
+        |val outBalance = OUTPUTS(index).R4[Long].get // LETS balance of the output
         |
+        |// A LETS box is one that has the same script as the current box
         |val isMemberBox = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
-        |val letsInputs = INPUTS.filter(isMemberBox)
-        |val letsOutputs = OUTPUTS.filter(isMemberBox)
+        |val letsInputs = INPUTS.filter(isMemberBox)    // all LETS input boxes
+        |val letsOutputs = OUTPUTS.filter(isMemberBox)  // all LETS output boxes
         |
-        |// receiver box will contain same amount of ergs.
-        |val receiver = outBalance > inBalance && OUTPUTS(index).value == SELF.value // there may be some ergs in receiver box
-        |val getLetsBalance = {(b:Box) => b.R4[Long].get}
+        |// The current input belongs to the receiver if its LETS balance increases
+        |// There may be some ergs in receiver's input box. We need to ensure that
+        |// the receiver's output box also contains the same amount of ergs as input
+        |val receiver = outBalance > inBalance && OUTPUTS(index).value == SELF.value
+        |
+        |val getLetsBalance = {(b:Box) => b.R4[Long].get} // returns LETS balance of a box
         |
         |val letsBalIn = letsInputs.map(getLetsBalance).fold(0L, {(l:Long, r:Long) => l + r})
         |val letsBalOut = letsOutputs.map(getLetsBalance).fold(0L, {(l:Long, r:Long) => l + r})
