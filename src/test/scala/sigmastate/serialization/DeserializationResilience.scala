@@ -2,15 +2,20 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.Outputs
+import org.ergoplatform.{ErgoBoxCandidate, Outputs}
 import org.ergoplatform.validation.ValidationException
-import scorex.util.serialization.{VLQByteBufferReader, Reader}
-import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
+import org.scalacheck.Gen
+import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import sigmastate.Values.{IntConstant, SValue, SigmaBoolean, Tuple}
 import sigmastate._
-import sigmastate.lang.exceptions.{InvalidTypePrefix, InputSizeLimitExceeded, DeserializeCallDepthExceeded}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
 import scala.collection.mutable
 
@@ -23,7 +28,6 @@ class DeserializationResilience extends SerializationSpecification {
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
       maxTreeDepth = maxTreeDepth).mark()
-    r.positionLimit = r.position + r.remaining
     r
   }
 
@@ -31,11 +35,25 @@ class DeserializationResilience extends SerializationSpecification {
     an[ArrayIndexOutOfBoundsException] should be thrownBy ValueSerializer.deserialize(Array[Byte]())
   }
 
-  // TODO convert to ErgoTreeSerializer.deserializeErgoTree() test
-  ignore("max size limit") {
-    val bytes = Array.fill[Byte](SigmaSerializer.MaxPropositionSize + 1)(1)
-    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes)
-    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(SigmaSerializer.startReader(bytes, 0))
+  property("exceeding ergo box propositionBytes max size check") {
+    val oversizedTree = new SigmaAnd(
+      Gen.listOfN(SigmaSerializer.MaxPropositionSize / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    an[InputSizeLimitExceeded] should be thrownBy
+      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes))
+  }
+
+  property("ergo box propositionBytes max size check") {
+    val bigTree = new SigmaAnd(
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val b = new ErgoBoxCandidate(1L, bigTree, 1)
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)) shouldEqual b
   }
 
   property("zeroes (invalid type code in constant deserialization path") {
@@ -105,7 +123,6 @@ class DeserializationResilience extends SerializationSpecification {
 
     val bytes = ValueSerializer.serialize(expr)
     val loggingR = new LoggingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes))).mark()
-    loggingR.positionLimit = loggingR.position + loggingR.remaining
     val _ = ValueSerializer.deserialize(loggingR)
     val levels = loggingR.levels.result()
     levels.nonEmpty shouldBe true
@@ -115,7 +132,6 @@ class DeserializationResilience extends SerializationSpecification {
       val throwingR = new ThrowingSigmaByteReader(new VLQByteBufferReader(ByteBuffer.wrap(bytes)),
         levels,
         throwOnNthLevelCall = levelIndex).mark()
-      throwingR.positionLimit = throwingR.position + throwingR.remaining
       try {
         val _ = ValueSerializer.deserialize(throwingR)
       } catch {
@@ -201,4 +217,18 @@ class DeserializationResilience extends SerializationSpecification {
       ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 3))
   }
 
+  property("exceed ergo box max size check") {
+    val bigTree = new SigmaAnd(
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val tokensCount = 250
+    val tokens = Gen.listOfN(tokensCount, Gen.oneOf(availableTokensGen.sample.get)).sample.get.toColl
+    val tokenAmounts = Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue)).sample.get.toColl
+    val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens.zip(tokenAmounts))
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    val bytes = w.toBytes
+    an[InputSizeLimitExceeded] should be thrownBy
+      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(bytes))
+  }
 }

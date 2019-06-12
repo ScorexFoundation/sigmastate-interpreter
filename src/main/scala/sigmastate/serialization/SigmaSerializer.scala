@@ -28,7 +28,6 @@ object SigmaSerializer {
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
       maxTreeDepth = MaxTreeDepth).mark()
-    r.positionLimit = r.position + r.remaining
     r
   }
 
@@ -40,7 +39,6 @@ object SigmaSerializer {
       constantStore,
       resolvePlaceholdersToConstants,
       maxTreeDepth = MaxTreeDepth).mark()
-    r.positionLimit = r.position + r.remaining
     r
   }
 
@@ -75,7 +73,6 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
       maxTreeDepth = SigmaSerializer.MaxTreeDepth)
-    sigmaByteReader.positionLimit = sigmaByteReader.position + sigmaByteReader.remaining
     parse(sigmaByteReader)
   }
 

@@ -128,8 +128,11 @@ class ErgoTreeSerializer {
     deserializeErgoTree(r)
   }
 
-  def deserializeErgoTree(r: SigmaByteReader): ErgoTree = {
+  def deserializeErgoTree(r: SigmaByteReader,
+                          maxTreeSizeBytes: Int = SigmaSerializer.MaxPropositionSize): ErgoTree = {
     val startPos = r.position
+    val previousPositionLimit = r.positionLimit
+    r.positionLimit = r.position + maxTreeSizeBytes
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
     val tree = try {
@@ -137,7 +140,6 @@ class ErgoTreeSerializer {
       val previousConstantStore = r.constantStore
       // reader with constant store attached is required (to get tpe for a constant placeholder)
       r.constantStore = new ConstantStore(cs)
-      r.positionLimit = r.position + SigmaSerializer.MaxPropositionSize
       val root = ValueSerializer.deserialize(r)
       CheckDeserializedScriptIsSigmaProp(root) {}
       r.constantStore = previousConstantStore
@@ -156,6 +158,7 @@ class ErgoTreeSerializer {
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
         }
     }
+    r.positionLimit = previousPositionLimit
     tree
   }
 
