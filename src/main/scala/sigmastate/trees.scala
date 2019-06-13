@@ -514,7 +514,7 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   }
 }
 /** NOTE: by-name argument is required for correct initialization order. */
-class ArithOpCompanion(val opCode: Byte, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
 }
 object ArithOp {
@@ -561,7 +561,7 @@ case class BitOp[T <: SNumericType](left: Value[T], right: Value[T], override va
   override def tpe: T = left.tpe
 }
 /** NOTE: by-name argument is required for correct initialization order. */
-class BitOpCompanion(val opCode: Byte, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+class BitOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
 }
 
@@ -599,7 +599,7 @@ case class ModQArithOp(left: Value[SBigInt.type], right: Value[SBigInt.type], ov
   override def tpe: SBigInt.type = SBigInt
   override def opType: SFunc = SFunc(Vector(left.tpe, right.tpe), tpe)
 }
-abstract class ModQArithOpCompanion(val opCode: Byte, val name: String) extends ValueCompanion {
+abstract class ModQArithOpCompanion(val opCode: OpCode, val name: String) extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
 }
 

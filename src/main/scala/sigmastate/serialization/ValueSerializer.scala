@@ -152,7 +152,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
-  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
+  override def getSerializer(opCode: OpCode): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers(opCode)
     CheckValidOpCode(serializer, opCode) { serializer }
   }
@@ -388,7 +388,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
       constantSerializer.deserialize(r)
     }
     else {
-      val opCode = r.getByte()
+      val opCode = OpCode @@ r.getByte()
       getSerializer(opCode).parse(r)
     }
     r.level = r.level - 1
