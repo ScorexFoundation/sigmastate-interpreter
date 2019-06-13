@@ -39,7 +39,7 @@ trait ValueCodes extends TypeCodes {
   * 1) operations which may appear in ErgoTree (these are defined by `OpCodes` below)
   * 2) operations which are not valid to be in ErgoTree, but serve special purposes. (these are defined by `OpCodesExtra`)
   * We can assume they are both Byte-sized codes, and store as a single byte, but as long as we can differentiate them
-  * from context (Where we cannot, we should use special encoding).
+  * from context (and where we cannot, we should use special encoding).
   *
   * The general extended encoding is like the following:
   * 0-255 - range of OpCodes

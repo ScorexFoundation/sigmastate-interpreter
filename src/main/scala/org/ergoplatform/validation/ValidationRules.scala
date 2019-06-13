@@ -4,12 +4,9 @@ import java.nio.ByteBuffer
 
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
-import sigmastate.eval.IRContext
 import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigma.util.Extensions.ByteOps
-import sigmastate.Values.{IntValue, SValue, Value}
 import sigmastate.eval.IRContext
-import sigmastate.lang.exceptions._
 import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
 import sigmastate.serialization.{OpCodes, ValueSerializer}
@@ -17,7 +14,6 @@ import sigmastate.utxo.DeserializeContext
 import sigmastate.lang.exceptions._
 import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.{CheckAndGetMethod, CheckTypeWithMethods, SCollection, SType}
-import sigma.util.Extensions._
 
 import scala.collection.mutable
 
@@ -143,7 +139,7 @@ object ValidationRules {
     }
   }
 
-  /** Throws soft-forkable ValidationException when this rules has status other that EnabledRule. */
+  /** Throws soft-forkable ValidationException when this rule has status other than EnabledRule. */
   object CheckCostWithContextIsActive extends ValidationRule(1006,
     "Contract execution cost in a given context is limited by given maximum value.")
       with SoftForkWhenReplaced {
