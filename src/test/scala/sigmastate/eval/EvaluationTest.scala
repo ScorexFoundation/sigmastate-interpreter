@@ -1,16 +1,15 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoBox
-import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ConcreteCollection, Constant, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue, Value}
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.Values.{ConcreteCollection, IntArrayConstant, IntConstant, SigmaPropConstant, SigmaPropValue}
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.Interpreter._
 import scalan.BaseCtxTests
 import sigmastate.lang.LangTests
 import scalan.util.BenchmarkUtil._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class EvaluationTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
@@ -28,15 +27,15 @@ class EvaluationTest extends BaseCtxTests
     reduce(emptyEnv, "one_gt_one", "1 > 1", ctx, false)
     reduce(emptyEnv, "or", "1 > 1 || 2 < 1", ctx, false)
     reduce(emptyEnv, "or2", "1 > 1 || 2 < 1 || 2 > 1", ctx, true)
-    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size < 1", ctx, true)
+    reduce(emptyEnv, "or3", "OUTPUTS.size > 1 || OUTPUTS.size <= 1", ctx, true)
     reduce(emptyEnv, "and", "1 > 1 && 2 < 1", ctx, false)
     reduce(emptyEnv, "and2", "1 > 1 && 2 < 1 && 2 > 1", ctx, false)
     reduce(emptyEnv, "and3", "1 == 1 && (2 < 1 || 2 > 1)", ctx, true)
-    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size < 1", ctx, false)
+    reduce(emptyEnv, "and4", "OUTPUTS.size > 1 && OUTPUTS.size <= 1", ctx, false)
   }
 
   test("lazy logical ops") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val pk = prover.dlogSecrets.head.publicImage
     val self = ErgoBox(1, pk, 0, additionalRegisters = Map(ErgoBox.R4 -> IntConstant(10)))
     val ctx = newErgoContext(height = 1, self)
@@ -111,7 +110,7 @@ class EvaluationTest extends BaseCtxTests
 //    val boxToSpend = ErgoBox(10, TrueLeaf)
 //    val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
 //    val tx1Output2 = ErgoBox(1, projectPubKey)
-//    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
+//    val tx1 = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
 //    val ergoCtx = ErgoLikeContext(
 //      currentHeight = timeout - 1,
 //      lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -126,18 +125,19 @@ class EvaluationTest extends BaseCtxTests
 //  }
 
   test("SubstConst") {
-    def script(pk: ProveDlog): Value[SType] = AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven)
+    def script(pk: ProveDlog): SigmaPropValue =
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
 
     val pk1 = DLogProverInput.random().publicImage
     val pk2 = DLogProverInput.random().publicImage
     val script1 = script(pk1)
     val script2 = script(pk2)
-    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script1)
+    val inputBytes = DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
     val positions = IntArrayConstant(Array[Int](2))
     // in ergo we have only byte array of a serialized group element
     val newVals = ConcreteCollection(Vector[SigmaPropValue](CreateProveDlog(DecodePoint(pk2.pkBytes))), SSigmaProp)
 
-    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(script2)
+    val expectedBytes = DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
     val ctx = newErgoContext(height = 1, boxToSpend)
     reduce(emptyEnv, "SubstConst",
       EQ(SubstConstants(inputBytes, positions, newVals), expectedBytes),

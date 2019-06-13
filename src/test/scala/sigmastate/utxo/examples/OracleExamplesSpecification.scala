@@ -3,28 +3,26 @@ package sigmastate.utxo.examples
 import java.security.SecureRandom
 
 import com.google.common.primitives.Longs
-import org.ergoplatform.ErgoBox.{R4, RegisterId}
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import org.ergoplatform.ErgoBox.RegisterId
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.eval._
+import sigmastate.lang.Terms._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
-import org.ergoplatform.dsl.ContractSyntax.Token
 import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
-import sigmastate.TrivialProp.TrueProp
-import sigmastate.eval.CSigmaProp
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
-import special.collection.Coll
 import special.sigma.Context
 
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   private val reg1 = ErgoBox.nonMandatoryRegisters(0)
   private val reg2 = ErgoBox.nonMandatoryRegisters(1)
@@ -72,9 +70,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     *
     */
   property("oracle example") {
-    val oracle = new ErgoLikeTestProvingInterpreter
-    val aliceTemplate = new ErgoLikeTestProvingInterpreter
-    val bob = new ErgoLikeTestProvingInterpreter
+    val oracle = new ContextEnrichingTestProvingInterpreter
+    val aliceTemplate = new ContextEnrichingTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -98,7 +96,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val reducedHashSize = 31
     val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)).take(reducedHashSize))
 
-    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger // todo : check
+    val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger
 
     val oracleBox = ErgoBox(
       value = 1L,
@@ -133,7 +131,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val contractLogic = OR(AND(GT(extract[SLong.type](reg1), LongConstant(15)), alicePubKey.isProven),
       AND(LE(extract[SLong.type](reg1), LongConstant(15)), bobPubKey.isProven))
 
-    val oracleProp = AND(OptionIsDefined(TreeLookup(LastBlockUtxoRootHash, ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)),
+    val oracleProp = AND(
+      OptionIsDefined(IR.builder.mkMethodCall(
+        LastBlockUtxoRootHash, SAvlTree.getMethod,
+        IndexedSeq(ExtractId(GetVarBox(22: Byte).get), GetVarByteArray(23: Byte).get)).asOption[SByteArray]),
       EQ(extract[SByteArray](ErgoBox.ScriptRegId), ByteArrayConstant(ErgoTree.fromSigmaBoolean(oraclePubKey).bytes)),
       EQ(Exponentiate(GroupGenerator, extract[SBigInt.type](reg3)),
         MultiplyGroup(extract[SGroupElement.type](reg2),
@@ -155,7 +156,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0, boxIndex = 2)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val sinceHeight = 40
     val timeout = 60
@@ -177,7 +178,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
-      self = null)
+      self = sAlice)
 
     val alice = aliceTemplate
       .withContextExtender(22: Byte, BoxConstant(oracleBox))
@@ -208,9 +209,9 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     * Heavyweight authentication from the previous example is not needed then.
     */
   property("lightweight oracle example") {
-    val oracle = new ErgoLikeTestProvingInterpreter
-    val alice = new ErgoLikeTestProvingInterpreter
-    val bob = new ErgoLikeTestProvingInterpreter
+    val oracle = new ContextEnrichingTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
 
     val verifier = new ErgoLikeTestInterpreter
 
@@ -246,7 +247,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     val newBox1 = ErgoBox(20, alicePubKey, 0)
     val newBoxes = IndexedSeq(newBox1)
-    val spendingTransaction = ErgoLikeTransaction(IndexedSeq(), newBoxes)
+    val spendingTransaction = createTransaction(newBoxes)
 
     val ctx = ErgoLikeContext(
       currentHeight = 50,
@@ -254,7 +255,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
-      self = null)
+      self = sOracle)
 
     val prA = alice.prove(emptyEnv + (ScriptNameProp -> "alice_prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, prA, fakeMessage).get._1 shouldBe true
@@ -306,7 +307,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
 
     // ARRANGE
     // block, tx, and output boxes which we will spend
-    val mockTx = block(0).newTransaction()
+    val mockTx = candidateBlock(0).newTransaction()
     val sOracle = mockTx
         .outBox(value = 1L, contract.oracleSignature)
         .withRegs(reg1 -> temperature)
@@ -314,7 +315,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val sAlice = mockTx.outBox(10, contract.prop)
     val sBob   = mockTx.outBox(10, contract.prop)
 
-    val tx = block(50).newTransaction().spending(sOracle, sAlice, sBob)
+    val tx = candidateBlock(50).newTransaction().spending(sOracle, sAlice, sBob)
     tx.outBox(20, contract.aliceSignature)
     val in = tx.inputs(1)
     val res = in.runDsl()

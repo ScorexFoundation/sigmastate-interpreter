@@ -5,22 +5,22 @@ import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.DLogInteractiveProver
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter._
 
 class DistributedSigSpecification extends SigmaTestingCommons {
-  implicit lazy val IR = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext
   
   property("distributed AND") {
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
-    val verifier = new ErgoLikeTestInterpreter
+    val verifier = new ContextEnrichingTestProvingInterpreter
 
     val dlA = proverA.dlogSecrets.head.publicImage
     val dlB = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> dlA, "pubkeyB" -> dlB)
-    val prop = compileWithCosting(env, """pubkeyA && pubkeyB""").asSigmaProp
+    val prop = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
 
     val ctx = ErgoLikeContext(
       currentHeight = 1,
@@ -65,5 +65,4 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   property("distributed THRESHOLD") {
 
   }
-
 }

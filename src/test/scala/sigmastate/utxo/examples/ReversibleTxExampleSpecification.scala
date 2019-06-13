@@ -5,10 +5,9 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
-import sigmastate.utxo._
 
 
 class ReversibleTxExampleSpecification extends SigmaTestingCommons {
@@ -27,7 +26,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *
     *  Consider the hot-wallet of a mining pool or an exchange. Funds withdrawn by customers originate from this hot-wallet.
     *
-    *  Since its a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
+    *  Since this is a hot-wallet, its private key can get compromised and unauthorized withdraws can occur.
     *
     *  We want to ensure that in the event of such a compromise, we are able to "save" all funds stored in this wallet by
     *  moving them to a secure address, provided that the breach is discovered within 24 hours of the first unauthorized withdraw.
@@ -55,24 +54,25 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     *  Carol with public key carolPubKey is the trusted party who can spend during the locking period (i.e., she can reverse payments)
     *
     *  Once alicePubKey is compromised (i.e., a transaction spending from this key is found to be unauthorized), an "abort procedure"
-    *  is triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
+    *  is to be triggered. After this, all locked UTXOs sent from alicePubKey are suspect and should be aborted by Carol.
     *
     *  A reversible address is created by Alice as follows:
     *
     *  1. Alice creates a script encoding the "reversible" logic. Lets call this the withdrawScript
-    *  2. She then creates a script called depositScript which requires that all created boxes be protected by withdrawScript.
+    *  2. She then creates a script called depositScript which requires that all created boxes are to be protected by withdrawScript.
     *  3. She a deposit a P2SH address for topping up the hot-wallet using depositScript.
     *
     */
+
   property("Evaluation - Reversible Tx Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter // private key controlling hot-wallet funds
+    val alice = new ContextEnrichingTestProvingInterpreter // private key controlling hot-wallet funds
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
+    val bob = new ContextEnrichingTestProvingInterpreter // private key of customer whose withdraws are sent from hot-wallet
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
-    val carol = new ErgoLikeTestProvingInterpreter // private key of trusted party who can abort withdraws
+    val carol = new ContextEnrichingTestProvingInterpreter // private key of trusted party who can abort withdraws
     val carolPubKey = carol.dlogSecrets.head.publicImage
 
     val withdrawEnv = Map(
@@ -80,7 +80,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       "carol" -> carolPubKey // this pub key can reverse payments
     )
 
-    val withdrawScript = compileWithCosting(withdrawEnv,
+    val withdrawScript = compile(withdrawEnv,
       """{
         |  val bob         = SELF.R4[SigmaProp].get     // Bob's key (or script) that Alice sent money to
         |  val bobDeadline = SELF.R5[Int].get           // after this height, Bob gets to spend unconditionally
@@ -88,18 +88,28 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
         |  (bob && HEIGHT > bobDeadline) || (carol && HEIGHT <= bobDeadline)
         |}""".stripMargin).asSigmaProp
 
+    val blocksIn24h = 500
+    val feeProposition = ErgoScriptPredef.feeProposition()
     val depositEnv = Map(
       ScriptNameProp -> "depositEnv",
       "alice" -> alicePubKey,
-      "withdrawScriptHash" -> Blake2b256(withdrawScript.bytes)
+      "blocksIn24h" -> blocksIn24h,
+      "maxFee" -> 10L,
+      "feePropositionBytes" -> feeProposition.bytes,
+      "withdrawScriptHash" -> Blake2b256(withdrawScript.treeWithSegregation.bytes)
     )
 
-    val depositScript = compileWithCosting(depositEnv,
+    val depositScript = compile(depositEnv,
       """{
-        |  alice && OUTPUTS.forall({(out:Box) =>
-        |    out.R5[Int].get >= HEIGHT + 30 &&
-        |    blake2b256(out.propositionBytes) == withdrawScriptHash
-        |  })
+        |  val isChange = {(b:Box) => b.propositionBytes == SELF.propositionBytes}
+        |  val isWithdraw = {(b:Box) => b.R5[Int].get >= HEIGHT + blocksIn24h &&
+        |                               blake2b256(b.propositionBytes) == withdrawScriptHash}
+        |  val isFee = {(b:Box) => b.propositionBytes == feePropositionBytes}
+        |  val isValidOut = {(b:Box) => isChange(b) || isWithdraw(b) || isFee(b)}
+        |
+        |  val totalFeeAlt = OUTPUTS.fold(0L, {(acc:Long, b:Box) => if (isFee(b)) acc + b.value else acc })
+        |
+        |  alice && OUTPUTS.forall(isValidOut) && totalFeeAlt <= maxFee
         |}""".stripMargin
     ).asSigmaProp
     // Note: in above bobDeadline is stored in R5. After this height, Bob gets to spend unconditionally
@@ -121,7 +131,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
 
     val withdrawAmount = 10
     val withdrawHeight = 101
-    val bobDeadline = 150
+    val bobDeadline = withdrawHeight+blocksIn24h
 
     val reversibleWithdrawOutput = ErgoBox(withdrawAmount, withdrawScript, withdrawHeight, Nil,
       Map(
@@ -131,7 +141,7 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val withdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(reversibleWithdrawOutput))
+    val withdrawTx = createTransaction(reversibleWithdrawOutput)
 
     val withdrawContext = ErgoLikeContext(
       currentHeight = withdrawHeight,
@@ -151,16 +161,16 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     // Possibility 1: Normal scenario
     // Bob spends after bobDeadline. He sends to Dave
 
-    val dave = new ErgoLikeTestProvingInterpreter
+    val dave = new ContextEnrichingTestProvingInterpreter
     val davePubKey = dave.dlogSecrets.head.publicImage
 
     val bobSpendAmount = 10
-    val bobSpendHeight = 151
+    val bobSpendHeight = bobDeadline+1
 
     val bobSpendOutput = ErgoBox(bobSpendAmount, davePubKey, bobSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val bobSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(bobSpendOutput))
+    val bobSpendTx = createTransaction(bobSpendOutput)
 
     val bobSpendContext = ErgoLikeContext(
       currentHeight = bobSpendHeight,
@@ -171,21 +181,23 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofBobSpend = bob.prove(withdrawEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+    val spendEnv = Map(ScriptNameProp -> "spendEnv")
 
-    verifier.verify(withdrawEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
+    val proofBobSpend = bob.prove(spendEnv, withdrawScript, bobSpendContext, fakeMessage).get.proof
+
+    verifier.verify(spendEnv, withdrawScript, bobSpendContext, proofBobSpend, fakeMessage).get._1 shouldBe true
 
     // Possibility 2: Abort scenario
     // carol spends before bobDeadline
 
     val carolSpendAmount = 10
-    val carolSpendHeight = 131
+    val carolSpendHeight = bobDeadline - 1
 
     // Carol sends to Dave
     val carolSpendOutput = ErgoBox(carolSpendAmount, davePubKey, carolSpendHeight)
 
     //normally this transaction would be invalid (why?), but we're not checking it in this test
-    val carolSpendTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolSpendOutput))
+    val carolSpendTx = createTransaction(carolSpendOutput)
 
     val carolSpendContext = ErgoLikeContext(
       currentHeight = carolSpendHeight,
@@ -196,9 +208,9 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
       self = reversibleWithdrawOutput
     )
 
-    val proofCarolSpend = carol.prove(withdrawEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
+    val proofCarolSpend = carol.prove(spendEnv, withdrawScript, carolSpendContext, fakeMessage).get.proof
 
-    verifier.verify(withdrawEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
+    verifier.verify(spendEnv, withdrawScript, carolSpendContext, proofCarolSpend, fakeMessage).get._1 shouldBe true
 
   }
 }

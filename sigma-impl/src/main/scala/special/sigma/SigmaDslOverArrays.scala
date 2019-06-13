@@ -20,29 +20,6 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   def CostModel: CostModel = new TestCostModel
 
-  def costBoxes(bs: Coll[Box]): CostedColl[Box] = {
-    val len = bs.length
-    val perItemCost = this.CostModel.AccessBox
-    val costs = this.Colls.replicate(len, perItemCost)
-    val sizes = bs.map(b => b.dataSize)
-    val valuesCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(bs, costs, sizes, valuesCost)
-  }
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T] = {
-    val perItemCost = (len.toLong * itemSize / 1024L + 1L) * this.CostModel.AccessKiloByteOfData.toLong
-    val costs = this.Colls.replicate(len, perItemCost.toInt)
-    val sizes = this.Colls.replicate(len, itemSize)
-    val valueCost = this.CostModel.CollectionConst
-    this.Costing.mkCostedColl(xs, costs, sizes, valueCost)
-  }
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T] = {
-    val none = this.Costing.mkCostedNone[T](opCost)
-    opt.fold[CostedOption[T]](none)(x => this.Costing.mkCostedSome(this.Costing.costedValue(x, SpecialPredef.some(opCost))))
-  }
-
   @NeverInline
   def verifyZK(proof: => SigmaProp): Boolean = proof.isValid
 
@@ -58,6 +35,9 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   def allZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.forall(p => p.isValid))
   @NeverInline
   def anyZK(props: Coll[SigmaProp]): SigmaProp = MockSigma(props.exists(p => p.isValid))
+
+  @NeverInline
+  override def xorOf(conditions: Coll[Boolean]): Boolean = conditions.toArray.distinct.length == 2
 
   @NeverInline
   def sigmaProp(b: Boolean): SigmaProp = MockSigma(b)
@@ -83,27 +63,14 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   def longToByteArray(l: Long): Coll[Byte] = Colls.fromArray(Longs.toByteArray(l))
+  @NeverInline
+  def byteArrayToLong(bytes: Coll[Byte]): Long = Longs.fromByteArray(bytes.toArray)
 
   @NeverInline
   def proveDlog(g: GroupElement): SigmaProp = MockProveDlog(true, Colls.emptyColl[Byte])
 
   @NeverInline
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???
-
-  @NeverInline
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean = ???
-
-  @NeverInline
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] = ???
-
-  @NeverInline
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] = ???
-
-  @NeverInline
-  override def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree] = ???
-
-  @NeverInline
-  override def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree] = ???
 
   @Internal val __curve__ = CustomNamedCurves.getByName("secp256k1")
   @Internal val __g__ = __curve__.getG.asInstanceOf[SecP256K1Point]
@@ -135,5 +102,11 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
   @NeverInline
   def toECPoint(ge: GroupElement): ECPoint = ge.value
+
+  @NeverInline
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = SpecialPredef.rewritableMethod
+
+  @NeverInline
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] = Colls.xor(l, r)
 }
 

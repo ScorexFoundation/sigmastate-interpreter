@@ -1,0 +1,1239 @@
+
+\subsubsection{\lst{placeholder} method (Code 115)}
+\label{sec:appendix:primops:ConstantPlaceholder}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Create special ErgoTree node which can be replaced by constant with given id. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{index} & \lst{: Int} & \text{// index of the constant in ErgoTree header} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ConstantPlaceholder]{\lst{ConstantPlaceholder}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{substConstants} method (Code 116)}
+\label{sec:appendix:primops:SubstConstants}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
+ at given positions with new values. This operation allow to use serialized scripts as
+ pre-defined templates.
+ The typical usage is "check that output box have proposition equal to given script bytes,
+ where minerPk (constants(0)) is replaced with currentMinerPk".
+ Each constant in original scriptBytes have SType serialized before actual data (see ConstantSerializer).
+ During substitution each value from newValues is checked to be an instance of the corresponding type.
+ This means, the constants during substitution cannot change their types.
+
+ Returns original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{scriptBytes} & \lst{: Coll[Byte]} & \text{// serialized ErgoTree with ConstantSegregationFlag set to 1.} \\
+\lst{positions} & \lst{: Coll[Int]} & \text{// zero based indexes in ErgoTree.constants array which should be replaced with new values} \\
+\lst{newValues} & \lst{: Coll[T]} & \text{// new values to be injected into the corresponding positions in ErgoTree.constants array} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SubstConstants]{\lst{SubstConstants}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{longToByteArray} method (Code 122)}
+\label{sec:appendix:primops:LongToByteArray}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Converts \lst{Long} value to big-endian bytes representation. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Long} & \text{// value to convert} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:LongToByteArray]{\lst{LongToByteArray}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{byteArrayToBigInt} method (Code 123)}
+\label{sec:appendix:primops:ByteArrayToBigInt}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Convert big-endian bytes representation (Coll[Byte]) to BigInt value. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes in big-endian format} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{BigInt} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByteArrayToBigInt]{\lst{ByteArrayToBigInt}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{byteArrayToLong} method (Code 124)}
+\label{sec:appendix:primops:ByteArrayToLong}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Convert big-endian bytes representation (Coll[Byte]) to Long value. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes in big-endian format} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Long} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByteArrayToLong]{\lst{ByteArrayToLong}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{downcast} method (Code 125)}
+\label{sec:appendix:primops:Downcast}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: T} & \text{// value to cast} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{R} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Downcast]{\lst{Downcast}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{upcast} method (Code 126)}
+\label{sec:appendix:primops:Upcast}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Cast this numeric value to a bigger type (e.g. Int to Long) \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: T} & \text{// value to cast} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{R} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Upcast]{\lst{Upcast}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{selectField} method (Code 140)}
+\label{sec:appendix:primops:SelectField}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Select tuple field by its 1-based index. E.g. \lst{input._1} is transformed to \lst{SelectField(input, 1)} \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: T} & \text{// tuple of items} \\
+\lst{fieldIndex} & \lst{: Byte} & \text{// index of an item to select} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{R} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SelectField]{\lst{SelectField}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{<} method (Code 143)}
+\label{sec:appendix:primops:LT}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns \lst{true} is the left operand is less then the right operand, \lst{false} otherwise. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:LT]{\lst{LT}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{<=} method (Code 144)}
+\label{sec:appendix:primops:LE}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns \lst{true} is the left operand is less then or equal to the right operand, \lst{false} otherwise. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:LE]{\lst{LE}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{>} method (Code 145)}
+\label{sec:appendix:primops:GT}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns \lst{true} is the left operand is greater then the right operand, \lst{false} otherwise. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:GT]{\lst{GT}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{>=} method (Code 146)}
+\label{sec:appendix:primops:GE}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns \lst{true} is the left operand is greater then or equal to the right operand, \lst{false} otherwise. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:GE]{\lst{GE}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{==} method (Code 147)}
+\label{sec:appendix:primops:EQ}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Compare equality of \lst{left} and \lst{right} arguments \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:EQ]{\lst{EQ}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{!=} method (Code 148)}
+\label{sec:appendix:primops:NEQ}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Compare inequality of \lst{left} and \lst{right} arguments \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:NEQ]{\lst{NEQ}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{if} method (Code 149)}
+\label{sec:appendix:primops:If}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Compute condition, if true then compute trueBranch else compute falseBranch \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{condition} & \lst{: Boolean} & \text{// condition expression} \\
+\lst{trueBranch} & \lst{: T} & \text{// expression to execute when \lst{condition == true}} \\
+\lst{falseBranch} & \lst{: T} & \text{// expression to execute when \lst{condition == false}} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:If]{\lst{If}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{allOf} method (Code 150)}
+\label{sec:appendix:primops:AND}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns true if \emph{all} the elements in collection are \lst{true}. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:AND]{\lst{AND}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{anyOf} method (Code 151)}
+\label{sec:appendix:primops:OR}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns true if \emph{any} the elements in collection are \lst{true}. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:OR]{\lst{OR}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{atLeast} method (Code 152)}
+\label{sec:appendix:primops:AtLeast}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  Logical threshold.
+ AtLeast has two inputs: integer \lst{bound} and \lst{children} same as in AND/OR.
+ The result is true if at least \lst{bound} children are proven.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{bound} & \lst{: Int} & \text{// required minimum of proven children} \\
+\lst{children} & \lst{: Coll[SigmaProp]} & \text{// proposition to be proven/validated} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:AtLeast]{\lst{AtLeast}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{-} method (Code 153)}
+\label{sec:appendix:primops:Minus}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns a result of subtracting second numeric operand from the first. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Minus]{\lst{Minus}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{+} method (Code 154)}
+\label{sec:appendix:primops:Plus}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns a sum of two numeric operands \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Plus]{\lst{Plus}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{binary_|} method (Code 155)}
+\label{sec:appendix:primops:Xor}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Byte-wise XOR of two collections of bytes \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: Coll[Byte]} & \text{// left operand} \\
+\lst{right} & \lst{: Coll[Byte]} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Xor]{\lst{Xor}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{*} method (Code 156)}
+\label{sec:appendix:primops:Multiply}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns a multiplication of two numeric operands \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Multiply]{\lst{Multiply}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{/} method (Code 157)}
+\label{sec:appendix:primops:Division}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Integer division of the first operand by the second operand. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Division]{\lst{Division}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{\%} method (Code 158)}
+\label{sec:appendix:primops:Modulo}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Reminder from division of the first operand by the second operand. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Modulo]{\lst{Modulo}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{min} method (Code 161)}
+\label{sec:appendix:primops:Min}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Minimum value of two operands. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Min]{\lst{Min}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{max} method (Code 162)}
+\label{sec:appendix:primops:Max}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Maximum value of two operands. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Max]{\lst{Max}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{avlTree} method (Code 182)}
+\label{sec:appendix:primops:CreateAvlTree}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Construct a new authenticated dictionary with given parameters and tree root digest. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{operationFlags} & \lst{: Byte} & \text{// flags of available operations} \\
+\lst{digest} & \lst{: Coll[Byte]} & \text{// hash of merkle tree root} \\
+\lst{keyLength} & \lst{: Int} & \text{// length of dictionary keys in bytes} \\
+\lst{valueLengthOpt} & \lst{: Option[Int]} & \text{// optional width of dictionary values in bytes} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{AvlTree} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateAvlTree]{\lst{CreateAvlTree}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{treeLookup} method (Code 183)}
+\label{sec:appendix:primops:TreeLookup}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{tree} & \lst{: AvlTree} & \text{// tree to lookup the key} \\
+\lst{key} & \lst{: Coll[Byte]} & \text{// a key of an item in the \lst{tree} to lookup} \\
+\lst{proof} & \lst{: Coll[Byte]} & \text{// proof to perform verification of the operation} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[Coll[Byte]]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:TreeLookup]{\lst{TreeLookup}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{blake2b256} method (Code 203)}
+\label{sec:appendix:primops:CalcBlake2b256}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Calculate Blake2b hash from \lst{input} bytes. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:CalcBlake2b256]{\lst{CalcBlake2b256}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{sha256} method (Code 204)}
+\label{sec:appendix:primops:CalcSha256}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Calculate Sha256 hash from \lst{input} bytes. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Byte]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:CalcSha256]{\lst{CalcSha256}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{proveDlog} method (Code 205)}
+\label{sec:appendix:primops:CreateProveDlog}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & ErgoTree operation to create a new \lst{SigmaProp} value representing public key
+ of discrete logarithm signature protocol.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{value} & \lst{: GroupElement} & \text{// element of elliptic curve group} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateProveDlog]{\lst{CreateProveDlog}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{proveDHTuple} method (Code 206)}
+\label{sec:appendix:primops:CreateProveDHTuple}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  ErgoTree operation to create a new SigmaProp value representing public key
+ of Diffie Hellman signature protocol.
+ Common input: (g,h,u,v)
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{g} & \lst{: GroupElement} & \text{// } \\
+\lst{h} & \lst{: GroupElement} & \text{// } \\
+\lst{u} & \lst{: GroupElement} & \text{// } \\
+\lst{v} & \lst{: GroupElement} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateProveDHTuple]{\lst{CreateProveDHTuple}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{sigmaProp} method (Code 209)}
+\label{sec:appendix:primops:BoolToSigmaProp}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Embedding of \lst{Boolean} values to \lst{SigmaProp} values.
+ As an example, this operation allows boolean experessions
+ to be used as arguments of \lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
+ During execution results to either \lst{TrueProp} or \lst{FalseProp} values of \lst{SigmaProp} type.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{condition} & \lst{: Boolean} & \text{// boolean value to embed in SigmaProp value} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BoolToSigmaProp]{\lst{BoolToSigmaProp}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{executeFromVar} method (Code 212)}
+\label{sec:appendix:primops:DeserializeContext}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Extracts context variable as \lst{Coll[Byte]}, deserializes it to script
+ and then executes this script in the current context.
+ The original \lst{Coll[Byte]} of the script is available as \lst{getVar[Coll[Byte]](id)}.
+ Type parameter \lst{V} result type of the deserialized script.
+ Throws an exception if the actual script type doesn't conform to T.
+ Returns a result of the script execution in the current context
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{id} & \lst{: Byte} & \text{// identifier of the context variable} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:DeserializeContext]{\lst{DeserializeContext}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{executeFromSelfReg} method (Code 213)}
+\label{sec:appendix:primops:DeserializeRegister}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Extracts SELF register as \lst{Coll[Byte]}, deserializes it to script
+ and then executes this script in the current context.
+ The original \lst{Coll[Byte]} of the script is available as \lst{SELF.getReg[Coll[Byte]](id)}.
+ Type parameter \lst{T} result type of the deserialized script.
+ Throws an exception if the actual script type doesn't conform to \lst{T}.
+ Returns a result of the script execution in the current context
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{id} & \lst{: Byte} & \text{// identifier of the register} \\
+\lst{default} & \lst{: Option[T]} & \text{// optional default value, if register is not available} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:DeserializeRegister]{\lst{DeserializeRegister}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{apply} method (Code 218)}
+\label{sec:appendix:primops:Apply}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Apply the function to the arguments.  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{func} & \lst{: (T) => R} & \text{// function which is applied} \\
+\lst{args} & \lst{: T} & \text{// list of arguments} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{R} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Apply]{\lst{Apply}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{getVar} method (Code 227)}
+\label{sec:appendix:primops:GetVar}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Get context variable with given \lst{varId} and type. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{varId} & \lst{: Byte} & \text{// \lst{Byte} identifier of context variable} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[T]} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:GetVar]{\lst{GetVar}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{allZK} method (Code 234)}
+\label{sec:appendix:primops:SigmaAnd}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns sigma proposition which is proven when \emph{all} the elements in collection are proven. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{propositions} & \lst{: Coll[SigmaProp]} & \text{// a collection of propositions} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SigmaAnd]{\lst{SigmaAnd}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{anyZK} method (Code 235)}
+\label{sec:appendix:primops:SigmaOr}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Returns sigma proposition which is proven when \emph{any} of the elements in collection is proven. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{propositions} & \lst{: Coll[SigmaProp]} & \text{// a collection of propositions} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{SigmaProp} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SigmaOr]{\lst{SigmaOr}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{||} method (Code 236)}
+\label{sec:appendix:primops:BinOr}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Logical OR of two operands \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
+\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BinOr]{\lst{BinOr}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{&&} method (Code 237)}
+\label{sec:appendix:primops:BinAnd}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Logical AND of two operands \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
+\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BinAnd]{\lst{BinAnd}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{decodePoint} method (Code 238)}
+\label{sec:appendix:primops:DecodePoint}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Convert \lst{Coll[Byte]} to \lst{GroupElement} using \lst{GroupElementSerializer} \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Coll[Byte]} & \text{// serialized bytes of some \lst{GroupElement} value} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{GroupElement} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:DecodePoint]{\lst{DecodePoint}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{unary_!} method (Code 239)}
+\label{sec:appendix:primops:LogicalNot}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Logical NOT operation. Returns \lst{true} if input is \lst{false} and \lst{false} if input is \lst{true}. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: Boolean} & \text{// input \lst{Boolean} value} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:LogicalNot]{\lst{LogicalNot}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{unary_-} method (Code 240)}
+\label{sec:appendix:primops:Negation}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Negates numeric value \lst{x} by returning \lst{-x}. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: T} & \text{// value of numeric type} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Negation]{\lst{Negation}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{unary_~} method (Code 241)}
+\label{sec:appendix:primops:BitInversion}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Invert every bit of the numeric value. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{input} & \lst{: T} & \text{// value of numeric type} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitInversion]{\lst{BitInversion}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_|} method (Code 242)}
+\label{sec:appendix:primops:BitOr}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Bitwise OR of two numeric operands. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitOr]{\lst{BitOr}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_&} method (Code 243)}
+\label{sec:appendix:primops:BitAnd}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Bitwise AND of two numeric operands. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitAnd]{\lst{BitAnd}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{^} method (Code 244)}
+\label{sec:appendix:primops:BinXor}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Logical XOR of two operands \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
+\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BinXor]{\lst{BinXor}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_^} method (Code 245)}
+\label{sec:appendix:primops:BitXor}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Bitwise XOR of two numeric operands. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitXor]{\lst{BitXor}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_>>} method (Code 246)}
+\label{sec:appendix:primops:BitShiftRight}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Right shift of bits. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRight]{\lst{BitShiftRight}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_<<} method (Code 247)}
+\label{sec:appendix:primops:BitShiftLeft}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Left shift of bits. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftLeft]{\lst{BitShiftLeft}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{bit_>>>} method (Code 248)}
+\label{sec:appendix:primops:BitShiftRightZeroed}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Right shift of bits. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{left} & \lst{: T} & \text{// left operand} \\
+\lst{right} & \lst{: T} & \text{// right operand} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{T} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRightZeroed]{\lst{BitShiftRightZeroed}} \\
+  \hline
+       
+\end{tabularx}
+
+\subsubsection{\lst{xorOf} method (Code 255)}
+\label{sec:appendix:primops:XorOf}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Similar to \lst{allOf}, but performing logical XOR operation between all conditions instead of \lst{&&} \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:XorOf]{\lst{XorOf}} \\
+  \hline
+       
+\end{tabularx}

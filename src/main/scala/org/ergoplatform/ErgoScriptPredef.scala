@@ -1,6 +1,5 @@
 package org.ergoplatform
 
-import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoAddressEncoder.NetworkPrefix
 import org.ergoplatform.settings.MonetarySettings
 import sigmastate.SCollection.SByteArray
@@ -10,9 +9,8 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.{SLong, _}
-import special.sigma.{SigmaDslBuilder, Context, SigmaContract}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.utxo._
 
 object ErgoScriptPredef {
@@ -39,7 +37,7 @@ object ErgoScriptPredef {
   def expectedMinerOutScriptBytesVal(delta: Int, minerPkBytesVal: Value[SByteArray]): Value[SByteArray] = {
     val genericPk = ProveDlog(CryptoConstants.dlogGroup.generator)
     val genericMinerProp = rewardOutputScript(delta, genericPk)
-    val genericMinerPropBytes = ErgoTreeSerializer.DefaultSerializer.serializeWithSegregation(genericMinerProp)
+    val genericMinerPropBytes = DefaultSerializer.serializeErgoTree(genericMinerProp)
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
     val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))
@@ -50,30 +48,30 @@ object ErgoScriptPredef {
   /**
     * Required script of the box, that collects mining rewards
     */
-  def rewardOutputScript(delta: Int, minerPk: ProveDlog): SigmaPropValue = {
+  def rewardOutputScript(delta: Int, minerPk: ProveDlog): ErgoTree = {
     SigmaAnd(
       GE(Height, Plus(boxCreationHeight(Self), IntConstant(delta))).toSigmaProp,
       SigmaPropConstant(minerPk)
-    )
+    ).treeWithSegregation
   }
 
   /**
     * Proposition that allows to send coins to a box which is protected by the following proposition:
     * prove dlog of miner's public key and height is at least `delta` blocks bigger then the current one.
     */
-  def feeProposition(delta: Int = 720): SigmaPropValue = {
+  def feeProposition(delta: Int = 720): ErgoTree = {
     val out = ByIndex(Outputs, IntConstant(0))
     AND(
       EQ(Height, boxCreationHeight(out)),
       EQ(ExtractScriptBytes(out), expectedMinerOutScriptBytesVal(delta, MinerPubkey)),
       EQ(SizeOf(Outputs), 1)
-    ).toSigmaProp
+    ).toSigmaProp.treeWithSegregation
   }
 
   /**
     * A contract that only allows to collect emission reward by a box with miner proposition.
     */
-  def emissionBoxProp(s: MonetarySettings): SigmaPropValue = {
+  def emissionBoxProp(s: MonetarySettings): ErgoTree = {
     val rewardOut = ByIndex(Outputs, IntConstant(0))
     val minerOut = ByIndex(Outputs, IntConstant(1))
 
@@ -99,7 +97,7 @@ object ErgoScriptPredef {
       heightIncreased,
       correctMinerOutput,
       OR(AND(outputsNum, sameScriptRule, correctCoinsConsumed, heightCorrect), lastCoins)
-    ).toSigmaProp
+    ).toSigmaProp.treeWithSegregation
   }
 
   /**
@@ -117,7 +115,7 @@ object ErgoScriptPredef {
     * may add or remove members, or change it to something more complicated like
     * `tokenThresholdScript`.
     */
-  def foundationScript(s: MonetarySettings): SigmaPropValue = {
+  def foundationScript(s: MonetarySettings): ErgoTree = {
     // new output of the foundation
     val newFoundationBox = ByIndex(Outputs, IntConstant(0))
     // calculate number of coins, that are not issued yet and should be kept in `newFoundationBox`
@@ -157,7 +155,7 @@ object ErgoScriptPredef {
     // check, that additional rules defined by foundation members are satisfied
     val customProposition = DeserializeRegister(ErgoBox.R4, SSigmaProp)
     // combine 3 conditions above with AND conjunction
-    SigmaAnd(amountCorrect.toSigmaProp, sameScriptRule.toSigmaProp, customProposition)
+    SigmaAnd(amountCorrect.toSigmaProp, sameScriptRule.toSigmaProp, customProposition).treeWithSegregation
   }
 
   /**

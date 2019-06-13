@@ -1,25 +1,31 @@
 package sigmastate.helpers
 
+import java.math.BigInteger
+
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform._
+import org.ergoplatform.validation.ValidationSpecification
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{Nullable, RType, TestContexts, TestUtils}
-import scorex.crypto.hash.Blake2b256
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import scalan.{TestUtils, TestContexts, Nullable, RType}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
-import sigma.types.{IsPrimView, PrimViewType, View}
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigma.types.{PrimViewType, IsPrimView, View}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.SigmaSerializer
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
+import special.sigma._
 import spire.util.Opt
+import sigmastate.eval._
+import sigmastate.interpreter.CryptoConstants.EcPointType
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -27,54 +33,80 @@ import scala.language.implicitConversions
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
   with GeneratorDrivenPropertyChecks
-  with Matchers with TestUtils with TestContexts {
-
+  with Matchers with TestUtils with TestContexts with ValidationSpecification {
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
+
+  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
 
-  implicit def grElemConvert(leafConstant: GroupElementConstant): CryptoConstants.EcPointType = leafConstant.value
+  implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
+    SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
 
   implicit def grLeafConvert(elem: CryptoConstants.EcPointType): Value[SGroupElement.type] = GroupElementConstant(elem)
 
   val compiler = SigmaCompiler(TestnetNetworkPrefix, TransformingSigmaBuilder)
 
-  def compile(env: ScriptEnv, code: String): Value[SType] = {
-    compiler.compile(env, code)
+  def checkSerializationRoundTrip(v: SValue): Unit = {
+    val compiledTreeBytes = ValueSerializer.serialize(v)
+    withClue(s"(De)Serialization roundtrip failed for the tree:") {
+      ValueSerializer.deserialize(compiledTreeBytes) shouldEqual v
+    }
   }
 
-  def compileWithCosting(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    val tree = IR.buildTree(calcF)
+  def compileWithoutCosting(env: ScriptEnv, code: String): Value[SType] = compiler.compileWithoutCosting(env, code)
+
+  def compile(env: ScriptEnv, code: String)(implicit IR: IRContext): Value[SType] = {
+    val tree = compiler.compile(env, code)
+    checkSerializationRoundTrip(tree)
     tree
   }
 
-
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
-                additionalTokens: Seq[(TokenId, Long)] = Seq(),
+                additionalTokens: Seq[(Digest32, Long)] = Seq(),
                 additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map())
   = ErgoBox(value, proposition, 0, additionalTokens, additionalRegisters)
 
-  def createBox(value: Int,
+  def createBox(value: Long,
                 proposition: ErgoTree,
                 creationHeight: Int)
   = ErgoBox(value, proposition, creationHeight, Seq(), Map(), ErgoBox.allZerosModifierId)
 
+  /**
+    * Create fake transaction with provided outputCandidates, but without inputs and data inputs.
+    * Normally, this transaction will be invalid as far as it will break rule that sum of
+    * coins in inputs should not be less then sum of coins in outputs, but we're not checking it
+    * in our test cases
+    */
+  def createTransaction(outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction = {
+    new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), outputCandidates)
+  }
+
+  def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
+
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
-    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: CostingResult[T]): Unit = {
+    override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
-        case Some(name: String) =>
+        case Some(name: String) if saveGraphsInFile =>
           emit(name, res)
         case _ =>
       }
     }
   }
 
-  def func[A: RType, B: RType](func: String)(implicit IR: IRContext): A => B = {
+  private def fromPrimView[A](in: A) = {
+    in match {
+      case IsPrimView(v) => v
+      case _ => in
+    }
+  }
+
+  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
+    import IR._
+    import IR.Context._;
     val tA = RType[A]
     val tB = RType[B]
     val tpeA = Evaluation.rtypeToSType(tA)
@@ -88,31 +120,22 @@ trait SigmaTestingCommons extends PropSpec
       """.stripMargin
     val env = Interpreter.emptyEnv
     val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting(env, interProp)
-    val valueFun = IR.compile[tpeB.type](IR.getDataEnv, IR.asRep[IR.Context => tpeB.WrappedType](calcF))
+    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
+    val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
+    val lA = calcF.elem.eDom.liftable.asLiftable[SContext, IR.Context]
+    val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+    val valueFun = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
 
     (in: A) => {
       implicit val cA = tA.classTag
-      val x = in match {
-        case IsPrimView(v) => v
-        case _ => in
-      }
-      val context = ErgoLikeContext.dummy(createBox(0, TrueProp))
-        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+      val x = fromPrimView(in)
+      val context =
+        ErgoLikeContext.dummy(createBox(0, TrueProp))
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(IR, isCost = false)
-      val res = valueFun(calcCtx)
-      (TransformingSigmaBuilder.unliftAny(res) match {
-        case Nullable(x) => // x is a value extracted from Constant
-          tB match {
-            case _: PrimViewType[_, _] => // need to wrap value into PrimValue
-              View.mkPrimView(x) match {
-                case Opt(pv) => pv
-                case _ => x // cannot wrap, so just return as is
-              }
-            case _ => x // don't need to wrap
-          }
-        case _ => res
-      }).asInstanceOf[B]
+      val (res, _) = valueFun(calcCtx)
+      res.asInstanceOf[B]
     }
   }
 

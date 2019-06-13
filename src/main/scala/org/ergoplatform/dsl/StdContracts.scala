@@ -4,7 +4,7 @@ import org.ergoplatform.dsl.ContractSyntax.Token
 
 trait StdContracts { self: ContractSyntax =>
   import spec._
-  def transferErgWithChange(tx: Transaction, from: OutBox, to: PropositionSpec, ergAmt: Long): (OutBox, Option[OutBox]) = {
+  def transferErgWithChange(tx: TransactionCandidate, from: OutBox, to: PropositionSpec, ergAmt: Long): (OutBox, Option[OutBox]) = {
     val ergChange = from.value - ergAmt
     if (ergChange < 0)
       error(s"Cannot transfer $ergAmt Ergs from $from to $to: not enough Ergs")
@@ -14,7 +14,7 @@ trait StdContracts { self: ContractSyntax =>
     (destBox, changeBox)
   }
 
-  def transferTokenWithChange(tx: Transaction, from: OutBox, to: PropositionSpec, tokenAmt: Token): (OutBox, Option[OutBox]) = {
+  def transferTokenWithChange(tx: TransactionCandidate, from: OutBox, to: PropositionSpec, tokenAmt: Token): (OutBox, Option[OutBox]) = {
     val tokenChange = from.token(tokenAmt.id).value - tokenAmt.value
     if (tokenChange < 0)
       error(s"Cannot transfer $tokenAmt from $from to $to: not enough amount of token")

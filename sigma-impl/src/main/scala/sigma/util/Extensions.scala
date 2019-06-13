@@ -43,7 +43,6 @@ object Extensions {
     def toShort: Short = b.toShort
     def toInt: Int = b.toInt
     def toLong: Long = b.toLong
-    def toBigInt: BigInteger = BigInteger.valueOf(b.toLong)
 
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
@@ -110,9 +109,6 @@ object Extensions {
         throw new ArithmeticException("Short overflow")
       x.toShort
     }
-
-    /** Convert this value to BigInt. */
-    def toBigInt: BigInteger = BigInteger.valueOf(x.toLong)
 
     /** Returns a big-endian representation of this Int in a collection of bytes.
       * For example, the Int value {@code 0x12131415} would yield the
@@ -220,13 +216,6 @@ object Extensions {
         Some(getValue)
       else
         None
-    }
-  }
-
-  implicit class NullableOps[T](val nul: Nullable[T]) {
-    def toOption: Option[T] = nul match {
-      case Nullable(v) => Some(v)
-      case _ => None
     }
   }
 }

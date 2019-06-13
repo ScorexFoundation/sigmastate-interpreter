@@ -17,10 +17,16 @@ import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
 import scalan.Nullable
+import sigmastate.SOption.SIntOption
 import sigmastate.basics.ProveDHTuple
-import sigmastate.eval.CostingSigmaDslBuilder
+import sigmastate.eval.{CostingSigmaDslBuilder, Evaluation}
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.{SigmaProp, GroupElement, AvlTree}
+import special.collection.Coll
+import special.sigma.{AvlTree, SigmaProp, GroupElement}
+import sigmastate.lang.SigmaTyper.STypeSubst
+import special.sigma.{SigmaProp, GroupElement}
 
 import scala.util.DynamicVariable
 
@@ -47,6 +53,7 @@ trait SigmaBuilder {
 
   def mkOR(input: Value[SCollection[SBoolean.type]]): BoolValue
   def mkAND(input: Value[SCollection[SBoolean.type]]): BoolValue
+  def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue
 
   def mkAnyOf(input: Seq[Value[SBoolean.type]]): BoolValue
   def mkAllOf(input: Seq[Value[SBoolean.type]]): BoolValue
@@ -62,31 +69,16 @@ trait SigmaBuilder {
                       right: Value[SGroupElement.type]): Value[SGroupElement.type]
   def mkXor(left: Value[SByteArray], right: Value[SByteArray]): Value[SByteArray]
 
-  def mkTreeModifications(tree: Value[SAvlTree.type],
-                          operations: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
-  def mkTreeRemovals(tree: Value[SAvlTree.type],
-                     operations: Value[SCollection[SByteArray]],
-                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
-  def mkTreeInserts(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]]
-
   def mkTreeLookup(tree: Value[SAvlTree.type],
-                   key: Value[SByteArray],
-                   proof: Value[SByteArray]): Value[SOption[SByteArray]]
-
-  def mkIsMember(tree: Value[SAvlTree.type],
-                 key: Value[SByteArray],
-                 proof: Value[SByteArray]): Value[SBoolean.type]
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]]
 
   def mkIf[T <: SType](condition: Value[SBoolean.type],
                        trueBranch: Value[T],
                        falseBranch: Value[T]): Value[T]
 
   def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray]
+  def mkByteArrayToLong(input: Value[SByteArray]): Value[SLong.type]
   def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type]
   def mkUpcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
   def mkDowncast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R): Value[R]
@@ -106,8 +98,7 @@ trait SigmaBuilder {
                                                 mapper: Value[SFunc]): Value[SCollection[OV]]
 
   def mkFilter[IV <: SType](input: Value[SCollection[IV]],
-                            id: Byte,
-                            condition: Value[SBoolean.type]): Value[SCollection[IV]]
+                            condition: Value[SFunc]): Value[SCollection[IV]]
 
   def mkExists[IV <: SType](input: Value[SCollection[IV]],
                             condition: Value[SFunc]): Value[SBoolean.type]
@@ -152,6 +143,11 @@ trait SigmaBuilder {
 
   def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue
 
+  def mkCreateAvlTree(operationFlags: ByteValue,
+                      digest: Value[SByteArray],
+                      keyLength: IntValue,
+                      valueLengthOpt: Value[SIntOption]): AvlTreeValue
+
   /** Logically inverse to mkSigmaPropIsProven */
   def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue
   /** Logically inverse to mkBoolToSigmaProp */
@@ -185,8 +181,8 @@ trait SigmaBuilder {
 
   def mkMethodCall(obj: Value[SType],
                    method: SMethod,
-                   args: IndexedSeq[Value[SType]]): Value[SType]
-
+                   args: IndexedSeq[Value[SType]],
+                   typeSubst: STypeSubst): Value[SType]
   def mkLambda(args: IndexedSeq[(String, SType)],
                givenResType: SType,
                body: Option[Value[SType]]): Value[SFunc]
@@ -199,6 +195,8 @@ trait SigmaBuilder {
   def mkConstantPlaceholder[T <: SType](id: Int, tpe: T): Value[SType]
   def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
                                        elementType: T): Constant[SCollection[T]]
+  def mkCollectionConstant[T <: SType](values: Coll[T#WrappedType],
+      elementType: T): Constant[SCollection[T]]
   def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type]
 
   def mkGetVar[T <: SType](varId: Byte, tpe: T): Value[SOption[T]]
@@ -223,41 +221,50 @@ trait SigmaBuilder {
 
   def mkUnitConstant: Value[SUnit.type]
 
-  def liftAny(v: Any): Nullable[SValue] = v match {
+  /** Created a new Value instance with an appropriate type derived from the given data `obj`.
+    * If `obj` is already Value, then it is returned as result.
+    * Uses scalan.Nullable instead of scala.Option to avoid allocation on consensus hot path.
+    */
+  def liftAny(obj: Any): Nullable[SValue] = obj match {
+    case v: SValue => Nullable(v)
     case arr: Array[Boolean] => Nullable(mkCollectionConstant[SBoolean.type](arr, SBoolean))
     case arr: Array[Byte] => Nullable(mkCollectionConstant[SByte.type](arr, SByte))
     case arr: Array[Short] => Nullable(mkCollectionConstant[SShort.type](arr, SShort))
     case arr: Array[Int] => Nullable(mkCollectionConstant[SInt.type](arr, SInt))
     case arr: Array[Long] => Nullable(mkCollectionConstant[SLong.type](arr, SLong))
-    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr, SBigInt))
+    case arr: Array[BigInteger] => Nullable(mkCollectionConstant[SBigInt.type](arr.map(SigmaDsl.BigInt(_)), SBigInt))
     case arr: Array[String] => Nullable(mkCollectionConstant[SString.type](arr, SString))
     case v: Byte => Nullable(mkConstant[SByte.type](v, SByte))
     case v: Short => Nullable(mkConstant[SShort.type](v, SShort))
     case v: Int => Nullable(mkConstant[SInt.type](v, SInt))
     case v: Long => Nullable(mkConstant[SLong.type](v, SLong))
 
-    case v: BigInteger => Nullable(mkConstant[SBigInt.type](v, SBigInt))
-    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](CostingSigmaDslBuilder.toBigInteger(n), SBigInt))
+    case v: BigInteger => Nullable(mkConstant[SBigInt.type](SigmaDsl.BigInt(v), SBigInt))
+    case n: special.sigma.BigInt => Nullable(mkConstant[SBigInt.type](n, SBigInt))
 
-    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](v, SGroupElement))
-    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](CostingSigmaDslBuilder.toECPoint(ge).asInstanceOf[EcPointType], SGroupElement))
+    case v: EcPointType => Nullable(mkConstant[SGroupElement.type](SigmaDsl.GroupElement(v), SGroupElement))
+    case ge: GroupElement => Nullable(mkConstant[SGroupElement.type](ge, SGroupElement))
 
     case b: Boolean => Nullable(if(b) TrueLeaf else FalseLeaf)
     case v: String => Nullable(mkConstant[SString.type](v, SString))
     case b: ErgoBox => Nullable(mkConstant[SBox.type](b, SBox))
 
-    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
-    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](CostingSigmaDslBuilder.toAvlTreeData(avl), SAvlTree))
+    case avl: AvlTreeData => Nullable(mkConstant[SAvlTree.type](SigmaDsl.avlTree(avl), SAvlTree))
+    case avl: AvlTree => Nullable(mkConstant[SAvlTree.type](avl, SAvlTree))
 
-    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](sb, SSigmaProp))
-    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](CostingSigmaDslBuilder.toSigmaBoolean(p), SSigmaProp))
+    case sb: SigmaBoolean => Nullable(mkConstant[SSigmaProp.type](SigmaDsl.SigmaProp(sb), SSigmaProp))
+    case p: SigmaProp => Nullable(mkConstant[SSigmaProp.type](p, SSigmaProp))
 
-    case v: SValue => Nullable(v)
-    case _ => Nullable.None
+    case coll: Coll[a] =>
+      val tpeItem = Evaluation.rtypeToSType(coll.tItem)
+      Nullable(mkCollectionConstant(coll.asInstanceOf[SCollection[SType]#WrappedType], tpeItem))
+
+    case _ =>
+      Nullable.None
   }
 
-  def unliftAny(v: SValue): Nullable[Any] = v match {
-    case Constant(v, t) => Nullable(v)
+  def unliftAny(value: SValue): Nullable[Any] = value match {
+    case Constant(v, _) => Nullable(v)
     case _ => Nullable.None
   }
 }
@@ -325,6 +332,9 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkAND(input: Value[SCollection[SBoolean.type]]): Value[SBoolean.type] =
     AND(input).withSrcCtx(currentSrcCtx.value)
 
+  override def mkXorOf(input: Value[SCollection[SBoolean.type]]): BoolValue =
+    XorOf(input).withSrcCtx(currentSrcCtx.value)
+
   override def mkAnyOf(input: Seq[Value[SBoolean.type]]) =
     OR(input).withSrcCtx(currentSrcCtx.value)
   override def mkAllOf(input: Seq[Value[SBoolean.type]]) =
@@ -352,29 +362,9 @@ class StdSigmaBuilder extends SigmaBuilder {
     Xor(left, right).withSrcCtx(currentSrcCtx.value)
 
   override def mkTreeLookup(tree: Value[SAvlTree.type],
-                            key: Value[SByteArray],
-                            proof: Value[SByteArray]): Value[SOption[SByteArray]] =
+      key: Value[SByteArray],
+      proof: Value[SByteArray]): Value[SOption[SByteArray]] =
     TreeLookup(tree, key, proof).withSrcCtx(currentSrcCtx.value)
-
-  override def mkTreeModifications(tree: Value[SAvlTree.type],
-                                   operations: Value[SByteArray],
-                                   proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeModifications(tree, operations, proof).withSrcCtx(currentSrcCtx.value)
-
-  def mkTreeInserts(tree: Value[SAvlTree.type],
-                    operations: Value[SCollection[STuple]],
-                    proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeInserts(tree, operations, proof)
-
-  def mkTreeRemovals(tree: Value[SAvlTree.type],
-                     operations: Value[SCollection[SByteArray]],
-                     proof: Value[SByteArray]): Value[SOption[SAvlTree.type]] =
-    TreeRemovals(tree, operations, proof)
-
-  override def mkIsMember(tree: Value[SAvlTree.type],
-                          key: Value[SByteArray],
-                          proof: Value[SByteArray]): Value[SBoolean.type] =
-    OptionIsDefined(TreeLookup(tree, key, proof)).withSrcCtx(currentSrcCtx.value)
 
   override def mkIf[T <: SType](condition: Value[SBoolean.type],
                                 trueBranch: Value[T],
@@ -383,6 +373,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkLongToByteArray(input: Value[SLong.type]): Value[SByteArray] =
     LongToByteArray(input).withSrcCtx(currentSrcCtx.value)
+
+  override def mkByteArrayToLong(input: Value[SByteArray]): Value[SLong.type] =
+    ByteArrayToLong(input).withSrcCtx(currentSrcCtx.value)
 
   override def mkByteArrayToBigInt(input: Value[SByteArray]): Value[SBigInt.type] =
     ByteArrayToBigInt(input).withSrcCtx(currentSrcCtx.value)
@@ -419,9 +412,8 @@ class StdSigmaBuilder extends SigmaBuilder {
     Slice(input, from, until).withSrcCtx(currentSrcCtx.value)
 
   override def mkFilter[IV <: SType](input: Value[SCollection[IV]],
-                                     id: Byte,
-                                     condition: Value[SBoolean.type]): Value[SCollection[IV]] =
-    Filter(input, id, condition).withSrcCtx(currentSrcCtx.value)
+                                     condition: Value[SFunc]): Value[SCollection[IV]] =
+    Filter(input, condition).withSrcCtx(currentSrcCtx.value)
 
   override def mkExists[IV <: SType](input: Value[SCollection[IV]],
                                      condition: Value[SFunc]): Value[SBoolean.type] =
@@ -493,6 +485,13 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkCreateProveDlog(value: Value[SGroupElement.type]): SigmaPropValue =
     CreateProveDlog(value)
 
+  override def mkCreateAvlTree(operationFlags: ByteValue,
+      digest: Value[SByteArray],
+      keyLength: IntValue,
+      valueLengthOpt: Value[SIntOption]): AvlTreeValue = {
+    CreateAvlTree(operationFlags, digest, keyLength, valueLengthOpt)
+  }
+
   override def mkBoolToSigmaProp(value: BoolValue): SigmaPropValue =
     BoolToSigmaProp(value).withSrcCtx(currentSrcCtx.value)
 
@@ -560,8 +559,9 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkMethodCall(obj: Value[SType],
                             method: SMethod,
-                            args: IndexedSeq[Value[SType]]): Value[SType] =
-    MethodCall(obj, method, args).withSrcCtx(currentSrcCtx.value)
+                            args: IndexedSeq[Value[SType]],
+                            typeSubst: STypeSubst = Map()): Value[SType] =
+    MethodCall(obj, method, args, typeSubst).withSrcCtx(currentSrcCtx.value)
 
   override def mkLambda(args: IndexedSeq[(String, SType)],
                         givenResType: SType,
@@ -582,9 +582,17 @@ class StdSigmaBuilder extends SigmaBuilder {
     ConstantPlaceholder[T](id, tpe).withSrcCtx(currentSrcCtx.value)
 
   override def mkCollectionConstant[T <: SType](values: Array[T#WrappedType],
-                                                elementType: T): Constant[SCollection[T]] =
+                                                elementType: T): Constant[SCollection[T]] = {
+    implicit val tElement = Evaluation.stypeToRType(elementType)
+    ConstantNode[SCollection[T]](Colls.fromArray(values), SCollection(elementType))
+        .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+  }
+
+  override def mkCollectionConstant[T <: SType](values: Coll[T#WrappedType],
+                                                elementType: T): Constant[SCollection[T]] = {
     ConstantNode[SCollection[T]](values, SCollection(elementType))
-      .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+        .withSrcCtx(currentSrcCtx.value).asInstanceOf[ConstantNode[SCollection[T]]]
+  }
 
   override def mkStringConcat(left: Constant[SString.type], right: Constant[SString.type]): Value[SString.type] =
     StringConstant(left.value + right.value).withSrcCtx(currentSrcCtx.value)

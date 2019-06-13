@@ -8,7 +8,7 @@ import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoolean, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -43,7 +43,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
   property("Evaluation - RpsGame Example") {
 
     // Alice is first player, who initiates the game
-    val alice = new ErgoLikeTestProvingInterpreter
+    val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
 
     val a:Byte = (scala.util.Random.nextInt.abs % 3).toByte
@@ -56,7 +56,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
       "k" -> h
     )
 
-    val fullGameScript = compileWithCosting(fullGameEnv,
+    val fullGameScript = compile(fullGameEnv,
       """{
         |  val s = getVar[Coll[Byte]](0).get  // Alice's secret byte string s
         |  val a = getVar[Byte](1).get        // Alice's secret choice a (represented as a byte)
@@ -80,13 +80,13 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val halfGameEnv = Map(
       ScriptNameProp -> "halfGameScript",
       "alice" -> alicePubKey,
-      "fullGameScriptHash" -> Blake2b256(fullGameScript.bytes)
+      "fullGameScriptHash" -> Blake2b256(fullGameScript.treeWithSegregation.bytes)
     )
 
     // Note that below script allows Alice to spend the half-game output anytime before Bob spends it.
     // We could also consider a more restricted version of the game where Alice is unable to spend the half-game output
     // before some minimum height.
-    val halfGameScript = compileWithCosting(halfGameEnv,
+    val halfGameScript = compile(halfGameEnv,
       """{
         |  OUTPUTS.forall{(out:Box) =>
         |    val b             = out.R4[Byte].get
@@ -129,7 +129,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     // a variable indicating height at which the tx spending halfGameTx is created
     val fullGameCreationHeight = halfGameCreationHeight + 10
 
-    val bob = new ErgoLikeTestProvingInterpreter
+    val bob = new ContextEnrichingTestProvingInterpreter
     val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
     val bobDeadline = 120 // height after which it become's Bob's money
     val b:Byte = (scala.util.Random.nextInt.abs % 3).toByte
@@ -153,7 +153,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     )
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val fullGameTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullGameOutput0, fullGameOutput1))
+    val fullGameTx = createTransaction(IndexedSeq(fullGameOutput0, fullGameOutput1))
 
     val fullGameContext = ErgoLikeContext(
       currentHeight = fullGameCreationHeight,
@@ -179,14 +179,14 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
 
     val gameOverHeight = fullGameCreationHeight + 10
     // assume paying to Carol
-    val carol = new ErgoLikeTestProvingInterpreter
+    val carol = new ContextEnrichingTestProvingInterpreter
     val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
 
     // note that playAmount below is not checked. It could be anything.
     val gameOverOutput = ErgoBox(playAmount, carolPubKey, gameOverHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val gameOverTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(gameOverOutput))
+    val gameOverTx = createTransaction(gameOverOutput)
 
     val aliceProver = alice.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
     val bobProver = bob.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
@@ -275,7 +275,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val defaultWinOutput = ErgoBox(playAmount*2, carolPubKey, defaultWinHeight)
 
     //normally this transaction would invalid (why?), but we're not checking it in this test
-    val defaultWinTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(defaultWinOutput))
+    val defaultWinTx = createTransaction(defaultWinOutput)
 
     val defaultWinContext0 = ErgoLikeContext(
       currentHeight = defaultWinHeight,

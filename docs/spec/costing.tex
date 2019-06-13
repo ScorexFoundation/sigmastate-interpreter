@@ -1,0 +1,37 @@
+\section{Costing}
+\label{sec:costing}
+
+This is how the file name is specified
+\begin{lstlisting}  
+
+    val env: ScriptEnv = Map(
+    ScriptNameProp -> s"filename_verify",
+  ...
+\end{lstlisting}  
+
+The file should be in \lst{test-out} directory. The graph should have
+explicit nodes like \lst{CostOf(...)}, which represent access to CostTable
+entries. The actual cost is counted in the nodes like this \lst{s1340: Int =
+OpCost(2, List(s1361, s1360), s983)}. Each such node is handled like
+\lst{costAccumulator.add(s1340, OpCost(2, List(s1361, s1360), s983), dataEnv)}
+See \lst{CostAccumulator}
+
+How much cost is represented by OpCost node?
+\begin{enumerate}
+    \item Symbols s1361, s1360 are dependencies. They represent cost that
+    should be accumulated before s983. 
+    \item If upon handling of OpCost, the dependencies are not yet
+    accumulated, then they are accumulated first, and then s983 is
+    accumulated.
+    \item the values of s1340 is the value of s983.
+    \item Thus execution of OpCost, consists of 2 parts: a) data flow b) side
+    effect on CostAccumulator
+    \item OpCost is special node, interpreted in a special way. See method
+    evaluate in Evaluation.
+\end{enumerate}
+
+% For why this is necessary, consider a script where two different context
+% variables are used. Without this, the same OpCost node is emitted twice, but
+% only single is added in the graph because of unification of nodes. Thus
+% adding costedValue.id make those nodes different and they both added to the
+% graph.

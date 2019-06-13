@@ -7,13 +7,13 @@ class DataCostingTest extends BaseCtxTests with LangTests with ErgoScriptTestkit
   import IR._
   import Coll._
 
-  test("split cols") {
-    emit("split_cols",
-      split3(fun { in: Rep[(Coll[Int], Byte)] =>
-        dataCost(in, None)
-      })
-    )
-  }
+//  test("split cols") {
+//    emit("split_cols",
+//      split3(fun { in: Rep[(Coll[Int], Byte)] =>
+//        dataCost(in, None)
+//      })
+//    )
+//  }
 
 //  test("split pair cols") {
 //    ctx.emit("split_pair_col",

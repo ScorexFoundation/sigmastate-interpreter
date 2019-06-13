@@ -23,9 +23,9 @@ class TwoArgumentSerializerSpecification extends TableSerializationSpecification
         Array[Byte](MinCode, SLong.typeCode, encodeZigZagLong(2).toByte, SLong.typeCode, encodeZigZagLong(3).toByte)),
       (Max(LongConstant(2), LongConstant(3)),
         Array[Byte](MaxCode, SLong.typeCode, encodeZigZagLong(2).toByte, SLong.typeCode, encodeZigZagLong(3).toByte)),
-      (Xor(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
+      (Xor(ByteArrayConstant(Array[Byte](1, 2, 3)), ByteArrayConstant(Array[Byte](3, 4))),
           Array[Byte](XorCode, ByteArrayTypeCode, 3, 1, 2, 3, ByteArrayTypeCode, 2, 3, 4)),
-      (Append(ByteArrayConstant(Array(1, 2, 3)), ByteArrayConstant(Array(3, 4))),
+      (Append(ByteArrayConstant(Array[Byte](1, 2, 3)), ByteArrayConstant(Array[Byte](3, 4))),
           Array[Byte](AppendCode, ByteArrayTypeCode, 3, 1, 2, 3, ByteArrayTypeCode, 2, 3, 4))
     )
 

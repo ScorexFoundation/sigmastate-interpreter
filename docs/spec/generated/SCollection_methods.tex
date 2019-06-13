@@ -1,0 +1,744 @@
+
+\subsubsection{\lst{SCollection.size} method (Code 12.1)}
+\label{sec:type:SCollection:size}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & The size of the collection in elements. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:SizeOf]{\lst{SizeOf}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.getOrElse} method (Code 12.2)}
+\label{sec:type:SCollection:getOrElse}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Return the element of collection if \lst{index} is in range \lst{0 .. size-1} \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{index} & \lst{: Int} & \text{// index of the element of this collection} \\
+\lst{default} & \lst{: IV} & \text{// value to return when \lst{index} is out of range} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{IV} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.map} method (Code 12.3)}
+\label{sec:type:SCollection:map}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  Builds a new collection by applying a function to all elements of this collection.
+ Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
+ \lst{f} to each element of this collection and collecting the results.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{f} & \lst{: (IV) => OV} & \text{// the function to apply to each element} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[OV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MapCollection]{\lst{MapCollection}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.exists} method (Code 12.4)}
+\label{sec:type:SCollection:exists}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Tests whether a predicate holds for at least one element of this collection.
+Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Exists]{\lst{Exists}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.fold} method (Code 12.5)}
+\label{sec:type:SCollection:fold}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Applies a binary operator to a start value and all elements of this collection, going left to right. \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{zero} & \lst{: OV} & \text{// a starting value} \\
+\lst{op} & \lst{: (OV,IV) => OV} & \text{// the binary operator} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{OV} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Fold]{\lst{Fold}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.forall} method (Code 12.6)}
+\label{sec:type:SCollection:forall}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Tests whether a predicate holds for all elements of this collection.
+Returns \lst{true} if this collection is empty or the given predicate \lst{p}
+holds for all elements of this collection, otherwise \lst{false}.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ForAll]{\lst{ForAll}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.slice} method (Code 12.7)}
+\label{sec:type:SCollection:slice}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Selects an interval of elements.  The returned collection is made up
+  of all elements \lst{x} which satisfy the invariant:
+  \lst{
+     from <= indexOf(x) < until
+  }
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{from} & \lst{: Int} & \text{// the lowest index to include from this collection} \\
+\lst{until} & \lst{: Int} & \text{// the lowest index to EXCLUDE from this collection} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Slice]{\lst{Slice}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.filter} method (Code 12.8)}
+\label{sec:type:SCollection:filter}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Selects all elements of this collection which satisfy a predicate.
+ Returns  a new collection consisting of all elements of this collection that satisfy the given
+ predicate \lst{p}. The order of the elements is preserved.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Filter]{\lst{Filter}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.append} method (Code 12.9)}
+\label{sec:type:SCollection:append}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{other} & \lst{: Coll[IV]} & \text{// the collection to append at the end of this} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Append]{\lst{Append}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.apply} method (Code 12.10)}
+\label{sec:type:SCollection:apply}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & The element at given index.
+ Indices start at \lst{0}; \lst{xs.apply(0)} is the first element of collection \lst{xs}.
+ Note the indexing syntax \lst{xs(i)} is a shorthand for \lst{xs.apply(i)}.
+ Returns the element at the given index.
+ Throws an exception if \lst{i < 0} or \lst{length <= i}
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{i} & \lst{: Int} & \text{// the index} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{IV} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.<<} method (Code 12.11)}
+\label{sec:type:SCollection:<<}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.>>} method (Code 12.12)}
+\label{sec:type:SCollection:>>}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[IV]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.>>>} method (Code 12.13)}
+\label{sec:type:SCollection:>>>}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{arg0} & \lst{: Coll[Boolean]} & \text{// } \\
+\lst{arg1} & \lst{: Int} & \text{// } \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[Boolean]} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.indices} method (Code 12.14)}
+\label{sec:type:SCollection:indices}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} & Produces the range of all indices of this collection as a new collection
+ containing [0 .. length-1] values.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+
+  \hline
+  \bf{Result} & \lst{Coll[Int]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.flatMap} method (Code 12.15)}
+\label{sec:type:SCollection:flatMap}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  Builds a new collection by applying a function to all elements of this collection
+ and using the elements of the resulting collections.
+ Function \lst{f} is constrained to be of the form \lst{x => x.someProperty}, otherwise
+ it is illegal.
+ Returns a new collection of type \lst{Coll[B]} resulting from applying the given collection-valued function
+ \lst{f} to each element of this collection and concatenating the results.
+         \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         \lst{f} & \lst{: (IV) => Coll[OV]} & \text{// the function to apply to each element.} \\
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[OV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.patch} method (Code 12.19)}
+\label{sec:type:SCollection:patch}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.updated} method (Code 12.20)}
+\label{sec:type:SCollection:updated}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.updateMany} method (Code 12.21)}
+\label{sec:type:SCollection:updateMany}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.unionSets} method (Code 12.22)}
+\label{sec:type:SCollection:unionSets}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.diff} method (Code 12.23)}
+\label{sec:type:SCollection:diff}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.intersect} method (Code 12.24)}
+\label{sec:type:SCollection:intersect}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.prefixLength} method (Code 12.25)}
+\label{sec:type:SCollection:prefixLength}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.indexOf} method (Code 12.26)}
+\label{sec:type:SCollection:indexOf}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.lastIndexOf} method (Code 12.27)}
+\label{sec:type:SCollection:lastIndexOf}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Int} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.find} method (Code 12.28)}
+\label{sec:type:SCollection:find}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Option[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.zip} method (Code 12.29)}
+\label{sec:type:SCollection:zip}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[(IV,OV)]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.distinct} method (Code 12.30)}
+\label{sec:type:SCollection:distinct}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+
+  \hline
+  \bf{Result} & \lst{Coll[IV]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.startsWith} method (Code 12.31)}
+\label{sec:type:SCollection:startsWith}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.endsWith} method (Code 12.32)}
+\label{sec:type:SCollection:endsWith}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Boolean} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}
+
+
+
+\subsubsection{\lst{SCollection.mapReduce} method (Code 12.34)}
+\label{sec:type:SCollection:mapReduce}
+\noindent
+\begin{tabularx}{\textwidth}{| l | X |}
+   \hline
+   \bf{Description} &  \\
+  
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+
+      \end{array}\) \\
+       
+  \hline
+  \bf{Result} & \lst{Coll[(K,V)]} \\
+  \hline
+
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
+  \hline
+
+\end{tabularx}

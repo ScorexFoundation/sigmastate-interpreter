@@ -2,17 +2,29 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
+import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.DLogProtocol._
 import sigmastate._
 import sigmastate.utils.Helpers
 import Values._
 import scalan.util.CollectionUtil._
+import scorex.util.encode.Base16
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.basics.DLogProtocol._
 
 import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
+import sigmastate.basics.{ProveDHTuple, SigmaProtocolPrivateInput, DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput}
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+
+import scala.util.Try
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
 import sigmastate.basics._
@@ -52,6 +64,13 @@ object HintsBag {
 }
 
 
+
+/*
+case class CostedProverResult(override val proof: Array[Byte],
+                              override val extension: ContextExtension,
+                              cost: Long) extends ProverResult(proof, extension)
+*/
+
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
@@ -63,10 +82,6 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
   override type ProofT = UncheckedTree
 
   val secrets: Seq[SigmaProtocolPrivateInput[_, _]]
-
-  def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map()
-
-  val knownExtensions = ContextExtension(contextExtenders)
 
   /**
     * The comments in this section are taken from the algorithm for the
@@ -131,37 +146,23 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val ctx = context.withExtension(knownExtensions).asInstanceOf[CTX]
-    val propTree = applyDeserializeContext(ctx, exp.proposition)
-    val tried = reduceToCrypto(ctx, env, propTree)
+    val prop = propositionFromErgoTree(exp, context)
+    val propTree = applyDeserializeContext(context, prop)
+    val tried = reduceToCrypto(context, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
     def errorReducedToFalse = error("Script reduced to false")
 
     val proofTree = reducedProp match {
-      case BooleanConstant(boolResult) =>
-        if (boolResult) NoProof
-        else errorReducedToFalse
-      case sigmaBoolean: SigmaBoolean =>
-        sigmaBoolean match {
-          case TrueProp => NoProof
-          case FalseProp => errorReducedToFalse
-          case _ =>
-            val unprovenTree = convertToUnproven(sigmaBoolean)
-            prove(unprovenTree, message, hintsBag)
-        }
-      case _ =>
-        error(s"Unexpected result of reduceToCrypto($ctx, $env, $propTree)")
-      // TODO this case should be removed, because above cases should cover all possible variants
-      //        val sigmaBoolean = Try { reducedProp.asInstanceOf[SigmaBoolean] }
-      //          .recover { case _ => throw new InterpreterException(s"failed to cast to SigmaBoolean: $reducedProp") }
-      //          .get
-      //        val ct = convertToUnproven(sigmaBoolean)
-      //        prove(ct, message)
+      case TrueProp => NoProof
+      case FalseProp => errorReducedToFalse
+      case sigmaTree =>
+        val unprovenTree = convertToUnproven(sigmaTree)
+        prove(unprovenTree, message, hintsBag)
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, knownExtensions, cost)
+    CostedProverResult(proof, context.extension, cost)
   }
 
   /**

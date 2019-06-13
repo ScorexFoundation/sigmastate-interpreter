@@ -5,82 +5,43 @@ package special.sigma {
     import AnyValue._;
     import AvlTree._;
     import Box._;
-    import CCostedAvlTree._;
-    import CCostedBox._;
-    import CCostedColl._;
-    import CCostedContext._;
-    import CCostedPrim._;
+    import CSizeAnyValue._;
+    import CSizeBox._;
+    import CSizeContext._;
     import Coll._;
-    import CollBuilder._;
-    import Context._;
-    import CostModel._;
-    import Costed._;
-    import CostedAvlTree._;
-    import CostedBox._;
-    import CostedColl._;
-    import CostedContext._;
-    import CostedOption._;
-    import SigmaDslBuilder._;
-    import TestSigmaDslBuilder._;
-    import WOption._;  // manual fix
-    import WSpecialPredef._; // manual fix
-
-    abstract class CCostedContext(val ctx: Rep[Context]) extends CostedContext {
-      def dsl: Rep[SigmaDslBuilder] = RTestSigmaDslBuilder();
-      def OUTPUTS: Rep[CostedColl[Box]] = CCostedContext.this.dsl.costBoxes(CCostedContext.this.ctx.OUTPUTS);
-      def INPUTS: Rep[CostedColl[Box]] = CCostedContext.this.dsl.costBoxes(CCostedContext.this.ctx.INPUTS);
-      def HEIGHT: Rep[Costed[Int]] = {
-        val cost: Rep[Int] = CCostedContext.this.dsl.CostModel.SelectField;
-        RCCostedPrim(CCostedContext.this.ctx.HEIGHT, cost, toRep(4L.asInstanceOf[Long]))
-      };
-      def SELF: Rep[CostedBox] = RCCostedBox(CCostedContext.this.ctx.SELF, CCostedContext.this.dsl.CostModel.AccessBox);
-      def LastBlockUtxoRootHash: Rep[CostedAvlTree] = RCCostedAvlTree(CCostedContext.this.ctx.LastBlockUtxoRootHash, CCostedContext.this.dsl.CostModel.AccessAvlTree);
-      def MinerPubKey: Rep[CostedColl[Byte]] = CCostedContext.this.dsl.costColWithConstSizedItem[Byte](CCostedContext.this.ctx.MinerPubKey, CCostedContext.this.dsl.CostModel.PubKeySize.toInt, toRep(1L.asInstanceOf[Long]));
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[CostedOption[T]] = {
-        val opt: Rep[WOption[T]] = CCostedContext.this.ctx.getVar[T](id);
-        CCostedContext.this.dsl.costOption[T](opt, CCostedContext.this.dsl.CostModel.GetVar)
-      };
-      @NeverInline def getConstant[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[Costed[T]] = delayInvoke;
-      def value: Rep[Context] = CCostedContext.this.ctx;
-      def cost: Rep[Int] = CCostedContext.this.ctx.cost;
-      def dataSize: Rep[Long] = CCostedContext.this.ctx.dataSize
+    import Header._;
+    import PreHeader._;
+    import Size._;
+    import SizeAnyValue._;
+    import SizeBox._;
+    import SizeBuilder._;
+    import SizeContext._;
+    import SizeSigmaProp._;
+    import WOption._;
+    import WRType._;
+    abstract class CSizeAnyValue(val tVal: Rep[WRType[Any]], val valueSize: Rep[Size[Any]]) extends SizeAnyValue {
+      @NeverInline override def dataSize: Rep[Long] = delayInvoke
     };
-    abstract class CCostedBox(val box: Rep[Box], val cost: Rep[Int]) extends CostedBox {
-      def dsl: Rep[SigmaDslBuilder] = RTestSigmaDslBuilder();
-      def id: Rep[CostedColl[Byte]] = CCostedBox.this.dsl.costColWithConstSizedItem[Byte](CCostedBox.this.box.id, CCostedBox.this.box.id.length, toRep(1L.asInstanceOf[Long]));
-      def valueCosted: Rep[Costed[Long]] = {
-        val cost: Rep[Int] = CCostedBox.this.dsl.CostModel.SelectField;
-        RCCostedPrim(CCostedBox.this.box.value, cost, toRep(8L.asInstanceOf[Long]))
-      };
-      def bytes: Rep[CostedColl[Byte]] = CCostedBox.this.dsl.costColWithConstSizedItem[Byte](CCostedBox.this.box.bytes, CCostedBox.this.box.bytes.length, toRep(1L.asInstanceOf[Long]));
-      def bytesWithoutRef: Rep[CostedColl[Byte]] = CCostedBox.this.dsl.costColWithConstSizedItem[Byte](CCostedBox.this.box.bytesWithoutRef, CCostedBox.this.box.bytesWithoutRef.length, toRep(1L.asInstanceOf[Long]));
-      def propositionBytes: Rep[CostedColl[Byte]] = CCostedBox.this.dsl.costColWithConstSizedItem[Byte](CCostedBox.this.box.propositionBytes, CCostedBox.this.box.propositionBytes.length, toRep(1L.asInstanceOf[Long]));
-      def registers: Rep[CostedColl[AnyValue]] = {
-        val len: Rep[Int] = CCostedBox.this.box.registers.length;
-        val costs: Rep[Coll[Int]] = CCostedBox.this.dsl.Colls.replicate[Int](len, CCostedBox.this.dsl.CostModel.AccessBox);
-        val sizes: Rep[Coll[Long]] = CCostedBox.this.box.registers.map[Long](fun(((o: Rep[AnyValue]) => o.dataSize)));
-        RCCostedColl(CCostedBox.this.box.registers, costs, sizes, CCostedBox.this.dsl.CostModel.CollectionConst)
-      };
-      def getReg[T](id: Rep[Int])(implicit cT: Elem[T]): Rep[CostedOption[T]] = {
-        val opt: Rep[WOption[T]] = CCostedBox.this.box.getReg[T](id);
-        CCostedBox.this.dsl.costOption[T](opt, CCostedBox.this.dsl.CostModel.GetRegister)
-      };
-      @NeverInline def creationInfo: Rep[Costed[scala.Tuple2[Int, Coll[Byte]]]] = delayInvoke;
-      def value: Rep[Box] = CCostedBox.this.box;
-      def dataSize: Rep[Long] = CCostedBox.this.box.dataSize
+    abstract class CSizeSigmaProp(val propBytes: Rep[Size[Coll[Byte]]]) extends SizeSigmaProp {
+      @NeverInline override def dataSize: Rep[Long] = delayInvoke
     };
-    abstract class CCostedAvlTree(val tree: Rep[AvlTree], val cost: Rep[Int]) extends CostedAvlTree {
-      def dsl: Rep[SigmaDslBuilder] = RTestSigmaDslBuilder();
-      def startingDigest: Rep[CostedColl[Byte]] = CCostedAvlTree.this.dsl.costColWithConstSizedItem[Byte](CCostedAvlTree.this.tree.startingDigest, CCostedAvlTree.this.dsl.CostModel.PubKeySize.toInt, toRep(1L.asInstanceOf[Long]));
-      def keyLength: Rep[Costed[Int]] = RCCostedPrim(CCostedAvlTree.this.tree.keyLength, CCostedAvlTree.this.dsl.CostModel.SelectField, toRep(4L.asInstanceOf[Long]));
-      def valueLengthOpt: Rep[CostedOption[Int]] = CCostedAvlTree.this.dsl.costOption[Int](CCostedAvlTree.this.tree.valueLengthOpt, CCostedAvlTree.this.dsl.CostModel.SelectField);
-      def maxNumOperations: Rep[CostedOption[Int]] = CCostedAvlTree.this.dsl.costOption[Int](CCostedAvlTree.this.tree.maxNumOperations, CCostedAvlTree.this.dsl.CostModel.SelectField);
-      def maxDeletes: Rep[CostedOption[Int]] = CCostedAvlTree.this.dsl.costOption[Int](CCostedAvlTree.this.tree.maxDeletes, CCostedAvlTree.this.dsl.CostModel.SelectField);
-      def value: Rep[AvlTree] = CCostedAvlTree.this.tree;
-      def dataSize: Rep[Long] = CCostedAvlTree.this.tree.dataSize
+    abstract class CSizeBox(val propositionBytes: Rep[Size[Coll[Byte]]], val bytes: Rep[Size[Coll[Byte]]], val bytesWithoutRef: Rep[Size[Coll[Byte]]], val registers: Rep[Size[Coll[WOption[AnyValue]]]], val tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]) extends SizeBox {
+      @NeverInline override def dataSize: Rep[Long] = delayInvoke;
+      @NeverInline override def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = delayInvoke
     };
-    trait CCostedContextCompanion;
-    trait CCostedBoxCompanion;
-    trait CCostedAvlTreeCompanion
+    abstract class CSizeContext(val outputs: Rep[Size[Coll[Box]]], val inputs: Rep[Size[Coll[Box]]], val dataInputs: Rep[Size[Coll[Box]]], val selfBox: Rep[Size[Box]], val lastBlockUtxoRootHash: Rep[Size[AvlTree]], val headers: Rep[Size[Coll[Header]]], val preHeader: Rep[Size[PreHeader]], val vars: Rep[Coll[Size[AnyValue]]]) extends SizeContext {
+      @NeverInline override def dataSize: Rep[Long] = delayInvoke;
+      @NeverInline override def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = delayInvoke
+    };
+    abstract class CSizeBuilder extends SizeBuilder {
+      def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue] = RCSizeAnyValue(tVal, valueSize);
+      def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]): Rep[SizeBox] = RCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens);
+      def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext] = RCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
+    };
+    trait CSizeAnyValueCompanion;
+    trait CSizeSigmaPropCompanion;
+    trait CSizeBoxCompanion;
+    trait CSizeContextCompanion;
+    trait CSizeBuilderCompanion
   }
 }

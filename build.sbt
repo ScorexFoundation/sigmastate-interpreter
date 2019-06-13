@@ -73,11 +73,11 @@ git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
 val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.6"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.3"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.4"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
-val specialVersion = "master-518e9d01-SNAPSHOT"
+val specialVersion = "master-534cb6f5-SNAPSHOT"
 val specialCommon  = "io.github.scalan" %% "common" % specialVersion
 val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
@@ -91,7 +91,7 @@ val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test",
   specialCommon, (specialCommon % Test).classifier("tests"),
@@ -115,10 +115,19 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
   "com.lihaoyi" %% "fastparse" % "1.0.0",
+  "org.spire-math" %% "debox" % "0.8.0"
 ) ++ testingDependencies
 
 
 scalacOptions ++= Seq("-feature", "-deprecation")
+
+
+// set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
+// see https://github.com/eclipse/jetty.project/issues/3244
+// these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
+// see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
+javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
+scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
@@ -137,7 +146,7 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-//        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-eq-tests-cb1f5c15-SNAPSHOT.jar"
+//        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-better-costing-2a66ed5c-SNAPSHOT.jar"
   )
 )
 
@@ -151,8 +160,8 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
     .dependsOn(sigmaconf)
     .settings(commonSettings,
       libraryDependencies ++= Seq(meta, plugin, libraryapi, libraryimpl),
-      publishArtifact in(Compile, packageBin) := false,
-      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = false) },
+//      publishArtifact in(Compile, packageBin) := false,
+      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
       artifact in(Compile, assembly) := {
         val art = (artifact in(Compile, assembly)).value
         art.withClassifier(Some("assembly"))
@@ -192,7 +201,9 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "v2.0"
+  val ergoBranch = "master"
+  val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
+  
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
   val cwd = new File("").absolutePath
   val ergoPath = new File(cwd + "/ergo-tests/")
@@ -202,14 +213,15 @@ def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   log.info(s"Cloning Ergo branch $ergoBranch into ${ergoPath.absolutePath}")
   s"git clone -b $ergoBranch --single-branch https://github.com/ergoplatform/ergo.git ${ergoPath.absolutePath}" !
 
+
   log.info(s"Updating Ergo in $ergoPath with Sigmastate version $sigmastateVersion")
-  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  Process(Seq("sbt", "unlock", "reload", "lock"), ergoPath, sbtEnvVars: _*) !
 
   log.info("Updated Ergo lock.sbt:")
   Process(Seq("git", "diff", "-U0", "lock.sbt"), ergoPath) !
 
   log.info(s"Running Ergo tests in $ergoPath with Sigmastate version $sigmastateVersion")
-  val res = Process(Seq("sbt", task), ergoPath, "SIGMASTATE_VERSION" -> sigmastateVersion) !
+  val res = Process(Seq("sbt", task), ergoPath, sbtEnvVars: _*) !
 
   if (res != 0) sys.error(s"Ergo $task failed!")
 }

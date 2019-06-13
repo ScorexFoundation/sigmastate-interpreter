@@ -1,6 +1,5 @@
 package org.ergoplatform.dsl
 
-import scalan.RType
 import special.collection.Coll
 import sigmastate.serialization.OperationSerializer
 import sigmastate.eval.{CAvlTree, CostingSigmaDslBuilder}
@@ -9,9 +8,9 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.{AvlTreeData, AvlTreeFlags}
 import special.sigma.AvlTree
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Operation, Insert}
+import CostingSigmaDslBuilder.Colls
 
 object AvlTreeHelpers {
-  val Colls = CostingSigmaDslBuilder.Colls
 
   /** Create authenticated dictionary with given allowed operations and key-value entries. */
   def createAvlTree(flags: AvlTreeFlags, entries: (ADKey, ADValue)*): (AvlTree, BatchAVLProver[Digest32, Blake2b256.type]) = {
@@ -19,7 +18,8 @@ object AvlTreeHelpers {
     val ok = entries.forall { case (key, value) =>
       avlProver.performOneOperation(Insert(key, value)).isSuccess
     }
-    val proof = avlProver.generateProof()
+    if (!ok) throw new Exception("Test tree generation failed")
+    val _ = avlProver.generateProof()
     val digest = avlProver.digest
     val treeData = new AvlTreeData(digest, flags, 32, None)
     (CAvlTree(treeData), avlProver)
@@ -31,17 +31,15 @@ object AvlTreeHelpers {
     Colls.fromArray(opsBytes)
   }
 
-  implicit class ArrayOps[T: RType](arr: Array[T]) {
-    def toColl: Coll[T] = Colls.fromArray(arr)
-  }
-
   implicit class ADKeyArrayOps(arr: Array[ADKey]) {
     def toColl: Coll[Coll[Byte]] = Colls.fromArray(arr.map(x => Colls.fromArray(x)))
   }
+
   implicit class ADKeyValueArrayOps(arr: Array[(ADKey, ADValue)]) {
     def toColl: Coll[(Coll[Byte], Coll[Byte])] = {
       val kvs = arr.map { case (k, v) => (Colls.fromArray(k), Colls.fromArray(v)) }
       Colls.fromArray(kvs)
     }
   }
+
 }

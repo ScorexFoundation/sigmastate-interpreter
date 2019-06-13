@@ -1,10 +1,12 @@
 package special.sigma
 
+import org.ergoplatform.ErgoBox
 import scalan._
 import special.collection.{Coll, CollOverArrayBuilder}
 import scalan.RType
-import sigmastate.AvlTreeData
-import sigmastate.eval.{CAvlTree, CostingDataContext, CostingSigmaDslBuilder}
+import sigmastate.{AvlTreeData, TrivialProp}
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
 
 trait ContractsTestkit {
   val R0 = 0.toByte;
@@ -54,30 +56,27 @@ trait ContractsTestkit {
   }
 
   val AliceId = Array[Byte](1) // 0x0001
-  def newAliceBox(id: Byte, value: Long, registers: Map[Int, AnyValue] = Map()): Box = new TestBox(
-    Colls.fromArray(Array[Byte](0, id)), value,
-    Colls.fromArray(AliceId), noBytes, noBytes,
-    regs(registers.map { case (k, v) => (k.toByte, v) })
-  )
+  def newAliceBox(id: Byte, value: Long): Box = {
+    val ergoBox = ErgoBox(value, TrivialProp.TrueProp.toSigmaProp, 0, Seq(), Map())
+    new CostingBox(false, ergoBox)
+  }
+
 
   def testContext(inputs: Array[Box], outputs: Array[Box], height: Int, self: Box,
                   tree: AvlTree, minerPk: Array[Byte], vars: Array[AnyValue]) =
     new CostingDataContext(
-      noInputs, noHeaders, dummyPreHeader,
-      inputs, outputs, height, self, tree, minerPk, vars, false)
+      noInputs.toColl, noHeaders, dummyPreHeader,
+      inputs.toColl, outputs.toColl, height, self, tree, minerPk.toColl, vars.toColl, false)
 
   def newContext(height: Int, self: Box, vars: AnyValue*): CostingDataContext = {
     testContext(noInputs, noOutputs, height, self, emptyAvlTree, dummyPubkey, vars.toArray)
   }
 
   implicit class TestContextOps(ctx: CostingDataContext) {
-    def withInputs(inputs: Box*) =
-      testContext(inputs.toArray, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
-    def withOutputs(outputs: Box*) =
-      testContext(ctx.inputs, outputs.toArray, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey, ctx.vars)
+    def withInputs(inputs: Box*) = ctx.copy(inputs = inputs.toArray.toColl)
+    def withOutputs(outputs: Box*) = ctx.copy(outputs = outputs.toArray.toColl)
     def withVariables(vars: Map[Int, AnyValue]) =
-      testContext(ctx.inputs, ctx.outputs, ctx.height, ctx.selfBox, emptyAvlTree, dummyPubkey,
-        contextVars(vars.map { case (k, v) => (k.toByte, v) }).toArray)
+      ctx.copy(vars = contextVars(vars.map { case (k, v) => (k.toByte, v) }))
   }
 
   case class NoEnvContract(condition: Context => Boolean) extends SigmaContract {

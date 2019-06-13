@@ -7,16 +7,15 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, Value, ByteArrayConstant, SigmaPropValue, IntConstant}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{ExtractCreationInfo, ByIndex, SelectField}
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -34,7 +33,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
   property("boxCreationHeight") {
     val verifier = new ErgoLikeTestInterpreter
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerProp = prover.dlogSecrets.head.publicImage
     val pk = minerProp.pkBytes
 
@@ -45,7 +44,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputBox = ErgoBox(1, prop, nextHeight, Seq(), Map())
     val inputBoxes = IndexedSeq(inputBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
-    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight, Seq(), Map())
+    val minerBox = new ErgoBoxCandidate(1, SigmaPropConstant(minerProp), nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
 
@@ -63,14 +62,14 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   property("collect coins from the founders' box") {
     def remaining(h: Int) = emission.remainingFoundationRewardAtHeight(h)
 
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val prop = ErgoScriptPredef.foundationScript(settings)
 
     def R4Prop(ableToProve: Boolean): CollectionConstant[SByte.type] = if (ableToProve) {
       val pks = (DLogProverInput.random() +: prover.dlogSecrets.take(2)).map(s => SigmaPropConstant(s.publicImage))
       ByteArrayConstant(ValueSerializer.serialize(AtLeast(IntConstant(2), pks)))
     } else {
-      val pk = (new ErgoLikeTestProvingInterpreter).dlogSecrets.head.publicImage
+      val pk = (new ContextEnrichingTestProvingInterpreter).dlogSecrets.head.publicImage
       ByteArrayConstant(ValueSerializer.serialize(SigmaPropConstant(pk)))
     }
 
@@ -99,7 +98,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     def checkSpending(remainingAmount: Long,
                       height: Int,
-                      newProp: SigmaPropValue,
+                      newProp: ErgoTree,
                       inputR4Val: CollectionConstant[SByte.type]): Try[Unit] = Try {
       val outputR4Val: CollectionConstant[SByte.type] = ByteArrayConstant(Random.randomBytes())
       val inputBoxes = IndexedSeq(ErgoBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
@@ -120,7 +119,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("collect coins from rewardOutputScript") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
     val verifier = new ErgoLikeTestInterpreter
@@ -154,7 +153,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("create transaction collecting the emission box") {
-    val prover = new ErgoLikeTestProvingInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
     val minerPk = prover.dlogSecrets.head.publicImage
     val prop = ErgoScriptPredef.emissionBoxProp(settings)
     val emissionBox = ErgoBox(emission.coinsTotal, prop, 0, Seq(), Map())
@@ -189,7 +188,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       createRewardTx(currentRate, height, minerPk) shouldBe 'failure
     }
 
-    def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: SigmaPropValue): Try[ErgoLikeTransaction] = {
+    def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: ErgoTree): Try[ErgoLikeTransaction] = {
       checkRewardTx(minerPk,
         minerProp,
         emissionBox,
@@ -200,8 +199,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ErgoLikeTestProvingInterpreter
-    val verifier = new ErgoLikeTestInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 2)
+    val verifier = new ErgoLikeTestInterpreter(CostTable.ScriptLimit * 2)
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -235,7 +234,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val inputs0 = IndexedSeq(
         ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
       )
-      check(inputs0).get shouldBe(())
+      check(inputs0).get shouldBe (())
 
       // transaction with the only input with insufficient token should fail
       val inputs1 = IndexedSeq(
@@ -257,7 +256,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         ErgoBox(20, prop, 0, Seq((wrongId, 1)), Map()),
         ErgoBox(20, prop, 0, Seq((tokenId, tokenAmount / 2 + 1), (wrongId2, 1)), Map())
       )
-      check(inputs3) shouldBe 'success
+      check(inputs3).fold(t => throw t, identity)
 
       // A transaction which contains input with no tokens
       val inputs4 = IndexedSeq(
@@ -279,18 +278,18 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   def checkRewardTx(minerPk: ProveDlog,
-                    minerProp: SigmaPropValue,
+                    minerProp: ErgoTree,
                     emissionBox: ErgoBox,
                     emissionAmount: Long,
-                    nextHeight: Int)(prover: ErgoLikeTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
+                    nextHeight: Int)(prover: ContextEnrichingTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
     val verifier = new ErgoLikeTestInterpreter
     val prop = emissionBox.ergoTree
     val inputBoxes = IndexedSeq(emissionBox)
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
     val pkBytes = minerPk.pkBytes
 
-    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight, Seq(), Map())
-    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight, Seq(), Map())
+    val newEmissionBox = new ErgoBoxCandidate(emissionBox.value - emissionAmount, prop, nextHeight)
+    val minerBox = new ErgoBoxCandidate(emissionAmount, minerProp, nextHeight)
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
 

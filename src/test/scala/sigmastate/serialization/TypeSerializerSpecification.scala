@@ -3,8 +3,6 @@ package sigmastate.serialization
 import org.scalacheck.Arbitrary._
 import org.scalatest.Assertion
 import sigmastate._
-import sigmastate.lang.exceptions.TypeDeserializeCallDepthExceeded
-import scorex.util.Extensions._
 
 class TypeSerializerSpecification extends SerializationSpecification {
 
@@ -60,7 +58,6 @@ class TypeSerializerSpecification extends SerializationSpecification {
     forAll { t: SPredefType =>
       whenever(t.isInstanceOf[SEmbeddable]) {
         val e = t.asInstanceOf[SEmbeddable]
-        val tCode = e.typeCode
         val tupCode = e.embedIn(PairSymmetricTypeCode)
         roundtrip(SCollection(STuple(e, e)), Array[Byte](CollectionTypeCode, tupCode))
         roundtrip(SCollection(SOption(e)), Array[Byte](CollectionTypeCode, e.embedIn(OptionTypeCode)))
@@ -92,12 +89,6 @@ class TypeSerializerSpecification extends SerializationSpecification {
 
     roundtrip(STuple(SLong, SLong, SByte, SBoolean, SInt),
       Array[Byte](TupleTypeCode, 5, SLong.typeCode, SLong.typeCode, SByte.typeCode, SBoolean.typeCode, SInt.typeCode))
-  }
-
-  property("tuple of tuples crazy deep") {
-    val bytes = List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => Array[Byte](TupleTypeCode, 2))
-      .toArray.flatten
-    an[TypeDeserializeCallDepthExceeded] should be thrownBy SigmaSerializer.startReader(bytes, 0).getType()
   }
 
   property("STypeIdent serialization roundtrip") {

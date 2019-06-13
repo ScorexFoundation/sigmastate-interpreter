@@ -9,6 +9,8 @@ import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.Values.{SigmaBoolean, SigmaPropConstant}
 import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple, SigmaProtocol}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.Values.{ErgoTree, SigmaBoolean, SigmaPropConstant}
+import sigmastate.basics.{FirstDiffieHellmanTupleProverMessage, FirstProverMessage, ProveDHTuple}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.existentials
@@ -129,8 +131,8 @@ case class UnprovenDiffieHellmanTuple(override val proposition: ProveDHTuple,
   *  and should not contain challenges, responses, or the real/simulated flag for any node.
   *
   */
-// todo: write a test that restores the tree from this string and check that the result is equal,
-// todo: in order to make sure this conversion is unambiguous
+// TODO coverage: write a test that restores the tree from this string and check that the result is equal,
+// in order to make sure this conversion is unambiguous
 object FiatShamirTree {
   val internalNodePrefix = 0: Byte
   val leafPrefix = 1: Byte
@@ -139,7 +141,8 @@ object FiatShamirTree {
 
     def traverseNode(node: ProofTree): Array[Byte] = node match {
       case l: ProofTreeLeaf =>
-        val propBytes = DefaultSerializer.serializeWithSegregation(SigmaPropConstant(l.proposition))
+        val propTree = ErgoTree.withSegregation(SigmaPropConstant(l.proposition))
+        val propBytes = DefaultSerializer.serializeErgoTree(propTree)
         val commitmentBytes = l.commitmentOpt.get.bytes
         leafPrefix +:
           ((Shorts.toByteArray(propBytes.length.toShort) ++ propBytes) ++

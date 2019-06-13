@@ -10,7 +10,7 @@ import sigmastate._
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms.{Ident, ZKProofBlock}
 import sigmastate.lang.exceptions.SpecializerException
-import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ValueGenerators}
+import sigmastate.serialization.generators.{ConcreteCollectionGenerators, TransformerGenerators, ObjectGenerators}
 import sigmastate.utxo._
 import sigmastate.lang.Terms._
 
@@ -18,7 +18,7 @@ class SigmaSpecializerTest extends PropSpec
   with PropertyChecks
   with Matchers
   with LangTests
-  with ValueGenerators
+  with ObjectGenerators
   with ConcreteCollectionGenerators
   with TransformerGenerators {
 
@@ -118,7 +118,7 @@ class SigmaSpecializerTest extends PropSpec
     spec("OUTPUTS.slice(0, 10)") shouldBe
       Slice(Outputs, IntConstant(0), IntConstant(10))
     spec("OUTPUTS.filter({ (out: Box) => out.value >= 10 })") shouldBe
-      Filter(Outputs, 21, GE(ExtractAmount(TaggedBox(21)), LongConstant(10)))
+      Filter(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
   }
 
   property("AND flattening predefined") {
@@ -150,6 +150,12 @@ class SigmaSpecializerTest extends PropSpec
     spec("true || true || true") shouldBe BinOr(BinOr(TrueLeaf, TrueLeaf), TrueLeaf)
     spec("true || (true || true) || true") shouldBe
       BinOr(BinOr(TrueLeaf, BinOr(TrueLeaf, TrueLeaf)), TrueLeaf)
+  }
+
+  property("XOR flattening predefined") {
+    spec("true ^ true ^ true") shouldBe BinXor(BinXor(TrueLeaf, TrueLeaf), TrueLeaf)
+    spec("true ^ (true ^ true) ^ true") shouldBe
+      BinXor(BinXor(TrueLeaf, BinXor(TrueLeaf, TrueLeaf)), TrueLeaf)
   }
 
   property("OR flattening, CAND/COR untouched") {

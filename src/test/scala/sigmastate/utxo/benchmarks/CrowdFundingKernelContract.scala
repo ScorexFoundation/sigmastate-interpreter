@@ -8,7 +8,8 @@ import sigmastate.basics.DLogProtocol.{DLogInteractiveProver, DLogProverInput, F
 import sigmastate.basics.VerifierMessage.Challenge
 import scorex.crypto.hash.Blake2b256
 import sigmastate._
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
+import sigmastate.lang.Terms._
+import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.utils.Helpers
 
@@ -17,8 +18,8 @@ import scala.util.Try
 class CrowdFundingKernelContract(
                                   timeout: Int,
                                   minToRaise: Long,
-                                  override val backerProver: ErgoLikeTestProvingInterpreter,
-                                  override val projectProver: ErgoLikeTestProvingInterpreter
+                                  override val backerProver: ContextEnrichingTestProvingInterpreter,
+                                  override val projectProver: ContextEnrichingTestProvingInterpreter
 ) extends CrowdFundingContract(timeout, minToRaise, backerProver, projectProver) {
 
   def isProven(pubKey: ProveDlog, message: Array[Byte]): projectProver.ProofT = {
@@ -57,7 +58,8 @@ class CrowdFundingKernelContract(
     val c2 = Array(
       ctx.currentHeight < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
-        out.value >= minToRaise && util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.bytes)
+        out.value >= minToRaise &&
+          util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.treeWithSegregation.bytes)
       })
     ).forall(identity)
     var proof: projectProver.ProofT = null

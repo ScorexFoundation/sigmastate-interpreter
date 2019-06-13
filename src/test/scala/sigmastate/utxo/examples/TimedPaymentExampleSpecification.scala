@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant}
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
@@ -19,10 +19,10 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
   implicit val ergoAddressEncoder: ErgoAddressEncoder = new ErgoAddressEncoder(TestnetNetworkPrefix)
   property("Evaluation - Timed payment Tx Example") {
 
-    val alice = new ErgoLikeTestProvingInterpreter // customer at coffee shop
+    val alice = new ContextEnrichingTestProvingInterpreter // customer at coffee shop
     val alicePubKey = alice.dlogSecrets.head.publicImage
 
-    val bob = new ErgoLikeTestProvingInterpreter // owner of coffee shop (or payment address of coffee shop)
+    val bob = new ContextEnrichingTestProvingInterpreter // owner of coffee shop (or payment address of coffee shop)
     val bobPubKey = bob.dlogSecrets.head.publicImage
 
     val env = Map(
@@ -30,7 +30,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
       "alice" -> alicePubKey
     )
 
-    val script = compileWithCosting(env,
+    val script = compile(env,
       """{ alice && HEIGHT <= getVar[Int](1).get }""".stripMargin
     ).asSigmaProp
 
@@ -56,7 +56,7 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     val timedWithdrawOutput = ErgoBox(withdrawAmount, bobPubKey, withdrawHeight)
 
     //normally this transaction would be invalid, but we're not checking it in this test
-    val withdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(timedWithdrawOutput))
+    val withdrawTx = createTransaction(IndexedSeq(timedWithdrawOutput))
 
     val withdrawContext = ErgoLikeContext(
       currentHeight = 109,

@@ -3,9 +3,8 @@ package sigmastate.eval
 import java.math.BigInteger
 
 import org.bouncycastle.crypto.ec.CustomNamedCurves
-import org.scalatest.{Matchers, FunSuite}
-import special.sigma.Extensions._
-import special.sigma.{MockSigma, Box, ContractsTestkit, SigmaProp, SigmaContract, Context, TestBox, TestSigmaDslBuilder, SigmaDslBuilder}
+import org.scalatest.{FunSuite, Matchers}
+import special.sigma.{Box, Context, ContractsTestkit, MockSigma, SigmaContract, SigmaDslBuilder, SigmaProp, TestSigmaDslBuilder}
 
 import scala.language.implicitConversions
 
@@ -13,11 +12,14 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
   override val SigmaDsl: SigmaDslBuilder = CostingSigmaDslBuilder
 
   implicit def boolToSigma(b: Boolean): SigmaProp = MockSigma(b)
-  ignore("atLeast") {
+
+  test("atLeast") {
     val props = Colls.fromArray(Array[SigmaProp](false, true, true, false))
+
     // border cases
     SigmaDsl.atLeast(0, props).isValid shouldBe true
     SigmaDsl.atLeast(5, props).isValid shouldBe false
+
     // normal cases
     SigmaDsl.atLeast(1, props).isValid shouldBe true
     SigmaDsl.atLeast(2, props).isValid shouldBe true
@@ -57,17 +59,11 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     val c2 = collection[Byte](3, 4)
     c1.append(c2).toArray shouldBe Array[Byte](1, 2, 3, 4)
   }
-  test("examples from wpaper")  {
-    val selfId = collection[Byte](0, 1)
-    val self = new TestBox(selfId, 10, noBytes, noBytes, noBytes, noRegisters)
-    val ctx = testContext(noInputs, noOutputs, height = 200, self, emptyAvlTree, dummyPubkey, Array())
-  }
 
   test("box.creationInfo._1 is Int") {
-    val box = newAliceBox(1, 100, Map(3 -> toAnyValue((20 -> SigmaDsl.Colls.fromArray(Array.emptyByteArray)))))
+    val box = newAliceBox(1, 100)
     box.creationInfo._1 shouldBe a [Integer]
   }
-
 
   case class Contract1(base64_pk1: String) extends SigmaContract {
     override def builder: SigmaDslBuilder = new TestSigmaDslBuilder

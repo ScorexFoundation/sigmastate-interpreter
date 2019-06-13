@@ -25,7 +25,7 @@ trait CostModel {
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
-  def PubKeySize: Long = 32
+  def PubKeySize: Long
 }
 
 /**
@@ -90,7 +90,7 @@ trait BigInt {
     */
   def plusModQ(other: BigInt): BigInt
 
-  /** Subracts this number with `other` by module Q.
+  /** Subtracts this number with `other` by module Q.
     * @since 2.0
     */
   def minusModQ(other: BigInt): BigInt
@@ -198,32 +198,32 @@ trait GroupElement {
 
   def isInfinity: Boolean
 
-  /** Multiplies this <code>GroupElement</code> by the given number.
-    * @param k The multiplicator.
-    * @return <code>k * this</code>.
+  /** Exponentiate this <code>GroupElement</code> to the given number.
+    * @param k The power.
+    * @return <code>this to the power of k</code>.
     * @since 2.0
     */
-  def multiply(k: BigInt): GroupElement
+  def exp(k: BigInt): GroupElement
 
   /** Group operation. */
-  def add(that: GroupElement): GroupElement
+  def multiply(that: GroupElement): GroupElement
 
   /** Inverse element in the group. */
   def negate: GroupElement
 
   /**
-    * Get an encoding of the point value, optionally in compressed format.
+    * Get an encoding of the point value.
     *
-    * @param compressed whether to generate a compressed point encoding.
     * @return the point encoding
     */
-  def getEncoded(compressed: Boolean): Coll[Byte]
+  def getEncoded: Coll[Byte]
 }
 
 /** Proposition which can be proven and verified by sigma protocol. */
 @scalan.Liftable
 trait SigmaProp {
   def isValid: Boolean
+  /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
   def propBytes: Coll[Byte]
 
   /** Logical AND between this SigmaProp and other SigmaProp.
@@ -247,7 +247,8 @@ trait SigmaProp {
 
 @scalan.Liftable
 trait AnyValue {
-  def dataSize: Long
+  def value: Any
+  def tVal: RType[Any]
 }
 
 @scalan.Liftable
@@ -267,8 +268,7 @@ trait Box {
 
   /** Serialized bytes of this box's content, excluding transactionId and index of output. */
   def bytesWithoutRef: Coll[Byte]
-  def cost: Int
-  def dataSize: Long
+
   def registers: Coll[AnyValue]
 
   /** Extracts register by id and type.
@@ -324,7 +324,7 @@ trait Box {
   def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
 
   @Internal
-  override def toString = s"Box(id=$id; value=$value; cost=$cost; size=$dataSize; regs=$registers)"
+  override def toString = s"Box(id=$id; value=$value; regs=$registers)"
 }
 
 /** Type of data which efficiently authenticates potentially huge dataset having key-value dictionary interface.
@@ -336,8 +336,8 @@ trait Box {
   */
 @scalan.Liftable
 trait AvlTree {
-  /** Returns digest of the state represent by this tree.
-    * Authenticated tree digest: root hash along with tree height
+  /** Returns digest of the state represented by this tree.
+    * Authenticated tree digest = root hash bytes ++ tree height
     * @since 2.0
     */
   def digest: Coll[Byte]
@@ -354,9 +354,6 @@ trait AvlTree {
   
   /** If non-empty, all the values under the tree are of the same length. */
   def valueLengthOpt: Option[Int]
-
-  def cost: Int
-  def dataSize: Long
 
   /** Checks if Insert operation is allowed for this tree instance. */
   def isInsertAllowed: Boolean
@@ -382,29 +379,54 @@ trait AvlTree {
     */
   def updateOperations(newOperations: Byte): AvlTree
 
+  /** Checks if an entry with key `key` exists in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return `true` if a leaf with the key `key` exists
+    * Return `false` if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
+    * @param proof
+    */
   def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
 
-  /** @param key    a key of an element of this authenticated dictionary.
+  /** Perform a lookup of key `key` in this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(bytes) of leaf with key `key` if it exists
+    * Return None if leaf with provided key does not exist.
+    * @param key    a key of an element of this authenticated dictionary.
     * @param proof
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
-  /** @param operations   collection of key-value pairs to insert in this authenticated dictionary.
+  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
+    * @param keys    keys of elements of this authenticated dictionary.
+    * @param proof
+    */
+  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
+
+  /** Perform insertions of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
     * @param proof
     */
   def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
-  /** @param operations   collection of key-value pairs to update in this authenticated dictionary.
+  /** Perform updates of key-value entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
     * @param proof
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
-  /** @param operations   serialized collection of Operation instances to perform with this authenticated dictionary.
-    * @param proof
-    */
-  def modify(operationsBytes: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-
-  /** @param operations   collection of keys to remove from this authenticated dictionary.
+  /** Perform removal of entries into this tree using proof `proof`.
+    * Throws exception if proof is incorrect
+    * Return Some(newTree) if successful
+    * Return None if operations were not performed.
+    * @param operations   collection of keys to remove from this authenticated dictionary.
     * @param proof
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
@@ -442,6 +464,9 @@ trait PreHeader { // Testnet2
   */
 @scalan.Liftable
 trait Header {
+  /** Bytes representation of ModifierId of this Header */
+  def id: Coll[Byte]
+
   /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
 
@@ -513,7 +538,7 @@ trait Context {
   /** Authenticated dynamic dictionary digest representing Utxo state before current state. */
   def LastBlockUtxoRootHash: AvlTree
 
-  /**
+  /** A fixed number of last block headers in descending order (first header is the newest one)
     * @since 2.0
     */
   def headers: Coll[Header]
@@ -525,11 +550,7 @@ trait Context {
 
   def minerPubKey: Coll[Byte]
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
-
-  def executeVar[T](id: Byte)(implicit cT: RType[T]): T
-
-  private[sigma] def cost: Int
-  private[sigma] def dataSize: Long
+  def vars: Coll[AnyValue]
 }
 
 @scalan.Liftable
@@ -551,6 +572,8 @@ trait SigmaContract {
   def anyOf(conditions: Coll[Boolean]): Boolean = this.builder.anyOf(conditions)
   def anyZK(conditions: Coll[SigmaProp]): SigmaProp = this.builder.anyZK(conditions)
 
+  def xorOf(conditions: Coll[Boolean]): Boolean = this.builder.xorOf(conditions)
+
   def PubKey(base64String: String): SigmaProp = this.builder.PubKey(base64String)
 
   def sigmaProp(b: Boolean): SigmaProp = this.builder.sigmaProp(b)
@@ -560,19 +583,21 @@ trait SigmaContract {
 
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = this.builder.byteArrayToBigInt(bytes)
   def longToByteArray(l: Long): Coll[Byte] = this.builder.longToByteArray(l)
+  def byteArrayToLong(bytes: Coll[Byte]): Long = this.builder.byteArrayToLong(bytes)
 
   def proveDlog(g: GroupElement): SigmaProp = this.builder.proveDlog(g)
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp =
     this.builder.proveDHTuple(g, h, u, v)
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean =
-    this.builder.isMember(tree, key, proof)
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]] =
-    this.builder.treeLookup(tree, key, proof)
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree] =
-    this.builder.treeModifications(tree, operations, proof)
-
   def groupGenerator: GroupElement = this.builder.groupGenerator
+
+  def decodePoint(encoded: Coll[Byte]): GroupElement = this.builder.decodePoint(encoded)
+
+  @Reified("T")
+  def substConstants[T](scriptBytes: Coll[Byte],
+      positions: Coll[Int],
+      newValues: Coll[T])
+      (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 
   @clause def canOpen(ctx: Context): Boolean
 
@@ -586,13 +611,6 @@ trait SigmaDslBuilder {
   def Costing: CostedBuilder
   def CostModel: CostModel
 
-  def costBoxes(bs: Coll[Box]): CostedColl[Box]
-
-  /** Cost of collection with static size elements. */
-  def costColWithConstSizedItem[T](xs: Coll[T], len: Int, itemSize: Long): CostedColl[T]
-
-  def costOption[T](opt: Option[T], opCost: Int)(implicit cT: RType[T]): CostedOption[T]
-
   def verifyZK(cond: => SigmaProp): Boolean
 
   def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp
@@ -603,6 +621,8 @@ trait SigmaDslBuilder {
   def anyOf(conditions: Coll[Boolean]): Boolean
   def anyZK(conditions: Coll[SigmaProp]): SigmaProp
 
+  def xorOf(conditions: Coll[Boolean]): Boolean
+
   def PubKey(base64String: String): SigmaProp
 
   def sigmaProp(b: Boolean): SigmaProp
@@ -612,16 +632,16 @@ trait SigmaDslBuilder {
 
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt
   def longToByteArray(l: Long): Coll[Byte]
+  def byteArrayToLong(bytes: Coll[Byte]): Long
 
   def proveDlog(g: GroupElement): SigmaProp
   def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp
 
-  def isMember(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Boolean
-  def treeLookup(tree: AvlTree, key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
-  def treeModifications(tree: AvlTree, operations: Coll[Byte], proof: Coll[Byte]): Option[AvlTree]
-  def treeInserts(tree: AvlTree, operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
-  def treeRemovals(tree: AvlTree, operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
-
+  /**
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
+    * @return the generator of this Dlog group
+    */
   def groupGenerator: GroupElement
 
   @Reified("T")
@@ -634,5 +654,9 @@ trait SigmaDslBuilder {
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
   def toBigInteger(n: BigInt): BigInteger
 
+  /** Construct a new authenticated dictionary with given parameters and tree root digest. */
+  def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
+
+  def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 

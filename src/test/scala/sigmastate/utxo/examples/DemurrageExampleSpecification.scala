@@ -1,19 +1,15 @@
 package sigmastate.utxo.examples
 
-import sigmastate.Values.{LongConstant, TaggedBox, SigmaPropConstant}
-import sigmastate._
 import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 
 class DemurrageExampleSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext
-  private val reg1 = ErgoBox.nonMandatoryRegisters.head
 
   /**
     * Demurrage currency example.
@@ -42,9 +38,9 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val verifier = new ErgoLikeTestInterpreter()
 
     //backer's prover with his private key
-    val userProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
+    val userProver = new ContextEnrichingTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
-    val minerProver = new ErgoLikeTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
+    val minerProver = new ContextEnrichingTestProvingInterpreter().withContextExtender(outIdxVarId, ShortConstant(0))
 
     val regScript = userProver.dlogSecrets.head.publicImage
 
@@ -55,8 +51,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       "regScript" -> regScript
     )
 
-    //todo: add condition on
-    val prop = compileWithCosting(env,
+    val prop = compile(env,
       """{
         | val outIdx = getVar[Short](127).get
         | val out = OUTPUTS(outIdx)
@@ -77,26 +72,6 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
         | }
       """.stripMargin).asSigmaProp
 
-    /*
-    todo: fix / uncomment
-    val reg1 = ErgoBox.nonMandatoryRegisters.head
-    val propTree = BinOr(
-      SigmaPropConstant(regScript).isProven,
-      AND(
-        GE(Height, Plus(ExtractRegisterAs[STuple](Self, reg1).get.asTuple. , LongConstant(demurragePeriod))),
-        Exists(Outputs, 21,
-          BinAnd(
-            GE(ExtractAmount(TaggedBox(21)), Minus(ExtractAmount(Self), LongConstant(demurrageCost))),
-            EQ(ExtractScriptBytes(TaggedBox(21)), ExtractScriptBytes(Self)),
-            LE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Height),
-            GE(ExtractRegisterAs[SLong.type](TaggedBox(21), reg1).get, Minus(Height, 50L))
-          )
-        )
-      )
-    )
-    prop shouldBe propTree
-    */
-
     val inHeight = 0
     val outValue = 100
     val approxSize = createBox(outValue, prop, inHeight).bytes.length + 2
@@ -107,7 +82,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //case 1: demurrage time hasn't come yet
     val currentHeight1 = inHeight + demurragePeriod - 1
 
-    val tx1 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight1)))
+    val tx1 = createTransaction(createBox(outValue, prop, currentHeight1))
     val selfBox = createBox(inValue, prop, inHeight)
     val ctx1 = ErgoLikeContext(
       currentHeight1,
@@ -128,7 +103,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //case 2: demurrage time has come
     val currentHeight2 = inHeight + demurragePeriod
-    val tx2 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(createBox(outValue, prop, currentHeight2)))
+    val tx2 = createTransaction(createBox(outValue, prop, currentHeight2))
     val ctx2 = ErgoLikeContext(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -144,7 +119,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //miner can spend "demurrageCoeff * demurragePeriod" tokens
     val b = createBox(outValue, prop, currentHeight2)
-    val tx3 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b))
+    val tx3 = createTransaction(b)
     val ctx3 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -161,7 +136,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     //miner can't spend more
     val b2 = createBox(outValue - 1, prop, currentHeight2)
-    val tx4 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b2))
+    val tx4 = createTransaction(b2)
     val ctx4 = ErgoLikeContext(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -175,8 +150,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx4, NoProof, fakeMessage).get._1 shouldBe false
 
     //miner can spend less
-    val tx5 = ErgoLikeTransaction(IndexedSeq(),
-      IndexedSeq(createBox(outValue + 1, prop, currentHeight2)))
+    val tx5 = createTransaction(createBox(outValue + 1, prop, currentHeight2))
 
     val ctx5 = ErgoLikeContext(
       currentHeight = currentHeight2,
@@ -193,7 +167,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can destroy a box if it contains less than the storage fee
     val iv = inValue - outValue
     val b3 = createBox(iv, ErgoScriptPredef.FalseProp, currentHeight2)
-    val tx6 = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(b3))
+    val tx6 = createTransaction(b3)
     val selfBox6 = createBox(iv, prop, inHeight)
     val ctx6 = ErgoLikeContext(
       currentHeight = currentHeight2,

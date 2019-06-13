@@ -12,7 +12,6 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef.PredefinedFuncRegistry
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{BinderException, InvalidArguments}
-import sigma.util.Extensions._
 
 object SrcCtxCallbackRewriter extends CallbackRewriter {
   override def rewriting[T](oldTerm: T, newTerm: T): T = (oldTerm, newTerm) match {
@@ -49,18 +48,15 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         case "LastBlockUtxoRootHash" => Some(LastBlockUtxoRootHash)
         case "EmptyByteArray" => Some(ByteArrayConstant(Array.emptyByteArray))
         case "SELF" => Some(Self)
+        case "CONTEXT" => Some(Context)
+        case "Global" => Some(Global)
         case "None" => Some(mkNoneValue(NoType))
         case _ => None
       }
     }
 
     // Rule: Coll[Int](...) -->
-    case e @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
-      args.foreach{ e =>
-        if (e.tpe != tpe)
-          error(s"Invalid construction of collection $e: expected type $tpe, actual type ${e.tpe}",
-            e.sourceContext)
-      }
+    case _ @ Apply(ApplyTypes(Ident("Coll", _), Seq(tpe)), args) =>
       Some(mkConcreteCollection(args, tpe))
 
     // Rule: Coll(...) -->
@@ -116,7 +112,7 @@ class SigmaBinder(env: ScriptEnv, builder: SigmaBuilder,
         None
 
     case a @ Apply(PKFunc.symNoType, args) =>
-      Some(PKFunc.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
+      Some(PKFunc.irInfo.irBuilder(PKFunc.sym, args).withPropagatedSrcCtx(a.sourceContext))
 
   })))(e)
 

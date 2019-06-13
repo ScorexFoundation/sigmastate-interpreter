@@ -2,6 +2,8 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import org.ergoplatform.ErgoConstants
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
@@ -11,8 +13,8 @@ object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = 1024 * 1024 * 1
-  val MaxTreeDepth: Int = 110
+  val MaxInputSize: Int = ErgoConstants.MaxInputSize.get
+  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
@@ -22,17 +24,21 @@ object SigmaSerializer {
   def startReader(bytes: Array[Byte], pos: Int = 0): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     buf.position(pos)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf), new ConstantStore(), resolvePlaceholdersToConstants = false)
-        .mark()
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = MaxTreeDepth).mark()
     r
   }
 
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean)(implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    val r = new SigmaByteReader(new VLQByteBufferReader(buf), constantStore, resolvePlaceholdersToConstants)
-      .mark()
+    val r = new SigmaByteReader(new VLQByteBufferReader(buf),
+      constantStore,
+      resolvePlaceholdersToConstants,
+      maxTreeDepth = MaxTreeDepth).mark()
     r
   }
 
@@ -62,8 +68,12 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
     serialize(obj, new SigmaByteWriter(w, None))
   }
 
-  def parseWithGenericReader(r: Reader): TFamily = {
-    parse(new SigmaByteReader(r,  new ConstantStore(), resolvePlaceholdersToConstants = false))
+  def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
+    parse(
+      new SigmaByteReader(r,
+        new ConstantStore(),
+        resolvePlaceholdersToConstants = false,
+        maxTreeDepth = SigmaSerializer.MaxTreeDepth))
   }
 
   def error(msg: String) = throw new SerializerException(msg, None)

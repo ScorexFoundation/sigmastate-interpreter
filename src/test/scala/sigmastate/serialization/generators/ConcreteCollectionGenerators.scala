@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate._
 import sigmastate.Values.{ConcreteCollection, EvaluatedValue, Value}
 
-trait ConcreteCollectionGenerators { self: ValueGenerators =>
+trait ConcreteCollectionGenerators { self: ObjectGenerators =>
   val minCollLength = 1
   val maxCollLength = 10
 
@@ -22,5 +22,5 @@ trait ConcreteCollectionGenerators { self: ValueGenerators =>
 
   implicit val arbCCOfIntConstant: Arbitrary[ConcreteCollection[SInt.type]] = Arbitrary(intConstCollectionGen)
   implicit val arbCCOfBoolConstant: Arbitrary[ConcreteCollection[SBoolean.type]] = Arbitrary(concreteCollectionGen[SBoolean.type](booleanConstGen))
-  implicit val arbCCOfSigmaPropConstant: Arbitrary[ConcreteCollection[SSigmaProp.type]] = Arbitrary(concreteCollectionGen[SSigmaProp.type](sigmaPropGen))
+  implicit val arbCCOfSigmaPropConstant: Arbitrary[ConcreteCollection[SSigmaProp.type]] = Arbitrary(concreteCollectionGen[SSigmaProp.type](sigmaPropValueGen))
 }

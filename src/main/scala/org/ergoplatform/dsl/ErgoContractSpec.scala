@@ -8,7 +8,7 @@ import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, BoxId}
 
 class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {
 
-  case class ErgoOutBox(tx: Transaction, boxIndex: Int, value: Long, propSpec: PropositionSpec)
+  case class ErgoOutBox(tx: TransactionCandidate, boxIndex: Int, value: Long, propSpec: PropositionSpec)
     extends OutBox {
     override def id: BoxId = ???
 
@@ -22,7 +22,7 @@ class ErgoContractSpec(implicit val IR: IRContext) extends ContractSpec {
   }
 
   trait TransactionContext {
-    def block: Block
+    def block: BlockCandidate
     def attachProof(proofs: (InputBox, CostedProverResult)*): Unit
     def submit(): Unit
   }

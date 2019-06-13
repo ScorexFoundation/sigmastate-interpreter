@@ -1,24 +1,22 @@
-
 package sigmastate.utxo.examples
 
 import java.math.BigInteger
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
-import org.ergoplatform.ErgoBox.{R4, R5, R6}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.ErgoBox.{R4, R5}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.AvlTreeData
-import sigmastate.Values.{ByteConstant, GroupElementConstant, IntConstant, SigmaPropConstant}
+import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
-import sigmastate.utxo.ErgoLikeTestInterpreter
+import sigmastate.eval._
 
 class MixExampleSpecification extends SigmaTestingCommons {
-  private implicit lazy val IR = new TestingIRContext
+  private implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("Evaluation - Mix Example") {
     import CryptoConstants.dlogGroup
@@ -26,12 +24,12 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val g = dlogGroup.generator
 
     // Alice is first player, who initiates the mix
-    val alice = new ErgoLikeTestProvingInterpreter
-    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
 
-    val x:BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
+    val x: BigInteger = alice.dlogSecrets.head.w // x is Alice's private key
 
-    val g_x = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
+    val gX = alicePubKey.h // g_x is Alice's public key (g_x = g^x)
     // Alternative 1:
     //      val g_x = alicePubKey.value
     // Alternative 2:
@@ -43,27 +41,27 @@ class MixExampleSpecification extends SigmaTestingCommons {
     val fullMixEnv = Map(
       ScriptNameProp -> "fullMixEnv",
       "g" -> g,
-      "g_x" -> g_x
+      "gX" -> gX
     )
 
-    ProveDlog(g_x) shouldBe alicePubKey
+    ProveDlog(gX) shouldBe alicePubKey
 
     // y is Bob's secret key and h = g^y is kind of like his "public key"
     // The Diffie-Hellman solution is g_xy = g_y^x = g_x^y = g^xy.
-    val fullMixScript = compileWithCosting(fullMixEnv,
+    val fullMixScript = compile(fullMixEnv,
       """{
-        |  val e = SELF.R4[GroupElement].get
-        |  val f = SELF.R5[GroupElement].get
-        |  proveDlog(f) ||            // either f is g^y
-        |  proveDHTuple(g, e, g_x, f) // or f is u^y = g^xy
+        |  val c1 = SELF.R4[GroupElement].get
+        |  val c2 = SELF.R5[GroupElement].get
+        |  proveDlog(c2) ||            // either c2 is g^y
+        |  proveDHTuple(g, c1, gX, c2) // or c2 is u^y = g^xy
         |}""".stripMargin
     ).asSigmaProp
 
     val halfMixEnv = Map(
       ScriptNameProp -> "halfMixEnv",
       "g" -> g,
-      "g_x" -> g_x,
-      "fullMixScriptHash" -> Blake2b256(fullMixScript.bytes)
+      "gX" -> gX,
+      "fullMixScriptHash" -> Blake2b256(fullMixScript.treeWithSegregation.bytes)
     )
 
     // Note that below script allows Alice to spend the half-mix output anytime before Bob spends it.
@@ -73,20 +71,20 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // The proveDHTuple instruction takes parameters (g, h, u, v) where g, h are generators (discrete log bases)
     // with u = g^x and v = h^x. Note that y = log_g(h), where y is Bob's secret.
 
-    val halfMixScript = compileWithCosting(halfMixEnv,
+    val halfMixScript = compile(halfMixEnv,
       """{
-        |  val c = OUTPUTS(0).R4[GroupElement].get
-        |  val d = OUTPUTS(0).R5[GroupElement].get
+        |  val c1 = OUTPUTS(0).R4[GroupElement].get
+        |  val c2 = OUTPUTS(0).R5[GroupElement].get
         |
         |  OUTPUTS.size == 2 &&
         |  OUTPUTS(0).value == SELF.value &&
         |  OUTPUTS(1).value == SELF.value &&
         |  blake2b256(OUTPUTS(0).propositionBytes) == fullMixScriptHash &&
         |  blake2b256(OUTPUTS(1).propositionBytes) == fullMixScriptHash &&
-        |  OUTPUTS(1).R4[GroupElement].get == d &&
-        |  OUTPUTS(1).R5[GroupElement].get == c && {
-        |    proveDHTuple(g, g_x, c, d) ||
-        |    proveDHTuple(g, g_x, d, c)
+        |  OUTPUTS(1).R4[GroupElement].get == c2 &&
+        |  OUTPUTS(1).R5[GroupElement].get == c1 && {
+        |    proveDHTuple(g, gX, c1, c2) ||
+        |    proveDHTuple(g, gX, c2, c1)
         |  }
         |}""".stripMargin
     ).asSigmaProp
@@ -114,28 +112,28 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // If Alice wants to abort the mix, she can take Bob's role and spend her Half-Mix output
 
-    val bob = new ErgoLikeTestProvingInterpreter
-    val bobPubKey:ProveDlog = bob.dlogSecrets.head.publicImage
+    val bob = new ContextEnrichingTestProvingInterpreter
+    val bobPubKey: ProveDlog = bob.dlogSecrets.head.publicImage
 
-    val y:BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
+    val y: BigInteger = bob.dlogSecrets.head.w // y is Bob's private key
 
-    val g_y = GroupElementConstant(bobPubKey.h) // g^y
-    val g_y_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
+    val gY = GroupElementConstant(bobPubKey.h) // g^y
+    val gY_alt = GroupElementConstant(dlogGroup.exponentiate(g, y))
 
-    g_y shouldBe g_y_alt
+    gY shouldBe gY_alt
 
     // To Do: Extract below g_x from halfMixOutput
-    val g_xy = GroupElementConstant(dlogGroup.exponentiate(g_x, y))
-    val g_xy_alt = GroupElementConstant(dlogGroup.exponentiate(g_y, x))
+    val gXY = GroupElementConstant(dlogGroup.exponentiate(gX, y))
+    val gXY_alt = GroupElementConstant(dlogGroup.exponentiate(gY, x))
 
-    g_xy shouldBe g_xy_alt
+    gXY shouldBe gXY_alt
 
     val randomBit = scala.util.Random.nextBoolean
     // randomBit is interpreted as follows
     //     0 is false
     //     1 is true
 
-    val (c0, c1) = if (randomBit) (g_xy, g_y) else (g_y, g_xy)
+    val (c0, c1) = if (randomBit) (gXY, gY) else (gY, gXY)
 
     val fullMixCreationHeight = 80
 
@@ -156,7 +154,7 @@ class MixExampleSpecification extends SigmaTestingCommons {
     )
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val fullMixTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(fullMixOutput0, fullMixOutput1))
+    val fullMixTx = createTransaction(IndexedSeq(fullMixOutput0, fullMixOutput1))
 
     val fullMixContext = ErgoLikeContext(
       currentHeight = fullMixCreationHeight,
@@ -169,9 +167,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
 
     // bob (2nd player) is generating a proof and it is passing verification
     // To Do: Extract below g_x from halfMixOutput
-    val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, g_x, g_y, g_xy))
+    val dhtBob = DiffieHellmanTupleProverInput(y, ProveDHTuple(g, gX, gY, gXY))
 
-    val proofFullMix = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofFullMix = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtBob)
     ).prove(halfMixEnv, halfMixScript, fullMixContext, fakeMessage).get.proof
 
@@ -182,14 +180,14 @@ class MixExampleSpecification extends SigmaTestingCommons {
     //////////////////////////////////////////////
 
     // some 3rd person that will be paid
-    val carol = new ErgoLikeTestProvingInterpreter
-    val carolPubKey:ProveDlog = carol.dlogSecrets.head.publicImage
+    val carol = new ContextEnrichingTestProvingInterpreter
+    val carolPubKey: ProveDlog = carol.dlogSecrets.head.publicImage
 
     val spendHeight = 90
     val carolOutput = ErgoBox(mixAmount, carolPubKey, spendHeight)
 
     // normally this transaction would be invalid, but we're not checking it in this test
-    val spendingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(carolOutput))
+    val spendingTx = createTransaction(carolOutput)
 
     //////////////////////////////////////////////
     //// Alice spending her output
@@ -201,15 +199,15 @@ class MixExampleSpecification extends SigmaTestingCommons {
     fullMixOutput0_R4 shouldBe c0
     fullMixOutput0_R5 shouldBe c1
 
-    val r4_x = dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x) // R4^x
+    val r4X = SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R4.asInstanceOf[GroupElementConstant], x)) // R4^x
 
     // if R4^x == R5 then this fullMixOutput0 is Alice's output else its Bob's output.
-    val (aliceAnonBox, bobAnonBox) = if (r4_x == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
+    val (aliceAnonBox, bobAnonBox) = if (r4X == fullMixOutput0_R5.asInstanceOf[GroupElementConstant].value) {
       println("First output is Alice's")
       (fullMixOutput0, fullMixOutput1)
     } else {
       println("First output is Bob's")
-      dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
+      SigmaDsl.GroupElement(dlogGroup.exponentiate(fullMixOutput0_R5.asInstanceOf[GroupElementConstant], x)) shouldBe fullMixOutput0_R4.asInstanceOf[GroupElementConstant].value
       (fullMixOutput1, fullMixOutput0)
     }
 
@@ -223,9 +221,9 @@ class MixExampleSpecification extends SigmaTestingCommons {
     )
 
     // To Do: Extract below g_y, g_xy from fullMixOutputs registers
-    val dhtAlice = DiffieHellmanTupleProverInput(x, ProveDHTuple(g, g_y, g_x, g_xy))
+    val dhtAlice = DiffieHellmanTupleProverInput(x, ProveDHTuple(g, gY, gX, gXY))
 
-    val proofAliceSpend = (new ErgoLikeTestProvingInterpreter).withDHSecrets(
+    val proofAliceSpend = (new ContextEnrichingTestProvingInterpreter).withDHSecrets(
       Seq(dhtAlice)
     ).prove(fullMixEnv, fullMixScript, aliceSpendContext, fakeMessage).get.proof
 

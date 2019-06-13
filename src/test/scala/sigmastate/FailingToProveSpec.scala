@@ -1,11 +1,10 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoLikeInterpreter}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.ErgoLikeTestInterpreter
 import org.ergoplatform.ErgoScriptPredef._
 
 class FailingToProveSpec extends SigmaTestingCommons {
@@ -17,11 +16,11 @@ class FailingToProveSpec extends SigmaTestingCommons {
     * Cause second condition has 3 outputs in body, while we are have only two in tx.
     */
   property("successfully evaluate proof 1") {
-    val interpreter = new ErgoLikeTestProvingInterpreter
+    val interpreter = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
-    val compiledScript = compileWithCosting(env,
+    val compiledScript = compile(env,
       s"""
          | {
          |  val withdrawCondition1 =
@@ -36,7 +35,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val selfBox = ErgoBox(200L, compiledScript, 0)
     val o1 = ErgoBox(101L, TrueProp, 5001)
     val o2 = ErgoBox(99L, TrueProp, 5001)
-    val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2))
+    val tx =  createTransaction(IndexedSeq(o1, o2))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -49,7 +48,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
   }
 
   property("successfully evaluate proof 2") {
-    val interpreter = new ErgoLikeTestProvingInterpreter
+    val interpreter = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter()
 
     val env = Map.empty[String, Any]
@@ -70,7 +69,7 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val o1 = ErgoBox(102L, TrueProp, 5001)
     val o2 = ErgoBox(98L, TrueProp, 5001)
     val o3 = ErgoBox(100L, TrueProp, 5001)
-    val tx =  ErgoLikeTransaction(IndexedSeq(), IndexedSeq(o1, o2, o3))
+    val tx =  createTransaction(IndexedSeq(o1, o2, o3))
     val ctx = ErgoLikeContext(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,

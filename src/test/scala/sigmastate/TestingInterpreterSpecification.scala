@@ -4,12 +4,12 @@ import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
+import sigma.util.Extensions._
 import Interpreter._
-import sigmastate.utxo.ErgoLikeTestInterpreter
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
 
@@ -29,15 +29,16 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       fakeSelf)
 
   property("Reduction to crypto #1") {
-    forAll() { (h: Int) =>
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
         val ctx = testingContext(h)
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
         prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
-          matchPattern { case sb: SigmaBoolean => })
+          matchPattern { case _: SigmaBoolean => })
 
         {
           val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
@@ -55,15 +56,15 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         }
         {
           val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
-          res should matchPattern { case sb: SigmaBoolean => }
+          res should matchPattern { case _: SigmaBoolean => }
         }
       }
     }
   }
 
   property("Reduction to crypto #2") {
-    forAll() { (h: Int) =>
-
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
         val dk1 = DLogProverInput.random().publicImage.isProven
@@ -116,7 +117,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       "box1" -> ErgoBox(10, ErgoScriptPredef.TrueProp, 0, Seq(), Map(
           reg1 -> IntArrayConstant(Array[Int](1, 2, 3)),
           reg2 -> BoolArrayConstant(Array[Boolean](true, false, true)))))
-    val prop = compileWithCosting(env, code).asBoolValue.toSigmaProp
+    val prop = compile(env, code).asBoolValue.toSigmaProp
     println(code)
     println(prop)
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
@@ -165,7 +166,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = box1.R5[Coll[Boolean]].get
         |  allOf(arr) == false
         |}""".stripMargin)
-
     testEval(
       """{
         |  val arr = Coll(1, 2, 3)
@@ -186,13 +186,14 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = Coll(1, 2, 3)
         |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
         |}""".stripMargin)
-    //    // TODO uncomment when Costing for where is implemented
-    //    testEval("""{
-    //              |  val arr = Array(1, 2, 3)
-    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-    //              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
+        |}""".stripMargin)
   }
 
+// TODO coverage: implement it as negative test
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
 //              |  val arr = Array(dk1, dk2)
@@ -202,10 +203,10 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
 
   property("Evaluate numeric casting ops") {
     def testWithCasting(castSuffix: String): Unit = {
-      testEval(s"Coll(1).size.toByte.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toShort.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toInt.$castSuffix == 1.$castSuffix")
-      testEval(s"Coll(1).size.toLong.$castSuffix == 1.$castSuffix")
+      testEval(s"OUTPUTS.size.toByte.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toShort.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toInt.$castSuffix == 0.$castSuffix")
+      testEval(s"OUTPUTS.size.toLong.$castSuffix == 0.$castSuffix")
     }
     testWithCasting("toByte")
     testWithCasting("toShort")
@@ -305,7 +306,7 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     val prop3 = AND(FalseLeaf, TrueLeaf).toSigmaProp
     verifier.verify(prop3, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
 
-    val prop4 = GT(Height, LongConstant(100)).toSigmaProp
+    val prop4 = GT(Height, IntConstant(100)).toSigmaProp
     verifier.verify(prop4, env, proof, challenge).map(_._1).fold(t => throw t, identity) shouldBe false
   }
 

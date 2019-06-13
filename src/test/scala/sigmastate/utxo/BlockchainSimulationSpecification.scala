@@ -3,17 +3,17 @@ package sigmastate.utxo
 import java.io.{File, FileWriter}
 
 import org.ergoplatform
+import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform._
 import org.scalacheck.Gen
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import sigmastate.Values.LongConstant
-import sigmastate.helpers.ErgoLikeTestProvingInterpreter
-import sigmastate.helpers.SigmaTestingCommons
+import sigmastate.Values.{IntConstant, LongConstant}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.eval.IRContext
+import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.{AvlTreeData, AvlTreeFlags, GE}
 
@@ -33,7 +33,7 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
-        new ErgoBoxCandidate(10, minerPubKey, height, Seq(), Map(heightReg -> LongConstant(height + windowSize)))
+        new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl[(TokenId, Long)], Map(heightReg -> IntConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
       val context = ErgoLikeContext(height + 1,
@@ -157,7 +157,7 @@ object BlockchainSimulationSpecification {
     def byId(boxId: KeyType): Try[ErgoBox] = Try(boxes(boxId))
 
     def byHeightRegValue(i: Int): Iterable[ErgoBox] =
-      boxes.values.filter(_.get(heightReg).getOrElse(LongConstant(i + 1)) == LongConstant(i))
+      boxes.values.filter(_.get(heightReg).getOrElse(IntConstant(i + 1)) == IntConstant(i))
 
     def byTwoInts(r1Id: ErgoBox.RegisterId, int1: Int,
                   r2Id: ErgoBox.RegisterId, int2: Int): Option[ErgoBox] =
@@ -212,7 +212,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, LongConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> LongConstant(i)), txId))
+        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey

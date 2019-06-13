@@ -1,16 +1,18 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
+import sigmastate.eval._
 
 import scala.util.Random
 
@@ -55,7 +57,7 @@ class MASTExampleSpecification extends SigmaTestingCommons {
       self = input1)
 
 
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(script1Bytes))
 
     val proveEnv = emptyEnv + (ScriptNameProp -> "simple_branching_prove")
@@ -85,28 +87,33 @@ class MASTExampleSpecification extends SigmaTestingCommons {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)
     treeElements.foreach(s => avlProver.performOneOperation(Insert(s._1, s._2)))
     avlProver.generateProof()
-    val treeData = new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None)
+    val treeData = SigmaDsl.avlTree(new AvlTreeData(avlProver.digest, AvlTreeFlags.ReadOnly, 32, None))
 
-    val merklePathToScript = OptionIsDefined(TreeLookup(ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
-      CalcBlake2b256(GetVarByteArray(scriptId).get),
-      GetVarByteArray(proofId).get))
+    val merklePathToScript = OptionIsDefined(
+      IR.builder.mkMethodCall(
+        ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
+        SAvlTree.getMethod,
+        IndexedSeq(
+          CalcBlake2b256(GetVarByteArray(scriptId).get),
+          GetVarByteArray(proofId).get)).asOption[SByteArray]
+    )
     val scriptIsCorrect = DeserializeContext(scriptId, SBoolean)
     val prop = AND(merklePathToScript, scriptIsCorrect).toSigmaProp
 
-    val recipientProposition = new ErgoLikeTestProvingInterpreter().dlogSecrets.head.publicImage
+    val recipientProposition = new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     val selfBox = ErgoBox(20, ErgoScriptPredef.TrueProp, 0, Seq(), Map(reg1 -> AvlTreeConstant(treeData)))
     val ctx = ErgoLikeContext(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
-      ErgoLikeTransaction(IndexedSeq(), IndexedSeq(ErgoBox(1, recipientProposition, 0))),
+      createTransaction(ErgoBox(1, recipientProposition, 0)),
       self = selfBox)
 
     avlProver.performOneOperation(Lookup(knownSecretTreeKey))
     val knownSecretPathProof = avlProver.generateProof()
     val usedBranch = scriptBranchesBytes.head
-    val prover = new ErgoLikeTestProvingInterpreter()
+    val prover = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(secretId, knownSecret)
       .withContextExtender(scriptId, ByteArrayConstant(usedBranch))
       .withContextExtender(proofId, ByteArrayConstant(knownSecretPathProof))

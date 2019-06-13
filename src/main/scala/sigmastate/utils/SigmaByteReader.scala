@@ -1,16 +1,16 @@
 package sigmastate.utils
 
-import java.nio.ByteBuffer
-
-import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.SValue
-import sigmastate.serialization.{ConstantStore, TypeSerializer, ValDefTypeStore, ValueSerializer}
+import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
+import sigmastate.serialization._
 import scorex.util.Extensions._
 
 class SigmaByteReader(val r: Reader,
                       var constantStore: ConstantStore,
-                      var resolvePlaceholdersToConstants: Boolean)
+                      var resolvePlaceholdersToConstants: Boolean,
+                      val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
@@ -67,7 +67,12 @@ class SigmaByteReader(val r: Reader,
 
   private var lvl: Int = 0
   @inline def level: Int = lvl
-  @inline def level_=(v: Int): Unit = lvl = v
+  @inline def level_=(v: Int): Unit = {
+    if (v > maxTreeDepth)
+      throw new DeserializeCallDepthExceeded(s"nested value deserialization call depth($v) exceeds allowed maximum $maxTreeDepth")
+    lvl = v
+  }
+
   @inline def getValues(): IndexedSeq[SValue] = {
     val size = getUInt().toIntExact
     val xs = new Array[SValue](size)

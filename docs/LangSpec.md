@@ -521,16 +521,6 @@ class Coll[A] {
     */
   def flatMap[B](f: A => Coll[B]): Coll[B]
 
-  /** Computes length of longest segment whose elements all satisfy some predicate.
-    *
-    *  @param   p     the predicate used to test elements.
-    *  @param   from  the index where the search starts.
-    *  @return  the length of the longest segment of this collection starting from index `from`
-    *           such that every element of the segment satisfies the predicate `p`.
-    *  @since 2.0
-    */
-  def segmentLength(p: A => Boolean, from: Int): Int
-
   /** Finds the first element of the $coll satisfying a predicate, if any.
     *
     *  @param p       the predicate used to test elements.
@@ -787,7 +777,7 @@ def allOf(conditions: Coll[Boolean]): Boolean
 /** Returns true if at least on element of the conditions is true */
 def anyOf(conditions: Coll[Boolean]): Boolean
 
-/** Similar to allOf, but performing logical XOR operation instead of `||` 
+/** Similar to allOf, but performing logical XOR operation instead of `&&` 
   * @since 2.0
   */
 def xorOf(conditions: Coll[Boolean]): Boolean 
