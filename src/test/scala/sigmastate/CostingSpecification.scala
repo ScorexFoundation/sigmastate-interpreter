@@ -16,6 +16,8 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.sigma.{SigmaTestingData, AvlTree}
 import Sized._
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -63,7 +65,7 @@ class CostingSpecification extends SigmaTestingData {
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, self = selfBox, extension)
+      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value)
 
   def cost(script: String): Long = {
     val ergoTree = compiler.compile(env, script)
