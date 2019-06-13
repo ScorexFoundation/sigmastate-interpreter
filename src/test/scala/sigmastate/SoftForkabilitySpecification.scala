@@ -12,9 +12,7 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CosterException, SerializerException}
-import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
-import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData

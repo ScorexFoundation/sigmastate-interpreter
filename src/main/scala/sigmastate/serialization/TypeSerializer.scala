@@ -2,11 +2,10 @@ package sigmastate.serialization
 
 import java.nio.charset.StandardCharsets
 
-import org.ergoplatform.validation.{ValidationRule, SoftForkWhenCodeAdded}
+import org.ergoplatform.validation.ValidationRules.{CheckPrimitiveTypeCode, CheckTypeCode}
 import sigmastate._
-import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InvalidOpCode}
+import sigmastate.lang.exceptions.InvalidTypePrefix
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions.ByteOps
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -17,25 +16,6 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
   val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
 
-  object CheckPrimitiveTypeCode extends ValidationRule(1008,
-    "Check the primitive type code is supported or is added via soft-fork")
-      with SoftForkWhenCodeAdded {
-    def apply[T](code: Byte)(block: => T): T = {
-      val ucode = code.toUByte
-      def msg = s"Cannot deserialize primitive type with code $ucode"
-      validate(ucode > 0 && ucode < embeddableIdToType.length, new SerializerException(msg), Seq(code), block)
-    }
-  }
-
-  object CheckTypeCode extends ValidationRule(1009,
-    "Check the non-primitive type code is supported or is added via soft-fork")
-      with SoftForkWhenCodeAdded {
-    def apply[T](typeCode: Byte)(block: => T): T = {
-      val ucode = typeCode.toUByte
-      def msg = s"Cannot deserialize the non-primitive type with code $ucode"
-      validate(ucode <= SGlobal.typeCode.toUByte, new SerializerException(msg), Seq(typeCode), block)
-    }
-  }
 
   def getEmbeddableType(code: Int): SType =
     CheckPrimitiveTypeCode(code.toByte) {

@@ -96,7 +96,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   var saveGraphsInFile: Boolean = true
 
   /** Whether to output the cost value estimated for the script given by ScriptNameProp environment variable */
-  var outputEstimatedCost: Boolean = true
+  var outputEstimatedCost: Boolean = false
 
 //  /** Pass configuration which is used by default in IRContext. */
 //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))

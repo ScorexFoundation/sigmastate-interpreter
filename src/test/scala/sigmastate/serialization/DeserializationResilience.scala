@@ -2,24 +2,24 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.{ErgoBoxCandidate, Outputs}
+import org.ergoplatform.{Outputs, ErgoBoxCandidate}
 import org.ergoplatform.validation.ValidationException
 import org.scalacheck.Gen
-import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{IntConstant, SValue, SigmaBoolean, Tuple}
+import scorex.util.serialization.{VLQByteBufferReader, Reader}
+import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix}
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.helpers.SigmaTestingCommons
 
 import scala.collection.mutable
 
-class DeserializationResilience extends SerializationSpecification {
+class DeserializationResilience extends SerializationSpecification with SigmaTestingCommons {
 
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
@@ -42,8 +42,12 @@ class DeserializationResilience extends SerializationSpecification {
     val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
     val w = SigmaSerializer.startWriter()
     ErgoBoxCandidate.serializer.serialize(b, w)
-    an[InputSizeLimitExceeded] should be thrownBy
+    assertExceptionThrown({
       ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes))
+    }, {
+      case e: SerializerException  => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
+      case _ => false
+    })
   }
 
   property("ergo box propositionBytes max size check") {
