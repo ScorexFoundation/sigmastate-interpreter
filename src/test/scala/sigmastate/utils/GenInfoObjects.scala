@@ -1,7 +1,7 @@
 package sigmastate.utils
 
 import sigmastate.SMethod
-import scalan.meta.PrintExtensions._
+import scalan.util.PrintExtensions._
 import scala.util.Try
 
 /** Generate as a console output all InfoObject objects.

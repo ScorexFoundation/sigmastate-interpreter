@@ -25,7 +25,9 @@ package object sigma {
   }
   implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
   implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
-  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(classTag[AvlTree])
+  implicit val AvlTreeRType:   RType[AvlTree]   = new GeneralType(classTag[AvlTree]) {
+    override def isConstantSize: Boolean = true
+  }
   implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
   // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)

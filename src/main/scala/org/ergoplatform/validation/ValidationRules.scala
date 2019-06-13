@@ -139,19 +139,16 @@ object ValidationRules {
     }
   }
 
-  object CheckCostWithContext extends ValidationRule(1006,
-    "Contract execution cost in a given context is limited by given maximum value.") {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)
-        (costingCtx: ctx.Context.SContext, exp: Value[SType],
-            costF: ctx.Rep[((ctx.Context, (Int, ctx.Size[ctx.Context]))) => Int], maxCost: Long): Int = {
-      def args = Seq(costingCtx, exp, costF, maxCost)
-      lazy val estimatedCostTry = ctx.checkCostWithContext(costingCtx, exp, costF, maxCost)
-      validate(estimatedCostTry.isSuccess,
-        {
-          val t = estimatedCostTry.toEither.left.get
-          new CosterException(s"Script cannot be executed due to high cost $exp: ", exp.sourceContext.toList.headOption, Some(t))
-        },
-        args, estimatedCostTry.get)
+  /** Throws soft-forkable ValidationException when this rule has status other than EnabledRule. */
+  object CheckCostWithContextIsActive extends ValidationRule(1006,
+    "Contract execution cost in a given context is limited by given maximum value.")
+      with SoftForkWhenReplaced {
+    def apply(vs: SigmaValidationSettings): Unit = {
+      val enabled = vs.getStatus(this.id) match {
+        case Some(EnabledRule) => true
+        case _ => false
+      }
+      validate(enabled, new CosterException(s"ValidationRule is disabled $this: ", None, None), Nil, {})
     }
   }
 
@@ -224,7 +221,7 @@ object ValidationRules {
     CheckIsSupportedIndexExpression,
     CheckCostFunc,
     CheckCalcFunc,
-    CheckCostWithContext,
+    CheckCostWithContextIsActive,
     CheckTupleType,
     CheckPrimitiveTypeCode,
     CheckTypeCode,
