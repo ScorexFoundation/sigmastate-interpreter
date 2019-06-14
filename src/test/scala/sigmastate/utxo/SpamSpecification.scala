@@ -29,12 +29,12 @@ class SpamSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
   //we assume that verifier must finish verification of any script in less time than 3M hash calculations
   // (for the Blake2b256 hash function over a single block input)
-  lazy val Timeout: Long = {
+  val Timeout: Long = {
     val block = Array.fill(16)(0: Byte)
     val hf = Blake2b256
 
     //just in case to heat up JVM
-    (1 to 1000000).foreach(_ => hf(block))
+    (1 to 2000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
     (1 to 4000000).foreach(_ => hf(block))
@@ -48,68 +48,6 @@ class SpamSpecification extends SigmaTestingCommons {
     val t = System.currentTimeMillis()
     (res, (t - t0) < Timeout)
   }
-
-  property("nested loops") {
-    val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
-    val largeColl = Colls.fromArray((1 to 50).toArray)
-    val env = Map(
-      ScriptNameProp -> "Script",
-      "alice" -> alicePubKey,
-      "largeColl" -> largeColl
-    )
-    val spamScript = compile(env,
-      """{
-        |  val valid  = largeColl.forall({(i:Int) =>
-        |     largeColl.exists({(j:Int) =>
-        |       i != j
-        |     }
-        |     ) &&
-        |     largeColl.exists({(j:Int) =>
-        |       largeColl.forall({(k:Int) =>
-        |         k != i + j
-        |       }
-        |       ) &&
-        |       i != j
-        |     }
-        |     ) &&
-        |     OUTPUTS.exists({(x:Box) =>
-        |       x.propositionBytes.size >= i
-        |     }
-        |     )
-        |   }
-        |  )
-        |  ! valid
-        |}
-      """.stripMargin).asBoolValue.toSigmaProp
-
-    //todo: make value dependent on CostTable constants, not magic constant
-    val ba = Random.randomBytes(10000000)
-
-    val id = 11: Byte
-    val id2 = 12: Byte
-
-    val prover = new ContextEnrichingTestProvingInterpreter()
-      .withContextExtender(id, ByteArrayConstant(ba))
-      .withContextExtender(id2, ByteArrayConstant(ba))
-
-    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
-
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
-
-    val verifier = new ErgoLikeTestInterpreter
-    val start = System.currentTimeMillis()
-    val (res, terminated) = termination(() =>
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
-    )
-    val end = System.currentTimeMillis()
-    println("Verify time: millis "+(end-start))
-    println("Timeout: " + Timeout)
-    terminated shouldBe true
-  }
-
 
   property("huge byte array") {
     //TODO coverage: make value dependent on CostTable constants, not magic constant
@@ -367,5 +305,63 @@ class SpamSpecification extends SigmaTestingCommons {
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
     println("Cost: " + pr.cost)
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).isFailure shouldBe true
+  }
+
+  property("nested loops") {
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val largeColl = Colls.fromArray((1 to 50).toArray)
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "largeColl" -> largeColl
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = largeColl.forall({(i:Int) =>
+        |     largeColl.exists({(j:Int) =>
+        |       i != j
+        |     }
+        |     ) &&
+        |     largeColl.exists({(j:Int) =>
+        |       largeColl.forall({(k:Int) =>
+        |         k != i + j
+        |       }
+        |       ) &&
+        |       i != j
+        |     }
+        |     ) &&
+        |     OUTPUTS.exists({(x:Box) =>
+        |       x.propositionBytes.size >= i
+        |     }
+        |     )
+        |   }
+        |  )
+        |  ! valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+
+    //todo: make value dependent on CostTable constants, not magic constant
+    val ba = Random.randomBytes(10000000)
+
+    val id = 11: Byte
+    val id2 = 12: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(id, ByteArrayConstant(ba))
+      .withContextExtender(id2, ByteArrayConstant(ba))
+
+    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
+
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (_, calcTime) = BenchmarkUtil.measureTime {
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
+    }
+    println(s"calc time: $calcTime millis")
+    calcTime < Timeout shouldBe true
   }
 }
