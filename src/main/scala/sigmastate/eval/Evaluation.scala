@@ -4,8 +4,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.CheckCostFuncOperation
 import sigmastate._
-import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
+import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
 import sigmastate.lang.Terms.OperationId
 import sigmastate.utxo.CostTableStat
 
@@ -17,11 +18,14 @@ import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{ProveDHTuple, DLogProtocol}
+import sigmastate.basics.{DLogProtocol, ProveDHTuple}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CosterException
+import sigmastate.serialization.OpCodes
 import special.SpecialPredef
 import special.Types._
+
+import scala.collection.immutable.HashSet
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
@@ -60,6 +64,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import CSizeBox._
   import SizeContext._
   import CSizeContext._
+  import OpCodes._
 
   val okPrintEvaluatedEntries: Boolean = false
 
@@ -84,47 +89,222 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
-  /** Checks is the operation is among the allowed in costF graph, created by costing.
-    * @throws StagingException if the given graph node `d` is not matched.
-    */
-  def isValidCostPrimitive(d: Def[_]): Boolean = d match {
-    case _: Const[_] => true
-    case _: OpCost | _: PerKbCostOf | _: Cast[_] => true
-    case _: Tup[_,_] | _: First[_,_] | _: Second[_,_] => true
-    case _: FieldApply[_] => true
-    case _: IntPlusMonoid => true
-    case _: Lambda[_,_] => true
-    case _: ThunkDef[_] => true
-    case ApplyUnOp(_: NumericToLong[_] | _: NumericToInt[_], _) => true
-    case ApplyBinOp(_: NumericPlus[_] | _: NumericTimes[_] | _: OrderingMax[_] | _: IntegralDivide[_] ,_,_) => true
+  private val _allowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
+    AppendCode,
+    ByIndexCode,
+    ConstantCode,
+    DivisionCode,
+    DowncastCode,
+    ExtractBytesWithNoRefCode,
+    ExtractRegisterAs,
+    ExtractScriptBytesCode,
+    FoldCode,
+    FuncApplyCode,
+    FuncValueCode,
+    GetVarCode,
+    InputsCode,
+    LastBlockUtxoRootHashCode,
+    MapCollectionCode,
+    MaxCode,
+    MethodCallCode,
+    MinCode,
+    MinusCode,
+    ModuloCode,
+    MultiplyCode,
+    OptionGetCode,
+    OptionGetOrElseCode,
+    OptionIsDefinedCode,
+    OutputsCode,
+    PlusCode,
+    SelectFieldCode,
+    SelfCode,
+    SigmaPropBytesCode,
+    SizeOfCode,
+    SliceCode,
+    TupleCode,
+    UpcastCode,
+  ).map(toExtra) ++ HashSet[OpCodeExtra](
+    OpCostCode,
+    PerKbCostOfCode,
+    CastCode,
+    IntPlusMonoidCode,
+    ThunkDefCode,
+    SCMInputsCode,
+    SCMOutputsCode,
+    SCMDataInputsCode,
+    SCMSelfBoxCode,
+    SCMLastBlockUtxoRootHashCode,
+    SCMHeadersCode,
+    SCMPreHeaderCode,
+    SCMGetVarCode,
+    SBMPropositionBytesCode,
+    SBMBytesCode,
+    SBMBytesWithoutRefCode,
+    SBMRegistersCode,
+    SBMGetRegCode,
+    SBMTokensCode,
+    SSPMPropBytesCode,
+    SAVMTValCode,
+    SAVMValueSizeCode,
+    SizeMDataSizeCode,
+    SPairLCode,
+    SPairRCode,
+    SCollMSizesCode,
+    SOptMSizeOptCode,
+    SFuncMSizeEnvCode,
+    CSizePairCtorCode,
+    CSizeFuncCtorCode,
+    CSizeOptionCtorCode,
+    CSizeCollCtorCode,
+    CSizeBoxCtorCode,
+    CSizeContextCtorCode,
+    CSizeAnyValueCtorCode,
+    CReplCollCtorCode,
+    PairOfColsCtorCode,
+    CollMSumCode,
+    CBMReplicateCode,
+    CBMFromItemsCode,
+    CostOfCode,
+    UOSizeOfCode,
+    SPCMSomeCode,
+  )
 
-    case SCM.inputs(_) | SCM.outputs(_) | SCM.dataInputs(_) | SCM.selfBox(_) | SCM.lastBlockUtxoRootHash(_) | SCM.headers(_) |
-         SCM.preHeader(_) | SCM.getVar(_,_,_) => true
-    case SBM.propositionBytes(_) |  SBM.bytes(_) |  SBM.bytesWithoutRef(_) |  SBM.registers(_) |  SBM.getReg(_,_,_) |
-         SBM.tokens(_)  => true
-    case SSPM.propBytes(_) => true
-    case SAVM.tVal(_) | SAVM.valueSize(_) => true
-    case SizeM.dataSize(_) => true
-    case SPairM.l(_) | SPairM.r(_) => true
-    case SCollM.sizes(_) => true
-    case SOptM.sizeOpt(_) => true
-    case SFuncM.sizeEnv(_) => true
-    case _: CSizePairCtor[_,_] | _: CSizeFuncCtor[_,_,_] | _: CSizeOptionCtor[_] | _: CSizeCollCtor[_] |
-         _: CSizeBoxCtor | _: CSizeContextCtor | _: CSizeAnyValueCtor => true
-    case ContextM.SELF(_) | ContextM.OUTPUTS(_) | ContextM.INPUTS(_) | ContextM.dataInputs(_) | ContextM.LastBlockUtxoRootHash(_) |
-         ContextM.getVar(_,_,_)  => true
-    case SigmaM.propBytes(_) => true
-    case _: CReplCollCtor[_] | _: PairOfColsCtor[_,_] => true
-    case CollM.length(_) | CollM.map(_,_) | CollM.sum(_,_) | CollM.zip(_,_) | CollM.slice(_,_,_) | CollM.apply(_,_) |
-         CollM.append(_,_) | CollM.foldLeft(_,_,_) => true
-    case CBM.replicate(_,_,_) | CBM.fromItems(_,_,_) => true
-    case BoxM.propositionBytes(_) | BoxM.bytesWithoutRef(_) | BoxM.getReg(_,_,_) => true
-    case OM.get(_) | OM.getOrElse(_,_) | OM.fold(_,_,_) | OM.isDefined(_) => true
-    case _: CostOf | _: SizeOf[_] => true
-    case _: Upcast[_,_] => true
-    case _: Apply[_,_] => true
-    case SPCM.some(_) => true
-    case _ => false
+  /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.
+    * This may include both ErgoTree codes (from OpCodes) and also additional non-ErgoTree codes
+    * from OpCodesExtra.
+    * Any IR graph node can be uniquely assigned to extended op code value
+    * from OpCodes + OpCodesExtra combined range. (See getOpCodeEx) */
+  protected def allowedOpCodesInCosting: HashSet[OpCodeExtra] = _allowedOpCodesInCosting
+
+  def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = allowedOpCodesInCosting.contains(opCode)
+
+  /** Returns extended op code assigned to the given IR graph node.
+    */
+  def getOpCodeEx(d: Def[_]): OpCodeExtra = d match {
+    case _: OpCost => OpCostCode
+    case _: PerKbCostOf => PerKbCostOfCode
+    case _: Cast[_] => CastCode
+    case _: IntPlusMonoid => IntPlusMonoidCode
+    case _: ThunkDef[_] => ThunkDefCode
+    case SCM.inputs(_) => SCMInputsCode
+    case SCM.outputs(_) => SCMOutputsCode
+    case SCM.dataInputs(_) => SCMDataInputsCode
+    case SCM.selfBox(_) => SCMSelfBoxCode
+    case SCM.lastBlockUtxoRootHash(_) => SCMLastBlockUtxoRootHashCode
+    case SCM.headers(_) => SCMHeadersCode
+    case SCM.preHeader(_) => SCMPreHeaderCode
+    case SCM.getVar(_, _, _) => SCMGetVarCode
+    case SBM.propositionBytes(_) => SBMPropositionBytesCode
+    case SBM.bytes(_) => SBMBytesCode
+    case SBM.bytesWithoutRef(_) => SBMBytesWithoutRefCode
+    case SBM.registers(_) => SBMRegistersCode
+    case SBM.getReg(_, _, _) => SBMGetRegCode
+    case SBM.tokens(_) => SBMTokensCode
+    case SSPM.propBytes(_) => SSPMPropBytesCode
+    case SAVM.tVal(_) => SAVMTValCode
+    case SAVM.valueSize(_) => SAVMValueSizeCode
+    case SizeM.dataSize(_) => SizeMDataSizeCode
+    case SPairM.l(_) => SPairLCode
+    case SPairM.r(_) => SPairRCode
+    case SCollM.sizes(_) => SCollMSizesCode
+    case SOptM.sizeOpt(_) => SOptMSizeOptCode
+    case SFuncM.sizeEnv(_) => SFuncMSizeEnvCode
+    case _: CSizePairCtor[_, _] => CSizePairCtorCode
+    case _: CSizeFuncCtor[_, _, _] => CSizeFuncCtorCode
+    case _: CSizeOptionCtor[_] => CSizeOptionCtorCode
+    case _: CSizeCollCtor[_] => CSizeCollCtorCode
+    case _: CSizeBoxCtor => CSizeBoxCtorCode
+    case _: CSizeContextCtor => CSizeContextCtorCode
+    case _: CSizeAnyValueCtor => CSizeAnyValueCtorCode
+    case _: CReplCollCtor[_] => CReplCollCtorCode
+    case _: PairOfColsCtor[_, _] => PairOfColsCtorCode
+    case CollM.sum(_, _) => CollMSumCode
+    case CBM.replicate(_, _, _) => CBMReplicateCode
+    case CBM.fromItems(_, _, _) => CBMFromItemsCode
+    case _: CostOf => CostOfCode
+    case _: SizeOf[_] => UOSizeOfCode
+    case SPCM.some(_) => SPCMSomeCode
+    case dSer => toExtra(dSer match {
+      case _: Const[_] => ConstantCode
+      case _: Tup[_, _] => TupleCode
+      case _: First[_, _] | _: Second[_, _] => SelectFieldCode
+      case _: FieldApply[_] => SelectFieldCode
+      case _: Lambda[_, _] => FuncValueCode
+      case _: Apply[_, _] => FuncApplyCode
+      case _: Upcast[_, _] => UpcastCode
+      case _: Downcast[_, _] => DowncastCode
+      case ApplyBinOp(op, _, _) => op match {
+        case _: NumericPlus[_] => PlusCode
+        case _: NumericMinus[_] => MinusCode
+        case _: NumericTimes[_] => MultiplyCode
+        case _: IntegralDivide[_] => DivisionCode
+        case _: IntegralMod[_] => ModuloCode
+        case _: OrderingMin[_] => MinCode
+        case _: OrderingMax[_] => MaxCode
+        case _: Equals[_] => EqCode
+        case _: NotEquals[_] => NeqCode
+        case _: OrderingGT[_] => GtCode
+        case _: OrderingLT[_] => LtCode
+        case _: OrderingGTEQ[_] => GeCode
+        case _: OrderingLTEQ[_] => LeCode
+      }
+      case ApplyUnOp(op, _) => op match {
+        case _: NumericToLong[_] => UpcastCode // it's either this or DowncastCode
+        case _: NumericToInt[_] => DowncastCode // it's either this or UpcastCode
+      }
+      case _: IfThenElseLazy[_] => IfCode
+      case ContextM.SELF(_) => SelfCode
+      case ContextM.OUTPUTS(_) => OutputsCode
+      case ContextM.INPUTS(_) => InputsCode
+      case ContextM.dataInputs(_) => MethodCallCode
+      case ContextM.LastBlockUtxoRootHash(_) => LastBlockUtxoRootHashCode
+      case ContextM.getVar(_, _, _) => GetVarCode
+      case ContextM.HEIGHT(_) => HeightCode
+      case ContextM.minerPubKey(_) => MinerPubkeyCode
+      case SigmaM.propBytes(_) => SigmaPropBytesCode
+      case SigmaM.isValid(_) => SigmaPropIsProvenCode
+      case CollM.length(_) => SizeOfCode
+      case CollM.apply(_, _) => ByIndexCode
+      case CollM.map(_, _) => MapCollectionCode
+      case CollM.zip(_, _) => MethodCallCode
+      case CollM.slice(_, _, _) => SliceCode
+      case CollM.append(_, _) => AppendCode
+      case CollM.foldLeft(_, _, _) => FoldCode
+      case CollM.exists(_, _) => ExistsCode
+      case CollM.forall(_, _) => ForAllCode
+      case CollM.filter(_, _) => FilterCode
+      case BoxM.propositionBytes(_) => ExtractScriptBytesCode
+      case BoxM.bytesWithoutRef(_) => ExtractBytesWithNoRefCode
+      case BoxM.getReg(_, _, _) => ExtractRegisterAs
+      case BoxM.value(_) => ExtractAmountCode
+      case BoxM.bytes(_) => ExtractBytesCode
+      case BoxM.id(_) => ExtractIdCode
+      case BoxM.creationInfo(_) => ExtractCreationInfoCode
+      case OM.get(_) => OptionGetCode
+      case OM.getOrElse(_, _) => OptionGetOrElseCode
+      case OM.fold(_, _, _) => MethodCallCode
+      case OM.isDefined(_) => OptionIsDefinedCode
+      case SDBM.substConstants(_, _, _, _, _) => SubstConstantsCode
+      case SDBM.longToByteArray(_, _) => LongToByteArrayCode
+      case SDBM.byteArrayToBigInt(_, _) => ByteArrayToBigIntCode
+      case SDBM.byteArrayToLong(_, _) => ByteArrayToLongCode
+      case SDBM.groupGenerator(_) => GroupGeneratorCode
+      case SDBM.allOf(_, _) => AndCode
+      case SDBM.anyOf(_, _) => OrCode
+      case SDBM.atLeast(_, _, _) => AtLeastCode
+      case SDBM.anyZK(_, _) => ExistsCode
+      case SDBM.allZK(_, _) => ForAllCode
+      case SDBM.blake2b256(_, _) => CalcBlake2b256Code
+      case SDBM.sha256(_, _) => CalcSha256Code
+      case SDBM.proveDlog(_, _) => ProveDlogCode
+      case SDBM.proveDHTuple(_, _, _, _, _) => ProveDHTupleCode
+      case SDBM.sigmaProp(_, _) => BoolToSigmaPropCode
+      case SDBM.decodePoint(_, _) => DecodePointCode
+      case SDBM.xorOf(_, _) => XorOfCode
+      case CBM.xor(_, _, _) => XorCode
+      case _: MethodCall => MethodCallCode
+      case _ => error(s"Unknown opCode for $d}")
+    })
   }
 
   /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
@@ -133,9 +313,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       lam.scheduleAll.forall { te =>
-        val ok = isValidCostPrimitive(te.rhs)
-        if (!ok) !!!(s"Invalid primitive in Cost function: ${te.rhs}")
-        ok
+        CheckCostFuncOperation(this)(getOpCodeEx(te.rhs)) { true }
       }
     }
   }

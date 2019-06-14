@@ -1,9 +1,9 @@
 package special.sigma
 
 import org.scalacheck.{Arbitrary, Gen}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 
-trait SigmaTypeGens extends ValueGenerators {
+trait SigmaTypeGens extends ObjectGenerators {
   import sigma.types._
   val genBoolean = Arbitrary.arbBool.arbitrary.map(CBoolean(_): Boolean)
   implicit val arbBoolean = Arbitrary(genBoolean)

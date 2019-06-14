@@ -16,6 +16,8 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.sigma.{SigmaTestingData, AvlTree}
 import Sized._
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -63,7 +65,7 @@ class CostingSpecification extends SigmaTestingData {
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, self = selfBox, extension)
+      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value)
 
   def cost(script: String): Long = {
     val ergoTree = compiler.compile(env, script)
@@ -197,8 +199,10 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $rootTree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
     cost(s"{ $rootTree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
     cost(s"{ $rootTree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
-    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe (AccessRootHash + selectField + newAvlTreeCost + comparisonPerKbCost)
-    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe (AccessRootHash + newAvlTreeCost + comparisonPerKbCost + constCost)
+    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe
+      (AccessRootHash + selectField + newAvlTreeCost + comparisonCost /* for isConstantSize AvlTree type */)
+    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe
+      (AccessRootHash + newAvlTreeCost + comparisonCost + constCost)
 
     val AccessTree = accessBox + RegisterAccess
     val selfTree = "SELF.R6[AvlTree].get"

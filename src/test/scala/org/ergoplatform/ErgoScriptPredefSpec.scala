@@ -7,7 +7,7 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, IntConstant, ErgoTree}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
@@ -55,8 +55,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBox)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "boxCreationHeight_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "boxCreationHeight_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("collect coins from the founders' box") {
@@ -113,8 +113,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head)
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkSpending_prove"), prop, ctx, fakeMessage).get
+      verifier.verify(emptyEnv + (ScriptNameProp -> "checkSpending_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
   }
 
@@ -143,8 +143,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       self = inputBoxes.head)
 
     // should not be able to collect before minerRewardDelay
-    val prove = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage)
+    val prove = prover.prove(emptyEnv + (ScriptNameProp -> "rewardOutputScript_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "rewardOutputScript_verify"), prop, prevBlockCtx, prove, fakeMessage)
       .fold(t => throw t, x => x) should matchPattern { case (false,_) => }
 
     // should be able to collect after minerRewardDelay
@@ -199,8 +199,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 2)
-    val verifier = new ErgoLikeTestInterpreter(CostTable.ScriptLimit * 2)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val verifier = new ErgoLikeTestInterpreter()
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -222,10 +222,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head)
+        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 2)
 
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+      verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
 
 
@@ -300,8 +300,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkRewardTx_prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "checkRewardTx_verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
     spendingTransaction
   }
 

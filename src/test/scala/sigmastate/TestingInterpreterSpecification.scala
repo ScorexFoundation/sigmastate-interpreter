@@ -4,6 +4,7 @@ import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
+import sigma.util.Extensions._
 import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
@@ -28,7 +29,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       fakeSelf)
 
   property("Reduction to crypto #1") {
-    forAll() { (h: Int) =>
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
@@ -61,8 +63,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Reduction to crypto #2") {
-    forAll() { (h: Int) =>
-
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
         val dk1 = DLogProverInput.random().publicImage.isProven

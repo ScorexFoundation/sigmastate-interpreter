@@ -118,13 +118,9 @@ class SigmaDslTest extends PropSpec
     lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
     lazy val compareTo = checkEq(func[(Int, Int), Int]("{ (x: (Int, Int)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
+    forAll { x: Byte => toByte(x.toInt) }
+    forAll { x: Short => toShort(x.toInt) }
     forAll { x: Int =>
-      whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
-        toByte(x)
-      }
-      whenever(Short.MinValue <= x && x <= Short.MaxValue) {
-        toShort(x)
-      }
       Seq(toInt, toLong, toBigInt).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
@@ -145,10 +141,8 @@ class SigmaDslTest extends PropSpec
     lazy val toAbs = checkEq(func[Short,Short]("{ (x: Short) => x.toAbs }"))((x: Short) => if (x >= 0.toShort) x else (-x).toShort)
     lazy val compareTo = checkEq(func[(Short, Short), Int]("{ (x: (Short, Short)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
+    forAll { x: Byte => toByte(x.toShort) }
     forAll { x: Short =>
-      whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
-        toByte(x)
-      }
       Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
@@ -170,16 +164,11 @@ class SigmaDslTest extends PropSpec
     */
     lazy val compareTo = checkEq(func[(Long, Long), Int]("{ (x: (Long, Long)) => x._1.compareTo(x._2) }"))(x => x._1.compareTo(x._2))
 
+    forAll { x: Byte => toByte(x.toLong) }
+    forAll { x: Short => toShort(x.toLong) }
+    forAll { x: Int => toInt(x.toLong) }
+
     forAll { x: Long =>
-      whenever(Byte.MinValue <= x && x <= scala.Byte.MaxValue) {
-        toByte(x)
-      }
-      whenever(Short.MinValue <= x && x <= Short.MaxValue) {
-        toShort(x)
-      }
-      whenever(Int.MinValue <= x && x <= Int.MaxValue) {
-        toInt(x)
-      }
       Seq(toLong, toBigInt).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }

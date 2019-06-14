@@ -1,5 +1,7 @@
 package special.sigma
 
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.interpreter.ContextExtension
 import org.scalacheck.Gen.containerOfN
 import sigmastate.{AvlTreeFlags, TrivialProp}
@@ -95,5 +97,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
     self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
-    extension = ContextExtension(Map()))
+    extension = ContextExtension.empty,
+    validationSettings = ValidationRules.currentSettings,
+    costLimit = ScriptCostLimit.value)
 }
