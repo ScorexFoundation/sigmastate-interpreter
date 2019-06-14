@@ -472,8 +472,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("function with type args") {
-    val tA = STypeIdent("A")
-    val tB = STypeIdent("B")
+    val tA = STypeVar("A")
+    val tB = STypeVar("B")
     parse("{ def f[A, B](x: A, y: B): (A, B) = (x, y) }") shouldBe Block(List(),
       Val("f",
         STuple(tA, tB),
@@ -491,8 +491,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("method extension(dotty)(no args) with type args") {
-    val tA = STypeIdent("A")
-    val tB = STypeIdent("B")
+    val tA = STypeVar("A")
+    val tB = STypeVar("B")
     parse("{ def (pairs: Coll[(A,B)]) f[A, B]: Coll[(B, A)] = pairs.magicSwap }") shouldBe Block(List(),
       Val("f",
         SCollection(STuple(tB, tA)),
@@ -505,8 +505,8 @@ class SigmaParserTest extends PropSpec with PropertyChecks with Matchers with La
   }
 
   property("method extension(dotty)(one arg) with type args") {
-    val tA = STypeIdent("A")
-    val tB = STypeIdent("B")
+    val tA = STypeVar("A")
+    val tB = STypeVar("B")
     parse("{ def (pairs: Coll[(A,B)]) take[A, B](i: Int): Coll[(A, B)] = pairs.drop(i) }") shouldBe Block(List(),
       Val("take",
         SCollection(STuple(tA, tB)),

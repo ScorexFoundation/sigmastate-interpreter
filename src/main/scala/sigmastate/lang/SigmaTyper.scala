@@ -12,7 +12,6 @@ import sigmastate.lang.exceptions._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.serialization.OpCodes
 import sigmastate.utxo._
-import sigma.util.Extensions._
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -26,17 +25,17 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
   private implicit val implicitPredefFuncRegistry: PredefinedFuncRegistry = predefFuncRegistry
 
-  private val tT = STypeIdent("T") // to be used in typing rules
+  private val tT = STypeVar("T") // to be used in typing rules
 
   private val predefinedEnv: Map[String, SType] =
-      predefFuncRegistry.funcs.map(f => f.name -> f.declaration.tpe).toMap
+      predefFuncRegistry.funcs.mapValues(f => f.declaration.tpe)
 
   private def processGlobalMethod(srcCtx: Nullable[SourceContext],
                                   method: SMethod,
                                   args: IndexedSeq[SValue]) = {
     val global = Global.withPropagatedSrcCtx(srcCtx)
     val node = for {
-      pf <- method.irBuilder
+      pf <- method.irInfo.irBuilder
       res <- pf.lift((builder, global, method, args, emptySubst))
     } yield res
     node.getOrElse(mkMethodCall(global, method, args, emptySubst).withPropagatedSrcCtx(srcCtx))
@@ -103,10 +102,10 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               else tMethSpec.copy(tDom = tMethSpec.tDom.tail, tRange = tMethSpec.tRange)
             case _ => tMeth
           }
-          if (method.irBuilder.isDefined && !tRes.isFunc) {
+          if (method.irInfo.irBuilder.isDefined && !tRes.isFunc) {
             // this is MethodCall of parameter-less property, so invoke builder and/or fallback to just MethodCall
             val methodConcrType = method.withSType(SFunc(newObj.tpe, tRes))
-            methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq(), Map()))
+            methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, IndexedSeq(), Map()))
                 .getOrElse(mkMethodCall(newObj, methodConcrType, IndexedSeq(), Map()))
           } else {
             mkSelect(newObj, n, Some(tRes))
@@ -142,8 +141,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
               if (expectedArgs.length != newArgTypes.length
                 || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                 error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
-              if (method.irBuilder.isDefined) {
-                method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
+              if (method.irInfo.irBuilder.isDefined) {
+                method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, subst))
                   .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
               } else {
                 val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -170,13 +169,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             case Some(subst) =>
               val concrFunTpe = applySubst(genFunTpe, subst)
               newObj.tpe.asInstanceOf[SProduct].method(n) match {
-                case Some(method) if method.irBuilder.isDefined =>
+                case Some(method) if method.irInfo.irBuilder.isDefined =>
                   val expectedArgs = concrFunTpe.asFunc.tDom
                   if (expectedArgs.length != newArgTypes.length
                     || !expectedArgs.zip(newArgTypes).forall { case (ea, na) => ea == SAny || ea == na })
                     error(s"For method $n expected args: $expectedArgs; actual: $newArgTypes", sel.sourceContext)
                   val methodConcrType = method.withSType(concrFunTpe.asFunc.withReceiverType(newObj.tpe))
-                  methodConcrType.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
+                  methodConcrType.irInfo.irBuilder.flatMap(_.lift(builder, newObj, methodConcrType, newArgs, Map()))
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs, Map()))
                 case _ =>
                   val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
@@ -286,7 +285,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                 }
               case _ => emptySubst
             }
-            method.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
+            method.irInfo.irBuilder.flatMap(_.lift(builder, newObj, method, newArgs, typeSubst))
               .getOrElse(mkMethodCall(newObj, method, newArgs, typeSubst))
 
           case _ =>
@@ -437,9 +436,9 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
     case ArithOp(l, r, OpCodes.MinCode) => bimap(env, "min", l.asNumValue, r.asNumValue)(mkMin)(tT, tT)
     case ArithOp(l, r, OpCodes.MaxCode) => bimap(env, "max", l.asNumValue, r.asNumValue)(mkMax)(tT, tT)
 
-    case BitOp(l, r, OpCodes.BitOrCode) => bimap(env, "|", l.asNumValue, r.asNumValue)(mkBitOr)(tT, tT)
-    case BitOp(l, r, OpCodes.BitAndCode) => bimap(env, "&", l.asNumValue, r.asNumValue)(mkBitAnd)(tT, tT)
-    case BitOp(l, r, OpCodes.BitXorCode) => bimap(env, "^", l.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
+    case BitOp(l, r, OpCodes.BitOrCode) => bimap(env, BitOp.BitOr.name, l.asNumValue, r.asNumValue)(mkBitOr)(tT, tT)
+    case BitOp(l, r, OpCodes.BitAndCode) => bimap(env, BitOp.BitAnd.name, l.asNumValue, r.asNumValue)(mkBitAnd)(tT, tT)
+    case BitOp(l, r, OpCodes.BitXorCode) => bimap(env, BitOp.BitXor.name, l.asNumValue, r.asNumValue)(mkBitXor)(tT, tT)
 
     case Xor(l, r) => bimap(env, "|", l, r)(mkXor)(SByteArray, SByteArray)
     case MultiplyGroup(l, r) => bimap(env, "*", l, r)(mkMultiplyGroup)(SGroupElement, SGroupElement)
@@ -611,8 +610,8 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
 
 object SigmaTyper {
 
-  type STypeSubst = Map[STypeIdent, SType]
-  val emptySubst = Map.empty[STypeIdent, SType]
+  type STypeSubst = Map[STypeVar, SType]
+  val emptySubst = Map.empty[STypeVar, SType]
 
   /** Performs pairwise type unification making sure each type variable is equally
     * substituted in all items. */
@@ -638,9 +637,9 @@ object SigmaTyper {
 
   /** Finds a substitution `subst` of type variables such that unifyTypes(applySubst(t1, subst), t2) shouldBe Some(emptySubst) */
   def unifyTypes(t1: SType, t2: SType): Option[STypeSubst] = (t1, t2) match {
-    case (_ @ STypeIdent(n1), _ @ STypeIdent(n2)) =>
+    case (_ @ STypeVar(n1), _ @ STypeVar(n2)) =>
       if (n1 == n2) unifiedWithoutSubst else None
-    case (id1 @ STypeIdent(_), _) =>
+    case (id1 @ STypeVar(_), _) =>
       Some(Map(id1 -> t2))
     case (e1: SCollectionType[_], e2: SCollectionType[_]) =>
       unifyTypes(e1.elemType, e2.elemType)
@@ -670,7 +669,7 @@ object SigmaTyper {
       SFunc(args.map(applySubst(_, subst)), applySubst(res, subst), remainingVars)
     case _ =>
       val substRule = rule[SType] {
-        case id: STypeIdent if subst.contains(id) => subst(id)
+        case id: STypeVar if subst.contains(id) => subst(id)
       }
       rewrite(everywherebu(substRule))(tpe)
   }

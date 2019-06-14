@@ -1,31 +1,54 @@
 
 \subsubsection{\lst{GroupElement.isIdentity} method (Code 7.1)}
+\label{sec:type:GroupElement:isIdentity}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Checks if this value is identity element of the eliptic curve group. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Boolean} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{GroupElement.getEncoded} method (Code 7.2)}
+\label{sec:type:GroupElement:getEncoded}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Get an encoding of the point value. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{GroupElement.exp} method (Code 7.3)}
+\label{sec:type:GroupElement:exp}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -40,11 +63,16 @@
   \hline
   \bf{Result} & \lst{GroupElement} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Exponentiate]{\lst{Exponentiate}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{GroupElement.multiply} method (Code 7.4)}
+\label{sec:type:GroupElement:multiply}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
@@ -59,17 +87,32 @@
   \hline
   \bf{Result} & \lst{GroupElement} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MultiplyGroup]{\lst{MultiplyGroup}} \\
+  \hline
+       
 \end{tabularx}
 
 
 
 \subsubsection{\lst{GroupElement.negate} method (Code 7.5)}
+\label{sec:type:GroupElement:negate}
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Inverse element of the group. \\
   
   \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l l}
+         
+      \end{array}\) \\
+       
+  \hline
   \bf{Result} & \lst{GroupElement} \\
   \hline
+  
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}

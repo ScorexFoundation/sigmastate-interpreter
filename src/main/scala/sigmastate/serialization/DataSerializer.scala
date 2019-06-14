@@ -4,11 +4,13 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate._
 import sigmastate.eval.{Evaluation, _}
+import sigmastate.lang.exceptions.SerializerException
 import special.collection._
 import special.sigma._
 
@@ -113,7 +115,10 @@ object DataSerializer {
         }.toArray[Any]
         val coll = Colls.fromArray(arr)(RType.AnyType)
         Evaluation.toDslTuple(coll, tuple)
-      case _ => sys.error(s"Don't know how to deserialize $tpe")
+      case t =>
+        CheckSerializableTypeCode(t.typeCode) {
+          throw new SerializerException(s"Not defined DataSerializer for type $t")
+        }
     }).asInstanceOf[T#WrappedType]
     r.level = r.level - 1
     res

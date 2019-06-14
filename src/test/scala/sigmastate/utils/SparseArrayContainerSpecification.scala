@@ -3,10 +3,10 @@ package sigmastate.utils
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 
 class SparseArrayContainerSpecification extends PropSpec
-  with ValueGenerators
+  with ObjectGenerators
   with PropertyChecks
   with Matchers {
 
@@ -23,14 +23,14 @@ class SparseArrayContainerSpecification extends PropSpec
 
   property("get") {
     forAll(distinctCodeValuePairsGen) { codeValuePairs =>
-      val c = new SparseArrayContainer(codeValuePairs)
+      val cont = new SparseArrayContainer(codeValuePairs)
       codeValuePairs.foreach { case (code, v) =>
-          c.get(code) shouldBe v
+          cont(code) shouldBe v
       }
       val mappedValues = codeValuePairs.toMap
       (Byte.MinValue to Byte.MaxValue).foreach { i =>
         if (mappedValues.get(i.toByte).isEmpty)
-          c.get(i.toByte) shouldBe null.asInstanceOf[Long]
+          cont(i.toByte) shouldBe null.asInstanceOf[Long]
       }
     }
   }

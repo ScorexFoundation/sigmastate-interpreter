@@ -1,11 +1,12 @@
 package sigmastate.eval
 
-import java.lang.reflect.Method
-
+import org.ergoplatform.validation.ValidationRules
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue}
+import sigmastate.Values.{Value, SValue, TrueSigmaProp}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
+import sigmastate.interpreter.Interpreter
+import sigmastate.lang.exceptions.CosterException
 
 import scala.util.Try
 
@@ -44,15 +45,26 @@ trait IRContext extends Evaluation with TreeBuilding {
   }
 
   def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
-    val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
-    val f = asRep[Costed[Context] => Costed[Any]](costed)
-    val calcF = f.sliceCalc(okRemoveIsProven)
-    val costF = f.sliceCostEx
+    def buildGraph(env: ScriptEnv, exp: SValue) = {
+      val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
+      asRep[Costed[Context] => Costed[Any]](costed)
+    }
+    val g = buildGraph(env, typed)
+    val calcF = g.sliceCalc(okRemoveIsProven)
+    val costF = g.sliceCostEx
     Pair(calcF, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
   private[sigmastate] def onCostingResult[T](env: ScriptEnv, tree: SValue, result: RCostingResultEx[T]) {
+  }
+
+  /** Can be overriden to to do for example logging of computed costs */
+  private[sigmastate] def onEstimatedCost[T](env: ScriptEnv,
+                                             tree: SValue,
+                                             result: RCostingResultEx[T],
+                                             ctx: special.sigma.Context,
+                                             estimatedCost: Int): Unit = {
   }
 
   import Size._; import Context._;
@@ -77,13 +89,31 @@ trait IRContext extends Evaluation with TreeBuilding {
     estimatedCost
   }
 
+  /** TODO soft-fork: Version Based Costing
+    * The following is based on ErgoTree.header checks performed during deserialization and
+    * described in `ErgoTreeSerializer`
+    * The next version should ensure that v2 node contained both old and new version of casting
+    * component (Coster).
+    *
+    * Then v2 node during chain validation will use version in the ErgoTree header,
+    * 1) if version = 1 then execute the old CosterV1
+    * 2) if version = 2 then execute CosterV2.
+    * Thus v2 protocol will apply the new costing for only new versions.
+    *
+    * With this scheme changing the parameters will not have negative effects,
+    * the old scripts will be validated according to the old parameter values,
+    * and the new ones according to the new values.
+    *
+    * And taking into account the cleaning of the garbage and cutting the blockchain history,
+    * the old scripts at some point will die out of the blockchain.
+    */
   def checkCostWithContext(ctx: SContext, exp: Value[SType],
                 costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
     if (estimatedCost > maxCost) {
-      throw new Error(msgCostLimitError(estimatedCost, maxCost))
+      throw new CosterException(msgCostLimitError(estimatedCost, maxCost), None)
     }
     estimatedCost
   }

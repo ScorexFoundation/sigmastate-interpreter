@@ -12,13 +12,13 @@ import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.{InterpreterException, CosterException}
+import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
+import org.ergoplatform.validation.ValidationRules._
 
 import scala.util.Try
-
 
 trait Interpreter extends ScorexLogging {
 
@@ -26,14 +26,7 @@ trait Interpreter extends ScorexLogging {
 
   type CTX <: InterpreterContext
 
-  type ProofT = UncheckedTree //todo:  ProofT <: UncheckedTree ?
-
-  final val MaxByteArrayLength = 10000
-
-  /**
-    * Max cost of a script interpreter can accept
-    */
-  def maxCost: Long
+  type ProofT = UncheckedTree
 
   def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
@@ -41,10 +34,9 @@ trait Interpreter extends ScorexLogging {
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
             val script = ValueSerializer.deserialize(eba.value.toArray)
-            if (d.tpe != script.tpe)
-              throw new InterpreterException(s"Failed context deserialization of $d: expected deserialized script to have type ${d.tpe}; got ${script.tpe}")
-            else
+            CheckDeserializedScriptType(d, script) {
               Some(script)
+            }
           case _ => None
         }
       else
@@ -71,8 +63,10 @@ trait Interpreter extends ScorexLogging {
   }
 
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
-    import IR.Size._; import IR.Context._;
+    import IR.Size._
+    import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val maxCost = context.costLimit
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
@@ -82,7 +76,9 @@ trait Interpreter extends ScorexLogging {
   }
 
   def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
-    import IR._; import Context._; import SigmaProp._
+    import IR._
+    import Context._
+    import SigmaProp._
     val res = calcF.elem.eRange.asInstanceOf[Any] match {
       case _: SigmaPropElem[_] =>
         val valueFun = compile[SContext, SSigmaProp, Context, SigmaProp](getDataEnv, asRep[Context => SigmaProp](calcF))
@@ -95,73 +91,115 @@ trait Interpreter extends ScorexLogging {
     }
     res
   }
-  /**
-    * As the first step both prover and verifier are applying context-specific transformations and then estimating
-    * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
-    * reducing the expression in the same way.
+
+  /** This method is used in both prover and verifier to compute SigmaProp value.
+    * As the first step the cost of computing the `exp` expression in the given context is estimated.
+    * If cost is above limit
+    *   then exception is returned and `exp` is not executed
+    *   else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
-    * @param exp
-    * @param context
-    * @return
+    * @param context   the context in which `exp` should be executed
+    * @param env       environment of system variables used by the interpreter internally
+    * @param exp       expression to be executed in the given `context`
+    * @return          result of script reduction
+    * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
-    import IR._; import Size._; import Context._; import SigmaProp._
-    val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
-    IR.onCostingResult(env, exp, costingRes)
+    import IR._
+    implicit val vs = context.validationSettings
+    val maxCost = context.costLimit
+    trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+      val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
+      IR.onCostingResult(env, exp, costingRes)
 
-    verifyCostFunc(asRep[Any => Int](costF)).fold(t => throw t, x => x)
+      CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
 
-    verifyIsProven(calcF).fold(t => throw t, x => x)
+      CheckCalcFunc(IR)(calcF) { }
 
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
-    val estimatedCost = checkCostWithContext(costingCtx, exp, costF, maxCost)
-      .fold(t => throw new CosterException(
-        s"Script cannot be executed $exp: ", exp.sourceContext.toList.headOption, Some(t)), identity)
+      val costingCtx = context.toSigmaContext(IR, isCost = true)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
+              .fold(t => throw t, identity)
 
-//    println(s"reduceToCrypto: estimatedCost: $estimatedCost")
-    
-    // check calc
-    val calcCtx = context.toSigmaContext(IR, isCost = false)
-    val res = calcResult(calcCtx, calcF)
-    SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
+
+      // check calc
+      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val res = calcResult(calcCtx, calcF)
+      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+    }
   }
 
   def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
     reduceToCrypto(context, Interpreter.emptyEnv, exp)
 
-  def verify(env: ScriptEnv, exp: ErgoTree,
+  /** Extracts proposition for ErgoTree handing soft-fork condition.
+    * @note soft-fork handler */
+  def propositionFromErgoTree(tree: ErgoTree, ctx: CTX): SigmaPropValue = {
+    val prop = tree.root match {
+      case Right(_) =>
+        tree.toProposition(tree.isConstantSegregation)
+      case Left(UnparsedErgoTree(_, error)) if ctx.validationSettings.isSoftFork(error) =>
+        TrueSigmaProp
+      case Left(UnparsedErgoTree(_, error)) =>
+        throw new InterpreterException(
+          "Script has not been recognized due to ValidationException, and it cannot be accepted as soft-fork.", None, Some(error))
+    }
+    prop
+  }
+
+  /** Executes the script in a given context.
+    * Step 1: Deserialize context variables
+    * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge statement (see also `SigmaBoolean`).
+    * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
+    *
+    * @param env       environment of system variables used by the interpreter internally
+    * @param tree      ErgoTree to execute in the given context and verify its result
+    * @param context   the context in which `exp` should be executed
+    * @param proof     The proof of knowledge of the secrets which is expected by the resulting SigmaProp
+    * @param message   message bytes, which are used in verification of the proof
+    *
+    * @return          verification result or Exception.
+    *                   If if the estimated cost of execution of the `tree` exceeds the limit (given in `context`),
+    *                   then exception if thrown and packed in Try.
+    *                   If left component is false, then:
+    *                    1) script executed to false or
+    *                    2) the given proof faild to validate resulting SigmaProp conditions.
+    * @see `reduceToCrypto`
+    */
+  def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = Try {
-    val propTree = applyDeserializeContext(context, exp.proposition)
-    val (cProp, cost) = reduceToCrypto(context, env, propTree).get
+    val prop = propositionFromErgoTree(tree, context)
+    implicit val vs = context.validationSettings
+    val propTree = trySoftForkable[BoolValue](whenSoftFork = TrueLeaf) {
+      applyDeserializeContext(context, prop)
+    }
+
+    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+    // and the rest of the verification is also trivial
+    val (cProp, cost) = reduceToCrypto(context, env, propTree).fold(t => throw t, identity)
 
     val checkingResult = cProp match {
-      case TrueLeaf => true
-      case FalseLeaf => false
-      case cProp: SigmaBoolean =>
-        cProp match {
-          case TrivialProp.TrueProp => true
-          case TrivialProp.FalseProp => false
-          case _ =>
-            // Perform Verifier Steps 1-3
-            SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-              case NoProof => false
-              case sp: UncheckedSigmaTree =>
-                // Perform Verifier Step 4
-                val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree] // todo: is this "asInstanceOf" necessary?
+      case TrivialProp.TrueProp => true
+      case TrivialProp.FalseProp => false
+      case _ =>
+        // Perform Verifier Steps 1-3
+        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
+          case NoProof => false
+          case sp: UncheckedSigmaTree =>
+            // Perform Verifier Step 4
+            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
 
-                /**
-                  * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
-                  * using the same conversion as the prover in 7
-                  * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
-                  * (and, if applicable,  the associated data). Reject otherwise.
-                  */
-                val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-                util.Arrays.equals(newRoot.challenge, expectedChallenge)
-            }
+            /**
+              * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
+              * using the same conversion as the prover in 7
+              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
+              * (and, if applicable,  the associated data). Reject otherwise.
+              */
+            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+            util.Arrays.equals(newRoot.challenge, expectedChallenge)
         }
-//      case _: Value[_] => false
     }
     checkingResult -> cost
   }
@@ -193,7 +231,8 @@ trait Interpreter extends ScorexLogging {
     verify(Interpreter.emptyEnv, exp, ctxv, proverResult.proof, message)
   }
 
-  def verify(env: ScriptEnv, exp: ErgoTree,
+  def verify(env: ScriptEnv,
+             exp: ErgoTree,
              context: CTX,
              proverResult: ProverResult,
              message: Array[Byte]): Try[VerificationResult] = {
@@ -202,7 +241,6 @@ trait Interpreter extends ScorexLogging {
   }
 
 
-  //todo: do we need the method below?
   def verify(exp: ErgoTree,
              context: CTX,
              proof: ProofT,
@@ -213,7 +251,16 @@ trait Interpreter extends ScorexLogging {
 }
 
 object Interpreter {
+  /** Result of Box.ergoTree verification procedure (see `verify` method).
+    * The first component is the value of Boolean type which represents a result of
+    * SigmaProp condition verification via sigma protocol.
+    * The second component is the estimated cost of contract execution. */
   type VerificationResult = (Boolean, Long)
+
+  /** Result of ErgoTree reduction procedure (see `reduceToCrypto`).
+    * The first component is the value of SigmaProp type which represents a statement
+    * verifiable via sigma protocol.
+    * The second component is the estimated cost of contract execution */
   type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]

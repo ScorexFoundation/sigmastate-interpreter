@@ -2,17 +2,20 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
+import org.ergoplatform.ErgoConstants
+import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = 1024 * 1024 * 1
-  val MaxTreeDepth: Int = 110
+  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.get
+  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
@@ -31,7 +34,7 @@ object SigmaSerializer {
 
   def startReader(bytes: Array[Byte],
                   constantStore: ConstantStore,
-                  resolvePlaceholdersToConstants: Boolean): SigmaByteReader = {
+                  resolvePlaceholdersToConstants: Boolean)(implicit vs: SigmaValidationSettings): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
     val r = new SigmaByteReader(new VLQByteBufferReader(buf),
       constantStore,
@@ -66,12 +69,12 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
     serialize(obj, new SigmaByteWriter(w, None))
   }
 
-  def parseWithGenericReader(r: Reader): TFamily = {
-    parse(
-      new SigmaByteReader(r,
-        new ConstantStore(),
-        resolvePlaceholdersToConstants = false,
-        maxTreeDepth = SigmaSerializer.MaxTreeDepth))
+  def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
+    val sigmaByteReader = new SigmaByteReader(r,
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = SigmaSerializer.MaxTreeDepth)
+    parse(sigmaByteReader)
   }
 
   def error(msg: String) = throw new SerializerException(msg, None)
@@ -84,9 +87,8 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
 }
 
 trait SigmaSerializerCompanion[TFamily] {
-  type Tag
 
-  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
+  def getSerializer(opCode: OpCode): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
   def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }

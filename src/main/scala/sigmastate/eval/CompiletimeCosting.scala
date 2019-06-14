@@ -14,7 +14,7 @@ import sigmastate.Values.Value.Typed
 import sigmastate.lang.Terms
 import sigma.util.Extensions._
 
-trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
+trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
   import builder._
 
   override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
@@ -61,10 +61,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: Evaluation =>
       // opt.isDefined =>
       case Select(nrv: Value[SOption[SType]]@unchecked, SOption.IsDefined, _) =>
         eval(mkOptionIsDefined(nrv))
-
-// TODO finish case for box.getReg[T](id) =>
-//      case Terms.Apply(Select(box: Value[SBox.type]@unchecked, SBox.GetReg, _), Seq(id)) if box.tpe == SBox =>
-//        eval(mkExtractRegisterAs(box, arg, ))
 
       case sel @ Select(obj, field, _) if obj.tpe == SBox =>
         (obj.asValue[SBox.type], field) match {

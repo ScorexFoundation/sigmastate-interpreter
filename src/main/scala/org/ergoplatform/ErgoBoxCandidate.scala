@@ -38,7 +38,7 @@ class ErgoBoxCandidate(val value: Long,
                        val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl,
                        val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map()) {
 
-  def proposition: BoolValue = ergoTree.proposition.asBoolValue
+  def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
   lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
 
@@ -122,10 +122,12 @@ object ErgoBoxCandidate {
     }
 
     def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
+      val previousPositionLimit = r.positionLimit
+      r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()
-      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
       val creationHeight = r.getUInt().toInt
-      val addTokensCount = r.getByte()
+      val addTokensCount = r.getUByte()
       val addTokens = (0 until addTokensCount).map { _ =>
         val tokenId = if (digestsInTx.isDefined) {
           val digestIndex = r.getUInt().toInt
@@ -138,13 +140,14 @@ object ErgoBoxCandidate {
         val amount = r.getULong()
         Digest32 @@ tokenId -> amount
       }
-      val regsCount = r.getByte()
+      val regsCount = r.getUByte()
       val regs = (0 until regsCount).map { iReg =>
         val regId = ErgoBox.startingNonMandatoryIndex + iReg
         val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryRegisterId]
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
         (reg, v)
       }.toMap
+      r.positionLimit = previousPositionLimit
       new ErgoBoxCandidate(value, tree, creationHeight, addTokens.toColl, regs)
     }
 

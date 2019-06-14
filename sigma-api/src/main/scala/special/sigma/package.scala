@@ -10,13 +10,6 @@ import scala.reflect.{ClassTag, classTag}
 
 package sigma {
 
-  case class WrapperType[Wrapper](cWrapper: ClassTag[Wrapper]) extends RType[Wrapper] {
-    override def classTag: ClassTag[Wrapper] = cWrapper
-    override def toString: String = cWrapper.toString
-    override def name: String = cWrapper.runtimeClass.getSimpleName
-    override def isConstantSize: Boolean = false  // pessimistic but safe default
-  }
-
   case class ArgType(override val name: String) extends RType[Any] {
     override def classTag: ClassTag[Any] = ClassTag.Any
     override def isConstantSize: Boolean = false  // pessimistic but safe default
@@ -24,19 +17,18 @@ package sigma {
 }
 
 package object sigma {
-  def wrapperType[W: ClassTag]: RType[W] = WrapperType(classTag[W])
-
-  // TODO make these types into GeneralType (same as Header and PreHeader)
-  implicit val BigIntRType: RType[BigInt] = new WrapperType(classTag[BigInt]) {
+  implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
     override def isConstantSize: Boolean = true
   }
-  implicit val GroupElementRType: RType[GroupElement] = new WrapperType(classTag[GroupElement]) {
+  implicit val GroupElementRType: RType[GroupElement] = new GeneralType(classTag[GroupElement]) {
     override def isConstantSize: Boolean = true
   }
-  implicit val SigmaPropRType: RType[SigmaProp] = wrapperType[SigmaProp]
-  implicit val BoxRType: RType[Box] = wrapperType[Box]
-  implicit val AvlTreeRType: RType[AvlTree] = wrapperType[AvlTree]
-  implicit val ContextRType: RType[Context] = wrapperType[Context]
+  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
+  implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
+  implicit val AvlTreeRType:   RType[AvlTree]   = new GeneralType(classTag[AvlTree]) {
+    override def isConstantSize: Boolean = true
+  }
+  implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
   // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)
   // and no conversion is necessary

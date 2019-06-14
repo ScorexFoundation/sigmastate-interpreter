@@ -1,5 +1,6 @@
 package sigmastate.interpreter
 
+import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
@@ -42,13 +43,21 @@ object ContextExtension {
 
 trait InterpreterContext {
   val extension: ContextExtension
+  val validationSettings: SigmaValidationSettings
+  val costLimit: Long
 
+  /** Creates a new instance with costLimit updated with given value. */
+  def withCostLimit(newCostLimit: Long): InterpreterContext
+
+  /** Creates a new instance with extension updated with given value. */
   def withExtension(newExtension: ContextExtension): InterpreterContext
 
+  /** Creates a new instance with given bindings added to extension. */
   def withBindings(bindings: (Byte, EvaluatedValue[_ <: SType])*): InterpreterContext = {
     val ext = extension.add(bindings: _*)
     withExtension(ext)
   }
 
+  /** Creates `special.sigma.Context` instance based on this context. */
   def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context
 }

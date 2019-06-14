@@ -1,11 +1,12 @@
 package sigmastate.eval
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
+import org.ergoplatform.validation.ValidationSpecification
 
 import scala.util.Success
-import sigmastate.{AvlTreeData, SInt, SLong, SType}
-import sigmastate.Values.{BigIntArrayConstant, Constant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, TrueLeaf, Value}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
+import sigmastate.{SInt, AvlTreeData, SLong, SType}
+import sigmastate.Values.{LongConstant, Constant, EvaluatedValue, SValue, TrueLeaf, SigmaPropConstant, Value, IntConstant, ErgoTree, BigIntArrayConstant}
+import org.ergoplatform.{Context => _, _}
 import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
@@ -19,7 +20,8 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 import scala.language.implicitConversions
 
-trait ErgoScriptTestkit extends ContractsTestkit with LangTests { self: BaseCtxTests =>
+trait ErgoScriptTestkit extends ContractsTestkit with LangTests
+    with ValidationSpecification { self: BaseCtxTests =>
 
   implicit lazy val IR: TestContext with IRContext =
     new TestContext with IRContext with CompiletimeCosting

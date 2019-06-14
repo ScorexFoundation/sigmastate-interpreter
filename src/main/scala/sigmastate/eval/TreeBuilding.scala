@@ -16,7 +16,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.SigmaTyper
 
-trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
+trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import Liftables._
   import Context._
   import SigmaProp._
@@ -48,7 +48,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
   type DefEnv = Map[Sym, (Int, SType)]
 
   object IsArithOp {
-    def unapply(op: EndoBinOp[_]): Option[Byte] = op match {
+    def unapply(op: EndoBinOp[_]): Option[OpCode] = op match {
       case _: NumericPlus[_]    => Some(PlusCode)
       case _: NumericMinus[_]   => Some(MinusCode)
       case _: NumericTimes[_]   => Some(MultiplyCode)
@@ -266,7 +266,7 @@ trait TreeBuilding extends RuntimeCosting { IR: Evaluation =>
         val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym).asCollection[SType]
-        val colTpe = col.tpe // elemToSType(colSym.elem).asCollection
+        val colTpe = col.tpe
         val method = SCollection.methods.find(_.name == m.getName).getOrElse(error(s"unknown method Coll.${m.getName}"))
         val typeSubst = (method, args) match {
           case (mth @ SCollection.FlatMapMethod, Seq(f)) =>

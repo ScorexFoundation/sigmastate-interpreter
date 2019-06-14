@@ -2,21 +2,21 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
-import scorex.util.Extensions._
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.Fold
-import sigmastate.{SCollection, SFunc, SType}
+import sigmastate.{SCollection, SType, SFunc}
 
 case class FoldSerializer(cons: (Value[SCollection[SType]], Value[SType], Value[SFunc]) => Value[SType])
   extends ValueSerializer[Fold[SType, SType]] {
-  override val opCode: OpCode = OpCodes.FoldCode
+  override def opDesc = Fold
 
-  override def serialize(obj: Fold[SType, SType], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.zero)
-      .putValue(obj.foldOp)
+  override def serialize(obj: Fold[SType, SType], w: SigmaByteWriter): Unit = {
+    import sigmastate.Operations.FoldInfo._
+    w.putValue(obj.input, thisArg)
+      .putValue(obj.zero, zeroArg)
+      .putValue(obj.foldOp, opArg)
+  }
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val input  = r.getValue().asCollection[SType]

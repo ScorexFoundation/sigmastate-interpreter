@@ -5,12 +5,12 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 
 class SerializationRoundTripSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with ValueGenerators
+  with ObjectGenerators
   with SigmaTestingCommons {
 
   property("ErgoBoxCandidate: Serializer round trip") {

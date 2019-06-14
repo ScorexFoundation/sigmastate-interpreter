@@ -7,7 +7,7 @@ import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue, IntConstant}
+import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
@@ -55,8 +55,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBox)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "boxCreationHeight_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "boxCreationHeight_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("collect coins from the founders' box") {
@@ -85,20 +85,20 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     def checkAtHeight(height: Int) = {
       // collect correct amount of coins, correct new script, able to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop.proposition, R4Prop(true)) shouldBe 'success
+      checkSpending(remaining(height), height, prop, R4Prop(true)) shouldBe 'success
       // unable to satisfy R4 conditions
-      checkSpending(remaining(height), height, prop.proposition, R4Prop(false)) shouldBe 'failure
+      checkSpending(remaining(height), height, prop, R4Prop(false)) shouldBe 'failure
       // incorrect new script
       checkSpending(remaining(height), height, TrivialProp.TrueProp, R4Prop(true)) shouldBe 'failure
       // collect less coins then possible
-      checkSpending(remaining(height) + 1, height, prop.proposition, R4Prop(true)) shouldBe 'success
+      checkSpending(remaining(height) + 1, height, prop, R4Prop(true)) shouldBe 'success
       // collect more coins then possible
-      checkSpending(remaining(height) - 1, height, prop.proposition, R4Prop(true)) shouldBe 'failure
+      checkSpending(remaining(height) - 1, height, prop, R4Prop(true)) shouldBe 'failure
     }
 
     def checkSpending(remainingAmount: Long,
                       height: Int,
-                      newProp: SigmaPropValue,
+                      newProp: ErgoTree,
                       inputR4Val: CollectionConstant[SByte.type]): Try[Unit] = Try {
       val outputR4Val: CollectionConstant[SByte.type] = ByteArrayConstant(Random.randomBytes())
       val inputBoxes = IndexedSeq(ErgoBox(emission.foundersCoinsTotal, prop, 0, Seq(), Map(R4 -> inputR4Val)))
@@ -113,8 +113,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head)
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkSpending_prove"), prop, ctx, fakeMessage).get
+      verifier.verify(emptyEnv + (ScriptNameProp -> "checkSpending_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
   }
 
@@ -143,8 +143,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       self = inputBoxes.head)
 
     // should not be able to collect before minerRewardDelay
-    val prove = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, prevBlockCtx, prove, fakeMessage)
+    val prove = prover.prove(emptyEnv + (ScriptNameProp -> "rewardOutputScript_prove"), prop, ctx, fakeMessage).get
+    verifier.verify(emptyEnv + (ScriptNameProp -> "rewardOutputScript_verify"), prop, prevBlockCtx, prove, fakeMessage)
       .fold(t => throw t, x => x) should matchPattern { case (false,_) => }
 
     // should be able to collect after minerRewardDelay
@@ -162,17 +162,17 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     // collect coins during the fixed rate period
     forAll(Gen.choose(1, settings.fixedRatePeriod)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
-      createRewardTx(currentRate, height, minerProp.proposition) shouldBe 'success
-      createRewardTx(currentRate + 1, height, minerProp.proposition) shouldBe 'failure
-      createRewardTx(currentRate - 1, height, minerProp.proposition) shouldBe 'failure
+      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }
 
     // collect coins after the fixed rate period
     forAll(Gen.choose(1, emission.blocksTotal - 1)) { height =>
       val currentRate = emission.minersRewardAtHeight(height)
-      createRewardTx(currentRate, height, minerProp.proposition) shouldBe 'success
-      createRewardTx(currentRate + 1, height, minerProp.proposition) shouldBe 'failure
-      createRewardTx(currentRate - 1, height, minerProp.proposition) shouldBe 'failure
+      createRewardTx(currentRate, height, minerProp) shouldBe 'success
+      createRewardTx(currentRate + 1, height, minerProp) shouldBe 'failure
+      createRewardTx(currentRate - 1, height, minerProp) shouldBe 'failure
     }
 
     // collect coins to incorrect proposition
@@ -182,13 +182,13 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val correctProp = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, minerPk)
       val incorrectDelay = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay + 1, minerPk)
       val incorrectPk = ErgoScriptPredef.rewardOutputScript(settings.minerRewardDelay, pk2)
-      createRewardTx(currentRate, height, correctProp.proposition) shouldBe 'success
-      createRewardTx(currentRate, height, incorrectDelay.proposition) shouldBe 'failure
-      createRewardTx(currentRate, height, incorrectPk.proposition) shouldBe 'failure
+      createRewardTx(currentRate, height, correctProp) shouldBe 'success
+      createRewardTx(currentRate, height, incorrectDelay) shouldBe 'failure
+      createRewardTx(currentRate, height, incorrectPk) shouldBe 'failure
       createRewardTx(currentRate, height, minerPk) shouldBe 'failure
     }
 
-    def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: SigmaPropValue): Try[ErgoLikeTransaction] = {
+    def createRewardTx(emissionAmount: Long, nextHeight: Int, minerProp: ErgoTree): Try[ErgoLikeTransaction] = {
       checkRewardTx(minerPk,
         minerProp,
         emissionBox,
@@ -199,8 +199,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   property("tokenThreshold") {
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 2)
-    val verifier = new ErgoLikeTestInterpreter(CostTable.ScriptLimit * 2)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val verifier = new ErgoLikeTestInterpreter()
 
     val pubkey = prover.dlogSecrets.head.publicImage
 
@@ -222,10 +222,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head)
+        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 2)
 
-      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+      val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
+      verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
     }
 
 
@@ -234,7 +234,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val inputs0 = IndexedSeq(
         ErgoBox(20, prop, 0, Seq((wrongId, tokenAmount), (tokenId, tokenAmount), (wrongId2, tokenAmount)), Map())
       )
-      check(inputs0).get shouldBe ()
+      check(inputs0).get shouldBe (())
 
       // transaction with the only input with insufficient token should fail
       val inputs1 = IndexedSeq(
@@ -278,7 +278,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
   }
 
   def checkRewardTx(minerPk: ProveDlog,
-                    minerProp: SigmaPropValue,
+                    minerProp: ErgoTree,
                     emissionBox: ErgoBox,
                     emissionAmount: Long,
                     nextHeight: Int)(prover: ContextEnrichingTestProvingInterpreter): Try[ErgoLikeTransaction] = Try {
@@ -300,8 +300,8 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "checkRewardTx_prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)
+    verifier.verify(emptyEnv + (ScriptNameProp -> "checkRewardTx_verify"), prop, ctx, pr, fakeMessage).fold(t => throw t, identity)._1 shouldBe true
     spendingTransaction
   }
 

@@ -7,14 +7,13 @@ import sigmastate.utxo.CostTable
 
 import scala.util.{Failure, Success}
 
-class ErgoLikeTestInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext) extends ErgoLikeInterpreter(maxCost) {
+class ErgoLikeTestInterpreter(implicit override val IR: IRContext) extends ErgoLikeInterpreter {
   override type CTX = ErgoLikeContext
 }
 
 class ErgoTransactionValidator(implicit IR: IRContext) {
   val verifier = new ErgoLikeTestInterpreter()
 
-  //todo: check that outputs are well-formed?
   def validate(tx: ErgoLikeTransaction,
                blockchainState: BlockchainState,
                minerPubkey: Array[Byte],

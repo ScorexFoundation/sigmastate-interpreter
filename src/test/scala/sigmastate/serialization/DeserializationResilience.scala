@@ -2,36 +2,62 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.Outputs
-import scorex.util.serialization.{Reader, VLQByteBufferReader}
-import sigmastate.Values.{IntConstant, SValue, SigmaBoolean, Tuple}
+import org.ergoplatform.{Outputs, ErgoBoxCandidate}
+import org.ergoplatform.validation.ValidationException
+import org.scalacheck.Gen
+import scorex.util.serialization.{VLQByteBufferReader, Reader}
+import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
 import sigmastate._
-import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidOpCode, InvalidTypePrefix}
+import sigmastate.interpreter.CryptoConstants
+import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InputSizeLimitExceeded, DeserializeCallDepthExceeded}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
+import sigmastate.eval._
+import sigmastate.eval.Extensions._
+import sigmastate.helpers.SigmaTestingCommons
 
 import scala.collection.mutable
 
-class DeserializationResilience extends SerializationSpecification {
+class DeserializationResilience extends SerializationSpecification with SigmaTestingCommons {
 
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
-    new SigmaByteReader(
+    val r = new SigmaByteReader(
       new VLQByteBufferReader(buf),
       new ConstantStore(),
       resolvePlaceholdersToConstants = false,
       maxTreeDepth = maxTreeDepth).mark()
+    r
   }
 
   property("empty") {
     an[ArrayIndexOutOfBoundsException] should be thrownBy ValueSerializer.deserialize(Array[Byte]())
   }
 
-  property("max size limit") {
-    val bytes = Array.fill[Byte](SigmaSerializer.MaxInputSize + 1)(1)
-    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(bytes)
-    an[InputSizeLimitExceeded] should be thrownBy ValueSerializer.deserialize(SigmaSerializer.startReader(bytes, 0))
+  property("exceeding ergo box propositionBytes max size check") {
+    val oversizedTree = new SigmaAnd(
+      Gen.listOfN(SigmaSerializer.MaxPropositionSize / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val b = new ErgoBoxCandidate(1L, oversizedTree, 1)
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    assertExceptionThrown({
+      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes))
+    }, {
+      case e: SerializerException  => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
+      case _ => false
+    })
+  }
+
+  property("ergo box propositionBytes max size check") {
+    val bigTree = new SigmaAnd(
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val b = new ErgoBoxCandidate(1L, bigTree, 1)
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(w.toBytes)) shouldEqual b
   }
 
   property("zeroes (invalid type code in constant deserialization path") {
@@ -61,7 +87,7 @@ class DeserializationResilience extends SerializationSpecification {
   }
 
   property("invalid op code") {
-    an[InvalidOpCode] should be thrownBy
+    an[ValidationException] should be thrownBy
       ValueSerializer.deserialize(Array.fill[Byte](1)(117.toByte))
   }
 
@@ -195,4 +221,16 @@ class DeserializationResilience extends SerializationSpecification {
       ValueSerializer.deserialize(reader(ValueSerializer.serialize(expr), maxTreeDepth = 3))
   }
 
+  property("exceed ergo box max size check") {
+    val bigTree = new SigmaAnd(
+      Gen.listOfN((SigmaSerializer.MaxPropositionSize / 2) / CryptoConstants.groupSize,
+        proveDlogGen.map(_.toSigmaProp)).sample.get).treeWithSegregation
+    val tokens = additionalTokensGen(127).sample.get.map(_.sample.get).toColl
+    val b = new ErgoBoxCandidate(1L, bigTree, 1, tokens)
+    val w = SigmaSerializer.startWriter()
+    ErgoBoxCandidate.serializer.serialize(b, w)
+    val bytes = w.toBytes
+    an[InputSizeLimitExceeded] should be thrownBy
+      ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(bytes))
+  }
 }

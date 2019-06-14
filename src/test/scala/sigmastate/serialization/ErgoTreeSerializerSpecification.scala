@@ -4,7 +4,7 @@ import sigmastate.Values.{ErgoTree, IntConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.eval.IRContext
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.lang.exceptions.SerializerException
+import sigmastate.lang.exceptions.{InputSizeLimitExceeded, SerializerException}
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 
 class ErgoTreeSerializerSpecification extends SerializationSpecification
@@ -30,7 +30,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp
     val ergoTree = extractConstants(tree)
     val bytes = DefaultSerializer.serializeErgoTree(ergoTree)
-    val (_, deserializedConstants, treeBytes) = DefaultSerializer
+    val (_, _, deserializedConstants, treeBytes) = DefaultSerializer
       .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
     deserializedConstants shouldEqual ergoTree.constants
     val r = SigmaSerializer.startReader(treeBytes, new ConstantStore(deserializedConstants),
@@ -58,7 +58,7 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
   property("Constant extraction during serialization: (de)serialization round trip") {
     val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
     val bytes = DefaultSerializer.serializeErgoTree(tree)
-    val (_, deserializedConstants, _) = DefaultSerializer.
+    val (_, _, deserializedConstants, _) = DefaultSerializer.
       deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes))
     deserializedConstants.length shouldBe 3
     val deserializedTree = DefaultSerializer.deserializeErgoTree(bytes)
@@ -70,9 +70,9 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     val tree2 = EQ(Plus(30, 40), IntConstant(70)).toSigmaProp.treeWithSegregation
     val bytes1 = DefaultSerializer.serializeErgoTree(tree1)
     val bytes2 = DefaultSerializer.serializeErgoTree(tree2)
-    val (_, _, treeBytes1) = DefaultSerializer
+    val (_, _, _, treeBytes1) = DefaultSerializer
       .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes1))
-    val (_, _, treeBytes2) = DefaultSerializer
+    val (_, _, _, treeBytes2) = DefaultSerializer
       .deserializeHeaderWithTreeBytes(SigmaSerializer.startReader(bytes2))
     treeBytes1 shouldEqual treeBytes2
   }
@@ -87,4 +87,21 @@ class ErgoTreeSerializerSpecification extends SerializationSpecification
     }
   }
 
+  property("max ergo tree byte size check") {
+    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
+    assertExceptionThrown({
+      DefaultSerializer.deserializeErgoTree(r, 1)
+    }, {
+      case e: SerializerException => rootCause(e).isInstanceOf[InputSizeLimitExceeded]
+    })
+  }
+
+  property("restore reader's positionLimit") {
+    val tree = EQ(Plus(10, 20), IntConstant(30)).toSigmaProp.treeWithSegregation
+    val r = SigmaSerializer.startReader(DefaultSerializer.serializeErgoTree(tree))
+    r.positionLimit = 1
+    DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize) shouldEqual tree
+    r.positionLimit shouldBe 1
+  }
 }

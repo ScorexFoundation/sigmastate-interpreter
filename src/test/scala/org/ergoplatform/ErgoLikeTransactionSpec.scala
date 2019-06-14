@@ -8,7 +8,7 @@ import sigmastate.Values.ByteArrayConstant
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.serialization.generators.ValueGenerators
+import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.SType._
@@ -16,7 +16,7 @@ import sigmastate.SType._
 class ErgoLikeTransactionSpec extends PropSpec
   with GeneratorDrivenPropertyChecks
   with Matchers
-  with ValueGenerators
+  with ObjectGenerators
   with SigmaTestingCommons {
 
   property("ErgoLikeTransaction: Serializer round trip") {

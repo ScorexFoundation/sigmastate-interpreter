@@ -7,7 +7,6 @@ import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter._
@@ -315,15 +314,6 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         EQ(SizeOf(data), IntConstant(1)).toSigmaProp
       }
     )
-
-// TODO uncomment after operations over Any are implemented
-//    test(env, ext,
-//    """{ val p = (getVar[Int](intVar1).get, getVar[Byte](byteVar2).get)
-//     |  p.getOrElse(2, 3).isInstanceOf[Int] }""".stripMargin,
-//    {
-//      val p = Tuple(GetVarInt(intVar1).get, GetVarByte(byteVar2).get)
-//      EQ(ByIndex[SAny.type](p, IntConstant(2), Some(IntConstant(3).asValue[SAny.type])), IntConstant(3))
-//    })
   }
 
   property("GetVar") {
@@ -342,12 +332,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   }
 
   property("ExtractRegisterAs") {
-    //TODO: uncomment and fix
-//    test("Extract1", env, ext,
-//      "{ SELF.R4[SigmaProp].get.isProven }",
-//      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
-//      true
-//    )
+    test("Extract1", env, ext,
+      "{ SELF.R4[SigmaProp].get.isProven }",
+      ExtractRegisterAs[SSigmaProp.type](Self, reg1).get,
+      true
+    )
     // wrong type
     assertExceptionThrown(
       test("Extract2", env, ext,
@@ -495,11 +484,11 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 //    println(CostTableStat.costTableString)
   }
 
-  //TODO: uncomment and fix
-//  property("ZKProof") {
-//    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
-//      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
-//  }
+  //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/236
+  ignore("ZKProof") {
+    test("zk1", env, ext, "ZKProof { sigmaProp(HEIGHT >= 0) }",
+      ZKProofBlock(BoolToSigmaProp(GE(Height, LongConstant(0)))), true)
+  }
 
   property("numeric cast") {
     test("downcast", env, ext,

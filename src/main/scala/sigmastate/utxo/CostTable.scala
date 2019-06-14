@@ -1,8 +1,10 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
+
 import scala.collection.mutable
 
 case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
@@ -59,8 +61,8 @@ object CostTable {
   val avlTreeOp = hashPerKb * 2
 
   val collAccess = 5
-  val collLength  = 5 // TODO should be >= selectField
-  val collByIndex = 5 // TODO should be >= selectField
+  val collLength  = 5 // TODO costing: should be >= selectField
+  val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
 
@@ -75,7 +77,7 @@ object CostTable {
   val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
   val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
 
-  val castOp = 5  // TODO should be >= selectField
+  val castOp = 5  // TODO costing: should be >= selectField
 
   val treeOp = 1000
 
@@ -136,11 +138,7 @@ object CostTable {
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
-    ("SCollection$.segmentLength", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
-    ("SCollection$.indexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
-    ("SCollection$.lastIndexWhere", "(Coll[IV],(IV) => Boolean,Int) => Int", collToColl),
     ("SCollection$.zip", "(Coll[IV],Coll[OV]) => Coll[(IV,OV)]", collToColl),
-    ("SCollection$.partition", "(Coll[IV],(IV) => Boolean) => (Coll[IV],Coll[IV])", collToColl),
     ("SCollection$.patch", "(Coll[IV],Int,Coll[IV],Int) => Coll[IV]", collToColl),
     ("SCollection$.updated", "(Coll[IV],Int,IV) => Coll[IV]", collToColl),
     ("SCollection$.updateMany_per_kb", "(Coll[IV],Coll[Int],Coll[IV]) => Coll[IV]", collToColl),
@@ -287,7 +285,7 @@ object CostTable {
   }
 
   //Maximum cost of a script
-  val ScriptLimit = 1000000
+  val ScriptLimit = ErgoConstants.ScriptCostLimit.value
 
   //Maximum number of expressions in initial(non-reduced script)
   val MaxExpressions = 300

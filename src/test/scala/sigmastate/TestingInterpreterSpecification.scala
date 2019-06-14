@@ -4,6 +4,7 @@ import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
+import sigma.util.Extensions._
 import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
@@ -28,7 +29,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       fakeSelf)
 
   property("Reduction to crypto #1") {
-    forAll() { (h: Int) =>
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
         val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
 
@@ -61,8 +63,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Reduction to crypto #2") {
-    forAll() { (h: Int) =>
-
+    forAll() { i: Int =>
+      val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
         val dk1 = DLogProverInput.random().publicImage.isProven
@@ -164,7 +166,6 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = box1.R5[Coll[Boolean]].get
         |  allOf(arr) == false
         |}""".stripMargin)
-
     testEval(
       """{
         |  val arr = Coll(1, 2, 3)
@@ -185,13 +186,14 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
         |  val arr = Coll(1, 2, 3)
         |  arr.map {(i: Int) => i + 1} == Coll(2, 3, 4)
         |}""".stripMargin)
-    //    // TODO uncomment when Costing for where is implemented
-    //    testEval("""{
-    //              |  val arr = Array(1, 2, 3)
-    //              |  arr.filter {(i: Int) => i < 3} == Array(1, 2)
-    //              |}""".stripMargin)
+    testEval(
+      """{
+        |  val arr = Coll(1, 2, 3)
+        |  arr.filter {(i: Int) => i < 3} == Coll(1, 2)
+        |}""".stripMargin)
   }
 
+// TODO coverage: implement it as negative test
 //  property("Evaluate sigma in lambdas") {
 //    testeval("""{
 //              |  val arr = Array(dk1, dk2)

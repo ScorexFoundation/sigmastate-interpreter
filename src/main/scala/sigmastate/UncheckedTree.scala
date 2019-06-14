@@ -20,8 +20,7 @@ trait UncheckedConjecture extends UncheckedSigmaTree with ProofTreeConjecture {
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedConjecture =>
-      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
-        children == x.children
+      util.Arrays.equals(challenge, x.challenge) && children == x.children
   }
 }
 
@@ -37,7 +36,7 @@ case class UncheckedSchnorr(override val proposition: ProveDlog,
 
   override def equals(obj: Any): Boolean = obj match {
     case x: UncheckedSchnorr =>
-      util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
+      util.Arrays.equals(challenge, x.challenge) &&
         commitmentOpt == x.commitmentOpt &&
         secondMessage == x.secondMessage
     case _ => false
@@ -55,7 +54,7 @@ case class UncheckedDiffieHellmanTuple(override val proposition: ProveDHTuple,
     case x: UncheckedDiffieHellmanTuple =>
       proposition == x.proposition &&
         commitmentOpt == x.commitmentOpt &&
-        util.Arrays.equals(challenge, x.challenge) && // todo: why does this code mix .equals and == ?
+        util.Arrays.equals(challenge, x.challenge) &&
         secondMessage == x.secondMessage
   }
 }

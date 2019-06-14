@@ -147,7 +147,7 @@ class CompilerItTest extends BaseCtxTests
 //        constCost[Coll[WBigInteger]] + costs.sum(intPlusMonoid)
 //      },
       size = null,
-      tree = mkMapCollection(BigIntArrayConstant(bigIntegerArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), -102))),
+      tree = mkMapCollection(BigIntArrayConstant(bigIntegerArr1), mkFuncValue(Vector((1,SBigInt)), ArithOp(ValUse(1,SBigInt), BigIntConstant(10L), PlusCode))),
       Result(res, 23, 64))
   }
   ignore("bigIntArray_Map_Case") {

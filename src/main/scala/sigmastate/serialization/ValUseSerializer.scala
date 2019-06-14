@@ -2,12 +2,10 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
-import sigmastate.utils.{SigmaByteWriter, SigmaByteReader}
+import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ValUseSerializer(cons: (Int, SType) => Value[SType]) extends ValueSerializer[ValUse[SType]] {
-
-  override val opCode: OpCode = ValUseCode
+  override def opDesc = ValUse
 
   override def serialize(obj: ValUse[SType], w: SigmaByteWriter): Unit = {
     w.putUInt(obj.valId)

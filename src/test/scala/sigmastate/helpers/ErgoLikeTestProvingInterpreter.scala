@@ -6,8 +6,8 @@ import sigmastate.eval.IRContext
 import sigmastate.interpreter.ProverInterpreter
 import sigmastate.utxo.CostTable
 
-class ErgoLikeTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext)
-  extends ErgoLikeTestInterpreter(maxCost) with ProverInterpreter {
+class ErgoLikeTestProvingInterpreter(implicit override val IR: IRContext)
+  extends ErgoLikeTestInterpreter with ProverInterpreter {
 
   override lazy val secrets: Seq[SigmaProtocolPrivateInput[_, _]] = {
     (1 to 4).map(_ => DLogProverInput.random()) ++
