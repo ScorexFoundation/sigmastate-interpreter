@@ -16,7 +16,6 @@ import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.exceptions.CosterException
@@ -48,6 +47,116 @@ class SpamSpecification extends SigmaTestingCommons {
     val t = System.currentTimeMillis()
     (res, (t - t0) < Timeout)
   }
+
+  property("nested loops 1") {
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val largeColl = Colls.fromArray((1 to 50).toArray)
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "largeColl" -> largeColl
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = largeColl.forall({(i:Int) =>
+        |     largeColl.exists({(j:Int) =>
+        |       i != j
+        |     }
+        |     ) &&
+        |     largeColl.exists({(j:Int) =>
+        |       largeColl.forall({(k:Int) =>
+        |         k != i + j
+        |       }
+        |       ) &&
+        |       i != j
+        |     }
+        |     ) &&
+        |     OUTPUTS.exists({(x:Box) =>
+        |       x.propositionBytes.size >= i
+        |     }
+        |     )
+        |   }
+        |  )
+        |  ! valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+
+    //todo: make value dependent on CostTable constants, not magic constant
+    val ba = Random.randomBytes(10000000)
+
+    val id = 11: Byte
+    val id2 = 12: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(id, ByteArrayConstant(ba))
+      .withContextExtender(id2, ByteArrayConstant(ba))
+
+    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
+
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (_, calcTime) = BenchmarkUtil.measureTime {
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
+    }
+    println(s"Verify time: $calcTime millis")
+    println("Timeout: " + Timeout)
+    (calcTime < Timeout) shouldBe true
+  }
+
+  property("nested loops 2") {
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val largeColl = Colls.fromArray((1 to 50).toArray)
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "largeColl" -> largeColl
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = largeColl.forall({(i:Int) =>
+        |     largeColl.exists({(j:Int) =>
+        |       largeColl.forall({(k:Int) =>
+        |         k != i + j
+        |       }
+        |       )
+        |     }
+        |     )
+        |   }
+        |  )
+        |  alice && valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+
+    //todo: make value dependent on CostTable constants, not magic constant
+    val ba = Random.randomBytes(10000000)
+
+    val id = 11: Byte
+    val id2 = 12: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter()
+      .withContextExtender(id, ByteArrayConstant(ba))
+      .withContextExtender(id2, ByteArrayConstant(ba))
+
+    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
+
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (_, calcTime) = BenchmarkUtil.measureTime {
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
+    }
+    println(s"Verify time: $calcTime millis")
+    println("Timeout: " + Timeout)
+    (calcTime < Timeout) shouldBe true
+  }
+
 
   property("huge byte array") {
     //TODO coverage: make value dependent on CostTable constants, not magic constant
