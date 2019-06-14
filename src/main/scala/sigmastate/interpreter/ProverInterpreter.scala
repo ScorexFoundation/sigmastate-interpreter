@@ -20,7 +20,9 @@ import gf2t.GF2_192_Poly
 import sigmastate.basics._
 
 /**
-  * A hint for prover, which helps prover to resolve a script. 
+  * A hint for prover, which helps prover to resolve a script. For example, if the script is "pk1 && pk2", and the
+  * prover knows only a secret for the public key pk1, the prover fails on proving without a hint. But if the prover
+  * knows that pk2 is known to another party, the prover may prove the statement.
   */
 trait Hint
 
