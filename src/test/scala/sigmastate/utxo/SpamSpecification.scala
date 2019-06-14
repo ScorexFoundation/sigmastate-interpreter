@@ -42,10 +42,12 @@ class SpamSpecification extends SigmaTestingCommons {
     val t0 = System.currentTimeMillis()
     val res = fn()
     val t = System.currentTimeMillis()
+    println("TIMEOUT IS "+Timeout)
+    println("TIME IS "+(t-t0))
     (res, (t - t0) < Timeout)
   }
 
-  property("nested loops") {
+  property("nested loops 1") {
     val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
     val largeColl = Colls.fromArray((1 to 100).toArray)
@@ -85,7 +87,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val id = 11: Byte
     val id2 = 12: Byte
 
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10)
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit*10)
       .withContextExtender(id, ByteArrayConstant(ba))
       .withContextExtender(id2, ByteArrayConstant(ba))
 
@@ -103,6 +105,58 @@ class SpamSpecification extends SigmaTestingCommons {
     val end = System.currentTimeMillis()
     println("Verify time: millis "+(end-start))
     res.isFailure shouldBe true
+    terminated shouldBe true
+  }
+
+  property("nested loops 2") {
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val largeColl = Colls.fromArray((1 to 50).toArray)
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "largeColl" -> largeColl
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = largeColl.forall({(i:Int) =>
+        |     largeColl.exists({(j:Int) =>
+        |       largeColl.forall({(k:Int) =>
+        |         k != i + j
+        |       }
+        |       )
+        |     }
+        |     )
+        |   }
+        |  )
+        |  alice && valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+
+    //todo: make value dependent on CostTable constants, not magic constant
+    val ba = Random.randomBytes(10000000)
+
+    val id = 11: Byte
+    val id2 = 12: Byte
+
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit)
+      .withContextExtender(id, ByteArrayConstant(ba))
+      .withContextExtender(id2, ByteArrayConstant(ba))
+
+    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
+
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+
+    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val start = System.currentTimeMillis()
+    val (res, terminated) = termination(() =>
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
+    )
+    val end = System.currentTimeMillis()
+    println("Verify time: millis "+(end-start))
+    //res.isFailure shouldBe true
     terminated shouldBe true
   }
 
