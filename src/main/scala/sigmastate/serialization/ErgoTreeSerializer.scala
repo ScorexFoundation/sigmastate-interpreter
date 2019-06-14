@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
-import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
+import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
 import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
 import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.SerializerException
+import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
@@ -135,14 +135,20 @@ class ErgoTreeSerializer {
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
     val tree = try {
-      val cs = deserializeConstants(h, r)
-      val previousConstantStore = r.constantStore
-      // reader with constant store attached is required (to get tpe for a constant placeholder)
-      r.constantStore = new ConstantStore(cs)
-      val root = ValueSerializer.deserialize(r)
-      CheckDeserializedScriptIsSigmaProp(root) {}
-      r.constantStore = previousConstantStore
-      ErgoTree(h, cs, root.asSigmaProp)
+      try { // nested try-catch to intercept size limit exceptions and rethrow them as ValidationExceptions
+        val cs = deserializeConstants(h, r)
+        val previousConstantStore = r.constantStore
+        // reader with constant store attached is required (to get tpe for a constant placeholder)
+        r.constantStore = new ConstantStore(cs)
+        val root = ValueSerializer.deserialize(r)
+        CheckDeserializedScriptIsSigmaProp(root) {}
+        r.constantStore = previousConstantStore
+        ErgoTree(h, cs, root.asSigmaProp)
+      }
+      catch {
+        case e: InputSizeLimitExceeded =>
+          throw ValidationException(s"Data size check failed", CheckPositionLimit, Nil, Some(e))
+      }
     }
     catch {
       case ve: ValidationException =>

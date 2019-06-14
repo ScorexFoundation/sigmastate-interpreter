@@ -91,14 +91,18 @@ trait Interpreter extends ScorexLogging {
     }
     res
   }
-  /**
-    * As the first step both prover and verifier are applying context-specific transformations and then estimating
-    * cost of the intermediate expression. If cost is above limit, abort. Otherwise, both prover and verifier are
-    * reducing the expression in the same way.
+
+  /** This method is used in both prover and verifier to compute SigmaProp value.
+    * As the first step the cost of computing the `exp` expression in the given context is estimated.
+    * If cost is above limit
+    *   then exception is returned and `exp` is not executed
+    *   else `exp` is computed in the given context and the resulting SigmaBoolean returned.
     *
-    * @param exp
-    * @param context
-    * @return
+    * @param context   the context in which `exp` should be executed
+    * @param env       environment of system variables used by the interpreter internally
+    * @param exp       expression to be executed in the given `context`
+    * @return          result of script reduction
+    * @see `ReductionResult`
     */
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._
@@ -112,7 +116,6 @@ trait Interpreter extends ScorexLogging {
 
       CheckCalcFunc(IR)(calcF) { }
 
-      CheckCostWithContextIsActive(context.validationSettings)
       val costingCtx = context.toSigmaContext(IR, isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
               .fold(t => throw t, identity)
@@ -144,8 +147,25 @@ trait Interpreter extends ScorexLogging {
     prop
   }
 
-  /** Executes the script in a given context and verifies the proof.
-    * @param costLimit   Max cost of a script interpreter can accept */
+  /** Executes the script in a given context.
+    * Step 1: Deserialize context variables
+    * Step 2: Evaluate expression and produce SigmaProp value, which is zero-knowledge statement (see also `SigmaBoolean`).
+    * Step 3: Verify that the proof is presented to satisfy SigmaProp conditions.
+    *
+    * @param env       environment of system variables used by the interpreter internally
+    * @param tree      ErgoTree to execute in the given context and verify its result
+    * @param context   the context in which `exp` should be executed
+    * @param proof     The proof of knowledge of the secrets which is expected by the resulting SigmaProp
+    * @param message   message bytes, which are used in verification of the proof
+    *
+    * @return          verification result or Exception.
+    *                   If if the estimated cost of execution of the `tree` exceeds the limit (given in `context`),
+    *                   then exception if thrown and packed in Try.
+    *                   If left component is false, then:
+    *                    1) script executed to false or
+    *                    2) the given proof faild to validate resulting SigmaProp conditions.
+    * @see `reduceToCrypto`
+    */
   def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
@@ -158,7 +178,7 @@ trait Interpreter extends ScorexLogging {
 
     // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
     // and the rest of the verification is also trivial
-    val (cProp, cost) = reduceToCrypto(context, env, propTree).get
+    val (cProp, cost) = reduceToCrypto(context, env, propTree).fold(t => throw t, identity)
 
     val checkingResult = cProp match {
       case TrivialProp.TrueProp => true
@@ -172,9 +192,9 @@ trait Interpreter extends ScorexLogging {
             val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
 
             /**
-              * Verifier Steps 5-6: Convert the tree to a string s for input to the Fiat-Shamir hash function,
+              * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
               * using the same conversion as the prover in 7
-              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of s
+              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
               * (and, if applicable,  the associated data). Reject otherwise.
               */
             val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
@@ -231,7 +251,16 @@ trait Interpreter extends ScorexLogging {
 }
 
 object Interpreter {
+  /** Result of Box.ergoTree verification procedure (see `verify` method).
+    * The first component is the value of Boolean type which represents a result of
+    * SigmaProp condition verification via sigma protocol.
+    * The second component is the estimated cost of contract execution. */
   type VerificationResult = (Boolean, Long)
+
+  /** Result of ErgoTree reduction procedure (see `reduceToCrypto`).
+    * The first component is the value of SigmaProp type which represents a statement
+    * verifiable via sigma protocol.
+    * The second component is the estimated cost of contract execution */
   type ReductionResult = (SigmaBoolean, Long)
 
   type ScriptEnv = Map[String, Any]

@@ -15,7 +15,7 @@ class SigmaByteReader(val r: Reader,
 
   @inline private def checkPositionLimit(): Unit =
     if (position > positionLimit)
-      throw new InputSizeLimitExceeded(s"read bytes position limit $positionLimit is reached at position $position")
+      throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
 
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()

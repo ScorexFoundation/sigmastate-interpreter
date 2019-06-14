@@ -253,7 +253,7 @@ trait STypeCompanion {
     * It delegate to getMethodById to lookup method.
     * @see getMethodById
     */
-  def methodById(methodId: Byte): SMethod = CheckAndGetMethod(this, methodId) { m => m }
+  def methodById(methodId: Byte): SMethod = ValidationRules.CheckAndGetMethod(this, methodId) { m => m }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -387,33 +387,6 @@ case class SMethod(
     docInfo.get.args.find(_.name == argName).get
 }
 
-object CheckTypeWithMethods extends ValidationRule(1011,
-  "Check the type (given by type code) supports methods")
-    with SoftForkWhenCodeAdded {
-  def apply[T](typeCode: Byte, cond: => Boolean)(block: => T): T = {
-    val ucode = typeCode.toUByte
-    def msg = s"Type with code $ucode doesn't support methods."
-    validate(cond, new SerializerException(msg), Seq(typeCode), block)
-  }
-}
-
-object CheckAndGetMethod extends ValidationRule(1012,
-  "Check the type has the declared method.") {
-  def apply[T](objType: STypeCompanion, methodId: Byte)(block: SMethod => T): T = {
-    def msg = s"The method with code $methodId doesn't declared in the type $objType."
-    lazy val methodOpt = objType.getMethodById(methodId)
-    validate(methodOpt.isDefined, new SerializerException(msg), Seq(objType, methodId), block(methodOpt.get))
-  }
-  override def isSoftFork(vs: SigmaValidationSettings,
-      ruleId: Short,
-      status: RuleStatus,
-      args: Seq[Any]): Boolean = (status, args) match {
-    case (ChangedRule(newValue), Seq(objType: STypeCompanion, methodId: Byte)) =>
-      val key = Array(objType.typeId, methodId)
-      newValue.grouped(2).exists(util.Arrays.equals(_, key))
-    case _ => false
-  }
-}
 
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
@@ -427,7 +400,7 @@ object SMethod {
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
+    val typeCompanion = ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
       SType.types(typeId)
     }
     val method = typeCompanion.methodById(methodId)
