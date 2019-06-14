@@ -48,22 +48,34 @@ class SpamSpecification extends SigmaTestingCommons {
   property("nested loops") {
     val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val largeColl = Colls.fromArray((1 to 100).toArray)
     val env = Map(
       ScriptNameProp -> "Script",
-      "alice" -> alicePubKey
+      "alice" -> alicePubKey,
+      "largeColl" -> largeColl
     )
     val spamScript = compile(env,
       """{
-        |  val valid  = Coll(1,2,3).map({(i:Int) =>
-        |     INPUTS.map({(iBox:Box) =>
-        |         iBox.value != i
+        |  val valid  = largeColl.forall({(i:Int) =>
+        |     largeColl.exists({(j:Int) =>
+        |       i != j
+        |     }
+        |     ) &&
+        |     largeColl.exists({(j:Int) =>
+        |       largeColl.forall({(k:Int) =>
+        |         k != i + j
         |       }
+        |       ) &&
+        |       i != j
+        |     }
+        |     ) &&
+        |     OUTPUTS.exists({(x:Box) =>
+        |       x.propositionBytes.size >= i
+        |     }
         |     )
-        |     val b = blake2b256(out.propositionBytes)
-        |     out.propositionBytes == SELF.propositionBytes && b != SELF.propositionBytes
         |   }
         |  )
-        |  valid
+        |  ! valid
         |}
       """.stripMargin).asBoolValue.toSigmaProp
 
@@ -84,11 +96,13 @@ class SpamSpecification extends SigmaTestingCommons {
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
+    val start = System.currentTimeMillis()
     val (res, terminated) = termination(() =>
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     )
-
-    //res.isFailure shouldBe true
+    val end = System.currentTimeMillis()
+    println("Verify time: millis "+(end-start))
+    res.isFailure shouldBe true
     terminated shouldBe true
   }
 
