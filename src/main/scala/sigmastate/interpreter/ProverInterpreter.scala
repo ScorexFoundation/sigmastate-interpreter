@@ -2,33 +2,26 @@ package sigmastate.interpreter
 
 import java.math.BigInteger
 
-import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
-import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import sigmastate.basics.DLogProtocol._
-import sigmastate._
-import sigmastate.utils.Helpers
-import Values._
 import scalan.util.CollectionUtil._
-import scorex.util.encode.Base16
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 
-import scala.util.Try
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
 import sigmastate.basics.{ProveDHTuple, SigmaProtocolPrivateInput, DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput}
-import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.Helpers
 
 import scala.util.Try
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
 import sigmastate.basics._
 
+/**
+  * A hint for prover, which helps prover to resolve a script. 
+  */
 trait Hint
 
 trait OtherSecret extends Hint {
