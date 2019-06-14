@@ -49,7 +49,7 @@ class SpamSpecification extends SigmaTestingCommons {
   property("nested loops") {
     val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
-    val largeColl = Colls.fromArray((1 to 100).toArray)
+    val largeColl = Colls.fromArray((1 to 50).toArray)
     val env = Map(
       ScriptNameProp -> "Script",
       "alice" -> alicePubKey,
@@ -86,7 +86,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val id = 11: Byte
     val id2 = 12: Byte
 
-    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit * 10)
+    val prover = new ContextEnrichingTestProvingInterpreter(CostTable.ScriptLimit)
       .withContextExtender(id, ByteArrayConstant(ba))
       .withContextExtender(id2, ByteArrayConstant(ba))
 
