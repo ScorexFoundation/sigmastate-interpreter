@@ -1,5 +1,6 @@
 package sigmastate.interpreter
 
+import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.Evaluation
@@ -42,6 +43,7 @@ object ContextExtension {
 
 trait InterpreterContext {
   val extension: ContextExtension
+  val validationSettings: SigmaValidationSettings
 
   def withExtension(newExtension: ContextExtension): InterpreterContext
 

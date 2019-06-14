@@ -8,7 +8,7 @@ import org.ergoplatform.dsl.TestContractSpec
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
 import sigmastate._
-import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ValDef, ValUse}
+import sigmastate.Values.{LongConstant, BlockValue, Value, ByteArrayConstant, ErgoTree, ValDef, ValUse}
 import sigmastate.eval.CSigmaProp
 import sigmastate.eval.Extensions._
 import sigmastate.lang.Terms.ValueOps
@@ -72,8 +72,8 @@ class AssetsAtomicExchangeTests extends SigmaTestingCommons { suite =>
             EQ(ExtractRegisterAs(ValUse(1, SBox), R4, SOption(SCollection(SByte))).get, ExtractId(Self))
           ).toSigmaProp
         ))
-      ).asBoolValue
-      buyerProp.ergoTree.proposition shouldBe expectedBuyerTree
+      ).asSigmaProp
+      buyerProp.ergoTree shouldBe ErgoTree.fromProposition(expectedBuyerTree)
     }
     import contract.spec._
 

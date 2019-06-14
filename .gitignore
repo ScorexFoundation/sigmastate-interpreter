@@ -9,6 +9,7 @@
 *.fdb_latexmk
 
 *.log
+docs/spec/out/
 test-out/
 flamegraphs/
 # sbt specific

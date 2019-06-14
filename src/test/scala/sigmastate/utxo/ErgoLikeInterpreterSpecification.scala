@@ -3,6 +3,7 @@ package sigmastate.utxo
 import com.google.common.primitives.Bytes
 import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationException
 import org.scalatest.TryValues._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.SCollection.SByteArray
@@ -13,10 +14,10 @@ import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
-import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
+import sigmastate.serialization.{ValueSerializer, SerializationSpecification}
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   with SerializationSpecification {
@@ -611,7 +612,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).get
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
 
-    //todo: check failing branches
+    //TODO coverage: check failing branches
   }
 
   property("DeserializeRegister value type mismatch") {
@@ -662,10 +663,10 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       // make sure verifier will fail on deserializing context with mismatched type
       // try to deserialize it as an expression with integer type
       val prop1 = EQ(DeserializeContext(scriptId, SInt), IntConstant(1)).toSigmaProp
-      an[InterpreterException] should be thrownBy
+      an[ValidationException] should be thrownBy
         verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop1, ctx, pr, fakeMessage).get
       // make sure prover fails as well on deserializing context with mismatched type
-      an[InterpreterException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
+      an[ValidationException] should be thrownBy prover.prove(prop1, ctx, fakeMessage).get
     }
  }
 

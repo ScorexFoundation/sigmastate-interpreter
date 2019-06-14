@@ -2,20 +2,19 @@ package sigmastate.serialization.transformers
 
 import sigmastate.Values.Value
 import sigmastate.lang.Terms._
-import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{OpCodes, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.MapCollection
-import sigmastate.{SCollection, SFunc, SType}
+import sigmastate.{SCollection, SType, SFunc}
 
 case class MapCollectionSerializer(cons: (Value[SCollection[SType]], Value[SFunc]) => Value[SType])
   extends ValueSerializer[MapCollection[SType, SType]] {
-
-  override val opCode: OpCode = OpCodes.MapCollectionCode
+  import sigmastate.Operations.MapCollectionInfo._
+  override def opDesc = MapCollection
 
   override def serialize(obj: MapCollection[SType, SType], w: SigmaByteWriter): Unit =
-    w.putValue(obj.input)
-      .putValue(obj.mapper)
+    w.putValue(obj.input, thisArg)
+      .putValue(obj.mapper, fArg)
 
   override def parse(r: SigmaByteReader): Value[SType] = {
     val input = r.getValue().asValue[SCollection[SType]]

@@ -36,8 +36,29 @@ class SparseArrayContainer[T: ClassTag](values: Seq[(Byte, T)]) {
     * @return value or null if no value for a given code
     */
   @inline
-  def get(code: Byte): T = sparseArray(codeToIndex(code))
+  def apply(code: Byte): T = sparseArray(codeToIndex(code))
 
+  /**
+    * Returns Some(value) for the given code if it is not `null`.
+    * @param code of a value
+    * @return Some(value) or None if no value for a given code
+    */
+  @inline
+  def get(code: Byte): Option[T] = Option(this(code))
+
+  /** Add new values to this container. */
+  def add(code: Byte, value: T) = {
+    val index = codeToIndex(code)
+    require(sparseArray(index) == null, s"Value with index $index already defined.")
+    sparseArray(index) = value
+  }
+
+  def remove(code: Byte) = {
+    val index = codeToIndex(code)
+    require(sparseArray(index) != null,
+      s"Value with index $index not-defined, probably incorrect attempt to remove it.")
+    sparseArray(index) = null.asInstanceOf[T]
+  }
 }
 
 object SparseArrayContainer {

@@ -108,7 +108,7 @@ trait Types extends Core {
       case (_, STypeApply("Coll", IndexedSeq()), Seq(Seq(t))) => SCollection(t)
       case (_, STypeApply("Option", IndexedSeq()), Seq(Seq(t))) => SOption(t)
       case (_, SPrimType(t), Seq()) => t
-      case (_, STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeIdent(tn)
+      case (_, STypeApply(tn, IndexedSeq()), args) if args.isEmpty => STypeVar(tn)
       case (index, t, typeArgs) =>
         error(s"Unsupported type $t[$typeArgs]", Some(srcCtx(index)))
     }

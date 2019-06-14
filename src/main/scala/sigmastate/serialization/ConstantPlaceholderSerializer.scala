@@ -2,13 +2,11 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class ConstantPlaceholderSerializer(cons: (Int, SType) => Value[SType])
   extends ValueSerializer[ConstantPlaceholder[SType]] {
-
-  override val opCode: OpCode = ConstantPlaceholderIndexCode
+  override def opDesc = ConstantPlaceholder
 
   override def serialize(obj: ConstantPlaceholder[SType], w: SigmaByteWriter): Unit = {
     w.putUInt(obj.id)

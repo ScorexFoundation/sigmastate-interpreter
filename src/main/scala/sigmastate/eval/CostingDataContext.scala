@@ -5,24 +5,23 @@ import java.util
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.ErgoBox
+import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, IntConstant, ErgoTree, SigmaBoolean}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CSizePrim, Builder, Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
+import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma.{Box, _}
-import special.sigma.Extensions._
 import sigmastate.eval.Extensions._
 
 import scala.util.{Success, Failure}
-import scalan.{NeverInline, RType}
+import scalan.RType
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.interpreter.Interpreter.emptyEnv
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
@@ -453,7 +452,7 @@ class CCostModel extends CostModel {
 
   def SelectField: Int = costOf("SelectField", SFunc(IndexedSeq(), SUnit))
 
-  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeIdent("IV"))))
+  def CollectionConst: Int = costOf("Const", SFunc(IndexedSeq(), SCollection(STypeVar("IV"))))
 
   def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
@@ -464,6 +463,8 @@ class CCostModel extends CostModel {
 
 class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
   dsl =>
+  implicit val validationSettings = ValidationRules.currentSettings
+
   override val Costing: CostedBuilder = new CCostedBuilder {
 
     import RType._

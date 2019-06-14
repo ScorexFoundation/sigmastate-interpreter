@@ -18,7 +18,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
   private def context(boxesToSpend: IndexedSeq[ErgoBox] = IndexedSeq(),
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
     {
-      // TODO this means the context is not totally correct
       val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
       ergoplatform.ErgoLikeContext(
         currentHeight = 50,
@@ -108,7 +107,8 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
-    //todo: finish
+
+    //TODO coverage: add negative case for `exists`
   }
 
   property("forall") {
@@ -139,7 +139,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
-    //todo: finish
   }
 
 
@@ -492,48 +491,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       IndexedSeq(1L, 1L))
   }
 
-  property("segmentLength") {
-    assertProof("OUTPUTS.segmentLength({ (out: Box) => out.value == 1L }, 0) == 1",
-      EQ(
-        MethodCall(Outputs,
-          SegmentLengthMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)),EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(0)
-          ),
-          Map()),
-        IntConstant(1)),
-      IndexedSeq(1L, 2L))
-  }
-
-  property("indexWhere") {
-    assertProof("OUTPUTS.indexWhere({ (out: Box) => out.value == 1L }, 0) == 0",
-      EQ(
-        MethodCall(Outputs,
-          IndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(0)
-          ),
-          Map()),
-        IntConstant(0)),
-      IndexedSeq(1L, 2L))
-  }
-
-  property("lastIndexWhere") {
-    assertProof("OUTPUTS.lastIndexWhere({ (out: Box) => out.value == 1L }, 1) == 0",
-      EQ(
-        MethodCall(Outputs,
-          LastIndexWhereMethod.withConcreteTypes(Map(tIV -> SBox)),
-          Vector(
-            FuncValue(Vector((1, SBox)), EQ(ExtractAmount(ValUse(1, SBox)), LongConstant(1))),
-            IntConstant(1)
-          ),
-          Map()),
-        IntConstant(0)),
-      IndexedSeq(1L, 2L))
-  }
-
   property("zip") {
     assertProof("OUTPUTS.zip(INPUTS).size == 2",
       EQ(
@@ -552,24 +509,6 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
         | t._1._2.value + t._2.value
         | }).fold(0L, { (a: Long, v: Long) => a + v }) == 10""".stripMargin,
       IndexedSeq(1L, 2L), IndexedSeq(3L, 4L))
-  }
-
-  property("partition") {
-    assertProof("OUTPUTS.partition({ (box: Box) => box.value < 2L})._1.size == 1",
-      EQ(
-        SizeOf(
-          SelectField(
-            MethodCall(Outputs,
-              PartitionMethod.withConcreteTypes(Map(tIV -> SBox)),
-              Vector(
-                FuncValue(Vector((1, SBox)), LT(ExtractAmount(ValUse(1, SBox)), LongConstant(2)))
-              ),
-              Map()).asValue[STuple],
-            1
-          ).asCollection[SType]
-        ),
-        IntConstant(1)),
-      IndexedSeq(1L, 2L))
   }
 
   property("patch") {

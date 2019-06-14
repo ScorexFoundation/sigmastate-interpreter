@@ -11,13 +11,14 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, PreHeader, Header}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import sigmastate.SType._
 import scalan.RType._
-import special.sigma.{Header, Box, AnyValue, PreHeader}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import SType._
 import RType._
-import special.sigma.Extensions._
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 
 import scala.util.Try
 
@@ -48,7 +49,8 @@ class ErgoLikeContext(val currentHeight: Height,
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
                       val self: ErgoBox,
-                      override val extension: ContextExtension = ContextExtension(Map())
+                      override val extension: ContextExtension = ContextExtension(Map()),
+                      val validationSettings: SigmaValidationSettings = ValidationRules.currentSettings
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -63,12 +65,12 @@ class ErgoLikeContext(val currentHeight: Height,
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension)
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension)
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings)
 
   import ErgoLikeContext._
   import Evaluation._
@@ -106,7 +108,7 @@ object ErgoLikeContext {
   val dummyPreHeader: PreHeader = null
 
   /** Maximimum number of headers in `headers` collection of the context. */
-  val MaxHeaders = 10
+  val MaxHeaders = ErgoConstants.MaxHeaders.get
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -114,12 +116,13 @@ object ErgoLikeContext {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             self: ErgoBox,
-            extension: ContextExtension = ContextExtension(Map())) =
+            extension: ContextExtension = ContextExtension(Map()),
+            vs: SigmaValidationSettings = ValidationRules.currentSettings) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension)
+      boxesToSpend, spendingTransaction, self, extension, vs)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -180,52 +183,60 @@ object ErgoLikeContext {
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */
-case object MinerPubkey extends NotReadyValueByteArray {
-  override val opCode: OpCode = OpCodes.MinerPubkeyCode
+case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
+  override def opCode: OpCode = OpCodes.MinerPubkeyCode
   def opType = SFunc(SContext, SCollection.SByteArray)
+  override def companion = this
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
-case object Height extends NotReadyValueInt {
-  override val opCode: OpCode = OpCodes.HeightCode
+case object Height extends NotReadyValueInt with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.HeightCode
   def opType = SFunc(SContext, SInt)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
-case object Inputs extends LazyCollection[SBox.type] {
-  override val opCode: OpCode = OpCodes.InputsCode
+case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.InputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
-case object Outputs extends LazyCollection[SBox.type] {
-  override val opCode: OpCode = OpCodes.OutputsCode
+case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.OutputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
-case object LastBlockUtxoRootHash extends NotReadyValueAvlTree {
-  override val opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
+case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
   def opType = SFunc(SContext, tpe)
 }
 
 
 /** When interpreted evaluates to a BoxConstant built from Context.self */
-case object Self extends NotReadyValueBox {
-  override val opCode: OpCode = OpCodes.SelfCode
+case object Self extends NotReadyValueBox with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
 }
 
-case object Context extends NotReadyValue[SContext.type] {
-  override val opCode: OpCode = OpCodes.ContextCode
+case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
 }
 
-case object Global extends NotReadyValue[SGlobal.type] {
-  override val opCode: OpCode = OpCodes.GlobalCode
+case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
+  override def companion = this
+  override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
   override def opType: SFunc = SFunc(SUnit, SGlobal)
 }

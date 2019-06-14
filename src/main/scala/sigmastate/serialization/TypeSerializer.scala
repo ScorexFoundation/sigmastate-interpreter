@@ -2,9 +2,11 @@ package sigmastate.serialization
 
 import java.nio.charset.StandardCharsets
 
+import org.ergoplatform.validation.{ValidationRule, SoftForkWhenCodeAdded}
 import sigmastate._
-import sigmastate.lang.exceptions.InvalidTypePrefix
+import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InvalidOpCode}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigma.util.Extensions.ByteOps
 
 /** Serialization of types according to specification in TypeSerialization.md. */
 object TypeSerializer extends ByteBufferSerializer[SType] {
@@ -15,11 +17,30 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
     * For each embeddable type `T`, and type constructor `C`, the type `C[T]` can be represented by single byte. */
   val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
 
+  object CheckPrimitiveTypeCode extends ValidationRule(1008,
+    "Check the primitive type code is supported or is added via soft-fork")
+      with SoftForkWhenCodeAdded {
+    def apply[T](code: Byte)(block: => T): T = {
+      val ucode = code.toUByte
+      def msg = s"Cannot deserialize primitive type with code $ucode"
+      validate(ucode > 0 && ucode < embeddableIdToType.length, new SerializerException(msg), Seq(code), block)
+    }
+  }
+
+  object CheckTypeCode extends ValidationRule(1009,
+    "Check the non-primitive type code is supported or is added via soft-fork")
+      with SoftForkWhenCodeAdded {
+    def apply[T](typeCode: Byte)(block: => T): T = {
+      val ucode = typeCode.toUByte
+      def msg = s"Cannot deserialize the non-primitive type with code $ucode"
+      validate(ucode <= SGlobal.typeCode.toUByte, new SerializerException(msg), Seq(typeCode), block)
+    }
+  }
+
   def getEmbeddableType(code: Int): SType =
-    if (code <= 0 || code >= embeddableIdToType.length)
-      sys.error(s"Cannot deserialize primitive type with code $code")
-    else
+    CheckPrimitiveTypeCode(code.toByte) {
       embeddableIdToType(code)
+    }
 
   override def serialize(tpe: SType, w: SigmaByteWriter) = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
@@ -104,7 +125,7 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         // `Tuple` type with more than 4 items `(Int, Byte, Box, Boolean, Int)`
         serializeTuple(tup, w)
     }
-    case typeIdent: STypeIdent => {
+    case typeIdent: STypeVar => {
       w.put(typeIdent.typeCode)
       val bytes = typeIdent.name.getBytes(StandardCharsets.UTF_8)
       w.putUByte(bytes.length)
@@ -175,22 +196,22 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
           val items = (0 until len).map(_ => deserialize(r, depth + 1))
           STuple(items)
         }
-        case SString.typeCode => SString
         case SAny.typeCode => SAny
         case SUnit.typeCode => SUnit
         case SBox.typeCode => SBox
         case SAvlTree.typeCode => SAvlTree
         case SContext.typeCode => SContext
-        case SGlobal.typeCode => SGlobal
-        case SHeader.typeCode => SHeader
-        case SPreHeader.typeCode => SPreHeader
-        case STypeIdent.TypeCode => {
+        case SString.typeCode => SString
+        case STypeVar.TypeCode => {
           val nameLength = r.getUByte()
           val name = new String(r.getBytes(nameLength), StandardCharsets.UTF_8)
-          STypeIdent(name)
+          STypeVar(name)
         }
+        case SHeader.typeCode => SHeader
+        case SPreHeader.typeCode => SPreHeader
+        case SGlobal.typeCode => SGlobal
         case _ =>
-          sys.error(s"Cannot deserialize type starting from code $c")
+          CheckTypeCode(c.toByte) { NoType }
       }
     }
     tpe

@@ -4,6 +4,7 @@ import org.ergoplatform
 import org.ergoplatform._
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
+import org.ergoplatform.validation._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
@@ -24,7 +25,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-trait ValueGenerators extends TypeGenerators {
+trait ValueGenerators extends TypeGenerators with ValidationSpecification {
 
   import sigmastate.lang.TransformingSigmaBuilder._
 
@@ -315,4 +316,26 @@ trait ValueGenerators extends TypeGenerators {
       }
     }
   }
+
+  val byteArrayGen: Gen[Array[Byte]] = for {
+    length <- Gen.chooseNum(1, 10)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+  } yield bytes.toArray
+
+  import ValidationRules._
+
+  val numRules = currentSettings.size
+
+  val replacedRuleIdGen = Gen.chooseNum((FirstRuleId + numRules).toShort, Short.MaxValue)
+
+  val ruleIdGen = Gen.chooseNum(FirstRuleId, (FirstRuleId + numRules - 1).toShort)
+
+  val statusGen: Gen[RuleStatus] = Gen.oneOf(
+    Gen.oneOf(EnabledRule, DisabledRule),
+    replacedRuleIdGen.map(id => ReplacedRule(id)),
+    byteArrayGen.map(xs => ChangedRule(xs))
+  )
+
+  implicit val statusArb: Arbitrary[RuleStatus] = Arbitrary(statusGen)
+
 }
