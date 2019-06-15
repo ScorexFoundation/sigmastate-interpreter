@@ -36,7 +36,7 @@ class SpamSpecification extends SigmaTestingCommons {
     (1 to 2000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 4000000).foreach(_ => hf(block))
+    (1 to 1000000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -53,7 +53,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
     val largeColl = Colls.fromArray((1 to 50).toArray)
     val env = Map(
-      ScriptNameProp -> "Script",
+      ScriptNameProp -> "nested loops 1",
       "alice" -> alicePubKey,
       "largeColl" -> largeColl
     )
@@ -99,20 +99,21 @@ class SpamSpecification extends SigmaTestingCommons {
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
-    val (_, calcTime) = BenchmarkUtil.measureTime {
+    val (res, calcTime) = BenchmarkUtil.measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
     println(s"Verify time: $calcTime millis")
     println("Timeout: " + Timeout)
+    println("Result: " + res)
     (calcTime < Timeout) shouldBe true
   }
 
   property("nested loops 2") {
     val alice = new ContextEnrichingTestProvingInterpreter
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
-    val largeColl = Colls.fromArray((1 to 50).toArray)
+    val largeColl = Colls.fromArray((1 to 100).toArray)
     val env = Map(
-      ScriptNameProp -> "Script",
+      ScriptNameProp -> "nested loops 2",
       "alice" -> alicePubKey,
       "largeColl" -> largeColl
     )
@@ -146,14 +147,17 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+    val pr = prover
+      .withSecrets(alice.dlogSecrets)
+      .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(ScriptCostLimit.value * 4), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
-    val (_, calcTime) = BenchmarkUtil.measureTime {
+    val (res, calcTime) = BenchmarkUtil.measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
     println(s"Verify time: $calcTime millis")
     println("Timeout: " + Timeout)
+    println("Result: " + res) // Caused by: sigmastate.lang.exceptions.CosterException: Estimated expression complexity 3030306 exceeds the limit 1000000
     (calcTime < Timeout) shouldBe true
   }
 
@@ -421,7 +425,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
     val largeColl = Colls.fromArray((1 to 50).toArray)
     val env = Map(
-      ScriptNameProp -> "Script",
+      ScriptNameProp -> "nested loops",
       "alice" -> alicePubKey,
       "largeColl" -> largeColl
     )

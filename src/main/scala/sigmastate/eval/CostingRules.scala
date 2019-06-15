@@ -63,7 +63,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
-    * the expression is re-evaluated. Each value should be reset in onReset() method. */
+    * the expression is re-evaluated. Each value should be reset in onReset() method.
+    * Accessing this lazy value is an order of magnitude faster than computing it from scratch. */
   private val _intZero = MutableLazy(0: Rep[Int])
   @inline def IntZero = _intZero.value
 

@@ -65,7 +65,7 @@ sealed trait SType extends SigmaNode {
 
   def isEmbeddable: Boolean = false
 
-  /** Returns true is dataSize doesn't depend on data value.
+  /** Returns true if dataSize doesn't depend on data value.
     * This is useful for optimizations of calculating sizes of collections. */
   def isConstantSize: Boolean
 
