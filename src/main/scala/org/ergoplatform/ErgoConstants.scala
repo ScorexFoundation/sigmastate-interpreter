@@ -64,18 +64,25 @@ object ErgoConstants {
     "Maximum execution cost of a script") {
   }
 
+  object MaxLoopLevelInCostFunction extends SizeConstant[Int](2, 13,
+    "Maximum allowed loop level in a cost function") {
+  }
+
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,
       MaxTreeDepth,
-      MaxPropositionBytes,
       MaxTokens,
       MaxRegisters,
+      MaxPropositionBytes,
+      MaxBoxSizeWithoutRefs,
       MaxBigIntSizeInBytes,
       MaxSigmaPropSizeInBytes,
       MaxTupleLength,
       MaxHeaders,
-      MaxChildrenCountForAtLeastOp
+      MaxChildrenCountForAtLeastOp,
+      ScriptCostLimit,
+      MaxLoopLevelInCostFunction
     )
     require(rows.length == rows.distinctBy(_.id).length, s"Duplicate constant id in $rows")
     rows

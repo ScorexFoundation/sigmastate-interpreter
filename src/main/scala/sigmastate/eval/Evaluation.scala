@@ -4,9 +4,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.CheckCostFuncOperation
+import org.ergoplatform.validation.ValidationRules.{CheckCostFuncOperation, CheckLoopLevelInCostFunction}
 import sigmastate._
-import sigmastate.Values.{Constant, GroupElementConstant, SigmaBoolean, Value}
+import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
 import sigmastate.lang.Terms.OperationId
 import sigmastate.utxo.CostTableStat
 
@@ -18,7 +18,7 @@ import scalan.{Nullable, RType}
 import scalan.RType._
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.basics.{DLogProtocol, ProveDHTuple}
+import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.OpCodes
@@ -105,6 +105,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     InputsCode,
     LastBlockUtxoRootHashCode,
     MapCollectionCode,
+    FlatMapCollectionCode,
     MaxCode,
     MethodCallCode,
     MinCode,
@@ -266,6 +267,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case CollM.length(_) => SizeOfCode
       case CollM.apply(_, _) => ByIndexCode
       case CollM.map(_, _) => MapCollectionCode
+      case CollM.flatMap(_, _) => FlatMapCollectionCode
       case CollM.zip(_, _) => MethodCallCode
       case CollM.slice(_, _, _) => SliceCode
       case CollM.append(_, _) => AppendCode
@@ -307,14 +309,44 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     })
   }
 
+
+  object LoopOperation {
+    /** Recognize loop operation and extracts the body of the loop.
+      * Every loop operation should be handled here.
+      * NOTE: flatMap is handled specially. */
+    def unapply(d: Def[_]): Option[AstGraph] = d match {
+      case CollM.map(_, Def(lam: Lambda[_,_])) => Some(lam)
+      case CollM.exists(_, Def(lam: Lambda[_,_])) => Some(lam)
+      case CollM.forall(_, Def(lam: Lambda[_,_])) => Some(lam)
+      case CollM.foldLeft(_, _, Def(lam: Lambda[_,_])) => Some(lam)
+      case CollM.filter(_, Def(lam: Lambda[_,_])) => Some(lam)
+      case _ => None
+    }
+  }
+
+  /** Recursively traverse the hierarchy of loop operations. */
+  private def traverseScope(scope: AstGraph, level: Int): Unit = {
+    scope.schedule.foreach { te =>
+      te.rhs match {
+        case op @ LoopOperation(bodyLam) =>
+          CheckCostFuncOperation(this)(getOpCodeEx(op)) { true }
+          val nextLevel = level + 1
+          CheckLoopLevelInCostFunction(nextLevel)
+          traverseScope(bodyLam, nextLevel)
+        case CollM.flatMap(_, Def(lam: Lambda[_,_])) =>
+          traverseScope(lam, level) // special case because the body is limited (so don't increase level)
+        case op =>
+          CheckCostFuncOperation(this)(getOpCodeEx(op)) { true }
+      }
+    }
+  }
+
   /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
     * in the schedule. */
   def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
-      lam.scheduleAll.forall { te =>
-        CheckCostFuncOperation(this)(getOpCodeEx(te.rhs)) { true }
-      }
+      traverseScope(lam, level = 0)
     }
   }
 

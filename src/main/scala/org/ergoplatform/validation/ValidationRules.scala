@@ -3,6 +3,7 @@ package org.ergoplatform.validation
 import java.nio.ByteBuffer
 import java.util
 
+import org.ergoplatform.ErgoConstants.MaxLoopLevelInCostFunction
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import sigma.util.Extensions.ByteOps
@@ -270,6 +271,15 @@ object ValidationRules {
     "Check that the Reader has not exceeded the position limit.") with SoftForkWhenReplaced {
   }
 
+  object CheckLoopLevelInCostFunction extends ValidationRule(1015,
+    "Check that loop level is not exceeded.") with SoftForkWhenReplaced {
+    def apply(level: Int): Unit = {
+      val max = MaxLoopLevelInCostFunction.value
+      validate(level <= max,
+      new CosterException(s"The loop level $level exceeds maximum $max", None), Seq(level), {})
+    }
+  }
+
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
@@ -285,7 +295,8 @@ object ValidationRules {
     CheckAndGetMethod,
     CheckHeaderSizeBit,
     CheckCostFuncOperation,
-    CheckPositionLimit
+    CheckPositionLimit,
+    CheckLoopLevelInCostFunction
   )
 
   /** Validation settings that correspond to the current version of the ErgoScript implementation.

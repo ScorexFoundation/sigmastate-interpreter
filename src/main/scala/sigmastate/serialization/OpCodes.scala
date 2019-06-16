@@ -139,7 +139,8 @@ object OpCodes extends ValueCodes {
   val SliceCode            : OpCode = newOpCode(68)
   val FilterCode           : OpCode = newOpCode(69)
   val AvlTreeCode          : OpCode = newOpCode(70)
-  val AvlTreeGetCode       : OpCode = newOpCode(71) // reserved 72 - 80 (9)
+  val AvlTreeGetCode       : OpCode = newOpCode(71)
+  val FlatMapCollectionCode: OpCode = newOpCode(72) // reserved 73 - 80 (8)
 
   // Type casts codes
   val ExtractAmountCode        : OpCode = newOpCode(81)
