@@ -98,6 +98,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _sizeBigInt: LazyRep[Size[BigInt]] = MutableLazy(costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt]))
   @inline def SizeBigInt: RSize[BigInt] = _sizeBigInt.value
 
+  private val _sizeSigmaProp: LazyRep[Size[SigmaProp]] = MutableLazy(costedBuilder.mkSizePrim(SSigmaProp.MaxSizeInBytes, element[SigmaProp]))
+  @inline def SizeSigmaProposition: RSize[SigmaProp] = _sizeSigmaProp.value
+
   private val _sizeString: LazyRep[Size[String]] = MutableLazy(costedBuilder.mkSizePrim(256L, StringElement))
   @inline def SizeString: RSize[String] = _sizeString.value
 
@@ -109,6 +112,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
   private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
   @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
+
+  private val _RAvlTreeDigestSize: LazyRep[Int] = MutableLazy {
+    AvlTreeData.DigestSize: Rep[Int]
+  }
+  @inline def RAvlTreeDigestSize: Rep[Int] = _RAvlTreeDigestSize.value
 
   private val _hashLength: LazyRep[Int] = MutableLazy {
     CryptoConstants.hashLength: Rep[Int]
@@ -142,14 +150,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     // and may lead to subtle bugs.
     Array(_intZero, _someIntZero,
       _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
-      _sizeInt, _sizeLong, _sizeBigInt, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
-      _hashLength, _sizesOfHashBytes, _costsOfHashBytes, _sizeHashBytes, _sizeToken)
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeSigmaProp, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
+      _RAvlTreeDigestSize, _hashLength, _sizesOfHashBytes, _costsOfHashBytes, _sizeHashBytes, _sizeToken)
         .foreach(_.reset())
   }
-
-  def mkSizeSigmaProp(size: Rep[Long]): RSize[SigmaProp] = costedBuilder.mkSizePrim(size, WRTypeSigmaProp)
-
-  def SizeOfSigmaProp(p: SSigmaProp): RSize[SigmaProp] = mkSizeSigmaProp(SSigmaProp.dataSize(p.asWrappedType))
 
   case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
     override def transform(t: Transformer) = Cast(eTo, t(x))
@@ -298,7 +302,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SAvlTree methods */
   class AvlTreeCoster(obj: RCosted[AvlTree], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[AvlTree](obj, method, costedArgs, args){
     import AvlTree._
-    def digest() = knownLengthCollPropertyAccess(_.digest, AvlTreeData.DigestSize)
+    def digest() = knownLengthCollPropertyAccess(_.digest, RAvlTreeDigestSize)
     def enabledOperations() = constantSizePropertyAccess(_.enabledOperations)
     def keyLength() = constantSizePropertyAccess(_.keyLength)
     def valueLengthOpt() =

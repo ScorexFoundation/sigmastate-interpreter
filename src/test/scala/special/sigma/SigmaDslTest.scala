@@ -356,7 +356,7 @@ class SigmaDslTest extends PropSpec
       byteArrayToBigInt(x)
     }
     forAll { x: Array[Byte] =>
-      whenever(x.length <= ErgoConstants.MaxBigIntSizeInBytes.get) {
+      whenever(x.length <= ErgoConstants.MaxBigIntSizeInBytes.value) {
         eq(Builder.DefaultCollBuilder.fromArray(x))
       }
     }

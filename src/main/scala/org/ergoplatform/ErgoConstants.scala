@@ -3,9 +3,7 @@ package org.ergoplatform
 import scalan.util.CollectionUtil._
 import sigmastate.eval.Sized
 
-case class SizeConstant[T: Numeric](value: T, id: Short, description: String) {
-  def get: T = value
-}
+case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
 
 /** Constants facade that provide access to the values used in sigma's logic and checks.
   * All the constants are collected in a sequence.
@@ -26,39 +24,43 @@ object ErgoConstants {
     "Max tree depth should not be greater then provided value") {
   }
 
-  object MaxTokens extends SizeConstant[Byte](4, 6,
+  object MaxTokens extends SizeConstant[Byte](4, 3,
     "Tokens count should not be greater than provided value") {
   }
 
-  object MaxRegisters extends SizeConstant[Int](10, 7,
+  object MaxRegisters extends SizeConstant[Int](10, 4,
     "Registers count should not be greater than provided value") {
   }
 
-  object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 3,
+  object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 5,
     "Max length of Box.propositionBytes collection") {
   }
 
-  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](Sized.SizeBoxBytesWithoutRefsMax.dataSize.toInt, 9,
+  object MaxBoxSizeWithoutRefs extends SizeConstant[Int](Sized.SizeBoxBytesWithoutRefsMax.dataSize.toInt, 6,
     "Box size should not be greater than provided value") {
   }
 
-  object MaxBigIntSizeInBytes extends SizeConstant[Long](32L, 10,
+  object MaxBigIntSizeInBytes extends SizeConstant[Long](32L, 7,
     "BigInt size in bytes should not be greater than provided value") {
   }
 
-  object MaxTupleLength extends SizeConstant[Int](255, 11,
+  object MaxSigmaPropSizeInBytes extends SizeConstant[Long](1024L, 8,
+    "SigmaProp size in bytes should not be greater than provided value") {
+  }
+
+  object MaxTupleLength extends SizeConstant[Int](255, 9,
     "Tuple length should not be greater than provided value") {
   }
 
-  object MaxHeaders extends SizeConstant[Int](10, 12,
+  object MaxHeaders extends SizeConstant[Int](10, 10,
     "Headers count should not be greater than provided value") {
   }
 
-  object MaxChildrenCountForAtLeastOp extends SizeConstant[Int](255, 13,
+  object MaxChildrenCountForAtLeastOp extends SizeConstant[Int](255, 11,
     "Max children count should not be greater than provided value") {
   }
 
-  object ScriptCostLimit extends SizeConstant[Int](1000000, 13,
+  object ScriptCostLimit extends SizeConstant[Int](1000000, 12,
     "Maximum execution cost of a script") {
   }
 
@@ -70,6 +72,7 @@ object ErgoConstants {
       MaxTokens,
       MaxRegisters,
       MaxBigIntSizeInBytes,
+      MaxSigmaPropSizeInBytes,
       MaxTupleLength,
       MaxHeaders,
       MaxChildrenCountForAtLeastOp

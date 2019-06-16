@@ -201,9 +201,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   val _costOfProveDlogEval = CostOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
   val _costOfProveDHTuple = CostOf("ProveDHTuple", SFunc(SUnit, SSigmaProp))
 
-  def costOfProveDlog: Rep[Int] = costOf(_costOfProveDlogEval, substFromCostTable)
-  def costOfDHTuple: Rep[Int] = costOf(_costOfProveDHTuple, substFromCostTable)  // see CostTable for how it relate to ProveDlogEval
-
   def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
     case _: ProveDlog => _costOfProveDlogEval.eval
     case _: ProveDHTuple => _costOfProveDHTuple.eval
@@ -712,35 +709,42 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
     * the expression is re-evaluated. Each value should be reset in onReset() method. */
   private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(RTestSigmaDslBuilder())
-  def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
+  @inline def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
 
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(sigmaDslBuilder.Colls)
-  def colBuilder: Rep[CollBuilder] = _colBuilder.value
+  @inline def colBuilder: Rep[CollBuilder] = _colBuilder.value
 
   private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
-  def sizeBuilder: Rep[SizeBuilder] = _sizeBuilder.value
+  @inline def sizeBuilder: Rep[SizeBuilder] = _sizeBuilder.value
 
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
-  def costedBuilder: Rep[CostedBuilder] = _costedBuilder.value
+  @inline def costedBuilder: Rep[CostedBuilder] = _costedBuilder.value
 
   private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(costedBuilder.monoidBuilder)
-  def monoidBuilder: Rep[MonoidBuilder] = _monoidBuilder.value
+  @inline def monoidBuilder: Rep[MonoidBuilder] = _monoidBuilder.value
 
   private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)
-  def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid.value
+  @inline def intPlusMonoid: Rep[Monoid[Int]] = _intPlusMonoid.value
 
   private val _longPlusMonoid: LazyRep[Monoid[Long]] = MutableLazy(monoidBuilder.longPlusMonoid)
-  def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid.value
+  @inline def longPlusMonoid: Rep[Monoid[Long]] = _longPlusMonoid.value
 
   private val _costedGlobal: LazyRep[Costed[SigmaDslBuilder]] =
     MutableLazy(RCCostedPrim(sigmaDslBuilder, IntZero, costedBuilder.mkSizePrim(1L, sigmaDslBuilderElement)))
-  def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal.value
+  @inline def costedGlobal: RCosted[SigmaDslBuilder] = _costedGlobal.value
+
+  private val _costOfProveDlog: LazyRep[Int] = MutableLazy(costOf(_costOfProveDlogEval, substFromCostTable))
+  @inline def CostOfProveDlog: Rep[Int] = _costOfProveDlog.value
+
+  private val _costOfDHTuple: LazyRep[Int] = MutableLazy(costOf(_costOfProveDHTuple, substFromCostTable))
+  @inline def CostOfDHTuple: Rep[Int] = _costOfDHTuple.value   // see CostTable for how it relate to ProveDlogEval
 
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
     Seq(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
-        _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal)
+      _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal,
+      _costOfProveDlog, _costOfDHTuple)
         .foreach(_.reset())
     _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
   }
@@ -1111,7 +1115,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         }
       case _: SigmaPropElem[_] =>
         val children = xs.values.map(asRep[T => SigmaProp](calcF))
-        val size = mkSizeSigmaProp(CryptoConstants.EncodedGroupElementLength.toLong)
+        val size = SizeSigmaProposition
         node match {
           case _: ForAll[_] =>
             val value = sigmaDslBuilder.allZK(children)
@@ -1158,7 +1162,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         case p: SSigmaProp =>
           assert(tpe == SSigmaProp)
           val resV = liftConst(p)
-          RCCostedPrim(resV, costOfSigmaTree(p), SizeOfSigmaProp(p))
+          RCCostedPrim(resV, costOfSigmaTree(p), SizeSigmaProposition)
         case bi: SBigInt =>
           assert(tpe == SBigInt)
           val resV = liftConst(bi)
@@ -1239,8 +1243,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case CreateProveDlog(In(_v)) =>
         val vC = asRep[Costed[GroupElement]](_v)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDlog(vC.value)
-        val cost = opCost(resV, Seq(vC.cost), costOfDHTuple)
-        RCCostedPrim(resV, cost, mkSizeSigmaProp(vC.size.dataSize))
+        val cost = opCost(resV, Seq(vC.cost), CostOfProveDlog)
+        RCCostedPrim(resV, cost, SizeSigmaProposition)
 
       case CreateProveDHTuple(In(_gv), In(_hv), In(_uv), In(_vv)) =>
         val gvC = asRep[Costed[GroupElement]](_gv)
@@ -1248,8 +1252,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val uvC = asRep[Costed[GroupElement]](_uv)
         val vvC = asRep[Costed[GroupElement]](_vv)
         val resV: Rep[SigmaProp] = sigmaDslBuilder.proveDHTuple(gvC.value, hvC.value, uvC.value, vvC.value)
-        val cost = opCost(resV, Seq(gvC.cost, hvC.cost, uvC.cost, vvC.cost), costOfDHTuple)
-        RCCostedPrim(resV, cost, mkSizeSigmaProp(gvC.size.dataSize * 4L))
+        val cost = opCost(resV, Seq(gvC.cost, hvC.cost, uvC.cost, vvC.cost), CostOfDHTuple)
+        RCCostedPrim(resV, cost, SizeSigmaProposition)
 
       case sigmastate.Exponentiate(In(_l), In(_r)) =>
         val l = asRep[Costed[GroupElement]](_l)
@@ -1441,12 +1445,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
         val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-        mkCostedColl(res, Blake2b256.DigestSize, cost)
+        mkCostedColl(res, HashLength, cost)
       case CalcSha256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
         val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-        mkCostedColl(res, Sha256.DigestSize, cost)
+        mkCostedColl(res, HashLength, cost)
 
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal.asInstanceOf[Any] match {
@@ -1500,7 +1504,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedCollFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
         val id = boxC.value.id
-        mkCostedColl(id, Blake2b256.DigestSize, opCost(id, Seq(boxC.cost), costOf(node)))
+        mkCostedColl(id, HashLength, opCost(id, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val v = boxC.value.bytesWithoutRef
@@ -1527,7 +1531,8 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case BoolToSigmaProp(bool) =>
         val boolC = eval(bool)
         val value = sigmaDslBuilder.sigmaProp(boolC.value)
-        RCCostedPrim(value, opCost(value, Seq(boolC.cost), costOf(node)), mkSizeSigmaProp(1L))
+        val cost = opCost(value, Seq(boolC.cost), costOf(node))
+        RCCostedPrim(value, cost, SizeSigmaProposition)
 
       case AtLeast(bound, input) =>
         val inputC = asRep[CostedColl[SigmaProp]](evalNode(ctx, env, input))
@@ -1539,8 +1544,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val boundC = eval(bound)
         val res = sigmaDslBuilder.atLeast(boundC.value, inputC.values)
         val cost = opCost(res, Seq(boundC.cost, inputC.cost), costOf(node))
-        val sInput = tryCast[SizeColl[SigmaProp]](inputC.size)
-        RCCostedPrim(res, cost, mkSizeSigmaProp(sInput.dataSize))
+        RCCostedPrim(res, cost, SizeSigmaProposition)
 
       case op: ArithOp[t] if op.tpe == SBigInt =>
         import OpCodes._
@@ -1684,16 +1688,14 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val res = sigmaDslBuilder.allZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
         val costs = itemsC.map(_.cost)
         val cost = opCost(res, costs, perItemCostOf(node, costs.length))
-        val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
-        RCCostedPrim(res, cost, mkSizeSigmaProp(size))
+        RCCostedPrim(res, cost, SizeSigmaProposition)
 
       case SigmaOr(items) =>
         val itemsC = items.map(eval)
         val res = sigmaDslBuilder.anyZK(colBuilder.fromItems(itemsC.map(s => asRep[SigmaProp](s.value)): _*))
         val costs = itemsC.map(_.cost)
         val cost = opCost(res, costs, perItemCostOf(node, costs.length))
-        val size = colBuilder.fromItems(itemsC.map(_.size.dataSize): _*).sum(longPlusMonoid)
-        RCCostedPrim(res, cost, mkSizeSigmaProp(size))
+        RCCostedPrim(res, cost, SizeSigmaProposition)
 
       case If(c, t, e) =>
         val cC = evalNode(ctx, env, c)

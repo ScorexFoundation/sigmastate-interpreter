@@ -4,7 +4,6 @@ import scalan.RType
 import special.collection._
 import scalan.RType._
 import sigmastate._
-import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
 import SType.AnyOps
 import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxTokens}
@@ -44,8 +43,9 @@ object Sized extends SizedLowPriority {
   val SizeShort: Size[Short] = new CSizePrim(2L, ShortType)
   val SizeInt: Size[Int] = new CSizePrim(4L, IntType)
   val SizeLong: Size[Long] = new CSizePrim(8L, LongType)
-  val SizeBigInt: Size[BigInt] = new CSizePrim(MaxSizeInBytes, BigIntRType)
+  val SizeBigInt: Size[BigInt] = new CSizePrim(SBigInt.MaxSizeInBytes, BigIntRType)
   val SizeGroupElement: Size[GroupElement] = new CSizePrim(CryptoConstants.EncodedGroupElementLength, GroupElementRType)
+  val SizeSigmaProp: Size[SigmaProp] = new CSizePrim(SSigmaProp.MaxSizeInBytes, SigmaPropRType)
   val SizeAvlTree: Size[AvlTree] = new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
 
   implicit val BooleanIsSized: Sized[Boolean] = (_: Boolean) => SizeBoolean
@@ -55,18 +55,19 @@ object Sized extends SizedLowPriority {
   implicit val LongIsSized: Sized[Long] = (_: Long) => SizeLong
   implicit val BigIntIsSized: Sized[BigInt] = (_: BigInt) => SizeBigInt
   implicit val GroupElementIsSized: Sized[GroupElement] = (_: GroupElement) => SizeGroupElement
+  implicit val SigmaPropIsSized: Sized[SigmaProp] = (_: SigmaProp) => SizeSigmaProp
   implicit val AvlTreeIsSized: Sized[AvlTree] = (_: AvlTree) => SizeAvlTree
 
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
-    case BooleanType => Sized[Boolean]
-    case ByteType => Sized[Byte]
-    case ShortType => Sized[Short]
-    case IntType => Sized[Int]
-    case LongType => Sized[Long]
-    case BigIntRType => Sized[BigInt]
-    case GroupElementRType => Sized[GroupElement]
-    case AvlTreeRType => Sized[AvlTree]
-    case SigmaPropRType => sigmaPropIsSized
+    case BooleanType => BooleanIsSized
+    case ByteType => ByteIsSized
+    case ShortType => ShortIsSized
+    case IntType => IntIsSized
+    case LongType => LongIsSized
+    case BigIntRType => BigIntIsSized
+    case GroupElementRType => GroupElementIsSized
+    case AvlTreeRType => AvlTreeIsSized
+    case SigmaPropRType => SigmaPropIsSized
     case AnyValueRType => anyValueIsSized
     case BoxRType => boxIsSized
     case HeaderRType => headerIsSized
@@ -131,9 +132,6 @@ object Sized extends SizedLowPriority {
     new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
   }
 
-  implicit val sigmaPropIsSized: Sized[SigmaProp] = (b: SigmaProp) => {
-    new CSizeSigmaProp(sizeOf(b.propBytes))
-  }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
     new EvalSizeBox(
       SizePropositionBytesMax,
