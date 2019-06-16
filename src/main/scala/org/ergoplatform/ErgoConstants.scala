@@ -64,7 +64,7 @@ object ErgoConstants {
     "Maximum execution cost of a script") {
   }
 
-  object MaxLoopLevelInCostFunction extends SizeConstant[Int](2, 13,
+  object MaxLoopLevelInCostFunction extends SizeConstant[Int](1, 13,
     "Maximum allowed loop level in a cost function") {
   }
 

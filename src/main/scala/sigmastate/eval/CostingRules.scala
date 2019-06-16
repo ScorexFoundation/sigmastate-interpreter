@@ -1,7 +1,7 @@
 package sigmastate.eval
 
-import org.ergoplatform.ErgoConstants.{MaxBoxSizeWithoutRefs, MaxPropositionBytes, MaxBoxSize}
-import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPropositionBytes}
+import org.ergoplatform.{ErgoLikeContext, ErgoConstants}
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.Values._
@@ -170,14 +170,14 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   val SigmaPropBytesInfo = new KnownCollInfo(SSigmaProp.MaxSizeInBytes.toInt, SizeByte)
   val EncodedGroupElementInfo = new KnownCollInfo(CryptoConstants.EncodedGroupElementLength.toInt, SizeByte)
   val AvlTreeDigestInfo = new KnownCollInfo(AvlTreeData.DigestSize, SizeByte)
+
   val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
       costedBuilder.mkSizePrim(Sized.SizeHeader.dataSize, element[Header]))
 
-  private val _sizeToken: LazyRep[Size[(Coll[Byte], Long)]] = MutableLazy {
-    val sToken = mkSizePair(HashInfo.size, SizeLong)
-    sToken
-  }
-  @inline def SizeToken: RSize[(Coll[Byte], Long)] = _sizeToken.value
+  val TokensInfo = new KnownCollInfo(ErgoConstants.MaxTokens.value.toInt,
+      mkSizePair(HashInfo.size, SizeLong))
+
+
 
   protected override def onReset(): Unit = {
     super.onReset()
@@ -186,12 +186,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     Array(_intZero, _someIntZero,
       _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
       _sizeInt, _sizeLong, _sizeBigInt, _sigmaPropBytesLength, _sizeSigmaProp, _sizeString,
-      _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
-      _sizeToken)
+      _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp)
         .foreach(_.reset())
     Array(HashInfo, BoxBytesInfo, BoxBytesWithoutRefsInfo, BoxPropositionBytesInfo,
       LongBytesInfo, NonceBytesInfo, VotesInfo, SigmaPropBytesInfo, EncodedGroupElementInfo,
-      AvlTreeDigestInfo, HeadersInfo)
+      AvlTreeDigestInfo, HeadersInfo, TokensInfo)
         .foreach(_.reset())
   }
 
@@ -469,12 +468,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
 
     def tokens() = {
-      val tokens = obj.value.tokens
-      val sTokens = asSizeColl(asSizeBox(obj.size).tokens).sizes
-      val len = sTokens.length
-      val costs = colBuilder.replicate(len, IntZero)
-      val sizes = colBuilder.replicate(len, SizeToken)
-      RCCostedColl(tokens, costs, sizes, opCost(tokens, Seq(obj.cost), costOf(method)))
+      knownLengthCollPropertyAccess(_.tokens, TokensInfo)
     }
 
     def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
