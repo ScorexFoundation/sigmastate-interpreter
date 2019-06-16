@@ -167,6 +167,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   val LongBytesInfo = new KnownCollInfo(8, SizeByte)
   val NonceBytesInfo = new KnownCollInfo(8, SizeByte)
   val VotesInfo = new KnownCollInfo(3, SizeByte)
+  val SigmaPropBytesInfo = new KnownCollInfo(SSigmaProp.MaxSizeInBytes.toInt, SizeByte)
   val EncodedGroupElementInfo = new KnownCollInfo(CryptoConstants.EncodedGroupElementLength.toInt, SizeByte)
   val AvlTreeDigestInfo = new KnownCollInfo(AvlTreeData.DigestSize, SizeByte)
   val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
@@ -188,8 +189,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
       _sizeToken)
         .foreach(_.reset())
-    Array(HashInfo, NonceBytesInfo, VotesInfo, EncodedGroupElementInfo, AvlTreeDigestInfo,
-      HeadersInfo)
+    Array(HashInfo, BoxBytesInfo, BoxBytesWithoutRefsInfo, BoxPropositionBytesInfo,
+      LongBytesInfo, NonceBytesInfo, VotesInfo, SigmaPropBytesInfo, EncodedGroupElementInfo,
+      AvlTreeDigestInfo, HeadersInfo)
         .foreach(_.reset())
   }
 

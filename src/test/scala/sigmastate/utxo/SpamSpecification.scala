@@ -33,7 +33,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val hf = Blake2b256
 
     //just in case to heat up JVM
-    (1 to 2000000).foreach(_ => hf(block))
+    (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
     (1 to 1000000).foreach(_ => hf(block))

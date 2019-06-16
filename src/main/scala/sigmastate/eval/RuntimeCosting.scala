@@ -1493,14 +1493,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.isValid
         val c = opCost(v, Seq(pC.cost), costOf(node))
-//        val s = pC.size // NOTE: we pass SigmaProp's size, this is handled in buildCostedGraph
         RCCostedPrim(v, c, SizeBoolean)
       case SigmaPropBytes(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.propBytes
-        mkCostedColl(v, SigmaPropBytesLength, opCost(v, Seq(pC.cost), costOf(node)))
+        SigmaPropBytesInfo.mkCostedColl(v, opCost(v, Seq(pC.cost), costOf(node)))
 
-      case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedCollFixed for fixed-size collections
+      case utxo.ExtractId(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val id = boxC.value.id
         HashInfo.mkCostedColl(id, opCost(id, Seq(boxC.cost), costOf(node)))
@@ -1658,7 +1657,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val c = opCost(v, Seq(lC.cost, rC.cost), costOf(node))
         withConstantSize(v, c)
 
-
       case BinAnd(l, r) =>
         val lC = evalNode(ctx, env, l)
         val rC = RCostedThunk(Thunk(evalNode(ctx, env, r)), IntZero)
@@ -1771,7 +1769,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val arrC = asRep[Costed[Coll[Byte]]](arr)
         val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
         val cost = opCost(value, Seq(arrC.cost), costOf(node))
-        withConstantSize(value, cost)
+        RCCostedPrim(value, cost, SizeLong)
 
       case Xor(InCollByte(l), InCollByte(r)) =>
         val values = colBuilder.xor(l.value, r.value)
@@ -1805,20 +1803,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     onTreeNodeCosted(ctx, env, node, resC)
     resC
   }
-
-//  trait Sizable[T] {
-//    def size(x: Rep[T]): RSize[T]
-//  }
-//  object Sizable {
-//    def apply[T](sz: Sizable[T]): Sizable[T] = sz
-//  }
-//
-//  def SizableColl[T: Sizable]: Sizable[Coll[T]] = new Sizable[Coll[T]] {
-//    override def size(x: RColl[T]): RSize[Coll[T]] = x.map()
-//  }
-//  def sizeColl[T](coll: RColl[T]): RSize[Coll[T]] = {
-//    coll.
-//  }
 
   def buildCostedGraph[T](envVals: Map[Any, SValue], tree: SValue): Rep[Costed[Context] => Costed[T]] = {
     fun { ctxC: RCosted[Context] =>
