@@ -4,10 +4,7 @@ import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPro
 import org.ergoplatform.{ErgoLikeContext, ErgoConstants}
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
-import sigmastate.Values._
-import sigmastate.SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.utxo.CostTable
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -100,9 +97,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _sizeBigInt: LazyRep[Size[BigInt]] = MutableLazy(costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt]))
   @inline def SizeBigInt: RSize[BigInt] = _sizeBigInt.value
 
-  private val _sigmaPropBytesLength: LazyRep[Int] = MutableLazy(SSigmaProp.MaxSizeInBytes.toInt: Rep[Int])
-  @inline def SigmaPropBytesLength: Rep[Int] = _sigmaPropBytesLength.value
-
   private val _sizeSigmaProp: LazyRep[Size[SigmaProp]] = MutableLazy(costedBuilder.mkSizePrim(SSigmaProp.MaxSizeInBytes, element[SigmaProp]))
   @inline def SizeSigmaProposition: RSize[SigmaProp] = _sizeSigmaProp.value
 
@@ -185,7 +179,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     // and may lead to subtle bugs.
     Array(_intZero, _someIntZero,
       _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
-      _sizeInt, _sizeLong, _sizeBigInt, _sigmaPropBytesLength, _sizeSigmaProp, _sizeString,
+      _sizeInt, _sizeLong, _sizeBigInt, _sizeSigmaProp, _sizeString,
       _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp)
         .foreach(_.reset())
     Array(HashInfo, BoxBytesInfo, BoxBytesWithoutRefsInfo, BoxPropositionBytesInfo,
