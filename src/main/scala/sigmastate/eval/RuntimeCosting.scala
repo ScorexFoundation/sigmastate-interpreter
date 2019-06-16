@@ -1284,8 +1284,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val xC = asRep[Costed[Long]](_x)
         val col = sigmaDslBuilder.longToByteArray(xC.value) // below we assume col.length == typeSize[Long]
         val cost = opCost(col, Seq(xC.cost), costOf(node))
-        val len = SizeLong.dataSize.toInt
-        mkCostedColl(col, len, cost)
+        LongBytesInfo.mkCostedColl(col, cost)
 
       // opt.get =>
       case utxo.OptionGet(In(_opt)) =>
@@ -1445,12 +1444,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.blake2b256(bytesC.value)
         val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-        mkCostedColl(res, HashLength, cost)
+        HashInfo.mkCostedColl(res, cost)
       case CalcSha256(In(input)) =>
         val bytesC = asRep[Costed[Coll[Byte]]](input)
         val res = sigmaDslBuilder.sha256(bytesC.value)
         val cost = opCost(res, Seq(bytesC.cost), perKbCostOf(node, bytesC.size.dataSize))
-        mkCostedColl(res, HashLength, cost)
+        HashInfo.mkCostedColl(res, cost)
 
       case utxo.SizeOf(In(xs)) =>
         xs.elem.eVal.asInstanceOf[Any] match {
@@ -1499,28 +1498,29 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case SigmaPropBytes(p) =>
         val pC = asRep[Costed[SigmaProp]](eval(p))
         val v = pC.value.propBytes
-        mkCostedColl(v, pC.size.dataSize.toInt, opCost(v, Seq(pC.cost), costOf(node)))
+        mkCostedColl(v, SigmaPropBytesLength, opCost(v, Seq(pC.cost), costOf(node)))
 
       case utxo.ExtractId(In(box)) =>  // TODO costing: use special CostedCollFixed for fixed-size collections
         val boxC = asRep[Costed[Box]](box)
         val id = boxC.value.id
-        mkCostedColl(id, HashLength, opCost(id, Seq(boxC.cost), costOf(node)))
+        HashInfo.mkCostedColl(id, opCost(id, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytesWithNoRef(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val v = boxC.value.bytesWithoutRef
-        mkCostedColl(v, MaxBoxSizeWithoutRefs.value, opCost(v, Seq(boxC.cost), costOf(node)))
+        BoxBytesWithoutRefsInfo.mkCostedColl(v, opCost(v, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractAmount(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val v = boxC.value.value
-        withConstantSize(v, opCost(v, Seq(boxC.cost), costOf(node)))
+        val c = opCost(v, Seq(boxC.cost), costOf(node))
+        RCCostedPrim(v, c, SizeLong)
       case utxo.ExtractScriptBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.propositionBytes
-        mkCostedColl(bytes, MaxPropositionBytes.value, opCost(bytes, Seq(boxC.cost), costOf(node)))
+        BoxPropositionBytesInfo.mkCostedColl(bytes, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractBytes(In(box)) =>
         val boxC = asRep[Costed[Box]](box)
         val bytes = boxC.value.bytes
-        mkCostedColl(bytes, MaxBoxSize.value, opCost(bytes, Seq(boxC.cost), costOf(node)))
+        BoxBytesInfo.mkCostedColl(bytes, opCost(bytes, Seq(boxC.cost), costOf(node)))
       case utxo.ExtractCreationInfo(In(box)) =>
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
@@ -1765,7 +1765,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val inputC = asRep[Costed[Long]](input)
         val res = sigmaDslBuilder.longToByteArray(inputC.value)
         val cost = opCost(res, Seq(inputC.cost), costOf(node))
-        mkCostedColl(res, 8, cost)
+        LongBytesInfo.mkCostedColl(res, cost)
 
       case ByteArrayToLong(In(arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](arr)

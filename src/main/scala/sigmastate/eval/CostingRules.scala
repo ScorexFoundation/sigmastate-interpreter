@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import org.ergoplatform.ErgoConstants.{MaxBoxSizeWithoutRefs, MaxPropositionBytes, MaxBoxSize}
 import org.ergoplatform.ErgoLikeContext
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
@@ -38,6 +39,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import WRType._
   import WOption._
   import Box._
+  import Header._
 
   /** Implements basic costing rule invocation mechanism.
     * Each MethodCall node of ErgoTree is costed using the same mechanism.
@@ -98,6 +100,9 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _sizeBigInt: LazyRep[Size[BigInt]] = MutableLazy(costedBuilder.mkSizePrim(SBigInt.MaxSizeInBytes, element[BigInt]))
   @inline def SizeBigInt: RSize[BigInt] = _sizeBigInt.value
 
+  private val _sigmaPropBytesLength: LazyRep[Int] = MutableLazy(SSigmaProp.MaxSizeInBytes.toInt: Rep[Int])
+  @inline def SigmaPropBytesLength: Rep[Int] = _sigmaPropBytesLength.value
+
   private val _sizeSigmaProp: LazyRep[Size[SigmaProp]] = MutableLazy(costedBuilder.mkSizePrim(SSigmaProp.MaxSizeInBytes, element[SigmaProp]))
   @inline def SizeSigmaProposition: RSize[SigmaProp] = _sizeSigmaProp.value
 
@@ -113,33 +118,62 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
   @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
 
-  private val _RAvlTreeDigestSize: LazyRep[Int] = MutableLazy {
-    AvlTreeData.DigestSize: Rep[Int]
-  }
-  @inline def RAvlTreeDigestSize: Rep[Int] = _RAvlTreeDigestSize.value
+  class KnownCollInfo[T](len: Int, itemSizeCreator: => RSize[T]) {
 
-  private val _hashLength: LazyRep[Int] = MutableLazy {
-    CryptoConstants.hashLength: Rep[Int]
-  }
-  @inline def HashLength: Rep[Int] = _hashLength.value
+    private val _length: LazyRep[Int] = MutableLazy { len: Rep[Int] }
+    def length: Rep[Int] = _length.value
 
-  private val _sizesOfHashBytes: LazyRep[Coll[Size[Byte]]] = MutableLazy {
-    colBuilder.replicate(HashLength, SizeByte)
-  }
-  @inline def SizesOfHashBytes: RColl[Size[Byte]] = _sizesOfHashBytes.value
+    private val _itemSize: LazyRep[Size[T]] = MutableLazy(itemSizeCreator)
+    def itemSize: RSize[T] = _itemSize.value
 
-  private val _costsOfHashBytes: LazyRep[Coll[Int]] = MutableLazy {
-    colBuilder.replicate(HashLength, IntZero)
-  }
-  @inline def CostsOfHashBytes: RColl[Int] = _costsOfHashBytes.value
+    private val _sizesColl: LazyRep[Coll[Size[T]]] = MutableLazy {
+      colBuilder.replicate(length, itemSize)
+    }
+    @inline def sizesColl: RColl[Size[T]] = _sizesColl.value
 
-  private val _sizeHashBytes: LazyRep[Size[Coll[Byte]]] = MutableLazy {
-    costedBuilder.mkSizeColl(SizesOfHashBytes)
+    private val _costZeros: LazyRep[Coll[Int]] = MutableLazy {
+      colBuilder.replicate(length, IntZero)
+    }
+    @inline def costZeros: RColl[Int] = _costZeros.value
+
+    private val _size: LazyRep[Size[Coll[T]]] = MutableLazy {
+      costedBuilder.mkSizeColl(sizesColl)
+    }
+    @inline def size: RSize[Coll[T]] = _size.value
+
+    def reset() = {
+      _length.reset()
+      _itemSize.reset()
+      _sizesColl.reset()
+      _costZeros.reset()
+      _size.reset()
+    }
+
+    /** Helper to wrap the given collection into costed collection node with given accumulated cost.
+      * All components are taken from this info object.
+      * @param   coll         collection to be wrapped (aka costed)
+      * @param   valuesCost   accumulated cost to be added to resulting node
+      * @return               Costed node representing cost information of the input collection `coll`.
+      */
+    def mkCostedColl(coll: Rep[Coll[T]], valuesCost: Rep[Int]): Rep[CostedColl[T]] = {
+      RCCostedColl(coll, costZeros, sizesColl, valuesCost)
+    }
   }
-  @inline def SizeHashBytes: RSize[Coll[Byte]] = _sizeHashBytes.value
+
+  val HashInfo = new KnownCollInfo(CryptoConstants.hashLength, SizeByte)
+  val BoxBytesInfo = new KnownCollInfo(MaxBoxSize.value, SizeByte)
+  val BoxBytesWithoutRefsInfo = new KnownCollInfo(MaxBoxSizeWithoutRefs.value, SizeByte)
+  val BoxPropositionBytesInfo = new KnownCollInfo(MaxPropositionBytes.value, SizeByte)
+  val LongBytesInfo = new KnownCollInfo(8, SizeByte)
+  val NonceBytesInfo = new KnownCollInfo(8, SizeByte)
+  val VotesInfo = new KnownCollInfo(3, SizeByte)
+  val EncodedGroupElementInfo = new KnownCollInfo(CryptoConstants.EncodedGroupElementLength.toInt, SizeByte)
+  val AvlTreeDigestInfo = new KnownCollInfo(AvlTreeData.DigestSize, SizeByte)
+  val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
+      costedBuilder.mkSizePrim(Sized.SizeHeader.dataSize, element[Header]))
 
   private val _sizeToken: LazyRep[Size[(Coll[Byte], Long)]] = MutableLazy {
-    val sToken = mkSizePair(SizeHashBytes, SizeLong)
+    val sToken = mkSizePair(HashInfo.size, SizeLong)
     sToken
   }
   @inline def SizeToken: RSize[(Coll[Byte], Long)] = _sizeToken.value
@@ -150,8 +184,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     // and may lead to subtle bugs.
     Array(_intZero, _someIntZero,
       _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
-      _sizeInt, _sizeLong, _sizeBigInt, _sizeSigmaProp, _sizeString, _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
-      _RAvlTreeDigestSize, _hashLength, _sizesOfHashBytes, _costsOfHashBytes, _sizeHashBytes, _sizeToken)
+      _sizeInt, _sizeLong, _sizeBigInt, _sigmaPropBytesLength, _sizeSigmaProp, _sizeString,
+      _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp,
+      _sizeToken)
+        .foreach(_.reset())
+    Array(HashInfo, NonceBytesInfo, VotesInfo, EncodedGroupElementInfo, AvlTreeDigestInfo,
+      HeadersInfo)
         .foreach(_.reset())
   }
 
@@ -242,13 +280,13 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedPrim(value, opCost(value, costOfArgs, selectFieldCost), size)
     }
 
-    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], len: Rep[Int]): Rep[CostedColl[R]] = {
+    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], info: KnownCollInfo[R]): Rep[CostedColl[R]] = {
       val value = prop(obj.value)
-      mkCostedColl(value, len, opCost(value, costOfArgs, selectFieldCost))
+      info.mkCostedColl(value, opCost(value, costOfArgs, selectFieldCost))
     }
 
     def digest32PropertyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
-      knownLengthCollPropertyAccess(prop, HashLength)
+      knownLengthCollPropertyAccess(prop, HashInfo)
 
     def groupElementPropertyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
       knownSizePropertyAccess(prop, SizeGroupElement)
@@ -288,7 +326,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   class GroupElementCoster(obj: RCosted[GroupElement], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[GroupElement](obj, method, costedArgs, args){
     import GroupElement._
     def getEncoded: RCosted[Coll[Byte]] =
-      knownLengthCollPropertyAccess(_.getEncoded, CryptoConstants.EncodedGroupElementLength.toInt)
+      knownLengthCollPropertyAccess(_.getEncoded, EncodedGroupElementInfo)
 
     def negate: RCosted[GroupElement] = {
       val value = obj.value.negate
@@ -302,7 +340,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Costing rules for SAvlTree methods */
   class AvlTreeCoster(obj: RCosted[AvlTree], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[AvlTree](obj, method, costedArgs, args){
     import AvlTree._
-    def digest() = knownLengthCollPropertyAccess(_.digest, RAvlTreeDigestSize)
+    def digest() = knownLengthCollPropertyAccess(_.digest, AvlTreeDigestInfo)
     def enabledOperations() = constantSizePropertyAccess(_.enabledOperations)
     def keyLength() = constantSizePropertyAccess(_.keyLength)
     def valueLengthOpt() =
@@ -378,7 +416,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       defaultCollPropertyAccess(prop, ctxS => propSize(asSizeContext(ctxS)), sigmaDslBuilder.CostModel.AccessBox)
     }
     def headers() = {
-      knownLengthCollPropertyAccess(_.headers, ErgoLikeContext.MaxHeaders)
+      knownLengthCollPropertyAccess(_.headers, HeadersInfo)
     }
     def preHeader() = constantSizePropertyAccess(_.preHeader)
 
@@ -402,7 +440,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       knownSizePropertyAccess(_.LastBlockUtxoRootHash, SizeAvlTree)
 
     def minerPubKey: RCostedColl[Byte] =
-      knownLengthCollPropertyAccess(_.minerPubKey, CryptoConstants.EncodedGroupElementLength.toInt)
+      knownLengthCollPropertyAccess(_.minerPubKey, EncodedGroupElementInfo)
 
     def getVar[T](id: RCosted[Byte])(implicit tT: Rep[WRType[T]]): RCostedOption[T] = { ???
 //      defaultOptionPropertyAccess(_.getVar(id.value)(tT.eA), asSizeContext(_).reg)
@@ -423,7 +461,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     def creationInfo: RCosted[(Int, Coll[Byte])] = {
       val info = obj.value.creationInfo
       val l = RCCostedPrim(info._1, IntZero, SizeInt)
-      val r = RCCostedColl(info._2, CostsOfHashBytes, SizesOfHashBytes, IntZero)
+      val r = RCCostedColl(info._2, HashInfo.costZeros, HashInfo.sizesColl, IntZero)
       val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
@@ -476,11 +514,11 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def powOnetimePk() = groupElementPropertyAccess(_.powOnetimePk)
 
-    def powNonce() = knownLengthCollPropertyAccess(_.powNonce, 8)
+    def powNonce() = knownLengthCollPropertyAccess(_.powNonce, NonceBytesInfo)
 
     def powDistance() = bigIntPropertyAccess(_.powDistance)
 
-    def votes() = knownLengthCollPropertyAccess(_.votes, 3)
+    def votes() = knownLengthCollPropertyAccess(_.votes, VotesInfo)
   }
 
   object HeaderCoster extends CostingHandler[Header]((obj, m, costedArgs, args) => new HeaderCoster(obj, m, costedArgs, args))
@@ -501,7 +539,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
 
     def minerPk() = groupElementPropertyAccess(_.minerPk)
 
-    def votes() = knownLengthCollPropertyAccess(_.votes, 3)
+    def votes() = knownLengthCollPropertyAccess(_.votes, VotesInfo)
   }
 
   object PreHeaderCoster extends CostingHandler[PreHeader]((obj, m, costedArgs, args) => new PreHeaderCoster(obj, m, costedArgs, args))
@@ -552,8 +590,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     import Coll._
     implicit val eT = obj.elem.eVal.eItem
 
-    def indices(): RCostedColl[Int] =
-      knownLengthCollPropertyAccess(_.indices, asSizeColl(obj.size).sizes.length)
+    def indices(): RCostedColl[Int] = {
+      val value = obj.value.indices
+      mkCostedColl(value, asSizeColl(obj.size).sizes.length, opCost(value, costOfArgs, selectFieldCost))
+    }
 
     def map[B](_f: RCosted[T => B]): RCosted[Coll[B]] = {
       val xs = asCostedColl(obj)
