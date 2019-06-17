@@ -44,6 +44,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
+  // script of maximum size
+  val maxSizeColl: Coll[Byte] = Colls.fromArray(Array.fill(0xFFFF)(2.toByte))
+  val maxSizeCollEnv: ScriptEnv = Map("maxSizeColl" -> maxSizeColl)
 
   def termination[T](fn: () => T): (T, Boolean) = {
     val t0 = System.currentTimeMillis()
@@ -69,6 +72,62 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     println(s"Timeout: $Timeout millis")
     println(s"Result: $res")
     (calcTime < Timeout) shouldBe true
+  }
+
+  property("large loop: int comparison") {
+    val check = "i >= 0"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+        |  maxSizeColl.forall({(i:Byte) =>
+        |    $check
+        |  })
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: addition") {
+    val check = "i + i + i + i + i + i + i + i + i + i > i + i + i + i + i + i + i + i + i"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: multiplication") {
+    val check = "i * i * i * i * i * i * i * i * i * i >= i * i * i * i * i * i * i * i * i"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+        |  maxSizeColl.forall({(i:Byte) =>
+        |    $check
+        |  })
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: negotiation") {
+    val check = "(! (i != 1)) || (! (i != 2)) || (! (i != 3)) || (! (i != 4))"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  // todo construct transaction with at least one output and check the same properties for outputs
+  property("large loop: INPUTS.propositionBytes.size") {
+    val check = "INPUTS.exists({(x:Box) => x.propositionBytes.size >= 0})"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
   }
 
   property("nested loops 1") {
@@ -103,7 +162,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp
 
     checkScript(spamScript)
-
   }
 
   property("nested loops 2") {
