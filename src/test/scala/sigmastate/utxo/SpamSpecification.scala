@@ -4,10 +4,10 @@ import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Gen
-import scalan.util.BenchmarkUtil
+import scalan.util.BenchmarkUtil.measureTime
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -26,7 +26,8 @@ import sigmastate.lang.exceptions.CosterException
   */
 class SpamSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
-  //we assume that verifier must finish verification of any script in less time than 3M hash calculations
+
+  //we assume that verifier must finish verification of any script in less time than 1M hash calculations
   // (for the Blake2b256 hash function over a single block input)
   val Timeout: Long = {
     val block = Array.fill(16)(0: Byte)
@@ -99,7 +100,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
-    val (res, calcTime) = BenchmarkUtil.measureTime {
+    val (res, calcTime) = measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
     println(s"Verify time: $calcTime millis")
@@ -152,7 +153,7 @@ class SpamSpecification extends SigmaTestingCommons {
       .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(ScriptCostLimit.value * 4), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
-    val (res, calcTime) = BenchmarkUtil.measureTime {
+    val (res, calcTime) = measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
     println(s"Verify time: $calcTime millis")
@@ -293,13 +294,9 @@ class SpamSpecification extends SigmaTestingCommons {
   property("transaction with many inputs and outputs") {
     implicit lazy val IR = new TestingIRContext {
       override val okPrintEvaluatedEntries = false
-      override def onEvaluatedGraphNode(env: DataEnv, sym: Sym, value: AnyRef): Unit = {
-        if (okPrintEvaluatedEntries)
-          println(printEnvEntry(sym, value))
-      }
     }
     val prover = new ContextEnrichingTestProvingInterpreter()
-    val limitlessProver = new ContextEnrichingTestProvingInterpreter()
+    val verifier = new ContextEnrichingTestProvingInterpreter()
 
     val prop = Exists(Inputs,
       FuncValue(Vector((1, SBox)),
@@ -309,7 +306,10 @@ class SpamSpecification extends SigmaTestingCommons {
     val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
     val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6)))).toSigmaProp
 
-    val inputs = ((1 to 999) map (_ => ErgoBox(11, inputScript, 0))) :+ ErgoBox(11, outputScript, 0)
+    val inputs = ErgoBox(11, prop, 0) +:   // the box we are going to spend
+                 ((1 to 998) map (_ => ErgoBox(11, inputScript, 0))) :+  // non equal boxes
+                 ErgoBox(11, outputScript, 0)  // the last one is equal to output
+
     val outputs = (1 to 1000) map (_ => ErgoBox(11, outputScript, 0))
 
     val tx = createTransaction(outputs)
@@ -329,14 +329,16 @@ class SpamSpecification extends SigmaTestingCommons {
 
     println(s"Timeout: ${Timeout / 1000.0} seconds")
 
+    val ctxWithoutLimit = ctx.withCostLimit(Long.MaxValue)
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctxWithoutLimit, fakeMessage).get
+
     // check that execution terminated within timeout due to costing exception and cost limit
-    val pt0 = System.currentTimeMillis()
-    val (res, terminated) = termination(() =>
-      prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage)
+    val (res, time) = measureTime(
+      verifier.verify(emptyEnv + (ScriptNameProp -> "reject_verify"), prop, ctx, pr, fakeMessage)
     )
-    val pt = System.currentTimeMillis()
-    println(s"Prover time: ${(pt - pt0) / 1000.0} seconds")
-    terminated shouldBe true
+    println(s"Prover time: ${time / 1000.0} seconds")
+    assert(time < Timeout, s"Script rejection time $time is longer than timeout $Timeout")
+
     assertExceptionThrown(
       res.fold(t => throw t, identity),
       {
@@ -348,14 +350,11 @@ class SpamSpecification extends SigmaTestingCommons {
     )
 
     // measure time required to execute the script itself and it is more then timeout
-    val (_, calcTime) = BenchmarkUtil.measureTime {
-      import limitlessProver.IR._
-      val Pair(calcF, _) = doCostingEx(emptyEnv + (ScriptNameProp -> "compute"), prop, true)
-      val calcCtx = ctx.toSigmaContext(limitlessProver.IR, isCost = false)
-      limitlessProver.calcResult(calcCtx, calcF)
+    val (_, calcTime) = measureTime {
+      verifier.verify(emptyEnv + (ScriptNameProp -> "full_verify"), prop, ctxWithoutLimit, pr, fakeMessage)
     }
     println(s"Full time to execute the script: ${calcTime / 1000.0} seconds")
-    assert(calcTime > Timeout)
+    assert(calcTime >= Timeout, s"Script full execution time $calcTime is less than timeout $Timeout")
   }
 
   property("too heavy avl tree lookup") {
@@ -471,7 +470,7 @@ class SpamSpecification extends SigmaTestingCommons {
     val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
-    val (_, calcTime) = BenchmarkUtil.measureTime {
+    val (_, calcTime) = measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
     println(s"calc time: $calcTime millis")

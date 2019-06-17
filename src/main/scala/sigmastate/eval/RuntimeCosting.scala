@@ -1432,7 +1432,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             val sizeF = fC.sliceSize
             val value = xC.value
             val y: Rep[Any] = Apply(calcF, value, false)
-            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), Apply(costF, Pair(xC.cost, xC.size), false))
+            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), Apply(costF, Pair(IntZero, xC.size), false))
             val s: Rep[Size[Any]]= Apply(sizeF, xC.size, false)
             RCCostedPrim(y, c, s)
         }
