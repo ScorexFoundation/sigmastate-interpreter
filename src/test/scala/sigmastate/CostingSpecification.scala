@@ -275,6 +275,9 @@ class CostingSpecification extends SigmaTestingData {
       (lambdaCost + accessBox + extractCost + selectField + (accessBox + extractCost) * tx.outputs.length
         + collToColl + collByIndex + constCost + GTConstCost)
     cost(s"{ $coll.exists({ (b: Box) => b.value > 1L }) }") shouldBe (accessBox + extractCost + GTConstCost)
+    cost(s"{ $coll.append(OUTPUTS).size > 0 }") shouldBe
+      (selectField + accessBox * tx.outputs.length +
+        accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
   }
 
   property("Option operations cost") {
