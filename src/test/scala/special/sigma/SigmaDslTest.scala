@@ -417,11 +417,13 @@ class SigmaDslTest extends PropSpec
     lazy val intCheck = checkEq(func[Box,Int]("{ (x: Box) => x.R6[Int].get }"))((x: Box) => x.R6[Int].get)
     lazy val longCheck = checkEq(func[Box,Long]("{ (x: Box) => x.R7[Long].get }"))((x: Box) => x.R7[Long].get)
     lazy val BigIntCheck = checkEq(func[Box,BigInt]("{ (x: Box) => x.R8[BigInt].get }"))((x: Box) => x.R8[BigInt].get)
+    lazy val avlTreeCheck = checkEq(func[Box,AvlTree]("{ (x: Box) => x.R9[AvlTree].get }"))((x: Box) => x.R9[AvlTree].get)
     byteCheck(s)
     shortCheck(s)
     intCheck(s)
     longCheck(s)
     BigIntCheck(s)
+    avlTreeCheck(s)
   }
 
   property("PreHeader properties equivalence") {
