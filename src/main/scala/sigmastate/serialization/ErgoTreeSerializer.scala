@@ -1,12 +1,12 @@
 package sigmastate.serialization
 
-import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit}
+import org.ergoplatform.validation.ValidationRules.{CheckDeserializedScriptIsSigmaProp, CheckHeaderSizeBit, CheckPositionLimit}
 import org.ergoplatform.validation.{ValidationException, SigmaValidationSettings}
 import sigmastate.SType
 import sigmastate.Values.{Value, ErgoTree, Constant, UnparsedErgoTree}
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.lang.exceptions.SerializerException
+import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
@@ -24,11 +24,12 @@ import scala.collection.mutable
   * UnparsedErgoTree. The decision about soft-fork can be done later.
   * But is looks like this is not necessary if we do as described below.
   *
-  * 2) we can also strictly check during deserialization the content of the script
-  * against version number in the header. Thus if the header have vK, then
-  * script is allowed to have instructions from versions from v1 to vK. On a node vN, N >
-  * K, this should also be enforced, i.e. vN node will reject scripts as invalid
-  * if the script has vK in header and vK+1 instruction in body.
+  * 2) HeaderVersionCheck:
+  * we can also strictly check during deserialization the content of the script
+  * against version number in the header. Thus if the header have vS, then
+  * script is allowed to have instructions from versions from v1 to vS. On a node vN, N > S,
+  * this should also be enforced, i.e. vN node will reject scripts as invalid
+  * if the script has vS in header and vS+1 instruction in body.
   *
   * Keeping this in mind, if we have a vN node and a script with vS in its header then:
   * During script deserialization:
@@ -124,22 +125,30 @@ class ErgoTreeSerializer {
     * Doesn't apply any transformations to the parsed tree. */
   def deserializeErgoTree(bytes: Array[Byte]): ErgoTree  = {
     val r = SigmaSerializer.startReader(bytes)
-    deserializeErgoTree(r)
+    deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
   }
 
-  def deserializeErgoTree(r: SigmaByteReader): ErgoTree = {
+  def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int): ErgoTree = {
     val startPos = r.position
+    val previousPositionLimit = r.positionLimit
+    r.positionLimit = r.position + maxTreeSizeBytes
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
     val tree = try {
-      val cs = deserializeConstants(h, r)
-      val previousConstantStore = r.constantStore
-      r.constantStore = new ConstantStore(cs)
-      // reader with constant store attached is required (to get tpe for a constant placeholder)
-      val root = ValueSerializer.deserialize(r)
-      CheckDeserializedScriptIsSigmaProp(root) {}
-      r.constantStore = previousConstantStore
-      ErgoTree(h, cs, root.asSigmaProp)
+      try { // nested try-catch to intercept size limit exceptions and rethrow them as ValidationExceptions
+        val cs = deserializeConstants(h, r)
+        val previousConstantStore = r.constantStore
+        // reader with constant store attached is required (to get tpe for a constant placeholder)
+        r.constantStore = new ConstantStore(cs)
+        val root = ValueSerializer.deserialize(r)
+        CheckDeserializedScriptIsSigmaProp(root) {}
+        r.constantStore = previousConstantStore
+        ErgoTree(h, cs, root.asSigmaProp)
+      }
+      catch {
+        case e: InputSizeLimitExceeded =>
+          throw ValidationException(s"Data size check failed", CheckPositionLimit, Nil, Some(e))
+      }
     }
     catch {
       case ve: ValidationException =>
@@ -154,6 +163,7 @@ class ErgoTreeSerializer {
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
         }
     }
+    r.positionLimit = previousPositionLimit
     tree
   }
 

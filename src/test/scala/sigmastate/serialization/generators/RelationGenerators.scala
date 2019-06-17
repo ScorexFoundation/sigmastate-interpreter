@@ -7,9 +7,6 @@ import sigmastate.{If, SInt, TreeLookup}
 trait RelationGenerators {
   this: ObjectGenerators with ConcreteCollectionGenerators =>
 
-  implicit val arbTreeLookup: Arbitrary[TreeLookup] = Arbitrary(treeLookupGen)
-  implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)
-
   val treeLookupGen: Gen[TreeLookup] = for {
     t <- arbTaggedAvlTree.arbitrary
     b1 <- arbByteArrayConstant.arbitrary
@@ -22,5 +19,7 @@ trait RelationGenerators {
     fb <- arbIntConstants.arbitrary
   } yield If(c, tb, fb)
 
+  implicit val arbTreeLookup: Arbitrary[TreeLookup] = Arbitrary(treeLookupGen)
+  implicit val arbIf: Arbitrary[If[SInt.type]] = Arbitrary(ifGen)
 
 }

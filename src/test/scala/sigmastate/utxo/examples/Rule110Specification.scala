@@ -33,9 +33,8 @@ class Rule110Specification extends SigmaTestingCommons {
     * - first output contains the same protecting script, allowing to calculate further layers
     */
   property("rule110 - one layer in register") {
-    val prover = new ContextEnrichingTestProvingInterpreter {
-      override val maxCost: Long = 2000000
-    }
+    val maxCost: Long = 2000000
+    val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
 
     val prop = compile(Map(),
@@ -62,7 +61,7 @@ class Rule110Specification extends SigmaTestingCommons {
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(input),
       tx,
-      self = input)
+      self = input).withCostLimit(maxCost)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
     verifier.verify(prop, ctx, pr, fakeMessage).get._1 shouldBe true
