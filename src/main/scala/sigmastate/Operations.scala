@@ -500,6 +500,12 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg)
   }
 
+  object SigmaPropIsProvenInfo extends InfoObject {
+    private val method = SMethod.fromIds(8, 2)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Seq(thisArg)
+  }
+
   object SizeOfInfo extends InfoObject {
     private val method = SMethod.fromIds(12, 1)
     val thisArg: ArgInfo = method.argInfo("this")
