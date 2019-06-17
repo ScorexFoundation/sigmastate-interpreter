@@ -131,18 +131,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         |}
       """.stripMargin).asBoolValue.toSigmaProp
 
-    //todo: make value dependent on CostTable constants, not magic constant
-    val ba = Random.randomBytes(10000000)
-
-    val id = 11: Byte
-    val id2 = 12: Byte
-
     val prover = new ContextEnrichingTestProvingInterpreter()
-      .withContextExtender(id, ByteArrayConstant(ba))
-      .withContextExtender(id2, ByteArrayConstant(ba))
-
-    //val spamScript = EQ(CalcBlake2b256(GetVarByteArray(id).get), CalcBlake2b256(GetVarByteArray(id2).get)).toSigmaProp
-
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
     val pr = prover
