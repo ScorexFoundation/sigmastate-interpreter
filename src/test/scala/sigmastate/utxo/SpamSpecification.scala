@@ -42,6 +42,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val t = System.currentTimeMillis()
     t - t0
   }
+  lazy val alice = new ContextEnrichingTestProvingInterpreter
+  lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
 
   def termination[T](fn: () => T): (T, Boolean) = {
     val t0 = System.currentTimeMillis()
@@ -53,7 +55,12 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   /**
     * Checks that regardless of the script structure, it's verification always consumes at most `Timeout` ms
     */
-  private def checkVerification(spamScript: SigmaPropValue, ctx: ErgoLikeContext, pr: CostedProverResult) = {
+  private def checkScript(spamScript: SigmaPropValue): Unit = {
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val pr = prover
+      .withSecrets(alice.dlogSecrets)
+      .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
     val verifier = new ErgoLikeTestInterpreter
     val (res, calcTime) = BenchmarkUtil.measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
@@ -65,12 +72,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("nested loops 1") {
-    val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
-    val largeColl: Coll[Int] = Colls.fromArray((0 until 5000).toArray)
+    val largeColl: Coll[Int] = Colls.fromArray((0 until 500).toArray)
     val env = Map(
       ScriptNameProp -> "nested loops 1",
-      "alice" -> alicePubKey,
       "largeColl" -> largeColl
     )
     val spamScript = compile(env,
@@ -98,18 +102,12 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         |}
       """.stripMargin).asBoolValue.toSigmaProp
 
-    val prover = new ContextEnrichingTestProvingInterpreter()
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
-
-    checkVerification(spamScript, ctx, pr)
+    checkScript(spamScript)
 
   }
 
   property("nested loops 2") {
-    val alice = new ContextEnrichingTestProvingInterpreter
-    val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
-    val largeColl = Colls.fromArray((1 to 100).toArray)
+    val largeColl = Colls.fromArray((1 to 65).toArray)
     val env = Map(
       ScriptNameProp -> "nested loops 2",
       "alice" -> alicePubKey,
@@ -131,14 +129,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         |}
       """.stripMargin).asBoolValue.toSigmaProp
 
-    val prover = new ContextEnrichingTestProvingInterpreter()
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    checkScript(spamScript)
 
-    val pr = prover
-      .withSecrets(alice.dlogSecrets)
-      .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(ScriptCostLimit.value * 4), fakeMessage).get
-
-    checkVerification(spamScript, ctx, pr)
   }
 
 
