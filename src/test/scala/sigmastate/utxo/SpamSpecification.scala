@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoBox.{R4, R5, R6, R7, R8, R9}
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
@@ -8,6 +9,7 @@ import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
@@ -188,7 +190,210 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp
 
     checkScript(spamScript)
+  }
 
+  property("large num of inputs 1") {
+    // runtime is high, test failing
+    /*
+      TIMEOUT IS 2150
+      TIME IS 598
+     */
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val minNumInputs = 10
+    val minNumOutputs = 10
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "minNumInputs" -> minNumInputs,
+      "minNumOutputs" -> minNumOutputs
+    )
+    val spamScript = compile(env,
+      """{
+        |  val valid  = INPUTS.exists({(ib:Box) =>
+        |     OUTPUTS.exists({(ob:Box) =>
+        |       OUTPUTS.exists({(ob2:Box) =>
+        |         val ib_r4 = ib.R4[Byte].get
+        |         val ib_r5 = ib.R5[SigmaProp].get
+        |         val ib_r6 = ib.R6[Int].get
+        |         val ib_r7 = ib.R7[Coll[Long]].get
+        |         val ib_r8 = ib.R8[Coll[Byte]].get
+        |         val ob_r4 = ob.R4[Byte].get
+        |         val ob_r5 = ob.R5[SigmaProp].get
+        |         val ob_r6 = ob.R6[Int].get
+        |         val ob_r7 = ob.R7[Coll[Long]].get
+        |         val ob_r8 = ob.R8[Coll[Byte]].get
+        |         val ob2_r4 = ob2.R4[Byte].get
+        |         val ob2_r5 = ob2.R5[SigmaProp].get
+        |         val ob2_r6 = ob2.R6[Int].get
+        |         val ob2_r7 = ob2.R7[Coll[Long]].get
+        |         val ob2_r8 = ob2.R8[Coll[Byte]].get
+        |         ib.propositionBytes == ob.propositionBytes && ob2.propositionBytes.size <= SELF.propositionBytes.size &&
+        |         ib_r4 == ob_r4 && ob_r4 == ob2_r4 &&
+        |         ib_r5 == ob_r5 && ob_r5 == ob2_r5 &&
+        |         ib_r6 == ob_r6 && ob_r6 == ob2_r6 &&
+        |         ib_r7 == ob_r7 && ob_r7 == ob2_r7 &&
+        |         ib_r8 == ob_r8 && ob_r8 == ob2_r8
+        |       }
+        |       )
+        |     }
+        |     )
+        |  }
+        |  ) && INPUTS.size >= minNumInputs && OUTPUTS.size >= minNumOutputs
+        |  alice && !valid
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+    val longs = Array[Long](1, 2, 3)
+
+    val output = ErgoBox(1, alicePubKey, 10, Nil,
+      Map(
+        R4 -> ByteConstant(1),
+        R5 -> SigmaPropConstant(alicePubKey),
+        R6 -> IntConstant(10),
+        R7 -> LongArrayConstant(longs),
+        R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get),
+      )
+    )
+
+    val input = ErgoBox(1, spamScript, 10, Nil,
+      Map(
+        R4 -> ByteConstant(1),
+        R5 -> SigmaPropConstant(alicePubKey),
+        R6 -> IntConstant(10),
+        R7 -> LongArrayConstant(longs),
+        R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get)
+      )
+    )
+    val outBoxes:IndexedSeq[ErgoBoxCandidate] = IndexedSeq.fill(minNumOutputs)(output)
+    val inBoxes:IndexedSeq[ErgoBox] = IndexedSeq.fill(minNumOutputs)(input)
+    //normally this transaction would invalid (why?), but we're not checking it in this test
+    val tx = createTransaction(outBoxes)
+
+    val context = ErgoLikeContext(
+      currentHeight = 10,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = inBoxes,
+      spendingTransaction = tx,
+      self = inBoxes(0) // what is the use of self?
+    )
+
+
+    val prover = new ContextEnrichingTestProvingInterpreter()
+
+    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, context, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (res, terminated) = termination(() =>
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
+    )
+    res.isFailure shouldBe true
+    terminated shouldBe true
+  }
+
+  property("large num of inputs 2") {
+    /*
+    Also failing, but time is high
+
+    TIMEOUT IS 2062
+    TIME IS 1476
+
+     */
+    val alice = new ContextEnrichingTestProvingInterpreter
+    val alicePubKey:ProveDlog = alice.dlogSecrets.head.publicImage
+    val minNumInputs = 60
+    val minNumOutputs = 60
+    val env = Map(
+      ScriptNameProp -> "Script",
+      "alice" -> alicePubKey,
+      "minNumInputs" -> minNumInputs,
+      "minNumOutputs" -> minNumOutputs
+    )
+    val spamScript = compile(env,
+      """{
+          |  val valid  = INPUTS.exists({(ib:Box) =>
+          |     OUTPUTS.exists({(ob:Box) =>
+          |         val ib_r4 = ib.R4[Byte].get
+          |         val ib_r5 = ib.R5[SigmaProp].get
+          |         val ib_r6 = ib.R6[Int].get
+          |         val ib_r7 = ib.R7[Coll[Long]].get
+          |         val ib_r8 = ib.R8[Coll[Byte]].get
+          |         val ib_r9 = ib.R9[Coll[Coll[Byte]]].get
+          |         val ob_r4 = ob.R4[Byte].get
+          |         val ob_r5 = ob.R5[SigmaProp].get
+          |         val ob_r6 = ob.R6[Int].get
+          |         val ob_r7 = ob.R7[Coll[Long]].get
+          |         val ob_r8 = ob.R8[Coll[Byte]].get
+          |         val ob_r9 = ob.R9[Coll[Coll[Byte]]].get
+          |         ib.propositionBytes == ob.propositionBytes && ob.propositionBytes.size <= SELF.propositionBytes.size &&
+          |         ib_r4 == ob_r4 &&
+          |         ib_r5 == ob_r5 &&
+          |         ib_r6 == ob_r6 &&
+          |         ib_r7 == ob_r7 &&
+          |         ib_r8 == ob_r8 &&
+          |         ib_r9 != ob_r9
+          |     }
+          |     )
+          |  }
+          |  ) && INPUTS.size >= minNumInputs && OUTPUTS.size >= minNumOutputs
+          |  alice && !valid
+          |}
+        """.stripMargin).asBoolValue.toSigmaProp
+
+    val collCollByte = Colls.fromItems(Colls.fromArray((1 to 100).map(_.toByte).toArray))
+    val longs = (1 to 100).map(_.toLong).toArray
+
+    object ByteArrayArrayConstant {
+      def apply(value: Coll[Coll[Byte]]): CollectionConstant[SByteArray.type] = CollectionConstant[SByteArray.type](value, SByteArray)
+    }
+
+
+    val output = ErgoBox(1, alicePubKey, 10, Nil,
+      Map(
+        R4 -> ByteConstant(1),
+        R5 -> SigmaPropConstant(alicePubKey),
+        R6 -> IntConstant(10),
+        R7 -> LongArrayConstant(longs),
+        R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get),
+        R9 -> ByteArrayArrayConstant(collCollByte)
+    )
+    )
+
+    val input = ErgoBox(1, spamScript, 10, Nil,
+      Map(
+        R4 -> ByteConstant(1),
+        R5 -> SigmaPropConstant(alicePubKey),
+        R6 -> IntConstant(10),
+        R7 -> LongArrayConstant(longs),
+        R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get),
+        R9 -> ByteArrayArrayConstant(collCollByte)
+      )
+    )
+    val outBoxes:IndexedSeq[ErgoBoxCandidate] = IndexedSeq.fill(minNumOutputs)(output)
+    val inBoxes:IndexedSeq[ErgoBox] = IndexedSeq.fill(minNumOutputs)(input)
+    //normally this transaction would invalid (why?), but we're not checking it in this test
+    val tx = createTransaction(outBoxes)
+
+    val context = ErgoLikeContext(
+      currentHeight = 10,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = inBoxes,
+      spendingTransaction = tx,
+      self = inBoxes(0) // what is the use of self?
+    )
+
+
+    val prover = new ContextEnrichingTestProvingInterpreter()
+
+    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, context, fakeMessage).get
+
+    val verifier = new ErgoLikeTestInterpreter
+    val (res, terminated) = termination(() =>
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
+    )
+    res.isFailure shouldBe true
+    terminated shouldBe true
   }
 
 
