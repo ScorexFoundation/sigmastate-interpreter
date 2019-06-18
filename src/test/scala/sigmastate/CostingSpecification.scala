@@ -32,6 +32,7 @@ class CostingSpecification extends SigmaTestingData {
 
   val (key1, _, avlProver) = sampleAvlProver
   val keys = Colls.fromItems(key1)
+  val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
   val digest = avlProver.digest.toColl
   val lookupProof = avlProver.generateProof().toColl
@@ -41,6 +42,7 @@ class CostingSpecification extends SigmaTestingData {
   lazy val env: ScriptEnv = Map(
     ScriptNameProp -> s"filename_verify",
     "key1" -> key1,
+    "key2" -> key2,
     "keys" -> keys,
     "lookupProof" -> lookupProof,
     "pkA" -> pkA,
@@ -265,6 +267,28 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $selfTree.contains(key1, lookupProof) }")(AccessTree + containsCost + 2 * constCost)
     cost(s"{ $selfTree.get(key1, lookupProof).isDefined }")(AccessTree + containsCost + 2 * constCost + selectField)
     cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }")(AccessTree + containsCost + 2 * constCost + LengthGTConstCost)
+    cost(s"{ $rootTree.valueLengthOpt.isDefined }") shouldBe (AccessRootHash + selectField + selectField)
+    cost(s"{ $selfTree.update(Coll[(Coll[Byte], Coll[Byte])]((key1, key1)), lookupProof).isDefined }") shouldBe
+      (AccessTree +
+        perKbCostOf(
+          Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+          avlTreeOp
+        )
+        + concreteCollCost + constCost + constCost + selectField)
+    cost(s"{ $selfTree.remove(keys, lookupProof).isDefined }") shouldBe
+      (AccessTree +
+        perKbCostOf(
+          Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+          avlTreeOp
+        )
+        + constCost + selectField)
+    cost(s"{ $selfTree.insert(Coll[(Coll[Byte], Coll[Byte])]((key2, key1)), lookupProof).isDefined }") shouldBe
+      (AccessTree +
+        perKbCostOf(
+          Seq(sizeOf(avlTree), sizeOf(key2), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+          avlTreeOp
+        )
+        + concreteCollCost + constCost + constCost + selectField)
   }
 
   property("Coll operations cost") {
