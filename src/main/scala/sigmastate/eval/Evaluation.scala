@@ -132,6 +132,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     CastCode,
     IntPlusMonoidCode,
     ThunkDefCode,
+    ThunkForceCode,
     SCMInputsCode,
     SCMOutputsCode,
     SCMDataInputsCode,
@@ -373,6 +374,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           usages.foreach { usageSym =>
             usageSym.rhs match {
               case l: Lambda[_,_] => //ok
+              case t: ThunkDef[_] => //ok
               case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
               case OpCost(_, _, _, opCost) if opCost == te.sym =>
                 println(s"WARNING: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
@@ -722,6 +724,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             }
             out(th)
 
+          case ThunkForce(In(t: ThunkData[Any])) =>
+            out(t())
           case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
             val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
