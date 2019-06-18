@@ -1031,7 +1031,7 @@ Convert true to 1 and false to 0
     \hline
          $ typeCode $ & \lst{Byte} & 1 & type of the method (see Table~\ref{table:predeftypes}) \\
     \hline
-           $ methodCode $ & \lst{Byte} & 1 & a code of the proprty \\
+           $ methodCode $ & \lst{Byte} & 1 & a code of the property \\
     \hline
            $ obj $ & \lst{Expr} & [1, *] & receiver object of this property call \\
     \hline
@@ -1130,6 +1130,58 @@ Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} other
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
          $ this $ & \lst{Expr} & [1, *] & this instance \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{ModQ} operation (OpCode 231)}
+\label{sec:serialization:operation:ModQ}
+
+Returns this \lst{mod} Q, i.e. remainder of division by Q, where Q is an order of the cryprographic group. See~\hyperref[sec:type:BigInt:modQ]{\lst{BigInt.modQ}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{PlusModQ} operation (OpCode 232)}
+\label{sec:serialization:operation:PlusModQ}
+
+Adds this number with \lst{other} by module Q. See~\hyperref[sec:type:BigInt:plusModQ]{\lst{BigInt.plusModQ}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
+    \hline
+           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
+    \hline
+      
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{MinusModQ} operation (OpCode 233)}
+\label{sec:serialization:operation:MinusModQ}
+
+Subtracts \lst{other} number from this by module Q. See~\hyperref[sec:type:BigInt:minusModQ]{\lst{BigInt.minusModQ}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+         $ this $ & \lst{Expr} & [1, *] & this instance \\
+    \hline
+           $ other $ & \lst{Expr} & [1, *] & Number to add to this. \\
     \hline
       
 \end{tabularx}\)
@@ -1264,6 +1316,28 @@ Negates numeric value \lst{x} by returning \lst{-x}. See~\hyperref[sec:appendix:
          $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
     \hline
       
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinXor} operation (OpCode 244)}
+\label{sec:serialization:operation:BinXor}
+
+Logical XOR of two operands See~\hyperref[sec:appendix:primops:BinXor]{\lst{^}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
        
 
