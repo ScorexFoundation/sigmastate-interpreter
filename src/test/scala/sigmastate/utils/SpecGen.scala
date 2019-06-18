@@ -262,7 +262,10 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of all operations with all methods by optional opCode
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
-      o => Some(o._1), m => m.docInfo.map(_.opDesc.opCode)
+      o => Some(o._1), m => m.docInfo.map(info => if (info.isFrontendOnly) {
+        System.err.println(s"WARNING: Operation is frontend only: $info")
+        None
+      } else info.opDesc.opCode)
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left

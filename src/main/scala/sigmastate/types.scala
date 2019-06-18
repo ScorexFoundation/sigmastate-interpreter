@@ -756,7 +756,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
     SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
         .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree."),
     SMethod(this, IsProven, SFunc(this, SBoolean), 2)
-        .withInfo(SigmaPropIsProven, // available only at frontend of ErgoScript
+        .withInfo(null, // available only at frontend of ErgoScript
           "Verify that sigma proposition is proven.")
   )
 }
