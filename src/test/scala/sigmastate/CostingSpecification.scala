@@ -260,6 +260,7 @@ class CostingSpecification extends SigmaTestingData {
   property("Coll operations cost") {
     val coll = "OUTPUTS"
     val nOutputs = tx.outputs.length
+    val collBytes = "CONTEXT.headers(0).id"
     cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }")(
       selectField + lambdaCost +
         (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
@@ -280,12 +281,23 @@ class CostingSpecification extends SigmaTestingData {
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
     cost(s"{ $coll.indices.size > 0 }") shouldBe
       (selectField + accessBox * tx.outputs.length + selectField + LengthGTConstCost)
-    cost(s"{ CONTEXT.headers(0).id.getOrElse(0, 1.toByte) == 0 }") shouldBe
+    cost(s"{ $collBytes.getOrElse(0, 1.toByte) == 0 }") shouldBe
       (AccessHeaderCost + selectField + collByIndex + collByIndex + comparisonCost + constCost)
     cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }") shouldBe
       ((accessBox + selectField + selectField + extractCost + plusMinus) * tx.outputs.length
         + plusMinus + GTConstCost)
     cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }") shouldBe (accessBox + extractCost + GTConstCost)
+    cost(s"{ $coll.slice(0, 1).size > 0 }") shouldBe
+      (selectField + collToColl + accessBox * tx.outputs.length + LengthGTConstCost)
+    cost(s"{ $coll.append(OUTPUTS).size > 0 }") shouldBe
+      (selectField + accessBox * tx.outputs.length +
+        accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
+    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }") shouldBe
+      (AccessHeaderCost + constCost + constCost + concreteCollCost + selectField + collToColl + LengthGTConstCost)
+    cost(s"{ $collBytes.updated(0, 1.toByte).size > 0 }") shouldBe
+      (AccessHeaderCost + selectField + collToColl + LengthGTConstCost)
+    cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }") shouldBe
+      (AccessHeaderCost + selectField + concreteCollCost + concreteCollCost + constCost + constCost + collToColl + LengthGTConstCost)
   }
 
   property("Option operations cost") {
