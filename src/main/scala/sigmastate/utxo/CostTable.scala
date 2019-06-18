@@ -48,6 +48,7 @@ object CostTable {
   val multiplyGroup = 50
   val negateGroup = 50
   val groupElementConst = 1
+  val decodePointCost = 1
   val constCost = 10
   val concreteCollCost = 1
   val lambdaCost = 10
@@ -290,7 +291,7 @@ object CostTable {
 
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
-    ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+    ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
 
     ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
     ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),

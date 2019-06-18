@@ -114,7 +114,7 @@ class CostingSpecification extends SigmaTestingData {
   property("atLeast costs") {
     val concrCollCost = proveDlogEvalCost
     cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }") shouldBe
-      (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + constCost)
+      (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + concreteCollCost)
   }
 
   property("allZK costs") {
@@ -153,6 +153,16 @@ class CostingSpecification extends SigmaTestingData {
 
   property("longToByteArray") {
     cost("{ longToByteArray(1L).size > 0 }") shouldBe (constCost + castOp + LengthGTConstCost)
+  }
+
+  property("decodePoint and GroupElement.getEncoded") {
+    cost("{ decodePoint(groupGenerator.getEncoded) == groupGenerator }") shouldBe
+      (selectField + selectField + decodePointCost + comparisonCost)
+  }
+
+  property("GroupElement.negate") {
+    cost("{ groupGenerator.negate != groupGenerator }") shouldBe
+      (selectField + negateGroup + comparisonCost)
   }
 
   property("SELF box operations cost") {
