@@ -5,13 +5,13 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BigIntValue, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue}
+import sigmastate.Values.{BigIntValue, BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value}
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -24,9 +24,10 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
-import special.sigma.{AvlTree, SigmaProp, GroupElement}
+import special.sigma.{AvlTree, GroupElement, SigmaProp}
 import sigmastate.lang.SigmaTyper.STypeSubst
-import special.sigma.{SigmaProp, GroupElement}
+import sigmastate.serialization.OpCodes.OpCode
+import special.sigma.{GroupElement, SigmaProp}
 
 import scala.util.DynamicVariable
 
@@ -42,7 +43,7 @@ trait SigmaBuilder {
   def mkLT[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
   def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type]
 
-  def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T]
+  def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode): Value[T]
   def mkPlus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMinus[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
   def mkMultiply[T <: SNumericType](left: Value[T], right: Value[T]): Value[T]
@@ -301,7 +302,7 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkLE[T <: SType](left: Value[T], right: Value[T]): Value[SBoolean.type] =
     comparisonOp(left, right, LE.apply[T]).withSrcCtx(currentSrcCtx.value)
 
-  override def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: Byte): Value[T] =
+  override def mkArith[T <: SNumericType](left: Value[T], right: Value[T], opCode: OpCode): Value[T] =
     arithOp(left, right, { (l: Value[T], r: Value[T]) => ArithOp[T](l, r, opCode) })
       .withSrcCtx(currentSrcCtx.value)
 

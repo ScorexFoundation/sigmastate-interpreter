@@ -8,7 +8,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
-class ErgoLikeInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit val IR: IRContext) extends Interpreter {
+class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
 
   override type CTX <: ErgoLikeContext
 

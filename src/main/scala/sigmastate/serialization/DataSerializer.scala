@@ -4,7 +4,7 @@ import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
 import org.ergoplatform.ErgoBox
-import org.ergoplatform.validation.{ValidationRule, SoftForkWhenReplaced}
+import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import scalan.RType
 import sigmastate.Values.SigmaBoolean
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -13,22 +13,11 @@ import sigmastate.eval.{Evaluation, _}
 import sigmastate.lang.exceptions.SerializerException
 import special.collection._
 import special.sigma._
-import sigma.util.Extensions.ByteOps
 
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
 object DataSerializer {
-
-  object CheckSerializableTypeCode extends ValidationRule(1010,
-    "Check the data values of the type (given by type code) can be serialized")
-      with SoftForkWhenReplaced {
-    def apply[T](typeCode: Byte)(block: => T): T = {
-      val ucode = typeCode.toUByte
-      def msg = s"Data value of the type with the code $ucode cannot be deserialized."
-      validate(ucode <= OpCodes.LastDataType.toUByte, new SerializerException(msg), Seq(typeCode), block)
-    }
-  }
 
   /** Use type descriptor `tpe` to deconstruct type structure and recursively serialize subcomponents.
     * Primitive types are leaves of the type tree, and they are served as basis of recursion.

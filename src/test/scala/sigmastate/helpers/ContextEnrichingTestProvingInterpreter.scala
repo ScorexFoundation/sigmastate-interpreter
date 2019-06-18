@@ -8,8 +8,8 @@ import sigmastate.basics.DiffieHellmanTupleProverInput
 import sigmastate.eval.IRContext
 import sigmastate.utxo.CostTable
 
-class ContextEnrichingTestProvingInterpreter(override val maxCost: Long = CostTable.ScriptLimit)(implicit override val IR: IRContext)
-  extends ErgoLikeTestProvingInterpreter(maxCost) with ContextEnrichingProverInterpreter {
+class ContextEnrichingTestProvingInterpreter(implicit override val IR: IRContext)
+  extends ErgoLikeTestProvingInterpreter with ContextEnrichingProverInterpreter {
 
   override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = (1 to 10).map { i =>
     val ba = Random.randomBytes(75)
@@ -20,7 +20,7 @@ class ContextEnrichingTestProvingInterpreter(override val maxCost: Long = CostTa
     val s = secrets
     val ce = contextExtenders
 
-    new ContextEnrichingTestProvingInterpreter(maxCost) {
+    new ContextEnrichingTestProvingInterpreter {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce + (tag -> value)
     }
@@ -30,7 +30,7 @@ class ContextEnrichingTestProvingInterpreter(override val maxCost: Long = CostTa
     val ce = contextExtenders
     val s = secrets ++ additionalSecrets
 
-    new ContextEnrichingTestProvingInterpreter(maxCost) {
+    new ContextEnrichingTestProvingInterpreter {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }
@@ -40,7 +40,7 @@ class ContextEnrichingTestProvingInterpreter(override val maxCost: Long = CostTa
     val ce = contextExtenders
     val s = secrets ++ additionalSecrets
 
-    new ContextEnrichingTestProvingInterpreter(maxCost) {
+    new ContextEnrichingTestProvingInterpreter {
       override lazy val secrets = s
       override lazy val contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = ce
     }
