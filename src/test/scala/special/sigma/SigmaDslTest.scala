@@ -81,10 +81,9 @@ class SigmaDslTest extends PropSpec
       checkEq(func[T, R](script))(dslFunc)(obj)
   }
 
-  ignore("Boolean methods equivalence") {
+  property("Boolean methods equivalence") {
     lazy val toByte = checkEq(func[Boolean,Byte]("{ (x: Boolean) => x.toByte }"))((x: Boolean) => x.toByte)
     forAll { x: Boolean =>
-      //TODO soft-fork: for new operation below
       Seq(toByte).foreach(_(x))
     }
   }

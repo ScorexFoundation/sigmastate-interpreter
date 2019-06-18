@@ -488,6 +488,10 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "1L * 1.toLong") shouldBe SLong
   }
 
+  property("casts for boolean type") {
+    typecheck(env, "(1 == 1).toByte") shouldBe SByte
+  }
+
   property("invalid cast method for numeric types") {
     typefail(env, "1.toSuperBigInteger", 1, 1)
   }

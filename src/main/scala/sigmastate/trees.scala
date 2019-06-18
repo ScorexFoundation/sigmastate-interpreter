@@ -322,10 +322,11 @@ object AtLeast extends ValueCompanion {
 /**
   * Up cast for Numeric types
   */
-case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
+case class Upcast[T <: SType, R <: SNumericType](input: Value[T], tpe: R)
   extends Transformer[T, R] {
   import Upcast._
-  require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
+  require(input.tpe.isInstanceOf[SNumericType] || input.tpe.isInstanceOf[SBoolean.type],
+    s"Cannot create Upcast node for non-numeric and non-boolean type ${input.tpe}")
   override def companion = Upcast
   override val opType = SFunc(Vector(tT), tR)
 }

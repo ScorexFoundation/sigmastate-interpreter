@@ -153,6 +153,7 @@ object SType {
         val okRange = f1.tRange.canBeTypedAs(f2.tRange)
         okDom && okRange
     }
+    def isBoolType: Boolean = tpe.isInstanceOf[SBoolean.type]
     def isNumType: Boolean = tpe.isInstanceOf[SNumericType]
     def asNumType: SNumericType = tpe.asInstanceOf[SNumericType]
     def asFunc: SFunc = tpe.asInstanceOf[SFunc]
@@ -536,13 +537,12 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override def typeId = typeCode
   override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
-  protected override def getMethods() = super.getMethods()
-  /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-  ++ Seq(
+  protected override def getMethods() = super.getMethods() ++ Seq(
     SMethod(this, ToByte, SFunc(this, SByte), 1)
       .withInfo(PropertyCall, "Convert true to 1 and false to 0"),
   )
-  */
+  def isCastMethod (name: String): Boolean = name == ToByte
+
   override def mkConstant(v: Boolean): Value[SBoolean.type] = BooleanConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
@@ -556,6 +556,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
   override def dataSize(v: SType#WrappedType): Long = 1
   override def isConstantSize = true
   override def upcast(v: AnyVal): Byte = v match {
+    case b: Boolean => if (b) 1.toByte else 0.toByte
     case b: Byte => b
     case _ => sys.error(s"Cannot upcast value $v to the type $this")
   }
