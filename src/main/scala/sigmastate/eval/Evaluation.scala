@@ -361,12 +361,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //      println(backDeps)
       lam.scheduleAll
         .filter {
-          case te @ TableEntrySingle(sym, op: OpCost, _) =>
-//            op.args.foreach { a =>
-//              assert(a.rhs.isInstanceOf[OpCost],
-//                s"Non OpCost arg $a -> ${a.rhs} of node $te")
-//            }
-            true
+          case _ @ TableEntrySingle(_, _: OpCost, _) => true
           case _ => false
         }
         .foreach { te =>
@@ -377,10 +372,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
               case t: ThunkDef[_] => //ok
               case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
               case OpCost(_, _, _, opCost) if opCost == te.sym =>
-                println(s"WARNING: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
-                //ok
-              case op @ ApplyBinOp(NumericTimes(n),_,_) =>
-                println(s"WARNING: OpCost usage of node $te in in $usageSym -> ${usageSym.rhs}")
+                println(s"INFO: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
                 //ok
               case _ =>
                 !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")

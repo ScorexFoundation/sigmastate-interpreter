@@ -588,7 +588,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             fun { in: Rep[((Size[b], Int), (Int, Size[a]))] =>
               val Pair(Pair(accSizeB, accCost), Pair(xCost, xSize)) = in
               val sBA = RCSizePair(accSizeB, xSize)
-              val res = Pair(sizeF(sBA), costF(Pair(xCost, sBA)))
+              val size = sizeF(sBA)
+              val cost: Rep[Int] = ThunkForce(Thunk(costF(Pair(xCost, sBA))))
+              val res = Pair(size, cost)
               res
             }
         )
