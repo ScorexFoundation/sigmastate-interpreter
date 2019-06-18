@@ -189,6 +189,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: Cast[_] => CastCode
     case _: IntPlusMonoid => IntPlusMonoidCode
     case _: ThunkDef[_] => ThunkDefCode
+    case _: ThunkForce[_] => ThunkForceCode
     case SCM.inputs(_) => SCMInputsCode
     case SCM.outputs(_) => SCMOutputsCode
     case SCM.dataInputs(_) => SCMDataInputsCode
@@ -372,7 +373,13 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           usages.foreach { usageSym =>
             usageSym.rhs match {
               case l: Lambda[_,_] => //ok
-              case OpCost(_, args, cost) if args.contains(te.sym) || cost == te.sym => //ok
+              case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
+              case OpCost(_, _, _, opCost) if opCost == te.sym =>
+                println(s"WARNING: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
+                //ok
+              case op @ ApplyBinOp(NumericTimes(n),_,_) =>
+                println(s"WARNING: OpCost usage of node $te in in $usageSym -> ${usageSym.rhs}")
+                //ok
               case _ =>
                 !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
             }
@@ -526,6 +533,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           // this is not a dependency arg, it is cost formula, so we take its value from env
           val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
           this += opCost
+          // NOTE: we don't mark op.opCost as visited, it allows to append the same constant
+          // many times in different OpCost nodes.
+          // This is the key semantic difference between `args` and `opCost` arguments of OpCost.
+          // If some cost is added via `args` is it marked as visited and never added again
+          // If it is add via `opCost` it is not marked and can be added again in different
+          // OpCost node down below in the scope.
         }
         _visited += s
       }

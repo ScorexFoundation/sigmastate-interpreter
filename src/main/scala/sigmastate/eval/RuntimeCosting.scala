@@ -599,7 +599,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>
         opCost(v, Seq(accCost), costOpt.getOrElse(Thunk(IntZero)))
       case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) =>
-        opCost(Pair(l.value, r.value), Seq(accCost), l.cost + r.cost)
+        opCost(Pair(l.value, r.value), Seq(accCost, l.cost, r.cost), IntZero)
 
       case CostedM.value(Def(CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_))) =>
         func.sliceCalc
@@ -925,27 +925,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     case OpCodes.GeCode  => OrderingGTEQ[A](elemToOrdering(eA))
     case OpCodes.LeCode  => OrderingLTEQ[A](elemToOrdering(eA))
     case _ => error(s"Cannot find BinOp for opcode $opCode")
-  }
-
-  /** This method works by:
-    * 1) staging block in the new scope of new thunk
-    * 2) extracting value, cost, or dataSize respectively
-    * 3) building the schedule by deps, effectively doing DCE along the way
-    * This has an effect of splitting the costed graph into three separate graphs*/
-  def evalCostedBlock[T](block: => Rep[Costed[T]]): Rep[Costed[T]] = {
-    val v = Thunk.forced {
-      val costed = block
-      costed.value
-    }
-    val c = Thunk.forced {
-      val costed = block
-      costed.cost
-    }
-    val s = Thunk.forced {
-      val costed = block
-      costed.size
-    }
-    RCCostedPrim(v, c, s)
   }
 
   def adaptSigmaBoolean(v: BoolValue) = v match {
@@ -1344,7 +1323,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val sizes = xs.sizes
         val len = sizes.length
         val cost = if (tpeIn.isConstantSize) {
-          len * costF(Pair(IntZero, constantTypeSize(eAny)))
+          len * ThunkForce(Thunk(costF(Pair(IntZero, constantTypeSize(eAny)))))
         } else {
           colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid)
         }
@@ -1745,7 +1724,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), elemType) =>
         implicit val eAny = stypeToElem(elemType).asElem[Any]
         val values = colBuilder.fromItems(vs: _*)(eAny)
-        val costs = colBuilder.fromItems(cs: _*)
+        val costs = colBuilder.replicate(cs.length, IntZero)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
         RCCostedColl(values, costs, sizes, opCost(values, cs, costOf(col)))
 

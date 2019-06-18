@@ -326,12 +326,13 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       override def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = false
     }
     val tIR = new TestingIRContextEmptyCodes
+    import tIR._
     val v2vs = vs.updated(CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
     checkRule(CheckCostFuncOperation, v2vs, {
-      implicit val intType = tIR.IntElement
       implicit val anyType = tIR.toLazyElem(tIR.AnyElement)
-      val costF = tIR.fun[Any, Int] {_ => tIR.reifyObject(tIR.OpCost(1, Seq(tIR.toRep(1)), tIR.toRep(1))) }
+      val v1 = variable[Int]
+      val costF = tIR.fun[Any, Int] {_ => tIR.opCost(v1, Seq(tIR.toRep(1)), tIR.toRep(1)) }
       CheckCostFunc(tIR)(tIR.asRep[Any => Int](costF)) { }
     })
   }

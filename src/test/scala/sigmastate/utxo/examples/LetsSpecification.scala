@@ -6,8 +6,8 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
-import sigmastate.eval.{CompiletimeCosting, IRContext, SigmaDsl}
+import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
+import sigmastate.eval.{IRContext, SigmaDsl}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
@@ -168,7 +168,7 @@ import scala.util.Random
 class LetsSpecification extends SigmaTestingCommons {
   suite =>
   // Not mixed with TestContext since it is not possible to call compiler.compile outside tests if mixed
-  implicit lazy val IR: IRContext = new IRContext with CompiletimeCosting
+  implicit lazy val IR: IRContext = new TestingIRContext
 
   lazy val project = new ErgoLikeTestProvingInterpreter()
 
@@ -179,7 +179,7 @@ class LetsSpecification extends SigmaTestingCommons {
   private val miningRewardsDelay = 720
   private val feeProp = ErgoScriptPredef.feeProposition(miningRewardsDelay)
 
-  val exchangeScript = compiler.compile(env,
+  lazy val exchangeScript = compiler.compile(env,
     """{
       |
       |  // Minimal balance allowed for LETS trader
@@ -228,9 +228,9 @@ class LetsSpecification extends SigmaTestingCommons {
       |}""".stripMargin
   ).asSigmaProp
 
-  val userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeScript))
+  lazy val userContractHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(exchangeScript))
 
-  val managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
+  lazy val managementScript = compiler.compile(env.updated("userContractHash", userContractHash),
     """{
       |
       | val selfOut = OUTPUTS(0)
@@ -275,8 +275,8 @@ class LetsSpecification extends SigmaTestingCommons {
       |}""".stripMargin
   ).asSigmaProp
 
-  println(exchangeScript)
-  println(managementScript)
+//  println(exchangeScript)
+//  println(managementScript)
 
   property("adding new member") {
     val avlProver = new BatchAVLProver[Digest32, Blake2b256.type](keyLength = 32, None)

@@ -97,7 +97,8 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript,
+        ctx.withCostLimit(ScriptCostLimit.value * 10), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, calcTime) = measureTime {
@@ -150,7 +151,7 @@ class SpamSpecification extends SigmaTestingCommons {
 
     val pr = prover
       .withSecrets(alice.dlogSecrets)
-      .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(ScriptCostLimit.value * 4), fakeMessage).get
+      .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(ScriptCostLimit.value * 10), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, calcTime) = measureTime {
@@ -344,6 +345,7 @@ class SpamSpecification extends SigmaTestingCommons {
       {
         case se: IR.StagingException =>
           val cause = rootCause(se)
+          println(s"Cause: $cause")
           cause.isInstanceOf[CosterException] && cause.getMessage.contains("Estimated expression complexity")
         case _ => false
       }
