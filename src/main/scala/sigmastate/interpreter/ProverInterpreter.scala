@@ -430,9 +430,6 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case None =>
           hintsBag.proofs.find(_.image == su.proposition).map { proof =>
             val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedSchnorr]
-         //   assert(provenSchnorr.challenge.sameElements(su.challengeOpt.get),
-         //           s"Challenges are different, prover's: ${provenSchnorr.challenge.mkString}, " +
-         //             s"su: ${su.challengeOpt.map(_.mkString)}")
             provenSchnorr.secondMessage
           }.getOrElse {
             val bs = secureRandomBytes(32)
