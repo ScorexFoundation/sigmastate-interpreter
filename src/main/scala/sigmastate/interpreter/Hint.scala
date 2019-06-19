@@ -48,6 +48,8 @@ case class HintsBag(hints: Seq[Hint]) {
 
   lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
   lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
+
+  override def toString: String = s"Hints(${hints.mkString("\n")})"
 }
 
 object HintsBag {
