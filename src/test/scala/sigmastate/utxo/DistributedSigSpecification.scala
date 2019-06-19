@@ -11,6 +11,31 @@ import sigmastate.interpreter._
 class DistributedSigSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
+  /*
+  def fillBag(verifier: ContextEnrichingTestProvingInterpreter,
+              context: ErgoLikeContext,
+              proposition: Values.Value[SSigmaProp.type],
+
+             ): HintsBag = {
+    val reducedTree = verifier.reduceToCrypto(context, proposition).get._1
+    val ut = SigSerializer.parseAndComputeChallenges(reducedTree, proofAlice.proof)
+    val proofTree = verifier.computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
+
+    def traverseNode(tree: ProofTree, proposition: SigmaBoolean, hintsBag: HintsBag): HintsBag = {
+      tree match {
+        case leaf: UncheckedLeaf[_] =>
+          if(proposition == leaf.proposition){
+            val h = OtherSecretProven(leaf.proposition, leaf)
+            hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
+          } else hintsBag
+        case inner: UncheckedConjecture =>
+          inner.children.foldLeft(hintsBag){case (hb, c) => traverseNode(c, proposition, hb)}
+      }
+    }
+
+    val bagB = traverseNode(proofTree, pubkeyAlice, HintsBag.empty).addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+  }*/
+
   /**
     * An example test where Alice (A) and Bob (B) are signing an input in a distributed way. A statement which
     * protects the box to spend is "pubkey_Alice && pubkey_Bob". Note that a signature in this case is about
@@ -31,15 +56,15 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   property("distributed AND") {
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
-    val verifier = new ContextEnrichingTestProvingInterpreter
+    val verifier: ContextEnrichingTestProvingInterpreter = new ContextEnrichingTestProvingInterpreter
 
     val pubkeyAlice = proverA.dlogSecrets.head.publicImage
     val pubkeyBob = proverB.dlogSecrets.head.publicImage
 
     val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob)
-    val prop = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
+    val prop: Values.Value[SSigmaProp.type] = compile(env, """pubkeyA && pubkeyB""").asSigmaProp
 
-    val ctx = ErgoLikeContext(
+    val ctx: ErgoLikeContext = ErgoLikeContext(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
@@ -81,7 +106,65 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe true
   }
 
-  property("distributed THRESHOLD") {
+  /**
+    * An example test where Alice (A), Bob (B) and Carol (C) are signing in a distributed way an input, which is
+    * protected by 2-out-of-3 threshold multi-signature.
+    *
+    * A statement which protects the box to spend is "atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))".
+    *
+    * The scheme is the same as in the previous example.
+    */
+  property("distributed THRESHOLD - 2 out of 3") {
+    val proverA = new ErgoLikeTestProvingInterpreter
+    val proverB = new ErgoLikeTestProvingInterpreter
+    val proverC = new ErgoLikeTestProvingInterpreter
+    val verifier = new ContextEnrichingTestProvingInterpreter
 
+    val pubkeyAlice = proverA.dlogSecrets.head.publicImage
+    val pubkeyBob = proverB.dlogSecrets.head.publicImage
+    val pubkeyCarol = proverC.dlogSecrets.head.publicImage
+
+    val env = Map("pubkeyA" -> pubkeyAlice, "pubkeyB" -> pubkeyBob, "pubkeyC" -> pubkeyCarol)
+    val prop = compile(env, """atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))""").asSigmaProp
+
+    val ctx = ErgoLikeContext(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContext.dummyPubkey,
+      boxesToSpend = IndexedSeq(fakeSelf),
+      spendingTransaction = null,
+      self = fakeSelf)
+
+    val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
+    val dlBKnown: Hint = OtherCommitment(pubkeyBob, aBob)
+    val bag = HintsBag(Seq(dlBKnown))
+
+    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
+
+    ////
+    val reducedTree = verifier.reduceToCrypto(ctx, prop).get._1
+
+    val proofTree = verifier.computeCommitments(SigSerializer.parseAndComputeChallenges(reducedTree, proofAlice.proof)).get.asInstanceOf[UncheckedSigmaTree]
+
+    def traverseNode(tree: ProofTree, proposition: SigmaBoolean, hintsBag: HintsBag): HintsBag = {
+      tree match {
+        case leaf: UncheckedLeaf[_] =>
+          if(proposition == leaf.proposition){
+            val h = OtherSecretProven(leaf.proposition, leaf)
+            hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
+          } else hintsBag
+        case inner: UncheckedConjecture =>
+          inner.children.foldLeft(hintsBag){case (hb, c) => traverseNode(c, proposition, hb)}
+      }
+    }
+
+    val bagB = traverseNode(proofTree, pubkeyAlice, HintsBag.empty).addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+    val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
+
+    // Proof generated by Alice without getting Bob's part is not correct
+    verifier.verify(prop, ctx, proofAlice, fakeMessage).get._1 shouldBe false
+
+    // Compound proof from Bob is correct
+    verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe false
   }
 }
