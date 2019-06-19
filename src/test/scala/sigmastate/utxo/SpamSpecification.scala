@@ -326,6 +326,17 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("ring signature") {
+    val publicImages = alice.dlogSecrets.head.publicImage +: (1 to 1000).map { _ =>
+      new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
+    }
+    // should not consume too much time for too large number of keys in a ring
+    checkScript(OR(publicImages.map(image => SigmaPropConstant(image).isProven)).toSigmaProp, emptyProofs = false)
+    // should not consume too much time for valid number of keys in a ring
+    checkScript(OR(publicImages.take(95).map(image => SigmaPropConstant(image).isProven)).toSigmaProp, emptyProofs = false)
+  }
+
+
   // todo construct transaction with at least one output and check the same properties for outputs
   property("large loop: INPUTS.propositionBytes.size") {
     val check = "INPUTS.exists({(x:Box) => x.propositionBytes.size >= 0})"
