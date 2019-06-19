@@ -203,6 +203,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ MinerPubkey.size > 0 }")(selectField + LengthGTConstCost)
     cost("{ CONTEXT.headers.size > 0 }")(HeadersCost + LengthGTConstCost)
     cost("{ CONTEXT.preHeader.height > 0 }")(PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.selfBoxIndex > 0 }") shouldBe (selectField + GTConstCost)
   }
 
   property("PreHeader operations cost") {
