@@ -87,14 +87,6 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         else
           eval(mkUpcast(numValue, tRes))
 
-      case Select(obj, method, Some(tRes: SNumericType))
-        if (obj.tpe.isBoolType && obj.asBoolValue.tpe.isCastMethod(method)) =>
-        val boolValue = obj.asBoolValue
-        if (boolValue.tpe == tRes)
-          eval(boolValue)
-        else
-          eval(mkUpcast(boolValue, tRes))
-
       case Terms.Apply(Select(col, SliceMethod.name, _), Seq(from, until)) =>
         eval(mkSlice(col.asValue[SCollection[SType]], from.asIntValue, until.asIntValue))
 
