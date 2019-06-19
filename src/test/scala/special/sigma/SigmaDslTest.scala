@@ -815,7 +815,19 @@ class SigmaDslTest extends PropSpec
         |  if (x.isDefined) f(x.get) else 5L
         |}""".stripMargin)
   }
-  
+
+  property("blake2b256, sha256 equivalence") {
+    val eqBlake2b256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => blake2b256(x) }")){ x =>
+      blake2b256(x)
+    }
+    val eqSha256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => sha256(x) }")){ x =>
+      sha256(x)
+    }
+    forAll { x: Array[Byte] =>
+      Seq(eqBlake2b256, eqSha256).foreach(_(Builder.DefaultCollBuilder.fromArray(x)))
+    }
+  }
+
   property("print") {
     println(ComplexityTableStat.complexityTableString)
   }
