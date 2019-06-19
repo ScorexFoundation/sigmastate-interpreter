@@ -912,4 +912,14 @@ class SigmaDslTest extends PropSpec
       eq(Builder.DefaultCollBuilder.fromArray(x))
     }
   }
+
+  property("proveDlog equivalence") {
+    val eq = EqualityChecker(SigmaDsl.groupGenerator)
+    eq({ (x: GroupElement) => proveDlog(x) })("{ (x: GroupElement) => proveDlog(x) }")
+  }
+
+  property("proveDHTuple equivalence") {
+    val eq = EqualityChecker(SigmaDsl.groupGenerator)
+    eq({ (x: GroupElement) => proveDHTuple(x, x, x, x) })("{ (x: GroupElement) => proveDHTuple(x, x, x, x) }")
+  }
 }
