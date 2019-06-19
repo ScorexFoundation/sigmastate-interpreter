@@ -469,12 +469,6 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
-  object PropertyCallInfo extends InfoObject {
-    private val method = SMethod.fromIds(1, 1)
-    val thisArg: ArgInfo = method.argInfo("this")
-    val argInfos: Seq[ArgInfo] = Seq(thisArg)
-  }
-
   object SelectFieldInfo extends InfoObject {
     private val func = predefinedOps.specialFuncs("selectField")
     val inputArg: ArgInfo = func.argInfo("input")
