@@ -6,7 +6,9 @@ import sigmastate.helpers.SigmaTestingCommons
 /** This test cases specify evaluation semantics of OpCost operation. */
 class CostAccumulatorTest extends SigmaTestingCommons { suite =>
 
-  lazy val IR = new TestingIRContext()
+  lazy val IR = new TestingIRContext() {
+    override val okPrintEvaluatedEntries = true
+  }
   import IR._
   import Liftables._
 
@@ -48,8 +50,8 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
       }, 0/*not used*/, 5)    // cost = 5
 
     run("opCost_arg_const", { _: Rep[Int] =>
-      opCost(v1, Seq(5/*+,M*/), 5/*S*/) // cost = 5
-      }, 0/*not used*/, 5)
+      opCost(v1, Seq(4/*+4,M*/), 6/*+6*/) // cost = 10
+      }, 0/*not used*/, 10)
 
     run("opCost_arg_and_const", { _: Rep[Int] =>
       opCost(v1, Seq(5/*+,M*/), 10/*+*/)  // cost = 15
@@ -62,11 +64,13 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
     run("opCost_id_const", { x: Rep[Int] => opCost(v1, Seq(x), 6) }, 10, 16)
     run2("opCost_const_id2", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x), y) }, (10, 6), 16)
 
-    run("opCost_arg_id", { x: Rep[Int] => opCost(v1, Seq(x), x) }, 10, 10)
+    an[StagingException] should be thrownBy run("opCost_arg_id", { x: Rep[Int] => opCost(v1, Seq(x), x) }, 10, 10)
 
     run("opCost_two_args", { x: Rep[Int] => opCost(v1, Seq(x, x), 5) }, 10, 15)
     run2("opCost_two_args_2", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, x), y) }, (10, 5), 15)
-    run2("opCost_two_args_3", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), y) }, (10, 5), 15)
+
+    an[StagingException] should be thrownBy run2("opCost_two_args_3", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), y) }, (10, 5), 15)
+
     run2("opCost_two_args_4", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), x + y) }, (10, 5), 30)
   }
 
@@ -155,25 +159,51 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
   property("unfolding lambda into thunk") {
     // the following two tests check cost equivalence under lambda unfolding
     // with unfolding
-    run("lambda_1", { _: Rep[Int] =>
+    run("lambda_1", { y: Rep[Int] =>
       val c0: Rep[Int] = 5   // const node
+      val c1: Rep[Int] = 6   // const node
       val f1 = fun { x: Rep[Int] =>
-        opCost(v1, Seq(x/*+5,M*/), c0/*+5*/)  // cost = 10
+        opCost(v1, Seq(x/*+5,M*/, y/*+5,M*/), c1/*+6*/)  // cost = 16
       }
-      // unfold f1 into thunk
-      val t1: Rep[Int] = ThunkForce(Thunk(f1(c0)))  // value = 10
-      opCost(v2, Seq(t1/*+10,M*/), c0/*+5*/)         // cost = 15
-      }, 0, 15)
+      // unfold f1 into thunk (this is staging time operation, there is no lambda in the final graph)
+      val t1: Rep[Int] = ThunkForce(Thunk(f1(c0)))  // value = 16
+      opCost(v2, Seq(t1/*+16,M*/, y/*+5*/), c0/*+5*/)         // cost = 26
+      }, 5, 26)
 
     // without unfolding f1
-    run("lambda_2", { _: Rep[Int] =>
+    run("lambda_2", { y: Rep[Int] =>
       val c0: Rep[Int] = 5   // const node
       val f1 = fun { x: Rep[Int] =>
-        opCost(v1, Seq(x/*+5,M*/), c0/*+5*/)  // cost = 10
+        opCost(v1, Seq(x/*+5,M*/, y/*+5,M*/), c0/*+5*/)  // cost = 15
       }
-      // reify application without unfolding f1
-      val t1: Rep[Int] = Apply(f1, c0, false)  // value = 10
-      opCost(v2, Seq(t1/*+10,M*/), c0/*+5*/)         // cost = 15
-      }, 0, 15)
+      // reify application without unfolding f1 (the lambda is called at runtime)
+      val t1: Rep[Int] = Apply(f1, c0, false)  // value = 15
+      opCost(v2, Seq(t1/*+15,M*/, y/*+5*/), c0/*+5*/)         // cost = 25
+      }, 5, 25)
+  }
+
+  property("unfolding collision") {
+    // the following two tests check cost equivalence under lambda unfolding
+    // with unfolding
+    run("collision_1", { y: Rep[Int] =>
+      val c0: Rep[Int] = 5   // const node
+      val f1 = fun { x: Rep[Int] =>
+        opCost(v1, Seq(x/*+5,M*/, c0/*S*/), y/*+5*/)  // cost = 10, c0 is skipped due to collision with x after unfold
+      }
+      // unfold f1 into thunk (this is staging time operation, there is no lambda in the final graph)
+      val t1: Rep[Int] = ThunkForce(Thunk(f1(c0)))  // value = 10
+      opCost(v2, Seq(t1/*+10,M*/, y/*+5*/), c0/*+5*/)         // cost = 20
+    }, 5, 20)
+
+    // without unfolding f1
+    run("collision_2", { y: Rep[Int] =>
+      val c0: Rep[Int] = 5   // const node
+      val f1 = fun { x: Rep[Int] =>
+        opCost(v1, Seq(x/*+5,M*/, c0/*+5,M*/), y/*+5*/)  // cost = 15
+      }
+      // reify application without unfolding f1 (the lambda is called at runtime)
+      val t1: Rep[Int] = Apply(f1, c0, false)  // value = 15
+      opCost(v2, Seq(t1/*+15,M*/, y/*+5*/), c0/*+5*/)         // cost = 25
+      }, 5, 25)
   }
 }

@@ -361,7 +361,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 //      println(backDeps)
       lam.scheduleAll
         .filter {
-          case _ @ TableEntrySingle(_, _: OpCost, _) => true
+          case _ @ TableEntrySingle(_, op: OpCost, _) =>
+            assert(!op.args.contains(op.opCost), s"Invalid $op")
+            true
           case _ => false
         }
         .foreach { te =>
@@ -513,16 +515,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       }
 
       @inline def add(s: Sym, op: OpCost, dataEnv: DataEnv): Unit = {
-        // first we need to add accumulate costs of non-visited args
-        for (arg <- op.args) {
-          if (!isVisited(arg)) {
-            val argCost = getArgCostFromEnv(op, dataEnv, arg)
-            this += argCost
-
-            // this arg has been accumulated, mark it as visited to avoid repeated accumulations
-            _visited += arg
-          }
-        }
         if (!isVisited(op.opCost)) {
           // this is not a dependency arg, it is cost formula, so we take its value from env
           val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
@@ -534,8 +526,30 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           // If it is add via `opCost` it is not marked and can be added again in different
           // OpCost node down below in the scope.
         }
+        // we need to add accumulate costs of non-visited args
+        for (arg <- op.args) {
+          if (!isVisited(arg)) {
+            val argCost = getArgCostFromEnv(op, dataEnv, arg)
+            this += argCost
+
+            // this arg has been accumulated, mark it as visited to avoid repeated accumulations
+            _visited += arg
+          }
+        }
+
         _visited += s
       }
+
+      /** Called by nested Scopes to communicate accumulated cost back to parent scope.
+        * When current scope terminates, it communicated accumulated cost up to its parent scope.
+        * This value is used at the root scope to obtain total accumulated scope.
+        */
+      private var _resultRegister: Int = 0
+      @inline def childScopeResult: Int = _resultRegister
+      @inline def childScopeResult_=(resultCost: Int): Unit = {
+        _resultRegister = resultCost
+      }
+
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
@@ -567,7 +581,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     def endScope() = {
       val deltaCost = currentScope.currentCost - currentScope.initialCost
       _scopeStack = _scopeStack.tail
-      _scopeStack.head += deltaCost
+      _scopeStack.head.childScopeResult = deltaCost  // set Result register of parent scope
     }
 
     /** Resets this accumulator into initial state to be ready for new graph execution. */
@@ -841,11 +855,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       val g = new PGraph(f)
       val xSym = f.getLambda.x
       val resEnv = g.schedule.foldLeft(dataEnv + (xSym -> x.asInstanceOf[AnyRef])) { (env, te) =>
-        val (e, _) = evaluate(te).run(env)
-        e
+        val (updatedEnv, _) = evaluate(te).run(env)
+        updatedEnv
       }
       val fun = resEnv(f).asInstanceOf[SA => SB]
       val y = fun(x)
+      costAccumulator.currentScope += costAccumulator.currentScope.childScopeResult
       (y, costAccumulator.totalCost)
     }
     res
