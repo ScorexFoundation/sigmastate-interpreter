@@ -831,4 +831,47 @@ class SigmaDslTest extends PropSpec
   property("print") {
     println(ComplexityTableStat.complexityTableString)
   }
+
+  property("sigmaProp equivalence") {
+    lazy val eq = checkEq(func[Boolean, SigmaProp]("{ (x: Boolean) => sigmaProp(x) }")){ (x: Boolean) =>
+      sigmaProp(x)
+    }
+    forAll { x: Boolean => eq(x) }
+  }
+
+  property("atLeast equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }")){ (x: Coll[SigmaProp]) =>
+      atLeast(x.size - 1, x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("&& sigma equivalence") {
+    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
+      x._1 && x._2
+    }
+    forAll { x: (SigmaProp, SigmaProp) =>
+      eq(x)
+    }
+  }
+
+  property("|| sigma equivalence") {
+    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
+      x._1 || x._2
+    }
+    forAll { x: (SigmaProp, SigmaProp) =>
+      eq(x)
+    }
+  }
+
+  property("SigmaProp.propBytes equivalence") {
+    lazy val eq = checkEq(func[SigmaProp, Coll[Byte]]("{ (x: SigmaProp) => x.propBytes }")){ (x: SigmaProp) =>
+      x.propBytes
+    }
+    forAll { x: SigmaProp =>
+      eq(x)
+    }
+  }
 }
