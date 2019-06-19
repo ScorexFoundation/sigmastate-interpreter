@@ -26,13 +26,15 @@ trait CommitmentHint extends Hint {
 }
 
 case class OwnCommitment(override val image: SigmaBoolean, randomness: BigInteger, commitment: FirstProverMessage) extends CommitmentHint
+
 case class OtherCommitment(override val image: SigmaBoolean, commitment: FirstProverMessage) extends OtherSecret with CommitmentHint
+
 case class OtherSecretProven(override val image: SigmaBoolean, uncheckedTree: UncheckedTree) extends OtherSecret
 
 
 /**
   * Collection of hints to be used by a prover
-  * @param hints
+  * @param hints - hints stored in the bag
   */
 case class HintsBag(hints: Seq[Hint]) {
 
