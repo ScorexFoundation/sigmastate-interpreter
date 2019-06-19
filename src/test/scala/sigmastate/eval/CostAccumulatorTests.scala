@@ -151,4 +151,29 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
       }, (10, 5), 125)
 
   }
+
+  property("unfolding lambda into thunk") {
+    // the following two tests check cost equivalence under lambda unfolding
+    // with unfolding
+    run("lambda_1", { _: Rep[Int] =>
+      val c0: Rep[Int] = 5   // const node
+      val f1 = fun { x: Rep[Int] =>
+        opCost(v1, Seq(x/*+5,M*/), c0/*+5*/)  // cost = 10
+      }
+      // unfold f1 into thunk
+      val t1: Rep[Int] = ThunkForce(Thunk(f1(c0)))  // value = 10
+      opCost(v2, Seq(t1/*+10,M*/), c0/*+5*/)         // cost = 15
+      }, 0, 15)
+
+    // without unfolding f1
+    run("lambda_2", { _: Rep[Int] =>
+      val c0: Rep[Int] = 5   // const node
+      val f1 = fun { x: Rep[Int] =>
+        opCost(v1, Seq(x/*+5,M*/), c0/*+5*/)  // cost = 10
+      }
+      // reify application without unfolding f1
+      val t1: Rep[Int] = Apply(f1, c0, false)  // value = 10
+      opCost(v2, Seq(t1/*+10,M*/), c0/*+5*/)         // cost = 15
+      }, 0, 15)
+  }
 }
