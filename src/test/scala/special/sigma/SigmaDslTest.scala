@@ -274,7 +274,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("AvlTree.{contains, get, getMany} equivalence") {
+  property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
     val doContains = checkEq(
       func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
       "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
@@ -291,6 +291,10 @@ class SigmaDslTest extends PropSpec
       func[(AvlTree, Coll[Byte]), AvlTree](
         "{ (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }"))
     { (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }
+    val doUpdateOperations = checkEq(
+      func[(AvlTree, Byte), AvlTree](
+        "{ (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }"))
+    { (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }
 
     val (key, _, avlProver) = sampleAvlProver
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
@@ -302,6 +306,7 @@ class SigmaDslTest extends PropSpec
     val keys = Colls.fromItems(key)
     doGetMany((tree, (keys, proof)))
     doUpdateDigest(tree, digest)
+    doUpdateOperations(tree, 1.toByte)
   }
 
   property("AvlTree.{insert, update, remove} equivalence") {
