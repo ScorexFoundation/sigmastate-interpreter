@@ -88,7 +88,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     println(s"Verify time: $calcTime millis")
     println(s"Timeout: $Timeout millis")
     println(s"Result: $res")
-    (calcTime < Timeout) shouldBe true
+    calcTime should be < Timeout
   }
 
   property("large loop: int comparison") {
@@ -245,6 +245,75 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
   }
+
+  property("large loop: val allocation") {
+    val check = s"""
+                   | val X = j + i
+                   | val Y = X + 1123 + j + j
+                   | val Z = Y + X + 1
+                   | val A = (Z * 2) + X + 1
+                   | val B = (A + i) % 1000
+                   | val C = (A + B) % 1000
+                   | val D = (i + C) % 1000
+                   | D < 1000
+                    """
+
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  coll1000.forall({(i:Byte) =>
+         |    coll100.forall({(j:Byte) =>
+         |     $check
+         |    })
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: numeric casts") {
+    val check = "(HEIGHT.toLong + i.toLong).toInt == (HEIGHT.toByte + i).toInt"
+
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: options") {
+    val check = "getVar[Int](1).isDefined || getVar[Int](2).isDefined || SELF.R4[Int].isDefined || SELF.R0[Long].isDefined"
+
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: binary operations") {
+    val check = s"""
+                    | val T1 = i == 2;
+                    | val T2 = (i * 3) % 5 == 1
+                    | val T3 = true
+                    | val T4 = T1 ^ false
+                    | val F1 = T1 ^ T2
+                    | val F2 = T4 && F1
+                    | val F3 = F1 || F2
+                    | val F4 = (F1 ^ F3) || (T4 ^ T3)
+                    | T1 && T2 && T3 && T4 && (! (F1 ^ F2)) && (! F3) && (! F4)
+                    """
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |   $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
 
 
   property("complex sigma proposition") {
