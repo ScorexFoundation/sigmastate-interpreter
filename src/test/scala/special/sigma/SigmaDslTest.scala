@@ -874,4 +874,42 @@ class SigmaDslTest extends PropSpec
       eq(x)
     }
   }
+
+  // TODO: implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  ignore("allZK equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => allZK(x) }")){ (x: Coll[SigmaProp]) =>
+      allZK(x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  // TODO: implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  ignore("anyZK equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => anyZK(x) }")){ (x: Coll[SigmaProp]) =>
+      anyZK(x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("allOf equivalence") {
+    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => allOf(x) }")){ (x: Coll[Boolean]) =>
+      allOf(x)
+    }
+    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("anyOf equivalence") {
+    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => anyOf(x) }")){ (x: Coll[Boolean]) =>
+      anyOf(x)
+    }
+    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
 }
