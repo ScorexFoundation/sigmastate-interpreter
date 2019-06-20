@@ -589,15 +589,23 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val costF = f.sliceCost
       val sizeF = f.sliceSize
       val vals = xs.values.map(calcF)
-      implicit val eT = xs.elem.eItem
-      implicit val eB = f.elem.eVal.eRange
-      val costs = xs.costs.zip(xs.sizes).map(costF)
-      val sizes = if (eB.isConstantSize) {
+      val sizes = xs.sizes
+      val len = sizes.length
+      val zeros = colBuilder.replicate(len, IntZero)
+
+      val eB = f.elem.eVal.eRange
+      val resSizes = if (eB.isConstantSize) {
         colBuilder.replicate(xs.sizes.length, constantTypeSize(eB): RSize[B])
       } else {
         xs.sizes.map(sizeF)
       }
-      RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
+      val isConstSize = eT.sourceType.isConstantSize
+      val mapperCost = if (isConstSize) {
+        len * Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+      } else {
+        zeros.zip(sizes).map(costF).sum(intPlusMonoid)
+      }
+      RCCostedColl(vals, zeros, resSizes, opCost(vals, costOfArgs, costOf(method) + mapperCost))
     }
 
     def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
