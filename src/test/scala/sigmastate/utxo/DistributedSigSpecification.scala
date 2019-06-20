@@ -149,7 +149,9 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe false
   }
 
-  /*
+  /**
+    * Distributef threshold signature, 3 out of 4 case.
+    */
   property("distributed THRESHOLD - 3 out of 4") {
     val proverA = new ErgoLikeTestProvingInterpreter
     val proverB = new ErgoLikeTestProvingInterpreter
@@ -173,13 +175,23 @@ class DistributedSigSpecification extends SigmaTestingCommons {
       spendingTransaction = null,
       self = fakeSelf)
 
+    val (_, aAlice) = DLogInteractiveProver.firstMessage(pubkeyAlice)
+    val dlAKnown: Hint = OtherCommitment(pubkeyAlice, aAlice)
+
     val (rBob, aBob) = DLogInteractiveProver.firstMessage(pubkeyBob)
     val dlBKnown: Hint = OtherCommitment(pubkeyBob, aBob)
-    val bag = HintsBag(Seq(dlBKnown))
 
-    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
+    val (_, aCarol) = DLogInteractiveProver.firstMessage(pubkeyCarol)
+    val dlCKnown: Hint = OtherCommitment(pubkeyCarol, aCarol)
 
-    val bagB = fillBag(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(OwnCommitment(pubkeyBob, rBob, aBob)))
+    val bagA = HintsBag(Seq(dlBKnown, dlCKnown))
+    val proofAlice = proverA.prove(prop, ctx, fakeMessage, bagA).get
+
+    val bagC = HintsBag(Seq(dlAKnown, dlBKnown))
+    val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
+
+    val bagB = fillBag(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice), Seq(OwnCommitment(pubkeyBob, rBob, aBob))) ++
+      fillBag(verifier, ctx, prop, proofCarol.proof, Seq(pubkeyCarol), Seq())
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
@@ -188,6 +200,6 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     // Compound proof from Bob is correct
     verifier.verify(prop, ctx, proofBob, fakeMessage).get._1 shouldBe false
-  }*/
+  }
 
 }
