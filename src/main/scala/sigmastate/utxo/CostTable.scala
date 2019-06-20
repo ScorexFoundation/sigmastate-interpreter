@@ -31,7 +31,7 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
 object CostTable {
   type ExpressionCost = Int
 
-  val MinimalCost = 1
+  val MinimalCost = 2
 
   val expCost = 5000
   val multiplyGroup = 50
@@ -49,7 +49,7 @@ object CostTable {
   val newOptionValueCost = 1
   val newAvlTreeCost = 10
 
-  val plusMinus = 2
+  val plusMinus = 4
   val multiply = 10
 
   val plusMinusBigInt = 10
@@ -66,10 +66,10 @@ object CostTable {
 
   val collToColl = 20
 
-  val comparisonCost = 3
+  val comparisonCost = 6
   val comparisonPerKbCost = 10
 
-  val logicCost = 2
+  val logicCost = 4
 
   val sigmaAndCost = 10
   val sigmaOrCost = 40
@@ -77,7 +77,7 @@ object CostTable {
   val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
   val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
 
-  val castOp = 5  // TODO costing: should be >= selectField
+  val castOp = 10  // TODO costing: should be >= selectField
 
   val treeOp = 1000
 

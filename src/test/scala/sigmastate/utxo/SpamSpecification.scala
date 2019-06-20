@@ -88,19 +88,49 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
     println(s"Verify time: $calcTime millis")
     println(s"Timeout: $Timeout millis")
-    println(s"Result: $res")
+    res.fold(t => {
+      val cause = rootCause(t)
+      println(s"Rejection cause: $cause")
+    }, r => {
+      println(s"Result: $res")
+    })
     calcTime should be < Timeout
   }
 
-  property("large loop: int comparison") {
+  def warmUpScenario() = {
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
     val check = "i >= 0"
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  maxSizeColl.forall({(i:Byte) =>
-         |    $check
-         |  })
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+        |  maxSizeColl.forall({(i:Byte) =>
+        |    $check
+        |  })
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+    new ContextEnrichingTestProvingInterpreter()
+        .withSecrets(alice.dlogSecrets)
+        .prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
+  }
+
+  lazy val warmUpPrecondition = {
+    val (_,t) = measureTime(warmUpScenario())
+    println(s"Warmup time: $t")
+    true
+  }
+
+  property("large loop: int comparison") {
+    assert(warmUpPrecondition)
+    val check = "i >= 0"
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val prover = new ContextEnrichingTestProvingInterpreter()
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+        |  maxSizeColl.forall({(i:Byte) =>
+        |    $check
+        |  })
+        |}
+      """.stripMargin).asBoolValue.toSigmaProp
+    runSpam(check, ctx, prop, true, true)(prover, prover)
   }
 
   property("large loop: addition") {
@@ -746,15 +776,21 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     println(s"$name: ${t / 1000.0} seconds")
   }
 
-  def runSpam(name: String, ctx: ErgoLikeContext, prop: ErgoTree)
+  def runSpam(name: String, ctx: ErgoLikeContext, prop: ErgoTree, genProofs: Boolean = false, doUnlimitedRun: Boolean = false)
              (prover: ErgoLikeTestProvingInterpreter, verifier: ErgoLikeTestInterpreter): Unit = {
     printTime("Timeout", Timeout)
 
     val ctxWithoutLimit = ctx.withCostLimit(Long.MaxValue)
-    val (pr, proveTime) = measureTime(
-      prover.prove(emptyEnv + (ScriptNameProp -> (name + "_prove")), prop, ctxWithoutLimit, fakeMessage).get
-    )
-    printTime("Successful prove time", proveTime)
+    val pr = if (!genProofs) {
+      // do not spend time to create a proof
+      CostedProverResult(Array[Byte](), ContextExtension.empty, 0L)
+    } else {
+      val (pr, proveTime) = measureTime(
+        prover.prove(emptyEnv + (ScriptNameProp -> (name + "_prove")), prop, ctxWithoutLimit, fakeMessage).get
+      )
+      printTime("Proof Generation Time", proveTime)
+      pr
+    }
 
     // check that execution terminated within timeout due to costing exception and cost limit
     val (res, verifyTime) = measureTime(
@@ -775,12 +811,16 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
     )
 
-    // measure time required to execute the script itself and it is more then timeout
-    val (_, calcTime) = measureTime {
-      verifier.verify(emptyEnv + (ScriptNameProp -> (name + "_full_verify")), prop, ctxWithoutLimit, pr, fakeMessage)
+    // measure time required to fully execute the script itself and check it is more then Timeout
+    // this is necessary to nurture a more realistic suite of test cases
+    if (doUnlimitedRun) {
+      val (_, calcTime) = measureTime {
+        verifier.verify(emptyEnv + (ScriptNameProp -> (name + "_full_verify")), prop, ctxWithoutLimit, pr, fakeMessage)
+      }
+      printTime("Full time to verify", calcTime)
+      if (calcTime < Timeout)
+        println(s"Script full execution time $calcTime is less than timeout $Timeout")
     }
-    printTime("Full time to verify", calcTime)
-    assert(calcTime >= Timeout, s"Script full execution time $calcTime is less than timeout $Timeout")
   }
 
   property("transaction with many inputs and outputs") {
@@ -821,7 +861,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       validationSettings = ValidationRules.currentSettings,
       costLimit = ScriptCostLimit.value)
 
-    runSpam("t1", ctx, prop)(prover, verifier)
+    runSpam("t1", ctx, prop, false, true)(prover, verifier)
   }
 
   property("too heavy avl tree lookup") {
