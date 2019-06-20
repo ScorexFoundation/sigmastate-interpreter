@@ -120,7 +120,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     * This will be corrected in the next step.
     * In a bottom-up traversal of the tree, do the following for each node:
     */
-  def markReal(hints: HintsBag): Strategy = everywherebu(rule[UnprovenTree] {
+  def markReal(hintsBag: HintsBag): Strategy = everywherebu(rule[UnprovenTree] {
     case and: CAndUnproven =>
       // If the node is AND, mark it "real" if all of its children are marked real; else mark it "simulated"
       val simulated = and.children.exists(_.asInstanceOf[UnprovenTree].simulated)
@@ -142,7 +142,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         case _ => false
       }
       val simulated = if (!secretKnown) {
-        !hints.otherImages.contains(su.proposition)
+        !hintsBag.otherImages.contains(su.proposition)
       } else false
       su.copy(simulated = simulated)
     case dhu: UnprovenDiffieHellmanTuple =>
