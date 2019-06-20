@@ -7,11 +7,10 @@ import scalan.util.CollectionUtil._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
-
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SigmaProtocolPrivateInput, DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput}
+import sigmastate.basics._
 import sigmastate.utils.Helpers
 
 import scala.util.Try
@@ -136,18 +135,19 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       }
       t.copy(simulated = c < t.k)
     case su: UnprovenSchnorr =>
-      // If the node is a leaf, mark it "real'' if the witness for it is available; else mark it "simulated"
-      val secretKnown = secrets.exists {
+      // If the node is a leaf, mark it "real'' if the witness for it is available
+      // or a hint shows the secret is known to external party participated in multi-signing;
+      // else mark it "simulated"
+      val real = hintsBag.otherImages.contains(su.proposition) || secrets.exists {
         case in: DLogProverInput => in.publicImage == su.proposition
         case _ => false
       }
-      val simulated = if (!secretKnown) {
-        !hintsBag.otherImages.contains(su.proposition)
-      } else false
-      su.copy(simulated = simulated)
+      su.copy(simulated = !real)
     case dhu: UnprovenDiffieHellmanTuple =>
-      // If the node is a leaf, mark it "real" if the witness for it is available; else mark it "simulated"
-      val secretKnown = secrets.exists {
+      // If the node is a leaf, mark it "real'' if the witness for it is available
+      // or a hint shows the secret is known to external party participated in multi-signing;
+      // else mark it "simulated"
+      val secretKnown = hintsBag.otherImages.contains(dhu.proposition) || secrets.exists {
         case in: DiffieHellmanTupleProverInput => in.publicImage == dhu.proposition
         case _ => false
       }
@@ -315,7 +315,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         val (fm, sm) = DLogInteractiveProver.simulate(su.proposition, su.challengeOpt.get)
         UncheckedSchnorr(su.proposition, Some(fm), su.challengeOpt.get, sm)
       } else {
-        // Step 6 (real leaf -- compute the commitment a)
+        // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
         hintsBag.commitments.find(_.image == su.proposition).map { proof =>
           su.copy(commitmentOpt = Some(proof.commitment.asInstanceOf[FirstDLogProverMessage]))
         }.getOrElse {
@@ -331,9 +331,13 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         val (fm, sm) = DiffieHellmanTupleInteractiveProver.simulate(dhu.proposition, dhu.challengeOpt.get)
         UncheckedDiffieHellmanTuple(dhu.proposition, Some(fm), dhu.challengeOpt.get, sm)
       } else {
-        // Step 6 (real leaf -- compute the commitment a)
-        val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
-        dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
+        // Step 6 (real leaf -- compute the commitment a or take it from the hints bag)
+        hintsBag.commitments.find(_.image == dhu.proposition).map { proof =>
+          dhu.copy(commitmentOpt = Some(proof.commitment.asInstanceOf[FirstDiffieHellmanTupleProverMessage]))
+        }.getOrElse {
+          val (r, fm) = DiffieHellmanTupleInteractiveProver.firstMessage(dhu.proposition)
+          dhu.copy(commitmentOpt = Some(fm), randomnessOpt = Some(r))
+        }
       }
 
     case a: Any => error(s"Don't know how to challengeSimulated($a)")
@@ -407,7 +411,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     // If the node is a leaf marked "real", compute its response according to the second prover step
     // of the Sigma-protocol given the commitment, challenge, and witness
     case su: UnprovenSchnorr if su.real =>
-      assert(su.challengeOpt.isDefined, s"Real UnprovenTree $su should have challenge defined")
+      assert(su.challengeOpt.isDefined, s"Real UnprovenSchnorr $su should have challenge defined")
       val privKeyOpt = secrets
         .filter(_.isInstanceOf[DLogProverInput])
         .find(_.asInstanceOf[DLogProverInput].publicImage == su.proposition)
@@ -439,6 +443,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
 
     case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
+      /*
       assert(dhu.challengeOpt.isDefined)
       val privKey = secrets
         .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
@@ -446,6 +451,39 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
         .get.asInstanceOf[DiffieHellmanTupleProverInput]
       val z = DiffieHellmanTupleInteractiveProver.secondMessage(privKey, dhu.randomnessOpt.get, dhu.challengeOpt.get)
       UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
+      */
+
+      assert(dhu.challengeOpt.isDefined, s"Real UnprovenDiffieHellmanTuple $dhu should have challenge defined")
+      val privKeyOpt = secrets
+        .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
+        .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
+
+      val z = privKeyOpt match {
+        case Some(privKey) =>
+          hintsBag.hints.filter(_.isInstanceOf[OwnCommitment]).map(_.asInstanceOf[OwnCommitment])
+            .find(_.image == dhu.proposition).map {oc =>
+            DiffieHellmanTupleInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+              oc.randomness,
+              dhu.challengeOpt.get)
+          }.getOrElse {
+            DiffieHellmanTupleInteractiveProver.secondMessage(
+              privKey.asInstanceOf[DiffieHellmanTupleProverInput],
+              dhu.randomnessOpt.get,
+              dhu.challengeOpt.get)
+          }
+
+        case None =>
+          hintsBag.proofs.find(_.image == dhu.proposition).map { proof =>
+            val provenSchnorr = proof.uncheckedTree.asInstanceOf[UncheckedDiffieHellmanTuple]
+            provenSchnorr.secondMessage
+          }.getOrElse {
+            val bs = secureRandomBytes(32)
+            SecondDiffieHellmanTupleProverMessage(new BigInteger(1, bs).mod(CryptoConstants.groupOrder))
+          }
+      }
+      UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
+
 
 
     case sn: UncheckedSchnorr => sn
