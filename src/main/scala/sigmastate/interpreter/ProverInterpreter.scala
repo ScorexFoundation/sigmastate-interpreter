@@ -21,7 +21,7 @@ import gf2t.GF2_192_Poly
 /**
   * Interpreter with enhanced functionality to prove statements.
   */
-trait ProverInterpreter extends Interpreter with AttributionCore {
+trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCore {
 
   import Interpreter._
   import CryptoConstants.secureRandomBytes

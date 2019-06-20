@@ -1,6 +1,6 @@
 package sigmastate
 
-import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._

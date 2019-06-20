@@ -1,7 +1,6 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.basics.DLogProtocol.DLogInteractiveProver
 import sigmastate.basics.DiffieHellmanTupleInteractiveProver
@@ -11,42 +10,6 @@ import sigmastate.interpreter._
 
 class DistributedSigSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext
-
-  /**
-    * A method which is extracting partial proofs of secret knowledge for particular secrets with their
-    * respective public images given. Useful for multisigs.
-    *
-    * @param verifier - verifier used to reduce the proposition
-    * @param context - context used to reduce the proposition
-    * @param proposition - proposition to reduce
-    * @param proof - proof for reduced proposition
-    * @param knownSecrets - public keys of known secrets
-    * @return - bag of OtherSecretProven and OtherCommitment hints
-    */
-  def bagForMultisig(verifier: ContextEnrichingTestProvingInterpreter,
-                     context: ErgoLikeContext,
-                     proposition: Values.Value[SSigmaProp.type],
-                     proof: Array[Byte],
-                     knownSecrets: Seq[SigmaBoolean]): HintsBag = {
-
-    val reducedTree = verifier.reduceToCrypto(context, proposition).get._1
-    val ut = SigSerializer.parseAndComputeChallenges(reducedTree, proof)
-    val proofTree = verifier.computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
-
-    def traverseNode(tree: ProofTree, propositions: Seq[SigmaBoolean], hintsBag: HintsBag): HintsBag = {
-      tree match {
-        case leaf: UncheckedLeaf[_] =>
-          if(propositions.contains(leaf.proposition)){
-            val h = OtherSecretProven(leaf.proposition, leaf)
-            hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
-          } else hintsBag
-        case inner: UncheckedConjecture =>
-          inner.children.foldLeft(hintsBag){case (hb, c) => traverseNode(c, propositions, hb)}
-      }
-    }
-
-    traverseNode(proofTree, knownSecrets, HintsBag.empty)
-  }
 
   /**
     * An example test where Alice (A) and Bob (B) are signing an input in a distributed way. A statement which
@@ -60,10 +23,10 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     * - Bob is generating first protocol message a_Bob and sends it to Alice
     * - Alice forms a hint which contain Bob's commitment "a_Bob", and puts the hint into a hints bag
     * - She proves the statement using the bag, getting the partial protocol transcript
-    *   (a_Alice, e, z_Alice) as a result and sends "a_Alice" and "z_Alice" to Bob.
-    *   Please note that "e" is got from both a_Alice and a_Bob.
+    * (a_Alice, e, z_Alice) as a result and sends "a_Alice" and "z_Alice" to Bob.
+    * Please note that "e" is got from both a_Alice and a_Bob.
     * - Bob now also knows a_Alice, so can generate the same "e" as Alice. Thus Bob is generating valid
-    *   proof ((a_Alice, a_Bob), e, (z_Alice, z_Bob)).
+    * proof ((a_Alice, a_Bob), e, (z_Alice, z_Bob)).
     */
   property("distributed AND") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -91,7 +54,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
 
-    val bagB = bagForMultisig(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
+    val bagB = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
       .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
@@ -138,7 +101,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
 
     val proofAlice = proverA.prove(prop, ctx, fakeMessage, bag).get
 
-    val bagB = bagForMultisig(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
+    val bagB = proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice))
       .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
@@ -151,7 +114,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   }
 
   /**
-    * Distributef threshold signature, 3 out of 4 case.
+    * Distributed threshold signature, 3 out of 4 case.
     */
   property("distributed THRESHOLD - 3 out of 4") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -191,8 +154,8 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val bagC = HintsBag(Seq(dlAKnown, dlBKnown))
     val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
 
-    val bagB = (bagForMultisig(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice)) ++
-                bagForMultisig(verifier, ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
+    val bagB = (proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice)) ++
+                proverB.bagForMultisig(ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
                   .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
@@ -205,7 +168,7 @@ class DistributedSigSpecification extends SigmaTestingCommons {
   }
 
   /**
-    * Distributef threshold signature, 3 out of 4 case, 1 real and 1 simulated secrets are of DH kind.
+    * Distributed threshold signature, 3 out of 4 case, 1 real and 1 simulated secrets are of DH kind.
     */
   property("distributed THRESHOLD - 3 out of 4 - w. DH") {
     val proverA = new ErgoLikeTestProvingInterpreter
@@ -245,9 +208,9 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     val bagC = HintsBag(Seq(dlAKnown, dlBKnown))
     val proofCarol = proverC.prove(prop, ctx, fakeMessage, bagC).get
 
-    val bagB = (bagForMultisig(verifier, ctx, prop, proofAlice.proof, Seq(pubkeyAlice)) ++
-      bagForMultisig(verifier, ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
-      .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
+    val bagB = (proverB.bagForMultisig(ctx, prop, proofAlice.proof, Seq(pubkeyAlice)) ++
+                proverB.bagForMultisig(ctx, prop, proofCarol.proof, Seq(pubkeyCarol)))
+                  .addHint(OwnCommitment(pubkeyBob, rBob, aBob))
 
     val proofBob = proverB.prove(prop, ctx, fakeMessage, bagB).get
 
