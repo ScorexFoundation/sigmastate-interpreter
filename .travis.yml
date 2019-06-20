@@ -17,7 +17,7 @@ jdk:
   - oraclejdk9
 
 script:
-  - sbt -jvm-opts .travis.jvmopts test
+  - sbt -jvm-opts .travis.jvmopts coverage test
 # enable scoverage after SpamSpecification timeout issue is resolved
 #  - sbt -jvm-opts .travis.jvmopts coverage test
 
