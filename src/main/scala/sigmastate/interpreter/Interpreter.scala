@@ -12,7 +12,7 @@ import sigmastate.eval.{IRContext, Sized}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
-import sigmastate.lang.exceptions.InterpreterException
+import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
@@ -70,7 +70,7 @@ trait Interpreter extends ScorexLogging {
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }

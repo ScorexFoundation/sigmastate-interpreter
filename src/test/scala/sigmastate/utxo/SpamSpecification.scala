@@ -1,15 +1,15 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, ScriptCostLimit}
+import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
@@ -17,16 +17,17 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
@@ -134,6 +135,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val (res, calcTime) = BenchmarkUtil.measureTime {
       verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx, pr, fakeMessage)
     }
+    checkResult(res, calcTime)
+  }
+  
+  def checkResult(res: Try[(Boolean, Long)], calcTime: Long) = {
     println(s"Verify time: $calcTime millis")
     println(s"Timeout: $Timeout millis")
     res.fold(t => {
@@ -144,7 +149,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     })
     val scriptCost = res.map(_._2).getOrElse(CostLimit)
     // time that will be consumed, if the whole block will be filled with such scripts
-//    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
+    //    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
     calcTime should be < Timeout
   }
 
@@ -182,6 +187,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: int comparison, cost a bit low then limit ") {
+    assert(warmUpPrecondition)
     val check = "i >= 0"
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
@@ -279,7 +285,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection element by index") {
-    val check = "OUTPUTS(0).R8[Coll[Byte]].get(i) == OUTPUTS(0).R8[Coll[Byte]].get(32700 - j)"
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(4000 - j)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
@@ -660,7 +666,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     val prover = new ContextEnrichingTestProvingInterpreter()
 
-    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, context, fakeMessage).get
+    val pr = prover
+      .withSecrets(alice.dlogSecrets)
+      .prove(emptyEnv + (ScriptNameProp -> "prove"),
+        spamScript, context, fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (res, terminated) = termination(() =>
@@ -937,7 +946,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         case se: verifier.IR.StagingException =>
           val cause = rootCause(se)
           println(s"Rejection cause: $cause")
-          cause.isInstanceOf[CosterException] && cause.getMessage.contains("Estimated expression complexity")
+          cause.isInstanceOf[CostLimitException] && cause.getMessage.contains("Estimated expression complexity")
         case _ => false
       }
     )

@@ -98,6 +98,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   /** Whether to output the cost value estimated for the script given by ScriptNameProp environment variable */
   var outputEstimatedCost: Boolean = false
 
+  /** Whether to perform extended checks of correctness, expected invariants and data consistency.
+    * Since it may add substantial overhead, tt shouldn't be used in production. */
+  val debugModeSanityChecks: Boolean = false
+
 //  /** Pass configuration which is used by default in IRContext. */
 //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
 //
@@ -250,14 +254,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     case _ =>
       costOf(v.opName, v.opType)
   }
-
-//  override def opCost(costedValue: Sym, args: Seq[Rep[Int]], opCost: Rep[Int]): Rep[Int] = {
-//    val zero = IntZero
-//    val nonZeroArgs = args.filterNot(_ == zero)
-//    if (nonZeroArgs.exists(_ == opCost))
-//      !!!(s"Invalid OpCost($costedValue, $args, $opCost)")
-//    super.opCost(costedValue, nonZeroArgs, opCost)
-//  }
 
   trait SizeStruct extends Size[Struct] {
     def sizeFields: Rep[Struct]
@@ -698,7 +694,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
           case _ => super.rewriteDef(d)
         }
 
-      case OpCost(_, id, args, cost) =>
+      case OpCost(_, id, args, cost) if debugModeSanityChecks =>
         if (args.contains(cost))
           !!!(s"Invalid OpCost($id, $args, $cost)")
         super.rewriteDef(d)

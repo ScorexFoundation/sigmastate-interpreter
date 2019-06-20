@@ -69,6 +69,11 @@ class ErgoLikeContext(val currentHeight: Height,
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, newCostLimit)
 
+  override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, extension, newVs, costLimit)
+
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,

@@ -1,17 +1,14 @@
 package sigmastate.eval
 
-import org.ergoplatform.validation.ValidationRules
 import sigmastate.SType
-import sigmastate.Values.{Value, SValue, TrueSigmaProp}
+import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
-import sigmastate.interpreter.Interpreter
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.lang.exceptions.CostLimitException
 
 import scala.util.Try
 
 trait IRContext extends Evaluation with TreeBuilding {
-  import TestSigmaDslBuilder._
 
   override val builder = TransformingSigmaBuilder
 
@@ -67,14 +64,15 @@ trait IRContext extends Evaluation with TreeBuilding {
                                              estimatedCost: Int): Unit = {
   }
 
-  import Size._; import Context._;
+  import Size._
+  import Context._;
 
   def checkCost(ctx: SContext, exp: Value[SType],
                 costF: Rep[Size[Context] => Int], maxCost: Long): Int = {
     val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
@@ -84,7 +82,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {
-      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
@@ -117,7 +115,7 @@ trait IRContext extends Evaluation with TreeBuilding {
       !!!(s"Estimated cost $estimatedCost should be equal $accCost")
 
     if (estimatedCost > maxCost) {
-      throw new CosterException(msgCostLimitError(estimatedCost, maxCost), None)
+      throw new CostLimitException(estimatedCost, msgCostLimitError(estimatedCost, maxCost), None)
     }
     estimatedCost
   }

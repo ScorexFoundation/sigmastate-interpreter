@@ -20,7 +20,7 @@ import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{ProveDHTuple, DLogProtocol}
 import special.sigma.Extensions._
-import sigmastate.lang.exceptions.CosterException
+import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.OpCodes
 import special.SpecialPredef
 import special.Types._
@@ -351,36 +351,38 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       traverseScope(lam, level = 0)
-      val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
-      lam.scheduleAll.foreach { te =>
-        getDeps(te.rhs).foreach { usedSym =>
-          val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
-          usages += te.sym
-        }
-      }
-//      println(backDeps)
-      lam.scheduleAll
-        .filter {
-          case _ @ TableEntrySingle(_, op: OpCost, _) =>
-            assert(!op.args.contains(op.opCost), s"Invalid $op")
-            true
-          case _ => false
-        }
-        .foreach { te =>
-          val usages = backDeps.getOrElse(te.sym, new ArrayBuffer())
-          usages.foreach { usageSym =>
-            usageSym.rhs match {
-              case l: Lambda[_,_] => //ok
-              case t: ThunkDef[_] => //ok
-              case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
-              case OpCost(_, _, _, opCost) if opCost == te.sym =>
-                println(s"INFO: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
-                //ok
-              case _ =>
-                !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
-            }
+      if (debugModeSanityChecks) {
+        val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
+        lam.scheduleAll.foreach { te =>
+          getDeps(te.rhs).foreach { usedSym =>
+            val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
+            usages += te.sym
           }
         }
+        //      println(backDeps)
+        lam.scheduleAll
+            .filter {
+              case _ @ TableEntrySingle(_, op: OpCost, _) =>
+                assert(!op.args.contains(op.opCost), s"Invalid $op")
+                true
+              case _ => false
+            }
+            .foreach { te =>
+              val usages = backDeps.getOrElse(te.sym, new ArrayBuffer())
+              usages.foreach { usageSym =>
+                usageSym.rhs match {
+                  case l: Lambda[_,_] => //ok
+                  case t: ThunkDef[_] => //ok
+                  case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
+                  case OpCost(_, _, _, opCost) if opCost == te.sym =>
+                    println(s"INFO: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
+                  //ok
+                  case _ =>
+                    !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
+                }
+              }
+            }
+      }
     }
   }
 
@@ -564,7 +566,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (costLimit.isDefined) {
         val limit = costLimit.get
         if (cost > limit)
-          throw new CosterException(msgCostLimitError(cost, limit), None)
+          throw new CostLimitException(cost, msgCostLimitError(cost, limit), None)
       }
 
       // each OpCost represents how much cost was added since beginning of the current scope
