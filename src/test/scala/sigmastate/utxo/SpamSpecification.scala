@@ -181,6 +181,48 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     checkScript(prop)
   }
 
+  property("large loop: int comparison, cost a bit low then limit ") {
+    val check = "i >= 0"
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  }) &&
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp
+    checkScript(prop)
+  }
+
   property("large loop: addition") {
     val check = "i + i + i + i + i + i + i + i + i + i > i + i + i + i + i + i + i + i + i"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
