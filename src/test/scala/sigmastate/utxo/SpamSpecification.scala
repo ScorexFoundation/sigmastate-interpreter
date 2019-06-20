@@ -48,23 +48,21 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
   val NumInputs: Int = 10
   val NumOutputs: Int = 10
+  val CostLimit: Long = ScriptCostLimit.value
   val Longs: Array[Long] = Array[Long](1, 2, 3, Long.MaxValue, Long.MinValue)
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
   // script of maximum size
-  val maxSizeColl: Array[Byte] = Array.fill(0xFFFF)(2.toByte)
-  val coll10000: Array[Byte] = Array.fill(10000)(10000.toByte)
-  val coll1000: Array[Byte] = Array.fill(1000)(1000.toByte)
+  val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
+  val coll10: Array[Byte] = Array.fill(10)(10.toByte)
   lazy val maxSizeCollEnv: ScriptEnv = Map(
     "alice" -> alice.dlogSecrets.head.publicImage,
     "alice2" -> alice.dlogSecrets(1).publicImage,
     "alice3" -> alice.dlogSecrets(2).publicImage,
     "alice4" -> alice.dlogSecrets(3).publicImage,
     "coll5" -> Colls.fromArray(Array.fill(5)(5.toByte)),
-    "coll10" -> Colls.fromArray(Array.fill(10)(10.toByte)),
+    "coll10" -> Colls.fromArray(coll10),
     "coll100" -> Colls.fromArray(Array.fill(100)(100.toByte)),
-    "coll1000" -> Colls.fromArray(coll1000),
-    "coll10000" -> Colls.fromArray(coll10000),
     "maxSizeColl" -> Colls.fromArray(maxSizeColl)
   )
 
@@ -89,9 +87,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
           R4 -> ByteConstant(1),
           R5 -> SigmaPropConstant(alicePubKey),
           R6 -> IntConstant(10),
-          R7 -> ByteArrayConstant(coll1000),
-          R8 -> ByteArrayConstant(coll10000),
-          R9 -> ByteArrayConstant(maxSizeColl)
+          R7 -> ByteArrayConstant(coll10),
+          R8 -> ByteArrayConstant(maxSizeColl)
         )
       )
 
@@ -100,9 +97,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
           R4 -> ByteConstant(1),
           R5 -> SigmaPropConstant(alicePubKey),
           R6 -> IntConstant(10),
-          R7 -> ByteArrayConstant(coll1000),
-          R8 -> ByteArrayConstant(coll10000),
-          R9 -> ByteArrayConstant(maxSizeColl)
+          R7 -> ByteArrayConstant(coll10),
+          R8 -> ByteArrayConstant(maxSizeColl)
         )
       )
       val outBoxes: IndexedSeq[ErgoBoxCandidate] = IndexedSeq.fill(NumOutputs)(output)
@@ -119,7 +115,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         self = inBoxes(0) // what is the use of self?
       )
     }
-
 
     val pr = if (emptyProofs) {
       // do not spend time to create a proof
@@ -144,7 +139,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }, r => {
       println(s"Result: $res")
     })
-    calcTime should be < Timeout
+    val scriptCost = res.map(_._2).getOrElse(CostLimit)
+    // time that will be consumed, if the whole block will be filled with such scripts
+    val estimatedTime = calcTime * CostLimit / scriptCost
+    estimatedTime should be < Timeout
   }
 
   def warmUpScenario() = {
@@ -932,7 +930,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       self = inputs(0),
       extension = ContextExtension.empty,
       validationSettings = ValidationRules.currentSettings,
-      costLimit = ScriptCostLimit.value)
+      costLimit = CostLimit)
 
     runSpam("t1", ctx, prop, false, true)(prover, verifier)
   }
