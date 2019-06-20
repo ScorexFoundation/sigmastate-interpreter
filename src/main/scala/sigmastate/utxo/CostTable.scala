@@ -65,7 +65,8 @@ object CostTable {
   val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
-
+  val lambdaInvoke = 5  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
+  
   val comparisonCost = 6
   val comparisonPerKbCost = 10
 

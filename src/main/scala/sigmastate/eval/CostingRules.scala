@@ -5,6 +5,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoConstants}
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.utxo.CostTable
 
 trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   import Coll._
@@ -601,9 +602,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       }
       val isConstSize = eT.sourceType.isConstantSize
       val mapperCost = if (isConstSize) {
-        len * Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        val mcost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        len * (mcost + CostTable.lambdaInvoke)
       } else {
-        zeros.zip(sizes).map(costF).sum(intPlusMonoid)
+        zeros.zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
       }
       RCCostedColl(vals, zeros, resSizes, opCost(vals, costOfArgs, costOf(method) + mapperCost))
     }
@@ -619,9 +621,10 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val zeros = colBuilder.replicate(len, IntZero)
       val isConstSize = eT.sourceType.isConstantSize
       val predicateCost = if (isConstSize) {
-        len * Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        val predCost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        len * (predCost + CostTable.lambdaInvoke)
       } else {
-        zeros.zip(sizes).map(costF).sum(intPlusMonoid)
+        zeros.zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
       }
       RCCostedColl(vals, zeros, sizes, opCost(vals, costOfArgs, costOf(method) + predicateCost))
     }
@@ -637,11 +640,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
           val costF = cfC.sliceCost
           val xs = asCostedColl(obj)
           val vals = xs.values.flatMap(calcF)
-          val sizes: RColl[Size[B]] = xs.sizes.flatMap(fun { s: RSize[T] =>
+          val sizes = xs.sizes
+          val len = sizes.length
+          val resSizes: RColl[Size[B]] = sizes.flatMap(fun { s: RSize[T] =>
             asSizeColl(sizeF(s)).sizes
           })
-          val costs = xs.costs.zip(xs.sizes).map(costF)
-          RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
+
+          val isConstSize = eT.sourceType.isConstantSize
+          val mapperCost = if (isConstSize) {
+            val mcost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+            len * (mcost + CostTable.lambdaInvoke)
+          } else {
+            colBuilder.replicate(len, IntZero)
+              .zip(sizes)
+              .map(costF)
+              .sum(intPlusMonoid) + len * CostTable.lambdaInvoke
+          }
+          val zeros = colBuilder.replicate(resSizes.length, IntZero)
+          RCCostedColl(vals, zeros, resSizes, opCost(vals, costOfArgs, costOf(method) + mapperCost))
         case _ =>
           !!!(s"Unsupported lambda in flatMap: allowed usage `xs.flatMap(x => x.property)`")
       }
