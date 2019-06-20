@@ -224,6 +224,42 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  property("BigInt plus equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 + x._2 }")){ x => x._1 + x._2 }(v)
+    }
+  }
+
+  property("BigInt minus equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 - x._2 }")){ x => x._1 - x._2 }(v)
+    }
+  }
+
+  property("BigInt multiply equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 * x._2 }")){ x => x._1 * x._2 }(v)
+    }
+  }
+
+  property("BigInt divide equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      whenever(v._2.compareTo(0.toBigInt) > 0) {
+        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 / x._2 }")) { x => x._1 / x._2 }(v)
+      }
+    }
+  }
+
+  property("BigInt mod equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      whenever(v._2.compareTo(0.toBigInt) > 0) {
+        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 % x._2 }")) { x =>
+          x._1 % x._2
+        }(v)
+      }
+    }
+  }
+
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
     val n = SigmaDsl.BigInt(BigInteger.TEN)
