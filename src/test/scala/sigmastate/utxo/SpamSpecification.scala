@@ -212,8 +212,19 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("large loop: comparison of the same elements") {
+    val check = "i == i"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: blake2b256") {
-    val check = "blake2b256(blake2b256(blake2b256(blake2b256(Coll(i))))) != blake2b256(Coll(i))"
+    val check = "blake2b256(blake2b256(Coll(i))) != blake2b256(Coll(i))"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
