@@ -600,6 +600,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
     }
 
+    def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
+      val xs = asCostedColl(obj)
+      val f = asCostedFunc[T,Boolean](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val vals = xs.values.filter(calcF)
+      val sizes = xs.sizes
+      val len = sizes.length
+      val zeros = colBuilder.replicate(len, IntZero)
+      val isConstSize = eT.sourceType.isConstantSize
+      val predicateCost = if (isConstSize) {
+        len * Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+      } else {
+        zeros.zip(sizes).map(costF).sum(intPlusMonoid)
+      }
+      RCCostedColl(vals, zeros, sizes, opCost(vals, costOfArgs, costOf(method) + predicateCost))
+    }
+
     def flatMap[B](fC: RCosted[T => Coll[B]]): RCostedColl[B] = {
       val fV = fC.value
       fV match {
@@ -663,16 +681,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(v, xsC.costs, xsC.sizes, c)
     }
 
-    def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
-      val xs = asCostedColl(obj)
-      val f = asCostedFunc[T,Boolean](_f)
-      val calcF = f.sliceCalc
-      val costF = f.sliceCost
-      val vals = xs.values.filter(calcF)
-      val costs = xs.costs.zip(xs.sizes).map(costF)
-      val zeros = colBuilder.replicate(xs.costs.length, IntZero)
-      RCCostedColl(vals, zeros, xs.sizes, opCost(vals, costOfArgs, costOf(method) + costs.sum(intPlusMonoid)))
-    }
   }
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, costedArgs, args) => new CollCoster[Any](obj, m, costedArgs, args))
