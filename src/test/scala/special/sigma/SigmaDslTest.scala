@@ -958,4 +958,19 @@ class SigmaDslTest extends PropSpec
     val eq = EqualityChecker(SigmaDsl.groupGenerator)
     eq({ (x: GroupElement) => proveDHTuple(x, x, x, x) })("{ (x: GroupElement) => proveDHTuple(x, x, x, x) }")
   }
+
+  property("&& boolean equivalence") {
+    lazy val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x:(Boolean, Boolean)) => x._1 && x._2 }")){ (x:(Boolean, Boolean)) =>
+      x._1 && x._2
+    }
+    forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
+  property("|| boolean equivalence") {
+    lazy val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x:(Boolean, Boolean)) => x._1 || x._2 }")){ (x:(Boolean, Boolean)) =>
+      x._1 || x._2
+    }
+    forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
 }
