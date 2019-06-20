@@ -48,6 +48,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
   val NumInputs: Int = 10
   val NumOutputs: Int = 10
+  val InputCostDefault: Int = 2000
   val CostLimit: Long = ScriptCostLimit.value
   val Longs: Array[Long] = Array[Long](1, 2, 3, Long.MaxValue, Long.MinValue)
   lazy val alice = new ContextEnrichingTestProvingInterpreter
@@ -141,7 +142,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     })
     val scriptCost = res.map(_._2).getOrElse(CostLimit)
     // time that will be consumed, if the whole block will be filled with such scripts
-    val estimatedTime = calcTime * CostLimit / scriptCost
+    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
     estimatedTime should be < Timeout
   }
 
@@ -167,18 +168,15 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: int comparison") {
-    assert(warmUpPrecondition)
     val check = "i >= 0"
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val prover = new ContextEnrichingTestProvingInterpreter()
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  maxSizeColl.forall({(i:Byte) =>
-         |    $check
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |             $check
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp
-    runSpam(check, ctx, prop, true, true)(prover, prover)
+    checkScript(prop)
   }
 
   property("large loop: addition") {
