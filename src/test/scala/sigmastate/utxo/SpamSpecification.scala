@@ -6,9 +6,6 @@ import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
-import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scalan.util.BenchmarkUtil.measureTime
 import scorex.crypto.authds.{ADKey, ADValue}
@@ -20,16 +17,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
-import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
-import sigmastate.interpreter.{ContextExtension, ProverInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.{CostedProverResult, ContextExtension}
 import sigmastate.lang.exceptions.CosterException
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
-
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
