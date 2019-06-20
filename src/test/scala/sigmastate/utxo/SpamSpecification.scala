@@ -236,7 +236,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection element by index") {
-    val check = "OUTPUTS(0).R8[Coll[Byte]].get(i) == OUTPUTS(0).R8[Coll[Byte]].get(32700 - j)"
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(32700 - j)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
