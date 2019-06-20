@@ -142,8 +142,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     })
     val scriptCost = res.map(_._2).getOrElse(CostLimit)
     // time that will be consumed, if the whole block will be filled with such scripts
-    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
-    estimatedTime should be < Timeout
+//    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
+    calcTime should be < Timeout
   }
 
   def warmUpScenario() = {
@@ -172,7 +172,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
-         |             $check
+         |    $check
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp
@@ -1050,7 +1050,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     val ctx = ErgoLikeContext.dummy(fakeSelf)
 
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx, fakeMessage).get
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
 
     val verifier = new ErgoLikeTestInterpreter
     val (_, calcTime) = measureTime {
