@@ -262,6 +262,33 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("large loop: if") {
+    val check =
+      s"""
+         |  if(i > 0) {
+         |    if(i == 1) {
+         |      false
+         |    } else {
+         |      if(i != 1) {
+         |        true
+         |      } else {
+         |        false
+         |      }
+         |    }
+         |  } else {
+         |    false
+         |  }
+      """
+
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  maxSizeColl.forall({(i:Byte) =>
+         |     $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: tuple operations") {
     val check = "(i, 9223372036854775800L)._1 == (12, 2)._2 && (i, 0)._1 == (2, 0)._1 && (i, 3)._1 == (2, 0)._1"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
