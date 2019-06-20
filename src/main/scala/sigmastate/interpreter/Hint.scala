@@ -65,6 +65,10 @@ case class HintsBag(hints: Seq[Hint]) {
 
   def addHint(hint: Hint): HintsBag = HintsBag(hint +: hints)
 
+  def addHints(newHints: Seq[Hint]): HintsBag = HintsBag(newHints ++ hints)
+
+  def ++(other: HintsBag): HintsBag = HintsBag(other.hints ++ hints)
+
   lazy val commitments = hints.filter(_.isInstanceOf[CommitmentHint]).map(_.asInstanceOf[CommitmentHint])
   lazy val proofs = hints.filter(_.isInstanceOf[OtherSecretProven]).map(_.asInstanceOf[OtherSecretProven])
 
