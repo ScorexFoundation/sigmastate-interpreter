@@ -239,6 +239,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection.slice") {
+    assert(warmUpPrecondition)
     val check = "maxSizeColl.slice(101, 1001) == maxSizeColl.slice(101, 1001)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{

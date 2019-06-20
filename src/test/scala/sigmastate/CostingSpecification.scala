@@ -219,11 +219,11 @@ class CostingSpecification extends SigmaTestingData {
     val nOutputs = tx.outputs.length
     cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }") shouldBe
       (selectField + lambdaCost +
-        (accessBox + extractCost + constCost + comparisonCost) * nOutputs + collToColl + LengthGTConstCost)
+        (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
 
     cost(s"{ $coll.flatMap({ (b: Box) => b.propositionBytes }).size > 0 }") shouldBe
-      (lambdaCost + accessBox + extractCost + selectField +
-          (accessBox + extractCost)  * nOutputs + collToColl + LengthGTConstCost)
+      (lambdaCost + extractCost + selectField +
+          (accessBox + extractCost )  * nOutputs + collToColl + LengthGTConstCost)
 
     cost(s"{ $coll.zip(OUTPUTS).size > 0 }") shouldBe
       (selectField + accessBox * tx.outputs.length +

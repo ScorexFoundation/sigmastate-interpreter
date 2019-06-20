@@ -599,18 +599,21 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
         implicit val eA: Elem[a] = xs.elem.eItem
         implicit val eB: Elem[b] = zero.elem.eVal
-        val Pair(resS, resC) = xs.costs.zip(xs.sizes).foldLeft(
+        val sizes = xs.sizes
+        val len = sizes.length
+        val zeros = colBuilder.replicate(len, IntZero)
+        val Pair(resS, resC) = zeros.zip(sizes).foldLeft(
             Pair(zero.size, IntZero),
             fun { in: Rep[((Size[b], Int), (Int, Size[a]))] =>
               val Pair(Pair(accSizeB, accCost), Pair(xCost, xSize)) = in
               val sBA = RCSizePair(accSizeB, xSize)
               val size = sizeF(sBA)
-              val cost: Rep[Int] = Apply(costF, Pair(xCost, sBA), false)
-              val res = Pair(size, cost)
+              val cost: Rep[Int] = asRep[Int](Apply(costF, Pair(IntZero, sBA), false))
+              val res = Pair(size, xCost + cost)
               res
             }
         )
-        RCCostedPrim(resV, resC, resS)
+        RCCostedPrim(resV, resC + len * CostTable.lambdaInvoke, resS)
 
       case OpCost(_, id, args, cost) if args.exists(_ == IntZero) =>
         val zero = IntZero
@@ -1379,9 +1382,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val sizes = xs.sizes
         val len = sizes.length
         val cost = if (tpeIn.isConstantSize) {
-          len * Apply(costF, Pair(IntZero, constantTypeSize(eAny)), false)
+          val predicateCost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eAny)), false)
+          len * (predicateCost + CostTable.lambdaInvoke)
         } else {
-          colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid)
+          colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
         }
         val res = costedBooleanTransformer(node, xs, calcF, cost)
         res
