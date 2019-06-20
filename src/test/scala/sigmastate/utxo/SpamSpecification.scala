@@ -185,7 +185,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "i + i + i + i + i + i + i + i + i + i > i + i + i + i + i + i + i + i + i"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -196,7 +196,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "i * i * i * i * i * i * i * i * i * i >= i * i * i * i * i * i * i * i * i"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -207,7 +207,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "(! (i != 1)) || (! (i != 2)) || (! (i != 3)) || (! (i != 4))"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -218,7 +218,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "blake2b256(blake2b256(blake2b256(blake2b256(Coll(i))))) != blake2b256(Coll(i))"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -226,10 +226,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection element by index") {
-    val check = "SELF.R8[Coll[Byte]].get(i) == SELF.R8[Coll[Byte]].get(32700 - j)"
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get(i) == OUTPUTS(0).R8[Coll[Byte]].get(32700 - j)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    coll5.forall({(j:Byte) =>
          |      $check
          |    })
@@ -243,7 +243,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "maxSizeColl.slice(101, 1001) == maxSizeColl.slice(101, 1001)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    coll10.forall({(j:Byte) =>
          |      $check
          |    })
@@ -255,13 +255,13 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   property("large loop: collection.indices") {
     val check =
       s"""
-         |  SELF.R8[Coll[Byte]].get.indices.forall({(j: Int) =>
-         |   SELF.R8[Coll[Byte]].get.indices(j) == SELF.R8[Coll[Byte]].get.indices(j)
+         |  OUTPUTS(0).R8[Coll[Byte]].get.indices.forall({(j: Int) =>
+         |   OUTPUTS(0).R8[Coll[Byte]].get.indices(j) == OUTPUTS(0).R8[Coll[Byte]].get.indices(j)
          |  })
       """
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |     $check
          |  })
          |}
@@ -269,10 +269,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection.filter") {
-    val check = "SELF.R8[Coll[Byte]].get.filter({(j:Byte) => i == j}).size == 1"
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get.filter({(j:Byte) => i == j}).size == 1"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.filter({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.filter({(i:Byte) =>
          |     $check
          |  }).size == 0
          |}
@@ -284,7 +284,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       " != Coll(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |     $check
          |  })
          |}
@@ -295,7 +295,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "(SELF.R0[Long].get == SELF.R9[Long].getOrElse(SELF.R0[Long].get)) && (SELF.R4[Byte].get == (i - 1)) && INPUTS(0).R5[SigmaProp].get == OUTPUTS(0).R5[SigmaProp].get && INPUTS(0).R6[Int].get == OUTPUTS(0).R6[Int].get"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |     $check
          |  })
          |}
@@ -322,7 +322,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |     $check
          |  })
          |}
@@ -333,7 +333,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "(i, 9223372036854775800L)._1 == (12, 2)._2 && (i, 0)._1 == (2, 0)._1 && (i, 3)._1 == (2, 0)._1"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |     $check
          |  })
          |}
@@ -344,7 +344,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "SELF.creationInfo._2 != Coll(i, j) && SELF.creationInfo._2 != Coll(j)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    coll5.forall({(j:Byte) =>
          |     $check
          |    })
@@ -382,7 +382,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -394,7 +394,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
@@ -416,7 +416,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
                     """
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |   $check
          |  })
          |}
@@ -448,7 +448,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val check = "INPUTS.exists({(x:Box) => x.propositionBytes.size >= 0})"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  SELF.R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    $check
          |  })
          |}
