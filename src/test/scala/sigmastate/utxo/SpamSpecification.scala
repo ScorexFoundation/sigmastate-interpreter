@@ -26,6 +26,8 @@ import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
+import scala.annotation.tailrec
+
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
@@ -212,8 +214,19 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("large loop: comparison of the same elements") {
+    val check = "i == i"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: blake2b256") {
-    val check = "blake2b256(blake2b256(blake2b256(blake2b256(Coll(i))))) != blake2b256(Coll(i))"
+    val check = "blake2b256(blake2b256(Coll(i))) != blake2b256(Coll(i))"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
@@ -451,6 +464,12 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("nested blake2b256") {
+    val nestedBlake = genNestedScript("OUTPUTS(0).R8[Coll[Byte]].get", "blake2b256(", ")", 100)
+    val script = s"$nestedBlake != OUTPUTS(0).R8[Coll[Byte]].get"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> script), script).asBoolValue.toSigmaProp)
   }
 
   property("nested loops 1") {
@@ -1059,4 +1078,12 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     println(s"calc time: $calcTime millis")
     calcTime < Timeout shouldBe true
   }
+
+  @tailrec
+  private def genNestedScript(current: String, left: String, right: String, i: Int): String = if (i > 0) {
+    genNestedScript(s"$left$current$right", left, right, i - 1)
+  } else {
+    current
+  }
+
 }
