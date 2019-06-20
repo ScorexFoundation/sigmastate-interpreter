@@ -98,6 +98,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   /** Whether to output the cost value estimated for the script given by ScriptNameProp environment variable */
   var outputEstimatedCost: Boolean = false
 
+  /** Whether to output the computed results of the script. */
+  var outputComputedResults: Boolean = true
+
   /** Whether to perform extended checks of correctness, expected invariants and data consistency.
     * Since it may add substantial overhead, tt shouldn't be used in production. */
   val debugModeSanityChecks: Boolean = false

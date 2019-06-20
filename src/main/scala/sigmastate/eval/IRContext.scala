@@ -64,6 +64,17 @@ trait IRContext extends Evaluation with TreeBuilding {
                                              estimatedCost: Int): Unit = {
   }
 
+  /** Can be overriden to to do for example logging of computed results */
+  private[sigmastate] def onResult[T](env: ScriptEnv,
+                                      tree: SValue,
+                                      result: RCostingResultEx[T],
+                                      ctx: special.sigma.Context,
+                                      estimatedCost: Int,
+                                      calcCtx: special.sigma.Context,
+                                      executedResult: special.sigma.SigmaProp,
+                                      executionTime: Long): Unit = {
+  }
+
   import Size._
   import Context._;
 
