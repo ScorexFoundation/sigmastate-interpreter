@@ -409,7 +409,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       t.withPolynomial(q).copy(children = newChildren)
 
     // If the node is a leaf marked "real", compute its response according to the second prover step
-    // of the Sigma-protocol given the commitment, challenge, and witness
+    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
     case su: UnprovenSchnorr if su.real =>
       assert(su.challengeOpt.isDefined, s"Real UnprovenSchnorr $su should have challenge defined")
       val privKeyOpt = secrets
@@ -442,17 +442,9 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       }
       UncheckedSchnorr(su.proposition, None, su.challengeOpt.get, z)
 
+    // If the node is a leaf marked "real", compute its response according to the second prover step
+    // of the Sigma-protocol given the commitment, challenge, and witness, or pull response from the hints bag
     case dhu: UnprovenDiffieHellmanTuple if dhu.real =>
-      /*
-      assert(dhu.challengeOpt.isDefined)
-      val privKey = secrets
-        .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
-        .find(_.asInstanceOf[DiffieHellmanTupleProverInput].publicImage == dhu.proposition)
-        .get.asInstanceOf[DiffieHellmanTupleProverInput]
-      val z = DiffieHellmanTupleInteractiveProver.secondMessage(privKey, dhu.randomnessOpt.get, dhu.challengeOpt.get)
-      UncheckedDiffieHellmanTuple(dhu.proposition, None, dhu.challengeOpt.get, z)
-      */
-
       assert(dhu.challengeOpt.isDefined, s"Real UnprovenDiffieHellmanTuple $dhu should have challenge defined")
       val privKeyOpt = secrets
         .filter(_.isInstanceOf[DiffieHellmanTupleProverInput])
