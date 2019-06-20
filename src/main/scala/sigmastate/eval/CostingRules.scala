@@ -64,9 +64,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
     * the expression is re-evaluated. Each value should be reset in onReset() method.
     * Accessing this lazy value is an order of magnitude faster than computing it from scratch. */
-  private val _intZero = MutableLazy(0: Rep[Int])
-  @inline def IntZero = _intZero.value
-
   private val _someIntZero = MutableLazy(SOME(IntZero))
   @inline def SomeIntZero = _someIntZero.value
 
@@ -177,7 +174,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise behavior after resetContext is undefined
     // and may lead to subtle bugs.
-    Array(_intZero, _someIntZero,
+    Array(_someIntZero,
       _selectFieldCost, _getRegisterCost, _sizeUnit, _sizeBoolean, _sizeByte, _sizeShort,
       _sizeInt, _sizeLong, _sizeBigInt, _sizeSigmaProp, _sizeString,
       _sizeAvlTree, _sizeGroupElement, _wRTypeSigmaProp)
@@ -603,6 +600,24 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(vals, costs, sizes, opCost(vals, costOfArgs, costOf(method)))
     }
 
+    def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
+      val xs = asCostedColl(obj)
+      val f = asCostedFunc[T,Boolean](_f)
+      val calcF = f.sliceCalc
+      val costF = f.sliceCost
+      val vals = xs.values.filter(calcF)
+      val sizes = xs.sizes
+      val len = sizes.length
+      val zeros = colBuilder.replicate(len, IntZero)
+      val isConstSize = eT.sourceType.isConstantSize
+      val predicateCost = if (isConstSize) {
+        len * Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+      } else {
+        zeros.zip(sizes).map(costF).sum(intPlusMonoid)
+      }
+      RCCostedColl(vals, zeros, sizes, opCost(vals, costOfArgs, costOf(method) + predicateCost))
+    }
+
     def flatMap[B](fC: RCosted[T => Coll[B]]): RCostedColl[B] = {
       val fV = fC.value
       fV match {
@@ -666,16 +681,6 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       RCCostedColl(v, xsC.costs, xsC.sizes, c)
     }
 
-    def filter(_f: RCosted[T => Boolean]): RCosted[Coll[T]] = {
-      val xs = asCostedColl(obj)
-      val f = asCostedFunc[T,Boolean](_f)
-      val calcF = f.sliceCalc
-      val costF = f.sliceCost
-      val vals = xs.values.filter(calcF)
-      val costs = xs.costs.zip(xs.sizes).map(costF)
-      val zeros = colBuilder.replicate(xs.costs.length, IntZero)
-      RCCostedColl(vals, zeros, xs.sizes, opCost(vals, costOfArgs, costOf(method) + costs.sum(intPlusMonoid)))
-    }
   }
 
   object CollCoster extends CostingHandler[Coll[Any]]((obj, m, costedArgs, args) => new CollCoster[Any](obj, m, costedArgs, args))

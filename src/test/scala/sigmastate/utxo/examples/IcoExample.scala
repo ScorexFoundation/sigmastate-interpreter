@@ -247,7 +247,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     "projectPubKey" -> project.secrets.head.publicImage
   )
 
-  val withdrawalScript: SigmaPropValue = compiler.compile(env,
+  lazy val withdrawalScript: SigmaPropValue = compiler.compile(env,
     """{
       |  val removeProof = getVar[Coll[Byte]](2).get
       |  val lookupProof = getVar[Coll[Byte]](3).get
@@ -299,9 +299,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
+  lazy val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-  val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
+  lazy val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
@@ -332,9 +332,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
+  lazy val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
 
-  val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
+  lazy val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id

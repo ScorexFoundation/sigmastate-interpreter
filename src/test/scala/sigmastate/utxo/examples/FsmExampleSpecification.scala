@@ -10,8 +10,8 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
@@ -154,7 +154,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     val spendingProof = prover
       .withContextExtender(scriptVarId, ByteArrayConstant(ValueSerializer.serialize(script1)))
       .withContextExtender(transitionProofId, ByteArrayConstant(transition12Proof))
-      .prove(fsmScript, ctx, fakeMessage).get
+      .prove(emptyEnv + (ScriptNameProp -> "prove"), fsmScript, ctx, fakeMessage).get
 
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx, spendingProof, fakeMessage).get._1 shouldBe true
 

@@ -264,4 +264,5 @@ object OpCodes extends ValueCodes {
   val CostOfCode: OpCodeExtra         = newOpCodeExtra(40)
   val UOSizeOfCode: OpCodeExtra       = newOpCodeExtra(41)
   val SPCMSomeCode: OpCodeExtra       = newOpCodeExtra(42)
+  val ThunkForceCode: OpCodeExtra     = newOpCodeExtra(43)
 }

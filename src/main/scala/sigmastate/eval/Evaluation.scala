@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCostFuncOperation, CheckLoopLevelInCostFunction}
+import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
 import sigmastate.lang.Terms.OperationId
@@ -26,6 +26,8 @@ import special.SpecialPredef
 import special.Types._
 
 import scala.collection.immutable.HashSet
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 /** This is a slice in IRContext cake which implements evaluation of graphs.
   */
@@ -130,6 +132,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     CastCode,
     IntPlusMonoidCode,
     ThunkDefCode,
+    ThunkForceCode,
     SCMInputsCode,
     SCMOutputsCode,
     SCMDataInputsCode,
@@ -187,6 +190,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: Cast[_] => CastCode
     case _: IntPlusMonoid => IntPlusMonoidCode
     case _: ThunkDef[_] => ThunkDefCode
+    case _: ThunkForce[_] => ThunkForceCode
     case SCM.inputs(_) => SCMInputsCode
     case SCM.outputs(_) => SCMOutputsCode
     case SCM.dataInputs(_) => SCMDataInputsCode
@@ -347,6 +351,36 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       traverseScope(lam, level = 0)
+      val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
+      lam.scheduleAll.foreach { te =>
+        getDeps(te.rhs).foreach { usedSym =>
+          val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
+          usages += te.sym
+        }
+      }
+//      println(backDeps)
+      lam.scheduleAll
+        .filter {
+          case _ @ TableEntrySingle(_, op: OpCost, _) =>
+            assert(!op.args.contains(op.opCost), s"Invalid $op")
+            true
+          case _ => false
+        }
+        .foreach { te =>
+          val usages = backDeps.getOrElse(te.sym, new ArrayBuffer())
+          usages.foreach { usageSym =>
+            usageSym.rhs match {
+              case l: Lambda[_,_] => //ok
+              case t: ThunkDef[_] => //ok
+              case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
+              case OpCost(_, _, _, opCost) if opCost == te.sym =>
+                println(s"INFO: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
+                //ok
+              case _ =>
+                !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
+            }
+          }
+        }
     }
   }
 
@@ -460,7 +494,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
     @inline def currentVisited: Set[Sym] = _scopeStack.head.visited
     @inline def currentScope: Scope = _scopeStack.head
-    @inline private def getCostFromEnv(dataEnv: DataEnv, s: Sym): Int = getFromEnv(dataEnv, s).asInstanceOf[Int]
 
     /** Represents a single scope during execution of the graph.
       * The lifetime of each instance is bound to scope execution.
@@ -470,36 +503,73 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     class Scope(visitiedOnEntry: Set[Sym], initialCost: Int) extends CostCounter(initialCost) {
       private var _visited: Set[Sym] = visitiedOnEntry
       @inline def visited: Set[Sym] = _visited
-      @inline def add(s: Sym, op: OpCost, opCost: Int, dataEnv: DataEnv): Unit = {
+      @inline def isVisited(s: Sym) = _visited.contains(s)
+
+      /** The value of dependency arg is either cost formula or another OpCost.
+        * In the latter case we expect is has already been accumulated. */
+      @inline private def getArgCostFromEnv(op: OpCost, dataEnv: DataEnv, s: Sym): Int = {
+        val res = getFromEnv(dataEnv, s).asInstanceOf[Int]
+        assert(!isVisited(s), s"Unexpected visited arg $s -> ${s.rhs} of $op")
+        assert(!s.rhs.isInstanceOf[OpCost], s"Unexpected not-visited OpCost arg $s -> ${s.rhs} of $op")
+        res
+      }
+
+      @inline def add(s: Sym, op: OpCost, dataEnv: DataEnv): Unit = {
+        if (!isVisited(op.opCost)) {
+          // this is not a dependency arg, it is cost formula, so we take its value from env
+          val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
+          this += opCost
+          // NOTE: we don't mark op.opCost as visited, it allows to append the same constant
+          // many times in different OpCost nodes.
+          // This is the key semantic difference between `args` and `opCost` arguments of OpCost.
+          // If some cost is added via `args` is it marked as visited and never added again
+          // If it is add via `opCost` it is not marked and can be added again in different
+          // OpCost node down below in the scope.
+        }
+        // we need to add accumulate costs of non-visited args
         for (arg <- op.args) {
-          if (!_visited.contains(arg)) {
-            val argCost = getCostFromEnv(dataEnv, arg)
-//            println(s"${this.currentCost} + $argCost ($arg <- $op)")
+          if (!isVisited(arg)) {
+            val argCost = getArgCostFromEnv(op, dataEnv, arg)
             this += argCost
+
+            // this arg has been accumulated, mark it as visited to avoid repeated accumulations
             _visited += arg
           }
         }
-        if (!_visited.contains(op.opCost)) {
-//          println(s"${this.currentCost} + $opCost (${op.opCost} <- $op)")
-          this += opCost
-        }
+
         _visited += s
       }
+
+      /** Called by nested Scopes to communicate accumulated cost back to parent scope.
+        * When current scope terminates, it communicated accumulated cost up to its parent scope.
+        * This value is used at the root scope to obtain total accumulated scope.
+        */
+      private var _resultRegister: Int = 0
+      @inline def childScopeResult: Int = _resultRegister
+      @inline def childScopeResult_=(resultCost: Int): Unit = {
+        _resultRegister = resultCost
+      }
+
     }
 
     /** Called once for each operation of a scope (lambda or thunk).
-      * if costLimit is defined then delegates to currentScope. */
+      */
     def add(s: Sym, op: OpCost, dataEnv: DataEnv): Int = {
-      val opCost = getFromEnv(dataEnv, op.opCost).asInstanceOf[Int]
+      currentScope.add(s, op, dataEnv)
+
+      // the cost we accumulated so far
+      val cost = currentScope.currentCost
+
+      // check that we are still withing the limit
       if (costLimit.isDefined) {
-        currentScope.add(s, op, opCost, dataEnv)
-        // check that we are still withing the limit
-        val cost = currentScope.currentCost
         val limit = costLimit.get
         if (cost > limit)
           throw new CosterException(msgCostLimitError(cost, limit), None)
       }
-      opCost
+
+      // each OpCost represents how much cost was added since beginning of the current scope
+      val opCostResult = cost - currentScope.initialCost
+      opCostResult
     }
 
     /** Called before any operation of a new scope (lambda or thunk)*/
@@ -511,7 +581,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     def endScope() = {
       val deltaCost = currentScope.currentCost - currentScope.initialCost
       _scopeStack = _scopeStack.tail
-      _scopeStack.head += deltaCost
+      _scopeStack.head.childScopeResult = deltaCost  // set Result register of parent scope
     }
 
     /** Resets this accumulator into initial state to be ready for new graph execution. */
@@ -632,6 +702,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case Lambda(l, _, x, y) =>
             val f = (ctx: AnyRef) => {
               costAccumulator.startScope()
+              // x is not yet in _visited set of the new scope, thus it will accumulated is necessary
               val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
                 val (e, _) = evaluate(te).run(env)
                 e
@@ -659,6 +730,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             }
             out(th)
 
+          case ThunkForce(In(t: ThunkData[Any])) =>
+            out(t())
           case SDBM.sigmaProp(_, In(isValid: Boolean)) =>
             val res = CSigmaProp(sigmastate.TrivialProp(isValid))
             out(res)
@@ -782,11 +855,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       val g = new PGraph(f)
       val xSym = f.getLambda.x
       val resEnv = g.schedule.foldLeft(dataEnv + (xSym -> x.asInstanceOf[AnyRef])) { (env, te) =>
-        val (e, _) = evaluate(te).run(env)
-        e
+        val (updatedEnv, _) = evaluate(te).run(env)
+        updatedEnv
       }
       val fun = resEnv(f).asInstanceOf[SA => SB]
       val y = fun(x)
+      costAccumulator.currentScope += costAccumulator.currentScope.childScopeResult
       (y, costAccumulator.totalCost)
     }
     res

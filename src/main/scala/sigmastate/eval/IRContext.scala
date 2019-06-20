@@ -111,7 +111,11 @@ trait IRContext extends Evaluation with TreeBuilding {
                 costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
-    val (_, estimatedCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
+    val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
+
+    if (estimatedCost != accCost)
+      !!!(s"Estimated cost $estimatedCost should be equal $accCost")
+
     if (estimatedCost > maxCost) {
       throw new CosterException(msgCostLimitError(estimatedCost, maxCost), None)
     }
