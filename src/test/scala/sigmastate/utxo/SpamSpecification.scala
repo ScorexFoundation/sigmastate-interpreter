@@ -142,9 +142,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }, r => {
       println(s"Result: $res")
     })
-    val scriptCost = res.map(_._2).getOrElse(CostLimit)
-    // time that will be consumed, if the whole block will be filled with such scripts
-//    val estimatedTime = calcTime * CostLimit / (scriptCost + InputCostDefault)
     calcTime should be < Timeout
   }
 
@@ -181,7 +178,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     checkScript(prop)
   }
 
-  property("large loop: int comparison, cost a bit low then limit ") {
+  property("int comparison, cost a bit lower than limit ") {
     val check = "i >= 0"
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
@@ -234,8 +231,41 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("addition, cost a bit lower than limit") {
+    val check = genNestedScript("1 < i", "", " + i", 55)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: multiplication") {
     val check = "i * i * i * i * i * i * i * i * i * i >= i * i * i * i * i * i * i * i * i"
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("multiplication, cost a bit lower than limit") {
+    val check = genNestedScript("i ", "", " * i", 22)  + " >= " + genNestedScript("i ", "", " * i", 10)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("multiplication, cost a bit lower than limit 2") {
+    val check = genNestedScript("true ", "", " && i * i < i * i * i", 21)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
@@ -256,6 +286,17 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("negotiation, cost a bit lower than limit") {
+    val check = genNestedScript("(! (i != 2)) ", "(! (i != 1)) || ", "", 50)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
+         |    $check
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: comparison of the same elements") {
     val check = "i == i"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
@@ -265,6 +306,13 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("comparison of the same elements, cost a bit lower than limit") {
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => i == i })"
+
+    val script = genNestedScript("123 == 123 ", "", s" && $check", 40)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp)
   }
 
   property("large loop: blake2b256") {
@@ -289,6 +337,13 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("collection element by index, cost a bit lower than limit") {
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i) != OUTPUTS(0).R8[Coll[Byte]].get(32700) })"
+
+    val script = genNestedScript("true ", "", s" && $check", 40)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp)
   }
 
   property("large loop: collection.slice") {
