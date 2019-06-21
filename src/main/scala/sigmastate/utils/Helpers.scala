@@ -49,7 +49,6 @@ object Helpers {
   def concatArrays[T:ClassTag](arr1: Array[T], arr2: Array[T]): Array[T] = {
     val length: Int = arr1.length + arr2.length
     val result: Array[T] = new Array[T](length)
-    var pos: Int = 0
     System.arraycopy(arr1, 0, result, 0, arr1.length)
     System.arraycopy(arr2, 0, result, arr1.length, arr2.length)
     result
