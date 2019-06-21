@@ -66,7 +66,7 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         |  val drawPubKey = SELF.R7[SigmaProp].get
         |
         |  (bob && HEIGHT > bobDeadline) || {
-        |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k
+        |    val valid_a = (a == 0 || a == 1 || a == 2) && blake2b256(s ++ Coll(a)) == k // Alice's commitment is hardwired via k
         |    valid_a && {
         |      val a_minus_b = a - b
         |      if (a_minus_b == 0) drawPubKey else {
