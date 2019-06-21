@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import org.scalatest.exceptions.TestFailedException
 import scalan.Lazy
 import sigmastate.helpers.SigmaTestingCommons
 
@@ -64,7 +65,7 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
     run("opCost_id_const", { x: Rep[Int] => opCost(v1, Seq(x), 6) }, 10, 16)
     run2("opCost_const_id2", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x), y) }, (10, 6), 16)
 
-    an[StagingException] should be thrownBy run("opCost_arg_id", { x: Rep[Int] => opCost(v1, Seq(x), x) }, 10, 10)
+    an[TestFailedException] should be thrownBy run("opCost_arg_id", { x: Rep[Int] => opCost(v1, Seq(x), x) }, 10, 10)
 
     run("opCost_two_args", { x: Rep[Int] => opCost(v1, Seq(x, x), 5) }, 10, 15)
     run2("opCost_two_args_2", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, x), y) }, (10, 5), 15)

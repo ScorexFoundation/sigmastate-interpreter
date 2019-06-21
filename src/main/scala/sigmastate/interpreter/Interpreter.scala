@@ -17,6 +17,7 @@ import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
+import scalan.util.BenchmarkUtil
 
 import scala.util.Try
 
@@ -169,39 +170,51 @@ trait Interpreter extends ScorexLogging {
   def verify(env: ScriptEnv, tree: ErgoTree,
              context: CTX,
              proof: Array[Byte],
-             message: Array[Byte]): Try[VerificationResult] = Try {
-    val prop = propositionFromErgoTree(tree, context)
-    implicit val vs = context.validationSettings
-    val propTree = trySoftForkable[BoolValue](whenSoftFork = TrueLeaf) {
-      applyDeserializeContext(context, prop)
+             message: Array[Byte]): Try[VerificationResult] = {
+    val (res, t) = BenchmarkUtil.measureTime(Try {
+      val prop = propositionFromErgoTree(tree, context)
+      implicit val vs = context.validationSettings
+      val propTree = trySoftForkable[BoolValue](whenSoftFork = TrueLeaf) {
+        applyDeserializeContext(context, prop)
+      }
+
+      // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
+      // and the rest of the verification is also trivial
+      val (cProp, cost) = reduceToCrypto(context, env, propTree).fold(t => throw t, identity)
+
+      val checkingResult = cProp match {
+        case TrivialProp.TrueProp => true
+        case TrivialProp.FalseProp => false
+        case _ =>
+          // Perform Verifier Steps 1-3
+          SigSerializer.parseAndComputeChallenges(cProp, proof) match {
+            case NoProof => false
+            case sp: UncheckedSigmaTree =>
+              // Perform Verifier Step 4
+              val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
+
+              /**
+                * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
+                * using the same conversion as the prover in 7
+                * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
+                * (and, if applicable,  the associated data). Reject otherwise.
+                */
+              val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
+              util.Arrays.equals(newRoot.challenge, expectedChallenge)
+          }
+      }
+      checkingResult -> cost
+    })
+    if (outputComputedResults) {
+      res.foreach { case (ok, cost) =>
+        val scaledCost = cost * 2 // this is the scale factor of CostModel with respect to the concrete hardware
+        val timeMicro = t * 1000  // time in microseconds
+        val delta = (scaledCost - timeMicro).toDouble
+        val error = (delta / timeMicro * 100).formatted(s"%10.3f")
+        println(s"Result: $ok, Validation Time: $timeMicro, Estimated Cost: $scaledCost, Error: $error %")
+      }
     }
-
-    // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
-    // and the rest of the verification is also trivial
-    val (cProp, cost) = reduceToCrypto(context, env, propTree).fold(t => throw t, identity)
-
-    val checkingResult = cProp match {
-      case TrivialProp.TrueProp => true
-      case TrivialProp.FalseProp => false
-      case _ =>
-        // Perform Verifier Steps 1-3
-        SigSerializer.parseAndComputeChallenges(cProp, proof) match {
-          case NoProof => false
-          case sp: UncheckedSigmaTree =>
-            // Perform Verifier Step 4
-            val newRoot = computeCommitments(sp).get.asInstanceOf[UncheckedSigmaTree]
-
-            /**
-              * Verifier Steps 5-6: Convert the tree to a string `s` for input to the Fiat-Shamir hash function,
-              * using the same conversion as the prover in 7
-              * Accept the proof if the challenge at the root of the tree is equal to the Fiat-Shamir hash of `s`
-              * (and, if applicable,  the associated data). Reject otherwise.
-              */
-            val expectedChallenge = CryptoFunctions.hashFn(FiatShamirTree.toBytes(newRoot) ++ message)
-            util.Arrays.equals(newRoot.challenge, expectedChallenge)
-        }
-    }
-    checkingResult -> cost
+    res
   }
 
   /**
