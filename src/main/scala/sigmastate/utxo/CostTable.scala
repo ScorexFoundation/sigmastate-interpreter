@@ -66,7 +66,7 @@ object CostTable {
 
   val collToColl = 20
   val lambdaInvoke = 5  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
-  
+  val concreteCollectionItemCost = 10  // since each item is a separate graph node
   val comparisonCost = 10
   val comparisonPerKbCost = 10
 
@@ -107,7 +107,7 @@ object CostTable {
 
     ("Lambda", "() => (D1) => R", lambdaCost),
 
-    ("ConcreteCollection", "() => Coll[IV]", constCost),
+    ("ConcreteCollection", "() => Coll[IV]", collToColl),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
     ("AccessAvlTree", "Context => AvlTree", constCost),

@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.lang.reflect.Constructor
+
 import scala.language.implicitConversions
 import scala.language.existentials
 import scalan.{Lazy, MutableLazy, Nullable, RType}
@@ -32,6 +33,8 @@ import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
+
+import scala.collection.mutable
 
 
 trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
@@ -697,10 +700,24 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
           case _ => super.rewriteDef(d)
         }
 
-      case OpCost(_, id, args, cost) if debugModeSanityChecks =>
-        if (args.contains(cost))
-          !!!(s"Invalid OpCost($id, $args, $cost)")
-        super.rewriteDef(d)
+      case OpCost(_, id, args, cost) =>
+        if (debugModeSanityChecks) {
+          if (args.contains(cost))
+            !!!(s"Invalid OpCost($id, $args, $cost)")
+        }
+//        val (ops, others) = args.partition(_.rhs.isInstanceOf[OpCost])
+        if (args.exists(_ == IntZero)) {
+          val zero = IntZero
+          val nonZeroArgs = args.filterNot(_ == zero)
+          val res: Rep[Int] =
+            if (cost == zero && nonZeroArgs.isEmpty) zero
+            else {
+              val lamVar = lambdaStack.head.x
+              OpCost(lamVar, id, nonZeroArgs, cost)
+            }
+          res
+        } else
+          super.rewriteDef(d)
 
       case _ =>
         super.rewriteDef(d)
@@ -1785,12 +1802,24 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val values = colBuilder.fromItems(vs: _*)(eAny)
         val costs = colBuilder.replicate(cs.length, IntZero)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
-        val accCost = opCost(
-          values,
-          vs.zip(cs).map { case (v,c) =>
-            if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
-          },
-          costOf(col))
+//        val args = vs.zip(cs).map { case (v,c) =>
+//          if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+//        }
+        val args = mutable.ArrayBuilder.make[Rep[Int]]
+        val uniqueArgs = scalan.AVHashMap[Rep[Any], (Rep[Any], Rep[Int])](10)
+        vs.zip(cs).foreach { vc =>
+          uniqueArgs.get(vc._1) match {
+            case Nullable((v, c)) =>
+              assert(c == vc._2, s"Inconsistent costed graph for $col: argument $v have different costs $c and ${vc._2}")
+            case _ =>
+              val v = vc._1
+              val c = vc._2
+              uniqueArgs.put(v, vc)
+              val arg = if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+              args += arg
+          }
+        }
+        val accCost = opCost(values, args.result(), costOf(col) + CostTable.concreteCollectionItemCost * ss.length)
         RCCostedColl(values, costs, sizes, accCost)
 
       case sigmastate.Upcast(In(inputC), tpe) =>

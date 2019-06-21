@@ -3,7 +3,8 @@ package sigmastate.utxo
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.validation.ValidationRules.CheckLoopLevelInCostFunction
+import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
@@ -346,7 +347,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("collection element by index, cost a bit lower than limit") {
-    val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i) != OUTPUTS(0).R8[Coll[Byte]].get(32700) })"
+    assert(warmUpPrecondition)
+    val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) != OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
 
     val script = genNestedScript("true ", "", s" && $check", 40)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp)
@@ -394,6 +396,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: collection allocation and comparison") {
+    assert(warmUpPrecondition)
     val check = "Coll(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)" +
       " != Coll(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)"
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
@@ -482,7 +485,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  coll1000.forall({(i:Byte) =>
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
          |    coll100.forall({(j:Byte) =>
          |     $check
          |    })
@@ -721,17 +724,23 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     val prover = new ContextEnrichingTestProvingInterpreter()
 
-    val pr = prover
-      .withSecrets(alice.dlogSecrets)
-      .prove(emptyEnv + (ScriptNameProp -> "prove"),
-        spamScript, context, fakeMessage).get
+    assertExceptionThrown({
+      val pr = prover
+          .withSecrets(alice.dlogSecrets)
+          .prove(emptyEnv + (ScriptNameProp -> "prove"),
+            spamScript, context, fakeMessage).get
 
-    val verifier = new ErgoLikeTestInterpreter
-    val (res, terminated) = termination(() =>
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
-    )
-    res.isFailure shouldBe true
-    terminated shouldBe true
+      val verifier = new ErgoLikeTestInterpreter
+      val (res, terminated) = termination(() =>
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
+      )
+      res.isFailure shouldBe true
+      terminated shouldBe true
+    }, {
+      case ve: ValidationException if ve.rule.id == CheckLoopLevelInCostFunction.id => true
+      case _ => false
+    })
+
   }
 
   property("large num of inputs 2") {
@@ -827,16 +836,22 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     )
 
 
-    val prover = new ContextEnrichingTestProvingInterpreter()
+    assertExceptionThrown({
+      val prover = new ContextEnrichingTestProvingInterpreter()
 
-    val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, context, fakeMessage).get
+      val pr = prover.withSecrets(alice.dlogSecrets).prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, context, fakeMessage).get
 
-    val verifier = new ErgoLikeTestInterpreter
-    val (res, terminated) = termination(() =>
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
-    )
-    res.isFailure shouldBe true
-    terminated shouldBe true
+      val verifier = new ErgoLikeTestInterpreter
+      val (res, terminated) = termination(() =>
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, context, pr, fakeMessage)
+      )
+      res.isFailure shouldBe true
+      terminated shouldBe true
+    },
+    {
+      case ve: ValidationException if ve.rule.id == CheckLoopLevelInCostFunction.id => true
+      case _ => false
+    })
   }
 
   property("huge byte array") {
