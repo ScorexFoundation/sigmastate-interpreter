@@ -108,7 +108,7 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._
     implicit val vs = context.validationSettings
-    val maxCost = context.costLimit / 2
+    val maxCost = context.costLimit
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
       val costingRes @ Pair(g, costF) = doCostingEx(env, exp, true)
       IR.onCostingResult(env, exp, costingRes)
