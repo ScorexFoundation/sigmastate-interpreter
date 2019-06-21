@@ -32,7 +32,7 @@ object CostTable {
   type ExpressionCost = Int
 
   val MinimalCost = 10
-
+  val interpreterInitCost = 2000
   val expCost = 5000
   val multiplyGroup = 50
   val negateGroup = 50

@@ -72,7 +72,7 @@ class CostingSpecification extends SigmaTestingData {
     val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
     if (printCosts)
       println(script + s" --> cost $res")
-    res
+    res - CostTable.interpreterInitCost  // subtract it here to simplify specification
   }
 
   val ContextVarAccess = accessContextVar + selectField  // `getVar(id)` + `.get`

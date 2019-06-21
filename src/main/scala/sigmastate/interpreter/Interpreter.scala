@@ -108,7 +108,7 @@ trait Interpreter extends ScorexLogging {
   def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
     import IR._
     implicit val vs = context.validationSettings
-    val maxCost = context.costLimit
+    val maxCost = context.costLimit / 2
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
       val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
       IR.onCostingResult(env, exp, costingRes)
@@ -207,7 +207,7 @@ trait Interpreter extends ScorexLogging {
     })
     if (outputComputedResults) {
       res.foreach { case (ok, cost) =>
-        val scaledCost = cost * 2 + 4000 // this is the scale factor of CostModel with respect to the concrete hardware
+        val scaledCost = cost * 2 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds
         val error = if (scaledCost > timeMicro) {
           val error = ((scaledCost / timeMicro.toDouble - 1) * 100d).formatted(s"%10.3f")
@@ -216,7 +216,8 @@ trait Interpreter extends ScorexLogging {
           val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
           error
         }
-        println(s"Res-Time-Cost-Error,$ok,$timeMicro,$scaledCost,$error")
+        val name = env.getOrElse(Interpreter.ScriptNameProp, "")
+        println(s"""Res-Time-Cost-Error,"$name",$ok,$timeMicro,$scaledCost,$error""")
       }
     }
     res

@@ -5,6 +5,7 @@ import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.utxo.CostTable
 
 import scala.util.Try
 
@@ -125,10 +126,11 @@ trait IRContext extends Evaluation with TreeBuilding {
     if (estimatedCost != accCost)
       !!!(s"Estimated cost $estimatedCost should be equal $accCost")
 
-    if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, msgCostLimitError(estimatedCost, maxCost), None)
+    val totalCost = CostTable.interpreterInitCost + estimatedCost
+    if (totalCost > maxCost) {
+      throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
-    estimatedCost
+    totalCost
   }
 
 }
