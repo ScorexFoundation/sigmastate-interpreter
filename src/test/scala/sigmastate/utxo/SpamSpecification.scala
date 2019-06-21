@@ -323,7 +323,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   property("stack overflow") {
     val check = "OUTPUTS(0).R7[Coll[Byte]].get.slice(1, 8) == OUTPUTS(0).R7[Coll[Byte]].get.slice(2, 9)"
     val script = (0 to 300).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+    an[StackOverflowError] should be thrownBy checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
   }
 
   property("large loop: collection.indices") {

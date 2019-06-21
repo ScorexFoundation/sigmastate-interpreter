@@ -110,12 +110,11 @@ trait Interpreter extends ScorexLogging {
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit / 2
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
-      val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
+      val costingRes @ Pair(g, costF) = doCostingEx(env, exp, true)
       IR.onCostingResult(env, exp, costingRes)
 
       CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
 
-      CheckCalcFunc(IR)(calcF) { }
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
@@ -124,6 +123,8 @@ trait Interpreter extends ScorexLogging {
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
       // check calc
+      val calcF = g.sliceCalc(true)
+      CheckCalcFunc(IR)(calcF) { }
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = calcResult(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost

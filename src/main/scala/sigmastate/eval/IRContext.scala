@@ -24,7 +24,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
-  type RCostingResultEx[T] = Rep[(Context => T, ((Context, (Int, Size[Context]))) => Int)]
+  type RCostingResultEx[T] = Rep[(Costed[Context] => Costed[T], ((Context, (Int, Size[Context]))) => Int)]
 
   def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
@@ -42,15 +42,16 @@ trait IRContext extends Evaluation with TreeBuilding {
     Pair(calcF, costF)
   }
 
-  def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
+  def doCostingEx(env: ScriptEnv,
+                  typed: SValue,
+                  okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
     def buildGraph(env: ScriptEnv, exp: SValue) = {
       val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
       asRep[Costed[Context] => Costed[Any]](costed)
     }
     val g = buildGraph(env, typed)
-    val calcF = g.sliceCalc(okRemoveIsProven)
     val costF = g.sliceCostEx
-    Pair(calcF, costF)
+    Pair(g, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
