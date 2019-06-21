@@ -304,7 +304,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("collection element by index, cost a bit lower than limit") {
     assert(warmUpPrecondition)
-    (0 until (100, 2)) foreach { repeats =>
+    (0 until(100, 2)) foreach { repeats =>
       val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
       val script = genNestedScript("true ", "", s" && $check", repeats)
       checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp)
@@ -313,68 +313,54 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: collection.slice") {
     assert(warmUpPrecondition)
-    (100 +: (0 until 40)) foreach { i =>
+    (100 +: (0 until 20)) foreach { i =>
       val check = "OUTPUTS(0).R7[Coll[Byte]].get.slice(1, 8) == OUTPUTS(0).R7[Coll[Byte]].get.slice(2, 9)"
       val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
       checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
     }
   }
 
-  property("stack overflow") {
+  // TODO looks like not consensus-critical, but fix is needed
+  ignore("stack overflow") {
     val check = "OUTPUTS(0).R7[Coll[Byte]].get.slice(1, 8) == OUTPUTS(0).R7[Coll[Byte]].get.slice(2, 9)"
     val script = (0 to 300).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
     an[StackOverflowError] should be thrownBy checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
   }
 
   property("large loop: collection.indices") {
-    val check =
-      s"""
-         |  OUTPUTS(0).R8[Coll[Byte]].get.indices.forall({(j: Int) =>
-         |   OUTPUTS(0).R8[Coll[Byte]].get.indices(j) == OUTPUTS(0).R8[Coll[Byte]].get.indices(j)
-         |  })
-      """
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
-      s"""{
-         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
-         |     $check
-         |  })
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+    assert(warmUpPrecondition)
+    (0 until 40) foreach { i =>
+      val check = "OUTPUTS(0).R7[Coll[Byte]].get.indices.getOrElse(i, i) == i"
+      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.indices.forall({(i:Int) => $check})").mkString(" && ")
+      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+    }
   }
 
   property("large loop: collection.filter") {
-    val check = "OUTPUTS(0).R8[Coll[Byte]].get.filter({(j:Byte) => i == j}).size == 1"
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
-      s"""{
-         |  OUTPUTS(0).R8[Coll[Byte]].get.filter({(i:Byte) =>
-         |     $check
-         |  }).size == 0
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+    assert(warmUpPrecondition)
+    (0 until 40) foreach { i =>
+      val check = "i == 1"
+      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.filter({(i:Byte) => $check}).size == 0").mkString(" && ")
+      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+    }
   }
 
-  property("large loop: collection allocation and comparison") {
+  property("large loop: collection allocation") {
     assert(warmUpPrecondition)
-    val check = "Coll(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)" +
-      " != Coll(i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i,i)"
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
-      s"""{
-         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
-         |     $check
-         |  })
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+    1900 +: (0 until 20) foreach { i =>
+      val check = genNestedScript("Coll(i", "", ",i", i) + s") == Coll(i)"
+      val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
+      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+    }
   }
 
   property("large loop: extract registers") {
-    val check = "(SELF.R0[Long].get == SELF.R9[Long].getOrElse(SELF.R0[Long].get)) && (SELF.R4[Byte].get == (i - 1)) && INPUTS(0).R5[SigmaProp].get == OUTPUTS(0).R5[SigmaProp].get && INPUTS(0).R6[Int].get == OUTPUTS(0).R6[Int].get"
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check),
-      s"""{
-         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) =>
-         |     $check
-         |  })
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+    assert(warmUpPrecondition)
+    50 +: (0 until 20) foreach { i =>
+      val check = "(SELF.R0[Long].get == SELF.R9[Long].getOrElse(SELF.R0[Long].get)) && (SELF.R4[Byte].get == (i - 1)) && INPUTS(0).R5[SigmaProp].get == OUTPUTS(0).R5[SigmaProp].get && INPUTS(0).R6[Int].get == OUTPUTS(0).R6[Int].get"
+      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
+      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+    }
   }
 
   property("large loop: if") {
