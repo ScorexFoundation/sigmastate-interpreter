@@ -207,11 +207,16 @@ trait Interpreter extends ScorexLogging {
     })
     if (outputComputedResults) {
       res.foreach { case (ok, cost) =>
-        val scaledCost = cost * 2 // this is the scale factor of CostModel with respect to the concrete hardware
+        val scaledCost = cost * 2 + 4000 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds
-        val delta = (scaledCost - timeMicro).toDouble
-        val error = (delta / timeMicro * 100).formatted(s"%10.3f")
-        println(s"Result: $ok, Validation Time: $timeMicro, Estimated Cost: $scaledCost, Error: $error %")
+        val error = if (scaledCost > timeMicro) {
+          val error = ((scaledCost / timeMicro.toDouble - 1) * 100d).formatted(s"%10.3f")
+          error
+        } else {
+          val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
+          error
+        }
+        println(s"Res-Time-Cost-Error,$ok,$timeMicro,$scaledCost,$error")
       }
     }
     res
