@@ -334,7 +334,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
     def builder: Rep[CostedBuilder] = costedBuilder
     def value: Rep[Thunk[A]] = Thunk { costedBlock.force().value }
-    def cost: Rep[Int] = costedBlock.force().cost
+    def cost: Rep[Int] = ThunkForce(Thunk(costedBlock.force.cost)) + thunkCost
     override def size: RSize[Thunk[A]] = SizeThunkCtor(Thunk { costedBlock.force().size })
   }
 
@@ -557,6 +557,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case Cast(eTo: Elem[to], x) if eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass) =>
         x
 
+      // Rule: ThunkDef(x, Nil).force => x
+      case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
+
       case SM.dataSize(Def(CSizeCollCtor(CBM.replicate(_, n, s: RSize[a]@unchecked)))) => s.dataSize * n.toLong
 
       case SM.dataSize(Def(CSizeCollCtor(sizes @ EValOfSizeColl(eVal)))) if eVal.isConstantSize =>
@@ -616,17 +619,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             }
         )
         RCCostedPrim(resV, resC + len * CostTable.lambdaInvoke, resS)
-
-      case OpCost(_, id, args, cost) if args.exists(_ == IntZero) =>
-        val zero = IntZero
-        val nonZeroArgs = args.filterNot(_ == zero)
-        val res: Rep[Int] =
-          if (cost == zero && nonZeroArgs.isEmpty) zero
-          else {
-            val lamVar = lambdaStack.head.x
-            OpCost(lamVar, id, nonZeroArgs, cost)
-          }
-        res
 
       case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
         accCost.rhs match {
@@ -705,9 +697,13 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
           if (args.contains(cost))
             !!!(s"Invalid OpCost($id, $args, $cost)")
         }
-//        val (ops, others) = args.partition(_.rhs.isInstanceOf[OpCost])
-        if (args.exists(_ == IntZero)) {
-          val zero = IntZero
+        val zero = IntZero
+// TODO this optimization can be applied after assertion assertValueIdForOpCost is removed (or relaxed)
+//        if (cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
+//          args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
+//        }
+//        else
+        if (args.exists(_ == zero)) {
           val nonZeroArgs = args.filterNot(_ == zero)
           val res: Rep[Int] =
             if (cost == zero && nonZeroArgs.isEmpty) zero
@@ -1487,7 +1483,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             val sizeF = fC.sliceSize
             val value = xC.value
             val y: Rep[Any] = Apply(calcF, value, false)
-            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), Apply(costF, Pair(IntZero, xC.size), false))
+            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), asRep[Int](Apply(costF, Pair(IntZero, xC.size), false)) + CostTable.lambdaInvoke)
             val s: Rep[Size[Any]]= Apply(sizeF, xC.size, false)
             RCCostedPrim(y, c, s)
         }

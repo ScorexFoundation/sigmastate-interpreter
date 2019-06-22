@@ -34,7 +34,9 @@ import scala.util.Try
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
   */
 class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
-  implicit lazy val IR: TestingIRContext = new TestingIRContext
+  implicit lazy val IR: TestingIRContext = new TestingIRContext {
+    substFromCostTable = false
+  }
 
   //we assume that verifier must finish verification of any script in less time than 1M hash calculations
   // (for the Blake2b256 hash function over a single block input)
@@ -175,7 +177,22 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("Too costly flatMap") {
     assert(warmUpPrecondition)
-    val script = (0 to 92).map(j => s"INPUTS.flatMap({ (in: Box) => in.propositionBytes }).forall({(i:Byte) => OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j})").mkString(" && ")
+    val script = (0 to 1).map(j =>
+      s"""INPUTS.flatMap({ (in: Box) => in.propositionBytes })
+         |  .forall({(i:Byte) =>
+         |     OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j
+         |   })""".stripMargin).mkString(" && \n")
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "Too costly flatMap"), script).asBoolValue.toSigmaProp
+    checkScript(prop)
+  }
+
+  property("Too costly flatMap2") {
+    assert(warmUpPrecondition)
+    val script = (0 to 1).map(j =>
+      s"""INPUTS.flatMap({ (in: Box) => in.propositionBytes })
+         |  .forall({(i:Byte) =>
+         |     OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j
+         |   })""".stripMargin).mkString(" && \n")
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "Too costly flatMap"), script).asBoolValue.toSigmaProp
     checkScript(prop)
   }
@@ -212,7 +229,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("int comparison, cost a bit lower than limit ") {
     assert(warmUpPrecondition)
-    (0 until 15) foreach { i =>
+    (0 until 1) foreach { i =>
       val check = "i >= 0"
       val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
       val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
