@@ -24,7 +24,13 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
-  type RCostingResultEx[T] = Rep[(Costed[Context] => Costed[T], ((Context, (Int, Size[Context]))) => Int)]
+
+  case class RCostingResultEx[T](
+    costedGraph: Rep[Costed[Context] => Costed[T]],
+    costF: Rep[((Context, (Int, Size[Context]))) => Int]
+  ) {
+    lazy val calcF: Rep[Context => Any] = costedGraph.sliceCalc(true)
+  }
 
   def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
@@ -51,7 +57,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     }
     val g = buildGraph(env, typed)
     val costF = g.sliceCostEx
-    Pair(g, costF)
+    RCostingResultEx(g, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
