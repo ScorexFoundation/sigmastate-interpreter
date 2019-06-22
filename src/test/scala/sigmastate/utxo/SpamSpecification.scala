@@ -172,6 +172,32 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     true
   }
 
+
+  property("Too costly flatMap") {
+    assert(warmUpPrecondition)
+    val script = (0 to 92).map(j => s"INPUTS.flatMap({ (in: Box) => in.propositionBytes }).forall({(i:Byte) => OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j})").mkString(" && ")
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "Too costly flatMap"), script).asBoolValue.toSigmaProp
+    checkScript(prop)
+  }
+
+  property("map") {
+    assert(warmUpPrecondition)
+    (0 until (100, 5)) foreach { i =>
+      val script = (0 to i).map(j => s"OUTPUTS.map({ (in: Box) => in.R7[Coll[Byte]].get}).forall({(c:Coll[Byte]) => c.forall({(c2: Byte) => c2 + ${j + 3} > 0}) })").mkString(" && ")
+      val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "map"), script).asBoolValue.toSigmaProp
+      checkScript(prop)
+    }
+  }
+
+  property("map 2") {
+    assert(warmUpPrecondition)
+    (0 until (100, 5)) foreach { i =>
+      val script = (0 to i).map(j => s"OUTPUTS(0).R7[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS.map({ (in: Box) => in.R7[Coll[Byte]].get}) != INPUTS.map({ (in: Box) => in.R7[Coll[Byte]].get}) || i > 0})").mkString(" && ")
+      val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "map"), script).asBoolValue.toSigmaProp
+      checkScript(prop)
+    }
+  }
+
   property("large loop: int comparison") {
     val check = "i >= 0"
     val prop = compile(maxSizeCollEnv + (ScriptNameProp -> check),
