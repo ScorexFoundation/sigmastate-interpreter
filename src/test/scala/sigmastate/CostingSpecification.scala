@@ -116,7 +116,7 @@ class CostingSpecification extends SigmaTestingData {
   property("atLeast costs") {
     val concrCollCost = proveDlogEvalCost
     cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }") shouldBe
-      (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + concreteCollCost)
+      (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + collToColl)
   }
 
   property("allZK costs") {
@@ -140,7 +140,7 @@ class CostingSpecification extends SigmaTestingData {
   property("byteArrayToBigInt") {
     cost("{ byteArrayToBigInt(Coll[Byte](1.toByte)) > 0 }") shouldBe
       (constCost // byte const
-        + concreteCollCost // concrete collection
+        + collToColl // concrete collection
         + constCost * 1 // build from array cost
         + castOp + newBigIntPerItem + comparisonBigInt + constCost)
   }
@@ -148,7 +148,7 @@ class CostingSpecification extends SigmaTestingData {
   property("byteArrayToLong") {
     cost("{ byteArrayToLong(Coll[Byte](1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte)) > 0 }") shouldBe
       (constCost // byte const
-        + concreteCollCost // concrete collection
+        + collToColl // concrete collection
         + constCost * 8 // build from array cost
         + castOp + GTConstCost)
   }
@@ -275,7 +275,7 @@ class CostingSpecification extends SigmaTestingData {
           Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
           avlTreeOp
         )
-        + concreteCollCost + constCost + constCost + selectField)
+        + collToColl + constCost + constCost + selectField)
     cost(s"{ $selfTree.remove(keys, lookupProof).isDefined }") shouldBe
       (AccessTree +
         perKbCostOf(
@@ -289,7 +289,7 @@ class CostingSpecification extends SigmaTestingData {
           Seq(sizeOf(avlTree), sizeOf(key2), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
           avlTreeOp
         )
-        + concreteCollCost + constCost + constCost + selectField)
+        + collToColl + constCost + constCost + selectField)
   }
 
   property("Coll operations cost") {
@@ -328,11 +328,11 @@ class CostingSpecification extends SigmaTestingData {
       (selectField + accessBox * tx.outputs.length +
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
     cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }") shouldBe
-      (AccessHeaderCost + constCost + constCost + concreteCollCost + selectField + collToColl + LengthGTConstCost)
+      (AccessHeaderCost + constCost + constCost + collToColl + selectField + collToColl + LengthGTConstCost)
     cost(s"{ $collBytes.updated(0, 1.toByte).size > 0 }") shouldBe
       (AccessHeaderCost + selectField + collToColl + LengthGTConstCost)
     cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }") shouldBe
-      (AccessHeaderCost + selectField + concreteCollCost + concreteCollCost + constCost + constCost + collToColl + LengthGTConstCost)
+      (AccessHeaderCost + selectField + collToColl + collToColl + constCost + constCost + collToColl + LengthGTConstCost)
   }
 
   property("Option operations cost") {

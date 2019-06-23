@@ -50,7 +50,6 @@ object CostTable {
   val groupElementConst = 1
   val decodePointCost = 1
   val constCost = 10
-  val concreteCollCost = 1
   val lambdaCost = 10
 
   /** Cost of creating new instances (kind of memory allocation cost).
