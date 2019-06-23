@@ -68,8 +68,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import CSizeContext._
   import OpCodes._
 
-  val okPrintEvaluatedEntries: Boolean = false
-
   private val SCM = SizeContextMethods
   private val SBM = SizeBoxMethods
   private val SSPM = SizeSigmaPropMethods

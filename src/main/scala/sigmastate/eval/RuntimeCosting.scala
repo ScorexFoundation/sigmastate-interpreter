@@ -91,6 +91,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   this.useAlphaEquality = false
 //  unfoldWithOriginalFunc = unfoldWithOrig
 
+  /** Whether to print values of evaluated nodes of the graph. */
+  val okPrintEvaluatedEntries: Boolean = false
+
   /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
     * true - substitute; false - create CostOf nodes */
   var substFromCostTable: Boolean = true
@@ -334,7 +337,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
     def builder: Rep[CostedBuilder] = costedBuilder
     def value: Rep[Thunk[A]] = Thunk { costedBlock.force().value }
-    def cost: Rep[Int] = ThunkForce(Thunk(costedBlock.force.cost)) + thunkCost
+    def cost: Rep[Int] = asRep[Int](ThunkForce(Thunk(costedBlock.force.cost))) + thunkCost
     override def size: RSize[Thunk[A]] = SizeThunkCtor(Thunk { costedBlock.force().size })
   }
 
