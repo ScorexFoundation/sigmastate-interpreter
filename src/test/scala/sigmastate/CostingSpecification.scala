@@ -21,7 +21,7 @@ import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries = true
+//    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
@@ -217,8 +217,8 @@ class CostingSpecification extends SigmaTestingData {
         (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
 
     cost(s"{ $coll.flatMap({ (b: Box) => b.propositionBytes }).size > 0 }")(
-      lambdaCost + extractCost + selectField +
-          (accessBox + extractCost )  * nOutputs + collToColl + LengthGTConstCost)
+      lambdaCost + selectField +
+          (accessBox + extractCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
 
     cost(s"{ $coll.zip(OUTPUTS).size > 0 }")(
       selectField + accessBox * tx.outputs.length +
