@@ -1,20 +1,20 @@
 package sigmastate
 
-import org.ergoplatform.ErgoLikeContext.{dummyPubkey, dummyPreHeader, noHeaders, noBoxes}
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, dummyPubkey, noBoxes, noHeaders}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, BooleanConstant, IntConstant}
+import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, IntConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.utxo.CostTable
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.utxo.{CostTable, CostTableStat}
 import sigmastate.utxo.CostTable._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import special.sigma.{SigmaTestingData, AvlTree}
+import special.sigma.{AvlTree, SigmaTestingData}
 import Sized._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
@@ -141,7 +141,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ byteArrayToBigInt(Coll[Byte](1.toByte)) > 0 }") shouldBe
       (constCost // byte const
         + collToColl // concrete collection
-        + constCost * 1 // build from array cost
+        + concreteCollectionItemCost * 1 // build from array cost
         + castOp + newBigIntPerItem + comparisonBigInt + constCost)
   }
 
@@ -149,7 +149,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ byteArrayToLong(Coll[Byte](1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte)) > 0 }") shouldBe
       (constCost // byte const
         + collToColl // concrete collection
-        + constCost * 8 // build from array cost
+        + concreteCollectionItemCost * 8 // build from array cost
         + castOp + GTConstCost)
   }
 
@@ -275,21 +275,21 @@ class CostingSpecification extends SigmaTestingData {
           Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
           avlTreeOp
         )
-        + collToColl + constCost + constCost + selectField)
+        + concreteCollectionItemCost + collToColl + constCost * 2 + newPairValueCost + selectField)
     cost(s"{ $selfTree.remove(keys, lookupProof).isDefined }") shouldBe
       (AccessTree +
         perKbCostOf(
           Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
           avlTreeOp
         )
-        + constCost + selectField)
-    cost(s"{ $selfTree.insert(Coll[(Coll[Byte], Coll[Byte])]((key2, key1)), lookupProof).isDefined }") shouldBe
-      (AccessTree +
-        perKbCostOf(
-          Seq(sizeOf(avlTree), sizeOf(key2), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
-          avlTreeOp
-        )
-        + collToColl + constCost + constCost + selectField)
+        + constCost * 2 + selectField)
+//    cost(s"{ $selfTree.insert(Coll[(Coll[Byte], Coll[Byte])]((key2, key1)), lookupProof).isDefined }") shouldBe
+//      (AccessTree +
+//        perKbCostOf(
+//          Seq(sizeOf(avlTree), sizeOf(key2), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+//          avlTreeOp
+//        )
+//        + concreteCollectionItemCost + collToColl + constCost * 3 + newPairValueCost + selectField)
   }
 
   property("Coll operations cost") {
