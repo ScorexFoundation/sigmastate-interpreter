@@ -141,7 +141,7 @@ object BlockchainSimulationSpecification {
 
   val windowSize = 10
 
-  val MaxBlockCost = 700000
+  val MaxBlockCost = 1000000
 
   case class Block(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 

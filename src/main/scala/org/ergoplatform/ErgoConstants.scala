@@ -32,6 +32,7 @@ object ErgoConstants {
     "Registers count should not be greater than provided value") {
   }
 
+  // TODO set to 1500 and make tests pass by using this constant there
   object MaxPropositionBytes extends SizeConstant[Int](Sized.SizePropositionBytesMax.dataSize.toInt, 5,
     "Max length of Box.propositionBytes collection") {
   }

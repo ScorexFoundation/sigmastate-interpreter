@@ -96,7 +96,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     */
   private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Unit = {
     val scriptSize = serializedScriptSize(spamScript)
-    assert(scriptSize <= MaxPropositionBytes.value - 2000, s"Script size $scriptSize is too big, fix the test")
+    // TODO use MaxPropositionBytes constant here once its value can be decreased without failing tests
+    assert(scriptSize <= 1500, s"Script size $scriptSize is too big, fix the test")
 
     val ctx = {
 
@@ -199,7 +200,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("Too costly flatMap") {
     assert(warmUpPrecondition)
-    repeatScript("Too costly flatMap", 50, 5) { scale =>
+    repeatScript("Too costly flatMap", 30, 5) { scale =>
       val script = (1 to scale).map(j =>
         s"""INPUTS.flatMap({ (in: Box) => in.propositionBytes })
           |  .forall({(i:Byte) =>
@@ -211,7 +212,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("Too costly flatMap2") {
     assert(warmUpPrecondition)
-    repeatScript("Too costly flatMap2", 65, 5) { size =>
+    repeatScript("Too costly flatMap2", 46, 5) { size =>
       val prefix = s"val outBytes = OUTPUTS.flatMap({ (out: Box) => out.propositionBytes })"
       val body = (1 to size).map(j =>
         s"""INPUTS.flatMap({ (in: Box) => in.propositionBytes })
@@ -229,7 +230,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("map") {
     assert(warmUpPrecondition)
-    repeatScript("map", 50, 5) { scale =>
+    repeatScript("map", 30, 5) { scale =>
       val script = (1 to scale).map(j =>
         s"""OUTPUTS.map({ (in: Box) => in.R7[Coll[Byte]].get})
            |  .forall({(c:Coll[Byte]) =>
@@ -265,7 +266,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   property("int comparison, cost a bit lower than limit ") {
     assert(warmUpPrecondition)
     val check = "i >= 0"
-    repeatScript(check, 100,5) { scale =>
+    repeatScript(check, 86,5) { scale =>
       val script = (1 to scale).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
       compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
     }
@@ -381,7 +382,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("collection element by index, cost a bit lower than limit") {
     assert(warmUpPrecondition)
-    repeatScript("collection element by index", 45, 5) { scale =>
+    repeatScript("collection element by index", 36, 5) { scale =>
       val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
       val script = genNestedScript("true ", "", s" && $check", scale)
       compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp
@@ -424,7 +425,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: collection allocation") {
     assert(warmUpPrecondition)
-    800 +: (0 until 20) foreach { i =>
+    400 +: (0 until 20) foreach { i =>
       val check = genNestedScript("Coll(i", "", ",i", i) + s") == Coll(i)"
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
       checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
@@ -433,7 +434,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: extract registers") {
     assert(warmUpPrecondition)
-    repeatScript("large loop: extract registers", 25, 5) { i =>
+    repeatScript("large loop: extract registers", 16, 5) { i =>
       val check = "(SELF.R0[Long].get == SELF.R9[Long].getOrElse(SELF.R0[Long].get)) && (SELF.R4[Byte].get == (i - 1)) && INPUTS(0).R5[SigmaProp].get == OUTPUTS(0).R5[SigmaProp].get && INPUTS(0).R6[Int].get == OUTPUTS(0).R6[Int].get"
       val script = (1 to i).map(_ =>
         s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
@@ -579,7 +580,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       new ContextEnrichingTestProvingInterpreter().dlogSecrets.head.publicImage
     }
     // should not consume too much time for valid number of keys in a ring
-    checkScript(OR(publicImages.take(45).map(image => SigmaPropConstant(image).isProven)).toSigmaProp, emptyProofs = false)
+    checkScript(OR(publicImages.take(35).map(image => SigmaPropConstant(image).isProven)).toSigmaProp, emptyProofs = false)
   }
 
   // todo construct transaction with at least one output and check the same properties for outputs

@@ -32,7 +32,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     case _ =>
       val block = generateBlock(state, miner, currentLevel, propOpt, extension)
       val updStateTry = state.applyBlock(block)
-      updStateTry.isSuccess shouldBe true
+      updStateTry.fold(t => throw t, identity)
       checkState(updStateTry.get, miner, currentLevel + 1, limit, propOpt, extension)
   }
 
@@ -74,7 +74,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
 object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
-  private val MaxBlockCost = 700000
+  private val MaxBlockCost = 1000000
 
   case class FullBlock(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 
