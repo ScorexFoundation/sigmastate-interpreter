@@ -1,0 +1,2282 @@
+Testing started at 17:37 ...
+/Library/Java/JavaVirtualMachines/jdk-11.0.3.jdk/Contents/Home/bin/java "-javaagent:/Users/slesarenko/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-2/183.6156.11/IntelliJ IDEA.app/Contents/lib/idea_rt.jar=51353:/Users/slesarenko/Library/Application Support/JetBrains/Toolbox/apps/IDEA-U/ch-2/183.6156.11/IntelliJ IDEA.app/Contents/bin" -Dfile.encoding=UTF-8 -classpath "/Users/slesarenko/Library/Application Support/IntelliJIdea2018.3/Scala/lib/runners.jar:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/target/scala-2.12/test-classes:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/target/scala-2.12/classes:/Users/slesarenko/.ivy2/cache/cglib/cglib/jars/cglib-3.2.3.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/macros_2.12/master-66dd765e-SNAPSHOT/jars/macros_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library_2.12/master-66dd765e-SNAPSHOT/jars/library_2.12-tests.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library_2.12/master-66dd765e-SNAPSHOT/jars/library_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library-impl_2.12/master-66dd765e-SNAPSHOT/jars/library-impl_2.12-tests.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library-impl_2.12/master-66dd765e-SNAPSHOT/jars/library-impl_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library-api_2.12/master-66dd765e-SNAPSHOT/jars/library-api_2.12-tests.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/library-api_2.12/master-66dd765e-SNAPSHOT/jars/library-api_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/core_2.12/master-66dd765e-SNAPSHOT/jars/core_2.12-tests.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/core_2.12/master-66dd765e-SNAPSHOT/jars/core_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/common_2.12/master-66dd765e-SNAPSHOT/jars/common_2.12-tests.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/common_2.12/master-66dd765e-SNAPSHOT/jars/common_2.12.jar:/Users/slesarenko/.ivy2/local/io.github.scalan/ast_2.12/master-66dd765e-SNAPSHOT/jars/ast_2.12.jar:/Users/slesarenko/.ivy2/cache/org.scalactic/scalactic_2.12/bundles/scalactic_2.12-3.0.8.jar:/Users/slesarenko/.ivy2/cache/org.bouncycastle/bcprov-jdk15on/jars/bcprov-jdk15on-1.62.jar:/Users/slesarenko/.ivy2/cache/org.scorexfoundation/scrypto_2.12/jars/scrypto_2.12-2.1.6.jar:/Users/slesarenko/.ivy2/cache/com.typesafe.scala-logging/scala-logging_2.12/bundles/scala-logging_2.12-3.9.2.jar:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/sigma-library/target/scala-2.12/test-classes:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/sigma-library/target/scala-2.12/classes:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/sigma-impl/target/scala-2.12/test-classes:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/sigma-impl/target/scala-2.12/classes:/Users/slesarenko/Projects/github/aslesarenko/sigma-state/sigma-api/target/scala-2.12/classes:/Users/slesarenko/.ivy2/cache/org.scalatest/scalatest_2.12/bundles/scalatest_2.12-3.0.5.jar:/Users/slesarenko/.ivy2/cache/ch.qos.logback/logback-classic/jars/logback-classic-1.3.0-alpha4.jar:/Users/slesarenko/.ivy2/cache/ch.qos.logback/logback-core/jars/logback-core-1.3.0-alpha4.jar:/Users/slesarenko/.ivy2/cache/com.github.kxbmap/configs_2.12/jars/configs_2.12-0.4.4.jar:/Users/slesarenko/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-3.0.2.jar:/Users/slesarenko/.ivy2/cache/com.google.guava/guava/bundles/guava-21.0.jar:/Users/slesarenko/.ivy2/cache/com.lihaoyi/fastparse-utils_2.12/jars/fastparse-utils_2.12-1.0.0.jar:/Users/slesarenko/.ivy2/cache/com.lihaoyi/fastparse_2.12/jars/fastparse_2.12-1.0.0.jar:/Users/slesarenko/.ivy2/cache/com.lihaoyi/sourcecode_2.12/bundles/sourcecode_2.12-0.1.4.jar:/Users/slesarenko/.ivy2/cache/com.novocode/junit-interface/jars/junit-interface-0.11.jar:/Users/slesarenko/.ivy2/cache/com.sun.mail/javax.mail/jars/javax.mail-1.6.0.jar:/Users/slesarenko/.ivy2/cache/com.trueaccord.lenses/lenses_2.12/jars/lenses_2.12-0.4.12.jar:/Users/slesarenko/.ivy2/cache/commons-io/commons-io/jars/commons-io-2.5.jar:/Users/slesarenko/.ivy2/cache/javax.activation/activation/jars/activation-1.1.jar:/Users/slesarenko/.ivy2/cache/jline/jline/jars/jline-2.14.3.jar:/Users/slesarenko/.ivy2/cache/junit/junit/jars/junit-4.12.jar:/Users/slesarenko/.ivy2/cache/org.apache.ant/ant/jars/ant-1.9.6.jar:/Users/slesarenko/.ivy2/cache/org.apache.ant/ant-launcher/jars/ant-launcher-1.9.6.jar:/Users/slesarenko/.ivy2/cache/org.bitbucket.inkytonik.dsinfo/dsinfo_2.12/jars/dsinfo_2.12-0.4.0.jar:/Users/slesarenko/.ivy2/cache/org.bitbucket.inkytonik.dsprofile/dsprofile_2.12/jars/dsprofile_2.12-0.4.0.jar:/Users/slesarenko/.ivy2/cache/org.bitbucket.inkytonik.kiama/kiama_2.12/jars/kiama_2.12-2.1.0.jar:/Users/slesarenko/.ivy2/cache/org.hamcrest/hamcrest-core/jars/hamcrest-core-1.3.jar:/Users/slesarenko/.ivy2/cache/org.objenesis/objenesis/jars/objenesis-2.4.jar:/Users/slesarenko/.ivy2/cache/org.ow2.asm/asm/jars/asm-5.0.4.jar:/Users/slesarenko/.ivy2/cache/org.rogach/scallop_2.12/jars/scallop_2.12-2.1.1.jar:/Users/slesarenko/.ivy2/cache/org.rudogma/supertagged_2.12/jars/supertagged_2.12-1.4.jar:/Users/slesarenko/.ivy2/cache/org.scala-lang.modules/scala-java8-compat_2.12/bundles/scala-java8-compat_2.12-0.8.0.jar:/Users/slesarenko/.ivy2/cache/org.scala-sbt/test-interface/jars/test-interface-1.0.jar:/Users/slesarenko/.ivy2/cache/org.slf4j/slf4j-api/jars/slf4j-api-1.8.0-beta1.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/macro-compat_2.12/jars/macro-compat_2.12-1.1.1.jar:/Users/slesarenko/.ivy2/cache/org.whispersystems/curve25519-java/jars/curve25519-java-0.5.0.jar:/Users/slesarenko/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.12.8.jar:/Users/slesarenko/.ivy2/cache/org.scala-lang/scala-reflect/jars/scala-reflect-2.12.8.jar:/Users/slesarenko/.ivy2/cache/org.spire-math/debox_2.12/jars/debox_2.12-0.8.0.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/algebra_2.12/jars/algebra_2.12-0.7.0.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/cats-kernel_2.12/jars/cats-kernel_2.12-0.9.0.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/machinist_2.12/jars/machinist_2.12-0.6.1.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/spire-macros_2.12/jars/spire-macros_2.12-0.14.1.jar:/Users/slesarenko/.ivy2/cache/org.typelevel/spire_2.12/jars/spire_2.12-0.14.1.jar:/Users/slesarenko/.ivy2/cache/com.typesafe/config/bundles/config-1.3.3.jar:/Users/slesarenko/.ivy2/cache/com.typesafe.akka/akka-actor_2.12/jars/akka-actor_2.12-2.5.23.jar:/Users/slesarenko/.ivy2/cache/org.scalacheck/scalacheck_2.12/jars/scalacheck_2.12-1.14.0.jar:/Users/slesarenko/.ivy2/cache/org.scorexfoundation/scorex-util_2.12/jars/scorex-util_2.12-0.1.4.jar:/Users/slesarenko/.ivy2/cache/org.scala-lang.modules/scala-xml_2.12/bundles/scala-xml_2.12-1.0.6.jar" org.jetbrains.plugins.scala.testingSupport.scalaTest.ScalaTestRunner -s sigmastate.utxo.SpamSpecification -C org.jetbrains.plugins.scala.testingSupport.scalaTest.ScalaTestReporter -showProgressMessages true
+Warmup time: 3184
+ErgoTree Scale: 1
+Initalization Cost: 18600
+Verify time: 169 millis; SerializedSize: 43
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 59600
+Verify time: 264 millis; SerializedSize: 248
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 100600
+Verify time: 310 millis; SerializedSize: 453
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 141600
+Verify time: 356 millis; SerializedSize: 658
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 182600
+Verify time: 426 millis; SerializedSize: 863
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 26
+Initalization Cost: 223600
+Verify time: 339 millis; SerializedSize: 1068
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 31
+Initalization Cost: 264600
+Verify time: 357 millis; SerializedSize: 1273
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 36
+Initalization Cost: 305600
+Verify time: 379 millis; SerializedSize: 1478
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 41
+Initalization Cost: 346600
+Verify time: 419 millis; SerializedSize: 1683
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 46
+Initalization Cost: 387600
+Verify time: 455 millis; SerializedSize: 1888
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 1
+Initalization Cost: 18600
+Verify time: 16 millis; SerializedSize: 43
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 49800
+Verify time: 46 millis; SerializedSize: 199
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 79800
+Verify time: 75 millis; SerializedSize: 349
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 109800
+Verify time: 123 millis; SerializedSize: 499
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 139800
+Verify time: 125 millis; SerializedSize: 649
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 26
+Initalization Cost: 169800
+Verify time: 149 millis; SerializedSize: 799
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 31
+Initalization Cost: 199800
+Verify time: 181 millis; SerializedSize: 949
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 36
+Initalization Cost: 229800
+Verify time: 203 millis; SerializedSize: 1099
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 41
+Initalization Cost: 259800
+Verify time: 235 millis; SerializedSize: 1249
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 46
+Initalization Cost: 289800
+Verify time: 260 millis; SerializedSize: 1399
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 51
+Initalization Cost: 319800
+Verify time: 351 millis; SerializedSize: 1549
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 56
+Initalization Cost: 349800
+Verify time: 310 millis; SerializedSize: 1699
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 61
+Initalization Cost: 379800
+Verify time: 327 millis; SerializedSize: 1849
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2336325 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 1
+WARNING: An illegal reflective access operation has occurred
+WARNING: Illegal reflective access by net.sf.cglib.core.ReflectUtils$1 (file:/Users/slesarenko/.ivy2/cache/cglib/cglib/jars/cglib-3.2.3.jar) to method java.lang.ClassLoader.defineClass(java.lang.String,byte[],int,int,java.security.ProtectionDomain)
+WARNING: Please consider reporting this to the maintainers of net.sf.cglib.core.ReflectUtils$1
+WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
+WARNING: All illegal access operations will be denied in a future release
+Initalization Cost: 18200
+Name-Time-Cost-Error	"verify"	43000	41425	    -3.802
+Verify time: 46 millis; SerializedSize: 41
+Timeout: 745 millis
+Result: Success((true,41425))
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 57200
+Name-Time-Cost-Error	"verify"	138000	166925	    20.960
+Verify time: 139 millis; SerializedSize: 236
+Timeout: 745 millis
+Result: Success((true,166925))
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 96200
+Name-Time-Cost-Error	"verify"	207000	292425	    41.268
+Verify time: 208 millis; SerializedSize: 431
+Timeout: 745 millis
+Result: Success((true,292425))
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 135200
+Name-Time-Cost-Error	"verify"	273000	417925	    53.086
+Verify time: 275 millis; SerializedSize: 626
+Timeout: 745 millis
+Result: Success((true,417925))
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 174200
+Name-Time-Cost-Error	"verify"	348000	543425	    56.157
+Verify time: 349 millis; SerializedSize: 821
+Timeout: 745 millis
+Result: Success((true,543425))
+----------------------------
+ErgoTree Scale: 26
+Initalization Cost: 213200
+Name-Time-Cost-Error	"verify"	461000	668925	    45.103
+Verify time: 462 millis; SerializedSize: 1016
+Timeout: 745 millis
+Result: Success((true,668925))
+----------------------------
+ErgoTree Scale: 31
+Initalization Cost: 252200
+Name-Time-Cost-Error	"verify"	504000	794425	    57.624
+Verify time: 505 millis; SerializedSize: 1211
+Timeout: 745 millis
+Result: Success((true,794425))
+----------------------------
+ErgoTree Scale: 36
+Initalization Cost: 291200
+Name-Time-Cost-Error	"verify"	671000	919925	    37.098
+Verify time: 673 millis; SerializedSize: 1406
+Timeout: 745 millis
+Result: Success((true,919925))
+----------------------------
+ErgoTree Scale: 41
+Initalization Cost: 330200
+Verify time: 542 millis; SerializedSize: 1601
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1045425 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 46
+Initalization Cost: 369200
+Verify time: 566 millis; SerializedSize: 1796
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1170925 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 1
+Initalization Cost: 20800
+Name-Time-Cost-Error	"verify"	26000	25737	    -1.022
+Verify time: 26 millis; SerializedSize: 54
+Timeout: 745 millis
+Result: Success((true,25737))
+----------------------------
+Initalization Cost: 15600
+Name-Time-Cost-Error	"verify"	80000	630487	   688.109
+Verify time: 80 millis; SerializedSize: 28
+Timeout: 745 millis
+Result: Success((true,630487))
+----------------------------
+ErgoTree Scale: 1
+Initalization Cost: 15600
+Name-Time-Cost-Error	"verify"	78000	630487	   708.317
+Verify time: 78 millis; SerializedSize: 28
+Timeout: 745 millis
+Result: Success((true,630487))
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 33800
+Verify time: 18 millis; SerializedSize: 119
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 50800
+Verify time: 31 millis; SerializedSize: 204
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 67800
+Verify time: 41 millis; SerializedSize: 289
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 84800
+Verify time: 54 millis; SerializedSize: 374
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 26
+Initalization Cost: 101800
+Verify time: 60 millis; SerializedSize: 459
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 31
+Initalization Cost: 118800
+Verify time: 70 millis; SerializedSize: 544
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 36
+Initalization Cost: 135800
+Verify time: 80 millis; SerializedSize: 629
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 41
+Initalization Cost: 152800
+Verify time: 88 millis; SerializedSize: 714
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 46
+Initalization Cost: 169800
+Verify time: 100 millis; SerializedSize: 799
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 51
+Initalization Cost: 186800
+Verify time: 111 millis; SerializedSize: 884
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 56
+Initalization Cost: 203800
+Verify time: 122 millis; SerializedSize: 969
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 61
+Initalization Cost: 220800
+Verify time: 132 millis; SerializedSize: 1054
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 66
+Initalization Cost: 237800
+Verify time: 143 millis; SerializedSize: 1139
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 71
+Initalization Cost: 254800
+Verify time: 224 millis; SerializedSize: 1224
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 76
+Initalization Cost: 271800
+Verify time: 212 millis; SerializedSize: 1309
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 81
+Initalization Cost: 288800
+Verify time: 177 millis; SerializedSize: 1394
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 86
+Initalization Cost: 305800
+Verify time: 188 millis; SerializedSize: 1479
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 91
+Initalization Cost: 322800
+Verify time: 196 millis; SerializedSize: 1564
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 96
+Initalization Cost: 339800
+Verify time: 210 millis; SerializedSize: 1649
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065285 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21400
+Verify time: 8 millis; SerializedSize: 57
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1353087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 15600
+Name-Time-Cost-Error	"verify"	83000	630487	   659.623
+Verify time: 83 millis; SerializedSize: 28
+Timeout: 745 millis
+Result: Success((true,630487))
+----------------------------
+Initalization Cost: 16200
+Name-Time-Cost-Error	"verify"	113000	733487	   549.104
+Verify time: 114 millis; SerializedSize: 31
+Timeout: 745 millis
+Result: Success((true,733487))
+----------------------------
+Initalization Cost: 16800
+Name-Time-Cost-Error	"verify"	145000	836487	   476.888
+Verify time: 145 millis; SerializedSize: 34
+Timeout: 745 millis
+Result: Success((true,836487))
+----------------------------
+Initalization Cost: 17400
+Name-Time-Cost-Error	"verify"	174000	939487	   439.935
+Verify time: 175 millis; SerializedSize: 37
+Timeout: 745 millis
+Result: Success((true,939487))
+----------------------------
+Initalization Cost: 18000
+Verify time: 6 millis; SerializedSize: 40
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1042487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 18600
+Verify time: 6 millis; SerializedSize: 43
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1145487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 19200
+Verify time: 6 millis; SerializedSize: 46
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1248487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 19800
+Verify time: 6 millis; SerializedSize: 49
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1351487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20400
+Verify time: 6 millis; SerializedSize: 52
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1454487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21000
+Verify time: 13 millis; SerializedSize: 55
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1557487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21600
+Verify time: 6 millis; SerializedSize: 58
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1660487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22200
+Verify time: 7 millis; SerializedSize: 61
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1763487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22800
+Verify time: 7 millis; SerializedSize: 64
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1866487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23400
+Verify time: 7 millis; SerializedSize: 67
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1969487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 24000
+Verify time: 7 millis; SerializedSize: 70
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2072487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 24600
+Verify time: 8 millis; SerializedSize: 73
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2175487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25200
+Verify time: 7 millis; SerializedSize: 76
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2278487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25800
+Verify time: 8 millis; SerializedSize: 79
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2381487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 26400
+Verify time: 8 millis; SerializedSize: 82
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2484487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27000
+Verify time: 7 millis; SerializedSize: 85
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1024175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27600
+Verify time: 7 millis; SerializedSize: 88
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28200
+Verify time: 55 millis; SerializedSize: 91
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28800
+Verify time: 9 millis; SerializedSize: 94
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 29400
+Verify time: 8 millis; SerializedSize: 97
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1188015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 30000
+Verify time: 8 millis; SerializedSize: 100
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1228975 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 30600
+Verify time: 9 millis; SerializedSize: 103
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1269935 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31200
+Verify time: 9 millis; SerializedSize: 106
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1310895 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31800
+Verify time: 10 millis; SerializedSize: 109
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1351855 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32400
+Verify time: 9 millis; SerializedSize: 112
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1392815 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 33000
+Verify time: 8 millis; SerializedSize: 115
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1433775 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 33600
+Verify time: 8 millis; SerializedSize: 118
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1474735 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34200
+Verify time: 9 millis; SerializedSize: 121
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1515695 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34800
+Verify time: 9 millis; SerializedSize: 124
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1556655 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35400
+Verify time: 9 millis; SerializedSize: 127
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1597615 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36000
+Verify time: 10 millis; SerializedSize: 130
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1638575 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36600
+Verify time: 10 millis; SerializedSize: 133
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1679535 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37200
+Verify time: 10 millis; SerializedSize: 136
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1720495 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37800
+Verify time: 10 millis; SerializedSize: 139
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1761455 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 38400
+Verify time: 10 millis; SerializedSize: 142
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1802415 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39000
+Verify time: 10 millis; SerializedSize: 145
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1843375 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21400
+Verify time: 7 millis; SerializedSize: 57
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1353087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 15400
+Name-Time-Cost-Error	"verify"	72000	527887	   633.176
+Verify time: 72 millis; SerializedSize: 27
+Timeout: 745 millis
+Result: Success((true,527887))
+----------------------------
+Initalization Cost: 17200
+Name-Time-Cost-Error	"verify"	101000	632087	   525.829
+Verify time: 102 millis; SerializedSize: 36
+Timeout: 745 millis
+Result: Success((true,632087))
+----------------------------
+Initalization Cost: 17800
+Name-Time-Cost-Error	"verify"	133000	735087	   452.697
+Verify time: 134 millis; SerializedSize: 39
+Timeout: 745 millis
+Result: Success((true,735087))
+----------------------------
+Initalization Cost: 18400
+Name-Time-Cost-Error	"verify"	164000	838087	   411.029
+Verify time: 165 millis; SerializedSize: 42
+Timeout: 745 millis
+Result: Success((true,838087))
+----------------------------
+Initalization Cost: 19000
+Name-Time-Cost-Error	"verify"	196000	941087	   380.146
+Verify time: 196 millis; SerializedSize: 45
+Timeout: 745 millis
+Result: Success((true,941087))
+----------------------------
+Initalization Cost: 19600
+Verify time: 6 millis; SerializedSize: 48
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1044087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20200
+Verify time: 6 millis; SerializedSize: 51
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20800
+Verify time: 6 millis; SerializedSize: 54
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1250087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21400
+Verify time: 6 millis; SerializedSize: 57
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1353087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22000
+Verify time: 6 millis; SerializedSize: 60
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1456087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22600
+Verify time: 6 millis; SerializedSize: 63
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1559087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23200
+Verify time: 6 millis; SerializedSize: 66
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1662087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23800
+Verify time: 6 millis; SerializedSize: 69
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1765087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 24400
+Verify time: 6 millis; SerializedSize: 72
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1868087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25000
+Verify time: 7 millis; SerializedSize: 75
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1971087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25600
+Verify time: 7 millis; SerializedSize: 78
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2074087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 26200
+Verify time: 6 millis; SerializedSize: 81
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2177087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 26800
+Verify time: 7 millis; SerializedSize: 84
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2280087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27400
+Verify time: 7 millis; SerializedSize: 87
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2383087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28000
+Verify time: 8 millis; SerializedSize: 90
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2486087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28600
+Verify time: 8 millis; SerializedSize: 93
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1024175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 29200
+Verify time: 8 millis; SerializedSize: 96
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 29800
+Verify time: 8 millis; SerializedSize: 99
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 30400
+Verify time: 8 millis; SerializedSize: 102
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31000
+Verify time: 8 millis; SerializedSize: 105
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1188015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31600
+Verify time: 8 millis; SerializedSize: 108
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1228975 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32200
+Verify time: 8 millis; SerializedSize: 111
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1269935 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32800
+Verify time: 9 millis; SerializedSize: 114
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1310895 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 33400
+Verify time: 9 millis; SerializedSize: 117
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1351855 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34000
+Verify time: 9 millis; SerializedSize: 120
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1392815 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34600
+Verify time: 9 millis; SerializedSize: 123
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1433775 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35200
+Verify time: 9 millis; SerializedSize: 126
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1474735 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35800
+Verify time: 9 millis; SerializedSize: 129
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1515695 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36400
+Verify time: 9 millis; SerializedSize: 132
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1556655 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37000
+Verify time: 10 millis; SerializedSize: 135
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1597615 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37600
+Verify time: 10 millis; SerializedSize: 138
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1638575 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 38200
+Verify time: 10 millis; SerializedSize: 141
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1679535 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 38800
+Verify time: 10 millis; SerializedSize: 144
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1720495 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39400
+Verify time: 10 millis; SerializedSize: 147
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1761455 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 40000
+Verify time: 53 millis; SerializedSize: 150
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1802415 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 14600
+Name-Time-Cost-Error	"verify"	17000	424687	  2398.159
+Verify time: 17 millis; SerializedSize: 23
+Timeout: 745 millis
+Result: Success((true,424687))
+----------------------------
+Initalization Cost: 18800
+Verify time: 6 millis; SerializedSize: 44
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1248087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23000
+Verify time: 8 millis; SerializedSize: 65
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2071487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27200
+Verify time: 10 millis; SerializedSize: 86
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31400
+Verify time: 11 millis; SerializedSize: 107
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1474735 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35600
+Verify time: 13 millis; SerializedSize: 128
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1802415 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39800
+Verify time: 14 millis; SerializedSize: 149
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2130095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 44000
+Verify time: 16 millis; SerializedSize: 170
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2457775 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 48200
+Verify time: 18 millis; SerializedSize: 191
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2785455 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 52400
+Verify time: 20 millis; SerializedSize: 212
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 3113135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 56600
+Verify time: 21 millis; SerializedSize: 233
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 3440815 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 60800
+Verify time: 23 millis; SerializedSize: 254
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 3768495 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 65000
+Verify time: 24 millis; SerializedSize: 275
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 4096175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 69200
+Verify time: 27 millis; SerializedSize: 296
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 4423855 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 73400
+Verify time: 27 millis; SerializedSize: 317
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 4751535 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 77600
+Verify time: 29 millis; SerializedSize: 338
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 5079215 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 81800
+Verify time: 32 millis; SerializedSize: 359
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 5406895 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 86000
+Verify time: 31 millis; SerializedSize: 380
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 5734575 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 90200
+Verify time: 33 millis; SerializedSize: 401
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 6062255 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 94400
+Verify time: 35 millis; SerializedSize: 422
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 6389935 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 98600
+Verify time: 37 millis; SerializedSize: 443
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 6717615 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 102800
+Verify time: 38 millis; SerializedSize: 464
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 7045295 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 107000
+Verify time: 40 millis; SerializedSize: 485
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 7372975 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 111200
+Verify time: 44 millis; SerializedSize: 506
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 7700655 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 115400
+Verify time: 44 millis; SerializedSize: 527
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 8028335 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 119600
+Verify time: 46 millis; SerializedSize: 548
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 8356015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 123800
+Verify time: 46 millis; SerializedSize: 569
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 8683695 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 128000
+Verify time: 49 millis; SerializedSize: 590
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 9011375 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 132200
+Verify time: 52 millis; SerializedSize: 611
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 9339055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 136400
+Verify time: 53 millis; SerializedSize: 632
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 9666735 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22400
+Verify time: 11 millis; SerializedSize: 62
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1968487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 15800
+Name-Time-Cost-Error	"verify"	111000	733087	   560.439
+Verify time: 112 millis; SerializedSize: 29
+Timeout: 745 millis
+Result: Success((true,733087))
+----------------------------
+Initalization Cost: 18800
+Verify time: 7 millis; SerializedSize: 44
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1145687 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20200
+Verify time: 10 millis; SerializedSize: 51
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1249487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20800
+Verify time: 9 millis; SerializedSize: 54
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1352487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21400
+Verify time: 9 millis; SerializedSize: 57
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1455487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22000
+Verify time: 10 millis; SerializedSize: 60
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1558487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22600
+Verify time: 12 millis; SerializedSize: 63
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1661487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23200
+Verify time: 11 millis; SerializedSize: 66
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1764487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23800
+Verify time: 11 millis; SerializedSize: 69
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1867487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 24400
+Verify time: 12 millis; SerializedSize: 72
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1970487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25000
+Verify time: 12 millis; SerializedSize: 75
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2073487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 25600
+Verify time: 12 millis; SerializedSize: 78
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2176487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 26200
+Verify time: 12 millis; SerializedSize: 81
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2279487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 26800
+Verify time: 12 millis; SerializedSize: 84
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2382487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27400
+Verify time: 12 millis; SerializedSize: 87
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2485487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28000
+Verify time: 13 millis; SerializedSize: 90
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1024175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28600
+Verify time: 11 millis; SerializedSize: 93
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 29200
+Verify time: 10 millis; SerializedSize: 96
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 29800
+Verify time: 10 millis; SerializedSize: 99
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 30400
+Verify time: 10 millis; SerializedSize: 102
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1188015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31000
+Verify time: 10 millis; SerializedSize: 105
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1228975 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31600
+Verify time: 10 millis; SerializedSize: 108
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1269935 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32200
+Verify time: 10 millis; SerializedSize: 111
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1310895 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32800
+Verify time: 10 millis; SerializedSize: 114
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1351855 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 33400
+Verify time: 10 millis; SerializedSize: 117
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1392815 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34000
+Verify time: 11 millis; SerializedSize: 120
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1433775 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34600
+Verify time: 11 millis; SerializedSize: 123
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1474735 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35200
+Verify time: 11 millis; SerializedSize: 126
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1515695 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 35800
+Verify time: 13 millis; SerializedSize: 129
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1556655 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36400
+Verify time: 12 millis; SerializedSize: 132
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1597615 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37000
+Verify time: 12 millis; SerializedSize: 135
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1638575 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 37600
+Verify time: 12 millis; SerializedSize: 138
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1679535 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 38200
+Verify time: 12 millis; SerializedSize: 141
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1720495 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 38800
+Verify time: 12 millis; SerializedSize: 144
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1761455 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39400
+Verify time: 13 millis; SerializedSize: 147
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1802415 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 40000
+Verify time: 13 millis; SerializedSize: 150
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1843375 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 40600
+Verify time: 13 millis; SerializedSize: 153
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884335 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 41200
+Verify time: 13 millis; SerializedSize: 156
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1925295 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 41800
+Verify time: 13 millis; SerializedSize: 159
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1966255 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 42400
+Verify time: 14 millis; SerializedSize: 162
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2007215 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 43000
+Verify time: 14 millis; SerializedSize: 165
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2048175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 43600
+Verify time: 14 millis; SerializedSize: 168
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2089135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 44200
+Verify time: 14 millis; SerializedSize: 171
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2130095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 44800
+Verify time: 14 millis; SerializedSize: 174
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2171055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 45400
+Verify time: 14 millis; SerializedSize: 177
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2212015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 46000
+Verify time: 14 millis; SerializedSize: 180
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2252975 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 46600
+Verify time: 14 millis; SerializedSize: 183
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2293935 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 47200
+Verify time: 14 millis; SerializedSize: 186
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2334895 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 47800
+Verify time: 15 millis; SerializedSize: 189
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2375855 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 48400
+Verify time: 15 millis; SerializedSize: 192
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2416815 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 14600
+Name-Time-Cost-Error	"verify"	17000	424687	  2398.159
+Verify time: 17 millis; SerializedSize: 23
+Timeout: 745 millis
+Result: Success((true,424687))
+----------------------------
+Initalization Cost: 11400
+Name-Time-Cost-Error	"verify"	2000	11475	   473.750
+Verify time: 3 millis; SerializedSize: 7
+Timeout: 745 millis
+Result: Success((true,11475))
+----------------------------
+Initalization Cost: 15600
+Name-Time-Cost-Error	"verify"	18000	425737	  2265.206
+Verify time: 18 millis; SerializedSize: 28
+Timeout: 745 millis
+Result: Success((true,425737))
+----------------------------
+Initalization Cost: 19800
+Name-Time-Cost-Error	"verify"	33000	840000	  2445.455
+Verify time: 35 millis; SerializedSize: 49
+Timeout: 745 millis
+Result: Success((true,840000))
+----------------------------
+Initalization Cost: 24000
+Verify time: 13 millis; SerializedSize: 70
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1254262 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 28200
+Verify time: 17 millis; SerializedSize: 91
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1668525 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32400
+Verify time: 21 millis; SerializedSize: 112
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2082787 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36600
+Verify time: 22 millis; SerializedSize: 133
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2497050 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 40800
+Verify time: 27 millis; SerializedSize: 154
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 45000
+Verify time: 29 millis; SerializedSize: 175
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 49200
+Verify time: 34 millis; SerializedSize: 196
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 53400
+Verify time: 35 millis; SerializedSize: 217
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 57600
+Verify time: 38 millis; SerializedSize: 238
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 61800
+Verify time: 43 millis; SerializedSize: 259
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 66000
+Verify time: 44 millis; SerializedSize: 280
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 70200
+Verify time: 49 millis; SerializedSize: 301
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 74400
+Verify time: 51 millis; SerializedSize: 322
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 78600
+Verify time: 54 millis; SerializedSize: 343
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 82800
+Verify time: 72 millis; SerializedSize: 364
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 87000
+Verify time: 75 millis; SerializedSize: 385
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 91200
+Verify time: 79 millis; SerializedSize: 406
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 95400
+Verify time: 83 millis; SerializedSize: 427
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 99600
+Verify time: 87 millis; SerializedSize: 448
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 103800
+Verify time: 72 millis; SerializedSize: 469
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 108000
+Verify time: 77 millis; SerializedSize: 490
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 112200
+Verify time: 80 millis; SerializedSize: 511
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 116400
+Verify time: 84 millis; SerializedSize: 532
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 120600
+Verify time: 89 millis; SerializedSize: 553
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 124800
+Verify time: 126 millis; SerializedSize: 574
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 129000
+Verify time: 93 millis; SerializedSize: 595
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 133200
+Verify time: 97 millis; SerializedSize: 616
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 137400
+Verify time: 98 millis; SerializedSize: 637
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 141600
+Verify time: 100 millis; SerializedSize: 658
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 145800
+Verify time: 107 millis; SerializedSize: 679
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 150000
+Verify time: 106 millis; SerializedSize: 700
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 154200
+Verify time: 164 millis; SerializedSize: 721
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 158400
+Verify time: 115 millis; SerializedSize: 742
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 162600
+Verify time: 115 millis; SerializedSize: 763
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 166800
+Verify time: 118 millis; SerializedSize: 784
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 171000
+Verify time: 121 millis; SerializedSize: 805
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 175200
+Verify time: 126 millis; SerializedSize: 826
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 179400
+Verify time: 127 millis; SerializedSize: 847
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 183600
+Verify time: 130 millis; SerializedSize: 868
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 187800
+Verify time: 134 millis; SerializedSize: 889
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 192000
+Verify time: 136 millis; SerializedSize: 910
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 196200
+Verify time: 160 millis; SerializedSize: 931
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 200400
+Verify time: 160 millis; SerializedSize: 952
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 204600
+Verify time: 154 millis; SerializedSize: 973
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 208800
+Verify time: 184 millis; SerializedSize: 994
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 213000
+Verify time: 154 millis; SerializedSize: 1015
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 217200
+Verify time: 160 millis; SerializedSize: 1036
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1148175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 17000
+Verify time: 10 millis; SerializedSize: 35
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22400
+Verify time: 19 millis; SerializedSize: 62
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1597645 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 1
+Initalization Cost: 19600
+Name-Time-Cost-Error	"verify"	127000	583375	   359.350
+Verify time: 128 millis; SerializedSize: 48
+Timeout: 745 millis
+Result: Success((true,583375))
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 60600
+Verify time: 60 millis; SerializedSize: 253
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 101600
+Verify time: 66 millis; SerializedSize: 458
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 142600
+Verify time: 96 millis; SerializedSize: 663
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 183600
+Verify time: 121 millis; SerializedSize: 868
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 26
+Initalization Cost: 224600
+Verify time: 139 millis; SerializedSize: 1073
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 31
+Initalization Cost: 265600
+Verify time: 161 millis; SerializedSize: 1278
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 36
+Initalization Cost: 306600
+Verify time: 185 millis; SerializedSize: 1483
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 41
+Initalization Cost: 347600
+Verify time: 237 millis; SerializedSize: 1688
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1127400 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 214800
+Verify time: 111 millis; SerializedSize: 1024
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21200
+Name-Time-Cost-Error	"verify"	45000	431437	   858.749
+Verify time: 45 millis; SerializedSize: 56
+Timeout: 745 millis
+Result: Success((true,431437))
+----------------------------
+Initalization Cost: 28600
+Name-Time-Cost-Error	"verify"	78000	848537	   987.868
+Verify time: 78 millis; SerializedSize: 93
+Timeout: 745 millis
+Result: Success((true,848537))
+----------------------------
+Initalization Cost: 32400
+Verify time: 10 millis; SerializedSize: 112
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1262037 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36200
+Verify time: 13 millis; SerializedSize: 131
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1675537 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 40000
+Verify time: 14 millis; SerializedSize: 150
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2089037 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 43800
+Verify time: 16 millis; SerializedSize: 169
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2502537 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 47600
+Verify time: 18 millis; SerializedSize: 188
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 51400
+Verify time: 19 millis; SerializedSize: 207
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 55200
+Verify time: 21 millis; SerializedSize: 226
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 59000
+Verify time: 23 millis; SerializedSize: 245
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 62800
+Verify time: 26 millis; SerializedSize: 264
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 66600
+Verify time: 27 millis; SerializedSize: 283
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 70400
+Verify time: 28 millis; SerializedSize: 302
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 74200
+Verify time: 30 millis; SerializedSize: 321
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 78000
+Verify time: 31 millis; SerializedSize: 340
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 81800
+Verify time: 33 millis; SerializedSize: 359
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 85600
+Verify time: 34 millis; SerializedSize: 378
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 89400
+Verify time: 36 millis; SerializedSize: 397
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 93200
+Verify time: 43 millis; SerializedSize: 416
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 97000
+Verify time: 44 millis; SerializedSize: 435
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147345 exceeds the limit 1000000
+----------------------------
+
+Test Ignored
+Initalization Cost: 19200
+Name-Time-Cost-Error	"verify"	81000	480587	   493.317
+Verify time: 81 millis; SerializedSize: 46
+Timeout: 745 millis
+Result: Success((true,480587))
+----------------------------
+Initalization Cost: 24600
+Name-Time-Cost-Error	"verify"	140000	946887	   576.348
+Verify time: 140 millis; SerializedSize: 73
+Timeout: 745 millis
+Result: Success((true,946887))
+----------------------------
+Initalization Cost: 28400
+Verify time: 12 millis; SerializedSize: 92
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1411587 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 32200
+Verify time: 14 millis; SerializedSize: 111
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1876287 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36000
+Verify time: 16 millis; SerializedSize: 130
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2340987 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39800
+Verify time: 19 millis; SerializedSize: 149
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 43600
+Verify time: 21 millis; SerializedSize: 168
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 47400
+Verify time: 24 millis; SerializedSize: 187
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 51200
+Verify time: 25 millis; SerializedSize: 206
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 55000
+Verify time: 30 millis; SerializedSize: 225
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 58800
+Verify time: 31 millis; SerializedSize: 244
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 62600
+Verify time: 32 millis; SerializedSize: 263
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 66400
+Verify time: 33 millis; SerializedSize: 282
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 70200
+Verify time: 37 millis; SerializedSize: 301
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 74000
+Verify time: 37 millis; SerializedSize: 320
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 77800
+Verify time: 39 millis; SerializedSize: 339
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 81600
+Verify time: 42 millis; SerializedSize: 358
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 85400
+Verify time: 44 millis; SerializedSize: 377
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 89200
+Verify time: 46 millis; SerializedSize: 396
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 93000
+Verify time: 54 millis; SerializedSize: 415
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 96800
+Verify time: 57 millis; SerializedSize: 434
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 100600
+Verify time: 59 millis; SerializedSize: 453
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 104400
+Verify time: 58 millis; SerializedSize: 472
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 108200
+Verify time: 104 millis; SerializedSize: 491
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 112000
+Verify time: 62 millis; SerializedSize: 510
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 115800
+Verify time: 62 millis; SerializedSize: 529
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 119600
+Verify time: 64 millis; SerializedSize: 548
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 123400
+Verify time: 68 millis; SerializedSize: 567
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 127200
+Verify time: 68 millis; SerializedSize: 586
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 131000
+Verify time: 71 millis; SerializedSize: 605
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 134800
+Verify time: 108 millis; SerializedSize: 624
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 138600
+Verify time: 84 millis; SerializedSize: 643
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 142400
+Verify time: 89 millis; SerializedSize: 662
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 146200
+Verify time: 85 millis; SerializedSize: 681
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 150000
+Verify time: 82 millis; SerializedSize: 700
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 153800
+Verify time: 114 millis; SerializedSize: 719
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 157600
+Verify time: 87 millis; SerializedSize: 738
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 161400
+Verify time: 90 millis; SerializedSize: 757
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 165200
+Verify time: 108 millis; SerializedSize: 776
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 169000
+Verify time: 107 millis; SerializedSize: 795
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106325 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 16800
+Name-Time-Cost-Error	"verify"	90000	631725	   601.917
+Verify time: 91 millis; SerializedSize: 34
+Timeout: 745 millis
+Result: Success((true,631725))
+----------------------------
+Initalization Cost: 22600
+Verify time: 8 millis; SerializedSize: 63
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1149687 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 27200
+Verify time: 12 millis; SerializedSize: 86
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1666450 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 31800
+Verify time: 13 millis; SerializedSize: 109
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2183212 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 36400
+Verify time: 16 millis; SerializedSize: 132
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 41000
+Verify time: 19 millis; SerializedSize: 155
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 45600
+Verify time: 21 millis; SerializedSize: 178
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 50200
+Verify time: 23 millis; SerializedSize: 201
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 54800
+Verify time: 28 millis; SerializedSize: 224
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 59400
+Verify time: 28 millis; SerializedSize: 247
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 64000
+Verify time: 31 millis; SerializedSize: 270
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 68600
+Verify time: 33 millis; SerializedSize: 293
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 73200
+Verify time: 34 millis; SerializedSize: 316
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 77800
+Verify time: 36 millis; SerializedSize: 339
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 82400
+Verify time: 39 millis; SerializedSize: 362
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 87000
+Verify time: 42 millis; SerializedSize: 385
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 91600
+Verify time: 44 millis; SerializedSize: 408
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 96200
+Verify time: 46 millis; SerializedSize: 431
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 100800
+Verify time: 49 millis; SerializedSize: 454
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 105400
+Verify time: 51 millis; SerializedSize: 477
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 110000
+Verify time: 53 millis; SerializedSize: 500
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 114600
+Verify time: 57 millis; SerializedSize: 523
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 119200
+Verify time: 64 millis; SerializedSize: 546
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 123800
+Verify time: 66 millis; SerializedSize: 569
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 128400
+Verify time: 69 millis; SerializedSize: 592
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 133000
+Verify time: 73 millis; SerializedSize: 615
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 137600
+Verify time: 68 millis; SerializedSize: 638
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 142200
+Verify time: 70 millis; SerializedSize: 661
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 146800
+Verify time: 73 millis; SerializedSize: 684
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 151400
+Verify time: 77 millis; SerializedSize: 707
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 156000
+Verify time: 76 millis; SerializedSize: 730
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 160600
+Verify time: 77 millis; SerializedSize: 753
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 165200
+Verify time: 81 millis; SerializedSize: 776
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 169800
+Verify time: 133 millis; SerializedSize: 799
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 174400
+Verify time: 108 millis; SerializedSize: 822
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 179000
+Verify time: 112 millis; SerializedSize: 845
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 183600
+Verify time: 89 millis; SerializedSize: 868
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 188200
+Verify time: 103 millis; SerializedSize: 891
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 192800
+Verify time: 106 millis; SerializedSize: 914
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 197400
+Verify time: 110 millis; SerializedSize: 937
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065385 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 336200
+Verify time: 26 millis; SerializedSize: 1631
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 33177775 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 14600
+Name-Time-Cost-Error	"verify"	18000	424687	  2259.372
+Verify time: 18 millis; SerializedSize: 23
+Timeout: 745 millis
+Result: Success((true,424687))
+----------------------------
+Initalization Cost: 16400
+Verify time: 7 millis; SerializedSize: 32
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1143287 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 16800
+Verify time: 5 millis; SerializedSize: 34
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1246087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 17200
+Verify time: 6 millis; SerializedSize: 36
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1348887 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 17600
+Verify time: 5 millis; SerializedSize: 38
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1451687 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 18000
+Verify time: 6 millis; SerializedSize: 40
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1554487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 18400
+Verify time: 14 millis; SerializedSize: 42
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1657287 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 18800
+Verify time: 6 millis; SerializedSize: 44
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1760087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 19200
+Verify time: 5 millis; SerializedSize: 46
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1862887 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 19600
+Verify time: 6 millis; SerializedSize: 48
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1965687 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20000
+Verify time: 5 millis; SerializedSize: 50
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2068487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20400
+Verify time: 5 millis; SerializedSize: 52
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2171287 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 20800
+Verify time: 6 millis; SerializedSize: 54
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2274087 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21200
+Verify time: 5 millis; SerializedSize: 56
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2376887 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 21600
+Verify time: 6 millis; SerializedSize: 58
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2479687 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22000
+Verify time: 5 millis; SerializedSize: 60
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1024175 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22400
+Verify time: 6 millis; SerializedSize: 62
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1065135 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 22800
+Verify time: 5 millis; SerializedSize: 64
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1106095 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23200
+Verify time: 6 millis; SerializedSize: 66
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1147055 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23600
+Verify time: 6 millis; SerializedSize: 68
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1188015 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 1
+Initalization Cost: 29600
+Verify time: 29 millis; SerializedSize: 98
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884395 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 6
+Initalization Cost: 103200
+Verify time: 99 millis; SerializedSize: 466
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884395 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 11
+Initalization Cost: 175200
+Verify time: 166 millis; SerializedSize: 826
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884395 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 16
+Initalization Cost: 247200
+Verify time: 260 millis; SerializedSize: 1186
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884395 exceeds the limit 1000000
+----------------------------
+ErgoTree Scale: 21
+Initalization Cost: 319200
+Verify time: 301 millis; SerializedSize: 1546
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1884395 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 23400
+Verify time: 10 millis; SerializedSize: 67
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1457487 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 18000
+Name-Time-Cost-Error	"verify"	224000	837687	   273.967
+Verify time: 224 millis; SerializedSize: 40
+Timeout: 745 millis
+Result: Success((true,837687))
+----------------------------
+Initalization Cost: 22000
+Verify time: 11 millis; SerializedSize: 60
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2867425 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 55000
+Verify time: 11 millis; SerializedSize: 225
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 86507695 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 17600
+Name-Time-Cost-Error	"verify"	229000	939762	   310.376
+Verify time: 229 millis; SerializedSize: 38
+Timeout: 745 millis
+Result: Success((true,939762))
+----------------------------
+Initalization Cost: 18000
+Verify time: 16 millis; SerializedSize: 40
+Timeout: 745 millis
+Rejection cause: special.sigma.InvalidType: Cannot getReg[Int](4): invalid type of value Value(1) at id=4
+----------------------------
+Initalization Cost: 32200
+Verify time: 22 millis; SerializedSize: 111
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1188015 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 60000
+Name-Time-Cost-Error	"verify"	16000	162935	   918.344
+Verify time: 18 millis; SerializedSize: 250
+Timeout: 745 millis
+Result: Success((false,162935))
+----------------------------
+Prover cost: 1134137
+Initalization Cost: 353400
+Verify time: 11 millis; SerializedSize: 1717
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1487537 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 16800
+Verify time: 9 millis; SerializedSize: 34
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 2867495 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 34600
+Name-Time-Cost-Error	"verify"	44000	61137	    38.948
+Verify time: 44 millis; SerializedSize: 123
+Timeout: 745 millis
+Result: Success((true,61137))
+----------------------------
+Initalization Cost: 212200
+Verify time: 26 millis; SerializedSize: 1011
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 10060090 exceeds the limit 1000000
+----------------------------
+Initalization Cost: 39200
+Verify time: 8 millis; SerializedSize: 146
+Timeout: 745 millis
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 11253801 exceeds the limit 1000000
+----------------------------
+Name-Time-Cost-Error	"verify"	53000	1246150	  2251.226
+Name-Time-Cost-Error	"verify"	53000	1285352	  2325.192
+Prover time: 0.015 seconds
+Name-Time-Cost-Error	"verify"	8000	2250	  -255.556
+Prover time: 0.009 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.009 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.009 seconds
+Name-Time-Cost-Error	"verify"	8000	2250	  -255.556
+Prover time: 0.009 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.007 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.008 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.007 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Prover time: 0.007 seconds
+Name-Time-Cost-Error	"verify"	6000	2250	  -166.667
+Prover time: 0.008 seconds
+Name-Time-Cost-Error	"verify"	7000	2250	  -211.111
+Scale: 100
+Timeout: 0.745 seconds
+Verifier reject time: 0.25 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1129200 exceeds the limit 1000000
+Name-Time-Cost-Error	"t1_full_verify"	230000	2837450	  1133.674
+Full time to verify: 0.23 seconds
+Script full execution time 230 is less than timeout 745
+----------------------
+Scale: 200
+Timeout: 0.745 seconds
+Verifier reject time: 0.278 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 4458200 exceeds the limit 1000000
+Name-Time-Cost-Error	"t1_full_verify"	694000	11159950	  1508.062
+Full time to verify: 0.694 seconds
+Script full execution time 694 is less than timeout 745
+----------------------
+Scale: 300
+Timeout: 0.745 seconds
+Verifier reject time: 0.391 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 9987200 exceeds the limit 1000000
+Name-Time-Cost-Error	"t1_full_verify"	1410000	24982450	  1671.805
+Full time to verify: 1.411 seconds
+----------------------
+Scale: 400
+Timeout: 0.745 seconds
+Verifier reject time: 0.504 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 17716200 exceeds the limit 1000000
+Name-Time-Cost-Error	"t1_full_verify"	2510000	44304950	  1665.137
+Full time to verify: 2.51 seconds
+----------------------
+Scale: 500
+Timeout: 0.745 seconds
+Verifier reject time: 0.613 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 27645200 exceeds the limit 1000000
+Name-Time-Cost-Error	"t1_full_verify"	3926000	69127450	  1660.760
+Full time to verify: 3.926 seconds
+----------------------
+proof size: 7211971
+Timeout: 0.745 seconds
+Verifier reject time: 0.094 seconds
+Rejection cause: sigmastate.lang.exceptions.CostLimitException: Estimated expression complexity 1408850 exceeds the limit 1000000
+calc time: 42 millis
+
+Process finished with exit code 0

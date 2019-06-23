@@ -109,6 +109,7 @@ trait Interpreter extends ScorexLogging {
     import IR._
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
+    val initCost = context.initCost
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
       val costingRes = doCostingEx(env, exp, true)
       val costF = costingRes.costF
@@ -116,9 +117,8 @@ trait Interpreter extends ScorexLogging {
 
       CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
 
-
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost)
               .fold(t => throw t, identity)
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
@@ -218,8 +218,8 @@ trait Interpreter extends ScorexLogging {
           val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
           error
         }
-        val name = env.getOrElse(Interpreter.ScriptNameProp, "")
-        println(s"""Res-Time-Cost-Error,"$name",$timeMicro,$scaledCost,$error""")
+        val name = "\"" + env.getOrElse(Interpreter.ScriptNameProp, "") + "\""
+        println(s"Name-Time-Cost-Error\t$name\t$timeMicro\t$scaledCost\t$error")
       }
     }
     res

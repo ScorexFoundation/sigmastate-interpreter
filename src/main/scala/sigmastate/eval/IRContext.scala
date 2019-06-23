@@ -125,7 +125,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     * the old scripts at some point will die out of the blockchain.
     */
   def checkCostWithContext(ctx: SContext, exp: Value[SType],
-                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Try[Int] = Try {
+                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
     val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
@@ -133,11 +133,11 @@ trait IRContext extends Evaluation with TreeBuilding {
     if (estimatedCost != accCost)
       !!!(s"Estimated cost $estimatedCost should be equal $accCost")
 
-    val totalCost = CostTable.interpreterInitCost + estimatedCost
+    val totalCost = initCost + (estimatedCost.toDouble * CostTable.costFactor).toLong
     if (totalCost > maxCost) {
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
-    totalCost
+    totalCost.toInt
   }
 
 }

@@ -1150,17 +1150,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   val ePairOfCollByte = pairElement(eCollByte, eCollByte)
 
   def costedBooleanTransformer[T](node: BooleanTransformer[_],
-                                  xs: RCostedColl[T], calcF: Rep[T => Any], accCost: Rep[Int]) = {
+                                  xs: RCostedColl[T],
+                                  condition: RCosted[T => SType#WrappedType],
+                                  calcF: Rep[T => Any], accCost: Rep[Int]) = {
+    val args = Seq(xs.cost, condition.cost)
     val res = calcF.elem.eRange.asInstanceOf[Elem[_]] match {
       case BooleanElement =>
         node match {
           case _: ForAll[_] =>
             val value = xs.values.forall(asRep[T => Boolean](calcF))
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ForallMethod))
             withConstantSize(value, cost)
           case _: Exists[_] =>
             val value = xs.values.exists(asRep[T => Boolean](calcF))
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ExistsMethod))
             withConstantSize(value, cost)
         }
       case _: SigmaPropElem[_] =>
@@ -1169,11 +1172,11 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         node match {
           case _: ForAll[_] =>
             val value = sigmaDslBuilder.allZK(children)
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ForallMethod))
             RCCostedPrim(value, cost, size)
           case _: Exists[_] =>
             val value = sigmaDslBuilder.anyZK(children)
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ExistsMethod))
             RCCostedPrim(value, cost, size)
         }
     }
@@ -1402,7 +1405,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         } else {
           colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
         }
-        val res = costedBooleanTransformer(node, xs, calcF, cost)
+        val res = costedBooleanTransformer[Any](node, xs, conditionC, calcF, cost)
         res
 
       case MapCollection(input, sfunc) =>

@@ -32,13 +32,18 @@ object CostTable {
   type ExpressionCost = Int
 
   val MinimalCost = 10
-  val interpreterInitCost = 2000
+
+  val interpreterInitCost = 10000
+  val perGraphNodeCost = 200
+  /** Scaling factor to be applied to estimated cost. */
+  val costFactor: Double = 2.5d
+
   val expCost = 5000
   val multiplyGroup = 50
   val negateGroup = 50
   val groupElementConst = 1
-  val constCost = 1
-  val lambdaCost = 1
+  val constCost = 10
+  val lambdaCost = 10
 
   /** Cost of creating new instances (kind of memory allocation cost).
     * When the instance already exists them the corresponding Access/Extract cost should be added.
@@ -65,7 +70,7 @@ object CostTable {
   val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
-  val lambdaInvoke = 5  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
+  val lambdaInvoke = 30  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
   val concreteCollectionItemCost = 10  // since each item is a separate graph node
   val comparisonCost = 10
   val comparisonPerKbCost = 10
@@ -136,6 +141,8 @@ object CostTable {
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
+    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
+    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),

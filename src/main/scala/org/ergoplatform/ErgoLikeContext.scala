@@ -52,7 +52,8 @@ class ErgoLikeContext(val currentHeight: Height,
                       val self: ErgoBox,
                       val extension: ContextExtension,
                       val validationSettings: SigmaValidationSettings,
-                      val costLimit: Long
+                      val costLimit: Long,
+                      val initCost: Long
                  ) extends InterpreterContext {
 
   assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
@@ -67,22 +68,27 @@ class ErgoLikeContext(val currentHeight: Height,
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, newCostLimit)
+      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, newCostLimit, initCost)
+
+  override def withInitCost(newCost: Long): ErgoLikeContext =
+    new ErgoLikeContext(
+      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, costLimit, newCost)
 
   override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, extension, newVs, costLimit)
+      dataBoxes, boxesToSpend, spendingTransaction, self, extension, newVs, costLimit, initCost)
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings, costLimit)
+      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings, costLimit, initCost)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings, costLimit)
+      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings, costLimit, initCost)
 
   import ErgoLikeContext._
   import Evaluation._
@@ -134,7 +140,7 @@ object ErgoLikeContext {
       noHeaders,
       dummyPreHeader,
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension, vs, ScriptCostLimit.value)
+      boxesToSpend, spendingTransaction, self, extension, vs, ScriptCostLimit.value, 0L)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -146,7 +152,7 @@ object ErgoLikeContext {
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value)
+      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,

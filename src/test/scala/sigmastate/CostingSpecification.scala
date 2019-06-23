@@ -65,14 +65,14 @@ class CostingSpecification extends SigmaTestingData {
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value)
+      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
 
-  def cost(script: String): Long = {
+  def cost(script: String)(expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)
     val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
     if (printCosts)
       println(script + s" --> cost $res")
-    res - CostTable.interpreterInitCost  // subtract it here to simplify specification
+    res shouldBe ((expCost * CostTable.costFactor).toLong + CostTable.interpreterInitCost)
   }
 
   val ContextVarAccess = accessContextVar + selectField  // `getVar(id)` + `.get`
@@ -83,41 +83,39 @@ class CostingSpecification extends SigmaTestingData {
 
   property("basic (smoke) tests") {
 
-    cost("{ getVar[Boolean](2).get }") shouldBe ContextVarAccess
+    cost("{ getVar[Boolean](2).get }")(ContextVarAccess)
 
-    cost("{ getVar[Int](1).get > 1 }") shouldBe (ContextVarAccess + GTConstCost)
+    cost("{ getVar[Int](1).get > 1 }")(ContextVarAccess + GTConstCost)
 
     // accessing two context variables
-    cost("{ getVar[Int](1).get > 1 && getVar[Boolean](2).get }") shouldBe
-        (ContextVarAccess * 2 + GTConstCost + logicCost)
+    cost("{ getVar[Int](1).get > 1 && getVar[Boolean](2).get }")(ContextVarAccess * 2 + GTConstCost + logicCost)
 
     // the same var is used twice doesn't lead to double cost
-    cost("{ getVar[Int](1).get + 1 > getVar[Int](1).get }") shouldBe
-        (ContextVarAccess + plusMinus + constCost + comparisonCost)
+    cost("{ getVar[Int](1).get + 1 > getVar[Int](1).get }")(ContextVarAccess + plusMinus + constCost + comparisonCost)
 
     // cost is accumulated along the expression tree
-    cost("{ getVar[Int](1).get + 1 > getVar[Int](1).get && getVar[Boolean](2).get }") shouldBe
-        (ContextVarAccess * 2 + plusMinus + constCost + comparisonCost + logicCost)
+    cost("{ getVar[Int](1).get + 1 > getVar[Int](1).get && getVar[Boolean](2).get }")(
+      ContextVarAccess * 2 + plusMinus + constCost + comparisonCost + logicCost)
   }
 
   property("logical op costs") {
-    cost("{ val cond = getVar[Boolean](2).get; cond && cond }") shouldBe (ContextVarAccess + logicCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond || cond }") shouldBe (ContextVarAccess + logicCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }") shouldBe (ContextVarAccess + logicCost * 3 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }") shouldBe (ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond && cond }")(ContextVarAccess + logicCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond || cond }")(ContextVarAccess + logicCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }")(ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost * 3 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
   }
 
   property("SELF box operations cost") {
-    cost("{ SELF.value > 0 }") shouldBe (accessBox + extractCost + GTConstCost)
-    cost("{ SELF.id.size > 0 }") shouldBe (accessBox + extractCost + LengthGTConstCost)
-    cost("{ SELF.tokens.size > 0 }") shouldBe (accessBox + extractCost + LengthGTConstCost)
-    cost("{ SELF.creationInfo._1 > 0 }") shouldBe (accessBox + accessRegister + selectField + GTConstCost)
-    cost("{ SELF.R5[Int].get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+    cost("{ SELF.value > 0 }")(accessBox + extractCost + GTConstCost)
+    cost("{ SELF.id.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
+    cost("{ SELF.tokens.size > 0 }")(accessBox + extractCost + LengthGTConstCost)
+    cost("{ SELF.creationInfo._1 > 0 }")(accessBox + accessRegister + selectField + GTConstCost)
+    cost("{ SELF.R5[Int].get > 0 }")(accessBox + RegisterAccess + GTConstCost)
 
     // TODO coverage: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/416
-    // cost("{ SELF.getReg[Long](0.toByte).get > 0 }") shouldBe (accessBox + RegisterAccess + GTConstCost)
+    // cost("{ SELF.getReg[Long](0.toByte).get > 0 }")(accessBox + RegisterAccess + GTConstCost)
   }
 
   lazy val OutputsCost = selectField + accessBox * tx.outputs.length
@@ -129,61 +127,58 @@ class CostingSpecification extends SigmaTestingData {
 
   property("Global operations cost") {
     // TODO costing: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // cost("{ groupGenerator.isIdentity > 0 }") shouldBe (selectField + selectField + GTConstCost)
+    // cost("{ groupGenerator.isIdentity > 0 }")(selectField + selectField + GTConstCost)
 
     val sizeOfArgs = Seq(sizeOf(key1), sizeOf(key1)).foldLeft(0L)(_ + _.dataSize)
     val xorCost = constCost + perKbCostOf(sizeOfArgs, hashPerKb / 2)
-    cost("{ xor(key1, key1).size > 0 }") shouldBe (xorCost + LengthGTConstCost)
+    cost("{ xor(key1, key1).size > 0 }")(xorCost + LengthGTConstCost)
   }
 
   property("Context operations cost") {
-    cost("{ HEIGHT > 0 }") shouldBe (selectField + GTConstCost)
-    cost("{ OUTPUTS.size > 0 }") shouldBe (OutputsCost + LengthGTConstCost)
-    cost("{ INPUTS.size > 0 }") shouldBe (InputsCost + LengthGTConstCost)
-    cost("{ CONTEXT.dataInputs.size > 0 }") shouldBe (DataInputsCost + LengthGTConstCost)
-    cost("{ LastBlockUtxoRootHash.isUpdateAllowed }") shouldBe (selectField + selectField)
-    cost("{ MinerPubkey.size > 0 }") shouldBe (selectField + LengthGTConstCost)
-    cost("{ CONTEXT.headers.size > 0 }") shouldBe (HeadersCost + LengthGTConstCost)
-    cost("{ CONTEXT.preHeader.height > 0 }") shouldBe (PreHeaderCost + selectField + GTConstCost)
+    cost("{ HEIGHT > 0 }")(selectField + GTConstCost)
+    cost("{ OUTPUTS.size > 0 }")(OutputsCost + LengthGTConstCost)
+    cost("{ INPUTS.size > 0 }")(InputsCost + LengthGTConstCost)
+    cost("{ CONTEXT.dataInputs.size > 0 }")(DataInputsCost + LengthGTConstCost)
+    cost("{ LastBlockUtxoRootHash.isUpdateAllowed }")(selectField + selectField)
+    cost("{ MinerPubkey.size > 0 }")(selectField + LengthGTConstCost)
+    cost("{ CONTEXT.headers.size > 0 }")(HeadersCost + LengthGTConstCost)
+    cost("{ CONTEXT.preHeader.height > 0 }")(PreHeaderCost + selectField + GTConstCost)
   }
 
   property("PreHeader operations cost") {
-    cost("{ CONTEXT.preHeader.version > 0 }") shouldBe (PreHeaderCost + selectField + castOp + GTConstCost)
-    cost("{ CONTEXT.preHeader.parentId.size > 0 }") shouldBe (PreHeaderCost + selectField + LengthGTConstCost)
-    cost("{ CONTEXT.preHeader.timestamp > 0L }") shouldBe (PreHeaderCost + selectField + GTConstCost)
-    cost("{ CONTEXT.preHeader.nBits > 0L }") shouldBe (PreHeaderCost + selectField + GTConstCost)
-    cost("{ CONTEXT.preHeader.height > 0 }") shouldBe (PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.preHeader.version > 0 }")(PreHeaderCost + selectField + castOp + GTConstCost)
+    cost("{ CONTEXT.preHeader.parentId.size > 0 }")(PreHeaderCost + selectField + LengthGTConstCost)
+    cost("{ CONTEXT.preHeader.timestamp > 0L }")(PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.preHeader.nBits > 0L }")(PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.preHeader.height > 0 }")(PreHeaderCost + selectField + GTConstCost)
 
-    cost("{ CONTEXT.preHeader.minerPk == groupGenerator }") shouldBe
-      (PreHeaderCost + selectField + comparisonCost + selectField)
+    cost("{ CONTEXT.preHeader.minerPk == groupGenerator }")(
+      PreHeaderCost + selectField + comparisonCost + selectField)
 
-    cost("{ CONTEXT.preHeader.votes.size > 0 }") shouldBe
-      (PreHeaderCost + selectField + LengthGTConstCost)
+    cost("{ CONTEXT.preHeader.votes.size > 0 }")(PreHeaderCost + selectField + LengthGTConstCost)
   }
 
   property("Header operations cost") {
     val header = "CONTEXT.headers(0)"
-    cost(s"{ $header.id.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
-    cost(s"{ $header.version > 0 }") shouldBe (AccessHeaderCost + selectField + castOp + comparisonCost)
-    cost(s"{ $header.parentId.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
-    cost(s"{ $header.ADProofsRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
-    cost(s"{ $header.stateRoot.isUpdateAllowed }") shouldBe (AccessHeaderCost + selectField + selectField)
-    cost(s"{ $header.transactionsRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
-    cost(s"{ $header.timestamp > 0L }") shouldBe (AccessHeaderCost + selectField + GTConstCost)
-    cost(s"{ $header.nBits > 0L }") shouldBe (AccessHeaderCost + selectField + GTConstCost)
-    cost(s"{ $header.height > 0 }") shouldBe (AccessHeaderCost + selectField + comparisonCost)
-    cost(s"{ $header.extensionRoot.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.id.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.version > 0 }")(AccessHeaderCost + selectField + castOp + comparisonCost)
+    cost(s"{ $header.parentId.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.ADProofsRoot.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.stateRoot.isUpdateAllowed }")(AccessHeaderCost + selectField + selectField)
+    cost(s"{ $header.transactionsRoot.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.timestamp > 0L }")(AccessHeaderCost + selectField + GTConstCost)
+    cost(s"{ $header.nBits > 0L }")(AccessHeaderCost + selectField + GTConstCost)
+    cost(s"{ $header.height > 0 }")(AccessHeaderCost + selectField + comparisonCost)
+    cost(s"{ $header.extensionRoot.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
 
-    cost(s"{ $header.minerPk == groupGenerator }") shouldBe
-        (AccessHeaderCost + selectField + comparisonCost + selectField)
+    cost(s"{ $header.minerPk == groupGenerator }")(AccessHeaderCost + selectField + comparisonCost + selectField)
 
-    cost(s"{ $header.powOnetimePk == groupGenerator }") shouldBe
-        (AccessHeaderCost + selectField + comparisonCost + selectField)
+    cost(s"{ $header.powOnetimePk == groupGenerator }")(AccessHeaderCost + selectField + comparisonCost + selectField)
 
-    cost(s"{ $header.powNonce.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.powNonce.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
 
-    cost(s"{ $header.powDistance > 0 }") shouldBe (AccessHeaderCost + selectField + comparisonBigInt + constCost)
-    cost(s"{ $header.votes.size > 0 }") shouldBe (AccessHeaderCost + selectField + LengthGTCost)
+    cost(s"{ $header.powDistance > 0 }")(AccessHeaderCost + selectField + comparisonBigInt + constCost)
+    cost(s"{ $header.votes.size > 0 }")(AccessHeaderCost + selectField + LengthGTCost)
   }
 
   val AccessRootHash = selectField
@@ -193,12 +188,12 @@ class CostingSpecification extends SigmaTestingData {
 
   property("AvlTree operations cost") {
     val rootTree = "LastBlockUtxoRootHash"
-//    cost(s"{ $rootTree.digest.size > 0 }") shouldBe (AccessRootHash + selectField + LengthGTConstCost)
-//    cost(s"{ $rootTree.enabledOperations > 0 }") shouldBe (AccessRootHash + selectField + castOp + GTConstCost)
-//    cost(s"{ $rootTree.keyLength > 0 }") shouldBe (AccessRootHash + selectField + GTConstCost)
-//    cost(s"{ $rootTree.isInsertAllowed }") shouldBe (AccessRootHash + selectField)
-//    cost(s"{ $rootTree.isUpdateAllowed }") shouldBe (AccessRootHash + selectField)
-//    cost(s"{ $rootTree.isRemoveAllowed }") shouldBe (AccessRootHash + selectField)
+//    cost(s"{ $rootTree.digest.size > 0 }")(AccessRootHash + selectField + LengthGTConstCost)
+//    cost(s"{ $rootTree.enabledOperations > 0 }")(AccessRootHash + selectField + castOp + GTConstCost)
+//    cost(s"{ $rootTree.keyLength > 0 }")(AccessRootHash + selectField + GTConstCost)
+//    cost(s"{ $rootTree.isInsertAllowed }")(AccessRootHash + selectField)
+//    cost(s"{ $rootTree.isUpdateAllowed }")(AccessRootHash + selectField)
+//    cost(s"{ $rootTree.isRemoveAllowed }")(AccessRootHash + selectField)
 //    cost(s"{ $rootTree.updateDigest($rootTree.digest) == $rootTree }") shouldBe
 //      (AccessRootHash + selectField + newAvlTreeCost + comparisonCost /* for isConstantSize AvlTree type */)
 //    cost(s"{ $rootTree.updateOperations(1.toByte) == $rootTree }") shouldBe
@@ -209,36 +204,36 @@ class CostingSpecification extends SigmaTestingData {
     val sizeOfArgs = Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize)
     val containsCost = perKbCostOf(sizeOfArgs, avlTreeOp)
 
-    cost(s"{ $selfTree.contains(key1, lookupProof) }") shouldBe (AccessTree + containsCost + 2 * constCost)
-    cost(s"{ $selfTree.get(key1, lookupProof).isDefined }") shouldBe (AccessTree + containsCost + 2 * constCost + selectField)
-    cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }") shouldBe (AccessTree + containsCost + 2 * constCost + LengthGTConstCost)
+    cost(s"{ $selfTree.contains(key1, lookupProof) }")(AccessTree + containsCost + 2 * constCost)
+    cost(s"{ $selfTree.get(key1, lookupProof).isDefined }")(AccessTree + containsCost + 2 * constCost + selectField)
+    cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }")(AccessTree + containsCost + 2 * constCost + LengthGTConstCost)
   }
 
   property("Coll operations cost") {
     val coll = "OUTPUTS"
     val nOutputs = tx.outputs.length
-    cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }") shouldBe
-      (selectField + lambdaCost +
+    cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }")(
+      selectField + lambdaCost +
         (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
 
-    cost(s"{ $coll.flatMap({ (b: Box) => b.propositionBytes }).size > 0 }") shouldBe
-      (lambdaCost + extractCost + selectField +
+    cost(s"{ $coll.flatMap({ (b: Box) => b.propositionBytes }).size > 0 }")(
+      lambdaCost + extractCost + selectField +
           (accessBox + extractCost )  * nOutputs + collToColl + LengthGTConstCost)
 
-    cost(s"{ $coll.zip(OUTPUTS).size > 0 }") shouldBe
-      (selectField + accessBox * tx.outputs.length +
+    cost(s"{ $coll.zip(OUTPUTS).size > 0 }")(
+      selectField + accessBox * tx.outputs.length +
         accessBox * nOutputs * 2 + collToColl + LengthGTConstCost)
   }
 
   property("Option operations cost") {
     val opt = "SELF.R5[Int]"
     val accessOpt = accessBox + accessRegister
-    cost(s"{ $opt.get > 0 }") shouldBe (accessOpt + selectField + GTConstCost)
-    cost(s"{ $opt.isDefined }") shouldBe (accessOpt + selectField)
-    cost(s"{ $opt.getOrElse(1) > 0 }") shouldBe (accessOpt + selectField + constCost + GTConstCost)
-    cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }") shouldBe
-       (accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
-    cost(s"{ $opt.map({ (x: Int) => x + 1}).isDefined }") shouldBe
-      (accessOpt + OptionOp + lambdaCost + plusMinus + constCost + selectField)
+    cost(s"{ $opt.get > 0 }")(accessOpt + selectField + GTConstCost)
+    cost(s"{ $opt.isDefined }")(accessOpt + selectField)
+    cost(s"{ $opt.getOrElse(1) > 0 }")(accessOpt + selectField + constCost + GTConstCost)
+    cost(s"{ $opt.filter({ (x: Int) => x > 0}).isDefined }")(
+      accessOpt + OptionOp + lambdaCost + GTConstCost + selectField)
+    cost(s"{ $opt.map({ (x: Int) => x + 1}).isDefined }")(
+      accessOpt + OptionOp + lambdaCost + plusMinus + constCost + selectField)
   }
 }
