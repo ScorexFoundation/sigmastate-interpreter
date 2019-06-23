@@ -1183,6 +1183,10 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
     res
   }
 
+  class CostingRuleStat(val node: SValue, val outerStart: Long, var innerTime: Long, val outerEnd: Long)
+
+  var ruleStack: List[CostingRuleStat] = Nil
+
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
@@ -1207,6 +1211,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       }
       Nullable(res)
     }}
+
+    if (okMeasureOperationTime) {
+      val t = System.nanoTime()
+      ruleStack = new CostingRuleStat(node, t, 0, t) :: ruleStack
+    }
+
     val res: Rep[Any] = node match {
       case TaggedVariableNode(id, _) =>
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
@@ -1874,16 +1884,45 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
+
+    if (okMeasureOperationTime) {
+      val t = System.nanoTime()
+
+      val rule = ruleStack.head   // always non empty at this point
+      ruleStack = ruleStack.tail  // pop current rule
+      assert(rule.node.opCode == node.opCode, s"Inconsistent stack at ${rule :: ruleStack}")
+
+      val ruleFullTime = t - rule.outerStart  // full time spent in this rule
+
+      // add this time to parent's innerTime (if any parent)
+      if (ruleStack.nonEmpty) {
+        val parent = ruleStack.head
+        parent.innerTime += ruleFullTime
+      } else {
+        // top level
+//        println(s"Top time: $ruleFullTime")
+      }
+      
+      val ruleSelfTime = ruleFullTime - rule.innerTime
+      ComplexityTableStat.addOpTime(node.opCode, ruleSelfTime)
+    }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)
     resC
   }
 
   def buildCostedGraph[T](envVals: Map[Any, SValue], tree: SValue): Rep[Costed[Context] => Costed[T]] = {
-    fun { ctxC: RCosted[Context] =>
-      val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
-      val res = asCosted[T](evalNode(ctxC, env, tree))
-      res
+    try {
+      assert(ruleStack.isEmpty)
+      fun { ctxC: RCosted[Context] =>
+        val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
+        val res = asCosted[T](evalNode(ctxC, env, tree))
+        res
+      }
+    }
+    finally {
+      // ensure leaving it in initial state
+      ruleStack = Nil
     }
   }
 

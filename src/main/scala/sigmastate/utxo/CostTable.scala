@@ -4,6 +4,10 @@ import org.ergoplatform.ErgoConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigma.util.Extensions.ByteOps
+import sigmastate.serialization.ValueSerializer.getSerializer
 
 import scala.collection.mutable
 
@@ -431,6 +435,48 @@ object CostTableStat {
       val isColl = opId.opType.tRange.isCollection
       "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isColl) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
     }.mkString("Seq(", "", "\n)")
+  }
+}
+
+object ComplexityTableStat {
+  // NOTE: make immutable before making public
+  private class StatItem(
+    /** How many times the operation has been executed */
+    var count: Long,
+    /** Sum of all execution times */
+    var sum: Long
+  )
+
+  private val stat = mutable.HashMap[OpCode, StatItem]()
+
+  def addOpTime(op: OpCode, time: Long) = {
+    stat.get(op) match {
+      case Some(item) =>
+        item.count += 1
+        item.sum += time
+      case None =>
+        stat(op) = new StatItem(1, time)
+    }
+  }
+
+  /** Prints the complexity table
+    * */
+  def complexityTableString: String = {
+    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: (stat.map { case (opCode, item) =>
+      val avgTime = item.sum / item.count
+      val timeStr = s"${avgTime / 1000}"
+      val ser = getSerializer(opCode)
+      val opName = ser.opDesc.typeName
+      (opName, (opCode.toUByte - LastConstantCode).toString, timeStr, item.count.toString)
+    }.toList)).map { case (opName, opCode, time, count) =>
+      s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
+    } .mkString("\n")
+    val total = stat.values.foldLeft(0L) { (acc, item) => acc + item.sum }
+    s"""
+      |$lines
+      |-----------
+      |Total Time: $total
+     """.stripMargin
   }
 }
 

@@ -9,21 +9,22 @@ import org.ergoplatform._
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.util.Extensions._
 import sigmastate.Values.{BooleanConstant, EvaluatedValue, IntConstant}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import special.collection.{Builder, Coll}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.utxo.ComplexityTableStat
+import special.collection.{Coll, Builder}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -40,6 +41,7 @@ class SigmaDslTest extends PropSpec
 
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
+    override val okMeasureOperationTime: Boolean = true
   }
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
@@ -105,6 +107,7 @@ class SigmaDslTest extends PropSpec
     forAll { x: Byte =>
       Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
     }
+    println(ComplexityTableStat.complexityTableString)
   }
 
   property("Int methods equivalence") {
@@ -801,5 +804,9 @@ class SigmaDslTest extends PropSpec
         |  def f(opt: Long): Long = opt + 1
         |  if (x.isDefined) f(x.get) else 5L
         |}""".stripMargin)
+  }
+  
+  property("print") {
+    println(ComplexityTableStat.complexityTableString)
   }
 }

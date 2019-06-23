@@ -2,7 +2,7 @@ package sigmastate.serialization
 
 import sigmastate.basics.ProveDHTuple
 import sigmastate.utils.GenSerializers
-import sigmastate.utxo.CostTableStat
+import sigmastate.utxo.{CostTableStat, ComplexityTableStat}
 
 class PDHTSerializerSpecification extends SerializationSpecification {
 
@@ -15,6 +15,7 @@ class PDHTSerializerSpecification extends SerializationSpecification {
 //    println(CostTableStat.costTableString)
 //    println(ValueSerializer.printSerInfo())
 //    GenSerializers.generateSerSpec()
+    println(ComplexityTableStat.complexityTableString)
   }
 
 }
