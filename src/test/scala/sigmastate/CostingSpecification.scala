@@ -120,13 +120,11 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("allZK costs") {
-    val concrCollCost = proveDlogEvalCost
-    cost("{ pkA && pkB }") shouldBe (concrCollCost + sigmaAndCost * 2)
+    cost("{ pkA && pkB }") shouldBe (proveDlogEvalCost * 2 + sigmaAndCost * 2)
   }
 
   property("anyZK costs") {
-    val concrCollCost = proveDlogEvalCost
-    cost("{ pkA || pkB }") shouldBe (concrCollCost + sigmaOrCost * 2)
+    cost("{ pkA || pkB }") shouldBe (proveDlogEvalCost * 2 + sigmaOrCost * 2)
   }
 
   property("blake2b256 costs") {
@@ -308,31 +306,32 @@ class CostingSpecification extends SigmaTestingData {
       selectField + accessBox * tx.outputs.length +
         accessBox * nOutputs * 2 + collToColl + LengthGTConstCost)
     cost(s"{ $coll.map({ (b: Box) => b.value })(0) > 0 }") shouldBe
-      (lambdaCost + accessBox + extractCost + selectField + (accessBox + extractCost) * tx.outputs.length
+      (lambdaCost + extractCost + selectField + (accessBox + extractCost) * tx.outputs.length
         + collToColl + collByIndex + constCost + GTConstCost)
-    cost(s"{ $coll.exists({ (b: Box) => b.value > 1L }) }") shouldBe (accessBox + extractCost + GTConstCost)
+    cost(s"{ $coll.exists({ (b: Box) => b.value > 1L }) }") shouldBe
+      (selectField + (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs)
     cost(s"{ $coll.append(OUTPUTS).size > 0 }") shouldBe
       (selectField + accessBox * tx.outputs.length +
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
     cost(s"{ $coll.indices.size > 0 }") shouldBe
       (selectField + accessBox * tx.outputs.length + selectField + LengthGTConstCost)
     cost(s"{ $collBytes.getOrElse(0, 1.toByte) == 0 }") shouldBe
-      (AccessHeaderCost + selectField + collByIndex + collByIndex + comparisonCost + constCost)
-    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }") shouldBe
-      ((accessBox + selectField + selectField + extractCost + plusMinus) * tx.outputs.length
-        + plusMinus + GTConstCost)
-    cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }") shouldBe (accessBox + extractCost + GTConstCost)
+      (AccessHeaderCost + selectField + castOp + collByIndex + comparisonCost + constCost)
+//    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }") shouldBe
+//      ((accessBox + extractCost + plusMinus) * nOutputs + GTConstCost)
+    cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }") shouldBe
+      (selectField + (accessBox + extractCost + GTConstCost + lambdaInvoke) * nOutputs)
     cost(s"{ $coll.slice(0, 1).size > 0 }") shouldBe
       (selectField + collToColl + accessBox * tx.outputs.length + LengthGTConstCost)
     cost(s"{ $coll.append(OUTPUTS).size > 0 }") shouldBe
       (selectField + accessBox * tx.outputs.length +
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
-    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }") shouldBe
-      (AccessHeaderCost + constCost + constCost + collToColl + selectField + collToColl + LengthGTConstCost)
+//    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }") shouldBe
+//      (AccessHeaderCost + constCost * 3 + concreteCollectionItemCost + collToColl + LengthGTConstCost)
     cost(s"{ $collBytes.updated(0, 1.toByte).size > 0 }") shouldBe
       (AccessHeaderCost + selectField + collToColl + LengthGTConstCost)
-    cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }") shouldBe
-      (AccessHeaderCost + selectField + collToColl + collToColl + constCost + constCost + collToColl + LengthGTConstCost)
+//    cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }") shouldBe
+//      (AccessHeaderCost + collToColl + constCost * 2 + concreteCollectionItemCost + LengthGTConstCost)
   }
 
   property("Option operations cost") {
