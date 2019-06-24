@@ -563,32 +563,28 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 /*
-    repeatScript("collection element by index", 36, 5) { scale =>
-      val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
-      val script = genNestedScript("true ", "", s" && $check", scale)
-      compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp
-    }
-
+,
+    "i1" -> BigInt("111111111111111111111111111111111111111111112"),
+    "i2" -> BigInt("111111111111111111111111111111111111111111113"),
+    "g" -> dlogGroup.generator,
+    "g1" -> dlogGroup.generator.add(dlogGroup.generator)
  */
   property("large loop: exp") {
-    repeatScript("collection element by index", 36, 5) { scale =>
-      compile(
-        Map(
-          ScriptNameProp -> "exp",
-          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
-          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
-          "g1" -> dlogGroup.generator,
-          "g2" -> dlogGroup.generator.add(dlogGroup.generator)
-        ),
-        s"""{
-           |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
-           |    val ex = if (b == 10) x1 else y1
-           |    g1.exp(ex) != g2
-           |  })
-           |}
-      """.stripMargin
-      ).asBoolValue.toSigmaProp
-    }
+    checkScript(compile(
+      Map(
+        ScriptNameProp -> "exp",
+        "x1" -> BigInt("111111111111111111111111111111111111111111112"),
+        "y1" -> BigInt("111111111111111111111111111111111111111111113"),
+        "g1" -> dlogGroup.generator,
+        "g2" -> dlogGroup.generator.add(dlogGroup.generator)
+      ),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
+         |    val ex = if (b == 10) x1 else y1
+         |    g1.exp(ex) != g2
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
   }
 
   property("large loop: binary operations") {
