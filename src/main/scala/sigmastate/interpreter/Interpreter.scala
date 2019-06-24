@@ -13,11 +13,13 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.utils.Helpers
 
 import scala.util.Try
 
@@ -29,12 +31,33 @@ trait Interpreter extends ScorexLogging {
 
   type ProofT = UncheckedTree
 
-  def substDeserialize(context: CTX, node: SValue): Option[SValue] = node match {
+  val IR: IRContext
+  import IR._
+
+  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]) = {
+    val r = SigmaSerializer.startReader(scriptBytes)
+    r.complexity = 0
+    val script = ValueSerializer.deserialize(r)
+    val scriptComplexity = r.complexity
+
+    val remainingLimit = context.costLimit - scriptComplexity
+    if (remainingLimit <= 0)
+      throw new CostLimitException(scriptComplexity, msgCostLimitError(scriptComplexity, context.costLimit), None)
+
+    val ctx1 = context.withCostLimit(remainingLimit).asInstanceOf[CTX]
+    (ctx1, script)
+  }
+
+  /** @param updateContext  call back to setup new context (with updated cost limit) to be passed next time */
+  def substDeserialize(context: CTX, updateContext: CTX => Unit, node: SValue): Option[SValue] = node match {
     case d: DeserializeContext[_] =>
       if (context.extension.values.contains(d.id))
         context.extension.values(d.id) match {
           case eba: EvaluatedValue[SByteArray]@unchecked if eba.tpe == SByteArray =>
-            val script = ValueSerializer.deserialize(eba.value.toArray)
+            val scriptBytes = eba.value.toArray
+            val (ctx1, script) = deserializeMeasured(context, scriptBytes)
+            updateContext(ctx1)
+
             CheckDeserializedScriptType(d, script) {
               Some(script)
             }
@@ -45,22 +68,24 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  val IR: IRContext
-  import IR._
-
   def toValidScriptType(exp: SValue): BoolValue = exp match {
     case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
     case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
+  class MutableCell[T](var value: T)
+
   /** Substitute Deserialize* nodes with deserialized subtrees
     * We can estimate cost of the tree evaluation only after this step.*/
-  def applyDeserializeContext(context: CTX, exp: Value[SType]): BoolValue = {
-    val substRule = strategy[Value[_ <: SType]] { case x => substDeserialize(context, x) }
+  def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
+    val currContext = new MutableCell(context)
+    val substRule = strategy[Value[_ <: SType]] { case x =>
+      substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
+    }
     val Some(substTree: SValue) = everywherebu(substRule)(exp)
     val res = toValidScriptType(substTree)
-    res
+    (res, currContext.value)
   }
 
   def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
@@ -174,15 +199,22 @@ trait Interpreter extends ScorexLogging {
              proof: Array[Byte],
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
-      val prop = propositionFromErgoTree(tree, context)
-      implicit val vs = context.validationSettings
-      val propTree = trySoftForkable[BoolValue](whenSoftFork = TrueLeaf) {
-        applyDeserializeContext(context, prop)
+
+      val remainingLimit = context.costLimit - tree.complexity
+      if (remainingLimit <= 0)
+        throw new CostLimitException(tree.complexity, msgCostLimitError(tree.complexity, context.costLimit), None)
+
+      val context1 = context.withCostLimit(remainingLimit).asInstanceOf[CTX]
+      val prop = propositionFromErgoTree(tree, context1)
+
+      implicit val vs = context1.validationSettings
+      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
+        applyDeserializeContext(context1, prop)
       }
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context, env, propTree).fold(t => throw t, identity)
+      val (cProp, cost) = reduceToCrypto(context2, env, propTree).fold(t => throw t, identity)
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true

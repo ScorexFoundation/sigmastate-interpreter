@@ -25,6 +25,7 @@ import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CostLimitException, CosterException}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
@@ -36,9 +37,9 @@ import scala.util.Try
   */
 class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   implicit lazy val IR: TestingIRContext = new TestingIRContext {
-//    substFromCostTable = false
+    //    substFromCostTable = false
     saveGraphsInFile = false
-//    override val okPrintEvaluatedEntries = true
+    //    override val okPrintEvaluatedEntries = true
   }
 
   //we assume that verifier must finish verification of any script in less time than 1M hash calculations
@@ -62,9 +63,11 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   val Longs: Array[Long] = Array[Long](1, 2, 3, Long.MaxValue, Long.MinValue)
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
-  // script of maximum size
+  val hugeSizeColl: Array[Byte] = Array.fill(1000000)(1.toByte)
   val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
   val coll10: Array[Byte] = Array.fill(10)(10.toByte)
+  val coll100: Array[Byte] = Array.fill(100)(100.toByte)
+  val coll1000: Array[Byte] = Array.fill(1000)(1000.toByte)
   lazy val maxSizeCollEnv: ScriptEnv = Map(
     "alice" -> alice.dlogSecrets.head.publicImage,
     "alice2" -> alice.dlogSecrets(1).publicImage,
@@ -72,7 +75,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     "alice4" -> alice.dlogSecrets(3).publicImage,
     "coll5" -> Colls.fromArray(Array.fill(5)(5.toByte)),
     "coll10" -> Colls.fromArray(coll10),
-    "coll100" -> Colls.fromArray(Array.fill(100)(100.toByte)),
+    "coll100" -> Colls.fromArray(coll100),
+    "coll1000" -> Colls.fromArray(coll1000),
     "maxSizeColl" -> Colls.fromArray(maxSizeColl)
   )
 
@@ -83,22 +87,28 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     (res, (t - t0) < Timeout)
   }
 
-  def serializedScriptSize(spamScript: SigmaPropValue): Int = {
-    ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(spamScript).size
+  def measuredScriptAndSize(spamScript: SigmaPropValue): (ErgoTree, Int) = {
+    val tree = ErgoTree.fromProposition(spamScript)
+    val bytes = DefaultSerializer.serializeErgoTree(tree)
+    val measuredTree = DefaultSerializer.deserializeErgoTree(bytes)
+    assert(measuredTree.complexity > 0)
+    (measuredTree, bytes.length)
   }
 
   def initializationCost(scriptSize: Int): Long = {
-    val cost = scriptSize * CostTable.perGraphNodeCost + CostTable.interpreterInitCost
-    cost
+    CostTable.interpreterInitCost
   }
 
   /**
     * Checks that regardless of the script structure, it's verification always consumes at most `Timeout` ms
     */
-  private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Unit = {
-    val scriptSize = serializedScriptSize(spamScript)
+  private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Boolean = {
+    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript)
     // TODO use MaxPropositionBytes constant here once its value can be decreased without failing tests
-    assert(scriptSize <= 1500, s"Script size $scriptSize is too big, fix the test")
+    if (scriptSize > 1500) {
+      println(s"Script size $scriptSize is too big, fix the test")
+      return false
+    }
 
     val ctx = {
 
@@ -112,7 +122,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         )
       )
 
-      val input = ErgoBox(1, spamScript, 10, Nil,
+      val input = ErgoBox(1, measuredTree, 10, Nil,
         Map(
           R4 -> ByteConstant(1),
           R5 -> SigmaPropConstant(alicePubKey),
@@ -138,23 +148,35 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     val pr = if (emptyProofs) {
       // do not spend time to create a proof
-      CostedProverResult(Array[Byte](), ContextExtension.empty, 0L)
+      CostedProverResult(Array[Byte](), ContextExtension(
+        Map(
+          1.toByte -> ByteArrayConstant(hugeSizeColl),
+          2.toByte -> ByteArrayConstant(coll10),
+          3.toByte -> TrueLeaf,
+          4.toByte -> IntConstant(12345),
+          5.toByte -> BigIntConstant(Long.MaxValue),
+          6.toByte -> ByteArrayConstant(coll100),
+          7.toByte -> ByteArrayConstant(coll1000),
+        )
+      ), 0L)
+
     } else {
       // generate a correct proof using a prover without a cost limit
       val pr = new ContextEnrichingTestProvingInterpreter()
         .withSecrets(alice.dlogSecrets)
-        .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
+        .prove(emptyEnv + (ScriptNameProp -> "prove"), measuredTree, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
       println(s"Prover cost: ${pr.cost}")
       pr
     }
 
     val initCost = initializationCost(scriptSize)
-    println(s"Initalization Cost: $initCost")
+    println(s"Initalization Cost: $initCost; Complexity: ${measuredTree.complexity}")
     val verifier = new ErgoLikeTestInterpreter
     val (res, calcTime) = BenchmarkUtil.measureTime {
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx.withInitCost(initCost), pr, fakeMessage)
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), measuredTree, ctx.withInitCost(initCost), pr, fakeMessage)
     }
     checkResult(res, calcTime, scriptSize)
+    true
   }
 
   def checkResult(res: Try[(Boolean, Long)], calcTime: Long, scriptSize: Int) = {
@@ -192,10 +214,29 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   def repeatScript(name: String, scaleLimit: Int, scaleStep: Int = 1)(scriptBuilder: Int => SigmaPropValue): Unit = {
-    (1 to (scaleLimit, scaleStep)) foreach { scale =>
+    (1 to(scaleLimit, scaleStep)) foreach { scale =>
       println(s"ErgoTree Scale: $scale")
       val prop = scriptBuilder(scale)
-      checkScript(prop)
+      if(!checkScript(prop)) return
+    }
+  }
+
+
+  property("Context extension with big coll") {
+    assert(warmUpPrecondition)
+    val name = "Context extension with big coll"
+    repeatScript(name, 86, 5) { scale =>
+      val script = (1 to scale).map(_ => s"getVar[Coll[Byte]](2).get.forall({(i:Byte) => getVar[Coll[Byte]](2).get.forall({(j:Byte) => i == j})})").mkString(" && ")
+      compile(maxSizeCollEnv + (ScriptNameProp -> name), script).asBoolValue.toSigmaProp
+    }
+  }
+
+  property("Context extension: valid scripts") {
+    assert(warmUpPrecondition)
+    val check = "getVar[Boolean](3).get && getVar[Int](4).get > i && getVar[BigInt](5).get >= getVar[Int](4).get"
+    repeatScript(check, 86, 3) { scale =>
+      val script = (1 to scale).map(_ => s"getVar[Coll[Byte]](6).get.forall({(i:Byte) => $check})").mkString(" && ")
+      compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
     }
   }
 
@@ -204,9 +245,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     repeatScript("Too costly flatMap", 30, 5) { scale =>
       val script = (1 to scale).map(j =>
         s"""INPUTS.flatMap({ (in: Box) => in.propositionBytes })
-          |  .forall({(i:Byte) =>
-          |     OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j
-          |   })""".stripMargin).mkString(" && \n")
+           |  .forall({(i:Byte) =>
+           |     OUTPUTS.flatMap({ (out: Box) => out.propositionBytes }).size != i + $j
+           |   })""".stripMargin).mkString(" && \n")
       compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
@@ -222,9 +263,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
            |   })""".stripMargin).mkString(" && \n")
       val script =
         s"""{
-          |  $prefix
-          |  $body
-          |}""".stripMargin
+           |  $prefix
+           |  $body
+           |}""".stripMargin
       compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
@@ -267,7 +308,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   property("int comparison, cost a bit lower than limit ") {
     assert(warmUpPrecondition)
     val check = "i >= 0"
-    repeatScript(check, 86,5) { scale =>
+    repeatScript(check, 86, 5) { scale =>
       val script = (1 to scale).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
       compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
     }
@@ -439,7 +480,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       val check = "(SELF.R0[Long].get == SELF.R9[Long].getOrElse(SELF.R0[Long].get)) && (SELF.R4[Byte].get == (i - 1)) && INPUTS(0).R5[SigmaProp].get == OUTPUTS(0).R5[SigmaProp].get && INPUTS(0).R6[Int].get == OUTPUTS(0).R6[Int].get"
       val script = (1 to i).map(_ =>
         s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-        ).mkString(" && \n")
+      ).mkString(" && \n")
       compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
@@ -1113,7 +1154,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val prover = new ContextEnrichingTestProvingInterpreter()
     val verifier = new ContextEnrichingTestProvingInterpreter()
 
-    (100 to (500, 100)) foreach { n =>
+    (100 to(500, 100)) foreach { n =>
       println(s"Scale: $n")
       val prop = Exists(Inputs,
         FuncValue(Vector((1, SBox)),
@@ -1133,7 +1174,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
       val tx = createTransaction(outputs)
 
-      val scriptSize = serializedScriptSize(prop)
+      val (measuredTree, scriptSize) = measuredScriptAndSize(prop)
       val initCost = initializationCost(scriptSize)
       val ctx = new ErgoLikeContext(currentHeight = 0,
         lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1149,7 +1190,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         costLimit = CostLimit,
         initCost = initCost)
 
-      runSpam("t1", ctx, prop, false, true)(prover, verifier)
+      runSpam("t1", ctx, measuredTree, false, true)(prover, verifier)
       println("----------------------")
     }
   }

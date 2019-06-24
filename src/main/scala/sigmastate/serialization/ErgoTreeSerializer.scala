@@ -130,6 +130,10 @@ class ErgoTreeSerializer {
   }
 
   def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int): ErgoTree = {
+    deserializeErgoTree(r, maxTreeSizeBytes, true)
+  }
+
+  private[sigmastate] def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int, checkType: Boolean): ErgoTree = {
     val startPos = r.position
     val previousPositionLimit = r.positionLimit
     val previousComplexity = r.complexity
@@ -144,7 +148,10 @@ class ErgoTreeSerializer {
         // reader with constant store attached is required (to get tpe for a constant placeholder)
         r.constantStore = new ConstantStore(cs)
         val root = ValueSerializer.deserialize(r)
-        CheckDeserializedScriptIsSigmaProp(root) {}
+
+        if (checkType)
+          CheckDeserializedScriptIsSigmaProp(root) {}
+
         r.constantStore = previousConstantStore
         val complexity = r.complexity
         new ErgoTree(h, cs, Right(root.asSigmaProp), complexity)
