@@ -21,7 +21,7 @@ import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
-//    override val okPrintEvaluatedEntries = true
+    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
@@ -114,8 +114,8 @@ class CostingSpecification extends SigmaTestingData {
   }
 
   property("atLeast costs") {
-    val concrCollCost = proveDlogEvalCost
-    cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }") (concrCollCost + proveDlogEvalCost * 3 + logicCost + constCost + collToColl)
+    cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
+      concreteCollectionItemCost * 3 + collToColl + proveDlogEvalCost * 2 + logicCost + constCost)
   }
 
   property("allZK costs") {
@@ -303,10 +303,12 @@ class CostingSpecification extends SigmaTestingData {
       selectField + accessBox * tx.outputs.length +
         accessBox * nOutputs * 2 + collToColl + LengthGTConstCost)
     cost(s"{ $coll.map({ (b: Box) => b.value })(0) > 0 }")(
-      lambdaCost + extractCost + selectField + (accessBox + extractCost) * tx.outputs.length
+      lambdaCost + selectField +
+        (accessBox + extractCost + lambdaInvoke) * nOutputs
         + collToColl + collByIndex + constCost + GTConstCost)
     cost(s"{ $coll.exists({ (b: Box) => b.value > 1L }) }") (
-      selectField + (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs)
+      lambdaCost + selectField +
+        (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl)
     cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
       selectField + accessBox * tx.outputs.length +
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
@@ -317,7 +319,8 @@ class CostingSpecification extends SigmaTestingData {
 //    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }")
 //      ((accessBox + extractCost + plusMinus) * nOutputs + GTConstCost)
     cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }")(
-      selectField + (accessBox + extractCost + GTConstCost + lambdaInvoke) * nOutputs)
+      lambdaCost + selectField +
+        (accessBox + extractCost + GTConstCost + lambdaInvoke) * nOutputs + collToColl)
     cost(s"{ $coll.slice(0, 1).size > 0 }")(
       selectField + collToColl + accessBox * tx.outputs.length + LengthGTConstCost)
     cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
