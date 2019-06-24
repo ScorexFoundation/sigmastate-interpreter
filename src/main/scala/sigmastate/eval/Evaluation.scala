@@ -571,8 +571,11 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         val limit = costLimit.get
         val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
         val accumulatedCost = cost + loopCost
-        if (accumulatedCost > limit)
+        if (accumulatedCost > limit) {
+//          if (cost < limit)
+//            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
           throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
+        }
       }
 
       // each OpCost represents how much cost was added since beginning of the current scope
@@ -683,14 +686,43 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case mc @ MethodCall(obj, m, args, _) =>
             val dataRes = obj.elem match {
               case _: CollElem[_, _] => mc match {
-                case CollMethods.flatMap(xs, f) =>
+                case CollMethods.flatMap(_, f) =>
                   val newMC = mc.copy(args = mc.args :+ f.elem.eRange.eItem)(mc.selfType, mc.isAdapterCall)
-                  invokeUnlifted(obj.elem, newMC, dataEnv)
-                case CollMethods.foldLeft(xs, init, f) =>
+                  costAccumulator.startLoop(f)
+                  val res = invokeUnlifted(obj.elem, newMC, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.foldLeft(_, _, f) =>
                   costAccumulator.startLoop(f)
                   val res = invokeUnlifted(obj.elem, mc, dataEnv)
                   costAccumulator.endLoop()
                   res
+
+                case CollMethods.map(_, f) =>
+                  costAccumulator.startLoop(f)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.filter(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.forall(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.exists(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
                 case _ =>
                   invokeUnlifted(obj.elem, mc, dataEnv)
               }

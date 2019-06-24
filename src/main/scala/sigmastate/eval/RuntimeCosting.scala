@@ -84,7 +84,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import CostModel._
 
   override val performViewsLifting = false
-  val okMeasureOperationTime: Boolean = true
+  val okMeasureOperationTime: Boolean = false
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
@@ -99,13 +99,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   var substFromCostTable: Boolean = true
 
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
-  var saveGraphsInFile: Boolean = true
+  var saveGraphsInFile: Boolean = false
 
   /** Whether to output the cost value estimated for the script given by ScriptNameProp environment variable */
   var outputEstimatedCost: Boolean = false
 
   /** Whether to output the computed results of the script. */
-  var outputComputedResults: Boolean = true
+  var outputComputedResults: Boolean = false
 
   /** Whether to perform extended checks of correctness, expected invariants and data consistency.
     * Since it may add substantial overhead, tt shouldn't be used in production. */
