@@ -84,7 +84,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import CostModel._
 
   override val performViewsLifting = false
-  val okMeasureOperationTime: Boolean = false
+  val okMeasureOperationTime: Boolean = true
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
@@ -1872,7 +1872,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       }
       
       val ruleSelfTime = ruleFullTime - rule.innerTime
-      ComplexityTableStat.addOpTime(node.opCode, ruleSelfTime)
+      node match {
+        case mc: Terms.MethodCall =>
+          val m = mc.method
+          ComplexityTableStat.addMcTime(m.objType.typeId, m.methodId, ruleSelfTime)
+        case _ =>
+          ComplexityTableStat.addOpTime(node.opCode, ruleSelfTime)
+      }
     }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)

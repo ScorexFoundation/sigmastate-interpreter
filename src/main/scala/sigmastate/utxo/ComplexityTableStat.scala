@@ -3,6 +3,7 @@ package sigmastate.utxo
 import sigmastate.serialization.ValueSerializer.getSerializer
 import sigmastate.serialization.OpCodes.OpCode
 import sigma.util.Extensions.ByteOps
+import sigmastate.SMethod
 import sigmastate.serialization.OpCodes
 
 import scala.collection.mutable
@@ -32,25 +33,46 @@ object ComplexityTableStat {
     }
   }
 
+  def addMcTime(typeId: Byte, methodId: Byte, time: Long) = {
+    mcStat.get((typeId, methodId)) match {
+      case Some(item) =>
+        item.count += 1
+        item.sum += time
+      case None =>
+        mcStat((typeId, methodId)) = new StatItem(1, time)
+    }
+  }
+
   /** Prints the complexity table
     * */
   def complexityTableString: String = {
-    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: (opStat.map { case (opCode, item) =>
+    val opCodeLines = opStat.map { case (opCode, item) =>
       val avgTime = item.sum / item.count
       val timeStr = s"${avgTime / 1000}"
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
       (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, timeStr, item.count.toString)
-    }.toList))
-        .sortBy(_._3)(Ordering[String].reverse)
-    .map { case (opName, opCode, time, count) =>
-      s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
-    } .mkString("\n")
-    val total = opStat.values.foldLeft(0L) { (acc, item) => acc + item.sum }
+    }.toList.sortBy(_._3)(Ordering[String].reverse)
+
+    val mcLines = mcStat.map { case (id @ (typeId, methodId), item) =>
+      val avgTime = item.sum / item.count
+      val timeStr = s"${avgTime / 1000}"
+      val m = SMethod.fromIds(typeId, methodId)
+      val typeName = m.objType.typeName
+      (s"$typeName.${m.name}", id.toString, timeStr, item.count.toString)
+    }.toList.sortBy(_._3)(Ordering[String].reverse)
+
+    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: opCodeLines ::: mcLines)
+      .map { case (opName, opCode, time, count) =>
+        s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
+      }
+      .mkString("\n")
+
+//    val total = opStat.values.foldLeft(0L) { (acc, item) => acc + item.sum }
     s"""
+      |-----------
       |$lines
       |-----------
-      |Total Time: $total
      """.stripMargin
   }
 }

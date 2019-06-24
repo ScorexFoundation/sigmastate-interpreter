@@ -6,8 +6,8 @@ import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant, SigmaPropValue}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -19,6 +19,7 @@ import sigmastate.interpreter.CryptoConstants
 
 import scala.util.Random
 import sigmastate.eval._
+import sigmastate.utxo.ComplexityTableStat
 
 /**
   *
@@ -532,6 +533,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
     println("withdrawal script cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
+  }
+
+  property("ComplexityTableStat") {
+    println(ComplexityTableStat.complexityTableString)
   }
 
 }

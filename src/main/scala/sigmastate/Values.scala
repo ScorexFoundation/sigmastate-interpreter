@@ -948,11 +948,18 @@ object Values {
     *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
     *                     there should be a constant in `constants` array.
     */
-  case class ErgoTree private(
+  case class ErgoTree private[sigmastate](
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: Either[UnparsedErgoTree, SigmaPropValue]
+    root: Either[UnparsedErgoTree, SigmaPropValue],
+    complexity: Int
   ) {
+
+    def this(header: Byte,
+             constants: IndexedSeq[Constant[SType]],
+             root: Either[UnparsedErgoTree, SigmaPropValue]) =
+      this(header, constants, root, 0)
+
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
 
