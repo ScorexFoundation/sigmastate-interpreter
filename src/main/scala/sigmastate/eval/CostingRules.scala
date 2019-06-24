@@ -460,7 +460,8 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
     }
 
     def tokens() = {
-      knownLengthCollPropertyAccess(_.tokens, TokensInfo)
+      val value = obj.value.tokens
+      TokensInfo.mkCostedColl(value, opCost(value, costOfArgs, costOf(method)))
     }
 
     def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
