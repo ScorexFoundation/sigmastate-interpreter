@@ -141,7 +141,7 @@ object BlockchainSimulationSpecification {
 
   val windowSize = 10
 
-  val MaxBlockCost = 1300000
+  val MaxBlockCost = 1000000
 
   case class Block(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 
@@ -212,7 +212,7 @@ object BlockchainSimulationSpecification {
     val initBlock = Block(
       (0 until windowSize).map { i =>
         val txId = hash.hash(i.toString.getBytes ++ scala.util.Random.nextString(12).getBytes).toModifierId
-        val boxes = (1 to 50).map(_ => ErgoBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
+        val boxes = (1 to 30).map(_ => ErgoBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
       ErgoLikeContext.dummyPubkey
