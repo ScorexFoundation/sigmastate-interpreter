@@ -515,6 +515,26 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
+  property("large loop: fold 1") {
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 1"),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
+         |    i && b == 1
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("large loop: fold 2") {
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 2"),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
+         |    (i && b == 1) || b == 10
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
   property("large loop: binary operations") {
     val check =
       s"""
