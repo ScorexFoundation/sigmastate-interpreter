@@ -607,7 +607,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         val proverWithKSecrets = prover.withSecrets(
           shuffledProvers.takeRight(neededExtraSecrets).map(_.dlogSecrets.head))
         val prTry = proverWithKSecrets.prove(prop, ctx, fakeMessage)
-        withClue(s"$prTry") { prTry.isSuccess shouldBe true }
+        prTry shouldBe 'success
         verifier.verify(prop, ctx, prTry.get, fakeMessage).get._1 shouldBe true
       }
     }
