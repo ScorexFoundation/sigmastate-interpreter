@@ -24,6 +24,7 @@ import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.serialization.ErgoTreeSerializer
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
@@ -82,20 +83,23 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     (res, (t - t0) < Timeout)
   }
 
-  def serializedScriptSize(spamScript: SigmaPropValue): Int = {
-    ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(spamScript).size
+  def measuredScriptAndSize(spamScript: SigmaPropValue): (ErgoTree, Int) = {
+    val tree = ErgoTree.fromProposition(spamScript)
+    val bytes = DefaultSerializer.serializeErgoTree(tree)
+    val measuredTree = DefaultSerializer.deserializeErgoTree(bytes)
+    assert(measuredTree.complexity > 0)
+    (measuredTree, bytes.length)
   }
 
   def initializationCost(scriptSize: Int): Long = {
-    val cost = scriptSize * CostTable.perGraphNodeCost + CostTable.interpreterInitCost
-    cost
+    CostTable.interpreterInitCost
   }
 
   /**
     * Checks that regardless of the script structure, it's verification always consumes at most `Timeout` ms
     */
   private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Unit = {
-    val scriptSize = serializedScriptSize(spamScript)
+    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript)
     // TODO use MaxPropositionBytes constant here once its value can be decreased without failing tests
     assert(scriptSize <= 1500, s"Script size $scriptSize is too big, fix the test")
 
@@ -111,7 +115,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         )
       )
 
-      val input = ErgoBox(1, spamScript, 10, Nil,
+      val input = ErgoBox(1, measuredTree, 10, Nil,
         Map(
           R4 -> ByteConstant(1),
           R5 -> SigmaPropConstant(alicePubKey),
@@ -142,16 +146,16 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       // generate a correct proof using a prover without a cost limit
       val pr = new ContextEnrichingTestProvingInterpreter()
         .withSecrets(alice.dlogSecrets)
-        .prove(emptyEnv + (ScriptNameProp -> "prove"), spamScript, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
+        .prove(emptyEnv + (ScriptNameProp -> "prove"), measuredTree, ctx.withCostLimit(Long.MaxValue), fakeMessage).get
       println(s"Prover cost: ${pr.cost}")
       pr
     }
 
     val initCost = initializationCost(scriptSize)
-    println(s"Initalization Cost: $initCost")
+    println(s"Initalization Cost: $initCost; Complexity: ${measuredTree.complexity}")
     val verifier = new ErgoLikeTestInterpreter
     val (res, calcTime) = BenchmarkUtil.measureTime {
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), spamScript, ctx.withInitCost(initCost), pr, fakeMessage)
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), measuredTree, ctx.withInitCost(initCost), pr, fakeMessage)
     }
     checkResult(res, calcTime, scriptSize)
   }
@@ -1084,7 +1088,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
       val tx = createTransaction(outputs)
 
-      val scriptSize = serializedScriptSize(prop)
+      val (measuredTree, scriptSize) = measuredScriptAndSize(prop)
       val initCost = initializationCost(scriptSize)
       val ctx = new ErgoLikeContext(currentHeight = 0,
         lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1100,7 +1104,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         costLimit = CostLimit,
         initCost = initCost)
 
-      runSpam("t1", ctx, prop, false, true)(prover, verifier)
+      runSpam("t1", ctx, measuredTree, false, true)(prover, verifier)
       println("----------------------")
     }
   }

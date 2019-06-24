@@ -993,6 +993,18 @@ object Values {
       case Left(UnparsedErgoTree(_, error)) =>
         throw error
     }
+
+    /** Override equality to exclude `complexity`. */
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[ErgoTree]
+
+    override def hashCode(): Int = header * 31 + Objects.hash(constants, root)
+
+    override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) ||
+      ((obj.asInstanceOf[AnyRef] != null) && (obj match {
+        case other: ErgoTree =>
+          other.header == header && other.constants == constants && other.root == root
+        case _ => false
+      }))
   }
 
   object ErgoTree {
