@@ -584,6 +584,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: fold 1") {
+    assert(warmUpPrecondition)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 1"),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
@@ -594,6 +595,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: fold 2") {
+    assert(warmUpPrecondition)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 2"),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>

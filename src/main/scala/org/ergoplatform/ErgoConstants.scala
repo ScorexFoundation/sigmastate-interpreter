@@ -24,7 +24,7 @@ object ErgoConstants {
     "Max tree depth should not be greater then provided value") {
   }
 
-  object MaxTokens extends SizeConstant[Int](4, 3,
+  object MaxTokens extends SizeConstant[Int](255, 3,
     "Tokens count should not be greater than provided value") {
   }
 

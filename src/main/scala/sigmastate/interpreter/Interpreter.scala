@@ -200,7 +200,7 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val remainingLimit = context.costLimit - tree.complexity
+      val remainingLimit = context.costLimit - tree.complexity - context.initCost
       if (remainingLimit <= 0)
         throw new CostLimitException(tree.complexity, msgCostLimitError(tree.complexity, context.costLimit), None)
 
