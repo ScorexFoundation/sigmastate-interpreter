@@ -48,30 +48,46 @@ object ComplexityTableStat {
   def complexityTableString: String = {
     val opCodeLines = opStat.map { case (opCode, item) =>
       val avgTime = item.sum / item.count
-      val timeStr = s"${avgTime / 1000}"
+      val time = avgTime / 1000
       val ser = getSerializer(opCode)
       val opName = ser.opDesc.typeName
-      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, timeStr, item.count.toString)
-    }.toList.sortBy(_._3)(Ordering[String].reverse)
+      (opName, (opCode.toUByte - OpCodes.LastConstantCode).toString, time, item.count.toString)
+    }.toList.sortBy(_._3)(Ordering[Long].reverse)
 
     val mcLines = mcStat.map { case (id @ (typeId, methodId), item) =>
       val avgTime = item.sum / item.count
-      val timeStr = s"${avgTime / 1000}"
+      val time = avgTime / 1000
       val m = SMethod.fromIds(typeId, methodId)
       val typeName = m.objType.typeName
-      (s"$typeName.${m.name}", id.toString, timeStr, item.count.toString)
-    }.toList.sortBy(_._3)(Ordering[String].reverse)
+      (s"$typeName.${m.name}", typeId, methodId, time, item.count.toString)
+    }.toList.sortBy(r => (r._2,r._3))(Ordering[(Byte,Byte)].reverse)
 
-    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: opCodeLines ::: mcLines)
+//    val lines = (("Op", "OpCode", "Avg Time,us", "Count") :: opCodeLines ::: mcLines)
+//      .map { case (opName, opCode, time, count) =>
+//        s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
+//      }
+//      .mkString("\n")
+
+    val rows = (opCodeLines)
       .map { case (opName, opCode, time, count) =>
-        s"${opName.padTo(30, ' ')}\t${opCode.padTo(7, ' ')}\t${time.padTo(9, ' ')}\t${count}"
+        val key = s"$opName.opCode".padTo(30, ' ')
+        s"$key -> $time,  // count = $count "
       }
       .mkString("\n")
+
+    val mcRows = (mcLines)
+        .map { case (opName, typeId, methodId, time, count) =>
+          val key = s"($typeId.toByte, $methodId.toByte)".padTo(25, ' ')
+          s"$key -> $time,  // count = $count, $opName "
+        }
+        .mkString("\n")
 
 //    val total = opStat.values.foldLeft(0L) { (acc, item) => acc + item.sum }
     s"""
       |-----------
-      |$lines
+      |$rows
+      |-----------
+      |$mcRows
       |-----------
      """.stripMargin
   }
