@@ -160,7 +160,7 @@ class MiscErrors extends SigmaTestingCommons with ObjectGenerators {
   property("not using BigInt type in env") {
     checkScript(compile(
       Map(
-        "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
+        "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))).bigInteger),
         "y1" -> BigInt(Blake2b256("world")), // this is not used in env (perhaps this is expected behavior, but please double check)
         "g1" -> dlogGroup.generator,
         "g2" -> dlogGroup.generator.add(dlogGroup.generator),
