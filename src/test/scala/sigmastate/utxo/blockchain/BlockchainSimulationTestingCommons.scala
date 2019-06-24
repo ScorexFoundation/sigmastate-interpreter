@@ -44,7 +44,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     val prop: ErgoTree = propOpt.getOrElse(prover.dlogSecrets.head.publicImage.toSigmaProp)
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
-    val boxesToSpend = state.boxesReader.randomBoxes(50 + height)
+    val boxesToSpend = state.boxesReader.randomBoxes(30 + height)
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =

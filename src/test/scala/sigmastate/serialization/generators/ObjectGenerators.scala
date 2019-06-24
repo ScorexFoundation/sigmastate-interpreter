@@ -174,7 +174,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       }
   }
 
-  def additionalTokensGen(cnt: Byte): Seq[Gen[(Digest32, Long)]] =
+  def additionalTokensGen(cnt: Int): Seq[Gen[(Digest32, Long)]] =
     (0 until cnt).map { _ =>
       for {
         id <- Digest32 @@ boxIdGen
@@ -291,7 +291,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val ergoBoxGen: Gen[ErgoBox] = for {
     tId <- modifierIdGen
     boxId <- unsignedShortGen
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Int](0, ErgoBox.MaxTokens)
     tokens <- Gen.sequence(additionalTokensGen(tokensCount)).map(_.asScala.map(_._1))
     candidate <- ergoBoxCandidateGen(tokens)
   } yield candidate.toBox(tId, boxId)
@@ -301,7 +301,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     b <- ergoTreeGen
     regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
     ar <- Gen.sequence(additionalRegistersGen(regNum))
-    tokensCount <- Gen.chooseNum[Byte](0, ErgoBox.MaxTokens)
+    tokensCount <- Gen.chooseNum[Int](0, ErgoBox.MaxTokens)
     tokens <- if(availableTokens.nonEmpty) {
       Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
     } else {
