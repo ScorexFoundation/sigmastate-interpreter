@@ -74,7 +74,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
 object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
-  private val MaxBlockCost = 1000000
+  private val MaxBlockCost = 1300000
 
   case class FullBlock(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 
