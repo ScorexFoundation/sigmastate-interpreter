@@ -161,7 +161,7 @@ class MiscErrors extends SigmaTestingCommons with ObjectGenerators {
     checkScript(compile(
       Map(
         "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))).bigInteger),
-        "y1" -> BigInt(Blake2b256("world")), // this is not used in env (perhaps this is expected behavior, but please double check)
+        "y1" -> SigmaDsl.BigInt(BigInt(Blake2b256("world")).bigInteger), // this is not used in env (perhaps this is expected behavior, but please double check)
         "g1" -> dlogGroup.generator,
         "g2" -> dlogGroup.generator.add(dlogGroup.generator),
         ScriptNameProp -> "exp"
@@ -184,7 +184,7 @@ class MiscErrors extends SigmaTestingCommons with ObjectGenerators {
       ),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
-         |    val ex:BigInt = if (b == 10) 10000 else 20000
+         |    val ex:BigInt = if (b == 10) 10000.toBigInt else 20000.toBigInt
          |    g1.exp(ex) != g2
          |  })
          |}
