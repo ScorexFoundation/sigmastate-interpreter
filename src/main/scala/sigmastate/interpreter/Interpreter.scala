@@ -35,16 +35,16 @@ trait Interpreter extends ScorexLogging {
   import IR._
 
   def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]) = {
-    val treeBytes = Helpers.concatArrays(Array[Byte](ErgoTree.DefaultHeader), scriptBytes)
-    val r = SigmaSerializer.startReader(treeBytes)
-    val measuredTree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize, false)
+    val r = SigmaSerializer.startReader(scriptBytes)
+    r.complexity = 0
+    val script = ValueSerializer.deserialize(r)
+    val scriptComplexity = r.complexity
 
-    val remainingLimit = context.costLimit - measuredTree.complexity
+    val remainingLimit = context.costLimit - scriptComplexity
     if (remainingLimit <= 0)
-      throw new CostLimitException(measuredTree.complexity, msgCostLimitError(measuredTree.complexity, context.costLimit), None)
+      throw new CostLimitException(scriptComplexity, msgCostLimitError(scriptComplexity, context.costLimit), None)
 
     val ctx1 = context.withCostLimit(remainingLimit).asInstanceOf[CTX]
-    val script = propositionFromErgoTree(measuredTree, ctx1)
     (ctx1, script)
   }
 
