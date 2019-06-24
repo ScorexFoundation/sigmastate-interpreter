@@ -316,8 +316,9 @@ class CostingSpecification extends SigmaTestingData {
       selectField + accessBox * tx.outputs.length + selectField + LengthGTConstCost)
     cost(s"{ $collBytes.getOrElse(0, 1.toByte) == 0 }")(
       AccessHeaderCost + selectField + castOp + collByIndex + comparisonCost + constCost)
-//    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }")
-//      ((accessBox + extractCost + plusMinus) * nOutputs + GTConstCost)
+//    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }")(
+//      selectField + constCost +
+//        (extractCost + plusMinus + lambdaInvoke) * nOutputs + GTConstCost)
     cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }")(
       lambdaCost + selectField +
         (accessBox + extractCost + GTConstCost + lambdaInvoke) * nOutputs + collToColl)
@@ -326,8 +327,8 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
       selectField + accessBox * tx.outputs.length +
         accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
-//    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }")
-//      (AccessHeaderCost + constCost * 3 + concreteCollectionItemCost + collToColl + LengthGTConstCost)
+//    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }")(
+//      AccessHeaderCost + constCost * 3 + concreteCollectionItemCost + collToColl + collToColl + LengthGTConstCost)
     cost(s"{ $collBytes.updated(0, 1.toByte).size > 0 }")(
       AccessHeaderCost + selectField + collToColl + LengthGTConstCost)
 //    cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }")
