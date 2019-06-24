@@ -5,6 +5,7 @@ import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.lang.exceptions.CostLimitException
+import sigmastate.utxo.CostTable
 
 import scala.util.Try
 
@@ -23,7 +24,13 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
   type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
-  type RCostingResultEx[T] = Rep[(Context => T, ((Context, (Int, Size[Context]))) => Int)]
+
+  case class RCostingResultEx[T](
+    costedGraph: Rep[Costed[Context] => Costed[T]],
+    costF: Rep[((Context, (Int, Size[Context]))) => Int]
+  ) {
+    lazy val calcF: Rep[Context => Any] = costedGraph.sliceCalc(true)
+  }
 
   def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
     val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, typed)
@@ -41,15 +48,16 @@ trait IRContext extends Evaluation with TreeBuilding {
     Pair(calcF, costF)
   }
 
-  def doCostingEx(env: ScriptEnv, typed: SValue, okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
+  def doCostingEx(env: ScriptEnv,
+                  typed: SValue,
+                  okRemoveIsProven: Boolean): RCostingResultEx[Any] = {
     def buildGraph(env: ScriptEnv, exp: SValue) = {
       val costed = buildCostedGraph[SType](env.map { case (k, v) => (k: Any, builder.liftAny(v).get) }, exp)
       asRep[Costed[Context] => Costed[Any]](costed)
     }
     val g = buildGraph(env, typed)
-    val calcF = g.sliceCalc(okRemoveIsProven)
     val costF = g.sliceCostEx
-    Pair(calcF, costF)
+    RCostingResultEx(g, costF)
   }
 
   /** Can be overriden to to do for example logging or saving of graphs */
@@ -117,7 +125,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     * the old scripts at some point will die out of the blockchain.
     */
   def checkCostWithContext(ctx: SContext, exp: Value[SType],
-                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long): Try[Int] = Try {
+                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
     val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
@@ -125,10 +133,11 @@ trait IRContext extends Evaluation with TreeBuilding {
     if (estimatedCost != accCost)
       !!!(s"Estimated cost $estimatedCost should be equal $accCost")
 
-    if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, msgCostLimitError(estimatedCost, maxCost), None)
+    val totalCost = initCost + (estimatedCost.toDouble * CostTable.costFactor).toLong
+    if (totalCost > maxCost) {
+      throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
-    estimatedCost
+    totalCost.toInt
   }
 
 }

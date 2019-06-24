@@ -68,8 +68,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import CSizeContext._
   import OpCodes._
 
-  val okPrintEvaluatedEntries: Boolean = false
-
   private val SCM = SizeContextMethods
   private val SBM = SizeBoxMethods
   private val SSPM = SizeSigmaPropMethods
@@ -471,7 +469,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
   }
 
-  def msgCostLimitError(cost: Int, limit: Long) = s"Estimated expression complexity $cost exceeds the limit $limit"
+  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated expression complexity $cost exceeds the limit $limit"
 
   /** Incapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {

@@ -109,21 +109,23 @@ trait Interpreter extends ScorexLogging {
     import IR._
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
+    val initCost = context.initCost
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
-      val costingRes @ Pair(calcF, costF) = doCostingEx(env, exp, true)
+      val costingRes = doCostingEx(env, exp, true)
+      val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
 
       CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
 
-      CheckCalcFunc(IR)(calcF) { }
-
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost)
               .fold(t => throw t, identity)
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
       // check calc
+      val calcF = costingRes.calcF
+      CheckCalcFunc(IR)(calcF) { }
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = calcResult(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
@@ -207,11 +209,17 @@ trait Interpreter extends ScorexLogging {
     })
     if (outputComputedResults) {
       res.foreach { case (ok, cost) =>
-        val scaledCost = cost * 2 // this is the scale factor of CostModel with respect to the concrete hardware
+        val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds
-        val delta = (scaledCost - timeMicro).toDouble
-        val error = (delta / timeMicro * 100).formatted(s"%10.3f")
-        println(s"Result: $ok, Validation Time: $timeMicro, Estimated Cost: $scaledCost, Error: $error %")
+        val error = if (scaledCost > timeMicro) {
+          val error = ((scaledCost / timeMicro.toDouble - 1) * 100d).formatted(s"%10.3f")
+          error
+        } else {
+          val error = (-(timeMicro.toDouble / scaledCost.toDouble - 1) * 100d).formatted(s"%10.3f")
+          error
+        }
+        val name = "\"" + env.getOrElse(Interpreter.ScriptNameProp, "") + "\""
+        println(s"Name-Time-Cost-Error\t$name\t$timeMicro\t$scaledCost\t$error")
       }
     }
     res

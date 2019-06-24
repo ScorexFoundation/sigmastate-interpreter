@@ -1,6 +1,7 @@
 package sigmastate.eval
 
 import java.lang.reflect.Constructor
+
 import scala.language.implicitConversions
 import scala.language.existentials
 import scalan.{Lazy, MutableLazy, Nullable, RType}
@@ -33,8 +34,10 @@ import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
 
+import scala.collection.mutable
 
-trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
+
+trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
@@ -81,12 +84,15 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   import CostModel._
 
   override val performViewsLifting = false
-  val okMeasureOperationTime: Boolean = false
+  val okMeasureOperationTime: Boolean = true
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
   this.useAlphaEquality = false
 //  unfoldWithOriginalFunc = unfoldWithOrig
+
+  /** Whether to print values of evaluated nodes of the graph. */
+  val okPrintEvaluatedEntries: Boolean = false
 
   /** Whether to create CostOf nodes or substutute costs from CostTable as constants in the graph.
     * true - substitute; false - create CostOf nodes */
@@ -114,38 +120,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
 /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
 //  beginPass(costPass)
-
-  def createSliceAnalyzer = new SliceAnalyzer
-
-  val CollMarking = new TraversableMarkingFor[Coll]
-  val WOptionMarking = new TraversableMarkingFor[WOption]
-
-  override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: LongPlusMonoidElem |
-         _: CollOverArrayBuilderElem | _: SigmaPropElem[_] =>
-      EmptyBaseMarking(eT)
-    case ae: CollElem[a,_] =>
-      val eA = ae.eItem
-      CollMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
-    case ae: WOptionElem[a,_] =>
-      val eA = ae.eItem
-      WOptionMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
-    case _ =>
-      super.createEmptyMarking(eT)
-  }
-
-  override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
-    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: LongPlusMonoidElem | _: CollOverArrayBuilderElem =>
-      AllBaseMarking(e)
-    case colE: CollElem[a,_] =>
-      implicit val eA = colE.eItem
-      CollMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
-    case optE: WOptionElem[a,_] =>
-      implicit val eA = optE.eItem
-      WOptionMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
-    case _ =>
-      super.createAllMarking(e)
-  }
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
     override def transform(t: Transformer): Def[IntPlusMonoidData] = this
@@ -331,7 +305,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
     def builder: Rep[CostedBuilder] = costedBuilder
     def value: Rep[Thunk[A]] = Thunk { costedBlock.force().value }
-    def cost: Rep[Int] = costedBlock.force().cost
+    def cost: Rep[Int] = asRep[Int](ThunkForce(Thunk(costedBlock.force.cost))) + thunkCost
     override def size: RSize[Thunk[A]] = SizeThunkCtor(Thunk { costedBlock.force().size })
   }
 
@@ -554,6 +528,9 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case Cast(eTo: Elem[to], x) if eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass) =>
         x
 
+      // Rule: ThunkDef(x, Nil).force => x
+      case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
+
       case SM.dataSize(Def(CSizeCollCtor(CBM.replicate(_, n, s: RSize[a]@unchecked)))) => s.dataSize * n.toLong
 
       case SM.dataSize(Def(CSizeCollCtor(sizes @ EValOfSizeColl(eVal)))) if eVal.isConstantSize =>
@@ -613,17 +590,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             }
         )
         RCCostedPrim(resV, resC + len * CostTable.lambdaInvoke, resS)
-
-      case OpCost(_, id, args, cost) if args.exists(_ == IntZero) =>
-        val zero = IntZero
-        val nonZeroArgs = args.filterNot(_ == zero)
-        val res: Rep[Int] =
-          if (cost == zero && nonZeroArgs.isEmpty) zero
-          else {
-            val lamVar = lambdaStack.head.x
-            OpCost(lamVar, id, nonZeroArgs, cost)
-          }
-        res
 
       case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
         accCost.rhs match {
@@ -697,10 +663,28 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
           case _ => super.rewriteDef(d)
         }
 
-      case OpCost(_, id, args, cost) if debugModeSanityChecks =>
-        if (args.contains(cost))
-          !!!(s"Invalid OpCost($id, $args, $cost)")
-        super.rewriteDef(d)
+      case OpCost(_, id, args, cost) =>
+        if (debugModeSanityChecks) {
+          if (args.contains(cost))
+            !!!(s"Invalid OpCost($id, $args, $cost)")
+        }
+        val zero = IntZero
+// TODO this optimization can be applied after assertion assertValueIdForOpCost is removed (or relaxed)
+//        if (cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
+//          args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
+//        }
+//        else
+        if (args.exists(_ == zero)) {
+          val nonZeroArgs = args.filterNot(_ == zero)
+          val res: Rep[Int] =
+            if (cost == zero && nonZeroArgs.isEmpty) zero
+            else {
+              val lamVar = lambdaStack.head.x
+              OpCost(lamVar, id, nonZeroArgs, cost)
+            }
+          res
+        } else
+          super.rewriteDef(d)
 
       case _ =>
         super.rewriteDef(d)
@@ -1134,17 +1118,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
   val ePairOfCollByte = pairElement(eCollByte, eCollByte)
 
   def costedBooleanTransformer[T](node: BooleanTransformer[_],
-                                  xs: RCostedColl[T], calcF: Rep[T => Any], accCost: Rep[Int]) = {
+                                  xs: RCostedColl[T],
+                                  condition: RCosted[T => SType#WrappedType],
+                                  calcF: Rep[T => Any], accCost: Rep[Int]) = {
+    val args = Seq(xs.cost, condition.cost)
     val res = calcF.elem.eRange.asInstanceOf[Elem[_]] match {
       case BooleanElement =>
         node match {
           case _: ForAll[_] =>
             val value = xs.values.forall(asRep[T => Boolean](calcF))
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ForallMethod))
             withConstantSize(value, cost)
           case _: Exists[_] =>
             val value = xs.values.exists(asRep[T => Boolean](calcF))
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ExistsMethod))
             withConstantSize(value, cost)
         }
       case _: SigmaPropElem[_] =>
@@ -1153,16 +1140,20 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         node match {
           case _: ForAll[_] =>
             val value = sigmaDslBuilder.allZK(children)
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ForallMethod))
             RCCostedPrim(value, cost, size)
           case _: Exists[_] =>
             val value = sigmaDslBuilder.anyZK(children)
-            val cost = opCost(value, Seq(xs.cost), accCost)
+            val cost = opCost(value, args, accCost + costOf(SCollection.ExistsMethod))
             RCCostedPrim(value, cost, size)
         }
     }
     res
   }
+
+  class CostingRuleStat(val node: SValue, val outerStart: Long, var innerTime: Long, val outerEnd: Long)
+
+  var ruleStack: List[CostingRuleStat] = Nil
 
   protected def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     import WOption._
@@ -1188,6 +1179,12 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       }
       Nullable(res)
     }}
+
+    if (okMeasureOperationTime) {
+      val t = System.nanoTime()
+      ruleStack = new CostingRuleStat(node, t, 0, t) :: ruleStack
+    }
+
     val res: Rep[Any] = node match {
       case TaggedVariableNode(id, _) =>
         env.getOrElse(id, !!!(s"TaggedVariable $id not found in environment $env"))
@@ -1386,7 +1383,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         } else {
           colBuilder.replicate(len, IntZero).zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
         }
-        val res = costedBooleanTransformer(node, xs, calcF, cost)
+        val res = costedBooleanTransformer[Any](node, xs, conditionC, calcF, cost)
         res
 
       case MapCollection(input, sfunc) =>
@@ -1470,7 +1467,7 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
             val sizeF = fC.sliceSize
             val value = xC.value
             val y: Rep[Any] = Apply(calcF, value, false)
-            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), Apply(costF, Pair(IntZero, xC.size), false))
+            val c: Rep[Int] = opCost(y, Seq(fC.cost, xC.cost), asRep[Int](Apply(costF, Pair(IntZero, xC.size), false)) + CostTable.lambdaInvoke)
             val s: Rep[Size[Any]]= Apply(sizeF, xC.size, false)
             RCCostedPrim(y, c, s)
         }
@@ -1785,12 +1782,24 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
         val values = colBuilder.fromItems(vs: _*)(eAny)
         val costs = colBuilder.replicate(cs.length, IntZero)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
-        val accCost = opCost(
-          values,
-          vs.zip(cs).map { case (v,c) =>
-            if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
-          },
-          costOf(col))
+//        val args = vs.zip(cs).map { case (v,c) =>
+//          if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+//        }
+        val args = mutable.ArrayBuilder.make[Rep[Int]]
+        val uniqueArgs = scalan.AVHashMap[Rep[Any], (Rep[Any], Rep[Int])](10)
+        vs.zip(cs).foreach { vc =>
+          uniqueArgs.get(vc._1) match {
+            case Nullable((v, c)) =>
+              assert(c == vc._2, s"Inconsistent costed graph for $col: argument $v have different costs $c and ${vc._2}")
+            case _ =>
+              val v = vc._1
+              val c = vc._2
+              uniqueArgs.put(v, vc)
+              val arg = if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+              args += arg
+          }
+        }
+        val accCost = opCost(values, args.result(), costOf(col) + CostTable.concreteCollectionItemCost * ss.length)
         RCCostedColl(values, costs, sizes, accCost)
 
       case sigmastate.Upcast(In(inputC), tpe) =>
@@ -1843,16 +1852,51 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
       case _ =>
         error(s"Don't know how to evalNode($node)", node.sourceContext.toOption)
     }
+
+    if (okMeasureOperationTime) {
+      val t = System.nanoTime()
+
+      val rule = ruleStack.head   // always non empty at this point
+      ruleStack = ruleStack.tail  // pop current rule
+      assert(rule.node.opCode == node.opCode, s"Inconsistent stack at ${rule :: ruleStack}")
+
+      val ruleFullTime = t - rule.outerStart  // full time spent in this rule
+
+      // add this time to parent's innerTime (if any parent)
+      if (ruleStack.nonEmpty) {
+        val parent = ruleStack.head
+        parent.innerTime += ruleFullTime
+      } else {
+        // top level
+//        println(s"Top time: $ruleFullTime")
+      }
+      
+      val ruleSelfTime = ruleFullTime - rule.innerTime
+      node match {
+        case mc: Terms.MethodCall =>
+          val m = mc.method
+          ComplexityTableStat.addMcTime(m.objType.typeId, m.methodId, ruleSelfTime)
+        case _ =>
+          ComplexityTableStat.addOpTime(node.opCode, ruleSelfTime)
+      }
+    }
     val resC = asRep[Costed[T#WrappedType]](res)
     onTreeNodeCosted(ctx, env, node, resC)
     resC
   }
 
   def buildCostedGraph[T](envVals: Map[Any, SValue], tree: SValue): Rep[Costed[Context] => Costed[T]] = {
-    fun { ctxC: RCosted[Context] =>
-      val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
-      val res = asCosted[T](evalNode(ctxC, env, tree))
-      res
+    try {
+      assert(ruleStack.isEmpty)
+      fun { ctxC: RCosted[Context] =>
+        val env = envVals.mapValues(v => evalNode(ctxC, Map(), v))
+        val res = asCosted[T](evalNode(ctxC, env, tree))
+        res
+      }
+    }
+    finally {
+      // ensure leaving it in initial state
+      ruleStack = Nil
     }
   }
 

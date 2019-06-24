@@ -315,9 +315,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val v2vs = vs.updated(CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
     checkRule(CheckCostFuncOperation, v2vs, {
-      val IR.Pair(calcF, _) = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
+      val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
-      CheckCostFunc(IR)(IR.asRep[Any => Int](calcF)) { }
+      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF)) { }
     })
   }
 

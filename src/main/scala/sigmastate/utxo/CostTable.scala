@@ -4,6 +4,10 @@ import org.ergoplatform.ErgoConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigma.util.Extensions.ByteOps
+import sigmastate.serialization.ValueSerializer.getSerializer
 
 import scala.collection.mutable
 
@@ -33,12 +37,17 @@ object CostTable {
 
   val MinimalCost = 10
 
+  val interpreterInitCost = 10000
+  val perGraphNodeCost = 200
+  /** Scaling factor to be applied to estimated cost. */
+  val costFactor: Double = 2.5d
+
   val expCost = 5000
   val multiplyGroup = 50
   val negateGroup = 50
   val groupElementConst = 1
-  val constCost = 1
-  val lambdaCost = 1
+  val constCost = 10
+  val lambdaCost = 10
 
   /** Cost of creating new instances (kind of memory allocation cost).
     * When the instance already exists them the corresponding Access/Extract cost should be added.
@@ -65,8 +74,8 @@ object CostTable {
   val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
-  val lambdaInvoke = 5  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
-  
+  val lambdaInvoke = 30  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
+  val concreteCollectionItemCost = 10  // since each item is a separate graph node
   val comparisonCost = 10
   val comparisonPerKbCost = 10
 
@@ -107,7 +116,7 @@ object CostTable {
 
     ("Lambda", "() => (D1) => R", lambdaCost),
 
-    ("ConcreteCollection", "() => Coll[IV]", constCost),
+    ("ConcreteCollection", "() => Coll[IV]", collToColl),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
     ("AccessAvlTree", "Context => AvlTree", constCost),
@@ -136,6 +145,8 @@ object CostTable {
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
+    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
+    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
@@ -380,50 +391,7 @@ object CostTable {
   }
 }
 
-object CostTableStat {
-  // NOTE: make immutable before making public
-  private class StatItem(
-    /** How many times the operation has been executed */
-    var count: Long,
-    /** Sum of all execution times */
-    var sum: Long,
-    /** Minimal length of the collection produced by the operation */
-    var minLen: Int,
-    /** Maximal length of the collection produced by the operation */
-    var maxLen: Int,
-    /** Sum of all lengths of the collections produced by the operation */
-    var sumLen: Int
-  )
-  private val stat = mutable.HashMap[OperationId, StatItem]()
-  def addOpTime(op: OperationId, time: Long, len: Int) = {
-    stat.get(op) match {
-      case Some(item) =>
-        item.count += 1
-        item.sum += time
-        item.minLen = item.minLen min len
-        item.maxLen = item.maxLen max len
-        item.sumLen += len
-      case None =>
-        stat(op) = new StatItem(1, time, minLen = len, maxLen = len, sumLen = len)
-    }
-  }
 
-  /** Prints the following string
-    * Seq(
-    * ("Const", "() => SByte", 1206), // count=199
-    * ("GT", "(T,T) => SBoolean", 7954), // count=157
-    * ("/", "(SByte,SByte) => SByte", 25180), // count=2
-    * ("Inputs$", "(SContext) => Coll[SBox]", 4699), // count=443; minLen=0; maxLen=1000; avgLen=9
-    * ("OptionIsDefined", "(Option[SSigmaProp]) => SBoolean", 9251), // count=2
-    * )
-    * */
-  def costTableString: String = {
-    stat.map { case (opId, item) =>
-      val cost = item.sum / item.count
-      val avgLen = item.sumLen / item.count
-      val isColl = opId.opType.tRange.isCollection
-      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isColl) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
-    }.mkString("Seq(", "", "\n)")
-  }
-}
+
+
 

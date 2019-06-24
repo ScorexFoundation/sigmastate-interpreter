@@ -70,7 +70,7 @@ class CostAccumulatorTest extends SigmaTestingCommons { suite =>
     run("opCost_two_args", { x: Rep[Int] => opCost(v1, Seq(x, x), 5) }, 10, 15)
     run2("opCost_two_args_2", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, x), y) }, (10, 5), 15)
 
-    an[StagingException] should be thrownBy run2("opCost_two_args_3", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), y) }, (10, 5), 15)
+    an[TestFailedException] should be thrownBy run2("opCost_two_args_3", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), y) }, (10, 5), 15)
 
     run2("opCost_two_args_4", { (x: Rep[Int], y: Rep[Int]) => opCost(v1, Seq(x, y), x + y) }, (10, 5), 30)
   }
