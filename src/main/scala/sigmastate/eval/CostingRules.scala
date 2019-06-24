@@ -166,7 +166,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
       costedBuilder.mkSizePrim(Sized.SizeHeader.dataSize, element[Header]))
 
-  val TokensInfo = new KnownCollInfo(ErgoConstants.MaxTokens.value.toInt,
+  val TokensInfo = new KnownCollInfo(ErgoConstants.MaxTokens.value,
       mkSizePair(HashInfo.size, SizeLong))
 
 

@@ -116,7 +116,7 @@ object Sized extends SizedLowPriority {
 
   val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
   val SizeToken: Size[(Coll[Byte], Long)] = new CSizePair(SizeTokenId, SizeLong)
-  val SizeTokensMax = new CSizeColl(Colls.replicate(MaxTokens.value.toInt, SizeToken))
+  val SizeTokensMax = new CSizeColl(Colls.replicate(MaxTokens.value, SizeToken))
 
   val SizePropositionBytesMax = {
     val sizeValue = SizeLong.dataSize.toInt
