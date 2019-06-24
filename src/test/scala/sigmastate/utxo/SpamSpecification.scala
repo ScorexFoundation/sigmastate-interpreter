@@ -1,16 +1,16 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
+import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, ScriptCostLimit}
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckLoopLevelInCostFunction
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
@@ -18,11 +18,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CosterException, CostLimitException}
+import sigmastate.lang.exceptions.{CostLimitException, CosterException}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.generators.ObjectGenerators
@@ -603,6 +604,34 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
+  }
+/*
+    repeatScript("collection element by index", 36, 5) { scale =>
+      val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
+      val script = genNestedScript("true ", "", s" && $check", scale)
+      compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp
+    }
+
+ */
+  property("large loop: exp") {
+    repeatScript("collection element by index", 36, 5) { scale =>
+      compile(
+        Map(
+          ScriptNameProp -> "exp",
+          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
+          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
+          "g1" -> dlogGroup.generator,
+          "g2" -> dlogGroup.generator.add(dlogGroup.generator)
+        ),
+        s"""{
+           |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
+           |    val ex = if (b == 10) x1 else y1
+           |    g1.exp(ex) != g2
+           |  })
+           |}
+      """.stripMargin
+      ).asBoolValue.toSigmaProp
+    }
   }
 
   property("large loop: binary operations") {
