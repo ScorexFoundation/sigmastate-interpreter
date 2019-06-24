@@ -15,8 +15,8 @@ class SizedTests extends BaseCtxTests {
     check(SizeCreationInfo, 4 + 32)
     check(SizeTokenId, 32)
     check(SizeToken, 32 + 8)
-    check(SizeTokensMax, (32 + 8) * 4)
-    check(SizePropositionBytesMax, 4 * 1024 - 8 - (32 + 8) * 4 - (4 + 32))
+    check(SizeTokensMax, (32 + 8) * 255)
+    check(SizePropositionBytesMax, 4 * 1024)
   }
 
 }
