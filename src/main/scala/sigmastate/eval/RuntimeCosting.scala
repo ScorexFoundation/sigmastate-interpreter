@@ -37,7 +37,7 @@ import scalan.util.ReflectionUtil
 import scala.collection.mutable
 
 
-trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IRContext =>
+trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
@@ -120,38 +120,6 @@ trait RuntimeCosting extends CostingRules with DataCosting with Slicing { IR: IR
 
 /**  To enable specific configuration uncomment one of the lines above and use it in the beginPass below. */
 //  beginPass(costPass)
-
-  def createSliceAnalyzer = new SliceAnalyzer
-
-  val CollMarking = new TraversableMarkingFor[Coll]
-  val WOptionMarking = new TraversableMarkingFor[WOption]
-
-  override def createEmptyMarking[T](eT: Elem[T]): SliceMarking[T] = eT match {
-    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: LongPlusMonoidElem |
-         _: CollOverArrayBuilderElem | _: SigmaPropElem[_] =>
-      EmptyBaseMarking(eT)
-    case ae: CollElem[a,_] =>
-      val eA = ae.eItem
-      CollMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
-    case ae: WOptionElem[a,_] =>
-      val eA = ae.eItem
-      WOptionMarking(KeyPath.None, EmptyMarking(eA)).asMark[T]
-    case _ =>
-      super.createEmptyMarking(eT)
-  }
-
-  override def createAllMarking[T](e: Elem[T]): SliceMarking[T] = e match {
-    case _: BoxElem[_] | _: BigIntElem[_] | _: IntPlusMonoidElem | _: LongPlusMonoidElem | _: CollOverArrayBuilderElem =>
-      AllBaseMarking(e)
-    case colE: CollElem[a,_] =>
-      implicit val eA = colE.eItem
-      CollMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
-    case optE: WOptionElem[a,_] =>
-      implicit val eA = optE.eItem
-      WOptionMarking[a](KeyPath.All, AllMarking(eA)).asMark[T]
-    case _ =>
-      super.createAllMarking(e)
-  }
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
     override def transform(t: Transformer): Def[IntPlusMonoidData] = this
