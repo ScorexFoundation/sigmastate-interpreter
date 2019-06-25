@@ -12,10 +12,6 @@ import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, Box, PreHeader, Header}
-import sigmastate.SType._
-import scalan.RType._
-import special.sigma.{AnyValue, Box, PreHeader, Header}
-import special.sigma.{AnyValue, Box, PreHeader, Header}
 import SType._
 import RType._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit

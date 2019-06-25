@@ -4,7 +4,6 @@ import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
 import sigmastate.interpreter.Interpreter
-import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
 
 
