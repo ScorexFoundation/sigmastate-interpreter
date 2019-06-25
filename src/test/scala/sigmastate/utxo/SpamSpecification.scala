@@ -1149,7 +1149,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         case se: verifier.IR.StagingException =>
           val cause = rootCause(se)
           println(s"Rejection cause: $cause")
-          cause.isInstanceOf[CostLimitException] && cause.getMessage.contains("Estimated expression complexity")
+          cause.isInstanceOf[CostLimitException] && cause.getMessage.contains("Estimated execution cost")
         case _ => false
       }
     )

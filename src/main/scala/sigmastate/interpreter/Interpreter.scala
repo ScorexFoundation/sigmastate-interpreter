@@ -40,11 +40,12 @@ trait Interpreter extends ScorexLogging {
     val script = ValueSerializer.deserialize(r)
     val scriptComplexity = r.complexity
 
-    val remainingLimit = context.costLimit - scriptComplexity
+    val currCost = context.initCost + scriptComplexity
+    val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0)
-      throw new CostLimitException(scriptComplexity, msgCostLimitError(scriptComplexity, context.costLimit), None)
+      throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None)
 
-    val ctx1 = context.withCostLimit(remainingLimit).asInstanceOf[CTX]
+    val ctx1 = context.withInitCost(currCost).asInstanceOf[CTX]
     (ctx1, script)
   }
 
@@ -96,7 +97,7 @@ trait Interpreter extends ScorexLogging {
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
     if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
@@ -200,11 +201,12 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val remainingLimit = context.costLimit - tree.complexity - context.initCost
+      val initCost = tree.complexity + context.initCost
+      val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
-        throw new CostLimitException(tree.complexity, msgCostLimitError(tree.complexity, context.costLimit), None)
+        throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)
 
-      val context1 = context.withCostLimit(remainingLimit).asInstanceOf[CTX]
+      val context1 = context.withInitCost(initCost).asInstanceOf[CTX]
       val prop = propositionFromErgoTree(tree, context1)
 
       implicit val vs = context1.validationSettings
