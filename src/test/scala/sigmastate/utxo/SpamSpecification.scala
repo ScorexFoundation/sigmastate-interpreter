@@ -629,6 +629,30 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
+  property("large loop: exp") {
+    /*
+      Rejection cause: java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Exp)
+     */
+    checkScript{
+      compile(
+        maxSizeCollEnv ++ Map(
+          ScriptNameProp -> "large loop: exp",
+          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))).bigInteger),
+          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))).bigInteger),
+          "g1" -> dlogGroup.generator,
+          "g2" -> dlogGroup.generator.add(dlogGroup.generator)
+        ),
+        s"""{
+           |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
+           |    val ex = if (b == 10) x1 else y1
+           |    g1.exp(ex) != g2
+           |  })
+           |}
+      """.stripMargin
+      ).asBoolValue.toSigmaProp
+    }
+  }
+
   property("repeat large loop: exp") {
     // to do: convert to nested
     /*
@@ -658,6 +682,73 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin
       ).asBoolValue.toSigmaProp
     }
+  }
+
+  property("not having certain types (BigInt) in env") {
+    // NOT a spam test (yet).
+    /* value z below is not present in environment, nor is there any information that is is invalid.
+
+       Perhaps this is expected behavior as the type of z is BigInt as opposed to SigmaDsl.BigInt.
+
+       However, this could be better handled as follows:
+        If the environment contains disallowed types, an error (or warning) could be given.
+
+       Actual error with uncommented code:
+         Cannot assign type for variable 'z' because it is not found in env
+
+     */
+    checkScript(compile(
+      Map(
+        "x" -> SigmaDsl.BigInt(BigInt(Blake2b256("hello")).bigInteger),
+        "y" -> SigmaDsl.BigInt(BigInt(Blake2b256("world")).bigInteger),
+        "z" -> BigInt(Blake2b256("world")), // Using z in code gives error "z is not present in environment"
+        "g1" -> dlogGroup.generator,
+        "g2" -> dlogGroup.generator.add(dlogGroup.generator),
+        ScriptNameProp -> "exp"
+      ),
+      s"""{
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
+         |    val ex = if (b == 10) x else y
+         |    // val ex = if (b == 10) x else z // uncommenting this line will give error
+         |    g1.exp(ex) != g2
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
+
+  property("declared type is ignored") {
+    // NOT a spam test (yet). This is to check if the declared type is correctly handled
+    /*
+    The declared types are ignored in the below two lines in the code
+
+     val x:Boolean = <some Int> // considers x as Int
+       ...
+     val z:BigInt = <some Int> // considers z as Int
+
+    So this appears to be a bug.
+    infers ex as Int rather than BigInt
+    Need to add .toBigInt in the code for this to work.
+
+    Note that the same error occurs outside the forall and for types other than BigInt
+    For instance the following line before the forall also has same effect
+
+     */
+    checkScript(compile(
+      Map(
+        ScriptNameProp -> "exp",
+        "g1" -> dlogGroup.generator,
+        "g2" -> dlogGroup.generator.add(dlogGroup.generator)
+      ),
+      s"""{
+         |  val x:Boolean = 1000 // x is considered as Int, the Boolean declaration is ignored
+         |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
+         |    val y:BigInt = if (x >= 1000 || b == 10) 10000.toBigInt else 20000.toBigInt // z is BigInt
+         |    val z:BigInt = if (x >= 1000 || b == 10) 10000 else 20000 // z is condiered an Int
+         |    g1.exp(y) != g2
+         |    // g1.exp(z) != g2  // uncommenting this causes an error
+         |  })
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
   }
 
   property("large loop: binary operations") {
