@@ -2,6 +2,7 @@ package sigmastate.interpreter
 
 import sigmastate._
 import sigmastate.Values.{SigmaBoolean, Value}
+import sigmastate.basics.VerifierMessage.Challenge
 
 
 trait ProverUtils extends Interpreter {
@@ -29,7 +30,7 @@ trait ProverUtils extends Interpreter {
       tree match {
         case leaf: UncheckedLeaf[_] =>
           if(propositions.contains(leaf.proposition)){
-            val h = OtherSecretProven(leaf.proposition, leaf)
+            val h = OtherSecretProven(leaf.proposition, Challenge @@ leaf.challenge, leaf)
             hintsBag.addHint(h).addHint(OtherCommitment(leaf.proposition, leaf.commitmentOpt.get))
           } else hintsBag
         case inner: UncheckedConjecture =>

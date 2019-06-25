@@ -5,6 +5,7 @@ import java.math.BigInteger
 import sigmastate.UncheckedTree
 import sigmastate.Values.SigmaBoolean
 import sigmastate.basics.FirstProverMessage
+import sigmastate.basics.VerifierMessage.Challenge
 
 /**
   * A hint for prover, which helps prover to resolve a script. For example, if the script is "pk1 && pk2", and the
@@ -23,7 +24,9 @@ trait OtherSecret extends Hint {
 /**
   * A hint which is contains a proof-of-knowledge for a secret associated with its public image "image".
   */
-case class OtherSecretProven(override val image: SigmaBoolean, uncheckedTree: UncheckedTree) extends OtherSecret
+case class OtherSecretProven(override val image: SigmaBoolean,
+                             challenge: Challenge,
+                             uncheckedTree: UncheckedTree) extends OtherSecret
 
 /**
   * A family of hints which are about a correspondence between a public image of a secret image and prover's commitment
