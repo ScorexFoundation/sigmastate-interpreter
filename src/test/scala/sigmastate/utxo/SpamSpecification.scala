@@ -50,7 +50,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 1000000).foreach(_ => hf(block))
+    (1 to 1500000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }

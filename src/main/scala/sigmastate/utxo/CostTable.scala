@@ -90,6 +90,7 @@ object CostTable {
   val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
 
   val castOp = 10  // should be >= selectField
+  val castOpBigInt = 40
 
   val treeOp = 1000
 
@@ -249,6 +250,9 @@ object CostTable {
 
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
+
+    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
+    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
 
     ("min", "(Byte, Byte) => Byte", logicCost),
     ("min", "(Short, Short) => Short", logicCost),

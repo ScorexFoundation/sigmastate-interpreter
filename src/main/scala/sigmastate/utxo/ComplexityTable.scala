@@ -13,13 +13,14 @@ object ComplexityTable {
   val OpCodeComplexity: Map[OpCode, Int] = Seq(
     Fold.opCode                    -> 4034,  // count = 122
     MapCollection.opCode           -> 2514,  // count = 402
+    BinAnd.opCode                  -> 2000,  // count = 21858
+    BinOr.opCode                   -> 2000,  // count = 9894
     Exists.opCode                  -> 1997,  // count = 4131
     Apply.opCode                   -> 1592,  // count = 327
     Append.opCode                  -> 1524,  // count = 63
     ForAll.opCode                  -> 1451,  // count = 7952
     XorOf.opCode                   -> 1273,  // count = 2
     GroupGenerator.opCode          -> 1212,  // count = 10
-    BinAnd.opCode                  -> 1004,  // count = 21858
     Filter.opCode                  -> 849,  // count = 1656
     ByteArrayToBigInt.opCode       -> 727,  // count = 9
     LastBlockUtxoRootHash.opCode   -> 726,  // count = 3
@@ -34,7 +35,6 @@ object ComplexityTable {
     CalcBlake2b256.opCode          -> 381,  // count = 609
     FuncValue.opCode               -> 352,  // count = 5687
     OptionIsDefined.opCode         -> 343,  // count = 58
-    BinOr.opCode                   -> 332,  // count = 9894
     Negation.opCode                -> 328,  // count = 9
     ByteArrayToLong.opCode         -> 284,  // count = 3
     If.opCode                      -> 284,  // count = 3918
