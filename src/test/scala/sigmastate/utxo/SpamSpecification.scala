@@ -23,15 +23,12 @@ import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CosterException, CostLimitException}
-import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
 import scala.annotation.tailrec
-import scala.util.{Failure, Try, Success}
-import Try._
+import scala.util.{Success, Try}
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
@@ -225,9 +222,32 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
-  property("recursion") {
-    assert(warmUpPrecondition)
-    val name = "recursion"
+  val recursiveScript = BlockValue(
+    Vector(
+      ValDef(1, Plus(GetVarInt(4).get, ValUse(2, SInt))),
+      ValDef(2, Plus(GetVarInt(5).get, ValUse(1, SInt)))),
+    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0) ).asBoolValue.toSigmaProp
+
+  property("recursion catched during deserialization") {
+    assertExceptionThrown({
+      checkSerializationRoundTrip(recursiveScript)
+    },
+    {
+      case e: NoSuchElementException => e.getMessage.contains("key not found: 2")
+      case _ => false
+    })
+  }
+
+  property("recursion catched during verify") {
+    checkScript(recursiveScript)
+
+    val verifier = new ErgoLikeTestInterpreter
+    val pr = CostedProverResult(Array[Byte](), ContextExtension( Map( ) ), 0L)
+    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val (res, calcTime) = BenchmarkUtil.measureTime {
+      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
+        ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
+    }
   }
 
   property("Context extension with big coll") {

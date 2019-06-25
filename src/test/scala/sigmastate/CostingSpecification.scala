@@ -75,7 +75,7 @@ class CostingSpecification extends SigmaTestingData {
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
   }
 
-  val ContextVarAccess = accessContextVar + selectField  // `getVar(id)` + `.get`
+  val ContextVarAccess = getVarCost + selectField  // `getVar(id)` + `.get`
   val RegisterAccess = accessRegister + selectField  // `getReg(id)` + `.get`
   val GTConstCost = comparisonCost + constCost
   val LengthGTConstCost = collLength + GTConstCost
