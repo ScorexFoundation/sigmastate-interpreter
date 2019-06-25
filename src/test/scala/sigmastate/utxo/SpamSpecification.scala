@@ -584,40 +584,54 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
-  property("large loop: fold 1") {
+  property("large loop: fold") {
+    val check = "i && b == 1"
     assert(warmUpPrecondition)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 1"),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
-         |    i && b == 1
+         |    $check
          |  })
          |}
       """.stripMargin).asBoolValue.toSigmaProp)
   }
 
-  property("large loop: fold 2") {
+  property("large loop: fold with complex logic") {
+    val check = "(i && b == 1) || (b == 2 && !i) || anyOf(Coll(i || b > 3, b == 0, b == -1, b == -2 && i))"
     assert(warmUpPrecondition)
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 2"),
+    checkScript(
+      compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{
-         |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
-         |    (i && b == 1) || b == 10
-         |  })
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+        |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
+        |    $check
+        |  })
+        |}""".stripMargin).asBoolValue.toSigmaProp
+    )
   }
-/*
-    repeatScript("collection element by index", 36, 5) { scale =>
-      val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => OUTPUTS(0).R8[Coll[Byte]].get(i.toInt) == OUTPUTS(0).R8[Coll[Byte]].get(3000) })"
-      val script = genNestedScript("true ", "", s" && $check", scale)
-      compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp
-    }
 
- */
-  property("large loop: exp") {
+  property("large loop: repeat fold with complex logic") {
+    val check = "(i && b == 1) || (b == 2 && !i) || anyOf(Coll(i || b > 3, b == 0, b == -1, b == -2 && i))"
     repeatScript("collection element by index", 36, 5) { scale =>
+      compile(maxSizeCollEnv + (ScriptNameProp -> check),
+        s"""{
+        |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
+        |    $check
+        |  })
+        |}""".stripMargin).asBoolValue.toSigmaProp
+    }
+  }
+
+  property("repeat large loop: exp") {
+    // to do: convert to nested
+    /*
+      Passes because costing is not implemented for exp
+        java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Exp)
+
+     */
+    repeatScript("collection element by index", 101, 5) { scale =>
       compile(
         Map(
-          ScriptNameProp -> "exp",
+          ScriptNameProp -> "repeat large loop: exp",
           "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
           "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
           "g1" -> dlogGroup.generator,
@@ -625,7 +639,11 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         ),
         s"""{
            |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
-           |    val ex = if (b == 10) x1 else y1
+           |    val inner = OUTPUTS(0).R8[Coll[Byte]].get.forall({(c:Byte) =>
+           |      val ex = if (b == 10) x1 else y1
+           |      g1.exp(ex) != g2
+           |    })
+           |    val ex = if (inner) x1 else y1
            |    g1.exp(ex) != g2
            |  })
            |}
