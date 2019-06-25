@@ -249,7 +249,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
       res.fold(t => throw t, identity)
     }, {
-      case e: IR.StagingException => e.getMessage.contains("ValUse 2 not found in environment")
+      case e: NoSuchElementException =>
+        // this is expected bacause of deserialization is forced when ErgoTree.complexity is accessed in verify
+        e.getMessage.contains("key not found: 2")
       case _ => false
     })
   }

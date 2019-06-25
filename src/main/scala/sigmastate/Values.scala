@@ -952,7 +952,7 @@ object Values {
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
-    complexity: Int
+    givenComplexity: Int
   ) {
 
     def this(header: Byte,
@@ -974,6 +974,14 @@ object Values {
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+
+    private var _complexity: Int = givenComplexity
+    lazy val complexity: Int = {
+      if (_complexity == 0) {
+        _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
+      }
+      _complexity
+    }
 
     /** Get proposition expression from this contract.
       * When root.isRight then
