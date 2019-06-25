@@ -180,7 +180,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   def checkResult(res: Try[(Boolean, Long)], calcTime: Long, scriptSize: Int) = {
-    println(s"Verify time: $calcTime millis; SerializedSize: $scriptSize")
+    println(s"Verify time: $calcTime millis; SerializedSize: $scriptSize;  Defs: ${IR.defCount}")
     println(s"Timeout: $Timeout millis")
     res.fold(t => {
       val cause = rootCause(t)
@@ -1158,25 +1158,31 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     (100 to(500, 100)) foreach { n =>
       println(s"Scale: $n")
+
       val prop = Exists(Inputs,
         FuncValue(Vector((1, SBox)),
           Exists(Outputs,
             FuncValue(Vector((2, SBox)),
               EQ(ExtractScriptBytes(ValUse(1, SBox)),
                 ExtractScriptBytes(ValUse(2, SBox))))))).toSigmaProp
+      val (measuredTree, scriptSize) = measuredScriptAndSize(prop)
 
       val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
       val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6)))).toSigmaProp
 
-      val inputs = ErgoBox(11, prop, 0) +: // the box we are going to spend
+      val inputs = ErgoBox(11, measuredTree, 0) +: // the box we are going to spend
         ((1 to n) map (_ => ErgoBox(11, inputScript, 0))) :+ // non equal boxes
         ErgoBox(11, outputScript, 0) // the last one is equal to output
 
       val outputs = (1 to n) map (_ => ErgoBox(11, outputScript, 0))
 
+      // force propositionBytes computation here (to exclude it from verify time)
+      inputs.foreach {in => in.propositionBytes }
+      outputs.foreach {out => out.propositionBytes }
+
       val tx = createTransaction(outputs)
 
-      val (measuredTree, scriptSize) = measuredScriptAndSize(prop)
+
       val initCost = initializationCost(scriptSize)
       val ctx = new ErgoLikeContext(currentHeight = 0,
         lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -1192,7 +1198,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         costLimit = CostLimit,
         initCost = initCost)
 
-      runSpam("t1", ctx, measuredTree, false, true)(prover, verifier)
+      runSpam("t1", ctx, measuredTree, false, false)(prover, verifier)
       println("----------------------")
     }
   }
