@@ -469,7 +469,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _ => error(s"Cannot find value in environment for $s (dataEnv = $dataEnv)")
   }
 
-  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated expression complexity $cost exceeds the limit $limit"
+  def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
   /** Incapsulate simple monotonic (add only) counter with reset. */
   class CostCounter(val initialCost: Int) {
@@ -492,12 +492,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     @inline private def initialStack() = List(new Scope(Set(), 0))
     private var _scopeStack: List[Scope] = initialStack
 
+    /** New item is pushed before loop starts evaluating and popped after it finishes. */
     private var _loopStack: List[Loop] = Nil
 
     @inline def currentVisited: Set[Sym] = _scopeStack.head.visited
     @inline def currentScope: Scope = _scopeStack.head
 
     /** Describes cost information of the loop (map, fold, flatMap etc.)
+      * This is used for fail-fast checks in `add` method.
       * @param body  symbol of the lambda representing loop body */
     class Loop(val body: Sym, var accumulatedCost: Int)
 

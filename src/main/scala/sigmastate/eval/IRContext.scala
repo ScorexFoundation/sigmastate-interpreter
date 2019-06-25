@@ -91,7 +91,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
@@ -101,7 +101,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {
-      throw new CostLimitException(estimatedCost, s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $exp")
+      throw new CostLimitException(estimatedCost, s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $exp")
     }
     estimatedCost
   }
@@ -130,8 +130,10 @@ trait IRContext extends Evaluation with TreeBuilding {
                     getDataEnv, costF, Some(maxCost))
     val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))
 
-    if (estimatedCost != accCost)
-      !!!(s"Estimated cost $estimatedCost should be equal $accCost")
+    if (debugModeSanityChecks) {
+      if (estimatedCost != accCost)
+        !!!(s"Estimated cost $estimatedCost should be equal $accCost")
+    }
 
     val totalCost = initCost + (estimatedCost.toDouble * CostTable.costFactor).toLong
     if (totalCost > maxCost) {
