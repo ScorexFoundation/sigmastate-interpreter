@@ -239,15 +239,19 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("recursion catched during verify") {
-    checkScript(recursiveScript)
-
-    val verifier = new ErgoLikeTestInterpreter
-    val pr = CostedProverResult(Array[Byte](), ContextExtension( Map( ) ), 0L)
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
-    val (res, calcTime) = BenchmarkUtil.measureTime {
-      verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
-        ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
-    }
+    assertExceptionThrown({
+      val verifier = new ErgoLikeTestInterpreter
+      val pr = CostedProverResult(Array[Byte](), ContextExtension( Map( ) ), 0L)
+      val ctx = ErgoLikeContext.dummy(fakeSelf)
+      val (res, calcTime) = BenchmarkUtil.measureTime {
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
+          ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
+      }
+      res.fold(t => throw t, identity)
+    }, {
+      case e: IR.StagingException => e.getMessage.contains("ValUse 2 not found in environment")
+      case _ => false
+    })
   }
 
   property("Context extension with big coll") {

@@ -96,7 +96,6 @@ object CostTable {
   val getVarCost       = 20
   val extractCost      = 10
   val selectField      = 10
-  val accessContextVar = 10
   val accessBox        = 10
   val accessRegister   = 10
 
