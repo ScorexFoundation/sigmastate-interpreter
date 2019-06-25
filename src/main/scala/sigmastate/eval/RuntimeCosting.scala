@@ -84,7 +84,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import CostModel._
 
   override val performViewsLifting = false
-  val okMeasureOperationTime: Boolean = true
+  val okMeasureOperationTime: Boolean = false
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
   this.keepOriginalFunc = false  // original lambda of Lambda node contains invocations of evalNode and we don't want that
@@ -99,13 +99,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   var substFromCostTable: Boolean = true
 
   /** Whether to save calcF and costF graphs in the file given by ScriptNameProp environment variable */
-  var saveGraphsInFile: Boolean = true
+  var saveGraphsInFile: Boolean = false
 
   /** Whether to output the cost value estimated for the script given by ScriptNameProp environment variable */
   var outputEstimatedCost: Boolean = false
 
   /** Whether to output the computed results of the script. */
-  var outputComputedResults: Boolean = true
+  var outputComputedResults: Boolean = false
 
   /** Whether to perform extended checks of correctness, expected invariants and data consistency.
     * Since it may add substantial overhead, tt shouldn't be used in production. */
@@ -578,18 +578,23 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val sizes = xs.sizes
         val len = sizes.length
         val zeros = colBuilder.replicate(len, IntZero)
-        val Pair(resS, resC) = zeros.zip(sizes).foldLeft(
-            Pair(zero.size, IntZero),
-            fun { in: Rep[((Size[b], Int), (Int, Size[a]))] =>
-              val Pair(Pair(accSizeB, accCost), Pair(xCost, xSize)) = in
+
+        // in order to fail fast this line is computed first before the fold loop below
+        val preFoldCost = opCost(resV, Seq(xs.cost, zero.cost), len * CostTable.lambdaInvoke + CostTable.lambdaCost)
+
+        val Pair(resS, resC) = sizes.foldLeft(Pair(zero.size, preFoldCost),
+            fun { in: Rep[((Size[b], Int), Size[a])] =>
+              val Pair(Pair(accSizeB, accCost), xSize) = in
               val sBA = RCSizePair(accSizeB, xSize)
-              val size = sizeF(sBA)
-              val cost: Rep[Int] = asRep[Int](Apply(costF, Pair(IntZero, sBA), false))
-              val res = Pair(size, xCost + cost)
+              val size = sizeF(sBA)  // unfold sizeF
+              val cost: Rep[Int] = opCost(size, Seq(accCost), asRep[Int](Apply(costF, Pair(IntZero, sBA), false)) + CostTable.lambdaInvoke)
+              val res = Pair(size, cost)
               res
             }
         )
-        RCCostedPrim(resV, resC + len * CostTable.lambdaInvoke, resS)
+
+        val cost = opCost(resV, Seq(preFoldCost), resC)
+        RCCostedPrim(resV, cost, resS)
 
       case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
         accCost.rhs match {

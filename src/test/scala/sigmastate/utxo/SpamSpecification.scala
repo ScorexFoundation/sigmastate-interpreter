@@ -586,6 +586,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: fold") {
     val check = "i && b == 1"
+    assert(warmUpPrecondition)
     checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "fold 1"),
       s"""{
          |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
@@ -597,6 +598,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: fold with complex logic") {
     val check = "(i && b == 1) || (b == 2 && !i) || anyOf(Coll(i || b > 3, b == 0, b == -1, b == -2 && i))"
+    assert(warmUpPrecondition)
     checkScript(
       compile(maxSizeCollEnv + (ScriptNameProp -> check),
       s"""{

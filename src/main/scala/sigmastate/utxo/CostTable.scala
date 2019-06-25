@@ -40,7 +40,7 @@ object CostTable {
   val interpreterInitCost = 10000
   val perGraphNodeCost = 200
   /** Scaling factor to be applied to estimated cost. */
-  val costFactor: Double = 2.5d
+  val costFactor: Double = 2d
 
   val expCost = 5000
   val multiplyGroup = 50

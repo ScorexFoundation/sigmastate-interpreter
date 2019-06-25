@@ -492,8 +492,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     @inline private def initialStack() = List(new Scope(Set(), 0))
     private var _scopeStack: List[Scope] = initialStack
 
+    private var _loopStack: List[Loop] = Nil
+
     @inline def currentVisited: Set[Sym] = _scopeStack.head.visited
     @inline def currentScope: Scope = _scopeStack.head
+
+    /** Describes cost information of the loop (map, fold, flatMap etc.)
+      * @param body  symbol of the lambda representing loop body */
+    class Loop(val body: Sym, var accumulatedCost: Int)
 
     /** Represents a single scope during execution of the graph.
       * The lifetime of each instance is bound to scope execution.
@@ -563,8 +569,13 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       // check that we are still withing the limit
       if (costLimit.isDefined) {
         val limit = costLimit.get
-        if (cost > limit)
-          throw new CostLimitException(cost, msgCostLimitError(cost, limit), None)
+        val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
+        val accumulatedCost = cost + loopCost
+        if (accumulatedCost > limit) {
+//          if (cost < limit)
+//            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
+          throw new CostLimitException(accumulatedCost, msgCostLimitError(accumulatedCost, limit), None)
+        }
       }
 
       // each OpCost represents how much cost was added since beginning of the current scope
@@ -577,11 +588,26 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       _scopeStack = new Scope(currentVisited, currentScope.currentCost) :: _scopeStack
     }
 
-    /** Called after all operations of a scope are executed (lambda or thunk)*/
-    def endScope() = {
+    /** Called after all operations of a scope are executed (lambda or thunk)
+      * @param body  symbol of Lambda or ThunkDef node of the scope
+      */
+    def endScope(body: Sym) = {
       val deltaCost = currentScope.currentCost - currentScope.initialCost
       _scopeStack = _scopeStack.tail
       _scopeStack.head.childScopeResult = deltaCost  // set Result register of parent scope
+
+      if (_loopStack.nonEmpty && _loopStack.head.body == body) {
+        // every time we exit the body of the loop we need to update accumulated cost
+        _loopStack.head.accumulatedCost += deltaCost
+      }
+    }
+
+    def startLoop(body: Sym) = {
+      _loopStack = new Loop(body, 0) :: _loopStack
+    }
+
+    def endLoop() = {
+      _loopStack = _loopStack.tail
     }
 
     /** Resets this accumulator into initial state to be ready for new graph execution. */
@@ -660,9 +686,43 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case mc @ MethodCall(obj, m, args, _) =>
             val dataRes = obj.elem match {
               case _: CollElem[_, _] => mc match {
-                case CollMethods.flatMap(xs, f) =>
+                case CollMethods.flatMap(_, f) =>
                   val newMC = mc.copy(args = mc.args :+ f.elem.eRange.eItem)(mc.selfType, mc.isAdapterCall)
-                  invokeUnlifted(obj.elem, newMC, dataEnv)
+                  costAccumulator.startLoop(f)
+                  val res = invokeUnlifted(obj.elem, newMC, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.foldLeft(_, _, f) =>
+                  costAccumulator.startLoop(f)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.map(_, f) =>
+                  costAccumulator.startLoop(f)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.filter(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.forall(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
+                case CollMethods.exists(_, p) =>
+                  costAccumulator.startLoop(p)
+                  val res = invokeUnlifted(obj.elem, mc, dataEnv)
+                  costAccumulator.endLoop()
+                  res
+
                 case _ =>
                   invokeUnlifted(obj.elem, mc, dataEnv)
               }
@@ -708,7 +768,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
                 e
               }
               val res = resEnv(y)
-              costAccumulator.endScope()
+              costAccumulator.endScope(te.sym)
               res
             }
             out(f)
@@ -725,7 +785,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
                 e
               }
               val res = resEnv(y)
-              costAccumulator.endScope()
+              costAccumulator.endScope(te.sym)
               res
             }
             out(th)
