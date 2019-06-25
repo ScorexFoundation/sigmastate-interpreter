@@ -701,7 +701,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       Map(
         "x" -> SigmaDsl.BigInt(BigInt(Blake2b256("hello")).bigInteger),
         "y" -> SigmaDsl.BigInt(BigInt(Blake2b256("world")).bigInteger),
-        "z" -> BigInt(Blake2b256("world")), // Using z in code gives error "z is not present in environment"
+//        "z" -> BigInt(Blake2b256("world")), // Using z in code gives error "z is not present in environment"
         "g1" -> dlogGroup.generator,
         "g2" -> dlogGroup.generator.add(dlogGroup.generator),
         ScriptNameProp -> "exp"
