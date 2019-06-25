@@ -19,6 +19,8 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     w.putValues(mc.args, ArgInfo("args", "arguments of the method call"))
   }
 
+  override def getComplexity: Int = 0  // because we add it explicitly in parse below
+
   /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
     * but a valid ErgoTree should have SMethod instances specialized for specific types
     * of `obj` and `args` using `specializeFor`.
