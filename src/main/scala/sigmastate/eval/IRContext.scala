@@ -135,7 +135,7 @@ trait IRContext extends Evaluation with TreeBuilding {
         !!!(s"Estimated cost $estimatedCost should be equal $accCost")
     }
 
-    val totalCost = initCost + (estimatedCost.toDouble * CostTable.costFactor).toLong
+    val totalCost = initCost + (estimatedCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease)
     if (totalCost > maxCost) {
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }

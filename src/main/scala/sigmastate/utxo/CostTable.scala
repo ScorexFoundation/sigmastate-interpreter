@@ -39,8 +39,10 @@ object CostTable {
 
   val interpreterInitCost = 10000
   val perGraphNodeCost = 200
-  /** Scaling factor to be applied to estimated cost. */
-  val costFactor: Double = 2d
+
+  /** Scaling factors to be applied to estimated cost (totalCost = cost * costFactorIncrease / costFactorDecrease */
+  val costFactorIncrease: Int = 3
+  val costFactorDecrease: Int = 2
 
   val expCost = 5000
   val multiplyGroup = 50
@@ -91,6 +93,7 @@ object CostTable {
 
   val treeOp = 1000
 
+  val getVarCost       = 20
   val extractCost      = 10
   val selectField      = 10
   val accessContextVar = 10
@@ -124,7 +127,7 @@ object CostTable {
     ("SelectField", "() => Unit", selectField),
     ("AccessKiloByteOfData", "() => Unit", extractCost),
     ("AccessBox", "Context => Box", accessBox),
-    ("GetVar", "(Context, Byte) => Option[T]", extractCost),
+    ("GetVar", "(Context, Byte) => Option[T]", getVarCost),
     ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
     ("AccessRegister", "Box => Option[T]", accessRegister),
     ("ExtractAmount", "(Box) => Long", extractCost),

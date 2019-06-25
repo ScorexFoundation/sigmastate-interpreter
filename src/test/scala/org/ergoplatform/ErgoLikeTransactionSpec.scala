@@ -20,8 +20,8 @@ class ErgoLikeTransactionSpec extends PropSpec
   with SigmaTestingCommons {
 
   property("ErgoLikeTransaction: Serializer round trip") {
-    forAll { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
-    forAll { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
+    forAll(MinSuccessful(50)) { t: ErgoLikeTransaction => roundTripTest(t)(ErgoLikeTransaction.serializer) }
+    forAll(MinSuccessful(50)) { t: ErgoLikeTransaction => roundTripTestWithPos(t)(ErgoLikeTransaction.serializer) }
   }
 
   property("ErgoLikeTransaction with same token in different outputs : Serializer round trip") {

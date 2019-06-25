@@ -40,6 +40,9 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
   * @param boxesToSpend - boxes, that corresponds to id's of `spendingTransaction.inputs`
   * @param spendingTransaction - transaction that contains `self` box
   * @param extension - prover-defined key-value pairs, that may be used inside a script
+  * @param validationSettings  validataion parameters passed to Interpreter.verify to detect soft-fork conditions
+  * @param costLimit  hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
+  * @param initCost   initial value of execution cost already accumulated before Interpreter.verify is called
   */
 class ErgoLikeContext(val currentHeight: Height,
                       val lastBlockUtxoRoot: AvlTreeData,

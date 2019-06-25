@@ -1,16 +1,16 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, ScriptCostLimit}
+import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckLoopLevelInCostFunction
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
+import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
@@ -18,19 +18,20 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CostLimitException, CosterException}
+import sigmastate.lang.exceptions.{CosterException, CostLimitException}
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
 import scala.annotation.tailrec
-import scala.util.Try
+import scala.util.{Failure, Try, Success}
+import Try._
 
 /**
   * Suite of tests where a malicious prover tries to feed a verifier with a script which is costly to verify
@@ -87,9 +88,14 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     (res, (t - t0) < Timeout)
   }
 
-  def measuredScriptAndSize(spamScript: SigmaPropValue): (ErgoTree, Int) = {
+  def measuredScriptAndSize(spamScript: SigmaPropValue): Try[(ErgoTree, Int)] = Try {
     val tree = ErgoTree.fromProposition(spamScript)
     val bytes = DefaultSerializer.serializeErgoTree(tree)
+    if (bytes.length > MaxPropositionBytes.value) {
+      val msg = s"Script size ${bytes.length} is too big, fix the test"
+      println(msg)
+      throw new Exception(msg)
+    }
     val measuredTree = DefaultSerializer.deserializeErgoTree(bytes)
     assert(measuredTree.complexity > 0)
     (measuredTree, bytes.length)
@@ -103,11 +109,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     * Checks that regardless of the script structure, it's verification always consumes at most `Timeout` ms
     */
   private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Boolean = {
-    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript)
-    // TODO use MaxPropositionBytes constant here once its value can be decreased without failing tests
-    if (scriptSize > 1500) {
-      println(s"Script size $scriptSize is too big, fix the test")
-      return false
+    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript) match {
+      case Success(x) => x
+      case _ =>  return false
     }
 
     val ctx = {
@@ -221,6 +225,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
+  property("recursion") {
+    assert(warmUpPrecondition)
+    val name = "recursion"
+  }
 
   property("Context extension with big coll") {
     assert(warmUpPrecondition)
@@ -1143,16 +1151,17 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
     assert(verifyTime < Timeout, s"Script rejection time $verifyTime is longer than timeout $Timeout")
 
-    assertExceptionThrown(
-      res.fold(t => throw t, identity),
-      {
-        case se: verifier.IR.StagingException =>
-          val cause = rootCause(se)
-          println(s"Rejection cause: $cause")
-          cause.isInstanceOf[CostLimitException] && cause.getMessage.contains("Estimated execution cost")
-        case _ => false
-      }
-    )
+//    assertExceptionThrown(
+//      res.fold(t => throw t, identity),
+//      {
+//        case ce: CostLimitException => true
+//        case se: verifier.IR.StagingException =>
+//          val cause = rootCause(se)
+//          println(s"Rejection cause: $cause")
+//          cause.isInstanceOf[CostLimitException] && cause.getMessage.contains("Estimated execution cost")
+//        case _ => false
+//      }
+//    )
 
     // measure time required to fully execute the script itself and check it is more then Timeout
     // this is necessary to nurture a more realistic suite of test cases
@@ -1183,7 +1192,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
             FuncValue(Vector((2, SBox)),
               EQ(ExtractScriptBytes(ValUse(1, SBox)),
                 ExtractScriptBytes(ValUse(2, SBox))))))).toSigmaProp
-      val (measuredTree, scriptSize) = measuredScriptAndSize(prop)
+      val (measuredTree, scriptSize) = measuredScriptAndSize(prop).get
 
       val inputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(5)))).toSigmaProp
       val outputScript = OR((1 to 200).map(_ => EQ(LongConstant(6), LongConstant(6)))).toSigmaProp
