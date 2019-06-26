@@ -325,6 +325,12 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val value = obj.value.negate
       RCCostedPrim(value, opCost(value, costOfArgs, costOf(method)), SizeGroupElement)
     }
+
+    def exp(bigInt: RCosted[BigInt]): RCosted[GroupElement] = {
+      val value = obj.value.exp(bigInt.value)
+      val cost = opCost(value, costOfArgs, costOf(method))
+      RCCostedPrim(value, cost, SizeGroupElement)
+    }
   }
 
   /** CostingHandler for SGroupElement, see SGroupElement.coster */
