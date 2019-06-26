@@ -1822,12 +1822,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val res = downcast(inputC.value)(elem)
         withConstantSize(res, opCost(res, Seq(inputC.cost), costOf(node)))
 
-      case LongToByteArray(In(input)) =>
-        val inputC = asRep[Costed[Long]](input)
-        val res = sigmaDslBuilder.longToByteArray(inputC.value)
-        val cost = opCost(res, Seq(inputC.cost), costOf(node))
-        LongBytesInfo.mkCostedColl(res, cost)
-
       case ByteArrayToLong(In(arr)) =>
         val arrC = asRep[Costed[Coll[Byte]]](arr)
         val value = sigmaDslBuilder.byteArrayToLong(arrC.value)
