@@ -6,10 +6,10 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, IntConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.{ContextExtension, Interpreter}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
 import sigmastate.utxo.{CostTable, CostTableStat}
 import sigmastate.utxo.CostTable._
 import sigmastate.eval._
@@ -350,4 +350,27 @@ class CostingSpecification extends SigmaTestingData {
   property("TrueLeaf cost") {
     cost("{ true }")(constCost)
   }
+
+  property("ErgoTree with TrueLeaf costs") {
+    val tree = ErgoTree(16, IndexedSeq(TrueLeaf), BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)))
+    tree.toString shouldBe
+      "ErgoTree(16,Vector(TrueLeaf$(127)),Right(BoolToSigmaProp(ConstantPlaceholder(0,SBoolean))),0)"
+
+    val pr = interpreter.prove(tree, context, fakeMessage).get
+    val expressionCost =
+      constCost +
+      logicCost + // SigmaPropIsProven
+      logicCost // BoolToSigmaProp
+
+    val baseCost = (expressionCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) +
+      CostTable.interpreterInitCost
+
+    pr.cost shouldBe baseCost
+
+    val verifier = new ErgoLikeTestInterpreter
+    val cost = verifier.verify(emptyEnv, tree, context, pr, fakeMessage).get._2
+
+    cost shouldBe (baseCost + tree.complexity)
+  }
+
 }
