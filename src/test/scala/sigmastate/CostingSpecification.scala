@@ -346,4 +346,8 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $opt.map({ (x: Int) => x + 1}).isDefined }")(
       accessOpt + OptionOp + lambdaCost + plusMinus + constCost + selectField)
   }
+
+  property("TrueLeaf cost") {
+    cost("{ true }")(constCost)
+  }
 }
