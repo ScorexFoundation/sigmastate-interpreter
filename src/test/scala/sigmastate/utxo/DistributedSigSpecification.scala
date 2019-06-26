@@ -124,7 +124,14 @@ class DistributedSigSpecification extends SigmaTestingCommons {
     *
     * A statement which protects the box to spend is "atLeast(2, Coll(pubkeyA, pubkeyB, pubkeyC))".
     *
-    * The scheme is the same as in the previous example.
+    * A scheme for multisigning is following:
+    *
+    *   - Bob is generating first protocol message (commitment to his randomness) "a" and sends it to Alice
+    *   - Alice is generating her proof having Bob's "a" as a hint. She then puts Bob's randomness and fill his
+    *     response with zero bits. Thus Alice's signature is not valid. Alice is sending her signature to Bob.
+    *   - Bob is extracting Alice's commitment to randomness and response, and also Carol's commitment and response.
+    *     He's using his randomness from his first step and completes the (valid) signature.
+    *
     */
   property("distributed THRESHOLD - 2 out of 3") {
     val proverA = new ErgoLikeTestProvingInterpreter
