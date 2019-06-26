@@ -134,11 +134,11 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
       throw new CostLimitException(initCost,
         s"Estimated execution cost $initCost exceeds the limit ${ctx.costLimit}", None)
 
-    val ctx1 = ctx.withInitCost(initCost).asInstanceOf[CTX]
+    val ctxUpdInitCost = ctx.withInitCost(initCost).asInstanceOf[CTX]
 
-    val prop = propositionFromErgoTree(tree, ctx1)
-    val (propTree, _) = applyDeserializeContext(ctx, prop)
-    val tried = reduceToCrypto(ctx, env, propTree)
+    val prop = propositionFromErgoTree(tree, ctxUpdInitCost)
+    val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
+    val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
     def errorReducedToFalse = error("Script reduced to false")
@@ -152,7 +152,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctx.extension, cost)
+    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
   }
 
   /**
