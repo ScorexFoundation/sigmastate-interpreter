@@ -8,13 +8,14 @@ import scorex.util.ByteArrayBuilder
 import sigmastate.lang.exceptions.SerializerException
 import sigmastate.utils._
 import scorex.util.serialization._
+import sigmastate.serialization.OpCodes.OpCode
 
 object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxInputSize: Int = ErgoConstants.MaxInputSize.get
-  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
+  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.value
+  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.value
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.
@@ -69,11 +70,11 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
   }
 
   def parseWithGenericReader(r: Reader)(implicit vs: SigmaValidationSettings): TFamily = {
-    parse(
-      new SigmaByteReader(r,
-        new ConstantStore(),
-        resolvePlaceholdersToConstants = false,
-        maxTreeDepth = SigmaSerializer.MaxTreeDepth))
+    val sigmaByteReader = new SigmaByteReader(r,
+      new ConstantStore(),
+      resolvePlaceholdersToConstants = false,
+      maxTreeDepth = SigmaSerializer.MaxTreeDepth)
+    parse(sigmaByteReader)
   }
 
   def error(msg: String) = throw new SerializerException(msg, None)
@@ -86,9 +87,8 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
 }
 
 trait SigmaSerializerCompanion[TFamily] {
-  type Tag
 
-  def getSerializer(opCode: Tag): SigmaSerializer[TFamily, _ <: TFamily]
+  def getSerializer(opCode: OpCode): SigmaSerializer[TFamily, _ <: TFamily]
   def deserialize(r: SigmaByteReader): TFamily
   def serialize(v: TFamily, w: SigmaByteWriter): Unit
 }

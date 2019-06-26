@@ -1,8 +1,14 @@
 package sigmastate.utxo
 
+import org.ergoplatform.ErgoConstants
 import sigmastate.{Downcast, Upcast}
 import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
+import sigmastate.serialization.OpCodes
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
+import sigma.util.Extensions.ByteOps
+import sigmastate.serialization.ValueSerializer.getSerializer
+
 import scala.collection.mutable
 
 case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => Int) {
@@ -29,14 +35,22 @@ case class CostTable(operCosts: Map[OperationId, Int]) extends (OperationId => I
 object CostTable {
   type ExpressionCost = Int
 
-  val MinimalCost = 1
+  val MinimalCost = 10
+
+  val interpreterInitCost = 10000
+  val perGraphNodeCost = 200
+
+  /** Scaling factors to be applied to estimated cost (totalCost = cost * costFactorIncrease / costFactorDecrease */
+  val costFactorIncrease: Int = 1
+  val costFactorDecrease: Int = 1
 
   val expCost = 5000
   val multiplyGroup = 50
   val negateGroup = 50
   val groupElementConst = 1
-  val constCost = 1
-  val lambdaCost = 1
+  val decodePointCost = 1
+  val constCost = 10
+  val lambdaCost = 10
 
   /** Cost of creating new instances (kind of memory allocation cost).
     * When the instance already exists them the corresponding Access/Extract cost should be added.
@@ -47,12 +61,13 @@ object CostTable {
   val newOptionValueCost = 1
   val newAvlTreeCost = 10
 
-  val plusMinus = 2
+  val plusMinus = 10
   val multiply = 10
 
   val plusMinusBigInt = 10
   val comparisonBigInt = 10
   val multiplyBigInt = 50
+  val newBigIntPerItem = 1
 
   val hashPerKb = 100
 
@@ -63,11 +78,12 @@ object CostTable {
   val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
-
-  val comparisonCost = 3
+  val lambdaInvoke = 30  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
+  val concreteCollectionItemCost = 10  // since each item is a separate graph node
+  val comparisonCost = 10
   val comparisonPerKbCost = 10
 
-  val logicCost = 2
+  val logicCost = 10
 
   val sigmaAndCost = 10
   val sigmaOrCost = 40
@@ -75,13 +91,14 @@ object CostTable {
   val proveDlogEvalCost = groupElementConst + constCost + 2 * expCost + multiplyGroup
   val proveDHTupleEvalCost = proveDlogEvalCost * 4  // we approximate it as multiple of proveDlogEvalCost
 
-  val castOp = 5  // TODO costing: should be >= selectField
+  val castOp = 10  // should be >= selectField
+  val castOpBigInt = 40
 
   val treeOp = 1000
 
+  val getVarCost       = 20
   val extractCost      = 10
   val selectField      = 10
-  val accessContextVar = 10
   val accessBox        = 10
   val accessRegister   = 10
 
@@ -104,7 +121,7 @@ object CostTable {
 
     ("Lambda", "() => (D1) => R", lambdaCost),
 
-    ("ConcreteCollection", "() => Coll[IV]", constCost),
+    ("ConcreteCollection", "() => Coll[IV]", collToColl),
     ("GroupGenerator$", "() => GroupElement", constCost),
     ("Self$", "Context => Box", constCost),
     ("AccessAvlTree", "Context => AvlTree", constCost),
@@ -112,7 +129,7 @@ object CostTable {
     ("SelectField", "() => Unit", selectField),
     ("AccessKiloByteOfData", "() => Unit", extractCost),
     ("AccessBox", "Context => Box", accessBox),
-    ("GetVar", "(Context, Byte) => Option[T]", extractCost),
+    ("GetVar", "(Context, Byte) => Option[T]", getVarCost),
     ("GetRegister", "(Box, Byte) => Option[T]", accessRegister),
     ("AccessRegister", "Box => Option[T]", accessRegister),
     ("ExtractAmount", "(Box) => Long", extractCost),
@@ -126,13 +143,15 @@ object CostTable {
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
-    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
     ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
+    ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
+    ("SCollection$.forall", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),
     ("SCollection$.map", "(Coll[IV],(IV) => OV) => Coll[OV]", collToColl),
     ("SCollection$.flatMap", "(Coll[IV],(IV) => Coll[OV]) => Coll[OV]", collToColl),
     ("SCollection$.indexOf_per_kb", "(Coll[IV],IV,Int) => Int", collToColl),
@@ -234,6 +253,9 @@ object CostTable {
     ("Downcast", s"(${Downcast.tT}) => ${Downcast.tR}", castOp),
     ("Upcast", s"(${Upcast.tT}) => ${Upcast.tR}", castOp),
 
+    ("Downcast", s"(BigInt) => ${Downcast.tR}", castOpBigInt),
+    ("Upcast", s"(${Upcast.tT}) => BigInt", castOpBigInt),
+
     ("min", "(Byte, Byte) => Byte", logicCost),
     ("min", "(Short, Short) => Short", logicCost),
     ("min", "(Int, Int) => Int", logicCost),
@@ -268,7 +290,7 @@ object CostTable {
 
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
-    ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+    ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
 
     ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
     ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),
@@ -283,7 +305,7 @@ object CostTable {
   }
 
   //Maximum cost of a script
-  val ScriptLimit = 1000000
+  val ScriptLimit = ErgoConstants.ScriptCostLimit.value
 
   //Maximum number of expressions in initial(non-reduced script)
   val MaxExpressions = 300
@@ -377,50 +399,7 @@ object CostTable {
   }
 }
 
-object CostTableStat {
-  // NOTE: make immutable before making public
-  private class StatItem(
-    /** How many times the operation has been executed */
-    var count: Long,
-    /** Sum of all execution times */
-    var sum: Long,
-    /** Minimal length of the collection produced by the operation */
-    var minLen: Int,
-    /** Maximal length of the collection produced by the operation */
-    var maxLen: Int,
-    /** Sum of all lengths of the collections produced by the operation */
-    var sumLen: Int
-  )
-  private val stat = mutable.HashMap[OperationId, StatItem]()
-  def addOpTime(op: OperationId, time: Long, len: Int) = {
-    stat.get(op) match {
-      case Some(item) =>
-        item.count += 1
-        item.sum += time
-        item.minLen = item.minLen min len
-        item.maxLen = item.maxLen max len
-        item.sumLen += len
-      case None =>
-        stat(op) = new StatItem(1, time, minLen = len, maxLen = len, sumLen = len)
-    }
-  }
 
-  /** Prints the following string
-    * Seq(
-    * ("Const", "() => SByte", 1206), // count=199
-    * ("GT", "(T,T) => SBoolean", 7954), // count=157
-    * ("/", "(SByte,SByte) => SByte", 25180), // count=2
-    * ("Inputs$", "(SContext) => Coll[SBox]", 4699), // count=443; minLen=0; maxLen=1000; avgLen=9
-    * ("OptionIsDefined", "(Option[SSigmaProp]) => SBoolean", 9251), // count=2
-    * )
-    * */
-  def costTableString: String = {
-    stat.map { case (opId, item) =>
-      val cost = item.sum / item.count
-      val avgLen = item.sumLen / item.count
-      val isColl = opId.opType.tRange.isCollection
-      "\n" + s"""("${opId.name}", "${opId.opType}", $cost), // count=${item.count}${if (isColl) s"; minLen=${item.minLen}; maxLen=${item.maxLen}; avgLen=$avgLen" else ""}"""
-    }.mkString("Seq(", "", "\n)")
-  }
-}
+
+
 

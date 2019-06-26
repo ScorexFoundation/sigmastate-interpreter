@@ -5,7 +5,7 @@ import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized}
 import sigma.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
-import scalan.meta.PrintExtensions._
+import scalan.util.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder

@@ -3,7 +3,7 @@ package sigmastate.utils
 import scorex.util.serialization.Reader
 import sigmastate.SType
 import sigmastate.Values.SValue
-import sigmastate.lang.exceptions.DeserializeCallDepthExceeded
+import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded}
 import sigmastate.serialization._
 import scorex.util.Extensions._
 
@@ -12,6 +12,11 @@ class SigmaByteReader(val r: Reader,
                       var resolvePlaceholdersToConstants: Boolean,
                       val maxTreeDepth: Int = SigmaSerializer.MaxTreeDepth)
   extends Reader {
+
+  @inline private def checkPositionLimit(): Unit =
+    if (position > positionLimit)
+      throw new InputSizeLimitExceeded(s"SigmaByteReader position limit $positionLimit is reached at position $position")
+
 
   val valDefTypeStore: ValDefTypeStore = new ValDefTypeStore()
 
@@ -23,31 +28,67 @@ class SigmaByteReader(val r: Reader,
 
   @inline override def getChunk(size: Int): CH = r.getChunk(size)
 
-  @inline override def getShortString(): String = r.getShortString()
+  @inline override def getShortString(): String = {
+    checkPositionLimit()
+    r.getShortString()
+  }
 
   @inline override def peekByte(): Byte = r.peekByte()
 
-  @inline override def getByte(): Byte = r.getByte()
+  @inline override def getByte(): Byte = {
+    checkPositionLimit()
+    r.getByte()
+  }
 
-  @inline override def getUByte(): Int = r.getUByte()
+  @inline override def getUByte(): Int = {
+    checkPositionLimit()
+    r.getUByte()
+  }
 
-  @inline override def getShort(): Short = r.getShort()
+  @inline override def getShort(): Short = {
+    checkPositionLimit()
+    r.getShort()
+  }
 
-  @inline override def getUShort(): Int = r.getUShort()
+  @inline override def getUShort(): Int = {
+    checkPositionLimit()
+    r.getUShort()
+  }
 
-  @inline override def getInt(): Int = r.getInt()
+  @inline override def getInt(): Int = {
+    checkPositionLimit()
+    r.getInt()
+  }
 
-  @inline override def getUInt(): Long = r.getUInt()
+  @inline override def getUInt(): Long = {
+    checkPositionLimit()
+    r.getUInt()
+  }
 
-  @inline override def getLong(): Long = r.getLong()
+  @inline override def getLong(): Long = {
+    checkPositionLimit()
+    r.getLong()
+  }
 
-  @inline override def getULong(): Long = r.getULong()
+  @inline override def getULong(): Long = {
+    checkPositionLimit()
+    r.getULong()
+  }
 
-  @inline override def getBytes(size: Int): Array[Byte] = r.getBytes(size)
+  @inline override def getBytes(size: Int): Array[Byte] = {
+    checkPositionLimit()
+    r.getBytes(size)
+  }
 
-  @inline override def getBits(size: Int): Array[Boolean] = r.getBits(size)
+  @inline override def getBits(size: Int): Array[Boolean] = {
+    checkPositionLimit()
+    r.getBits(size)
+  }
 
-  @inline override def getOption[T](getValue: => T): Option[T] = r.getOption(getValue)
+  @inline override def getOption[T](getValue: => T): Option[T] = {
+    checkPositionLimit()
+    r.getOption(getValue)
+  }
 
   @inline override def consumed: Int = r.consumed
 
@@ -80,5 +121,21 @@ class SigmaByteReader(val r: Reader,
       xs(i) = getValue()
     }
     xs.toIndexedSeq
+  }
+
+  private var positionLmt: Int = r.position + r.remaining
+  @inline def positionLimit: Int = positionLmt
+  @inline def positionLimit_=(v: Int): Unit = {
+    positionLmt = v
+  }
+
+  private var _complexity: Int = 0
+  @inline def complexity: Int = _complexity
+  @inline def complexity_=(v: Int): Unit = {
+    _complexity = v
+  }
+
+  @inline def addComplexity(delta: Int): Unit = {
+    _complexity += delta
   }
 }

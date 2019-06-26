@@ -77,7 +77,7 @@ val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.4"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 
-val specialVersion = "master-534cb6f5-SNAPSHOT"
+val specialVersion = "master-4178b526-SNAPSHOT"
 val specialCommon  = "io.github.scalan" %% "common" % specialVersion
 val specialCore    = "io.github.scalan" %% "core" % specialVersion
 val specialLibrary = "io.github.scalan" %% "library" % specialVersion
@@ -172,7 +172,7 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
     .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
       libraryDependencies ++= Seq(
-        specialCommon, meta, libraryapi, macroCompat, scrypto, bouncycastleBcprov
+        specialCommon, libraryapi, macroCompat, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
@@ -201,7 +201,7 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "master"
+  val ergoBranch = "v2.2-faster-costing"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")

@@ -1,22 +1,19 @@
 package sigmastate
 
-import org.ergoplatform.validation.ValidationRules._
 import org.ergoplatform._
+import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCostFuncOperation, CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable, _}
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree}
-import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
+import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.serialization._
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{SerializerException, CosterException}
-import sigmastate.serialization.DataSerializer.CheckSerializableTypeCode
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
-import sigmastate.serialization.TypeSerializer.{CheckPrimitiveTypeCode, CheckTypeCode}
+import sigmastate.lang.exceptions.{CosterException, SerializerException}
+import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
+import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
 
@@ -89,7 +86,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     proveAndVerifyTx("propV1", tx, vs)
   }
 
-  val Height2Code = (LastConstantCode + 56).toByte
+  val Height2Code: OpCode = OpCode @@ (LastConstantCode + 56).toByte
   /** Same as Height, but new opcode to test soft-fork */
   case object Height2 extends NotReadyValueInt with ValueCompanion {
     override def companion = this
@@ -148,7 +145,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     assertExceptionThrown(
       {
         val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
-        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+        ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
       },
       {
         case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
@@ -161,7 +158,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       assertExceptionThrown(
         {
           val r = SigmaSerializer.startReader(v2tree_withoutSize_bytes)
-          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r)
+          ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
         },
         {
           case ve: ValidationException if ve.rule == CheckHeaderSizeBit => true
@@ -313,4 +310,30 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     })
   }
 
+  property("CheckCostFuncOperation rule") {
+    val exp = Height
+    val v2vs = vs.updated(CheckCostFuncOperation.id,
+      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
+    checkRule(CheckCostFuncOperation, v2vs, {
+      val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
+      // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
+      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF)) { }
+    })
+  }
+
+  property("CheckCostFuncOperation rule (OpCodeExtra") {
+    class TestingIRContextEmptyCodes extends TestingIRContext {
+      override def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = false
+    }
+    val tIR = new TestingIRContextEmptyCodes
+    import tIR._
+    val v2vs = vs.updated(CheckCostFuncOperation.id,
+      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
+    checkRule(CheckCostFuncOperation, v2vs, {
+      implicit val anyType = AnyElement
+      val v1 = variable[Int]
+      val costF = fun[Any, Int] {_ => opCost(v1, Seq(1), 2) }
+      CheckCostFunc(tIR)(asRep[Any => Int](costF)) { }
+    })
+  }
 }

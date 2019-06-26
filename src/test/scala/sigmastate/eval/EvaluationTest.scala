@@ -95,35 +95,6 @@ class EvaluationTest extends BaseCtxTests
     */
   }
   
-//  test("Crowd Funding") {
-//    val backerProver = new ErgoLikeProvingInterpreter
-//    val projectProver = new ErgoLikeProvingInterpreter
-//    val backerPubKey = backerProver.dlogSecrets.head.publicImage
-//    val projectPubKey = projectProver.dlogSecrets.head.publicImage
-//    val ctxVars = contextVars(Map(
-//      backerPubKeyId -> backerPubKey,
-//      projectPubKeyId -> projectPubKey
-//    )).arr
-//    val ctx = newContext(height = 1, boxA1, ctxVars:_*)
-//    reduce(envCF, "CrowdFunding", crowdFundingScript, ctx, FalseLeaf)
-//
-//    val boxToSpend = ErgoBox(10, TrueLeaf)
-//    val tx1Output1 = ErgoBox(minToRaise, projectPubKey)
-//    val tx1Output2 = ErgoBox(1, projectPubKey)
-//    val tx1 = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
-//    val ergoCtx = ErgoLikeContext(
-//      currentHeight = timeout - 1,
-//      lastBlockUtxoRoot = AvlTreeData.dummy,
-//      boxesToSpend = IndexedSeq(),
-//      spendingTransaction = tx1,
-//      self = boxToSpend,
-//      extension = ContextExtension(Map(
-//        backerPubKeyId -> SigmaPropConstant(backerPubKey),
-//        projectPubKeyId -> SigmaPropConstant(projectPubKey)
-//      )))
-//    reduce(envCF, "CrowdFunding", crowdFundingScript, ergoCtx.toTestContext, projectPubKey)
-//  }
-
   test("SubstConst") {
     def script(pk: ProveDlog): SigmaPropValue =
       AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp

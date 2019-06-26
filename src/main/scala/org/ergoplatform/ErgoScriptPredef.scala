@@ -181,8 +181,7 @@ object ErgoScriptPredef {
         |  val sumValues = { (xs: Coll[Long]) => xs.fold(0L, { (acc: Long, amt: Long) => acc + amt }) }
         |
         |  val tokenAmounts = INPUTS.map({ (box: Box) =>
-        |    val tokens = box.R2[Coll[(Coll[Byte], Long)]].get
-        |    sumValues(tokens.map { (tokenPair: (Coll[Byte], Long)) =>
+        |    sumValues(box.tokens.map { (tokenPair: (Coll[Byte], Long)) =>
         |      val ourTokenAmount = if (tokenPair._1 == tokenId) tokenPair._2 else 0L
         |      ourTokenAmount
         |    })

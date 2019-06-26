@@ -190,15 +190,26 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       self = fakeSelf)
 
     //before timeout
-    val prA = proverA.prove(mixingRequestProp(pubkeyA, 100), ctx, fakeMessage).get
-    verifier.verify(mixingRequestProp(pubkeyA, 100), ctx, prA, fakeMessage).get._1 shouldBe true
-    verifier.verify(mixingRequestProp(pubkeyB, 100), ctx, prA, fakeMessage).get._1 shouldBe true
+    val prA = proverA.prove(
+      emptyEnv + (ScriptNameProp -> "before_timeout_prove"),
+      mixingRequestProp(pubkeyA, 100), ctx, fakeMessage).get
+    verifier.verify(
+      emptyEnv + (ScriptNameProp -> "before_timeout_verify1"),
+      mixingRequestProp(pubkeyA, 100), ctx, prA, fakeMessage).get._1 shouldBe true
+    verifier.verify(
+      emptyEnv + (ScriptNameProp -> "before_timeout_verify2"),
+      mixingRequestProp(pubkeyB, 100), ctx, prA, fakeMessage).get._1 shouldBe true
 
     //after timeout
-    val prA2 = proverA.prove(mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
-    verifier.verify(mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get._1 shouldBe true
-
-    verifier.verify(mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).map(_._1).getOrElse(false) shouldBe false
+    val prA2 = proverA.prove(
+        emptyEnv + (ScriptNameProp -> "after_timeout_prove"),
+        mixingRequestProp(pubkeyA, 40), ctx, fakeMessage).get
+    verifier.verify(
+      emptyEnv + (ScriptNameProp -> "after_timeout_verify1"),
+      mixingRequestProp(pubkeyA, 40), ctx, prA2, fakeMessage).get._1 shouldBe true
+    verifier.verify(
+      emptyEnv + (ScriptNameProp -> "after_timeout_verify2"),
+      mixingRequestProp(pubkeyB, 40), ctx, prA2, fakeMessage).map(_._1).getOrElse(false) shouldBe false
   }
 
   property("map + sum") {

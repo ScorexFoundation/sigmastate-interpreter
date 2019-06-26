@@ -4,9 +4,9 @@ import scalan.RType
 import special.collection._
 import scalan.RType._
 import sigmastate._
-import sigmastate.SBigInt.MaxSizeInBytes
 import special.sigma._
 import SType.AnyOps
+import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxTokens}
 import sigmastate.interpreter.CryptoConstants
 
 /** Type-class to give types a capability to build a Size structure. */
@@ -33,6 +33,7 @@ trait SizedLowPriority {
   implicit def optionIsSized[T: Sized]: Sized[Option[T]] = (xs: Option[T]) => new CSizeOption(xs.map(Sized[T].size))
   implicit def pairIsSized[A: Sized, B: Sized]: Sized[(A,B)] = (in: (A,B)) => new CSizePair(Sized[A].size(in._1), Sized[B].size(in._2))
 }
+
 object Sized extends SizedLowPriority {
   def apply[T](implicit sz: Sized[T]): Sized[T] = sz
   def sizeOf[T: Sized](x: T): Size[T] = Sized[T].size(x)
@@ -42,8 +43,9 @@ object Sized extends SizedLowPriority {
   val SizeShort: Size[Short] = new CSizePrim(2L, ShortType)
   val SizeInt: Size[Int] = new CSizePrim(4L, IntType)
   val SizeLong: Size[Long] = new CSizePrim(8L, LongType)
-  val SizeBigInt: Size[BigInt] = new CSizePrim(MaxSizeInBytes, BigIntRType)
+  val SizeBigInt: Size[BigInt] = new CSizePrim(SBigInt.MaxSizeInBytes, BigIntRType)
   val SizeGroupElement: Size[GroupElement] = new CSizePrim(CryptoConstants.EncodedGroupElementLength, GroupElementRType)
+  val SizeSigmaProp: Size[SigmaProp] = new CSizePrim(SSigmaProp.MaxSizeInBytes, SigmaPropRType)
   val SizeAvlTree: Size[AvlTree] = new CSizePrim(AvlTreeData.TreeDataSize, AvlTreeRType)
 
   implicit val BooleanIsSized: Sized[Boolean] = (_: Boolean) => SizeBoolean
@@ -53,18 +55,19 @@ object Sized extends SizedLowPriority {
   implicit val LongIsSized: Sized[Long] = (_: Long) => SizeLong
   implicit val BigIntIsSized: Sized[BigInt] = (_: BigInt) => SizeBigInt
   implicit val GroupElementIsSized: Sized[GroupElement] = (_: GroupElement) => SizeGroupElement
+  implicit val SigmaPropIsSized: Sized[SigmaProp] = (_: SigmaProp) => SizeSigmaProp
   implicit val AvlTreeIsSized: Sized[AvlTree] = (_: AvlTree) => SizeAvlTree
 
   def typeToSized[T](t: RType[T]): Sized[T] = (t match {
-    case BooleanType => Sized[Boolean]
-    case ByteType => Sized[Byte]
-    case ShortType => Sized[Short]
-    case IntType => Sized[Int]
-    case LongType => Sized[Long]
-    case BigIntRType => Sized[BigInt]
-    case GroupElementRType => Sized[GroupElement]
-    case AvlTreeRType => Sized[AvlTree]
-    case SigmaPropRType => sigmaPropIsSized
+    case BooleanType => BooleanIsSized
+    case ByteType => ByteIsSized
+    case ShortType => ShortIsSized
+    case IntType => IntIsSized
+    case LongType => LongIsSized
+    case BigIntRType => BigIntIsSized
+    case GroupElementRType => GroupElementIsSized
+    case AvlTreeRType => AvlTreeIsSized
+    case SigmaPropRType => SigmaPropIsSized
     case AnyValueRType => anyValueIsSized
     case BoxRType => boxIsSized
     case HeaderRType => headerIsSized
@@ -76,10 +79,14 @@ object Sized extends SizedLowPriority {
     case _ => sys.error(s"Don't know how to compute Sized for type $t")
   }).asInstanceOf[Sized[T]]
 
+  val SizeNullValue: SizeAnyValue = {
+    val size = new CSizePrim[Any](0L, NothingType.asInstanceOf[RType[Any]])
+    new CSizeAnyValue(NothingType.asInstanceOf[RType[Any]], size)
+  }
+
   implicit val anyValueIsSized: Sized[AnyValue] = (x: AnyValue) => {
     if (x.tVal == null) {
-      val size = new CSizePrim[Any](0L, NothingType.asInstanceOf[RType[Any]])
-      new CSizeAnyValue(NothingType.asInstanceOf[RType[Any]], size)
+      SizeNullValue
     } else {
       assert(x.value != null, s"Invalid AnyValue: non-null type ${x.tVal} and null value.")
       val sized = typeToSized(x.tVal)
@@ -92,8 +99,10 @@ object Sized extends SizedLowPriority {
     new CSizeColl(Colls.replicate(xs.length, SizeByte))
   }
 
+  private val SizeOptionAnyValueNone = new CSizeOption[AnyValue](None)
+
   private def sizeOfAnyValue(v: AnyValue): Size[Option[AnyValue]] = {
-    if (v == null) return new CSizeOption[AnyValue](None)
+    if (v == null) return SizeOptionAnyValueNone
     val size = sizeOf(v)
     new CSizeOption[AnyValue](Some(size))
   }
@@ -102,26 +111,39 @@ object Sized extends SizedLowPriority {
     new CSizeColl(b.registers.map(sizeOfAnyValue))
   }
 
+  val SizeHash = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
+  val SizeCreationInfo: Size[(Int, Coll[Byte])] = new CSizePair(SizeInt, SizeHash)
+
+  val SizeTokenId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
+  val SizeToken: Size[(Coll[Byte], Long)] = new CSizePair(SizeTokenId, SizeLong)
+  val SizeTokensMax = new CSizeColl(Colls.replicate(MaxTokens.value, SizeToken))
+
+  val SizePropositionBytesMax = new CSizeColl(Colls.replicate(4096 /*4K*/, SizeByte))
+  val SizeBoxBytesMax = new CSizeColl(Colls.replicate(MaxBoxSize.value, SizeByte))
+  val SizeOfInputRefBytes = CryptoConstants.hashLength + SizeShort.dataSize.toInt
+  val SizeBoxBytesWithoutRefsMax = new CSizeColl(
+    Colls.replicate(MaxBoxSize.value - SizeOfInputRefBytes, SizeByte))
+
   private def sizeOfTokens(b: Box): Size[Coll[(Coll[Byte], Long)]] = {
-    val sId = new CSizeColl(Colls.replicate(CryptoConstants.hashLength, SizeByte))
-    val sToken = new CSizePair(sId, SizeLong)
-    new CSizeColl(Colls.replicate(b.tokens.length, sToken))
+    new CSizeColl(Colls.replicate(b.tokens.length, SizeToken))
   }
 
-  implicit val sigmaPropIsSized: Sized[SigmaProp] = (b: SigmaProp) => {
-    new CSizeSigmaProp(sizeOf(b.propBytes))
-  }
   implicit val boxIsSized: Sized[Box] = (b: Box) => {
     new EvalSizeBox(
-      sizeOf(b.propositionBytes),
-      sizeOf(b.bytes),
-      sizeOf(b.bytesWithoutRef),
+      SizePropositionBytesMax,
+      SizeBoxBytesMax,
+      SizeBoxBytesWithoutRefsMax,
       sizeOfRegisters(b),
-      sizeOfTokens(b)
+      SizeTokensMax
       )
   }
-  implicit val headerIsSized: Sized[Header] = (_: Header) => new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
-  implicit val preHeaderIsSized: Sized[PreHeader] = (_: PreHeader) => new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+
+  val SizeHeader = new CSizePrim(SHeader.dataSize(0.asWrappedType), HeaderRType)
+  implicit val headerIsSized: Sized[Header] = (_: Header) => SizeHeader
+
+  val SizePreHeader = new CSizePrim(SPreHeader.dataSize(0.asWrappedType), PreHeaderRType)
+  implicit val preHeaderIsSized: Sized[PreHeader] = (_: PreHeader) => SizePreHeader
+
   implicit val contextIsSized: Sized[Context] = (ctx: Context) => {
     val outputs = sizeOf(ctx.OUTPUTS)
     val inputs = sizeOf(ctx.INPUTS)

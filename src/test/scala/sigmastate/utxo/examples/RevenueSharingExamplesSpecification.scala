@@ -1,105 +1,83 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
+import sigmastate.eval.Extensions
 import sigmastate.helpers.SigmaTestingCommons
 import special.collection.Coll
-import special.sigma.{Context,SigmaProp}
-import sigmastate.eval.Extensions
+import special.sigma.{Box, Context}
 
 class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR = new TestingIRContext
 
-  class OutputContract[Spec <: ContractSpec](
-  )(implicit val spec: Spec) extends SigmaContractSyntax with StdContracts {
-
-    import syntax._
-
-    lazy val contractEnv = Env()
-
-    lazy val prop = proposition("outputContract", { CONTEXT: Context =>
-      import CONTEXT._
-      val spenders: Coll[(SigmaProp, Int)] = SELF.R4[Coll[(SigmaProp, Int)]].get
-      val index = getVar[Int](1).get
-      val spender:(SigmaProp, Int) = spenders(index)
-      val pubKey:SigmaProp = spender._1
-      val ratio:Int = spender._2
-      // val total = spenders.foldLeft(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
-      val total = spenders.foldLeft(0, {accum:(Int, (SigmaProp, Int)) => accum._1+accum._2._2})
-      val balance = SELF.value - SELF.value / total * ratio
-
-      val remainingSpenders = spenders.filter(_._1 != pubKey)
-
-      val out = OUTPUTS(0)
-      val outSpenders = out.R4[Coll[(SigmaProp, Int)]].get
-
-      val validOut = out.propositionBytes == SELF.propositionBytes &&
-                     out.value >= balance && remainingSpenders == outSpenders
-      pubKey && (outSpenders.size == 0 || validOut)
-    },
-    """{
-      |      val spenders: Coll[(SigmaProp, Int)] = SELF.R4[Coll[(SigmaProp, Int)]].get
-      |      val index = getVar[Int](1).get
-      |      val spender:(SigmaProp, Int) = spenders(index)
-      |      val pubKey:SigmaProp = spender._1
-      |      val ratio:Int = spender._2
-      |      // below syntax can be simplified but does not work
-      |      val total = spenders.fold(0, {(accum:Int, s:(SigmaProp, Int)) => accum + s._2})
-      |      //val total = spenders.foldLeft(0, {accum:(Int, (SigmaProp, Int)) => accum._1+accum._2._2})
-      |      val balance = SELF.value - SELF.value / total * ratio
-      |
-      |      val getNew = {(s:(SigmaProp, Int)) => if (s._1 == pubKey) (s._1, 0) else (s._1, s._2)}
-      |
-      |      val out = OUTPUTS(0)
-      |
-      |      //val leftSpenders = spenders.map({(s:(SigmaProp, Int)) => getNew(s)})
-      |      val leftSpenders = spenders
-      |      val validNextSpenders = out.R4[Coll[(SigmaProp, Int)]].get == leftSpenders
-      |
-      |      val validOut = out.propositionBytes == SELF.propositionBytes &&
-      |                     out.value >= balance && validNextSpenders
-      |
-      |      pubKey && (total == ratio || validOut)
-      |}
-    """.stripMargin)
-  }
-
   case class RevenueContract[Spec <: ContractSpec]
-      (alice: Spec#ProvingParty, bob: Spec#ProvingParty, carol:Spec#ProvingParty)
-      (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
+  (alice: Spec#ProvingParty, bob: Spec#ProvingParty, carol:Spec#ProvingParty)
+  (implicit val spec: Spec) extends SigmaContractSyntax with StdContracts
   {
-    import syntax._
-    val pkDummy = alice.pubKey
+    val spenders = Coll(
+      (blake2b256(alice.pubKey.propBytes), 50),
+      (blake2b256(bob.pubKey.propBytes), 30),
+      (blake2b256(carol.pubKey.propBytes), 20)
+    )
 
-    val spenders = Coll((alice.pubKey, 50), (bob.pubKey, 30), (carol.pubKey, 20))
+    val miner = alice  // put some other entity here
+    val feeProp = miner.pubKey
+    val fee = 10
+    val feePropBytesHash = blake2b256(feeProp.propBytes)
 
-    val outputContract = new OutputContract()
-
-    val outPropBytes:Coll[Byte] = Coll(outputContract.prop.ergoTree.bytes:_*)
-
-    val outPropBytesHash:Coll[Byte] = blake2b256(outPropBytes)
-
-    lazy val contractEnv = Env("pkDummy" -> pkDummy, "spenders" -> spenders, "outPropBytesHash" -> outPropBytesHash)
-
+    lazy val contractEnv = Env(
+      "spenders" -> spenders,
+      "feePropBytesHash" -> feePropBytesHash,
+      "fee" -> fee,
+      "feeProp" -> feeProp,
+      "requireAliceSignature" -> alice.pubKey,
+      "requireBobSignature" -> bob.pubKey,
+      "requireCarolSignature" -> carol.pubKey,
+    )
     lazy val prop = proposition("revenueContract", { CONTEXT: Context =>
       import CONTEXT._
-      val index = getVar[Int](1).get
-      val spender = spenders(index)
-      val pubKey:SigmaProp = spender._1
-      val ratio = spender._2
-      val balance = SELF.value - SELF.value / 100 * ratio
-      val remainingSpenders = spenders.filter(_._1 != pubKey)
-      val validOut = blake2b256(OUTPUTS(0).propositionBytes) == outPropBytesHash &&
-                     OUTPUTS(0).value >= balance &&
-                     OUTPUTS(0).R4[Coll[(SigmaProp, Int)]].get == remainingSpenders
-      pubKey && validOut
+
+      val feeBox = OUTPUTS(0)
+      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
+      //validFeeBox
+      miner.pubKey // dummy line because above doesn't work
     },
     """{
-      |      pkDummy
+      |      val feeBox = OUTPUTS(0)
+      |      val validFeeBox = blake2b256(feeBox.propositionBytes) == feePropBytesHash
+      |      val amt = SELF.value - fee
+      |      val ratios = spenders.map({(e:(Coll[Byte], Int)) => e._2})
+      |      val total = ratios.fold(0, {(l:Int, r:Int) => l + r})
+      |      val validOuts = spenders.zip(OUTPUTS).forall({
+      |        (e:((Coll[Byte], Int), Box)) =>
+      |           val ratio = e._1._2
+      |           val pubKeyHash = e._1._1
+      |           val box = e._2
+      |           val share = amt / total * ratio
+      |           box.value >= share && blake2b256(box.propositionBytes) == pubKeyHash
+      |      })
+      |      sigmaProp(validOuts && validFeeBox)
       |}
     """.stripMargin)
 
-    lazy val requireDummySignature  = proposition("dummySignature", _ => pkDummy, "pkDummy")
+    lazy val requireAliceSignature =  proposition(
+      "requireAliceSignature",
+      _ => alice.pubKey,
+      "requireAliceSignature"
+    )
+    lazy val requireBobSignature =  proposition(
+      "requireBobSignature",
+      _ => bob.pubKey,
+      "requireBobSignature"
+    )
+    lazy val requireCarolSignature =  proposition(
+      "requireCarolSignature",
+      _ => carol.pubKey,
+      "requireCarolSignature"
+    )
+    lazy val requireMinerSignature =  proposition(
+      "feeProp", _ => miner.pubKey, "feeProp"
+    )
+
   }
 
   lazy val spec = TestContractSpec(suite)(new TestingIRContext)
@@ -108,24 +86,21 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
   lazy val bob = spec.ProvingParty("Bob")
   lazy val carol = spec.ProvingParty("Carol")
 
-  ignore("Revenue sharing contract") {
+  property("Revenue sharing contract") {
     val contract = RevenueContract[spec.type](alice, bob, carol)(spec)
 
     import contract.spec._
 
     val mockTx = candidateBlock(0).newTransaction()
 
-    val deposit = mockTx.outBox(100, contract.prop)
+    val deposit = mockTx.outBox(110, contract.prop)
 
     val tx = candidateBlock(10).newTransaction().spending(deposit)
 
-    tx.outBox(70, contract.outputContract.prop).withRegs(
-      R4 -> Coll[(SigmaProp, Int)](
-        Array((alice.pubKey, 50), (carol.pubKey, 20))
-      )
-    )
-
-    tx.outBox(value = 30, contract.requireDummySignature)
+    tx.outBox(50, contract.requireAliceSignature)
+    tx.outBox(30, contract.requireBobSignature)
+    tx.outBox(20, contract.requireCarolSignature)
+    tx.outBox(10, contract.requireMinerSignature)
 
     val in = tx.inputs(0)
 

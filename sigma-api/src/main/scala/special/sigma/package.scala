@@ -17,15 +17,21 @@ package sigma {
 }
 
 package object sigma {
+
   implicit val BigIntRType: RType[BigInt] = new GeneralType(classTag[BigInt]) {
     override def isConstantSize: Boolean = true
   }
   implicit val GroupElementRType: RType[GroupElement] = new GeneralType(classTag[GroupElement]) {
     override def isConstantSize: Boolean = true
   }
-  implicit val SigmaPropRType: RType[SigmaProp] = GeneralType(classTag[SigmaProp])
+  implicit val SigmaPropRType: RType[SigmaProp] = new GeneralType(classTag[SigmaProp]) {
+    override def isConstantSize: Boolean = true
+  }
+  implicit val AvlTreeRType:   RType[AvlTree]   = new GeneralType(classTag[AvlTree]) {
+    override def isConstantSize: Boolean = true
+  }
+
   implicit val BoxRType:       RType[Box]       = GeneralType(classTag[Box])
-  implicit val AvlTreeRType:   RType[AvlTree]   = GeneralType(classTag[AvlTree])
   implicit val ContextRType:   RType[Context]   = GeneralType(classTag[Context])
 
   // these are not wrapper types since they are used directly in ErgoTree values (e.g. Constants)

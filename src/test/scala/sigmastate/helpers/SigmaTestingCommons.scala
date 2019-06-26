@@ -1,9 +1,7 @@
 package sigmastate.helpers
 
-import java.math.BigInteger
-
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
-import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationSpecification
@@ -11,21 +9,19 @@ import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
 import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
 import org.scalatest.{PropSpec, Assertion, Matchers}
-import scalan.{TestUtils, TestContexts, Nullable, RType}
+import scalan.{TestUtils, TestContexts, RType}
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
-import sigma.types.{PrimViewType, IsPrimView, View}
+import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
-import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
-import special.sigma._
-import spire.util.Opt
-import sigmastate.eval._
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -91,8 +87,36 @@ trait SigmaTestingCommons extends PropSpec
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
         case Some(name: String) if saveGraphsInFile =>
-          emit(name, res)
+          emit(name, Pair(res.calcF, res.costF))
         case _ =>
+      }
+    }
+
+    override def onEstimatedCost[T](env: ScriptEnv,
+                                    tree: SValue,
+                                    result: RCostingResultEx[T],
+                                    ctx: special.sigma.Context,
+                                    estimatedCost: Int): Unit = {
+      if (outputEstimatedCost) {
+        env.get(Interpreter.ScriptNameProp) match {
+          case Some(name: String) =>
+            println(s"Cost of $name = $estimatedCost")
+          case _ =>
+        }
+      }
+    }
+
+    override private[sigmastate] def onResult[T](env: ScriptEnv,
+                                     tree: SValue,
+                                     result: RCostingResultEx[T],
+                                     ctx: sigma.Context,
+                                     estimatedCost: Int,
+                                     calcCtx: sigma.Context,
+                                     executedResult: sigma.SigmaProp,
+                                     executionTime: Long): Unit = {
+      if (outputComputedResults) {
+        val name = env.get(Interpreter.ScriptNameProp).getOrElse("")
+        println(s"ScriptName: $name, EstimatedCost: $estimatedCost, ExecutionTime: $executionTime")
       }
     }
   }
@@ -160,7 +184,10 @@ trait SigmaTestingCommons extends PropSpec
     // using default sigma reader/writer
     val bytes = serializer.toBytes(v)
     bytes.nonEmpty shouldBe true
-    serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
+    val r = SigmaSerializer.startReader(bytes)
+    val positionLimitBefore = r.positionLimit
+    serializer.parse(r) shouldBe v
+    r.positionLimit shouldBe positionLimitBefore
 
     // using ergo's(scorex) reader/writer
     val w = new VLQByteStringWriter()

@@ -168,7 +168,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
       operations.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
-          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest)")
+          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest): ${insertRes.failed.get}}")
         }
         insertRes.isSuccess
       }
@@ -377,7 +377,7 @@ object CostingBox {
 ////    val costFun = IR.compile[SInt.type](IR.getDataEnv, costF)
 ////    val IntConstant(estimatedCost) = costFun(costingCtx)
 ////    if (estimatedCost > maxCost) {
-////      throw new Error(s"Estimated expression complexity $estimatedCost exceeds the limit $maxCost in $tree")
+////      throw new Error(s"Estimated execution cost $estimatedCost exceeds the limit $maxCost in $tree")
 ////    }
 //    // check calc
 //    val calcCtx = context.toSigmaContext(IR, isCost = false)

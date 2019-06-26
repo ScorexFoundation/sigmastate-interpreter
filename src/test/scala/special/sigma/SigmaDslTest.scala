@@ -9,21 +9,22 @@ import org.ergoplatform._
 import org.scalacheck.Gen.containerOfN
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.util.Extensions._
 import sigmastate.Values.{BooleanConstant, EvaluatedValue, IntConstant}
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import special.collection.{Builder, Coll}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.utxo.ComplexityTableStat
+import special.collection.{Coll, Builder}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -40,6 +41,7 @@ class SigmaDslTest extends PropSpec
 
   implicit lazy val IR = new TestingIRContext {
     override val okPrintEvaluatedEntries: Boolean = false
+    override val okMeasureOperationTime: Boolean = true
   }
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
@@ -105,6 +107,7 @@ class SigmaDslTest extends PropSpec
     forAll { x: Byte =>
       Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
     }
+    println(ComplexityTableStat.complexityTableString)
   }
 
   property("Int methods equivalence") {
@@ -221,6 +224,42 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  property("BigInt plus equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 + x._2 }")){ x => x._1 + x._2 }(v)
+    }
+  }
+
+  property("BigInt minus equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 - x._2 }")){ x => x._1 - x._2 }(v)
+    }
+  }
+
+  property("BigInt multiply equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      checkEq(func[(BigInt, BigInt),BigInt]( "{ (x: (BigInt, BigInt)) => x._1 * x._2 }")){ x => x._1 * x._2 }(v)
+    }
+  }
+
+  property("BigInt divide equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      whenever(v._2.compareTo(0.toBigInt) > 0) {
+        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 / x._2 }")) { x => x._1 / x._2 }(v)
+      }
+    }
+  }
+
+  property("BigInt mod equivalence") {
+    forAll { v: (BigInt, BigInt) =>
+      whenever(v._2.compareTo(0.toBigInt) > 0) {
+        checkEq(func[(BigInt, BigInt), BigInt]("{ (x: (BigInt, BigInt)) => x._1 % x._2 }")) { x =>
+          x._1 % x._2
+        }(v)
+      }
+    }
+  }
+
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
     val n = SigmaDsl.BigInt(BigInteger.TEN)
@@ -271,7 +310,7 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("AvlTree.{contains, get, getMany} equivalence") {
+  property("AvlTree.{contains, get, getMany, updateDigest, updateOperations} equivalence") {
     val doContains = checkEq(
       func[(AvlTree, (Coll[Byte], Coll[Byte])), Boolean](
       "{ (t: (AvlTree, (Coll[Byte], Coll[Byte]))) => t._1.contains(t._2._1, t._2._2) }"))
@@ -284,6 +323,14 @@ class SigmaDslTest extends PropSpec
       func[(AvlTree, (Coll[Coll[Byte]], Coll[Byte])), Coll[Option[Coll[Byte]]]](
       "{ (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }"))
          { (t: (AvlTree, (Coll[Coll[Byte]], Coll[Byte]))) => t._1.getMany(t._2._1, t._2._2) }
+    val doUpdateDigest = checkEq(
+      func[(AvlTree, Coll[Byte]), AvlTree](
+        "{ (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }"))
+    { (t: (AvlTree, Coll[Byte])) => t._1.updateDigest(t._2) }
+    val doUpdateOperations = checkEq(
+      func[(AvlTree, Byte), AvlTree](
+        "{ (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }"))
+    { (t: (AvlTree, Byte)) => t._1.updateOperations(t._2) }
 
     val (key, _, avlProver) = sampleAvlProver
     avlProver.performOneOperation(Lookup(ADKey @@ key.toArray))
@@ -294,6 +341,8 @@ class SigmaDslTest extends PropSpec
     doGet((tree, (key, proof)))
     val keys = Colls.fromItems(key)
     doGetMany((tree, (keys, proof)))
+    doUpdateDigest(tree, digest)
+    doUpdateOperations(tree, 1.toByte)
   }
 
   property("AvlTree.{insert, update, remove} equivalence") {
@@ -356,7 +405,7 @@ class SigmaDslTest extends PropSpec
       byteArrayToBigInt(x)
     }
     forAll { x: Array[Byte] =>
-      whenever(x.length <= ErgoConstants.MaxBigIntSizeInBytes.get) {
+      whenever(x.length <= ErgoConstants.MaxBigIntSizeInBytes.value) {
         eq(Builder.DefaultCollBuilder.fromArray(x))
       }
     }
@@ -802,4 +851,126 @@ class SigmaDslTest extends PropSpec
         |  if (x.isDefined) f(x.get) else 5L
         |}""".stripMargin)
   }
+
+  property("blake2b256, sha256 equivalence") {
+    val eqBlake2b256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => blake2b256(x) }")){ x =>
+      blake2b256(x)
+    }
+    val eqSha256 = checkEq(func[Coll[Byte], Coll[Byte]]("{ (x: Coll[Byte]) => sha256(x) }")){ x =>
+      sha256(x)
+    }
+    forAll { x: Array[Byte] =>
+      Seq(eqBlake2b256, eqSha256).foreach(_(Builder.DefaultCollBuilder.fromArray(x)))
+    }
+  }
+
+  property("print") {
+    println(ComplexityTableStat.complexityTableString)
+  }
+
+  property("sigmaProp equivalence") {
+    lazy val eq = checkEq(func[Boolean, SigmaProp]("{ (x: Boolean) => sigmaProp(x) }")){ (x: Boolean) =>
+      sigmaProp(x)
+    }
+    forAll { x: Boolean => eq(x) }
+  }
+
+  property("atLeast equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => atLeast(x.size - 1, x) }")){ (x: Coll[SigmaProp]) =>
+      atLeast(x.size - 1, x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("&& sigma equivalence") {
+    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 && x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
+      x._1 && x._2
+    }
+    forAll { x: (SigmaProp, SigmaProp) =>
+      eq(x)
+    }
+  }
+
+  property("|| sigma equivalence") {
+    lazy val eq = checkEq(func[(SigmaProp, SigmaProp), SigmaProp]("{ (x:(SigmaProp, SigmaProp)) => x._1 || x._2 }")){ (x:(SigmaProp, SigmaProp)) =>
+      x._1 || x._2
+    }
+    forAll { x: (SigmaProp, SigmaProp) =>
+      eq(x)
+    }
+  }
+
+  property("SigmaProp.propBytes equivalence") {
+    lazy val eq = checkEq(func[SigmaProp, Coll[Byte]]("{ (x: SigmaProp) => x.propBytes }")){ (x: SigmaProp) =>
+      x.propBytes
+    }
+    forAll { x: SigmaProp =>
+      eq(x)
+    }
+  }
+
+  // TODO: implement allZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  ignore("allZK equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => allZK(x) }")){ (x: Coll[SigmaProp]) =>
+      allZK(x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  // TODO: implement anyZK func https://github.com/ScorexFoundation/sigmastate-interpreter/issues/543
+  ignore("anyZK equivalence") {
+    lazy val eq = checkEq(func[Coll[SigmaProp], SigmaProp]("{ (x: Coll[SigmaProp]) => anyZK(x) }")){ (x: Coll[SigmaProp]) =>
+      anyZK(x)
+    }
+    forAll(arrayGen[SigmaProp].suchThat(_.length > 2)) { x: Array[SigmaProp] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("allOf equivalence") {
+    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => allOf(x) }")){ (x: Coll[Boolean]) =>
+      allOf(x)
+    }
+    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("anyOf equivalence") {
+    lazy val eq = checkEq(func[Coll[Boolean], Boolean]("{ (x: Coll[Boolean]) => anyOf(x) }")){ (x: Coll[Boolean]) =>
+      anyOf(x)
+    }
+    forAll(arrayGen[Boolean].suchThat(_.length > 2)) { x: Array[Boolean] =>
+      eq(Builder.DefaultCollBuilder.fromArray(x))
+    }
+  }
+
+  property("proveDlog equivalence") {
+    val eq = EqualityChecker(SigmaDsl.groupGenerator)
+    eq({ (x: GroupElement) => proveDlog(x) })("{ (x: GroupElement) => proveDlog(x) }")
+  }
+
+  property("proveDHTuple equivalence") {
+    val eq = EqualityChecker(SigmaDsl.groupGenerator)
+    eq({ (x: GroupElement) => proveDHTuple(x, x, x, x) })("{ (x: GroupElement) => proveDHTuple(x, x, x, x) }")
+  }
+
+  property("&& boolean equivalence") {
+    lazy val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x:(Boolean, Boolean)) => x._1 && x._2 }")){ (x:(Boolean, Boolean)) =>
+      x._1 && x._2
+    }
+    forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
+  property("|| boolean equivalence") {
+    lazy val eq = checkEq(func[(Boolean, Boolean), Boolean]("{ (x:(Boolean, Boolean)) => x._1 || x._2 }")){ (x:(Boolean, Boolean)) =>
+      x._1 || x._2
+    }
+    forAll { x: (Boolean, Boolean) => eq(x) }
+  }
+
 }

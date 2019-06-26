@@ -6,10 +6,12 @@ import java.util
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scalan.RType
+import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigma.util.Extensions._
+import sigmastate.SBigInt.MaxSizeInBytes
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -64,7 +66,7 @@ sealed trait SType extends SigmaNode {
 
   def isEmbeddable: Boolean = false
 
-  /** Returns true is dataSize doesn't depend on data value.
+  /** Returns true if dataSize doesn't depend on data value.
     * This is useful for optimizations of calculating sizes of collections. */
   def isConstantSize: Boolean
 
@@ -115,7 +117,9 @@ object SType {
   implicit val SigmaBooleanRType: RType[SigmaBoolean] = RType.fromClassTag(classTag[SigmaBoolean])
   implicit val ErgoBoxRType: RType[ErgoBox] = RType.fromClassTag(classTag[ErgoBox])
   implicit val ErgoBoxCandidateRType: RType[ErgoBoxCandidate] = RType.fromClassTag(classTag[ErgoBoxCandidate])
-  implicit val AvlTreeDataRType: RType[AvlTreeData] = RType.fromClassTag(classTag[AvlTreeData])
+  implicit val AvlTreeDataRType: RType[AvlTreeData] = new GeneralType(classTag[AvlTreeData]) {
+    override def isConstantSize: Boolean = true
+  }
   implicit val ErgoLikeContextRType: RType[ErgoLikeContext] = RType.fromClassTag(classTag[ErgoLikeContext])
 
   /** All pre-defined types should be listed here. Note, NoType is not listed.
@@ -250,7 +254,7 @@ trait STypeCompanion {
     * It delegate to getMethodById to lookup method.
     * @see getMethodById
     */
-  def methodById(methodId: Byte): SMethod = CheckAndGetMethod(this, methodId) { m => m }
+  def methodById(methodId: Byte): SMethod = ValidationRules.CheckAndGetMethod(this, methodId) { m => m }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -384,33 +388,6 @@ case class SMethod(
     docInfo.get.args.find(_.name == argName).get
 }
 
-object CheckTypeWithMethods extends ValidationRule(1011,
-  "Check the type (given by type code) supports methods")
-    with SoftForkWhenCodeAdded {
-  def apply[T](typeCode: Byte, cond: => Boolean)(block: => T): T = {
-    val ucode = typeCode.toUByte
-    def msg = s"Type with code $ucode doesn't support methods."
-    validate(cond, new SerializerException(msg), Seq(typeCode), block)
-  }
-}
-
-object CheckAndGetMethod extends ValidationRule(1012,
-  "Check the type has the declared method.") {
-  def apply[T](objType: STypeCompanion, methodId: Byte)(block: SMethod => T): T = {
-    def msg = s"The method with code $methodId doesn't declared in the type $objType."
-    lazy val methodOpt = objType.getMethodById(methodId)
-    validate(methodOpt.isDefined, new SerializerException(msg), Seq(objType, methodId), block(methodOpt.get))
-  }
-  override def isSoftFork(vs: SigmaValidationSettings,
-      ruleId: Short,
-      status: RuleStatus,
-      args: Seq[Any]): Boolean = (status, args) match {
-    case (ChangedRule(newValue), Seq(objType: STypeCompanion, methodId: Byte)) =>
-      val key = Array(objType.typeId, methodId)
-      newValue.grouped(2).exists(util.Arrays.equals(_, key))
-    case _ => false
-  }
-}
 
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
@@ -424,7 +401,7 @@ object SMethod {
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
+    val typeCompanion = ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
       SType.types(typeId)
     }
     val method = typeCompanion.methodById(methodId)
@@ -668,7 +645,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.get
+  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -768,10 +745,13 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override val typeCode: TypeCode = 8: Byte
   override def typeId = typeCode
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    Sized.sizeOf(v.asInstanceOf[SigmaProp]).dataSize
-  }
-  override def isConstantSize = false
+
+  /** The maximum size of SigmaProp value in serialized byte array representation. */
+  val MaxSizeInBytes: Long = ErgoConstants.MaxSigmaPropSizeInBytes.value
+
+  override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
+
+  override def isConstantSize = true
   def ancestors = Nil
   val PropBytes = "propBytes"
   val IsProven = "isProven"
@@ -1284,7 +1264,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.get
+  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)
@@ -1435,7 +1415,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override def typeId = typeCode
   override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = AvlTreeData.TreeDataSize
-  override def isConstantSize = false
+  override def isConstantSize = true
   def ancestors = Nil
 
   import SOption._

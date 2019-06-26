@@ -7,13 +7,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.OperationId
-import sigmastate.lang.exceptions.InputSizeLimitExceeded
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
 import sigma.util.Extensions._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils._
+import sigmastate.utxo.ComplexityTable._
 import sigmastate.utxo.CostTable._
 import sigmastate.utxo._
 
@@ -22,8 +22,11 @@ import scala.collection.mutable
 trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V] {
   import scala.language.implicitConversions
   val companion = ValueSerializer
-  def opDesc: ValueCompanion
 
+  def getComplexity: Int = OpCodeComplexity.getOrElse(opCode, MinimalComplexity)
+  lazy val complexity: Int = getComplexity
+
+  def opDesc: ValueCompanion
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   def opCode: OpCode = opDesc.opCode
@@ -152,7 +155,7 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     case _ => v
   }
 
-  override def getSerializer(opCode: Tag): ValueSerializer[_ <: Value[SType]] = {
+  override def getSerializer(opCode: OpCode): ValueSerializer[_ <: Value[SType]] = {
     val serializer = serializers(opCode)
     CheckValidOpCode(serializer, opCode) { serializer }
   }
@@ -377,19 +380,19 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   }
 
   override def deserialize(r: SigmaByteReader): Value[SType] = {
-    val bytesRemaining = r.remaining
-    if (bytesRemaining > SigmaSerializer.MaxInputSize)
-      throw new InputSizeLimitExceeded(s"input size $bytesRemaining exceeds ${ SigmaSerializer.MaxInputSize}")
     val depth = r.level
     r.level = depth + 1
     val firstByte = r.peekByte().toUByte
     val v = if (firstByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
+      r.addComplexity(constantSerializer.complexity)
       constantSerializer.deserialize(r)
     }
     else {
-      val opCode = r.getByte()
-      getSerializer(opCode).parse(r)
+      val opCode = OpCode @@ r.getByte()
+      val ser = getSerializer(opCode)
+      r.addComplexity(ser.complexity)
+      ser.parse(r)
     }
     r.level = r.level - 1
     v
