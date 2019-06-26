@@ -1,16 +1,16 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
+import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, ScriptCostLimit}
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckLoopLevelInCostFunction
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
@@ -18,12 +18,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
@@ -62,7 +63,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
   val hugeSizeColl: Array[Byte] = Array.fill(1000000)(1.toByte)
-  val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
+  val maxSizeColl: Array[Byte] = Array.fill(SigmaSerializer.MaxPropositionSize - 50)(2.toByte)
   val coll10: Array[Byte] = Array.fill(10)(10.toByte)
   val coll100: Array[Byte] = Array.fill(100)(100.toByte)
   val coll1000: Array[Byte] = Array.fill(1000)(1000.toByte)
