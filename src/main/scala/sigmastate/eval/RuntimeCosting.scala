@@ -223,11 +223,18 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     constCost(tpe)
   }
 
+  val UpcastBigIntOpType = SFunc(sigmastate.Upcast.tT, SBigInt)
+  val DowncastBigIntOpType = SFunc(SBigInt, sigmastate.Upcast.tR)
+
   def costOf(v: SValue): Rep[Int] = v match {
     case l: Terms.Lambda =>
       constCost(l.tpe)
     case l: FuncValue =>
       constCost(l.tpe)
+    case sigmastate.Upcast(_, SBigInt) =>
+      costOf("Upcast", UpcastBigIntOpType)
+    case sigmastate.Downcast(v, _) if v.tpe == SBigInt =>
+      costOf("Downcast", DowncastBigIntOpType)
     case _ =>
       costOf(v.opName, v.opType)
   }
@@ -380,7 +387,15 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
     def sliceCostEx: Rep[((A, (Int,Size[A]))) => Int] = fun { in: Rep[(A, (Int, Size[A]))] =>
       val Pair(ctx, Pair(c, s)) = in
-      f(RCCostedPrim(ctx, c, s)).cost
+
+      val oldFun = funUnderCosting
+      try {
+        funUnderCosting = f
+        f(RCCostedPrim(ctx, c, s)).cost
+      }
+      finally {
+        funUnderCosting = oldFun
+      }
     }
 
     def sliceSize: Rep[Size[A] => Size[B]] = fun { in: Rep[Size[A]] =>
@@ -659,26 +674,16 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case IsConstSizeCostedColl(col) if !d.isInstanceOf[MethodCall] => // see also rewriteNonInvokableMethodCall
         mkCostedColl(col.value, col.value.length, col.cost)
 
-      case _ if isCostingProcess =>
-        // apply special rules for costing function
-        d match {
-          case CM.length(Def(IfThenElseLazy(_, Def(ThunkDef(t: RColl[a]@unchecked,_)), Def(ThunkDef(_e,_)))))  =>
-            val e = asRep[Coll[a]](_e)
-            t.length max e.length
-          case _ => super.rewriteDef(d)
-        }
-
       case OpCost(_, id, args, cost) =>
         if (debugModeSanityChecks) {
           if (args.contains(cost))
             !!!(s"Invalid OpCost($id, $args, $cost)")
         }
         val zero = IntZero
-// TODO this optimization can be applied after assertion assertValueIdForOpCost is removed (or relaxed)
-//        if (cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
-//          args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
-//        }
-//        else
+        if (isCostingProcess && cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
+          args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
+        }
+        else
         if (args.exists(_ == zero)) {
           val nonZeroArgs = args.filterNot(_ == zero)
           val res: Rep[Int] =

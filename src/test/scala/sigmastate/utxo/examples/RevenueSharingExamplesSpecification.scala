@@ -55,7 +55,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |           val share = amt / total * ratio
       |           box.value >= share && blake2b256(box.propositionBytes) == pubKeyHash
       |      })
-      |      validOuts && validFeeBox
+      |      sigmaProp(validOuts && validFeeBox)
       |}
     """.stripMargin)
 

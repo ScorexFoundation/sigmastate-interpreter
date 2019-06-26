@@ -50,7 +50,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     (1 to 1000000).foreach(_ => hf(block))
 
     val t0 = System.currentTimeMillis()
-    (1 to 1000000).foreach(_ => hf(block))
+    (1 to 1500000).foreach(_ => hf(block))
     val t = System.currentTimeMillis()
     t - t0
   }
@@ -249,7 +249,9 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
       res.fold(t => throw t, identity)
     }, {
-      case e: IR.StagingException => e.getMessage.contains("ValUse 2 not found in environment")
+      case e: NoSuchElementException =>
+        // this is expected bacause of deserialization is forced when ErgoTree.complexity is accessed in verify
+        e.getMessage.contains("key not found: 2")
       case _ => false
     })
   }
