@@ -362,15 +362,15 @@ class CostingSpecification extends SigmaTestingData {
       logicCost + // SigmaPropIsProven
       logicCost // BoolToSigmaProp
 
-    val baseCost = (expressionCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) +
-      CostTable.interpreterInitCost
+    val expectedCost = (expressionCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) +
+      CostTable.interpreterInitCost + tree.complexity
 
-    pr.cost shouldBe baseCost
+    pr.cost shouldBe expectedCost
 
     val verifier = new ErgoLikeTestInterpreter
     val cost = verifier.verify(emptyEnv, tree, context, pr, fakeMessage).get._2
 
-    cost shouldBe (baseCost + tree.complexity)
+    cost shouldBe expectedCost
   }
 
 }
