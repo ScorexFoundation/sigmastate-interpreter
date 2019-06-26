@@ -1,27 +1,27 @@
 package sigmastate
 
-import org.ergoplatform.ErgoLikeContext.{dummyPubkey, dummyPreHeader, noHeaders, noBoxes}
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
+import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, dummyPubkey, noBoxes, noHeaders}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, BooleanConstant, IntConstant}
+import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, IntConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.utxo.CostTable
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.utxo.{CostTable, CostTableStat}
 import sigmastate.utxo.CostTable._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import special.sigma.{SigmaTestingData, AvlTree}
+import special.sigma.{AvlTree, SigmaTestingData}
 import Sized._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
-//    override val okPrintEvaluatedEntries = true
+    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
@@ -32,17 +32,21 @@ class CostingSpecification extends SigmaTestingData {
 
   val (key1, _, avlProver) = sampleAvlProver
   val keys = Colls.fromItems(key1)
+  val key2 = keyCollGen.sample.get
   avlProver.performOneOperation(Lookup(ADKey @@ key1.toArray))
   val digest = avlProver.digest.toColl
   val lookupProof = avlProver.generateProof().toColl
   val avlTreeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags.AllOperationsAllowed, 32, None)
   val avlTree: AvlTree = CAvlTree(avlTreeData)
 
-  val env: ScriptEnv = Map(
+  lazy val env: ScriptEnv = Map(
     ScriptNameProp -> s"filename_verify",
     "key1" -> key1,
+    "key2" -> key2,
     "keys" -> keys,
-    "lookupProof" -> lookupProof
+    "lookupProof" -> lookupProof,
+    "pkA" -> pkA,
+    "pkB" -> pkB,
   )
 
   val extension: ContextExtension = ContextExtension(Map(
@@ -105,6 +109,57 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
     cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
+    cost("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }") (ContextVarAccess + logicCost * 2 + constCost)
+  }
+
+  property("atLeast costs") {
+    cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
+      concreteCollectionItemCost * 3 + collToColl + proveDlogEvalCost * 2 + logicCost + constCost)
+  }
+
+  property("allZK costs") {
+    cost("{ pkA && pkB }") (proveDlogEvalCost * 2 + sigmaAndCost * 2)
+  }
+
+  property("anyZK costs") {
+    cost("{ pkA || pkB }") (proveDlogEvalCost * 2 + sigmaOrCost * 2)
+  }
+
+  property("blake2b256 costs") {
+    cost("{ blake2b256(key1).size > 0 }") (constCost + hashPerKb + LengthGTConstCost)
+  }
+
+  property("sha256 costs") {
+    cost("{ sha256(key1).size > 0 }") (constCost + hashPerKb + LengthGTConstCost)
+  }
+
+  property("byteArrayToBigInt") {
+    cost("{ byteArrayToBigInt(Coll[Byte](1.toByte)) > 0 }")(
+      constCost // byte const
+        + collToColl // concrete collection
+        + concreteCollectionItemCost * 1 // build from array cost
+        + castOp + newBigIntPerItem + comparisonBigInt + constCost)
+  }
+
+  property("byteArrayToLong") {
+    cost("{ byteArrayToLong(Coll[Byte](1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte, 1.toByte)) > 0 }") (
+      constCost // byte const
+        + collToColl // concrete collection
+        + concreteCollectionItemCost * 8 // build from array cost
+        + castOp + GTConstCost)
+  }
+
+  property("longToByteArray") {
+    cost("{ longToByteArray(1L).size > 0 }") (constCost + castOp + LengthGTConstCost)
+  }
+
+  property("decodePoint and GroupElement.getEncoded") {
+    cost("{ decodePoint(groupGenerator.getEncoded) == groupGenerator }") (selectField + selectField + decodePointCost + comparisonCost)
+  }
+
+  property("GroupElement.negate") {
+    cost("{ groupGenerator.negate != groupGenerator }") (selectField + negateGroup + comparisonCost)
   }
 
   property("SELF box operations cost") {
@@ -143,6 +198,7 @@ class CostingSpecification extends SigmaTestingData {
     cost("{ MinerPubkey.size > 0 }")(selectField + LengthGTConstCost)
     cost("{ CONTEXT.headers.size > 0 }")(HeadersCost + LengthGTConstCost)
     cost("{ CONTEXT.preHeader.height > 0 }")(PreHeaderCost + selectField + GTConstCost)
+    cost("{ CONTEXT.selfBoxIndex > 0 }") (selectField + GTConstCost)
   }
 
   property("PreHeader operations cost") {
@@ -207,11 +263,34 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $selfTree.contains(key1, lookupProof) }")(AccessTree + containsCost + 2 * constCost)
     cost(s"{ $selfTree.get(key1, lookupProof).isDefined }")(AccessTree + containsCost + 2 * constCost + selectField)
     cost(s"{ $selfTree.getMany(keys, lookupProof).size > 0 }")(AccessTree + containsCost + 2 * constCost + LengthGTConstCost)
+    cost(s"{ $rootTree.valueLengthOpt.isDefined }") (AccessRootHash + selectField + selectField)
+    cost(s"{ $selfTree.update(Coll[(Coll[Byte], Coll[Byte])]((key1, key1)), lookupProof).isDefined }") (
+      AccessTree +
+        perKbCostOf(
+          Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+          avlTreeOp
+        )
+        + concreteCollectionItemCost + collToColl + constCost * 2 + newPairValueCost + selectField)
+    cost(s"{ $selfTree.remove(keys, lookupProof).isDefined }")(
+      AccessTree +
+        perKbCostOf(
+          Seq(sizeOf(avlTree), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+          avlTreeOp
+        )
+        + constCost * 2 + selectField)
+//    cost(s"{ $selfTree.insert(Coll[(Coll[Byte], Coll[Byte])]((key2, key1)), lookupProof).isDefined }")
+//      (AccessTree +
+//        perKbCostOf(
+//          Seq(sizeOf(avlTree), sizeOf(key2), sizeOf(key1), sizeOf(lookupProof)).foldLeft(0L)(_ + _.dataSize),
+//          avlTreeOp
+//        )
+//        + concreteCollectionItemCost + collToColl + constCost * 3 + newPairValueCost + selectField)
   }
 
   property("Coll operations cost") {
     val coll = "OUTPUTS"
     val nOutputs = tx.outputs.length
+    val collBytes = "CONTEXT.headers(0).id"
     cost(s"{ $coll.filter({ (b: Box) => b.value > 1L }).size > 0 }")(
       selectField + lambdaCost +
         (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl + LengthGTConstCost)
@@ -223,6 +302,37 @@ class CostingSpecification extends SigmaTestingData {
     cost(s"{ $coll.zip(OUTPUTS).size > 0 }")(
       selectField + accessBox * tx.outputs.length +
         accessBox * nOutputs * 2 + collToColl + LengthGTConstCost)
+    cost(s"{ $coll.map({ (b: Box) => b.value })(0) > 0 }")(
+      lambdaCost + selectField +
+        (accessBox + extractCost + lambdaInvoke) * nOutputs
+        + collToColl + collByIndex + constCost + GTConstCost)
+    cost(s"{ $coll.exists({ (b: Box) => b.value > 1L }) }") (
+      lambdaCost + selectField +
+        (accessBox + extractCost + constCost + comparisonCost + lambdaInvoke) * nOutputs + collToColl)
+    cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
+      selectField + accessBox * tx.outputs.length +
+        accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
+    cost(s"{ $coll.indices.size > 0 }")(
+      selectField + accessBox * tx.outputs.length + selectField + LengthGTConstCost)
+    cost(s"{ $collBytes.getOrElse(0, 1.toByte) == 0 }")(
+      AccessHeaderCost + selectField + castOp + collByIndex + comparisonCost + constCost)
+//    cost(s"{ $coll.fold(0L, { (acc: Long, b: Box) => acc + b.value }) > 0 }")(
+//      selectField + constCost +
+//        (extractCost + plusMinus + lambdaInvoke) * nOutputs + GTConstCost)
+    cost(s"{ $coll.forall({ (b: Box) => b.value > 1L }) }")(
+      lambdaCost + selectField +
+        (accessBox + extractCost + GTConstCost + lambdaInvoke) * nOutputs + collToColl)
+    cost(s"{ $coll.slice(0, 1).size > 0 }")(
+      selectField + collToColl + accessBox * tx.outputs.length + LengthGTConstCost)
+    cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
+      selectField + accessBox * tx.outputs.length +
+        accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
+//    cost(s"{ $collBytes.patch(1, Coll(3.toByte), 1).size > 0 }")(
+//      AccessHeaderCost + constCost * 3 + concreteCollectionItemCost + collToColl + collToColl + LengthGTConstCost)
+    cost(s"{ $collBytes.updated(0, 1.toByte).size > 0 }")(
+      AccessHeaderCost + selectField + collToColl + LengthGTConstCost)
+//    cost(s"{ $collBytes.updateMany(Coll(0), Coll(1.toByte)).size > 0 }")
+//      (AccessHeaderCost + collToColl + constCost * 2 + concreteCollectionItemCost + LengthGTConstCost)
   }
 
   property("Option operations cost") {
