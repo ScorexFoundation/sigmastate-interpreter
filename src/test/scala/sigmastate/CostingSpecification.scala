@@ -21,7 +21,7 @@ import org.ergoplatform.validation.ValidationRules
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
-    override val okPrintEvaluatedEntries = true
+//    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
