@@ -4,7 +4,7 @@ import java.util
 
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
-import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{rule, everywheretd, everywherebu}
+import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import scalan.util.CollectionUtil._
 import scorex.util.encode.Base16
@@ -12,9 +12,10 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
 import sigmastate.basics.VerifierMessage.Challenge
-import sigmastate.basics.{ProveDHTuple, SigmaProtocolPrivateInput, DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput}
+import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupleProverInput, ProveDHTuple, SigmaProtocolPrivateInput}
+import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 
 import scala.util.Try
 
@@ -126,9 +127,18 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
 
   def prove(env: ScriptEnv, tree: ErgoTree, ctx: CTX, message: Array[Byte]): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val prop = propositionFromErgoTree(tree, ctx)
-    val (propTree, _) = applyDeserializeContext(ctx, prop)
-    val tried = reduceToCrypto(ctx, env, propTree)
+
+    val initCost = tree.complexity + ctx.initCost
+    val remainingLimit = ctx.costLimit - initCost
+    if (remainingLimit <= 0)
+      throw new CostLimitException(initCost,
+        s"Estimated execution cost $initCost exceeds the limit ${ctx.costLimit}", None)
+
+    val ctxUpdInitCost = ctx.withInitCost(initCost).asInstanceOf[CTX]
+
+    val prop = propositionFromErgoTree(tree, ctxUpdInitCost)
+    val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
+    val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
     def errorReducedToFalse = error("Script reduced to false")
@@ -142,7 +152,7 @@ trait ProverInterpreter extends Interpreter with AttributionCore {
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, ctx.extension, cost)
+    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
   }
 
   /**
