@@ -48,6 +48,7 @@ object CostTable {
   val multiplyGroup = 50
   val negateGroup = 50
   val groupElementConst = 1
+  val decodePointCost = 1
   val constCost = 10
   val lambdaCost = 10
 
@@ -66,6 +67,7 @@ object CostTable {
   val plusMinusBigInt = 10
   val comparisonBigInt = 10
   val multiplyBigInt = 50
+  val newBigIntPerItem = 1
 
   val hashPerKb = 100
 
@@ -141,7 +143,7 @@ object CostTable {
     ("Exponentiate", "(GroupElement,BigInt) => GroupElement", expCost),
     ("MultiplyGroup", "(GroupElement,GroupElement) => GroupElement", multiplyGroup),
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
-    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", MinimalCost),
+    ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
     ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
@@ -288,7 +290,7 @@ object CostTable {
 
     ("SubstConstants_per_kb", "(Coll[Byte], Coll[Int], Coll[T]) => Coll[Byte]", MinimalCost),
 
-    ("DecodePoint", "(Coll[Byte]) => GroupElement", MinimalCost),
+    ("DecodePoint", "(Coll[Byte]) => GroupElement", decodePointCost),
 
     ("SOption$.map", "(Option[T],(T) => R) => Option[R]", OptionOp),
     ("SOption$.filter", "(Option[T],(T) => Boolean) => Option[T]", OptionOp),

@@ -168,7 +168,7 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
       operations.forall { case (key, value) =>
         val insertRes = bv.performOneOperation(Insert(ADKey @@ key.toArray, ADValue @@ value.toArray))
         if (insertRes.isFailure) {
-          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest)")
+          Interpreter.error(s"Incorrect insert for $treeData (key: $key, value: $value, digest: $digest): ${insertRes.failed.get}}")
         }
         insertRes.isSuccess
       }
