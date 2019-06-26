@@ -10,6 +10,7 @@ import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
+import sigmastate.utxo.ComplexityTable
 
 import scala.collection.mutable
 
@@ -129,9 +130,15 @@ class ErgoTreeSerializer {
   }
 
   def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int): ErgoTree = {
+    deserializeErgoTree(r, maxTreeSizeBytes, true)
+  }
+
+  private[sigmastate] def deserializeErgoTree(r: SigmaByteReader, maxTreeSizeBytes: Int, checkType: Boolean): ErgoTree = {
     val startPos = r.position
     val previousPositionLimit = r.positionLimit
+    val previousComplexity = r.complexity
     r.positionLimit = r.position + maxTreeSizeBytes
+    r.complexity = 0
     val (h, sizeOpt) = deserializeHeaderAndSize(r)
     val bodyPos = r.position
     val tree = try {
@@ -141,9 +148,13 @@ class ErgoTreeSerializer {
         // reader with constant store attached is required (to get tpe for a constant placeholder)
         r.constantStore = new ConstantStore(cs)
         val root = ValueSerializer.deserialize(r)
-        CheckDeserializedScriptIsSigmaProp(root) {}
+
+        if (checkType)
+          CheckDeserializedScriptIsSigmaProp(root) {}
+
         r.constantStore = previousConstantStore
-        ErgoTree(h, cs, root.asSigmaProp)
+        val complexity = r.complexity
+        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity)
       }
       catch {
         case e: InputSizeLimitExceeded =>
@@ -157,13 +168,17 @@ class ErgoTreeSerializer {
             val numBytes = bodyPos - startPos + treeSize
             r.position = startPos
             val bytes = r.getBytes(numBytes)
-            ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)))
+            val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
         }
     }
-    r.positionLimit = previousPositionLimit
+    finally {
+      r.positionLimit = previousPositionLimit
+      r.complexity = previousComplexity
+    }
     tree
   }
 

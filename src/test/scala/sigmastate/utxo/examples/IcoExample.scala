@@ -6,8 +6,8 @@ import org.ergoplatform.dsl.TestContractSpec
 import org.ergoplatform._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.hash.{Blake2b256, Digest32}
-import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, CollectionConstant, IntArrayConstant, SigmaPropValue}
+import scorex.crypto.hash.{Digest32, Blake2b256}
+import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -19,6 +19,7 @@ import sigmastate.interpreter.CryptoConstants
 
 import scala.util.Random
 import sigmastate.eval._
+import sigmastate.utxo.ComplexityTableStat
 
 /**
   *
@@ -247,7 +248,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
     "projectPubKey" -> project.secrets.head.publicImage
   )
 
-  val withdrawalScript: SigmaPropValue = compiler.compile(env,
+  lazy val withdrawalScript: SigmaPropValue = compiler.compile(env,
     """{
       |  val removeProof = getVar[Coll[Byte]](2).get
       |  val lookupProof = getVar[Coll[Byte]](3).get
@@ -299,9 +300,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
+  lazy val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
-  val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
+  lazy val issuanceScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", wsHash),
     """{
       |  val openTree = SELF.R5[AvlTree].get
       |
@@ -332,9 +333,9 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |}""".stripMargin
   ).asSigmaProp
 
-  val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
+  lazy val issuanceHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(issuanceScript))
 
-  val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
+  lazy val fundingScript: SigmaPropValue = compile(env.updated("nextStageScriptHash", issuanceHash),
     """{
       |
       |  val selfIndexIsZero = INPUTS(0).id == SELF.id
@@ -532,6 +533,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
     println("withdrawal script cost: " + res.cost)
     println("remove proof size: " + removalProof.length)
     println("lookup proof size: " + lookupProof.length)
+  }
+
+  property("ComplexityTableStat") {
+    println(ComplexityTableStat.complexityTableString)
   }
 
 }

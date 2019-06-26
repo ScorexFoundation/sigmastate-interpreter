@@ -5,6 +5,7 @@ import sigmastate._
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.lang.Terms.MethodCall
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utxo.ComplexityTable
 
 case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[SType]], STypeSubst) => Value[SType])
   extends ValueSerializer[MethodCall] {
@@ -17,6 +18,8 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     assert(mc.args.nonEmpty)
     w.putValues(mc.args, ArgInfo("args", "arguments of the method call"))
   }
+
+  override def getComplexity: Int = 0  // because we add it explicitly in parse below
 
   /** The SMethod instances in STypeCompanions may have type STypeIdent in methods types,
     * but a valid ErgoTree should have SMethod instances specialized for specific types
@@ -35,6 +38,8 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
     val obj = r.getValue()
     val args = r.getValues()
     val method = SMethod.fromIds(typeId, methodId)
+    val complexity = ComplexityTable.MethodCallComplexity.getOrElse((typeId, methodId), ComplexityTable.MinimalComplexity)
+    r.addComplexity(complexity)
     val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
     cons(obj, specMethod, args, Map())
   }

@@ -21,6 +21,7 @@ import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.{SGroupElement, SType}
 import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -86,7 +87,7 @@ trait SigmaTestingCommons extends PropSpec
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {
         case Some(name: String) if saveGraphsInFile =>
-          emit(name, res)
+          emit(name, Pair(res.calcF, res.costF))
         case _ =>
       }
     }
@@ -102,6 +103,20 @@ trait SigmaTestingCommons extends PropSpec
             println(s"Cost of $name = $estimatedCost")
           case _ =>
         }
+      }
+    }
+
+    override private[sigmastate] def onResult[T](env: ScriptEnv,
+                                     tree: SValue,
+                                     result: RCostingResultEx[T],
+                                     ctx: sigma.Context,
+                                     estimatedCost: Int,
+                                     calcCtx: sigma.Context,
+                                     executedResult: sigma.SigmaProp,
+                                     executionTime: Long): Unit = {
+      if (outputComputedResults) {
+        val name = env.get(Interpreter.ScriptNameProp).getOrElse("")
+        println(s"ScriptName: $name, EstimatedCost: $estimatedCost, ExecutionTime: $executionTime")
       }
     }
   }
