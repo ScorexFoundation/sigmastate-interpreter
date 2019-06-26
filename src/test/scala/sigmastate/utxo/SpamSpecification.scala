@@ -265,10 +265,11 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
+  // TODO increase scaleLimit after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/550
   property("Context extension: valid scripts") {
     assert(warmUpPrecondition)
     val check = "getVar[Boolean](3).get && getVar[Int](4).get > i && getVar[BigInt](5).get >= getVar[Int](4).get"
-    repeatScript(check, 80, 5) { scale =>
+    repeatScript(check, 70, 5) { scale =>
       val script = (1 to scale).map(_ => s"getVar[Coll[Byte]](6).get.forall({(i:Byte) => $check})").mkString(" && ")
       compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
     }
