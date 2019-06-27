@@ -1,25 +1,22 @@
 package sigmastate
 
-import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, dummyPubkey, noBoxes, noHeaders}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
-import scorex.crypto.authds.{ADDigest, ADKey}
+import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
 import scorex.crypto.authds.avltree.batch.Lookup
+import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, Interpreter}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
-import sigmastate.utxo.{CostTable, CostTableStat}
-import sigmastate.utxo.CostTable._
-import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.eval.Sized._
+import sigmastate.eval._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
+import sigmastate.utxo.CostTable
+import sigmastate.utxo.CostTable._
 import special.sigma.{AvlTree, SigmaTestingData}
-import Sized._
-import org.ergoplatform.ErgoBox.{MaxBoxSize, R4, R5, R6, R7, R8}
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
-import org.ergoplatform.validation.ValidationRules
-import sigmastate.interpreter.CryptoConstants.dlogGroup
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -48,12 +45,7 @@ class CostingSpecification extends SigmaTestingData {
     "keys" -> keys,
     "lookupProof" -> lookupProof,
     "pkA" -> pkA,
-    "pkB" -> pkB,
-    "ScriptName" -> "large loop: exp",
-    "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))).bigInteger),
-    "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))).bigInteger),
-    "g1" -> dlogGroup.generator,
-    "g2" -> dlogGroup.generator.add(dlogGroup.generator)
+    "pkB" -> pkB
   )
 
   val extension: ContextExtension = ContextExtension(Map(
@@ -66,11 +58,7 @@ class CostingSpecification extends SigmaTestingData {
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
           ErgoBox.R5 -> IntConstant(3),
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
-
-  lazy val outBoxA = ErgoBox(10, pkA, 0, Nil,
-    Map(
-      R4 -> ByteArrayConstant(maxSizeColl)))
+  lazy val outBoxA = ErgoBox(10, pkA, 0)
   lazy val outBoxB = ErgoBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
   lazy val context =
@@ -88,7 +76,6 @@ class CostingSpecification extends SigmaTestingData {
     val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
     if (printCosts)
       println(script + s" --> cost $res")
-    println(s"kek: $res")
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
   }
 
