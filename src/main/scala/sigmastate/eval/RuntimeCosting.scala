@@ -33,6 +33,7 @@ import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
+import sigmastate.eval.ExactNumeric._
 
 import scala.collection.mutable
 
@@ -930,10 +931,10 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import NumericOps._
   private lazy val elemToNumericMap = Map[Elem[_], Numeric[_]](
-    (ByteElement, numeric[Byte]),
-    (ShortElement, numeric[Short]),
-    (IntElement, numeric[Int]),
-    (LongElement, numeric[Long]),
+    (ByteElement, ByteIsExactNumeric),
+    (ShortElement, ShortIsExactNumeric),
+    (IntElement, IntIsExactNumeric),
+    (LongElement, LongIsExactNumeric),
     (bigIntElement, numeric[SBigInt])
   )
   private lazy val elemToIntegralMap = Map[Elem[_], Integral[_]](
@@ -950,10 +951,17 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (LongElement, implicitly[Ordering[Long]]),
     (bigIntElement, implicitly[Ordering[SBigInt]])
   )
+  private lazy val elemToExactNumeric = Map[Elem[_], ExactNumeric[_]](
+    (ByteElement,   ByteIsExactNumeric),
+    (ShortElement,  ShortIsExactNumeric),
+    (IntElement,    IntIsExactNumeric),
+    (LongElement,   LongIsExactNumeric),
+  )
 
   def elemToNumeric [T](e: Elem[T]): Numeric[T]  = elemToNumericMap(e).asInstanceOf[Numeric[T]]
   def elemToIntegral[T](e: Elem[T]): Integral[T] = elemToIntegralMap(e).asInstanceOf[Integral[T]]
   def elemToOrdering[T](e: Elem[T]): Ordering[T] = elemToOrderingMap(e).asInstanceOf[Ordering[T]]
+  def elemToExactNumeric[T](e: Elem[T]): ExactNumeric[T] = elemToExactNumeric(e).asInstanceOf[ExactNumeric[T]]
 
   def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
     case OpCodes.PlusCode => NumericPlus(elemToNumeric(eT))(eT)
