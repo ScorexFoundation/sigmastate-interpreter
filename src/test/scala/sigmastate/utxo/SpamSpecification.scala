@@ -687,8 +687,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       compile(
         Map(
           ScriptNameProp -> check,
-          "x1" -> SigmaDsl.BigInt((BigInt(1)+scale).bigInteger),
-          "y1" -> SigmaDsl.BigInt((BigInt(1)+scale*2).bigInteger),
+          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
+          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
           "g1" -> dlogGroup.generator,
           "g2" -> dlogGroup.generator.add(dlogGroup.generator),
           "coll" -> Colls.fromArray(Array.fill(scale)(10.toByte))
