@@ -682,23 +682,19 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("repeat large loop: exp") {
     // to do: convert to nested
-    repeatScript("collection element by index", 101, 5) { scale =>
+    val check = "g1.exp(if (b == 10) x1 else y1) != g2"
+    repeatScript("collection element by index",  101, 5) { scale =>
       compile(
         Map(
-          ScriptNameProp -> "repeat large loop: exp",
-          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
-          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
+          ScriptNameProp -> check,
+          "x1" -> SigmaDsl.BigInt((BigInt(1)+scale).bigInteger),
+          "y1" -> SigmaDsl.BigInt((BigInt(1)+scale*2).bigInteger),
           "g1" -> dlogGroup.generator,
           "g2" -> dlogGroup.generator.add(dlogGroup.generator)
         ),
         s"""{
-           |  OUTPUTS(0).R8[Coll[Byte]].get.forall({(b:Byte) =>
-           |    val inner = OUTPUTS(0).R8[Coll[Byte]].get.forall({(c:Byte) =>
-           |      val ex = if (b == 10) x1 else y1
-           |      g1.exp(ex) != g2
-           |    })
-           |    val ex = if (inner) x1 else y1
-           |    g1.exp(ex) != g2
+           |  OUTPUTS(0).R8[Coll[Byte]].get.fold(true, {(i:Boolean, b:Byte) =>
+           |    $check
            |  })
            |}
       """.stripMargin
