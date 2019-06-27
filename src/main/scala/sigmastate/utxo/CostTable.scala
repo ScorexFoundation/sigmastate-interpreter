@@ -145,7 +145,6 @@ object CostTable {
     ("ByteArrayToBigInt", "(Coll[Byte]) => BigInt", castOp),
     ("new_BigInteger_per_item", "(Coll[Byte]) => BigInt", newBigIntPerItem),
     ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
-    ("SGroupElement$.exp", "(GroupElement,BigInt) => GroupElement", expCost),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
     ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
