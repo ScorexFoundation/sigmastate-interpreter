@@ -993,16 +993,31 @@ class SigmaDslTest extends PropSpec
     forAll { x: (Boolean, Boolean) => eq(x) }
   }
 
-  property("lazy || boolean equivalence") {
+  property("lazy || and && boolean equivalence") {
     checkEq(func[Boolean, Boolean]("{ (x: Boolean) => x || (1/0 == 1) }")){ (x: Boolean) =>
       x || (1 / 0 == 1)
     }(true)
-  }
-
-  property("lazy && boolean equivalence") {
     checkEq(func[Boolean, Boolean]("{ (x: Boolean) => (x && (1/0 == 1)) == false }")){ (x: Boolean) =>
       (x && (1 / 0 == 1)) == false
     }(false)
-  }
 
+    // nested
+
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => x && (x || (1/0 == 1)) }")){ (x: Boolean) =>
+      x && (x || (1 / 0 == 1))
+    }(true)
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => x && (x && (x || (1/0 == 1))) }")){ (x: Boolean) =>
+      x && (x && (x || (1 / 0 == 1)))
+    }(true)
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => x && (x && (x && (x || (1 / 0 == 1)))) }")){ (x: Boolean) =>
+      x && (x && (x && (x || (1 / 0 == 1))))
+    }(true)
+
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => (x || (1 / 0 == 0)) && x }")){ (x: Boolean) =>
+      (x || (1 / 0 == 0)) && x
+    }(true)
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => (x || (1 / 0 == 0)) && (x || (1 / 0 == 1)) }")){ (x: Boolean) =>
+      (x || (1 / 0 == 0)) && (x || (1 / 0 == 1))
+    }(true)
+  }
 }
