@@ -681,25 +681,15 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("repeat large loop: exp") {
-    // to do: convert to nested
-    val check = "g1.exp(if (b == 10) x1 else y1) != g2"
-    repeatScript("collection element by index",  300, 20) { scale =>
-      compile(
-        Map(
-          ScriptNameProp -> check,
-          "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger),
-          "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger),
-          "g1" -> dlogGroup.generator,
-          "g2" -> dlogGroup.generator.add(dlogGroup.generator),
-          "coll" -> Colls.fromArray(Array.fill(scale)(10.toByte))
-        ),
-        s"""{
-           |  coll.forall({(b:Byte) =>
-           |    $check
-           |  })
-           |}
-      """.stripMargin
-      ).asBoolValue.toSigmaProp
+    repeatScript("repeat large loop: exp", 25) { scale =>
+      val innerCheck = "g1.exp(if (b == 10) x1 else y1) != g2"
+      val check = genNestedScript(s"$innerCheck", "", s" && $innerCheck", scale)
+      val script = s"OUTPUTS(0).R7[Coll[Byte]].get.forall({(b:Byte) => $check})"
+      compile(maxSizeCollEnv +
+        ("x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))+scale).bigInteger)) +
+        ("y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))+scale*2).bigInteger)) +
+        ("g1" -> dlogGroup.generator) +
+        ("g2" -> dlogGroup.generator.add(dlogGroup.generator)), script).asBoolValue.toSigmaProp
     }
   }
 
