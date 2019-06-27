@@ -109,7 +109,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   var outputComputedResults: Boolean = false
 
   /** Whether to perform extended checks of correctness, expected invariants and data consistency.
-    * Since it may add substantial overhead, tt shouldn't be used in production. */
+    * NOTE: Since it may add substantial overhead, set it to `false` before using in production. */
   val debugModeSanityChecks: Boolean = false
 
 //  /** Pass configuration which is used by default in IRContext. */
@@ -676,10 +676,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         mkCostedColl(col.value, col.value.length, col.cost)
 
       case OpCost(_, id, args, cost) =>
-        if (debugModeSanityChecks) {
-          if (args.contains(cost))
-            !!!(s"Invalid OpCost($id, $args, $cost)")
-        }
         val zero = IntZero
         if (isCostingProcess && cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
           args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
@@ -694,9 +690,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
               OpCost(lamVar, id, nonZeroArgs, cost)
             }
           res
-        } else
+        } else {
+          if (debugModeSanityChecks) {
+            if (args.contains(cost))
+              !!!(s"Invalid OpCost($id, $args, $cost)")
+          }
           super.rewriteDef(d)
-
+        }
       case _ =>
         super.rewriteDef(d)
     }

@@ -69,7 +69,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     *
     *
     */
-  property("oracle example") {
+  ignore("oracle example") {
     val oracle = new ContextEnrichingTestProvingInterpreter
     val aliceTemplate = new ContextEnrichingTestProvingInterpreter
     val bob = new ContextEnrichingTestProvingInterpreter
