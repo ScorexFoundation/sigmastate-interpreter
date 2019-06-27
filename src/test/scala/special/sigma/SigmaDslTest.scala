@@ -993,4 +993,16 @@ class SigmaDslTest extends PropSpec
     forAll { x: (Boolean, Boolean) => eq(x) }
   }
 
+  property("lazy || boolean equivalence") {
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => x || (1/0 == 1) }")){ (x: Boolean) =>
+      x || (1 / 0 == 1)
+    }(true)
+  }
+
+  property("lazy && boolean equivalence") {
+    checkEq(func[Boolean, Boolean]("{ (x: Boolean) => (x && (1/0 == 1)) == false }")){ (x: Boolean) =>
+      (x && (1 / 0 == 1)) == false
+    }(false)
+  }
+
 }

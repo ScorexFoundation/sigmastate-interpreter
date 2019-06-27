@@ -621,4 +621,20 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       true
     )
   }
+
+  property("lazy OR") {
+    test("lazy OR", env, ext,
+      "true || ((1/0) == 1)",
+      null,
+      true
+    )
+  }
+
+  property("lazy AND") {
+    test("lazy AND", env, ext,
+      "(false && ((1/0) == 1)) == false",
+      null,
+      true
+    )
+  }
 }
