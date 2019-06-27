@@ -656,9 +656,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large loop: exp") {
-    /*
-      Rejection cause: java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Exp)
-     */
     checkScript{
       compile(
         maxSizeCollEnv ++ Map(
@@ -681,11 +678,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("repeat large loop: exp") {
     // to do: convert to nested
-    /*
-      Passes because costing is not implemented for exp
-        java.lang.NoSuchMethodException: sigmastate.eval.CostingRules$GroupElementCoster.exp(scalan.Base$Exp)
-
-     */
     repeatScript("collection element by index", 101, 5) { scale =>
       compile(
         Map(

@@ -6,7 +6,7 @@ import org.ergoplatform.ErgoScriptPredef.TrueProp
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, IntConstant}
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
@@ -16,8 +16,10 @@ import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import special.sigma.{AvlTree, SigmaTestingData}
 import Sized._
+import org.ergoplatform.ErgoBox.{MaxBoxSize, R4, R5, R6, R7, R8}
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
+import sigmastate.interpreter.CryptoConstants.dlogGroup
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -47,18 +49,28 @@ class CostingSpecification extends SigmaTestingData {
     "lookupProof" -> lookupProof,
     "pkA" -> pkA,
     "pkB" -> pkB,
+    "ScriptName" -> "large loop: exp",
+    "x1" -> SigmaDsl.BigInt((BigInt(Blake2b256("hello"))).bigInteger),
+    "y1" -> SigmaDsl.BigInt((BigInt(Blake2b256("world"))).bigInteger),
+    "g1" -> dlogGroup.generator,
+    "g2" -> dlogGroup.generator.add(dlogGroup.generator)
   )
 
   val extension: ContextExtension = ContextExtension(Map(
     1.toByte -> IntConstant(1),
-    2.toByte -> BooleanConstant(true)
+    2.toByte -> BooleanConstant(true),
+    3.toByte -> BigIntConstant(BigInt("12345678901").bigInteger)
   ))
   val tokenId = Blake2b256("tokenA")
   val selfBox = createBox(0, TrueProp, Seq(tokenId -> 10L),
       Map(ErgoBox.R4 -> ByteArrayConstant(Array[Byte](1, 2, 3)),
           ErgoBox.R5 -> IntConstant(3),
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
-  lazy val outBoxA = ErgoBox(10, pkA, 0)
+  val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
+
+  lazy val outBoxA = ErgoBox(10, pkA, 0, Nil,
+    Map(
+      R4 -> ByteArrayConstant(maxSizeColl)))
   lazy val outBoxB = ErgoBox(20, pkB, 0)
   lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
   lazy val context =
@@ -76,6 +88,7 @@ class CostingSpecification extends SigmaTestingData {
     val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
     if (printCosts)
       println(script + s" --> cost $res")
+    println(s"kek: $res")
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
   }
 
@@ -160,6 +173,10 @@ class CostingSpecification extends SigmaTestingData {
 
   property("GroupElement.negate") {
     cost("{ groupGenerator.negate != groupGenerator }") (selectField + negateGroup + comparisonCost)
+  }
+
+  property("GroupElement.exp") {
+    cost("{ groupGenerator.exp(getVar[BigInt](3).get) == groupGenerator }") (selectField + expCost + ContextVarAccess + comparisonCost)
   }
 
   property("SELF box operations cost") {
