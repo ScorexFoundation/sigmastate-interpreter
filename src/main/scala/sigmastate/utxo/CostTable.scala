@@ -41,8 +41,8 @@ object CostTable {
   val perGraphNodeCost = 200
 
   /** Scaling factors to be applied to estimated cost (totalCost = cost * costFactorIncrease / costFactorDecrease */
-  val costFactorIncrease: Int = 3
-  val costFactorDecrease: Int = 2
+  val costFactorIncrease: Int = 1
+  val costFactorDecrease: Int = 1
 
   val expCost = 5000
   val multiplyGroup = 50

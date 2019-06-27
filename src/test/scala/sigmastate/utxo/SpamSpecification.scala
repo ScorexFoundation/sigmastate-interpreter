@@ -1,16 +1,16 @@
 package sigmastate.utxo
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.{ScriptCostLimit, MaxPropositionBytes}
+import org.ergoplatform.ErgoConstants.{MaxPropositionBytes, ScriptCostLimit}
 import org.ergoplatform._
 import org.ergoplatform.validation.ValidationRules.CheckLoopLevelInCostFunction
 import org.ergoplatform.validation.{ValidationException, ValidationRules}
 import org.scalacheck.Gen
 import scalan.util.BenchmarkUtil
 import scalan.util.BenchmarkUtil.measureTime
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.encode.Base16
 import scorex.utils.Random
 import sigmastate.SCollection.SByteArray
@@ -18,12 +18,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.interpreter.Interpreter._
 import sigmastate.interpreter.{ContextExtension, CostedProverResult}
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.serialization.generators.ObjectGenerators
 import special.collection.Coll
 
@@ -62,7 +63,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
   val hugeSizeColl: Array[Byte] = Array.fill(1000000)(1.toByte)
-  val maxSizeColl: Array[Byte] = Array.fill(MaxBoxSize)(2.toByte)
+  val maxSizeColl: Array[Byte] = Array.fill(SigmaSerializer.MaxPropositionSize - 50)(2.toByte)
   val coll10: Array[Byte] = Array.fill(10)(10.toByte)
   val coll100: Array[Byte] = Array.fill(100)(100.toByte)
   val coll1000: Array[Byte] = Array.fill(1000)(1000.toByte)
@@ -215,6 +216,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   def repeatScript(name: String, scaleLimit: Int, scaleStep: Int = 1)(scriptBuilder: Int => SigmaPropValue): Unit = {
+    IR.resetContext()
+    System.gc()
     (1 to(scaleLimit, scaleStep)) foreach { scale =>
       println(s"ErgoTree Scale: $scale")
       val prop = scriptBuilder(scale)
@@ -265,10 +268,11 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
+  // TODO increase scaleLimit after https://github.com/ScorexFoundation/sigmastate-interpreter/issues/550
   property("Context extension: valid scripts") {
     assert(warmUpPrecondition)
     val check = "getVar[Boolean](3).get && getVar[Int](4).get > i && getVar[BigInt](5).get >= getVar[Int](4).get"
-    repeatScript(check, 86, 3) { scale =>
+    repeatScript(check, 70, 5) { scale =>
       val script = (1 to scale).map(_ => s"getVar[Coll[Byte]](6).get.forall({(i:Byte) => $check})").mkString(" && ")
       compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp
     }
@@ -360,10 +364,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("addition, cost a bit lower than limit") {
-    (0 until 40) foreach { repeats =>
-      val check = genNestedScript("1 < i", "", " + i", repeats)
+    repeatScript("addition, cost a bit lower than limit", 40) { scale =>
+      val check = genNestedScript("1 < i", "", " + i", scale)
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
@@ -379,18 +383,18 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("multiplication, cost a bit lower than limit") {
-    (0 until 40) foreach { repeats =>
-      val check = genNestedScript("i ", "", " * i", repeats + 1) + " >= " + genNestedScript("i ", "", " * i", repeats)
+    repeatScript("multiplication, cost a bit lower than limit", 40) { scale =>
+      val check = genNestedScript("i ", "", " * i", scale + 1) + " >= " + genNestedScript("i ", "", " * i", scale)
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
   property("multiplication, cost a bit lower than limit 2") {
-    (0 until 30) foreach { repeats =>
-      val check = genNestedScript("true ", "", " && i * 2 < i * i * i", repeats)
+    repeatScript("multiplication, cost a bit lower than limit 2", 30) { scale =>
+      val check = genNestedScript("true ", "", " && i * 2 < i * i * i", scale)
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
@@ -406,10 +410,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("negotiation, cost a bit lower than limit") {
-    (0 until 50) foreach { repeats =>
-      val check = genNestedScript("(! (i != 2)) ", "(! (i != 1)) || ", "", repeats)
+    repeatScript("negotiation, cost a bit lower than limit", 50) { scale =>
+      val check = genNestedScript("(! (i != 2)) ", "(! (i != 1)) || ", "", scale)
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
@@ -425,10 +429,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("comparison of the same elements, cost a bit lower than limit") {
-    (0 until 50) foreach { repeats =>
+    repeatScript("comparison of the same elements, cost a bit lower than limit", 50) { scale =>
       val check = "OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => i == i })"
-      val script = genNestedScript("123 == 123 ", "", s" && $check", repeats)
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), "{" + script + "}").asBoolValue.toSigmaProp)
+      val script = genNestedScript("123 == 123 ", "", s" && $check", scale)
+      compile(maxSizeCollEnv, "{" + script + "}").asBoolValue.toSigmaProp
     }
   }
 
@@ -467,10 +471,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: collection.slice") {
     assert(warmUpPrecondition)
-    (50 +: (0 until 20)) foreach { i =>
+    repeatScript("large loop: collection.slice", 50, 5) { scale =>
       val check = "OUTPUTS(0).R7[Coll[Byte]].get.slice(1, 8) == OUTPUTS(0).R7[Coll[Byte]].get.slice(2, 9)"
-      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      val script = (0 to scale).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})").mkString(" && ")
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
@@ -483,28 +487,28 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
 
   property("large loop: collection.indices") {
     assert(warmUpPrecondition)
-    (0 until 40) foreach { i =>
+    repeatScript("large loop: collection.indices", 40) { scale =>
       val check = "OUTPUTS(0).R7[Coll[Byte]].get.indices.getOrElse(i, i) == i"
-      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.indices.forall({(i:Int) => $check})").mkString(" && ")
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      val script = (0 to scale).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.indices.forall({(i:Int) => $check})").mkString(" && ")
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
   property("large loop: collection.filter") {
     assert(warmUpPrecondition)
-    (0 until 40) foreach { i =>
+    repeatScript("large loop: collection.filter", 40) { scale =>
       val check = "i == 1"
-      val script = (0 to i).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.filter({(i:Byte) => $check}).size == 0").mkString(" && ")
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      val script = (0 to scale).map(_ => s"OUTPUTS(0).R8[Coll[Byte]].get.filter({(i:Byte) => $check}).size == 0").mkString(" && ")
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 
   property("large loop: collection allocation") {
     assert(warmUpPrecondition)
-    400 +: (0 until 20) foreach { i =>
-      val check = genNestedScript("Coll(i", "", ",i", i) + s") == Coll(i)"
+    repeatScript("large loop: collection allocation", 400, 100) { scale =>
+      val check = genNestedScript("Coll(i", "", ",i", scale) + s") == Coll(i)"
       val script = s"OUTPUTS(0).R8[Coll[Byte]].get.forall({(i:Byte) => $check})"
-      checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> check), script).asBoolValue.toSigmaProp)
+      compile(maxSizeCollEnv, script).asBoolValue.toSigmaProp
     }
   }
 

@@ -298,7 +298,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |  selfOutputCorrect
       | // properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
       |}""".stripMargin
-  ).asSigmaProp
+  ).asBoolValue.toSigmaProp
 
   lazy val wsHash = Blake2b256(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(withdrawalScript))
 
@@ -370,7 +370,7 @@ class IcoExample extends SigmaTestingCommons { suite =>
       |
       |  selfIndexIsZero && outputsCorrect && properTreeModification
       |}""".stripMargin
-  ).asSigmaProp
+  ).asBoolValue.toSigmaProp
 
 
 
