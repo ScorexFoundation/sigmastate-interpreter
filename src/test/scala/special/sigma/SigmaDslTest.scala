@@ -718,19 +718,18 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll fold method equivalnce") {
-    val monoid = Builder.DefaultCollBuilder.Monoids.intPlusMonoid
-    val eq = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1.fold(x._2, { (i1: Int, i2: Int) => i1 + i2 }) }"))
+  property("Coll fold method equivalence") {
+    val eq = checkEq(func[(Coll[Byte], Int),Int]("{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"))
     { x =>
-      x._1.sum(monoid) + x._2
+      x._1.foldLeft(x._2, { i: (Int, Byte) => i._1 + i._2 })
     }
-    val eqIndexOf = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1.indexOf(x._2, 0) }"))
+    val eqIndexOf = checkEq(func[(Coll[Byte], Byte),Int]("{ (x: (Coll[Byte], Byte)) => x._1.indexOf(x._2, 0) }"))
     { x =>
       x._1.indexOf(x._2, 0)
     }
-    forAll { x: (Array[Int], Int) =>
+    forAll { x: (Array[Byte], Short, Byte) =>
       eq(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
-      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
+      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), x._3)
     }
   }
 
@@ -784,7 +783,7 @@ class SigmaDslTest extends PropSpec
       x.map(v => v + 1)
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Builder.DefaultCollBuilder.fromArray(x.filter(_ < Int.MaxValue)))
     }
   }
 
