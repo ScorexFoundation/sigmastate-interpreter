@@ -5,19 +5,22 @@ import sigmastate._
 
 class ModQSerializerSpecification extends SerializationSpecification {
 
-  property("ModQ: Serializer round trip") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("ModQ: Serializer round trip") {
     forAll(bigIntConstGen) { x: BigIntConstant =>
       roundTripTest(ModQ(x))
     }
   }
 
-  property("PlusModQ: Serializer round trip") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("PlusModQ: Serializer round trip") {
     forAll(bigIntConstGen, bigIntConstGen) { (x1: BigIntConstant, x2: BigIntConstant) =>
       roundTripTest(PlusModQ(x1, x2))
     }
   }
 
-  property("MinusModQ: Serializer round trip") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("MinusModQ: Serializer round trip") {
     forAll(bigIntConstGen, bigIntConstGen) { (x1: BigIntConstant, x2: BigIntConstant) =>
       roundTripTest(MinusModQ(x1, x2))
     }
