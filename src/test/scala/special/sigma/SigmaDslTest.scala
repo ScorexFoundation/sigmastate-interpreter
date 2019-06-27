@@ -26,6 +26,8 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 
+import scala.util.{Success, Try, Failure}
+
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -45,8 +47,18 @@ class SigmaDslTest extends PropSpec
   }
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
-    val b1 = f(x); val b2 = g(x)
-    assert(b1 == b2)
+    val b1 = Try(f(x)); val b2 = Try(g(x))
+    (b1, b2) match {
+      case (Success(b1), Success(b2)) =>
+        assert(b1 == b2)
+      case (Failure(t1), Failure(t2)) =>
+        val c1 = rootCause(t1).getClass
+        val c2 = rootCause(t2).getClass
+        c1 shouldBe c2
+      case _ =>
+        assert(false)
+    }
+
   }
 
   def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>

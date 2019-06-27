@@ -93,7 +93,7 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val ts = System.currentTimeMillis()
 
     // we need to fit the resulted BigInt in group order
-    val reducedHashSize = 31
+    val reducedHashSize = 30
     val e = BigInt(1, Blake2b256.hash(Longs.toByteArray(temperature) ++ Longs.toByteArray(ts)).take(reducedHashSize))
 
     val z = (r + e.bigInteger.multiply(oraclePrivKey.w)).mod(group.order).bigInteger
