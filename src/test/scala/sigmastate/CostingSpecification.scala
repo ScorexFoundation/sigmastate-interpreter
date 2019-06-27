@@ -377,4 +377,10 @@ class CostingSpecification extends SigmaTestingData {
     cost shouldBe expectedCost
   }
 
+  property("laziness of AND, OR costs") {
+    cost("{ val cond = getVar[Boolean](2).get; !(!cond && (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost * 3 + multiply + comparisonCost)
+    cost("{ val cond = getVar[Boolean](2).get; (cond || (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost + multiply + comparisonCost)
+  }
 }
