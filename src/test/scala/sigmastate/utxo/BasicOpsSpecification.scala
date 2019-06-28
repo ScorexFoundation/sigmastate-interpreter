@@ -452,7 +452,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("ByteArrayToBigInt: big int should not exceed dlog group order q (it is NOT ModQ integer)") {
+  // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+  ignore("ByteArrayToBigInt: big int should not exceed dlog group order q (it is NOT ModQ integer)") {
     val q = CryptoConstants.dlogGroup.q
     val bytes = q.add(BigInteger.valueOf(1L)).toByteArray
     val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
@@ -464,6 +465,35 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       ),
       e => rootCause(e).isInstanceOf[ArithmeticException]
     )
+  }
+
+  property("ByteArrayToBigInt: range check") {
+    def check(b: BigInteger, shouldThrow: Boolean) = {
+      val bytes = b.toByteArray
+      val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
+      if (shouldThrow)
+        assertExceptionThrown(
+          test("BATBI1", env, ext,
+            s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
+            NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+            onlyPositive = true
+          ),
+          e => rootCause(e).isInstanceOf[ArithmeticException])
+      else
+        test("BATBI1", env, ext,
+          s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
+          NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+          onlyPositive = true
+        )
+    }
+
+    check(BigInteger.TWO.negate().pow(255), false)
+    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
+    // TODO: fix throw (it should not)
+//    check(BigInteger.TWO.pow(255), false)
+    check(BigInteger.TWO.pow(255).add(BigInteger.ONE), true)
+    check(BigInteger.TWO.pow(256), true)
+    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
   }
 
   property("ExtractCreationInfo") {
