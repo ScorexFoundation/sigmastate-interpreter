@@ -311,9 +311,8 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
 
   property("SGroupElement.exp") {
     comp("g1.exp(1.toBigInt)") shouldBe
-      mkMethodCall(GroupElementConstant(ecp1),
-        SGroupElement.method("exp").get,
-        IndexedSeq(BigIntConstant(1)))
+      mkExponentiate(GroupElementConstant(ecp1),
+        BigIntConstant(1))
   }
 
   property("SOption.map") {

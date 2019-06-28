@@ -26,11 +26,13 @@ class SigmaCompilerSpecification extends SigmaTestingCommons {
     propComp shouldBe propTree
   }
 
-  property("modular arithmetic ops: ModQ") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("modular arithmetic ops: ModQ") {
     compile("10.toBigInt.modQ") shouldEqual ModQ(BigIntConstant(10))
   }
 
-  property("modular arithmetic ops: BinOps") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("modular arithmetic ops: BinOps") {
     compile("10.toBigInt.plusModQ(2.toBigInt)") shouldEqual
         PlusModQ(BigIntConstant(10), BigIntConstant(2))
     compile("10.toBigInt.minusModQ(2.toBigInt)") shouldEqual

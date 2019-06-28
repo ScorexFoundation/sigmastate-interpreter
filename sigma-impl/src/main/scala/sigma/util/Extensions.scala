@@ -179,6 +179,21 @@ object Extensions {
       * @since Mainnet
       */
     def multInverseModQ: BigInt = ???
+
+    /** Checks this {@code BigInteger} can be cust to 256 bit two's-compliment representation,
+      * checking for lost information. If the value of this {@code BigInteger}
+      * is out of the range of the 256 bits, then an {@code ArithmeticException} is thrown.
+      *
+      * @return this {@code BigInteger} if the check is successful
+      * @throws ArithmeticException if the value of {@code this} will
+      * not exactly fit in a 256 bit range.
+      * @see BigInteger#longValueExact
+      */
+    @inline final def to256BitValueExact: BigInteger = {
+      if (x.bitLength() <= 255) x
+      else
+        throw new ArithmeticException("BigInteger out of 256 bit range");
+    }
   }
 
   implicit class OptionOps[T](val opt: Option[T]) extends AnyVal {
