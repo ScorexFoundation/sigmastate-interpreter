@@ -686,9 +686,9 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
   protected override def getMethods() = super.getMethods() ++ Seq(
-    ModQMethod,
-    PlusModQMethod,
-    MinusModQMethod,
+//    ModQMethod,
+//    PlusModQMethod,
+//    MinusModQMethod,
     // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // MultModQMethod,
   )

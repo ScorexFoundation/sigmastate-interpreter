@@ -2,6 +2,7 @@ package special.sigma
 
 import special.collection.{Coll}
 import java.math.BigInteger
+import sigma.util.Extensions.BigIntegerOps
 
 abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
   val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder
@@ -31,11 +32,11 @@ abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
 
   override def signum: Int = value.signum()
 
-  override def add(that: BigInt): BigInt = dsl.BigInt(value.add(that.value))
+  override def add(that: BigInt): BigInt = dsl.BigInt(value.add(that.value).to256BitValueExact)
 
-  override def subtract(that: BigInt): BigInt = dsl.BigInt(value.subtract(that.value))
+  override def subtract(that: BigInt): BigInt = dsl.BigInt(value.subtract(that.value).to256BitValueExact)
 
-  override def multiply(that: BigInt): BigInt = dsl.BigInt(value.multiply(that.value))
+  override def multiply(that: BigInt): BigInt = dsl.BigInt(value.multiply(that.value).to256BitValueExact)
 
   override def divide(that: BigInt): BigInt = dsl.BigInt(value.divide(that.value))
 
@@ -47,5 +48,5 @@ abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
 
   override def max(that: BigInt): BigInt = dsl.BigInt(value.max(that.value))
 
-  override def negate(): BigInt = dsl.BigInt(value.negate())
+  override def negate(): BigInt = dsl.BigInt(value.negate().to256BitValueExact)
 }

@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import java.lang.{Math => JMath}
 import sigmastate.SType
 import sigmastate.Values.{Value, SValue}
 import sigmastate.interpreter.Interpreter.ScriptEnv
@@ -135,7 +136,8 @@ trait IRContext extends Evaluation with TreeBuilding {
         !!!(s"Estimated cost $estimatedCost should be equal $accCost")
     }
 
-    val totalCost = initCost + (estimatedCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease)
+    val scaledCost = JMath.multiplyExact(estimatedCost.toLong, CostTable.costFactorIncrease.toLong) / CostTable.costFactorDecrease
+    val totalCost = JMath.addExact(initCost, scaledCost)
     if (totalCost > maxCost) {
       throw new CostLimitException(totalCost, msgCostLimitError(totalCost, maxCost), None)
     }
