@@ -262,6 +262,18 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "{ def f(x: Int) = { x + 1 }; f }") shouldBe SFunc(IndexedSeq(SInt), SInt)
   }
 
+  property("recursive function definitions") {
+    an[TyperException] should be thrownBy {
+      typecheck(env,
+        s"""{
+          |  def f(x: Int) = if (x / 2 == 0) g(x) else x
+          |  def g(x: Int) = f(x + 1)
+          |  g(1)
+          |}
+      """.stripMargin)
+    }
+  }
+
   property("predefined primitives") {
     typecheck(env, "{ (box: Box) => box.value }") shouldBe SFunc(IndexedSeq(SBox), SLong)
     typecheck(env, "{ (box: Box) => box.propositionBytes }") shouldBe SFunc(IndexedSeq(SBox), SByteArray)

@@ -99,5 +99,5 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension.empty,
     validationSettings = ValidationRules.currentSettings,
-    costLimit = ScriptCostLimit.value)
+    costLimit = ScriptCostLimit.value, initCost = 0L)
 }

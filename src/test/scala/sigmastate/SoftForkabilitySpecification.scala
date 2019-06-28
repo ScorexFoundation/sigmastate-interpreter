@@ -315,9 +315,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     val v2vs = vs.updated(CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
     checkRule(CheckCostFuncOperation, v2vs, {
-      val IR.Pair(calcF, _) = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
+      val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
-      CheckCostFunc(IR)(IR.asRep[Any => Int](calcF)) { }
+      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF)) { }
     })
   }
 
@@ -326,13 +326,14 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       override def isAllowedOpCodeInCosting(opCode: OpCodeExtra): Boolean = false
     }
     val tIR = new TestingIRContextEmptyCodes
+    import tIR._
     val v2vs = vs.updated(CheckCostFuncOperation.id,
       ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
     checkRule(CheckCostFuncOperation, v2vs, {
-      implicit val intType = tIR.IntElement
-      implicit val anyType = tIR.toLazyElem(tIR.AnyElement)
-      val costF = tIR.fun[Any, Int] {_ => tIR.reifyObject(tIR.OpCost(1, Seq(tIR.toRep(1)), tIR.toRep(1))) }
-      CheckCostFunc(tIR)(tIR.asRep[Any => Int](costF)) { }
+      implicit val anyType = AnyElement
+      val v1 = variable[Int]
+      val costF = fun[Any, Int] {_ => opCost(v1, Seq(1), 2) }
+      CheckCostFunc(tIR)(asRep[Any => Int](costF)) { }
     })
   }
 }

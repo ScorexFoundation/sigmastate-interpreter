@@ -571,7 +571,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     import org.scalacheck.Shrink
     implicit val noShrink: Shrink[Seq[ContextEnrichingTestProvingInterpreter]] = Shrink.shrinkAny
 
-    forAll(proversGen(3, 6), minSuccessful(10 /*test is heavy*/)) { allProvers =>
+    forAll(proversGen(3, 5), minSuccessful(10 /*test is heavy*/)) { allProvers =>
       val verifier = new ErgoLikeTestInterpreter
       val k = Gen.chooseNum(2, allProvers.length - 1).sample.get
       val kNumKeysCombinations = allProvers.map(_.dlogSecrets.head).toSet
@@ -608,7 +608,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         val proverWithKSecrets = prover.withSecrets(
           shuffledProvers.takeRight(neededExtraSecrets).map(_.dlogSecrets.head))
         val prTry = proverWithKSecrets.prove(prop, ctx, fakeMessage)
-        prTry.isSuccess shouldBe true
+        prTry shouldBe 'success
         verifier.verify(prop, ctx, prTry.get, fakeMessage).get._1 shouldBe true
       }
     }

@@ -32,7 +32,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     case _ =>
       val block = generateBlock(state, miner, currentLevel, propOpt, extension)
       val updStateTry = state.applyBlock(block)
-      updStateTry.isSuccess shouldBe true
+      updStateTry.fold(t => throw t, identity)
       checkState(updStateTry.get, miner, currentLevel + 1, limit, propOpt, extension)
   }
 
@@ -44,7 +44,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     val prop: ErgoTree = propOpt.getOrElse(prover.dlogSecrets.head.publicImage.toSigmaProp)
     val minerPubkey = prover.dlogSecrets.head.publicImage.pkBytes
 
-    val boxesToSpend = state.boxesReader.randomBoxes(50 + height)
+    val boxesToSpend = state.boxesReader.randomBoxes(30 + height)
 
     val txs = boxesToSpend.map { box =>
       val newBoxCandidate =
@@ -74,7 +74,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
 object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
 
-  private val MaxBlockCost = 700000
+  private val MaxBlockCost = 1000000
 
   case class FullBlock(txs: IndexedSeq[ErgoLikeTransaction], minerPubkey: Array[Byte])
 

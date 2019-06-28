@@ -45,9 +45,13 @@ trait InterpreterContext {
   val extension: ContextExtension
   val validationSettings: SigmaValidationSettings
   val costLimit: Long
+  val initCost: Long
 
   /** Creates a new instance with costLimit updated with given value. */
   def withCostLimit(newCostLimit: Long): InterpreterContext
+
+  /** Creates a new instance with initCost updated with given value. */
+  def withInitCost(newCost: Long): InterpreterContext
 
   /** Creates a new instance with extension updated with given value. */
   def withExtension(newExtension: ContextExtension): InterpreterContext
@@ -57,6 +61,9 @@ trait InterpreterContext {
     val ext = extension.add(bindings: _*)
     withExtension(ext)
   }
+
+  /** Creates a new instance with given validation settings. */
+  def withValidationSettings(newVs: SigmaValidationSettings): InterpreterContext
 
   /** Creates `special.sigma.Context` instance based on this context. */
   def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context

@@ -948,11 +948,18 @@ object Values {
     *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
     *                     there should be a constant in `constants` array.
     */
-  case class ErgoTree private(
+  case class ErgoTree private[sigmastate](
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
-    root: Either[UnparsedErgoTree, SigmaPropValue]
+    root: Either[UnparsedErgoTree, SigmaPropValue],
+    givenComplexity: Int
   ) {
+
+    def this(header: Byte,
+             constants: IndexedSeq[Constant[SType]],
+             root: Either[UnparsedErgoTree, SigmaPropValue]) =
+      this(header, constants, root, 0)
+
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
 
@@ -967,6 +974,14 @@ object Values {
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
     @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+
+    private var _complexity: Int = givenComplexity
+    lazy val complexity: Int = {
+      if (_complexity == 0) {
+        _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
+      }
+      _complexity
+    }
 
     /** Get proposition expression from this contract.
       * When root.isRight then
@@ -986,6 +1001,18 @@ object Values {
       case Left(UnparsedErgoTree(_, error)) =>
         throw error
     }
+
+    /** Override equality to exclude `complexity`. */
+    override def canEqual(that: Any): Boolean = that.isInstanceOf[ErgoTree]
+
+    override def hashCode(): Int = header * 31 + Objects.hash(constants, root)
+
+    override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) ||
+      ((obj.asInstanceOf[AnyRef] != null) && (obj match {
+        case other: ErgoTree =>
+          other.header == header && other.constants == constants && other.root == root
+        case _ => false
+      }))
   }
 
   object ErgoTree {

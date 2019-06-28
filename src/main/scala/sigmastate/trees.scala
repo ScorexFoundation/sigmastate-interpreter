@@ -269,7 +269,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
-  val MaxChildrenCount: Int = ErgoConstants.MaxChildrenCountForAtLeastOp.get
+  val MaxChildrenCount: Int = ErgoConstants.MaxChildrenCountForAtLeastOp.value
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))

@@ -14,8 +14,8 @@ object SigmaSerializer {
   type Position = Int
   type Consumed = Int
 
-  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.get
-  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.get
+  val MaxPropositionSize: Int = ErgoConstants.MaxPropositionBytes.value
+  val MaxTreeDepth: Int = ErgoConstants.MaxTreeDepth.value
 
     /** Helper function to be use in serializers.
     * Starting position is marked and then used to compute number of consumed bytes.

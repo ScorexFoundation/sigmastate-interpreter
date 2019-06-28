@@ -16,6 +16,7 @@ import sigmastate.utils.Helpers
 import scala.util.Try
 import gf2t.GF2_192
 import gf2t.GF2_192_Poly
+import sigmastate.lang.exceptions.CostLimitException
 
 
 /**
@@ -92,9 +93,18 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
             message: Array[Byte],
             hintsBag: HintsBag = HintsBag.empty): Try[CostedProverResult] = Try {
     import TrivialProp._
-    val prop = propositionFromErgoTree(exp, context)
-    val propTree = applyDeserializeContext(context, prop)
-    val tried = reduceToCrypto(context, env, propTree)
+
+    val initCost = exp.complexity + context.initCost
+    val remainingLimit = context.costLimit - initCost
+    if (remainingLimit <= 0)
+      throw new CostLimitException(initCost,
+        s"Estimated execution cost $initCost exceeds the limit ${context.costLimit}", None)
+
+    val ctxUpdInitCost = context.withInitCost(initCost).asInstanceOf[CTX]
+
+    val prop = propositionFromErgoTree(exp, ctxUpdInitCost)
+    val (propTree, _) = applyDeserializeContext(ctxUpdInitCost, prop)
+    val tried = reduceToCrypto(ctxUpdInitCost, env, propTree)
     val (reducedProp, cost) = tried.fold(t => throw t, identity)
 
     def errorReducedToFalse = error("Script reduced to false")
@@ -108,7 +118,7 @@ trait ProverInterpreter extends Interpreter with ProverUtils with AttributionCor
     }
     // Prover Step 10: output the right information into the proof
     val proof = SigSerializer.toBytes(proofTree)
-    CostedProverResult(proof, context.extension, cost)
+    CostedProverResult(proof, ctxUpdInitCost.extension, cost)
   }
 
   /**
