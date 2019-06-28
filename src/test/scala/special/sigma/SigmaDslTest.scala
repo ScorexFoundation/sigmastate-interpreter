@@ -296,6 +296,15 @@ class SigmaDslTest extends PropSpec
       val eq = EqualityChecker((ge, g2))
       eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
     }
+
+    {
+      val eq = checkEq(func[BigInt, GroupElement]("{ (x: BigInt) => groupGenerator.exp(x) }")) { x =>
+        groupGenerator.exp(x)
+      }
+      forAll { x: BigInt =>
+        eq(x)
+      }
+    }
   }
 
   property("AvlTree properties equivalence") {
