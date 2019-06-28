@@ -1,6 +1,7 @@
 package sigmastate.interpreter
 
 import java.util
+import java.lang.{Math => JMath}
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
@@ -13,13 +14,11 @@ import sigmastate.lang.Terms.ValueOps
 import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
-import sigmastate.serialization.{ValueSerializer, ErgoTreeSerializer, SigmaSerializer}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
 import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
-import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.utils.Helpers
 
 import scala.util.Try
 
@@ -40,7 +39,7 @@ trait Interpreter extends ScorexLogging {
     val script = ValueSerializer.deserialize(r)
     val scriptComplexity = r.complexity
 
-    val currCost = context.initCost + scriptComplexity
+    val currCost = JMath.addExact(context.initCost, scriptComplexity)
     val remainingLimit = context.costLimit - currCost
     if (remainingLimit <= 0)
       throw new CostLimitException(currCost, msgCostLimitError(currCost, context.costLimit), None)
@@ -201,7 +200,7 @@ trait Interpreter extends ScorexLogging {
              message: Array[Byte]): Try[VerificationResult] = {
     val (res, t) = BenchmarkUtil.measureTime(Try {
 
-      val initCost = tree.complexity + context.initCost
+      val initCost = JMath.addExact(tree.complexity.toLong, context.initCost)
       val remainingLimit = context.costLimit - initCost
       if (remainingLimit <= 0)
         throw new CostLimitException(initCost, msgCostLimitError(initCost, context.costLimit), None)

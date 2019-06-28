@@ -1,5 +1,6 @@
 package sigmastate.utxo
 
+import java.math.BigInteger
 import org.ergoplatform.ErgoBox.{R6, R8}
 import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
@@ -13,6 +14,7 @@ import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
+import sigmastate.interpreter.CryptoConstants
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -441,7 +443,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("ByteArrayToBigInt: big int should always be positive") {
+  // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+  ignore("ByteArrayToBigInt: big int should always be positive") {
     test("BATBI1", env, ext,
       "{ byteArrayToBigInt(Coll[Byte](-1.toByte)) > 0 }",
       GT(ByteArrayToBigInt(ConcreteCollection(ByteConstant(-1))), BigIntConstant(0)).toSigmaProp,
@@ -449,8 +452,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     )
   }
 
-  property("ByteArrayToBigInt: big int should not exceed dlog group order ") {
-    val bytes = Array.fill[Byte](500)(1)
+  // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+  ignore("ByteArrayToBigInt: big int should not exceed dlog group order q (it is NOT ModQ integer)") {
+    val q = CryptoConstants.dlogGroup.q
+    val bytes = q.add(BigInteger.valueOf(1L)).toByteArray
     val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
     assertExceptionThrown(
       test("BATBI1", env, ext,
@@ -458,8 +463,37 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         GT(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
         onlyPositive = true
       ),
-      _.getCause.isInstanceOf[RuntimeException]
+      e => rootCause(e).isInstanceOf[ArithmeticException]
     )
+  }
+
+  property("ByteArrayToBigInt: range check") {
+    def check(b: BigInteger, shouldThrow: Boolean) = {
+      val bytes = b.toByteArray
+      val itemsStr = bytes.map(v => s"$v.toByte").mkString(",")
+      if (shouldThrow)
+        assertExceptionThrown(
+          test("BATBI1", env, ext,
+            s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
+            NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+            onlyPositive = true
+          ),
+          e => rootCause(e).isInstanceOf[ArithmeticException])
+      else
+        test("BATBI1", env, ext,
+          s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
+          NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+          onlyPositive = true
+        )
+    }
+
+    check(BigInteger.TWO.negate().pow(255), false)
+    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
+    check(BigInteger.TWO.pow(255).subtract(BigInteger.ONE), false)
+    check(BigInteger.TWO.pow(255), true)
+    check(BigInteger.TWO.pow(255).add(BigInteger.ONE), true)
+    check(BigInteger.TWO.pow(256), true)
+    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
   }
 
   property("ExtractCreationInfo") {

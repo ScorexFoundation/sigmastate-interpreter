@@ -1,5 +1,6 @@
 package sigmastate.eval
 
+import java.lang.Math
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
@@ -477,7 +478,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
     @inline def += (n: Int) = {
       // println(s"${_currentCost} + $n")
-      this._currentCost += n
+      this._currentCost = java.lang.Math.addExact(this._currentCost, n)
     }
     @inline def currentCost: Int = _currentCost
     @inline def resetCost() = { _currentCost = initialCost }
@@ -572,7 +573,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (costLimit.isDefined) {
         val limit = costLimit.get
         val loopCost = if (_loopStack.isEmpty) 0 else _loopStack.head.accumulatedCost
-        val accumulatedCost = cost + loopCost
+        val accumulatedCost = java.lang.Math.addExact(cost, loopCost)
         if (accumulatedCost > limit) {
 //          if (cost < limit)
 //            println(s"FAIL FAST in loop: $accumulatedCost > $limit")
@@ -600,7 +601,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
       if (_loopStack.nonEmpty && _loopStack.head.body == body) {
         // every time we exit the body of the loop we need to update accumulated cost
-        _loopStack.head.accumulatedCost += deltaCost
+        val h = _loopStack.head
+        h.accumulatedCost = java.lang.Math.addExact(h.accumulatedCost, deltaCost)
       }
     }
 

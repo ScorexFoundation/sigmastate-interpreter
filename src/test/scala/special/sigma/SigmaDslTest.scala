@@ -26,6 +26,8 @@ import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 
+import scala.util.{Success, Try, Failure}
+
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
   * the evaluation of the corresponding ErgoScript operation */
@@ -45,8 +47,18 @@ class SigmaDslTest extends PropSpec
   }
 
   def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
-    val b1 = f(x); val b2 = g(x)
-    assert(b1 == b2)
+    val b1 = Try(f(x)); val b2 = Try(g(x))
+    (b1, b2) match {
+      case (Success(b1), Success(b2)) =>
+        assert(b1 == b2)
+      case (Failure(t1), Failure(t2)) =>
+        val c1 = rootCause(t1).getClass
+        val c2 = rootCause(t2).getClass
+        c1 shouldBe c2
+      case _ =>
+        assert(false)
+    }
+
   }
 
   def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
@@ -283,6 +295,15 @@ class SigmaDslTest extends PropSpec
     {
       val eq = EqualityChecker((ge, g2))
       eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
+    }
+
+    {
+      val eq = checkEq(func[BigInt, GroupElement]("{ (x: BigInt) => groupGenerator.exp(x) }")) { x =>
+        groupGenerator.exp(x)
+      }
+      forAll { x: BigInt =>
+        eq(x)
+      }
     }
   }
 
@@ -718,19 +739,18 @@ class SigmaDslTest extends PropSpec
     }
   }
 
-  property("Coll fold method equivalnce") {
-    val monoid = Builder.DefaultCollBuilder.Monoids.intPlusMonoid
-    val eq = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1.fold(x._2, { (i1: Int, i2: Int) => i1 + i2 }) }"))
+  property("Coll fold method equivalence") {
+    val eq = checkEq(func[(Coll[Byte], Int),Int]("{ (x: (Coll[Byte], Int)) => x._1.fold(x._2, { (i1: Int, i2: Byte) => i1 + i2 }) }"))
     { x =>
-      x._1.sum(monoid) + x._2
+      x._1.foldLeft(x._2, { i: (Int, Byte) => i._1 + i._2 })
     }
-    val eqIndexOf = checkEq(func[(Coll[Int], Int),Int]("{ (x: (Coll[Int], Int)) => x._1.indexOf(x._2, 0) }"))
+    val eqIndexOf = checkEq(func[(Coll[Byte], Byte),Int]("{ (x: (Coll[Byte], Byte)) => x._1.indexOf(x._2, 0) }"))
     { x =>
       x._1.indexOf(x._2, 0)
     }
-    forAll { x: (Array[Int], Int) =>
+    forAll { x: (Array[Byte], Short, Byte) =>
       eq(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
-      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), x._2)
+      eqIndexOf(Builder.DefaultCollBuilder.fromArray(x._1), x._3)
     }
   }
 
@@ -784,7 +804,7 @@ class SigmaDslTest extends PropSpec
       x.map(v => v + 1)
     }
     forAll { x: Array[Int] =>
-      eq(Builder.DefaultCollBuilder.fromArray(x))
+      eq(Builder.DefaultCollBuilder.fromArray(x.filter(_ < Int.MaxValue)))
     }
   }
 

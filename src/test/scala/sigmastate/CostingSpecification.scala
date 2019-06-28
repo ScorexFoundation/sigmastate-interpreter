@@ -1,23 +1,22 @@
 package sigmastate
 
-import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, dummyPubkey, noBoxes, noHeaders}
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
-import org.ergoplatform.ErgoScriptPredef.TrueProp
-import scorex.crypto.authds.{ADDigest, ADKey}
-import scorex.crypto.authds.avltree.batch.Lookup
-import scorex.crypto.hash.Blake2b256
-import sigmastate.Values.{AvlTreeConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.interpreter.{ContextExtension, Interpreter}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
-import sigmastate.utxo.{CostTable, CostTableStat}
-import sigmastate.utxo.CostTable._
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import special.sigma.{AvlTree, SigmaTestingData}
-import Sized._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import scorex.crypto.authds.avltree.batch.Lookup
+import scorex.crypto.authds.{ADDigest, ADKey}
+import scorex.crypto.hash.Blake2b256
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BooleanConstant, ByteArrayConstant, ConstantPlaceholder, ErgoTree, IntConstant, TrueLeaf}
+import sigmastate.eval.Extensions._
+import sigmastate.eval.Sized._
+import sigmastate.eval._
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter}
+import sigmastate.interpreter.ContextExtension
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp, emptyEnv}
+import sigmastate.utxo.CostTable
+import sigmastate.utxo.CostTable._
+import special.sigma.{AvlTree, SigmaTestingData}
 
 class CostingSpecification extends SigmaTestingData {
   implicit lazy val IR = new TestingIRContext {
@@ -46,12 +45,13 @@ class CostingSpecification extends SigmaTestingData {
     "keys" -> keys,
     "lookupProof" -> lookupProof,
     "pkA" -> pkA,
-    "pkB" -> pkB,
+    "pkB" -> pkB
   )
 
   val extension: ContextExtension = ContextExtension(Map(
     1.toByte -> IntConstant(1),
-    2.toByte -> BooleanConstant(true)
+    2.toByte -> BooleanConstant(true),
+    3.toByte -> BigIntConstant(BigInt("12345678901").bigInteger)
   ))
   val tokenId = Blake2b256("tokenA")
   val selfBox = createBox(0, TrueProp, Seq(tokenId -> 10L),
@@ -160,6 +160,10 @@ class CostingSpecification extends SigmaTestingData {
 
   property("GroupElement.negate") {
     cost("{ groupGenerator.negate != groupGenerator }") (selectField + negateGroup + comparisonCost)
+  }
+
+  property("GroupElement.exp") {
+    cost("{ groupGenerator.exp(getVar[BigInt](3).get) == groupGenerator }") (selectField + expCost + ContextVarAccess + comparisonCost)
   }
 
   property("SELF box operations cost") {

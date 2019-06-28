@@ -508,7 +508,8 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, """ "a" + "b" """) shouldBe SString
   }
 
-  property("modular arith ops") {
+  // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
+  ignore("modular arith ops") {
     typecheck(env, "10.toBigInt.modQ") shouldBe SBigInt
     typecheck(env, "10.toBigInt.plusModQ(2.toBigInt)") shouldBe SBigInt
     typecheck(env, "10.toBigInt.minusModQ(2.toBigInt)") shouldBe SBigInt

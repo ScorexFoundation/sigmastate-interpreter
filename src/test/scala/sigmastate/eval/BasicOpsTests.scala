@@ -26,11 +26,13 @@ class BasicOpsTests extends FunSuite with ContractsTestkit with Matchers {
     SigmaDsl.atLeast(3, props).isValid shouldBe false
   }
 
-  test("ByteArrayToBigInt should always produce a positive big int") {
+  // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+  ignore("ByteArrayToBigInt should always produce a positive big int") {
     SigmaDsl.byteArrayToBigInt(collection[Byte](-1)).signum shouldBe 1
   }
 
-  test("ByteArrayToBigInt should always produce big int less than dlog group order") {
+  // TODO this is valid for BigIntModQ type (https://github.com/ScorexFoundation/sigmastate-interpreter/issues/554)
+  ignore("ByteArrayToBigInt should always produce big int less than dlog group order") {
     val groupOrder = CustomNamedCurves.getByName("secp256k1").getN
 
     SigmaDsl.byteArrayToBigInt(
