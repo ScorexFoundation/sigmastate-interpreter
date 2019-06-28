@@ -489,8 +489,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
 
     check(BigInteger.TWO.negate().pow(255), false)
     check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
-    // TODO: fix throw (it should not)
-//    check(BigInteger.TWO.pow(255), false)
+    check(BigInteger.TWO.pow(255).subtract(BigInteger.ONE), false)
+    check(BigInteger.TWO.pow(255), true)
     check(BigInteger.TWO.pow(255).add(BigInteger.ONE), true)
     check(BigInteger.TWO.pow(256), true)
     check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
