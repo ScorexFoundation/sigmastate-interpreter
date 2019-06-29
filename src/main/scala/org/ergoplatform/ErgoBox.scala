@@ -99,7 +99,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  val MaxBoxSize: Int = ErgoConstants.MaxBoxSize.get
+  val MaxBoxSize: Int = ErgoConstants.MaxBoxSize.value
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
@@ -133,9 +133,9 @@ object ErgoBox {
   val TokensRegId: MandatoryRegisterId = R2
   val ReferenceRegId: MandatoryRegisterId = R3
 
-  val MaxTokens: Byte = ErgoConstants.MaxTokens.get
+  val MaxTokens: Int = ErgoConstants.MaxTokens.value
 
-  val maxRegisters: Int = ErgoConstants.MaxRegisters.get
+  val maxRegisters: Int = ErgoConstants.MaxRegisters.value
   val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
   val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
   val startingNonMandatoryIndex: Byte = nonMandatoryRegisters.head.number

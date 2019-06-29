@@ -118,6 +118,7 @@ trait BigInt {
     * @return { @code this + that}
     */
   def add(that: BigInt): BigInt
+  def +(that: BigInt): BigInt = add(that)
 
   /** Returns a BigInt whose value is {@code (this - that)}.
     *
@@ -125,6 +126,7 @@ trait BigInt {
     * @return { @code this - that}
     */
   def subtract(that: BigInt): BigInt
+  def -(that: BigInt): BigInt = subtract(that)
 
   /** Returns a BigInt whose value is {@code (this * that)}.
     *
@@ -134,6 +136,7 @@ trait BigInt {
     * @return { @code this * that}
     */
   def multiply(that: BigInt): BigInt
+  def *(that: BigInt): BigInt = multiply(that)
 
   /** Returns a BigInt whose value is {@code (this / that)}.
     *
@@ -142,6 +145,7 @@ trait BigInt {
     * @throws ArithmeticException if { @code that} is zero.
     */
   def divide(that: BigInt): BigInt
+  def /(that: BigInt): BigInt = divide(that)
 
   /**
     * Returns a BigInt whose value is {@code (this mod m}).  This method
@@ -154,6 +158,7 @@ trait BigInt {
     * @see #remainder
     */
   def mod(m: BigInt): BigInt
+  def %(m: BigInt): BigInt = mod(m)
 
   /**
     * Returns a BigInt whose value is {@code (this % that)}.

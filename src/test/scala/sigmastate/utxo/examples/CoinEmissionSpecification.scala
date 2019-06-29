@@ -26,6 +26,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
     // override val okPrintEvaluatedEntries = true
     saveGraphsInFile = false
     outputEstimatedCost = false
+    outputComputedResults = false
   }
 
   private val reg1 = ErgoBox.nonMandatoryRegisters.head

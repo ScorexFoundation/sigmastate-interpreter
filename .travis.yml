@@ -18,8 +18,11 @@ jdk:
 
 script:
   - sbt -jvm-opts .travis.jvmopts test
+# enable scoverage after SpamSpecification timeout issue is resolved
+#  - sbt -jvm-opts .travis.jvmopts coverage test
 
 after_success:
+#  - sbt coverageReport coveralls
   - sbt -jvm-opts .travis.jvmopts publish
 
 env:

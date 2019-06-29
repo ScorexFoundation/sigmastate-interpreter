@@ -91,7 +91,8 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         self = utxoBox.ergoBox,
         extension = ContextExtension.empty,
         validationSettings = ValidationRules.currentSettings,
-        costLimit = ScriptCostLimit.value)
+        costLimit = ScriptCostLimit.value,
+        initCost = 0L)
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {

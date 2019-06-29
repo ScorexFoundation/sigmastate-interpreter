@@ -11,6 +11,7 @@ import sigmastate.SType.{TypeCode, AnyOps}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utils.Overloading.Overload1
 import sigma.util.Extensions._
+import sigmastate.SBigInt.MaxSizeInBytes
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -65,7 +66,7 @@ sealed trait SType extends SigmaNode {
 
   def isEmbeddable: Boolean = false
 
-  /** Returns true is dataSize doesn't depend on data value.
+  /** Returns true if dataSize doesn't depend on data value.
     * This is useful for optimizations of calculating sizes of collections. */
   def isConstantSize: Boolean
 
@@ -644,7 +645,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.get
+  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -685,9 +686,9 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
   protected override def getMethods() = super.getMethods() ++ Seq(
-    ModQMethod,
-    PlusModQMethod,
-    MinusModQMethod,
+//    ModQMethod,
+//    PlusModQMethod,
+//    MinusModQMethod,
     // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     // MultModQMethod,
   )
@@ -744,10 +745,13 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override val typeCode: TypeCode = 8: Byte
   override def typeId = typeCode
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
-  override def dataSize(v: SType#WrappedType): Long = {
-    Sized.sizeOf(v.asInstanceOf[SigmaProp]).dataSize
-  }
-  override def isConstantSize = false
+
+  /** The maximum size of SigmaProp value in serialized byte array representation. */
+  val MaxSizeInBytes: Long = ErgoConstants.MaxSigmaPropSizeInBytes.value
+
+  override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
+
+  override def isConstantSize = true
   def ancestors = Nil
   val PropBytes = "propBytes"
   val IsProven = "isProven"
@@ -1260,7 +1264,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.get
+  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)

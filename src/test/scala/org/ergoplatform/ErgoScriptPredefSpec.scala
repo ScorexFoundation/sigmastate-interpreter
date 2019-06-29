@@ -222,7 +222,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
-        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 2)
+        self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 10)
 
       val pr = prover.prove(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
       verifier.verify(emptyEnv + (ScriptNameProp -> "tokenThresholdScript_verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true

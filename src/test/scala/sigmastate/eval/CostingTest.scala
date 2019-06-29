@@ -8,17 +8,18 @@ import sigmastate._
 import sigmastate.Values.{ConstantPlaceholder, _}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
 import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.{LangTests, SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.lang.{LangTests, TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.utxo.CostTable.Cost
-import sigmastate.utxo.{ExtractCreationInfo, SelectField, SigmaPropBytes, SizeOf}
+import sigmastate.utxo.{SigmaPropBytes, ExtractCreationInfo, SizeOf, SelectField}
 import SType._
-import org.ergoplatform.{Height, MinerPubkey, Self}
+import org.ergoplatform.{Height, Self, MinerPubkey}
 import scalan.util.BenchmarkUtil._
 import scalan.BaseCtxTests
 import sigmastate.SCollection.SByteArray
 import sigmastate.basics.DLogProtocol
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.serialization.OpCodes
 
 class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with ErgoScriptTestkit { cake =>
   implicit override lazy val IR: TestContext with IRContext =
@@ -128,10 +129,11 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("context data") {
 //    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
-    check("height1", "HEIGHT + 1", ctx => ctx.HEIGHT + 1)
+    def plus[T: Elem](x: Rep[T], y: Rep[T]) = ApplyBinOp(opcodeToEndoBinOp(OpCodes.PlusCode, element[T]), x, y)
+    check("height1", "HEIGHT + 1", ctx => plus(ctx.HEIGHT, 1))
     check("height2", "HEIGHT > 1", ctx => ctx.HEIGHT > 1)
-    check("size", "INPUTS.size + OUTPUTS.size", ctx => { ctx.INPUTS.length + ctx.OUTPUTS.length })
-    check("value", "SELF.value + 1L", ctx => ctx.SELF.value + 1L)
+    check("size", "INPUTS.size + OUTPUTS.size", ctx => { plus(ctx.INPUTS.length, ctx.OUTPUTS.length) })
+    check("value", "SELF.value + 1L", ctx => plus(ctx.SELF.value, 1L))
   }
 
   test("collection ops") {
