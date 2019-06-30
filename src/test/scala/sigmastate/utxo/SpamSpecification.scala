@@ -63,7 +63,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   lazy val alice = new ContextEnrichingTestProvingInterpreter
   lazy val alicePubKey: ProveDlog = alice.dlogSecrets.head.publicImage
   val hugeSizeColl: Array[Byte] = Array.fill(1000000)(1.toByte)
-  val maxSizeColl: Array[Byte] = Array.fill(SigmaSerializer.MaxPropositionSize - 50)(2.toByte)
+  //val maxSizeColl: Array[Byte] = Array.fill(SigmaSerializer.MaxPropositionSize - 50)(2.toByte)
+  val maxSizeColl: Array[Byte] = Array.fill(100)(2.toByte)
   val coll10: Array[Byte] = Array.fill(10)(10.toByte)
   val coll100: Array[Byte] = Array.fill(100)(100.toByte)
   val coll1000: Array[Byte] = Array.fill(1000)(1000.toByte)
