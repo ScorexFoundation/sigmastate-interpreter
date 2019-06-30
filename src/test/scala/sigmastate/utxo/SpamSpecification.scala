@@ -1477,7 +1477,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val prop = GT(SizeOf(nestedFoldCode(100).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    val prop = GT(SizeOf(nestedFoldCode(101).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
 }

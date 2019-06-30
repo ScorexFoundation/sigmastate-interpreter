@@ -78,6 +78,8 @@ object CostTable {
   val collByIndex = 5 // TODO costing: should be >= selectField
 
   val collToColl = 20
+  val appendCost = 50
+  val appendPerItemCost = 2
   val lambdaInvoke = 30  // interpreter overhead on each lambda invocation (map, filter, forall, etc)
   val concreteCollectionItemCost = 10  // since each item is a separate graph node
   val comparisonCost = 10
@@ -147,7 +149,10 @@ object CostTable {
     ("SGroupElement$.negate", "(GroupElement) => GroupElement", negateGroup),
 
     ("Slice", "(Coll[IV],Int,Int) => Coll[IV]", collToColl),
-    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", collToColl),
+
+    ("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", appendCost),
+    ("Append_per_item", "(Coll[IV],Coll[IV]) => Coll[IV]", appendPerItemCost),
+
     ("SizeOf", "(Coll[IV]) => Int", collLength),
     ("ByIndex", "(Coll[IV],Int) => IV", collByIndex),
     ("SCollection$.exists", "(Coll[IV],(IV) => Boolean) => Boolean", collToColl),

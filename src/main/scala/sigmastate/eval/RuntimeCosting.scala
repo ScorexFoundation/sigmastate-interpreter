@@ -1451,9 +1451,10 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val col1 = asRep[CostedColl[Any]](_col1)
         val col2 = asRep[CostedColl[Any]](_col2)
         val values = col1.values.append(col2.values)
-        val costs = col1.costs.append(col2.costs)
+        val len = col1.costs.length + col2.costs.length
+        val costs = colBuilder.replicate(len, IntZero)
         val sizes = col1.sizes.append(col2.sizes)
-        RCCostedColl(values, costs, sizes, opCost(values, Seq(col1.cost, col2.cost), costOf(node)))
+        RCCostedColl(values, costs, sizes, opCost(values, Seq(col1.cost, col2.cost), costOf(node) + perItemCostOf(node, len)))
 
       case Filter(input, p) =>
         val inputC = evalNode(ctx, env, input)
