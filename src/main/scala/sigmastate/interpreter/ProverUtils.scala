@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigmastate._
-import sigmastate.Values.{ErgoTree, SigmaBoolean, Value}
+import sigmastate.Values.{ErgoTree, SigmaBoolean}
 import sigmastate.basics.VerifierMessage.Challenge
 
 
