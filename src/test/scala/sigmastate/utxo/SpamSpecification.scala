@@ -107,10 +107,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     * Checks that regardless of the script structure, it's verification always consumes at most `Timeout` ms
     */
   private def checkScript(spamScript: SigmaPropValue, emptyProofs: Boolean = true): Boolean = {
-    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript) match {
-      case Success(x) => x
-      case _ =>  return false
-    }
+    val (measuredTree, scriptSize) = measuredScriptAndSize(spamScript).get
 
     val ctx = {
 
@@ -1464,29 +1461,23 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   }
 
   property("large collection: deep nested fold appending collections") {
-    def nestedFoldCode(level: Int): String =
+    def nestedFoldCode(level: Int): SValue =
       if (level == 0) {
-        "hugeColl,"
+        ByteArrayConstant(coll10)
       } else {
-        s"""
-           | hugeColl.fold(
-           |   ${nestedFoldCode(level - 1)}
-           | {(i: Coll[Byte], b: Byte) => i.append(i)}),
-       """.stripMargin
-    }
+        Fold(ByteArrayConstant(coll10), nestedFoldCode(level - 1),
+          FuncValue(
+            Vector((1, STuple(SByteArray, SByte))),
+            Append(
+              SelectField(ValUse(1, STuple(SByteArray, SByte)), 1).asCollection,
+              SelectField(ValUse(1, STuple(SByteArray, SByte)), 1).asCollection
+            )
+          )
+        )
+      }
 
     assert(warmUpPrecondition)
-    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "nested fold LCFAC"),
-      s"""{
-         |  val hugeColl = OUTPUTS(0).R8[Coll[Byte]].get
-         |  hugeColl.fold(
-         |      ${nestedFoldCode(92)}
-         |       {(i: Coll[Byte], b: Byte) =>
-         |    i.append(i)
-         |  }).size > 0
-         |}
-      """.stripMargin).asBoolValue.toSigmaProp
-    println("Compiled!!!")
+    val prop = GT(SizeOf(nestedFoldCode(100).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
 }
