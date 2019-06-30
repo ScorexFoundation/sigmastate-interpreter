@@ -1476,15 +1476,17 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
 
     assert(warmUpPrecondition)
-    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "nested fold LCFAC"),
+    val prop = compile(maxSizeCollEnv + (ScriptNameProp -> "nested fold LCFAC"),
       s"""{
          |  val hugeColl = OUTPUTS(0).R8[Coll[Byte]].get
          |  hugeColl.fold(
-         |      ${nestedFoldCode(100)}
+         |      ${nestedFoldCode(92)}
          |       {(i: Coll[Byte], b: Byte) =>
          |    i.append(i)
          |  }).size > 0
          |}
-      """.stripMargin).asBoolValue.toSigmaProp)
+      """.stripMargin).asBoolValue.toSigmaProp
+    println("Compiled!!!")
+    checkScript(prop)
   }
 }
