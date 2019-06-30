@@ -1,7 +1,7 @@
 package sigmastate.interpreter
 
 import sigmastate._
-import sigmastate.Values.{SigmaBoolean, Value}
+import sigmastate.Values.{ErgoTree, SigmaBoolean, Value}
 import sigmastate.basics.VerifierMessage.Challenge
 
 
@@ -12,17 +12,20 @@ trait ProverUtils extends Interpreter {
     * respective public images given. Useful for multisigs.
     *
     * @param context - context used to reduce the proposition
-    * @param proposition - proposition to reduce
+    * @param exp - proposition to reduce
     * @param proof - proof for reduced proposition
     * @param knownSecrets - public keys of known secrets
     * @return - bag of OtherSecretProven and OtherCommitment hints
     */
   def bagForMultisig(context: CTX,
-                     proposition: Value[SType],
+                     exp: ErgoTree,
                      proof: Array[Byte],
                      knownSecrets: Seq[SigmaBoolean]): HintsBag = {
 
-    val reducedTree = reduceToCrypto(context, proposition).get._1
+    val prop = propositionFromErgoTree(exp, context)
+    val (propTree, _) = applyDeserializeContext(context, prop)
+    val reducedTree = reduceToCrypto(context, propTree).get._1
+
     val ut = SigSerializer.parseAndComputeChallenges(reducedTree, proof)
     val proofTree = computeCommitments(ut).get.asInstanceOf[UncheckedSigmaTree]
 
