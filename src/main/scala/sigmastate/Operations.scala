@@ -383,19 +383,6 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
   }
 
-  object MinusModQInfo extends InfoObject {
-    private val method = SMethod.fromIds(6, 3)
-    val thisArg: ArgInfo = method.argInfo("this")
-    val otherArg: ArgInfo = method.argInfo("other")
-    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
-  }
-
-  object ModQInfo extends InfoObject {
-    private val method = SMethod.fromIds(6, 1)
-    val thisArg: ArgInfo = method.argInfo("this")
-    val argInfos: Seq[ArgInfo] = Seq(thisArg)
-  }
-
   object ModuloInfo extends InfoObject {
     private val func = predefinedOps.funcs("%")
     val leftArg: ArgInfo = func.argInfo("left")
@@ -460,13 +447,6 @@ object Operations {
     val leftArg: ArgInfo = func.argInfo("left")
     val rightArg: ArgInfo = func.argInfo("right")
     val argInfos: Seq[ArgInfo] = Seq(leftArg, rightArg)
-  }
-
-  object PlusModQInfo extends InfoObject {
-    private val method = SMethod.fromIds(6, 2)
-    val thisArg: ArgInfo = method.argInfo("this")
-    val otherArg: ArgInfo = method.argInfo("other")
-    val argInfos: Seq[ArgInfo] = Seq(thisArg, otherArg)
   }
 
   object SelectFieldInfo extends InfoObject {
