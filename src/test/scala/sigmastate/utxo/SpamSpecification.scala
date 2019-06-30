@@ -1463,4 +1463,28 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     current
   }
 
+  property("large collection: deep nested fold appending collections") {
+    def nestedFoldCode(level: Int): String =
+      if (level == 0) {
+        "hugeColl,"
+      } else {
+        s"""
+           | hugeColl.fold(
+           |   ${nestedFoldCode(level - 1)}
+           | {(i: Coll[Byte], b: Byte) => i.append(i)}),
+       """.stripMargin
+    }
+
+    assert(warmUpPrecondition)
+    checkScript(compile(maxSizeCollEnv + (ScriptNameProp -> "nested fold LCFAC"),
+      s"""{
+         |  val hugeColl = OUTPUTS(0).R8[Coll[Byte]].get
+         |  hugeColl.fold(
+         |      ${nestedFoldCode(100)}
+         |       {(i: Coll[Byte], b: Byte) =>
+         |    i.append(i)
+         |  }).size > 0
+         |}
+      """.stripMargin).asBoolValue.toSigmaProp)
+  }
 }
