@@ -1,4 +1,13 @@
+# v2.2
 
+- soft-forkability for cost estimation (#503)
+- optimization of cost estimation rules (#523)
+- new Context parameters (initCost, costLimit)
+- implemented fast complexity measure of box propositions
+  (to fail-fast on too complex scripts #537)
+- implemented test cases to check fast script rejections of
+  of either oversized of too costly scripts  
+  
 # v2.1
 - soft-forkability for language evolution (add types, operations) #500
 - ErgoTree language specification (abstract syntax, typing rules, semantics, serialization format) #495 

@@ -11,6 +11,7 @@ import scalan.{RType, Internal, NeverInline, Reified}
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
+import sigma.util.Extensions.BigIntegerOps
 
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix
@@ -53,11 +54,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
 
   @NeverInline
   def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = {
-    val dlogGroupOrder = __curve__.getN
-    val bi = new BigInteger(1, bytes.toArray)
-    if (bi.compareTo(dlogGroupOrder) == 1) {
-      throw new RuntimeException(s"BigInt value exceeds the order of the dlog group (${__curve__}). Expected to be less than: $dlogGroupOrder, actual: $bi")
-    }
+    val bi = new BigInteger(bytes.toArray).to256BitValueExact
     this.BigInt(bi)
   }
 

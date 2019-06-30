@@ -31,6 +31,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import WOption._
   import WECPoint._
   import AvlTree._
+  import GroupElement._
 
   private val ContextM = ContextMethods
   private val SigmaM = SigmaPropMethods
@@ -42,6 +43,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   private val OM = WOptionMethods
   private val BIM = BigIntMethods
   private val AvlM = AvlTreeMethods
+  private val GM = GroupElementMethods
 
   /** Describes assignment of valIds for symbols which become ValDefs.
     * Each ValDef in current scope have entry in this map */
@@ -395,6 +397,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case Def(SimpleStruct(_, fields)) =>
         val items = fields.map { case (n, v) => recurse(v) }
         mkTuple(items)
+
+      case GM.exp(In(obj), In(arg)) =>
+        mkExponentiate(obj.asGroupElement, arg.asBigInt)
 
       // Fallback MethodCall rule: should be the last in this list of cases
       case Def(MethodCall(objSym, m, argSyms, _)) =>
