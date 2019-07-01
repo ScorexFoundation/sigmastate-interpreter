@@ -1536,4 +1536,24 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val prop = GT(SizeOf(nestedFoldCode(6).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
+
+  property("large collection: deep nested on zero fold in append") {
+    def nestedFoldCode(level: Int): Value[SCollection[SByte.type]] =
+      if (level == 0) {
+        ByteArrayConstant(coll10)
+      } else {
+        Fold(ByteArrayConstant(coll10), nestedFoldCode(level - 1),
+          FuncValue(
+            Vector((1, STuple(SByteArray, SByte))),
+            SelectField(ValUse(1, STuple(SByteArray, SByte)), 1)
+          )
+        )
+      }
+
+    assert(warmUpPrecondition)
+    val nestedFold = nestedFoldCode(56) // 56 to stay within the cost limit, 57 will trigger the cost limit
+    val prop = GT(SizeOf(Append(nestedFold, nestedFold)), IntConstant(0)).toSigmaProp
+    checkScript(prop)
+  }
+
 }
