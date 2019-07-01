@@ -1476,12 +1476,30 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         )
       }
 
+    /* Generates code that looks like:
+      coll10.fold(
+        coll10.fold(
+          coll10.fold(
+            coll10.fold(
+              coll10.fold(
+                coll10.fold(
+                  coll10.fold(
+                    coll10,
+                    {(i: Coll[Byte], b: Byte) => i.append(i)}),
+                  {(i: Coll[Byte], b: Byte) => i.append(i)}),
+                {(i: Coll[Byte], b: Byte) => i.append(i)}),
+              {(i: Coll[Byte], b: Byte) => i.append(i)}),
+            {(i: Coll[Byte], b: Byte) => i.append(i)}),
+          {(i: Coll[Byte], b: Byte) => i.append(i)}), {(i: Coll[Byte], b: Byte) =>
+        i.append(i)
+      }).size > 0
+     */
+
     assert(warmUpPrecondition)
-    val prop = GT(SizeOf(nestedFoldCode(40).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
-    checkScript(prop)
-    val level = 101 // to stay within the max nesting level in reader
-    val prop2 = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
-    checkScript(prop2)
+    val maxLevel = 101 // to stay within the max nesting level in reader
+    repeatScript("nested folds on zero with append in lambda", maxLevel) { scale =>
+      GT(SizeOf(nestedFoldCode(scale).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    }
   }
 
   property("large collection: deep nested on zero fold") {
@@ -1498,9 +1516,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val level = 104 // to stay within the max nesting level in reader
-    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
-    checkScript(prop)
+    val maxLevel = 104 // to stay within the max nesting level in reader
+    repeatScript("nested folds on zero", maxLevel) { scale =>
+      GT(SizeOf(nestedFoldCode(scale).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    }
   }
 
   property("large collection: deep nested on lambda fold") {
@@ -1517,9 +1536,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val level = 52 // to stay within the max nesting level in reader
-    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
-    checkScript(prop)
+    val maxLevel = 52 // to stay within the max nesting level in reader
+    repeatScript("nested folds on lambda", maxLevel) { scale =>
+      GT(SizeOf(nestedFoldCode(scale).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    }
   }
 
   property("large collection: deep nested on lambda and zero fold") {
@@ -1536,9 +1556,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val level = 6 // 7 will blow past MaxPropBytes
-    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
-    checkScript(prop)
+    val maxLevel = 6 // 7 will blow past MaxPropBytes
+    repeatScript("nested folds on both zero and lambda", maxLevel) { scale =>
+      GT(SizeOf(nestedFoldCode(scale).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    }
   }
 
   property("large collection: deep nested on zero fold in append") {
@@ -1555,9 +1576,10 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val nestedFold = nestedFoldCode(56) // 56 to stay within the cost limit, 57 will trigger the cost limit
-    val prop = GT(SizeOf(Append(nestedFold, nestedFold)), IntConstant(0)).toSigmaProp
-    checkScript(prop)
+    val maxLevel = 56 // 56 to stay within the cost limit, 57 will trigger the cost limit
+    repeatScript("append with nested folds", maxLevel) { scale =>
+      GT(SizeOf(Append(nestedFoldCode(scale), nestedFoldCode(scale))), IntConstant(0)).toSigmaProp
+    }
   }
 
 }
