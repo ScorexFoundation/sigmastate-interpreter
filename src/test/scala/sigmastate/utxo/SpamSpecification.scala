@@ -1515,6 +1515,25 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
         )
       }
 
+    /* Generates code that looks like:
+      coll10.fold(
+        coll10.fold(
+          coll10.fold(
+            coll10.fold(
+              coll10.fold(
+                coll10.fold(
+                  coll10.fold(
+                    coll10,
+                    {(i: Coll[Byte], b: Byte) => i}),
+                  {(i: Coll[Byte], b: Byte) => i}),
+                {(i: Coll[Byte], b: Byte) => i}),
+              {(i: Coll[Byte], b: Byte) => i}),
+            {(i: Coll[Byte], b: Byte) => i}),
+          {(i: Coll[Byte], b: Byte) => i}), {(i: Coll[Byte], b: Byte) =>
+        i.append(i)
+      }).size > 0
+     */
+
     assert(warmUpPrecondition)
     val maxLevel = 104 // to stay within the max nesting level in reader
     repeatScript("nested folds on zero", maxLevel) { scale =>
@@ -1574,6 +1593,42 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
           )
         )
       }
+
+    /* Generates code that looks like:
+      coll10.fold(
+        coll10.fold(
+          coll10.fold(
+            coll10.fold(
+              coll10.fold(
+                coll10.fold(
+                  coll10.fold(
+                    coll10,
+                    {(i: Coll[Byte], b: Byte) => i}),
+                  {(i: Coll[Byte], b: Byte) => i}),
+                {(i: Coll[Byte], b: Byte) => i}),
+              {(i: Coll[Byte], b: Byte) => i}),
+            {(i: Coll[Byte], b: Byte) => i}),
+          {(i: Coll[Byte], b: Byte) => i}), {(i: Coll[Byte], b: Byte) =>
+        i
+      }).append(
+        coll10.fold(
+          coll10.fold(
+            coll10.fold(
+              coll10.fold(
+                coll10.fold(
+                  coll10.fold(
+                    coll10.fold(
+                      coll10,
+                      {(i: Coll[Byte], b: Byte) => i}),
+                    {(i: Coll[Byte], b: Byte) => i}),
+                  {(i: Coll[Byte], b: Byte) => i}),
+                {(i: Coll[Byte], b: Byte) => i}),
+              {(i: Coll[Byte], b: Byte) => i}),
+            {(i: Coll[Byte], b: Byte) => i}), {(i: Coll[Byte], b: Byte) =>
+          i
+        })
+      )
+     */
 
     assert(warmUpPrecondition)
     val maxLevel = 56 // 56 to stay within the cost limit, 57 will trigger the cost limit
