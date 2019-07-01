@@ -1479,7 +1479,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     assert(warmUpPrecondition)
     val prop = GT(SizeOf(nestedFoldCode(40).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
-    val prop2 = GT(SizeOf(nestedFoldCode(101).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    val level = 101 // to stay within the max nesting level in reader
+    val prop2 = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop2)
   }
 
@@ -1497,7 +1498,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val prop = GT(SizeOf(nestedFoldCode(104).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    val level = 104 // to stay within the max nesting level in reader
+    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
 
@@ -1515,7 +1517,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val prop = GT(SizeOf(nestedFoldCode(52).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    val level = 52 // to stay within the max nesting level in reader
+    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
 
@@ -1533,7 +1536,8 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
       }
 
     assert(warmUpPrecondition)
-    val prop = GT(SizeOf(nestedFoldCode(6).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
+    val level = 6 // 7 will blow past MaxPropBytes
+    val prop = GT(SizeOf(nestedFoldCode(level).asCollection[SByte.type]), IntConstant(0)).toSigmaProp
     checkScript(prop)
   }
 
