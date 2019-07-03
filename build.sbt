@@ -133,7 +133,7 @@ scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
 
 parallelExecution in Test := false
-publishArtifact in Test := false
+publishArtifact in Test := true
 
 pomIncludeRepository := { _ => false }
 
