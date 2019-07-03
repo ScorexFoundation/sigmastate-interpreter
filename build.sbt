@@ -199,6 +199,10 @@ lazy val sigma = (project in file("."))
     .aggregate(sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
     .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
     .settings(commonSettings: _*)
+    .settings(Seq(
+      publishArtifact in Test := true,
+      publishArtifact in(Test, packageDoc) := false
+    ))
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "master"
