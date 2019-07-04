@@ -83,7 +83,7 @@
 
 \title{Multi-Stage Contracts in the UTXO Model}
 
-\author{Ergo Developers}
+%\author{Ergo Developers}
 
 \maketitle
 
@@ -125,7 +125,7 @@ The examples include a Rock-Paper-Scissors game, an Initial Coin Offering (ICO) 
 
 Ergo uses Bitcoin's UTXO model but allows general-purpose smart contracts via a highly expressible (but still decidable) language called \langname. Ergo has better scalability than Bitcoin due to additional enahcements such as storage rent~\cite{chepurnoy2018systematic} and support for thin clients that can verify the entire blockchain with only a small amount of data. Unlike Ethereum and most other smart contract platforms which only allow imperative style programs, \langname supports functional programming and its syntax borrows heavily from Scala. 
 
-Code in functional style is more compact and easier to understand because it focusses on WHAT (i.e., the actual task at hand), while imperative code focusses on HOW (i.e., on the nitty grittys of task). For example, if we want to find out whether there exists at least one black cat, the code in a hypothetical imperative language would look something like the following:
+Code in functional style is more compact and easier to understand because it focusses on WHAT (i.e., the actual task at hand), while imperative code focusses on HOW (i.e., on the nitty grittys of task). For example, if we want to find out whether there exists at least one black cat, the code in a hypothetical imperative language (such as Solidity in Ethereum) would look something like the following:
 \begin{verbatim}
     bool found = false;
     for (int i = 0; i <= cats.size; i++){
@@ -423,6 +423,8 @@ The above two-party contract can be extended for multiple parties, such as one b
 	\item For two keys the amount is 10\% or 1000 ergs (whichever is higher).
 	\item If all three keys are spending then there are no restrictions. 
 \end{enumerate}
+
+We refer the reader to the \langname repository~\cite{langrepo} for the complete code.
 
 %We leave this contract as an exercise to the reader.
 \subsection{Revenue Sharing Addresses}
