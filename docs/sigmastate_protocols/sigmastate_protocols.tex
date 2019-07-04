@@ -215,7 +215,7 @@ val validOuts = spenders.map({(e:(Coll[Byte], Int)) =>
 validOuts.fold(true, {(l:Boolean, r:Boolean) => l && r}) && validFeeBox
 \end{verbatim}
 
-Any funds sent to this address can only be spent in a transaction that creats boxes paying to Alice, Bob and Carol in the ratios defined above (after deducting transaction fee).
+Any funds sent to this address can only be spent in a transaction that creates boxes paying to Alice, Bob and Carol in the ratios defined above (after deducting transaction fee).
 
 %\subsection{Automated Salary Contracts}
 %further improvements. Can we reduce offchain data size, do multiple mixes offchain?

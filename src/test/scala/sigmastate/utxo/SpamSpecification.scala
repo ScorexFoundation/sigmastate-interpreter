@@ -185,6 +185,7 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
   def checkResult(res: Try[(Boolean, Long)], calcTime: Long, scriptSize: Int) = {
     println(s"Verify time: $calcTime millis; SerializedSize: $scriptSize;  Defs: ${IR.defCount}")
     println(s"Timeout: $Timeout millis")
+    println(s"Testname: $currentTestName")
     res.fold(t => {
       val cause = rootCause(t)
       println(s"Rejection cause: $cause")
