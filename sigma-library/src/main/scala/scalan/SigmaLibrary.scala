@@ -72,7 +72,7 @@ trait SigmaLibrary extends Library
       for (i <- items) {
         i match {
           case SM.isValid(s) => ss += s
-          case b => bs += b.asRep[Boolean]
+          case b => bs += asRep[Boolean](b)
         }
       }
       assert(items.length == bs.length + ss.length)
@@ -102,9 +102,9 @@ trait SigmaLibrary extends Library
     case ApplyBinOp(op, lhs, rhs) =>
       op.asInstanceOf[BinOp[_, _]] match {
         case And =>
-          sigmaDslBuilder.allOf(sigmaDslBuilder.Colls.fromItems(Seq(lhs.asRep[Boolean], rhs.asRep[Boolean]):_*))
+          sigmaDslBuilder.allOf(sigmaDslBuilder.Colls.fromItems(Seq(asRep[Boolean](lhs), asRep[Boolean](rhs)):_*))
         case Or =>
-          sigmaDslBuilder.anyOf(sigmaDslBuilder.Colls.fromItems(Seq(lhs.asRep[Boolean], rhs.asRep[Boolean]):_*))
+          sigmaDslBuilder.anyOf(sigmaDslBuilder.Colls.fromItems(Seq(asRep[Boolean](lhs), asRep[Boolean](rhs)):_*))
         case _ => super.rewriteDef(d)
       }
 

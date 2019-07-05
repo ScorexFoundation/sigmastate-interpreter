@@ -248,13 +248,13 @@ class CompilerItTest extends BaseCtxTests
       { ctx: Rep[Context] =>
         val backerPubKey = liftConst(dslValue.SigmaProp(backerPK))
         val projectPubKey = liftConst(dslValue.SigmaProp(projectPK))
-        val c1 = dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout)).asRep[SigmaProp] && backerPubKey
-        val c2 = dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
+        val c1 = asRep[SigmaProp](dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout))) && backerPubKey
+        val c2 = asRep[SigmaProp](dsl.sigmaProp(dsl.allOf(colBuilder.fromItems(
           ctx.HEIGHT < toRep(timeout),
           ctx.OUTPUTS.exists(fun { out =>
             out.value >= toRep(minToRaise) lazy_&& Thunk(out.propositionBytes === projectPubKey.propBytes)
           }))
-        )).asRep[SigmaProp] && projectPubKey
+        ))) && projectPubKey
         (c1 || c2)
       },
       cost = null,

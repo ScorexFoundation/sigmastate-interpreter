@@ -177,7 +177,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       verifyIsProven(calcF) shouldBe Success(())
 
       if (expectedTree.isDefined) {
-        val compiledProp = IR.buildTree(calcF.asRep[Context => SType#WrappedType])
+        val compiledProp = IR.buildTree(asRep[Context => SType#WrappedType](calcF))
         checkExpected(compiledProp, expectedTree, "Compiled Tree actual: %s, expected: %s")
 
         val ergoTree = compiledProp.treeWithSegregation
