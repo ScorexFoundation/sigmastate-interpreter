@@ -28,7 +28,6 @@ import PreHeader._
 import SigmaContract._
 import SigmaDslBuilder._
 import SigmaProp._
-import WBigInteger._
 import WOption._
 import WRType._
 
@@ -4723,20 +4722,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         true, false, element[GroupElement]))
     }
 
-    override def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("BigInt", classOf[Sym]),
-        List(n),
-        true, false, element[BigInt]))
-    }
-
-    override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(self,
-        SigmaDslBuilderClass.getMethod("toBigInteger", classOf[Sym]),
-        List(n),
-        true, false, element[WBigInteger]))
-    }
-
     override def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
       asRep[AvlTree](mkMethodCall(self,
         SigmaDslBuilderClass.getMethod("avlTree", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
@@ -4926,20 +4911,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         thisClass.getMethod("decodePoint", classOf[Sym]),
         List(encoded),
         true, true, element[GroupElement]))
-    }
-
-    def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = {
-      asRep[BigInt](mkMethodCall(source,
-        thisClass.getMethod("BigInt", classOf[Sym]),
-        List(n),
-        true, true, element[BigInt]))
-    }
-
-    def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(source,
-        thisClass.getMethod("toBigInteger", classOf[Sym]),
-        List(n),
-        true, true, element[WBigInteger]))
     }
 
     def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
@@ -5302,32 +5273,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object BigInt {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[WBigInteger])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "BigInt" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[WBigInteger])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[WBigInteger])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object toBigInteger {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaDslBuilder], Rep[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaDslBuilderElem[_]] && method.getName == "toBigInteger" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[BigInt])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

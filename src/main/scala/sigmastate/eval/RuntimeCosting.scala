@@ -42,9 +42,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import Context._;
   import Header._;
   import PreHeader._;
-  import WArray._;
-  import WBigInteger._
-  import WECPoint._
   import GroupElement._;
   import BigInt._;
   import WOption._
@@ -357,9 +354,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case CostOf(name, opType) => s"CostOf($name:$opType)"
     case GroupElementConst(p) => p.showToString
     case SigmaPropConst(sp) => sp.toString
-    case ac: WArrayConst[_,_] =>
-      val trimmed = ac.constValue.take(ac.constValue.length min 10)
-      s"WArray(len=${ac.constValue.length}; ${trimmed.mkString(",")},...)"
     case _ => super.formatDef(d)
   }
 
@@ -519,7 +513,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     val CostedM = CostedMethods
     val CostedOptionM = CostedOptionMethods
     val WOptionM = WOptionMethods
-    val WArrayM = WArrayMethods
     val CM = CollMethods
     val CostedBuilderM = CostedBuilderMethods
     val SPCM = WSpecialPredefCompanionMethods
@@ -556,8 +549,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val f = asRep[((a,b)) => Any](_f)
         implicit val eb = ys.elem.eItem
         ys.map(fun { y: Rep[b] => f(Pair(x, y))})
-
-      case WArrayM.length(Def(arrC: WArrayConst[_,_])) => arrC.constValue.length
 
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
@@ -873,19 +864,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case LongType => LongElement
     case StringType => StringElement
     case AnyType => AnyElement
-
-    case BigIntegerRType => wBigIntegerElement
     case BigIntRType => bigIntElement
-
-    case ECPointRType => wECPointElement
     case GroupElementRType => groupElementElement
-
     case AvlTreeRType => avlTreeElement
     case ot: OptionType[_] => wOptionElement(rtypeToElem(ot.tA))
     case BoxRType => boxElement
     case SigmaPropRType => sigmaPropElement
     case tup: TupleType => tupleStructElement(tup.items.map(t => rtypeToElem(t)):_*)
-    case at:  ArrayType[_] => wArrayElement(rtypeToElem(at.tA))
     case ct:  CollType[_] => collElement(rtypeToElem(ct.tItem))
     case ft:  FuncType[_,_] => funcElement(rtypeToElem(ft.tDom), rtypeToElem(ft.tRange))
     case pt:  PairType[_,_] => pairElement(rtypeToElem(pt.tFst), rtypeToElem(pt.tSnd))
@@ -913,9 +898,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case UnitElement => UnitIsLiftable
     case e: BigIntElem[_] => LiftableBigInt
     case e: GroupElementElem[_] => LiftableGroupElement
-    case ae: WArrayElem[t,_] =>
-      implicit val lt = liftableFromElem[t](ae.eItem)
-      liftableArray(lt)
     case ce: CollElem[t,_] =>
       implicit val lt = liftableFromElem[t](ce.eItem)
       liftableColl(lt)

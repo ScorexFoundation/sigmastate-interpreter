@@ -15,8 +15,6 @@ package special.sigma {
     import MonoidBuilderInst._;
     import SigmaDslBuilder._;
     import SigmaProp._;
-    import WBigInteger._;
-    import WECPoint._;
     import WOption._;
     abstract class TestSigmaDslBuilder extends SigmaDslBuilder {
       def Colls: Rep[CollBuilder] = RCollOverArrayBuilder();

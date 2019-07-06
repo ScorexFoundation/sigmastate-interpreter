@@ -15,12 +15,10 @@ trait SigmaLibrary extends Library
     with SigmaDslOverArraysModule
     with SigmaDslCostedModule
 {
-  import WArray._
   import Coll._
   import CollBuilder._
   import SigmaProp._
   import SigmaContract._
-  import WECPoint._
   import SigmaDslBuilder._
   import WRType._
   import Size._
@@ -28,7 +26,6 @@ trait SigmaLibrary extends Library
   implicit lazy val wRTypeAnyElement = wRTypeElement(AnyElement)
   implicit lazy val sizeAnyElement = sizeElement(AnyElement)
 
-  private val WA = WArrayMethods
   private val CM = CollMethods
   private val CBM = CollBuilderMethods
   private val SM = SigmaPropMethods
