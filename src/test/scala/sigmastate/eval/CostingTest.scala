@@ -26,10 +26,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     new TestContext with IRContext with CompiletimeCosting {
     }
   import IR._
-  import WArray._
-  import WECPoint._
   import GroupElement._
-  import WBigInteger._
   import BigInt._
   import Context._; import SigmaContract._
   import Cost._; import CollBuilder._; import Coll._; import Box._; import SigmaProp._;

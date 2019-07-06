@@ -23,7 +23,6 @@ class CompilerItTest extends BaseCtxTests
     with LangTests with ExampleContracts with ErgoScriptTestkit {
   import IR._
   import builder._
-  import WArray._
   import WOption._
   import CollBuilder._
   import SigmaDslBuilder._
@@ -32,8 +31,6 @@ class CompilerItTest extends BaseCtxTests
   import SigmaProp._
   import CostedColl._
   import CCostedColl._
-  import WBigInteger._
-  import WECPoint._
   import BigInt._
   import GroupElement._
   import sigmastate.serialization.OpCodes._

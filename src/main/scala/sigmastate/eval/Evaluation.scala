@@ -43,8 +43,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import AvlTree._
   import CollBuilder._
   import SigmaDslBuilder._
-  import WBigInteger._
-  import WArray._
   import WOption._
   import WRType._
   import GroupElement._
@@ -85,9 +83,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val AvlM = AvlTreeMethods
   private val CBM = CollBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
-  private val AM = WArrayMethods
   private val OM = WOptionMethods
-  private val BIM = WBigIntegerMethods
   private val SPCM = WSpecialPredefCompanionMethods
 
   private val _allowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
@@ -679,7 +675,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)(sigmaDslBuilderValue.validationSettings)
             out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
 
-          case AM.length(In(arr: Array[_])) => out(arr.length)
           case CBM.replicate(In(b: special.collection.CollBuilder), In(n: Int), xSym @ In(x)) =>
             out(b.replicate(n, x)(asType[Any](xSym.elem.sourceType)))
 

@@ -23,8 +23,6 @@ import MonoidBuilder._
 import MonoidBuilderInst._
 import SigmaDslBuilder._
 import SigmaProp._
-import WBigInteger._
-import WECPoint._
 import WOption._
 import TestSigmaDslBuilder._
 
@@ -175,34 +173,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         thisClass.getMethod("decodePoint", classOf[Sym]),
         List(encoded),
         true, false, element[GroupElement]))
-    }
-
-    override def BigInt(n: Rep[WBigInteger]): Rep[BigInt] = {
-      asRep[BigInt](mkMethodCall(self,
-        thisClass.getMethod("BigInt", classOf[Sym]),
-        List(n),
-        true, false, element[BigInt]))
-    }
-
-    override def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger] = {
-      asRep[WBigInteger](mkMethodCall(self,
-        thisClass.getMethod("toBigInteger", classOf[Sym]),
-        List(n),
-        true, false, element[WBigInteger]))
-    }
-
-    override def GroupElement(p: Rep[WECPoint]): Rep[GroupElement] = {
-      asRep[GroupElement](mkMethodCall(self,
-        thisClass.getMethod("GroupElement", classOf[Sym]),
-        List(p),
-        true, false, element[GroupElement]))
-    }
-
-    override def toECPoint(ge: Rep[GroupElement]): Rep[WECPoint] = {
-      asRep[WECPoint](mkMethodCall(self,
-        thisClass.getMethod("toECPoint", classOf[Sym]),
-        List(ge),
-        true, false, element[WECPoint]))
     }
 
     override def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree] = {
@@ -600,58 +570,6 @@ object TestSigmaDslBuilder extends EntityObject("TestSigmaDslBuilder") {
         case _ => Nullable.None
       }
       def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object BigInt {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "BigInt" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WBigInteger])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object toBigInteger {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "toBigInteger" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object GroupElement {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "GroupElement" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[WECPoint])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object toECPoint {
-      def unapply(d: Def[_]): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[TestSigmaDslBuilderElem] && method.getName == "toECPoint" =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[TestSigmaDslBuilder], Rep[GroupElement])] = exp match {
         case Def(d) => unapply(d)
         case _ => Nullable.None
       }

@@ -87,17 +87,21 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
     this.GroupElement(__curve__.getCurve.decodePoint(encoded.toArray))
 
   @NeverInline
+  @Internal
   override def BigInt(n: BigInteger): BigInt = SpecialPredef.rewritableMethod
 
   @NeverInline
+  @Internal
   override def toBigInteger(n: BigInt): BigInteger = n.asInstanceOf[TestBigInt].value
 
   /** Create DSL's group element from existing `org.bouncycastle.math.ec.ECPoint`. */
   @NeverInline
+  @Internal
   def GroupElement(p: ECPoint): GroupElement = SpecialPredef.rewritableMethod
 
   /** Extract `org.bouncycastle.math.ec.ECPoint` from DSL's `GroupElement` type. */
   @NeverInline
+  @Internal
   def toECPoint(ge: GroupElement): ECPoint = ge.value
 
   @NeverInline
