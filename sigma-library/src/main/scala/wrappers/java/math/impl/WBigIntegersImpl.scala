@@ -631,7 +631,7 @@ object WBigInteger extends EntityObject("WBigInteger") {
   // familyElem
   class WBigIntegerElem[To <: WBigInteger]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableBigInteger.asLiftable[BigInteger, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[BigInteger, To](LiftableBigInteger)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++

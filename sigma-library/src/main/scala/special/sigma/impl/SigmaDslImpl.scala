@@ -238,7 +238,7 @@ object CostModel extends EntityObject("CostModel") {
   // familyElem
   class CostModelElem[To <: CostModel]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableCostModel.asLiftable[SCostModel, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SCostModel, To](LiftableCostModel)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -807,7 +807,7 @@ object BigInt extends EntityObject("BigInt") {
   // familyElem
   class BigIntElem[To <: BigInt]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableBigInt.asLiftable[SBigInt, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SBigInt, To](LiftableBigInt)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -1280,7 +1280,7 @@ object GroupElement extends EntityObject("GroupElement") {
   // familyElem
   class GroupElementElem[To <: GroupElement]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableGroupElement.asLiftable[SGroupElement, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SGroupElement, To](LiftableGroupElement)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -1562,7 +1562,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
   // familyElem
   class SigmaPropElem[To <: SigmaProp]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSigmaProp.asLiftable[SSigmaProp, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaProp, To](LiftableSigmaProp)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -1775,7 +1775,7 @@ object AnyValue extends EntityObject("AnyValue") {
   // familyElem
   class AnyValueElem[To <: AnyValue]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableAnyValue.asLiftable[SAnyValue, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SAnyValue, To](LiftableAnyValue)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -2045,7 +2045,7 @@ object Box extends EntityObject("Box") {
   // familyElem
   class BoxElem[To <: Box]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableBox.asLiftable[SBox, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SBox, To](LiftableBox)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -2619,7 +2619,7 @@ object AvlTree extends EntityObject("AvlTree") {
   // familyElem
   class AvlTreeElem[To <: AvlTree]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableAvlTree.asLiftable[SAvlTree, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SAvlTree, To](LiftableAvlTree)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -3016,7 +3016,7 @@ object PreHeader extends EntityObject("PreHeader") {
   // familyElem
   class PreHeaderElem[To <: PreHeader]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftablePreHeader.asLiftable[SPreHeader, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SPreHeader, To](LiftablePreHeader)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -3421,7 +3421,7 @@ object Header extends EntityObject("Header") {
   // familyElem
   class HeaderElem[To <: Header]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableHeader.asLiftable[SHeader, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SHeader, To](LiftableHeader)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -3902,7 +3902,7 @@ object Context extends EntityObject("Context") {
   // familyElem
   class ContextElem[To <: Context]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableContext.asLiftable[SContext, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SContext, To](LiftableContext)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -4217,7 +4217,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
   // familyElem
   class SigmaContractElem[To <: SigmaContract]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSigmaContract.asLiftable[SSigmaContract, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaContract, To](LiftableSigmaContract)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -4960,7 +4960,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   // familyElem
   class SigmaDslBuilderElem[To <: SigmaDslBuilder]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSigmaDslBuilder.asLiftable[SSigmaDslBuilder, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSigmaDslBuilder, To](LiftableSigmaDslBuilder)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++

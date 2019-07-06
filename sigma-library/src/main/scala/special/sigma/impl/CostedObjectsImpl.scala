@@ -120,7 +120,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
   // familyElem
   class SizeAnyValueElem[To <: SizeAnyValue]
     extends SizeElem[AnyValue, To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSizeAnyValue.asLiftable[SSizeAnyValue, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSizeAnyValue, To](LiftableSizeAnyValue)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -275,7 +275,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
   // familyElem
   class SizeSigmaPropElem[To <: SizeSigmaProp]
     extends SizeElem[SigmaProp, To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSizeSigmaProp.asLiftable[SSizeSigmaProp, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSizeSigmaProp, To](LiftableSizeSigmaProp)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -487,7 +487,7 @@ object SizeBox extends EntityObject("SizeBox") {
   // familyElem
   class SizeBoxElem[To <: SizeBox]
     extends SizeElem[Box, To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSizeBox.asLiftable[SSizeBox, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSizeBox, To](LiftableSizeBox)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -792,7 +792,7 @@ object SizeContext extends EntityObject("SizeContext") {
   // familyElem
   class SizeContextElem[To <: SizeContext]
     extends SizeElem[Context, To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSizeContext.asLiftable[SSizeContext, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSizeContext, To](LiftableSizeContext)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
@@ -1042,7 +1042,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
   // familyElem
   class SizeBuilderElem[To <: SizeBuilder]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableSizeBuilder.asLiftable[SSizeBuilder, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[SSizeBuilder, To](LiftableSizeBuilder)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++

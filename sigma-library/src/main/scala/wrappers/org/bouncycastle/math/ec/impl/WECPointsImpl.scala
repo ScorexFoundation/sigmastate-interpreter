@@ -115,7 +115,7 @@ object WECPoint extends EntityObject("WECPoint") {
   // familyElem
   class WECPointElem[To <: WECPoint]
     extends EntityElem[To] {
-    override val liftable: Liftables.Liftable[_, To] = LiftableECPoint.asLiftable[ECPoint, To]
+    override val liftable: Liftables.Liftable[_, To] = asLiftable[ECPoint, To](LiftableECPoint)
 
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
