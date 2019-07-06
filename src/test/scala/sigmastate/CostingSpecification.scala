@@ -314,7 +314,7 @@ class CostingSpecification extends SigmaTestingData {
 
     cost(s"{ $coll.append(OUTPUTS).size > 0 }")(
       selectField + accessBox * tx.outputs.length +
-        appendPerItemCost * tx.outputs.length * 2 + appendCost + LengthGTConstCost)
+      accessBox * tx.outputs.length * 2 + collToColl + LengthGTConstCost)
 
     cost(s"{ $coll.indices.size > 0 }")(
       selectField + accessBox * tx.outputs.length + selectField + LengthGTConstCost)

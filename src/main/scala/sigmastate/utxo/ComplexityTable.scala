@@ -11,7 +11,7 @@ object ComplexityTable {
   val MinimalComplexity = 100
 
   val OpCodeComplexity: Map[OpCode, Int] = Seq(
-    Fold.opCode                    -> 8034,  // count = 122
+    Fold.opCode                    -> 4034,  // count = 122
     MapCollection.opCode           -> 2514,  // count = 402
     BinAnd.opCode                  -> 2000,  // count = 21858
     BinOr.opCode                   -> 2000,  // count = 9894
