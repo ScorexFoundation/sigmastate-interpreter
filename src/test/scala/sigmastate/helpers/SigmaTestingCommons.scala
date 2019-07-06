@@ -156,8 +156,8 @@ trait SigmaTestingCommons extends PropSpec
     val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
     val tree = IR.buildTree(calcF)
     checkSerializationRoundTrip(tree)
-    val lA = calcF.elem.eDom.liftable.asLiftable[SContext, IR.Context]
-    val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+    val lA = Liftables.asLiftable[SContext, IR.Context](calcF.elem.eDom.liftable)
+    val lB = Liftables.asLiftable[Any, Any](calcF.elem.eRange.liftable)
     val valueFun = IR.compile[SContext, Any, IR.Context, Any](IR.getDataEnv, calcF)(lA, lB)
 
     (in: A) => {

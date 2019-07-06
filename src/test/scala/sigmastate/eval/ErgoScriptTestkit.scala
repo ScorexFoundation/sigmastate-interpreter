@@ -200,7 +200,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
         // check size
         {
-          val lA = sizeF.elem.eDom.liftable.asLiftable[SSize[SContext], Size[Context]]
+          val lA = asLiftable[SSize[SContext], Size[Context]](sizeF.elem.eDom.liftable)
           val sizeFun = IR.compile[SSize[SContext], Long, Size[Context], Long](getDataEnv, sizeF)(lA, liftable[Long, Long])
           val estimatedSize = sizeFun(Sized.sizeOf(costCtx))
           checkExpected(estimatedSize, expectedResult.size,
@@ -209,8 +209,8 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
         }
 
         // check calc
-        val lA = calcF.elem.eDom.liftable.asLiftable[SContext, Context]
-        val lB = calcF.elem.eRange.liftable.asLiftable[Any, Any]
+        val lA = asLiftable[SContext, Context](calcF.elem.eDom.liftable)
+        val lB = asLiftable[Any, Any](calcF.elem.eRange.liftable)
         val valueFun = IR.compile(getDataEnv, calcF)(lA, lB)
         val (res, _) = valueFun(calcCtx)
         checkExpected(res, expectedResult.calc,
