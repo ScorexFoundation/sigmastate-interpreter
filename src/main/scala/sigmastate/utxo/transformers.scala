@@ -106,13 +106,13 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
 
 object Fold extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FoldCode
-  def sum[T <: SNumericType](input: Value[SCollection[T]])(implicit tT: T) =
+  def sum[T <: SNumericType](input: Value[SCollection[T]], varId: Int)(implicit tT: T) =
     Fold(input,
       Constant(tT.upcast(0.toByte), tT),
-      FuncValue(Vector((1, STuple(tT, tT))),
+      FuncValue(Vector((varId, STuple(tT, tT))),
         Plus(
-          SelectField(ValUse(1, STuple(tT, tT)), 1).asNumValue,
-          SelectField(ValUse(1, STuple(tT, tT)), 2).asNumValue))
+          SelectField(ValUse(varId, STuple(tT, tT)), 1).asNumValue,
+          SelectField(ValUse(varId, STuple(tT, tT)), 2).asNumValue))
     )
 
   def concat[T <: SType](input: Value[SCollection[SCollection[T]]])(implicit tT: T): Fold[SCollection[T], T] = {
