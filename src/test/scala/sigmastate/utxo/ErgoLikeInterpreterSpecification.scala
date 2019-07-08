@@ -228,7 +228,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val propExp = BlockValue(
       Vector(
         ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
-        ValDef(2, Fold.sum[SLong.type](ValUse(1, SLong)))
+        ValDef(2, Fold.sum[SLong.type](ValUse(1, SCollection.SLongArray), 2))
       ),
       SigmaAnd(
         Seq(

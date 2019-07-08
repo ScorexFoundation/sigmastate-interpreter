@@ -424,7 +424,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     var curEnv = env
     for (te <- subG.schedule) {
       val s = te.sym; val d = te.rhs
-      if ((mainG.hasManyUsagesGlobal(s) || LoopOperation.unapply(d).isDefined)
+      val nonRootLoop = LoopOperation.unapply(d).isDefined && !subG.roots.contains(s)
+      if ((mainG.hasManyUsagesGlobal(s) || nonRootLoop)
         && IsContextProperty.unapply(d).isEmpty
         && IsInternalDef.unapply(d).isEmpty
           // to increase effect of constant segregation we need to treat the constants specially
