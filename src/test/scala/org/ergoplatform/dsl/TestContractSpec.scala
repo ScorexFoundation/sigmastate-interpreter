@@ -49,7 +49,6 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         IR.builder.mkConstant(v.value.asWrappedType, Evaluation.rtypeToSType(v.tA))
       }
       val ctx = inBox.toErgoContext
-//      val newExtension = ContextExtension(ctx.extension.values ++ bindings)
       val env = propSpec.scriptSpec.env + (ScriptNameProp -> (propSpec.name + "_prove"))
       val prop = propSpec.ergoTree
       val p = bindings.foldLeft(prover) { (p, b) => p.withContextExtender(b._1, b._2) }

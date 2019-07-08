@@ -545,10 +545,10 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case SM.dataSize(Def(CSizeCollCtor(sizes @ EValOfSizeColl(eVal)))) if eVal.isConstantSize =>
         sizes.length.toLong * typeSize(eVal)
 
-      case CM.map(CM.zip(CBM.replicate(_, n, x: Rep[a]), ys: RColl[b]@unchecked), _f) =>
-        val f = asRep[((a,b)) => Any](_f)
-        implicit val eb = ys.elem.eItem
-        ys.map(fun { y: Rep[b] => f(Pair(x, y))})
+//      case CM.map(CM.zip(CBM.replicate(_, n, x: Rep[a]), ys: RColl[b]@unchecked), _f) =>
+//        val f = asRep[((a,b)) => Any](_f)
+//        implicit val eb = ys.elem.eItem
+//        ys.map(fun { y: Rep[b] => f(Pair(x, y))})
 
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
