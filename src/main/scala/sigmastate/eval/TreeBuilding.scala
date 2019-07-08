@@ -112,16 +112,10 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  object IsNonConstantDef {
+  object IsConstantDef {
     def unapply(d: Def[_]): Option[Def[_]] = d match {
-      // in case of GroupElement constant (ProveDlog) different constants have different meaning,
-      // thus it is ok for them to create ValDef
-//      case c: Const[_] if c.elem.isInstanceOf[WECPointElem[_]] => Some(d)
-      // to increase effect of constant segregation we need to treat the constants specially
-      // and don't create ValDef even if the constant is used more than one time,
-      // because two equal constants don't always have the same meaning.
-      case _: Const[_] => None
-      case _ => Some(d)
+      case _: Const[_] => Some(d)
+      case _ => None
     }
   }
 
@@ -430,10 +424,13 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     var curEnv = env
     for (te <- subG.schedule) {
       val s = te.sym; val d = te.rhs
-      if (mainG.hasManyUsagesGlobal(s)
+      if ((mainG.hasManyUsagesGlobal(s) || LoopOperation.unapply(d).isDefined)
         && IsContextProperty.unapply(d).isEmpty
         && IsInternalDef.unapply(d).isEmpty
-        && IsNonConstantDef.unapply(d).nonEmpty)
+          // to increase effect of constant segregation we need to treat the constants specially
+          // and don't create ValDef even if the constant is used more than one time,
+          // because two equal constants don't always have the same meaning.
+        && IsConstantDef.unapply(d).isEmpty)
       {
         val rhs = buildValue(ctx, mainG, curEnv, s, curId, constantsProcessing)
         curId += 1

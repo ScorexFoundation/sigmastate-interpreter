@@ -59,6 +59,24 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       |}
     """.stripMargin)
 
+// TODO move to a separate test case somewhere
+// the following code is minimized version of the above to reproduce the problem
+// when fold is pulled into forall during BuildTree.
+// In minimized form it can be used to test BuildTree on loop operations.
+//    """{
+//      |      val feeBox = OUTPUTS(0)
+//      |      val total = ratios.fold(0, {(l:Int, r:Int) => l + r})
+//      |      val validOuts = ratios.zip(OUTPUTS).forall({
+//      |        (e: (Int, Box)) =>
+//      |           val ratio = e._1
+//      |           val box = e._2
+//      |           val share = total * ratio
+//      |           box.value >= share
+//      |      })
+//      |      sigmaProp(validOuts)
+//      |}
+//    """.stripMargin)
+
     lazy val requireAliceSignature =  proposition(
       "requireAliceSignature",
       _ => alice.pubKey,
@@ -80,7 +98,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
 
   }
 
-  lazy val spec = TestContractSpec(suite)(new TestingIRContext)
+  lazy val spec = TestContractSpec(suite)(new TestingIRContext { saveGraphsInFile = true })
 
   lazy val alice = spec.ProvingParty("Alice")
   lazy val bob = spec.ProvingParty("Bob")
