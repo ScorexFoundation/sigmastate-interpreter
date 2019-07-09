@@ -11,8 +11,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.utxo.ComplexityTable
-
-import scala.collection.mutable
+import spire.syntax.all.cfor
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.
@@ -195,16 +194,17 @@ class ErgoTreeSerializer {
     (header, sizeOpt)
   }
 
+  private val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+
   /** Deserialize constants section only. */
   private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
     val constants = if (ErgoTree.isConstantSegregation(header)) {
-      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
       val nConsts = r.getUInt().toInt
-      val builder = mutable.ArrayBuilder.make[Constant[SType]]()
-      for (_ <- 0 until nConsts) {
-        builder += constantSerializer.deserialize(r)
+      val res = new Array[Constant[SType]](nConsts)
+      cfor(0)(_ < nConsts, _ + 1) { i =>
+        res(i) = constantSerializer.deserialize(r)
       }
-      builder.result
+      res
     }
     else
       Array.empty[Constant[SType]]

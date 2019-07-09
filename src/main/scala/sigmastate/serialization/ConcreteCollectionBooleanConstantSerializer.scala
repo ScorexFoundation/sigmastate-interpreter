@@ -4,6 +4,7 @@ import sigmastate.{SCollection, SBoolean, ArgInfo}
 import sigmastate.Values._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import SigmaByteWriter._
+import spire.syntax.all.cfor
 
 case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[SBoolean.type]], SBoolean.type) => Value[SCollection[SBoolean.type]])
   extends ValueSerializer[ConcreteCollection[SBoolean.type]] {
@@ -20,8 +21,12 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
   }
 
   override def parse(r: SigmaByteReader): Value[SCollection[SBoolean.type]] = {
-    val size = r.getUShort()
-    val booleanConstants = r.getBits(size).map(v => BooleanConstant.fromBoolean(v))
-    cons(booleanConstants, SBoolean)
+    val size = r.getUShort()    // READ
+    val bits = r.getBits(size)  // READ
+    val items = new Array[BoolValue](size)
+    cfor(0)(_ < size, _ + 1) { i =>
+      items(i) = BooleanConstant.fromBoolean(bits(i))
+    }
+    cons(items, SBoolean)
   }
 }

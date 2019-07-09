@@ -29,7 +29,7 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
   def opDesc: ValueCompanion
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
-  def opCode: OpCode = opDesc.opCode
+  @inline final def opCode: OpCode = opDesc.opCode
 
   def opCost(opId: OperationId): ExpressionCost =
     sys.error(s"Operation opCost is not defined for AST node ${this.getClass}")
@@ -383,14 +383,14 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
   override def deserialize(r: SigmaByteReader): Value[SType] = {
     val depth = r.level
     r.level = depth + 1
-    val firstByte = r.peekByte().toUByte
+    val firstByte = toUByte(r.peekByte())
     val v = if (firstByte <= LastConstantCode) {
       // look ahead byte tell us this is going to be a Constant
       r.addComplexity(constantSerializer.complexity)
       constantSerializer.deserialize(r)
     }
     else {
-      val opCode = OpCode @@ r.getByte()
+      val opCode = r.getByte().asInstanceOf[OpCode]
       val ser = getSerializer(opCode)
       r.addComplexity(ser.complexity)
       ser.parse(r)

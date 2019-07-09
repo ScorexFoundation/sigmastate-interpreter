@@ -135,7 +135,7 @@ class SigmaByteReader(val r: Reader,
     _complexity = v
   }
 
-  @inline def addComplexity(delta: Int): Unit = {
+  @inline final def addComplexity(delta: Int): Unit = {
     _complexity += delta
   }
 }

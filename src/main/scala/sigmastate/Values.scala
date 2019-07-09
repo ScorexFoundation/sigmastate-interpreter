@@ -28,6 +28,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigma.util.Extensions.ByteOps
+import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -671,16 +672,25 @@ object Values {
           case ProveDHTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             COR(children)
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             CTHRESHOLD(k, children)
         }
         r.level = r.level - 1
@@ -1034,9 +1044,9 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
-    @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
-    @inline def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
-    @inline def getVersion(header: Byte): Byte = (header & VersionMask).toByte
+    @inline final def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+    @inline final def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+    @inline final def getVersion(header: Byte): Byte = (header & VersionMask).toByte
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)

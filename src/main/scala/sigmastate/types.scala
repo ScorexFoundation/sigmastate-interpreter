@@ -1293,7 +1293,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
   val typeParams: Seq[STypeParam] = tpeParams
-  val tparamSubst: Map[STypeVar, SType] = Map() // defined in MethodCall.typeSubst
+  val tparamSubst: Map[STypeVar, SType] = Map.empty // defined in MethodCall.typeSubst
 
   def getGenericType: SFunc = {
     val typeParams: Seq[STypeParam] = tDom.zipWithIndex
@@ -1308,7 +1308,7 @@ object SFunc {
   val tD = STypeVar("D")
   val tR = STypeVar("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange)
   val identity = { x: Any => x }
 }
 

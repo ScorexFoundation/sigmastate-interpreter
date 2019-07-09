@@ -156,7 +156,7 @@ object ErgoBoxCandidate {
       cfor(0)(_ < nRegs, _ + 1) { iReg =>
         val reg = ErgoBox.nonMandatoryRegisters(iReg)
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
-        b += reg -> v
+        b += ((reg, v))
       }
       r.positionLimit = previousPositionLimit
       new ErgoBoxCandidate(value, tree, creationHeight, tokens, b.result())
