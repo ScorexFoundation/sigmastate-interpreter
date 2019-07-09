@@ -632,7 +632,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
       try {
-        val startTime = if (okMeasureOperationTime) System.nanoTime() else 0L
         val res: (DataEnv, Sym) = te.rhs match {
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
@@ -884,21 +883,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case _ =>
             !!!(s"Don't know how to evaluate($te)")
-        }
-        if (okMeasureOperationTime) {
-          val endTime = System.nanoTime()
-          val estimatedTime = endTime - startTime
-          te.sym.getMetadata(OperationIdKey) match {
-            case Some(opId: OperationId) =>
-              if (opId.opType.tRange.isCollection) {
-                val col = res._1(res._2).asInstanceOf[SColl[Any]]
-                val colTime = if (col.length > 1) estimatedTime / col.length else estimatedTime
-                CostTableStat.addOpTime(opId, colTime, col.length)
-              }
-              else
-                CostTableStat.addOpTime(opId, estimatedTime, len = 1)
-            case _ =>
-          }
         }
         onEvaluatedGraphNode(res._1, res._2, res._1(res._2))
         res

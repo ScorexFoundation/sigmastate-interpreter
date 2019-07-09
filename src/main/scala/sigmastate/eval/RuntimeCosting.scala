@@ -986,8 +986,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   import sigmastate._
 
-  val OperationIdKey = MetaKey[AnyRef]("OperationId")(AnyRefElement)
-
   protected def isOperationNode(v: SValue): Boolean = v match {
     case _: Block | _: BlockValue | _: TaggedVariableNode[_] | _: ValNode | _: ValDef | _: ValUse[_] | _: FuncValue => false
     case _ => true
@@ -996,15 +994,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   protected def onTreeNodeCosted[T <: SType](
         ctx: RCosted[Context], env: CostingEnv,
         node: Value[T], costed: RCosted[T#WrappedType]): Unit = {
-    if (okMeasureOperationTime && isOperationNode(node)) {
-      asRep[Any](costed) match {
-        case Def(CCostedPrimCtor(v, c, s)) =>
-          v.setMetadata(OperationIdKey)(node.opId)
-        case Def(CCostedCollCtor(vs,_,_,_)) =>
-          vs.setMetadata(OperationIdKey)(node.opId)
-        case _ =>
-      }
-    }
   }
 
   @inline def SigmaDsl = sigmaDslBuilderValue
