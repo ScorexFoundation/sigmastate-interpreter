@@ -26,6 +26,7 @@ case class ValidationRule(
     id: Short,
     description: String
 ) extends SoftForkChecker {
+  private var _checked: Boolean = false
 
   /** Generic helper method to implement validation rules.
     * It executes the given `block` only when this rule is disabled of `condition` is satisfied.
@@ -45,23 +46,23 @@ case class ValidationRule(
   protected def validate[T](
         condition: => Boolean,
         cause: => Throwable, args: Seq[Any], block: => T): T = {
-    ValidationRules.currentSettings.getStatus(this.id) match {
-      case None =>
+    if (!_checked) {
+      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty)
         throw new SigmaException(s"ValidationRule $this not found in validation settings")
-      case Some(DisabledRule) =>
-        block  // if the rule is disabled we still need to execute the block of code
-      case Some(_) =>
-        if (condition) {
-          block
-        }
-        else if (cause.isInstanceOf[ValidationException]) {
-          throw cause
-        }
-        else {
-          throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
-        }
+      _checked = true  // prevent this check on every call (only first call is checked)
+    }
+    // here we assume the rule is registered with EnabledRule status
+    if (condition) {
+      block
+    }
+    else if (cause.isInstanceOf[ValidationException]) {
+      throw cause
+    }
+    else {
+      throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
     }
   }
+
 }
 
 /** Base class for all exceptions which may be thrown by validation rules.
@@ -163,8 +164,8 @@ object ValidationRules {
       with SoftForkWhenCodeAdded {
     def apply[T](code: Byte)(block: => T): T = {
       val ucode = code.toUByte
-      def msg = s"Cannot deserialize primitive type with code $ucode"
-      validate(ucode > 0 && ucode < embeddableIdToType.length, new SerializerException(msg), Seq(code), block)
+      validate(ucode > 0 && ucode < embeddableIdToType.length,
+        new SerializerException(s"Cannot deserialize primitive type with code $ucode"), Array(code), block)
     }
   }
 

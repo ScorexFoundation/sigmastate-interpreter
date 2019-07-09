@@ -136,19 +136,31 @@ object ErgoBox {
   val MaxTokens: Int = ErgoConstants.MaxTokens.value
 
   val maxRegisters: Int = ErgoConstants.MaxRegisters.value
-  val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
-  val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
+
+  private val _mandatoryRegisters: Array[MandatoryRegisterId] = Array(R0, R1, R2, R3)
+  val mandatoryRegisters: Seq[MandatoryRegisterId] = _mandatoryRegisters
+
+  private val _nonMandatoryRegisters: Array[NonMandatoryRegisterId] = Array(R4, R5, R6, R7, R8, R9)
+  val nonMandatoryRegisters: Seq[NonMandatoryRegisterId] = _nonMandatoryRegisters
+
   val startingNonMandatoryIndex: Byte = nonMandatoryRegisters.head.number
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 
-  val allRegisters: Vector[RegisterId] = (mandatoryRegisters ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
+  val allRegisters: Seq[RegisterId] =
+    Helpers.concatArrays[RegisterId](
+      Helpers.castArray(_mandatoryRegisters): Array[RegisterId],
+      Helpers.castArray(_nonMandatoryRegisters): Array[RegisterId]).ensuring(_.length == maxRegisters)
+
   val mandatoryRegistersCount: Byte = mandatoryRegisters.size.toByte
   val nonMandatoryRegistersCount: Byte = nonMandatoryRegisters.size.toByte
 
   val registerByName: Map[String, RegisterId] = allRegisters.map(r => s"R${r.number}" -> r).toMap
-  val registerByIndex: Map[Byte, RegisterId] = allRegisters.map(r => r.number -> r).toMap
 
-  def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
+  /** @hotspot called from ErgoBox serializer */
+  @inline final def registerByIndex(index: Int): RegisterId = allRegisters(index)
+
+  def findRegisterByIndex(i: Int): Option[RegisterId] =
+    if (0 <= i && i < maxRegisters) Some(registerByIndex(i)) else None
 
   val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 

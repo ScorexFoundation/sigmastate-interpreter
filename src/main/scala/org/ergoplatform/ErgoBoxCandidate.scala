@@ -15,7 +15,10 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.Coll
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
+import spire.syntax.all.cfor
 
+import scala.collection.{mutable, immutable}
 import scala.runtime.ScalaRunTime
 
 /**
@@ -40,7 +43,7 @@ class ErgoBoxCandidate(val value: Long,
 
   def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
-  lazy val propositionBytes: Array[Byte] = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoTree)
+  lazy val propositionBytes: Array[Byte] = DefaultSerializer.serializeErgoTree(ergoTree)
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 
@@ -84,7 +87,7 @@ object ErgoBoxCandidate {
                                         tokensInTx: Option[Coll[TokenId]],
                                         w: SigmaByteWriter): Unit = {
       w.putULong(obj.value)
-      w.putBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(obj.ergoTree))
+      w.putBytes(DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
       obj.additionalTokens.foreach { case (id, amount) =>
@@ -124,31 +127,39 @@ object ErgoBoxCandidate {
     def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
-      val value = r.getULong()
-      val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)
-      val creationHeight = r.getUInt().toInt
-      val addTokensCount = r.getUByte()
-      val addTokens = (0 until addTokensCount).map { _ =>
+      val value = r.getULong()                  // READ
+      val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
+      val creationHeight = r.getUInt().toInt    // READ
+      val nTokens = r.getUByte()                // READ
+      val tokenIds = new Array[Digest32](nTokens)
+      val tokenAmounts = new Array[Long](nTokens)
+      val tokenIdSize = TokenId.size
+      cfor(0)(_ < nTokens, _ + 1) { i =>
         val tokenId = if (digestsInTx.isDefined) {
-          val digestIndex = r.getUInt().toInt
+          val digestIndex = r.getUInt().toInt   // READ
           val digests = digestsInTx.get
           if (!digests.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
           digests(digestIndex)
         } else {
-          r.getBytes(TokenId.size)
+          r.getBytes(tokenIdSize)               // READ
         }
-        val amount = r.getULong()
-        Digest32 @@ tokenId -> amount
+        val amount = r.getULong()               // READ
+        tokenIds(i) = tokenId.asInstanceOf[Digest32]
+        tokenAmounts(i) = amount
       }
-      val regsCount = r.getUByte()
-      val regs = (0 until regsCount).map { iReg =>
-        val regId = ErgoBox.startingNonMandatoryIndex + iReg
-        val reg = ErgoBox.findRegisterByIndex(regId.toByte).get.asInstanceOf[NonMandatoryRegisterId]
+      val tokens = Colls.pairCollFromArrays(tokenIds, tokenAmounts)
+
+      // TODO optimize: hotspot: replace Map with much faster Coll
+      val nRegs = r.getUByte()              // READ
+      val b = immutable.Map.newBuilder[NonMandatoryRegisterId, EvaluatedValue[_ <: SType]]
+      b.sizeHint(nRegs)
+      cfor(0)(_ < nRegs, _ + 1) { iReg =>
+        val reg = ErgoBox.nonMandatoryRegisters(iReg)
         val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
-        (reg, v)
-      }.toMap
+        b += reg -> v
+      }
       r.positionLimit = previousPositionLimit
-      new ErgoBoxCandidate(value, tree, creationHeight, addTokens.toColl, regs)
+      new ErgoBoxCandidate(value, tree, creationHeight, tokens, b.result())
     }
 
     override def parse(r: SigmaByteReader): ErgoBoxCandidate = {

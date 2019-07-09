@@ -166,7 +166,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
     (0 until cnt)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
-      .map(rI => ErgoBox.registerByIndex(rI.toByte).asInstanceOf[NonMandatoryRegisterId])
+      .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
         for {
           arr <- byteArrayConstGen
