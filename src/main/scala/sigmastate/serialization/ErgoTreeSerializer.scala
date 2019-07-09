@@ -149,8 +149,9 @@ class ErgoTreeSerializer {
         r.constantStore = new ConstantStore(cs)
         val root = ValueSerializer.deserialize(r)
 
-        if (checkType)
-          CheckDeserializedScriptIsSigmaProp(root) {}
+        if (checkType) {
+          CheckDeserializedScriptIsSigmaProp(root)
+        }
 
         r.constantStore = previousConstantStore
         val complexity = r.complexity

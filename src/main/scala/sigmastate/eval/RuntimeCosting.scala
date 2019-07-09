@@ -1349,7 +1349,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
       case SelectField(In(_tup), fieldIndex) =>
         val eTuple = _tup.elem.eVal.asInstanceOf[Elem[_]]
-        CheckTupleType(IR)(eTuple) {}
+        CheckTupleType(IR)(eTuple)
         eTuple match {
           case pe: PairElem[a,b] =>
             assert(fieldIndex == 1 || fieldIndex == 2, s"Invalid field index $fieldIndex of the pair ${_tup}: $pe")
@@ -1526,10 +1526,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val iV = iC.value
         val size = if (xs.tpe.elemType.isConstantSize)
             constantTypeSize(xsC.elem.eItem)
-          else
-            CheckIsSupportedIndexExpression(IR)(xs, i, iV) {
-              xsC.sizes(iV)
-            }
+        else {
+          CheckIsSupportedIndexExpression(IR)(xs, i, iV)
+          xsC.sizes(iV)
+        }
+
         defaultOpt match {
           case Some(defaultValue) =>
             val defaultC = asRep[Costed[Any]](eval(defaultValue))

@@ -118,9 +118,8 @@ object DataSerializer {
         val coll = Colls.fromArray(arr)(RType.AnyType)
         Evaluation.toDslTuple(coll, tuple)
       case t =>
-        CheckSerializableTypeCode(t.typeCode) {
-          throw new SerializerException(s"Not defined DataSerializer for type $t")
-        }
+        CheckSerializableTypeCode(t.typeCode)
+        throw new SerializerException(s"Not defined DataSerializer for type $t")
     }).asInstanceOf[T#WrappedType]
     r.level = r.level - 1
     res

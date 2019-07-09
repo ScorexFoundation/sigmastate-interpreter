@@ -254,7 +254,9 @@ trait STypeCompanion {
     * It delegate to getMethodById to lookup method.
     * @see getMethodById
     */
-  def methodById(methodId: Byte): SMethod = ValidationRules.CheckAndGetMethod(this, methodId) { m => m }
+  def methodById(methodId: Byte): SMethod = {
+    ValidationRules.CheckAndGetMethod(this, methodId)
+  }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -401,9 +403,8 @@ object SMethod {
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
-      SType.types(typeId)
-    }
+    ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId))
+    val typeCompanion = SType.types(typeId)
     val method = typeCompanion.methodById(methodId)
     method
   }

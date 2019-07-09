@@ -332,14 +332,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     scope.schedule.foreach { te =>
       te.rhs match {
         case op @ LoopOperation(bodyLam) =>
-          CheckCostFuncOperation(this)(getOpCodeEx(op)) { true }
+          CheckCostFuncOperation(this)(getOpCodeEx(op))
           val nextLevel = level + 1
           CheckLoopLevelInCostFunction(nextLevel)
           traverseScope(bodyLam, nextLevel)
         case CollM.flatMap(_, Def(lam: Lambda[_,_])) =>
           traverseScope(lam, level) // special case because the body is limited (so don't increase level)
         case op =>
-          CheckCostFuncOperation(this)(getOpCodeEx(op)) { true }
+          CheckCostFuncOperation(this)(getOpCodeEx(op))
       }
     }
   }

@@ -6,7 +6,7 @@ import java.util
 import org.ergoplatform.ErgoConstants.MaxLoopLevelInCostFunction
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
-import sigma.util.Extensions.ByteOps
+import sigma.util.Extensions.toUByte
 import sigmastate.eval.IRContext
 import sigmastate.serialization.OpCodes.{OpCodeExtra, OpCode}
 import sigmastate.Values.{Value, ErgoTree, SValue, IntValue}
@@ -26,7 +26,36 @@ case class ValidationRule(
     id: Short,
     description: String
 ) extends SoftForkChecker {
+
+  /** Whether the status of this rule was checked on first invocation. */
   private var _checked: Boolean = false
+
+  /** Check the rule is registered and enabled.
+    * Since it is easy to forget to register new rule, we need to do this check.
+    * But because it is hotspot, we do this check only once for each rule.
+    * @hotspot executed on every typeCode and opCode during script deserialization
+    */
+  @inline protected final def checkRule(): Unit = {
+    if (!_checked) {
+      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty)
+        throw new SigmaException(s"ValidationRule $this not found in validation settings")
+      _checked = true  // prevent this check on every call (only first call is checked)
+    }
+    // upon successful return we know the rule is registered with EnabledRule status
+  }
+
+  /** Throws ValidationException with the given cause and args.
+    * Should be used in all validation rules to unify ValidationException instances
+    * which can be thrown (to simplify handling).
+    */
+  protected def throwValidationException(cause: Throwable, args: Seq[Any]) = {
+    if (cause.isInstanceOf[ValidationException]) {
+      throw cause
+    }
+    else {
+      throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+    }
+  }
 
   /** Generic helper method to implement validation rules.
     * It executes the given `block` only when this rule is disabled of `condition` is satisfied.
@@ -46,11 +75,7 @@ case class ValidationRule(
   protected def validate[T](
         condition: => Boolean,
         cause: => Throwable, args: Seq[Any], block: => T): T = {
-    if (!_checked) {
-      if (ValidationRules.currentSettings.getStatus(this.id).isEmpty)
-        throw new SigmaException(s"ValidationRule $this not found in validation settings")
-      _checked = true  // prevent this check on every call (only first call is checked)
-    }
+    checkRule()
     // here we assume the rule is registered with EnabledRule status
     if (condition) {
       block
@@ -59,7 +84,7 @@ case class ValidationRule(
       throw cause
     }
     else {
-      throw ValidationException(s"Validation failed on $this with args $args", this, args, Option(cause))
+      throwValidationException(cause, args)
     }
   }
 
@@ -87,125 +112,158 @@ object ValidationRules {
 
   object CheckDeserializedScriptType extends ValidationRule(FirstRuleId,
     "Deserialized script should have expected type") {
-    def apply[T](d: DeserializeContext[_], script: SValue)(block: => T): T =
-      validate(d.tpe == script.tpe,
-        new InterpreterException(s"Failed context deserialization of $d: \n" +
-        s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"),
-        Seq[Any](d, script), block
-      )
+    final def apply[T](d: DeserializeContext[_], script: SValue): Unit = {
+      checkRule()
+      if (d.tpe != script.tpe) {
+        throwValidationException(
+          new InterpreterException(s"Failed context deserialization of $d: \n" +
+              s"expected deserialized script to have type ${d.tpe}; got ${script.tpe}"),
+          Array[Any](d, script))
+      }
+    }
   }
 
   object CheckDeserializedScriptIsSigmaProp extends ValidationRule(1001,
     "Deserialized script should have SigmaProp type") {
-    def apply[T](root: SValue)(block: => T): T =
-      validate(root.tpe.isSigmaProp,
-        new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}"),
-        Seq(root), block
-      )
+    final def apply[T](root: SValue): Unit = {
+      checkRule()
+      if (!root.tpe.isSigmaProp) {
+        throwValidationException(
+          new SerializerException(s"Failed deserialization, expected deserialized script to have type SigmaProp; got ${root.tpe}"),
+          Array(root))
+      }
+    }
   }
 
   object CheckValidOpCode extends ValidationRule(1002,
     "Check the opcode is supported by registered serializer or is added via soft-fork")
     with SoftForkWhenCodeAdded {
-    def apply[T](ser: ValueSerializer[_], opCode: OpCode)(block: => T): T = {
-      def msg = s"Cannot find serializer for Value with opCode = LastConstantCode + ${opCode.toUByte - OpCodes.LastConstantCode}"
-      def args = Seq(opCode)
-      validate(ser != null && ser.opCode == opCode, new InvalidOpCode(msg), args, block)
+    final def apply[T](ser: ValueSerializer[_], opCode: OpCode): Unit = {
+      checkRule()
+      if (ser == null || ser.opCode != opCode) {
+        throwValidationException(
+          new InvalidOpCode(s"Cannot find serializer for Value with opCode = LastConstantCode + ${toUByte(opCode) - OpCodes.LastConstantCode}"),
+          Array(opCode))
+      }
     }
   }
 
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
     "Check the index expression for accessing collection element is supported.") {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int])(block: => T): T = {
-      def msg = s"Unsupported index expression $i when accessing collection $coll"
-      def args = Seq(coll, i)
-      validate(ctx.isSupportedIndexExpression(iSym),
-        new SigmaException(msg, i.sourceContext.toOption),
-        args, block)
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int]): Unit = {
+      checkRule()
+      if (!ctx.isSupportedIndexExpression(iSym))
+        throwValidationException(
+          new SigmaException(s"Unsupported index expression $i when accessing collection $coll", i.sourceContext.toOption),
+          Array(coll, i))
     }
   }
 
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Rep[Any => Int])(block: => T): T = {
-      def args = Seq(costF)
-      lazy val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
-      validate(verification.isSuccess,
-        verification.toEither.left.get,
-        args, block)
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Rep[Any => Int]): Unit = {
+      checkRule()
+      val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
+      if (!verification.isSuccess) {
+        throwValidationException(verification.toEither.left.get, Array(costF))
+      }
     }
   }
 
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any])(block: => T): T = {
-      def args = Seq(calcF)
-      lazy val verification = ctx.verifyIsProven(calcF)
-      validate(verification.isSuccess,
-        verification.toEither.left.get,
-        args, block)
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any]): Unit = {
+      checkRule()
+      val verification = ctx.verifyIsProven(calcF)
+      if (!verification.isSuccess) {
+        throwValidationException(verification.toEither.left.get, Array(calcF))
+      }
     }
   }
 
   object CheckTupleType extends ValidationRule(1006,
     "Supported tuple type.") with SoftForkWhenReplaced {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_])(block: => T): T = {
-      def msg = s"Invalid tuple type $e"
-      lazy val condition = e match {
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(e: ctx.Elem[_]): Unit = {
+      checkRule()
+      val condition = e match {
         case _: ctx.PairElem[_,_] => true
         case _ => false
       }
-      validate(condition, new SigmaException(msg), Seq[ctx.Elem[_]](e), block)
+      if (!condition) {
+        throwValidationException(new SigmaException(s"Invalid tuple type $e"), Array[ctx.Elem[_]](e))
+      }
     }
   }
 
   object CheckPrimitiveTypeCode extends ValidationRule(1007,
     "Check the primitive type code is supported or is added via soft-fork")
       with SoftForkWhenCodeAdded {
-    def apply[T](code: Byte)(block: => T): T = {
-      val ucode = code.toUByte
-      validate(ucode > 0 && ucode < embeddableIdToType.length,
-        new SerializerException(s"Cannot deserialize primitive type with code $ucode"), Array(code), block)
+    final final def apply[T](code: Byte): Unit = {
+      checkRule()
+      val ucode = toUByte(code)
+      if (ucode <= 0 || ucode >= embeddableIdToType.length) {
+        throwValidationException(
+          new SerializerException(s"Cannot deserialize primitive type with code $ucode"),
+          Array(code))
+      }
     }
   }
 
   object CheckTypeCode extends ValidationRule(1008,
     "Check the non-primitive type code is supported or is added via soft-fork")
       with SoftForkWhenCodeAdded {
-    def apply[T](typeCode: Byte)(block: => T): T = {
-      val ucode = typeCode.toUByte
-      def msg = s"Cannot deserialize the non-primitive type with code $ucode"
-      validate(ucode <= SGlobal.typeCode.toUByte, new SerializerException(msg), Seq(typeCode), block)
+    final def apply[T](typeCode: Byte): Unit = {
+      checkRule()
+      val ucode = toUByte(typeCode)
+      if (ucode > toUByte(SGlobal.typeCode)) {
+        throwValidationException(
+          new SerializerException(s"Cannot deserialize the non-primitive type with code $ucode"),
+          Array(typeCode))
+      }
     }
   }
 
   object CheckSerializableTypeCode extends ValidationRule(1009,
     "Check the data values of the type (given by type code) can be serialized")
       with SoftForkWhenReplaced {
-    def apply[T](typeCode: Byte)(block: => T): T = {
-      val ucode = typeCode.toUByte
-      def msg = s"Data value of the type with the code $ucode cannot be deserialized."
-      validate(ucode <= OpCodes.LastDataType.toUByte, new SerializerException(msg), Seq(typeCode), block)
+    final def apply[T](typeCode: Byte): Unit = {
+      checkRule()
+      val ucode = toUByte(typeCode)
+      if (ucode > toUByte(OpCodes.LastDataType)) {
+        throwValidationException(
+          new SerializerException(s"Data value of the type with the code $ucode cannot be deserialized."),
+          Array(typeCode))
+      }
     }
   }
 
   object CheckTypeWithMethods extends ValidationRule(1010,
     "Check the type (given by type code) supports methods")
       with SoftForkWhenCodeAdded {
-    def apply[T](typeCode: Byte, cond: => Boolean)(block: => T): T = {
-      val ucode = typeCode.toUByte
-      def msg = s"Type with code $ucode doesn't support methods."
-      validate(cond, new SerializerException(msg), Seq(typeCode), block)
+    final def apply[T](typeCode: Byte, cond: Boolean): Unit = {
+      checkRule()
+      val ucode = toUByte(typeCode)
+      if (!cond) {
+        throwValidationException(
+          new SerializerException(s"Type with code $ucode doesn't support methods."),
+          Array(typeCode))
+      }
     }
   }
 
   object CheckAndGetMethod extends ValidationRule(1011,
     "Check the type has the declared method.") {
-    def apply[T](objType: STypeCompanion, methodId: Byte)(block: SMethod => T): T = {
-      def msg = s"The method with code $methodId doesn't declared in the type $objType."
-      lazy val methodOpt = objType.getMethodById(methodId)
-      validate(methodOpt.isDefined, new SerializerException(msg), Seq(objType, methodId), block(methodOpt.get))
+    final def apply[T](objType: STypeCompanion, methodId: Byte): SMethod = {
+      checkRule()
+      val methodOpt = objType.getMethodById(methodId)
+      if (methodOpt.isDefined) methodOpt.get
+      else {
+        throwValidationException(
+          new SerializerException(s"The method with code $methodId doesn't declared in the type $objType."),
+          Array(objType, methodId))
+      }
     }
+
     override def isSoftFork(vs: SigmaValidationSettings,
                             ruleId: Short,
                             status: RuleStatus,
@@ -219,10 +277,14 @@ object ValidationRules {
 
   object CheckHeaderSizeBit extends ValidationRule(1012,
     "For version greater then 0, size bit should be set.") with SoftForkWhenReplaced {
-    def apply(header: Byte): Unit = {
-      validate(
-        ErgoTree.getVersion(header) == 0 || ErgoTree.hasSize(header),
-        new SigmaException(s"Invalid ErgoTreeHeader $header, size bit is expected"), Seq(header), {})
+    final def apply(header: Byte): Unit = {
+      checkRule()
+      val version = ErgoTree.getVersion(header)
+      if (version != 0 && !ErgoTree.hasSize(header)) {
+        throwValidationException(
+          new SigmaException(s"Invalid ErgoTreeHeader $header, size bit is expected for version $version"),
+          Array(header))
+      }
     }
   }
 
@@ -236,10 +298,13 @@ object ValidationRules {
    * checking consistency). */
   object CheckCostFuncOperation extends ValidationRule(1013,
     "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
-    def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra)(block: => T): T = {
-      def msg = s"Not allowed opCode $opCode in cost function"
-      def args = Seq(opCode)
-      validate(ctx.isAllowedOpCodeInCosting(opCode), new CosterException(msg, None), args, block)
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra): Unit = {
+      checkRule()
+      if (!ctx.isAllowedOpCodeInCosting(opCode)) {
+        throwValidationException(
+          new CosterException(s"Not allowed opCode $opCode in cost function", None),
+          Array(opCode))
+      }
     }
 
     override def isSoftFork(vs: SigmaValidationSettings,
@@ -274,10 +339,14 @@ object ValidationRules {
 
   object CheckLoopLevelInCostFunction extends ValidationRule(1015,
     "Check that loop level is not exceeded.") with SoftForkWhenReplaced {
-    def apply(level: Int): Unit = {
+    final def apply(level: Int): Unit = {
+      checkRule()
       val max = MaxLoopLevelInCostFunction.value
-      validate(level <= max,
-      new CosterException(s"The loop level $level exceeds maximum $max", None), Seq(level), {})
+      if (level > max) {
+        throwValidationException(
+          new CosterException(s"The loop level $level exceeds maximum $max", None),
+          Array(level))
+      }
     }
   }
 
