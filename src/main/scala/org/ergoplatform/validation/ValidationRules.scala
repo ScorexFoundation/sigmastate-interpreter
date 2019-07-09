@@ -57,37 +57,6 @@ case class ValidationRule(
     }
   }
 
-  /** Generic helper method to implement validation rules.
-    * It executes the given `block` only when this rule is disabled of `condition` is satisfied.
-    * Should be used in derived classes to implemented validation logic.
-    *
-    * @tparam  T  type of the result produced by `block`
-    * @param   condition  executes condition to be checked and returns its result
-    * @param   cause      executed only when condition returns false, attached as `cause` parameter when Validation exception
-    * @param   args       parameters which should be attached to ValidationException
-    * @param   block      executed only when condition returns true, its result become a result of `validate` call.
-    * @return    result produced by the `block` if condition is true
-    * @throws    SigmaException if this rule is not found in ValidationRules.currentSettings
-    * @throws    ValidationException if the `condition` is not true.
-    *
-    * @see ValidationRules
-    */
-  protected def validate[T](
-        condition: => Boolean,
-        cause: => Throwable, args: Seq[Any], block: => T): T = {
-    checkRule()
-    // here we assume the rule is registered with EnabledRule status
-    if (condition) {
-      block
-    }
-    else if (cause.isInstanceOf[ValidationException]) {
-      throw cause
-    }
-    else {
-      throwValidationException(cause, args)
-    }
-  }
-
 }
 
 /** Base class for all exceptions which may be thrown by validation rules.
