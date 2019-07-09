@@ -198,7 +198,7 @@ object ValidationRules {
   object CheckPrimitiveTypeCode extends ValidationRule(1007,
     "Check the primitive type code is supported or is added via soft-fork")
       with SoftForkWhenCodeAdded {
-    final final def apply[T](code: Byte): Unit = {
+    final def apply[T](code: Byte): Unit = {
       checkRule()
       val ucode = toUByte(code)
       if (ucode <= 0 || ucode >= embeddableIdToType.length) {
