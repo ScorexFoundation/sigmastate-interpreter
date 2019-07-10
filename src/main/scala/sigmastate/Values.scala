@@ -962,8 +962,8 @@ object Values {
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
-    givenComplexity: Int,
-    propositionBytes: Array[Byte]
+    private val givenComplexity: Int,
+    private val propositionBytes: Array[Byte]
   ) {
 
     def this(header: Byte,
