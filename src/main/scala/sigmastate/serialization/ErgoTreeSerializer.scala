@@ -154,7 +154,13 @@ class ErgoTreeSerializer {
 
         r.constantStore = previousConstantStore
         val complexity = r.complexity
-        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity)
+
+        // now we know the end position of propositionBytes, read them all at once into array
+        val treeSize = r.position - startPos
+        r.position = startPos
+        val propositionBytes = r.getBytes(treeSize)
+
+        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity, propositionBytes)
       }
       catch {
         case e: InputSizeLimitExceeded =>
@@ -169,7 +175,7 @@ class ErgoTreeSerializer {
             r.position = startPos
             val bytes = r.getBytes(numBytes)
             val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
-            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))

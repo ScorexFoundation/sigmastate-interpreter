@@ -124,14 +124,14 @@ class SigmaByteReader(val r: Reader,
   }
 
   private var positionLmt: Int = r.position + r.remaining
-  @inline def positionLimit: Int = positionLmt
-  @inline def positionLimit_=(v: Int): Unit = {
+  @inline final def positionLimit: Int = positionLmt
+  @inline final def positionLimit_=(v: Int): Unit = {
     positionLmt = v
   }
 
   private var _complexity: Int = 0
-  @inline def complexity: Int = _complexity
-  @inline def complexity_=(v: Int): Unit = {
+  @inline final def complexity: Int = _complexity
+  @inline final def complexity_=(v: Int): Unit = {
     _complexity = v
   }
 

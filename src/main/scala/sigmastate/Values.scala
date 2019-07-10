@@ -962,13 +962,14 @@ object Values {
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
-    givenComplexity: Int
+    givenComplexity: Int,
+    propositionBytes: Array[Byte]
   ) {
 
     def this(header: Byte,
              constants: IndexedSeq[Constant[SType]],
              root: Either[UnparsedErgoTree, SigmaPropValue]) =
-      this(header, constants, root, 0)
+      this(header, constants, root, 0, DefaultSerializer.serializeErgoTree(ErgoTree(header, constants, root, 0, null)))
 
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
@@ -983,7 +984,14 @@ object Values {
     @inline def isRightParsed: Boolean = root.isRight
     @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline def hasSize: Boolean = ErgoTree.hasSize(header)
-    @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+
+    private var _bytes: Array[Byte] = propositionBytes
+    final def bytes: Array[Byte] = {
+      if (_bytes == null) {
+        _bytes = DefaultSerializer.serializeErgoTree(this)
+      }
+      _bytes
+    }
 
     private var _complexity: Int = givenComplexity
     lazy val complexity: Int = {

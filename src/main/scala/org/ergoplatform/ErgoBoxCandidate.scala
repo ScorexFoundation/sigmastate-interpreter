@@ -43,7 +43,7 @@ class ErgoBoxCandidate(val value: Long,
 
   def proposition: BoolValue = ergoTree.toProposition(ergoTree.isConstantSegregation).asBoolValue
 
-  lazy val propositionBytes: Array[Byte] = DefaultSerializer.serializeErgoTree(ergoTree)
+  lazy val propositionBytes: Array[Byte] = ergoTree.bytes
 
   lazy val bytesWithNoRef: Array[Byte] = ErgoBoxCandidate.serializer.toBytes(this)
 

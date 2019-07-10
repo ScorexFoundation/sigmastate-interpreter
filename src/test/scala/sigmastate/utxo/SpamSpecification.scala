@@ -1368,14 +1368,13 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     val value1 = genValue("value1")
 
     val prop = ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants,
-      EQ(
+      Right(EQ(
         IR.builder.mkMethodCall(
           ExtractRegisterAs[SAvlTree.type](Self, reg1).get,
           SAvlTree.getMethod,
           IndexedSeq(ByteArrayConstant(key1), ByteArrayConstant(proof))).asOption[SByteArray].get,
         ByteArrayConstant(value1)
-      ).toSigmaProp
-    )
+      ).toSigmaProp), 0, null /* since we cannot actually serialize this tree with huge proof array*/)
 
     val newBox1 = ErgoBox(10, pubkey, 0)
     val newBoxes = IndexedSeq(newBox1)
