@@ -661,6 +661,7 @@ object Values {
         }
       }
 
+      /** @hotspot don't beautify this code */
       override def parse(r: SigmaByteReader): SigmaBoolean = {
         val depth = r.level
         r.level = depth + 1

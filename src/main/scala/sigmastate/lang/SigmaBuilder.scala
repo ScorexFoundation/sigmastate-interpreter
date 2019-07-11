@@ -651,12 +651,15 @@ class StdSigmaBuilder extends SigmaBuilder {
 
 trait TypeConstraintCheck {
 
+  /** @hotspot called during script deserialization (don't beautify this code)
+    * @consensus
+    */
   def check2[T <: SType](left: Value[T],
                          right: Value[T],
                          constraints: Seq[TypeConstraint2]): Unit = {
     val n = constraints.length
     cfor(0)(_ < n, _ + 1) { i =>
-      val c = constraints(i)
+      val c = constraints(i)  // to be efficient constraints should be WrappedArray (not List)
       if (!c(left.tpe, right.tpe))
         throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
     }

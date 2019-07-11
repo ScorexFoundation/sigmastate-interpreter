@@ -58,6 +58,8 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
 sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationRule, RuleStatus)]) extends SigmaValidationSettings {
   override def iterator: Iterator[(Short, (ValidationRule, RuleStatus))] = map.iterator
   override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
+
+  /** @hotspot don't beautify this code */
   override def getStatus(id: Short): Option[RuleStatus] = {
     val statusOpt = map.get(id)
     val res = if (statusOpt.isDefined) Some(statusOpt.get._2) else None

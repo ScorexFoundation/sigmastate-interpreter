@@ -20,6 +20,7 @@ case class ConcreteCollectionBooleanConstantSerializer(cons: (IndexedSeq[Value[S
       maxBitsInfo("bits", 0x1FFF, "Boolean values encoded as as bits (right most byte is zero-padded on the right)"))
   }
 
+  /** @hotspot don't beautify this code */
   override def parse(r: SigmaByteReader): Value[SCollection[SBoolean.type]] = {
     val size = r.getUShort()    // READ
     val bits = r.getBits(size)  // READ

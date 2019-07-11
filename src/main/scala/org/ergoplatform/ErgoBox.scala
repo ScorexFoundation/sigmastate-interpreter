@@ -46,6 +46,7 @@ import scala.runtime.ScalaRunTime
   * @param creationHeight      - height when a transaction containing the box was created.
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
+  * @hotspot don't beautify the code of this class
   */
 class ErgoBox(
          override val value: Long,
@@ -137,6 +138,7 @@ object ErgoBox {
 
   val maxRegisters: Int = ErgoConstants.MaxRegisters.value
 
+  /** @hotspot don't beautify the code in this companion */
   private val _mandatoryRegisters: Array[MandatoryRegisterId] = Array(R0, R1, R2, R3)
   val mandatoryRegisters: Seq[MandatoryRegisterId] = _mandatoryRegisters
 

@@ -455,7 +455,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val info = obj.value.creationInfo
       val l = RCCostedPrim(info._1, IntZero, SizeInt)
       val r = RCCostedColl(info._2, HashInfo.costZeros, HashInfo.sizesColl, IntZero)
-      val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
+      val cost = opCost(Pair(l, r), Seq.apply(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
 

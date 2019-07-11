@@ -202,7 +202,9 @@ class ErgoTreeSerializer {
 
   private val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
 
-  /** Deserialize constants section only. */
+  /** Deserialize constants section only.
+    * @hotspot don't beautify this code
+    */
   private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
     val constants = if (ErgoTree.isConstantSegregation(header)) {
       val nConsts = r.getUInt().toInt

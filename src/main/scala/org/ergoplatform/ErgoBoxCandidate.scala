@@ -124,6 +124,7 @@ object ErgoBoxCandidate {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
+    /** @hotspot don't beautify the code */
     def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
@@ -155,8 +156,8 @@ object ErgoBoxCandidate {
       b.sizeHint(nRegs)
       cfor(0)(_ < nRegs, _ + 1) { iReg =>
         val reg = ErgoBox.nonMandatoryRegisters(iReg)
-        val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]
-        b += ((reg, v))
+        val v = r.getValue().asInstanceOf[EvaluatedValue[SType]]  // READ
+        b += ((reg, v))  // don't use `->` since it incur additional wrapper overhead
       }
       r.positionLimit = previousPositionLimit
       new ErgoBoxCandidate(value, tree, creationHeight, tokens, b.result())

@@ -1308,7 +1308,7 @@ object SFunc {
   val tD = STypeVar("D")
   val tR = STypeVar("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange)
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // @hotspot
   val identity = { x: Any => x }
 }
 

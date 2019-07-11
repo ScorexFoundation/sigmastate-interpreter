@@ -5,7 +5,8 @@ import sigmastate.Values.{Constant, ConstantNode, ConstantPlaceholder}
 import sigmastate.lang.SigmaBuilder
 import debox.Buffer
 
-class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = IndexedSeq()) {
+/** @hotspot used in deserialization (don't beautify this code) */
+class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = Array()) {
 
   private val store: Buffer[Constant[SType]] = Buffer.fromIterable(constants)
 
