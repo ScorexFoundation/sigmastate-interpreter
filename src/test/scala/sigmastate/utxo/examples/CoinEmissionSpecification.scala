@@ -162,7 +162,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 1000 == 0) {
+      if (height % 100 == 0) {
         println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
         IR.resetContext()
       }

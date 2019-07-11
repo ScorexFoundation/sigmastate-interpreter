@@ -552,7 +552,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val valDefGen: Gen[ValDef] = for {
     id <- unsignedIntGen
     rhs <- booleanExprGen
-  } yield ValDef(id, Seq(), rhs)
+  } yield ValDef(id, Nil, rhs)
 
   val funDefGen: Gen[ValDef] = for {
     id <- unsignedIntGen

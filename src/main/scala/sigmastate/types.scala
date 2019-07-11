@@ -276,7 +276,7 @@ trait SProduct extends SType {
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)` */
-  protected def getMethods(): Seq[SMethod] = Seq()
+  protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
   lazy val methods: Seq[SMethod] = {
@@ -1230,8 +1230,8 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override def mkConstant(v: Coll[Any]): Value[this.type] =
     Constant[STuple](v, this).asValue[this.type]
 
-  val typeParams = Seq()
-  val tparamSubst = Map()
+  val typeParams = Nil
+  val tparamSubst = Map.empty
 
   override def toTermString = s"(${items.map(_.toTermString).mkString(",")})"
   override def toString = s"(${items.mkString(",")})"

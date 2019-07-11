@@ -120,7 +120,7 @@ class SigmaByteReader(val r: Reader,
     for (i <- 0 until size) {
       xs(i) = getValue()
     }
-    xs.toIndexedSeq
+    xs
   }
 
   private var positionLmt: Int = r.position + r.remaining

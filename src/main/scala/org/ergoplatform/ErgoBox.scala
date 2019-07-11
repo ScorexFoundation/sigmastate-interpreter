@@ -52,7 +52,7 @@ class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
          override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
-         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
          val transactionId: ModifierId,
          val index: Short,
          override val creationHeight: Int
@@ -169,8 +169,8 @@ object ErgoBox {
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
-            additionalTokens: Seq[(TokenId, Long)] = Seq(),
-            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+            additionalTokens: Seq[(TokenId, Long)] = Nil,
+            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
