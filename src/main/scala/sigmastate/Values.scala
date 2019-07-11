@@ -957,6 +957,20 @@ object Values {
     *                     instead of some Constant nodes. Otherwise, it may not contain placeholders.
     *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
     *                     there should be a constant in `constants` array.
+    *  @param givenComplexity  structural complexity of the tree or 0 if is not specified at construction time.
+    *                          Access to this private value is provided via `complexity` property.
+    *                          In case of 0, the complexity is computed using ErgoTree deserializer, which can do this.
+    *                          When specified it should be computed as the sum of complexity values taken
+    *                          from ComplexityTable for all tree nodes. It approximates the time needed to process
+    *                          the tree by sigma compiler to obtain cost formula. Overly complex trees can thus
+    *                          be rejected even before compiler starts working.
+    *  @param propositionBytes original bytes of this tree from which it has been deserialized.
+    *                          If null then the bytes are not provided, and will be lazily generated when `bytes`
+    *                          method is called.
+    *                          These bytes are obtained in two ways:
+    *                          1) in the ErgoTreeSerializer from Reader
+    *                          2) in the alternative constructor using ErgoTreeSerializer.serializeErgoTree
+    *
     */
   case class ErgoTree private[sigmastate](
     header: Byte,
@@ -980,12 +994,14 @@ object Values {
     @deprecated("Use toProposition instead", "v2.1")
     lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
-    @inline def version: Byte = ErgoTree.getVersion(header)
-    @inline def isRightParsed: Boolean = root.isRight
-    @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
-    @inline def hasSize: Boolean = ErgoTree.hasSize(header)
+    @inline final def version: Byte = ErgoTree.getVersion(header)
+    @inline final def isRightParsed: Boolean = root.isRight
+    @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
+    @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
     private var _bytes: Array[Byte] = propositionBytes
+
+    /** Serialized bytes of this tree. */
     final def bytes: Array[Byte] = {
       if (_bytes == null) {
         _bytes = DefaultSerializer.serializeErgoTree(this)
@@ -994,6 +1010,10 @@ object Values {
     }
 
     private var _complexity: Int = givenComplexity
+
+    /** Structural complexity estimation of this tree.
+      * @see ComplexityTable
+      */
     lazy val complexity: Int = {
       if (_complexity == 0) {
         _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
