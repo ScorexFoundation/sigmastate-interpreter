@@ -16,7 +16,7 @@ import sigmastate.interpreter.{CryptoConstants, Interpreter}
 import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma.{Box, _}
 import sigmastate.eval.Extensions._
-
+import spire.syntax.all.cfor
 import scala.util.{Success, Failure}
 import scalan.RType
 import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
@@ -198,9 +198,11 @@ case class CAvlTree(treeData: AvlTreeData) extends AvlTree with WrapperOf[AvlTre
     if (!isRemoveAllowed) {
       None
     } else {
-      val keysToRemove = operations.toArray.map(_.toArray)
       val bv = createVerifier(proof)
-      keysToRemove.foreach(key => bv.performOneOperation(Remove(ADKey @@ key)))
+      cfor(0)(_ < operations.length, _ + 1) { i =>
+        val key = operations(i).toArray
+        bv.performOneOperation(Remove(ADKey @@ key))
+      }
       bv.digest match {
         case Some(v) => Some(updateDigest(Colls.fromArray(v)))
         case _ => None

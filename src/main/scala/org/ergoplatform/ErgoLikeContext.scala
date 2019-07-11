@@ -16,7 +16,7 @@ import SType._
 import RType._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
-
+import spire.syntax.all.cfor
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -59,7 +59,7 @@ class ErgoLikeContext(val currentHeight: Height,
   assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
   assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
-  headers.toArray.indices.foreach { i =>
+  cfor(0)(_ < headers.length, _ + 1) { i =>
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
   assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")

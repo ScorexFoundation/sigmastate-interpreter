@@ -11,7 +11,7 @@ import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
 import sigmastate.eval.Extensions._
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 import scala.util.Try
 import sigmastate.SType._
@@ -119,12 +119,15 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
     val distinctTokenIds = tokenIds.map(_.toColl).distinct.map(_.toArray.asInstanceOf[TokenId])
 
     w.putUInt(distinctTokenIds.length)
-    distinctTokenIds.foreach { tokenId =>
-      w.putBytes(tokenId.toArray)
+    cfor(0)(_ < distinctTokenIds.length, _ + 1) { i =>
+      val tokenId = distinctTokenIds(i)
+      w.putBytes(tokenId)
     }
     // serialize outputs
-    w.putUShort(tx.outputCandidates.length)
-    for (out <- tx.outputCandidates) {
+    val outs = tx.outputCandidates
+    w.putUShort(outs.length)
+    cfor(0)(_ < outs.length, _ + 1) { i =>
+      val out = outs(i)
       ErgoBoxCandidate.serializer.serializeBodyWithIndexedDigests(out, Some(distinctTokenIds), w)
     }
   }
