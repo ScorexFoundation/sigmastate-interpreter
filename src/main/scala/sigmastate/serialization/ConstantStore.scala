@@ -3,22 +3,21 @@ package sigmastate.serialization
 import sigmastate.SType
 import sigmastate.Values.{Constant, ConstantNode, ConstantPlaceholder}
 import sigmastate.lang.SigmaBuilder
+import debox.Buffer
 
-import scala.collection.mutable.ArrayBuffer
+/** @hotspot used in deserialization (don't beautify this code) */
+class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = Array[Constant[SType]]()) {
 
-class ConstantStore(private val constants: IndexedSeq[Constant[SType]] = IndexedSeq()) {
-
-  private val store: ArrayBuffer[Constant[SType]] = new ArrayBuffer[Constant[SType]]()
-  store ++= constants
+  private val store: Buffer[Constant[SType]] = Buffer.fromIterable(constants)
 
   def put[T <: SType](c: Constant[T])(implicit builder: SigmaBuilder): ConstantPlaceholder[T] = {
     store += c.asInstanceOf[Constant[SType]]
     val tpe = c.asInstanceOf[ConstantNode[T]].tpe
-    builder.mkConstantPlaceholder[tpe.type](store.size - 1, tpe)
+    builder.mkConstantPlaceholder[tpe.type](store.length - 1, tpe)
       .asInstanceOf[sigmastate.Values.ConstantPlaceholder[T]]
   }
 
-  def get(index: Int): Constant[SType] = store(index)
+  @inline final def get(index: Int): Constant[SType] = store(index)
 
-  def getAll: IndexedSeq[Constant[SType]] = store.toIndexedSeq
+  @inline final def getAll: IndexedSeq[Constant[SType]] = store.toArray()
 }

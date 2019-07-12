@@ -66,6 +66,12 @@ object Helpers {
     result
   }
 
+  def castArray[A, B >: A : ClassTag](array: Array[A]): Array[B] = {
+    val result: Array[B] = new Array[B](array.length)
+    System.arraycopy(array, 0, result, 0, array.length)
+    result
+  }
+
   def deepHashCode[T](arr: Array[T]): Int = arr match {
     case arr: Array[AnyRef] => util.Arrays.deepHashCode(arr)
     case arr: Array[Byte] => util.Arrays.hashCode(arr)

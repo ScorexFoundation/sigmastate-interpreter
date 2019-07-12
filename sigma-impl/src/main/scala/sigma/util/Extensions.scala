@@ -17,8 +17,12 @@ object Extensions {
     def toByte: Byte = if (b) 1 else 0
   }
 
+  /** @hotspot  it is used in deserialization so we avoid allocation by any means. */
+  @inline final def toUByte(b: Byte) = b & 0xFF
+
   implicit class ByteOps(val b: Byte) extends AnyVal {
-    @inline def toUByte: Int = b & 0xFF
+    @inline def toUByte: Int = Extensions.toUByte(b)
+
     def addExact(b2: Byte): Byte = {
       val r = b + b2
       if (r < Byte.MinValue || r > Byte.MaxValue)

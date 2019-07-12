@@ -17,7 +17,7 @@ import scala.util.Try
   */
 trait ContextEnrichingProverInterpreter extends ProverInterpreter {
 
-  def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map()
+  def contextExtenders: Map[Byte, EvaluatedValue[_ <: SType]] = Map.empty
 
   val knownExtensions = ContextExtension(contextExtenders)
 

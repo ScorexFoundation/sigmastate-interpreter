@@ -11,8 +11,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigma.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.utxo.ComplexityTable
-
-import scala.collection.mutable
+import spire.syntax.all.cfor
 
 /**
   * Rationale for soft-forkable ErgoTree serialization.
@@ -149,12 +148,19 @@ class ErgoTreeSerializer {
         r.constantStore = new ConstantStore(cs)
         val root = ValueSerializer.deserialize(r)
 
-        if (checkType)
-          CheckDeserializedScriptIsSigmaProp(root) {}
+        if (checkType) {
+          CheckDeserializedScriptIsSigmaProp(root)
+        }
 
         r.constantStore = previousConstantStore
         val complexity = r.complexity
-        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity)
+
+        // now we know the end position of propositionBytes, read them all at once into array
+        val treeSize = r.position - startPos
+        r.position = startPos
+        val propositionBytes = r.getBytes(treeSize)
+
+        new ErgoTree(h, cs, Right(root.asSigmaProp), complexity, propositionBytes)
       }
       catch {
         case e: InputSizeLimitExceeded =>
@@ -169,7 +175,7 @@ class ErgoTreeSerializer {
             r.position = startPos
             val bytes = r.getBytes(numBytes)
             val complexity = ComplexityTable.OpCodeComplexity(Constant.opCode)
-            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity)
+            new ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, Left(UnparsedErgoTree(bytes, ve)), complexity, bytes)
           case None =>
             throw new SerializerException(
               s"Cannot handle ValidationException, ErgoTree serialized without size bit.", None, Some(ve))
@@ -194,16 +200,19 @@ class ErgoTreeSerializer {
     (header, sizeOpt)
   }
 
-  /** Deserialize constants section only. */
+  private val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
+
+  /** Deserialize constants section only.
+    * @hotspot don't beautify this code
+    */
   private def deserializeConstants(header: Byte, r: SigmaByteReader): Array[Constant[SType]] = {
     val constants = if (ErgoTree.isConstantSegregation(header)) {
-      val constantSerializer = ConstantSerializer(DeserializationSigmaBuilder)
       val nConsts = r.getUInt().toInt
-      val builder = mutable.ArrayBuilder.make[Constant[SType]]()
-      for (_ <- 0 until nConsts) {
-        builder += constantSerializer.deserialize(r)
+      val res = new Array[Constant[SType]](nConsts)
+      cfor(0)(_ < nConsts, _ + 1) { i =>
+        res(i) = constantSerializer.deserialize(r)
       }
-      builder.result
+      res
     }
     else
       Array.empty[Constant[SType]]
