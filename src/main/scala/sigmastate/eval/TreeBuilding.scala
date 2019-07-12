@@ -422,8 +422,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     val valdefs = new ArrayBuffer[ValDef]
     var curId = defId
     var curEnv = env
-    for (te <- subG.schedule) {
-      val s = te.sym; val d = te.rhs
+    for (s <- subG.schedule) {
+      val d = s.rhs
       val nonRootLoop = LoopOperation.unapply(d).isDefined && !subG.roots.contains(s)
       if ((mainG.hasManyUsagesGlobal(s) || nonRootLoop)
         && IsContextProperty.unapply(d).isEmpty
