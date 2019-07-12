@@ -348,32 +348,32 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       traverseScope(lam, level = 0)
       if (debugModeSanityChecks) {
         val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
-        lam.scheduleAll.foreach { te =>
-          getDeps(te.rhs).foreach { usedSym =>
+        lam.scheduleAll.foreach { sym =>
+          getDeps(sym.rhs).foreach { usedSym =>
             val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
-            usages += te.sym
+            usages += sym
           }
         }
         //      println(backDeps)
         lam.scheduleAll
             .filter {
-              case _ @ TableEntrySingle(_, op: OpCost, _) =>
+              case Def(op: OpCost) =>
                 assert(!op.args.contains(op.opCost), s"Invalid $op")
                 true
               case _ => false
             }
-            .foreach { te =>
-              val usages = backDeps.getOrElse(te.sym, new ArrayBuffer())
+            .foreach { sym =>
+              val usages = backDeps.getOrElse(sym, new ArrayBuffer())
               usages.foreach { usageSym =>
                 usageSym.rhs match {
-                  case l: Lambda[_,_] => //ok
-                  case t: ThunkDef[_] => //ok
-                  case OpCost(_, _, args, _) if args.contains(te.sym) => //ok
-                  case OpCost(_, _, _, opCost) if opCost == te.sym =>
-                    println(s"INFO: OpCost usage of node $te in opCost poistion in $usageSym -> ${usageSym.rhs}")
+                  case _: Lambda[_,_] => //ok
+                  case _: ThunkDef[_] => //ok
+                  case OpCost(_, _, args, _) if args.contains(sym) => //ok
+                  case OpCost(_, _, _, opCost) if opCost == sym =>
+                    println(s"INFO: OpCost usage of node $sym -> ${sym.rhs} in opCost poistion in $usageSym -> ${usageSym.rhs}")
                   //ok
                   case _ =>
-                    !!!(s"Non OpCost usage of node $te in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
+                    !!!(s"Non OpCost usage of node $sym -> ${sym.rhs} in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
                 }
               }
             }
@@ -384,10 +384,10 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val s = lam.scheduleAll.find(te => te.rhs match {
+    val s = lam.scheduleAll.find(sym => sym.rhs match {
       case SigmaM.isValid(_) => true
       case _ => false
-    }).map(_.sym)
+    })
     s
   }
 
@@ -628,11 +628,11 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   {
     val costAccumulator = new CostAccumulator(0, costLimit)
 
-    def evaluate(te: TableEntry[_]): EnvRep[_] = EnvRep { dataEnv =>
+    def evaluate(sym: Sym): EnvRep[_] = EnvRep { dataEnv =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
-      def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (te.sym -> vBoxed), te.sym) }
+      def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (sym -> vBoxed), sym) }
       try {
-        val res: (DataEnv, Sym) = te.rhs match {
+        val res: (DataEnv, Sym) = sym.rhs match {
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
@@ -658,7 +658,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid |
                _: WSpecialPredefCompanion =>
-            out(dataEnv.getOrElse(te.sym, !!!(s"Cannot resolve companion instance for $te")))
+            out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.rhs}")))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
@@ -761,12 +761,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             val f = (ctx: AnyRef) => {
               costAccumulator.startScope()
               // x is not yet in _visited set of the new scope, thus it will accumulated is necessary
-              val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, te) =>
-                val (e, _) = evaluate(te).run(env)
+              val resEnv = l.schedule.foldLeft(dataEnv + (x -> ctx)) { (env, sym) =>
+                val (e, _) = evaluate(sym).run(env)
                 e
               }
               val res = resEnv(y)
-              costAccumulator.endScope(te.sym)
+              costAccumulator.endScope(sym)
               res
             }
             out(f)
@@ -778,12 +778,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case ThunkDef(y, schedule) =>
             val th = () => {
               costAccumulator.startScope()
-              val resEnv = schedule.foldLeft(dataEnv) { (env, te) =>
-                val (e, _) = evaluate(te).run(env)
+              val resEnv = schedule.foldLeft(dataEnv) { (env, sym) =>
+                val (e, _) = evaluate(sym).run(env)
                 e
               }
               val res = resEnv(y)
-              costAccumulator.endScope(te.sym)
+              costAccumulator.endScope(sym)
               res
             }
             out(th)
@@ -840,7 +840,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case op @ PerKbCostOf(_,In(size: Long)) =>
             out(op.eval(size))
           case op: OpCost =>
-            val c = costAccumulator.add(te.sym, op, dataEnv)
+            val c = costAccumulator.add(sym, op, dataEnv)
             out(c)
           case SizeOf(sym @ In(data)) =>
             val tpe = elemToSType(sym.elem)
@@ -882,14 +882,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             out(sigmaDslBuilderValue.Colls.fromArray(items)(AnyType))
 
           case _ =>
-            !!!(s"Don't know how to evaluate($te)")
+            !!!(s"Don't know how to evaluate($sym -> ${sym.rhs})")
         }
         onEvaluatedGraphNode(res._1, res._2, res._1(res._2))
         res
       }
       catch {
         case e: Throwable =>
-          !!!(s"Error in Evaluation.compile.evaluate($te)", e)
+          !!!(s"Error in Evaluation.compile.evaluate($sym -> ${sym.rhs})", e)
       }
     }
 
