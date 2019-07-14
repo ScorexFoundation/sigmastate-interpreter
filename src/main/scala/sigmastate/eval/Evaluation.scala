@@ -349,7 +349,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (debugModeSanityChecks) {
         val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
         lam.scheduleAll.foreach { sym =>
-          getDeps(sym.rhs).foreach { usedSym =>
+          sym.rhs.deps.foreach { usedSym =>
             val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
             usages += sym
           }

@@ -1085,7 +1085,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         // the node is of Context type  => `context-dependent`
         _contextDependantNodes += (d.nodeId)
       case d =>
-        val allArgs = getDeps(d).forall(isContextDependant)
+        val allArgs = d.deps.forall(isContextDependant)
         if (allArgs) {
           // all arguments are `context-dependent`  =>  d is `context-dependent`
           _contextDependantNodes += (d.nodeId)
