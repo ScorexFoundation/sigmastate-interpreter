@@ -1078,14 +1078,14 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     *
     * @see super.createDefinition, isSupportedIndexExpression
     */
-  override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): TableEntry[T] = {
+  override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): Rep[T] = {
     val res = super.createDefinition(optScope, s, d)
     res.rhs match {
       case d if d.selfType.isInstanceOf[ContextElem[_]] =>
         // the node is of Context type  => `context-dependent`
         _contextDependantNodes += (d.nodeId)
       case d =>
-        val allArgs = d.getDeps.forall(isContextDependant)
+        val allArgs = getDeps(d).forall(isContextDependant)
         if (allArgs) {
           // all arguments are `context-dependent`  =>  d is `context-dependent`
           _contextDependantNodes += (d.nodeId)
