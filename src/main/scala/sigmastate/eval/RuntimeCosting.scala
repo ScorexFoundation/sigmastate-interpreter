@@ -1561,7 +1561,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case AtLeast(bound, input) =>
         val inputC = asRep[CostedColl[SigmaProp]](evalNode(ctx, env, input))
         if (inputC.values.length.isConst) {
-          val inputCount = inputC.values.length.asValue
+          val inputCount = valueFromRep(inputC.values.length)
           if (inputCount > AtLeast.MaxChildrenCount)
             error(s"Expected input elements count should not exceed ${AtLeast.MaxChildrenCount}, actual: $inputCount", node.sourceContext.toOption)
         }
