@@ -281,7 +281,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case BoxM.getReg(In(box), regId, _) =>
         val tpe = elemToSType(s.elem).asOption
         if (regId.isConst)
-          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(regId.asValue), tpe)
+          mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
         else
           error(s"Non constant expressions (${regId.rhs}) are not supported in getReg")
       case BoxM.creationInfo(In(box)) =>
