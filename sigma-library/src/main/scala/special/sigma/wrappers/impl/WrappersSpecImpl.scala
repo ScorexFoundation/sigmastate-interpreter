@@ -10,7 +10,6 @@ trait WrappersSpecDefs extends scalan.Scalan with WrappersSpec {
   self: SigmaLibrary =>
 import IsoUR._
 import Converter._
-import WArray._
 import WSigmaPredef._
 import WrapSpecBase._
 import SigmaPredefWrapSpec._

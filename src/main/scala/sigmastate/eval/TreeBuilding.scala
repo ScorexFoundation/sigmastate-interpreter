@@ -37,7 +37,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   private val BoxM = BoxMethods
   private val CBM = CollBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
-//  private val AM = WArrayMethods
   private val OM = WOptionMethods
   private val BIM = BigIntMethods
   private val AvlM = AvlTreeMethods
