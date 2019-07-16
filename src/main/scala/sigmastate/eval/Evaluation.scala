@@ -348,14 +348,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       traverseScope(lam, level = 0)
       if (debugModeSanityChecks) {
         val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
-        lam.scheduleAll.foreach { sym =>
+        lam.flatSchedule.foreach { sym =>
           sym.rhs.deps.foreach { usedSym =>
             val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
             usages += sym
           }
         }
         //      println(backDeps)
-        lam.scheduleAll
+        lam.flatSchedule
             .filter {
               case Def(op: OpCost) =>
                 assert(!op.args.contains(op.opCost), s"Invalid $op")
@@ -384,7 +384,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val s = lam.scheduleAll.find(sym => sym.rhs match {
+    val s = lam.flatSchedule.find(sym => sym.rhs match {
       case SigmaM.isValid(_) => true
       case _ => false
     })
