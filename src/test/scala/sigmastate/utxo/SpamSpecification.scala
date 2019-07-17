@@ -222,40 +222,6 @@ class SpamSpecification extends SigmaTestingCommons with ObjectGenerators {
     }
   }
 
-  val recursiveScript = BlockValue(
-    Vector(
-      ValDef(1, Plus(GetVarInt(4).get, ValUse(2, SInt))),
-      ValDef(2, Plus(GetVarInt(5).get, ValUse(1, SInt)))),
-    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0) ).asBoolValue.toSigmaProp
-
-  property("recursion catched during deserialization") {
-    assertExceptionThrown({
-      checkSerializationRoundTrip(recursiveScript)
-    },
-    {
-      case e: NoSuchElementException => e.getMessage.contains("key not found: 2")
-      case _ => false
-    })
-  }
-
-  property("recursion catched during verify") {
-    assertExceptionThrown({
-      val verifier = new ErgoLikeTestInterpreter
-      val pr = CostedProverResult(Array[Byte](), ContextExtension( Map( ) ), 0L)
-      val ctx = ErgoLikeContext.dummy(fakeSelf)
-      val (res, calcTime) = BenchmarkUtil.measureTime {
-        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
-          ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
-      }
-      res.fold(t => throw t, identity)
-    }, {
-      case e: NoSuchElementException =>
-        // this is expected bacause of deserialization is forced when ErgoTree.complexity is accessed in verify
-        e.getMessage.contains("key not found: 2")
-      case _ => false
-    })
-  }
-
   property("Context extension with big coll") {
     assert(warmUpPrecondition)
     val name = "Context extension with big coll"
