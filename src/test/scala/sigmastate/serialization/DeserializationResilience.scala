@@ -78,21 +78,21 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
     val evilBytes = List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => Array[Byte](AndCode, ConcreteCollectionCode, 2, SBoolean.typeCode))
       .toArray.flatten
     an[DeserializeCallDepthExceeded] should be thrownBy
-      SigmaSerializer.startReader(evilBytes, 0).getValue()
+      SigmaSerializer.startReader(evilBytes).getValue()
     // test other API endpoints
     an[DeserializeCallDepthExceeded] should be thrownBy
-      ValueSerializer.deserialize(evilBytes, 0)
+      ValueSerializer.deserialize(evilBytes)
     an[DeserializeCallDepthExceeded] should be thrownBy
-      ValueSerializer.deserialize(SigmaSerializer.startReader(evilBytes, 0))
+      ValueSerializer.deserialize(SigmaSerializer.startReader(evilBytes))
 
     // guard should not be tripped up by a huge collection
     val goodBytes = SigmaSerializer.startWriter()
       .putValue(AND(List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
       .toBytes
-    ValueSerializer.deserialize(goodBytes, 0)
+    ValueSerializer.deserialize(goodBytes)
     // test other API endpoints
-    ValueSerializer.deserialize(SigmaSerializer.startReader(goodBytes, 0))
-    SigmaSerializer.startReader(goodBytes, 0).getValue()
+    ValueSerializer.deserialize(SigmaSerializer.startReader(goodBytes))
+    SigmaSerializer.startReader(goodBytes).getValue()
   }
 
   property("invalid op code") {
