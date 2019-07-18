@@ -270,7 +270,7 @@ def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit 
   log.info(s"Running spam tests in $spamPath with Sigmastate version $sigmastateVersion")
   val res = Process(Seq("sbt", task), spamPath, sbtEnvVars: _*) !
 
-  if (res != 0) sys.error(s"Ergo $task failed!")
+  if (res != 0) sys.error(s"Spam $task failed!")
 }
 
 lazy val spamTestTask = TaskKey[Unit]("spamTestTask", "run spam tests with current version")
