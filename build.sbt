@@ -114,9 +114,9 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 val circeVersion = "0.10.0"
-val circeCore = "io.circe" %% "circe-core" % circeVersion 
-val circeGeneric = "io.circe" %% "circe-generic" % circeVersion 
-val circeParser = "io.circe" %% "circe-parser" % circeVersion 
+val circeCore = "io.circe" %% "circe-core" % circeVersion
+val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
+val circeParser = "io.circe" %% "circe-parser" % circeVersion
 
 libraryDependencies ++= Seq( circeCore, circeGeneric, circeParser )
 
@@ -235,7 +235,7 @@ lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser)) 
+    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser))
 
 lazy val sigma = (project in file("."))
     .settings(commonSettings, rootSettings)
