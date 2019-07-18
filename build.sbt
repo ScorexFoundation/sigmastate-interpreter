@@ -253,3 +253,36 @@ commands += Command.command("ergoItTest") { state =>
     "ergoItTestTask" ::
     state
 }
+
+def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
+  val spamBranch = "unify-collect-coverage"
+  val sbtEnvVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion)
+
+  log.info(s"Testing current build with spam tests (branch $spamBranch):")
+  val cwd = new File("").absolutePath
+  val spamPath = new File(cwd + "/spam-tests/")
+  log.info(s"Cleaning $spamPath")
+  s"rm -rf ${spamPath.absolutePath}" !
+
+  log.info(s"Cloning spam tests branch $spamBranch into ${spamPath.absolutePath}")
+  s"git clone -b $spamBranch --single-branch git@github.com:greenhat/sigma-spam.git ${spamPath.absolutePath}" !
+
+  log.info(s"Running spam tests in $spamPath with Sigmastate version $sigmastateVersion")
+  val res = Process(Seq("sbt", task), spamPath, sbtEnvVars: _*) !
+
+  if (res != 0) sys.error(s"Ergo $task failed!")
+}
+
+lazy val spamTestTask = TaskKey[Unit]("spamTestTask", "run spam tests with current version")
+spamTestTask := {
+  val log = streams.value.log
+  val sigmastateVersion = version.value
+  runSpamTestTask("test", sigmastateVersion, log)
+}
+
+commands += Command.command("spamTest") { state =>
+  "clean" ::
+    "publishLocal" ::
+    "spamTestTask" ::
+    state
+}
