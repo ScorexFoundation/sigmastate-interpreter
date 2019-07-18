@@ -487,13 +487,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         )
     }
 
-    check(BigInteger.TWO.negate().pow(255), false)
-    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
-    check(BigInteger.TWO.pow(255).subtract(BigInteger.ONE), false)
-    check(BigInteger.TWO.pow(255), true)
-    check(BigInteger.TWO.pow(255).add(BigInteger.ONE), true)
-    check(BigInteger.TWO.pow(256), true)
-    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
+    val two = BigInteger.valueOf(2) // BigInteger.TWO is not exported in JDK 1.8
+    check(two.negate().pow(255), false)
+    check(two.negate().pow(256).subtract(BigInteger.ONE), true)
+    check(two.pow(255).subtract(BigInteger.ONE), false)
+    check(two.pow(255), true)
+    check(two.pow(255).add(BigInteger.ONE), true)
+    check(two.pow(256), true)
+    check(two.negate().pow(256).subtract(BigInteger.ONE), true)
   }
 
   property("ExtractCreationInfo") {
