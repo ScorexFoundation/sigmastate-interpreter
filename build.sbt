@@ -118,9 +118,9 @@ libraryDependencies ++= Seq(
 ) ++ testingDependencies
 
 val circeVersion = "0.10.0"
-val circeCore = "io.circe" %% "circe-core" % circeVersion 
-val circeGeneric = "io.circe" %% "circe-generic" % circeVersion 
-val circeParser = "io.circe" %% "circe-parser" % circeVersion 
+val circeCore = "io.circe" %% "circe-core" % circeVersion
+val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
+val circeParser = "io.circe" %% "circe-parser" % circeVersion
 
 libraryDependencies ++= Seq( circeCore, circeGeneric, circeParser )
 
