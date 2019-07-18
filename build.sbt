@@ -256,19 +256,23 @@ commands += Command.command("ergoItTest") { state =>
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val spamBranch = "unify-collect-coverage"
-  val sbtEnvVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion)
+  val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
+    // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
+    "GIT_SSH_COMMAND" -> "ssh -i $SSH_SPAM_REPO_KEY")
 
   log.info(s"Testing current build with spam tests (branch $spamBranch):")
-  val cwd = new File("").absolutePath
-  val spamPath = new File(cwd + "/spam-tests/")
+  val cwd = new File("")
+  val spamPath = new File(cwd.absolutePath + "/spam-tests/")
   log.info(s"Cleaning $spamPath")
   s"rm -rf ${spamPath.absolutePath}" !
 
   log.info(s"Cloning spam tests branch $spamBranch into ${spamPath.absolutePath}")
-  s"git clone -b $spamBranch --single-branch git@github.com:greenhat/sigma-spam.git ${spamPath.absolutePath}" !
+  Process(Seq("git", "clone",  "-b", spamBranch, "--single-branch", "git@github.com:greenhat/sigma-spam.git", spamPath.absolutePath),
+    cwd.getAbsoluteFile,
+    envVars: _*) !
 
   log.info(s"Running spam tests in $spamPath with Sigmastate version $sigmastateVersion")
-  val res = Process(Seq("sbt", task), spamPath, sbtEnvVars: _*) !
+  val res = Process(Seq("sbt", task), spamPath, envVars: _*) !
 
   if (res != 0) sys.error(s"Spam $task failed!")
 }
