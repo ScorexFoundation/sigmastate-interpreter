@@ -36,7 +36,7 @@ trait SigmaTestingCommons extends PropSpec
   val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
-  val fakeMessage = Blake2b256("Hello World")
+  val fakeMessage: Digest32 = Blake2b256("Hello World")
 
   implicit def grElemConvert(leafConstant: GroupElementConstant): EcPointType =
     SigmaDsl.toECPoint(leafConstant.value).asInstanceOf[EcPointType]
