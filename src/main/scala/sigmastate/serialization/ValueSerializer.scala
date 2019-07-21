@@ -138,12 +138,10 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaTransformerSerializer(SigmaAnd, mkSigmaAnd),
     SigmaTransformerSerializer(SigmaOr, mkSigmaOr),
     BoolToSigmaPropSerializer(mkBoolToSigmaProp),
-
     // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
-    //    ModQSerializer,
-    //    ModQArithOpSerializer(ModQArithOp.PlusModQ, mkPlusModQ),
-    //    ModQArithOpSerializer(ModQArithOp.MinusModQ, mkMinusModQ),
-
+    ModQSerializer,
+    ModQArithOpSerializer(ModQArithOp.PlusModQ, mkPlusModQ),
+    ModQArithOpSerializer(ModQArithOp.MinusModQ, mkMinusModQ),
     SubstConstantsSerializer,
     CreateProveDlogSerializer(mkCreateProveDlog),
     CreateProveDHTupleSerializer(mkCreateProveDHTuple),
