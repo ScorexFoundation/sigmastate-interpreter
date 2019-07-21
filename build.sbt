@@ -257,6 +257,7 @@ commands += Command.command("ergoItTest") { state =>
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val spamBranch = "unify-collect-coverage"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
+    "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
     "GIT_SSH_COMMAND" -> "ssh -i $SSH_SPAM_REPO_KEY")
 
