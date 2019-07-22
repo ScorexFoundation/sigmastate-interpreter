@@ -48,7 +48,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import CollBuilder._;
   import SigmaProp._;
   import Box._
-  import CollOverArrayBuilder._;
   import CCostedBuilder._
   import CSizeBuilder._
   import Size._;
