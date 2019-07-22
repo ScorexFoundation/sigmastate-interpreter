@@ -125,7 +125,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
                  defId: Int,
                  constantsProcessing: Option[ConstantStore]): SValue = {
     import builder._
-    import TestSigmaDslBuilder._
     def recurse[T <: SType](s: Sym) = buildValue(ctx, mainG, env, s, defId, constantsProcessing).asValue[T]
     object In { def unapply(s: Sym): Option[SValue] = Some(buildValue(ctx, mainG, env, s, defId, constantsProcessing)) }
     s match {
@@ -160,7 +159,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkConstant[tpe.type](wc.constValue.asInstanceOf[tpe.WrappedType], tpe)
 
       case Def(IsContextProperty(v)) => v
-      case Def(TestSigmaDslBuilderCtor()) => Global
+      case s if s == sigmaDslBuilder => Global
 
       case Def(ApplyBinOp(IsArithOp(opCode), xSym, ySym)) =>
         val Seq(x, y) = Seq(xSym, ySym).map(recurse)
@@ -400,12 +399,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
           .getOrElse(error(s"Cannot find method ${m.getName} in object $obj"))
         val specMethod = method.specializeFor(obj.tpe, args.map(_.tpe))
         builder.mkMethodCall(obj, specMethod, args.toIndexedSeq, Map())
-//        val method = ((SCollection.methods.find(_.name == m.getName), args) match {
-//          case (Some(mth @ SCollection.FlatMapMethod), Seq(f)) =>
-//            mth.withConcreteTypes(Map(SCollection.tOV -> f.asFunc.tpe.tRange.asCollection.elemType))
-//          case (Some(mth), _) => mth
-//          case (None, _) => error(s"unknown method Coll.${m.getName}")
-//        }).withConcreteTypes(Map(SCollection.tIV -> colTpe.elemType))
 
       case Def(d) =>
         !!!(s"Don't know how to buildValue($mainG, $s -> $d, $env, $defId)")
