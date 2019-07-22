@@ -12,7 +12,6 @@ trait SigmaLibrary extends Library
     with WrappersSpecModule
     with SigmaDslModule
     with CostedObjectsModule
-    with SigmaDslOverArraysModule
     with SigmaDslCostedModule
 {
   import Coll._

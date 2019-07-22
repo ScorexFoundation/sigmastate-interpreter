@@ -77,7 +77,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import IntPlusMonoid._
   import LongPlusMonoid._
   import WSpecialPredef._
-  import TestSigmaDslBuilder._
   import CostModel._
 
   val okMeasureOperationTime: Boolean = false
@@ -568,6 +567,8 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           l1 || prop
         res.isValid
 
+      case SDBM.Colls(_) => colBuilder
+
       case SDBM.sigmaProp(_, SigmaM.isValid(p)) => p
 
       case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
@@ -747,10 +748,10 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   /** Lazy values, which are immutable, but can be reset, so that the next time they are accessed
     * the expression is re-evaluated. Each value should be reset in onReset() method. */
-  private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(RTestSigmaDslBuilder())
+  private val _sigmaDslBuilder: LazyRep[SigmaDslBuilder] = MutableLazy(variable[SigmaDslBuilder])
   @inline def sigmaDslBuilder: Rep[SigmaDslBuilder] = _sigmaDslBuilder.value
 
-  private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(sigmaDslBuilder.Colls)
+  private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Rep[CollBuilder] = _colBuilder.value
 
   private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
