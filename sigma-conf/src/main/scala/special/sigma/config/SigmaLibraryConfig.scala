@@ -12,16 +12,6 @@ class SigmaLibraryConfig extends LibraryConfig {
 
   def wrapperConfigs: Map[String, WrapperConf] = List(
     WrapperConf(baseDir,
-      packageName = "org.bouncycastle.math.ec",
-      name = "ECPoint",
-      annotations = List(classOf[Liftable]).map(_.getSimpleName)
-    ),
-    WrapperConf(baseDir,
-      packageName = "java.math",
-      name = "BigInteger",
-      annotations = List(classOf[Liftable]).map(_.getSimpleName)
-    ),
-    WrapperConf(baseDir,
       packageName = "special.sigma",
       name = "SigmaPredef"
     )

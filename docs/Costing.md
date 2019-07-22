@@ -282,8 +282,8 @@ Following is an example of a simple costing rule to introduce basic concepts
 (it can be found in RuntimeCosting.scala file).
 ```scala
   case sigmastate.MultiplyGroup(In(_l), In(_r)) =>
-    val l = asRep[Costed[WECPoint]](_l)   // type cast to an expected Rep type
-    val r = asRep[Costed[WECPoint]](_r)
+    val l = asRep[Costed[GroupElement]](_l)   // type cast to an expected Rep type
+    val r = asRep[Costed[GroupElement]](_r)
     val value = l.value.add(r.value)            // value sub-rule
     val cost = l.cost + r.cost + costOf(node)   // cost sub-rule
     val size = CryptoConstants.groupSize.toLong // size sub-rule
