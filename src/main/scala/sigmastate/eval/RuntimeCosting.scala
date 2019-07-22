@@ -22,7 +22,6 @@ import scalan.RType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.{Terms, SourceContext}
-import scalan.staged.Slicing
 import sigma.types.PrimViewType
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -81,7 +80,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import TestSigmaDslBuilder._
   import CostModel._
 
-  override val performViewsLifting = false
   val okMeasureOperationTime: Boolean = false
 
   this.isInlineThunksOnForce = true  // this required for splitting of cost graph
