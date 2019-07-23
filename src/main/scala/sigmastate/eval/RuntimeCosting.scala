@@ -73,8 +73,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import SigmaDslBuilder._
   import MonoidBuilder._
   import AvlTree._
-  import IntPlusMonoid._
-  import LongPlusMonoid._
   import WSpecialPredef._
   import CostModel._
 
@@ -116,7 +114,8 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 //  beginPass(costPass)
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
-    override def transform(t: Transformer): Def[IntPlusMonoidData] = this
+    override def transform(t: Transformer): Def[Int] = this
+
     def eval: Int = {
       val operId = OperationId(opName, opType)
       val cost = CostTable.DefaultCosts(operId)
@@ -129,7 +128,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     * @param size     size of the data which is used to compute operation cost
     */
   case class PerKbCostOf(operId: OperationId, size: Rep[Long]) extends BaseDef[Int] {
-    override def transform(t: Transformer): Def[IntPlusMonoidData] = PerKbCostOf(operId, t(size))
+    override def transform(t: Transformer): Def[Int] = PerKbCostOf(operId, t(size))
     /** Cost rule which is used to compute operation cost, depending on dataSize.
       * Per kilobite cost of the oparation is obtained from CostTable and multiplied on
       * the data size in Kb. */
@@ -759,7 +758,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
   @inline def costedBuilder: Rep[CostedBuilder] = _costedBuilder.value
 
-  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(costedBuilder.monoidBuilder)
+  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(variable[MonoidBuilder])
   @inline def monoidBuilder: Rep[MonoidBuilder] = _monoidBuilder.value
 
   private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)

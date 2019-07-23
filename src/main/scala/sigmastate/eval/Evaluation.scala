@@ -63,6 +63,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import CSizeBox._
   import SizeContext._
   import CSizeContext._
+  import MonoidBuilder._
   import OpCodes._
 
   private val SCM = SizeContextMethods
@@ -83,6 +84,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val SDBM = SigmaDslBuilderMethods
   private val OM = WOptionMethods
   private val SPCM = WSpecialPredefCompanionMethods
+  private val MBM = MonoidBuilderMethods
 
   private val _allowedOpCodesInCosting: HashSet[OpCodeExtra] = HashSet[OpCode](
     AppendCode,
@@ -181,9 +183,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: OpCost => OpCostCode
     case _: PerKbCostOf => PerKbCostOfCode
     case _: Cast[_] => CastCode
-    case _: IntPlusMonoid => IntPlusMonoidCode
     case _: ThunkDef[_] => ThunkDefCode
     case _: ThunkForce[_] => ThunkForceCode
+    case MBM.intPlusMonoid(_) => IntPlusMonoidCode
     case SCM.inputs(_) => SCMInputsCode
     case SCM.outputs(_) => SCMOutputsCode
     case SCM.dataInputs(_) => SCMDataInputsCode
@@ -652,8 +654,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case wc: LiftedConst[_,_] => out(wc.constValue)
 
-          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder | _: IntPlusMonoid | _: LongPlusMonoid |
-               _: WSpecialPredefCompanion =>
+          case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
+               _: WSpecialPredefCompanion |
+               MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) =>
             out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.rhs}")))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>
