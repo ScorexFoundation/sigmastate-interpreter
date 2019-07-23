@@ -176,9 +176,9 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
         mkNode(recurse(xSym))
 
-      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
-        val colTpe = elemToSType(s.elem)
-        mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
+//      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
+//        val colTpe = elemToSType(s.elem)
+//        mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
       case CBM.fromItems(_, colSyms, elemT) =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
