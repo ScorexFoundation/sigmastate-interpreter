@@ -36,8 +36,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import Context._
   import SigmaProp._
   import Coll._
-  import CReplColl._
-  import PairOfCols._
   import AnyValue._
   import Box._
   import AvlTree._
@@ -216,8 +214,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: CSizeBoxCtor => CSizeBoxCtorCode
     case _: CSizeContextCtor => CSizeContextCtorCode
     case _: CSizeAnyValueCtor => CSizeAnyValueCtorCode
-    case _: CReplCollCtor[_] => CReplCollCtorCode
-    case _: PairOfColsCtor[_, _] => PairOfColsCtorCode
     case CollM.sum(_, _) => CollMSumCode
     case CBM.replicate(_, _, _) => CBMReplicateCode
     case CBM.fromItems(_, _, _) => CBMFromItemsCode
@@ -805,13 +801,13 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             val res = sigmaDslBuilderValue.avlTree(flags, digest, keyLength, valueLengthOpt)
             out(res)
 
-          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
-            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
-            out(res)
-
-          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
-            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
-            out(res)
+//          case CReplCollCtor(valueSym @ In(value), In(len: Int)) =>
+//            val res = sigmaDslBuilderValue.Colls.replicate(len, value)(asType[Any](valueSym.elem.sourceType))
+//            out(res)
+//
+//          case PairOfColsCtor(In(ls: SColl[a]@unchecked), In(rs: SColl[b]@unchecked)) =>
+//            val res = sigmaDslBuilderValue.Colls.pairColl(ls, rs)
+//            out(res)
 
           case CSizePrimCtor(In(dataSize: Long), tVal) =>
             val res = new special.collection.CSizePrim(dataSize, tVal.eA.sourceType)
