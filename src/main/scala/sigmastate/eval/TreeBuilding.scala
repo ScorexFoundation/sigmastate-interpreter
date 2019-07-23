@@ -25,7 +25,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   import CollBuilder._
   import SigmaDslBuilder._
   import CCostedBuilder._
-  import MonoidBuilderInst._
   import BigInt._
   import WOption._
   import AvlTree._
