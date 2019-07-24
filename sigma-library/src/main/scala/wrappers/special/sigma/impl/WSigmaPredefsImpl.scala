@@ -33,8 +33,6 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
   // familyElem
   class WSigmaPredefElem[To <: WSigmaPredef]
     extends EntityElem[To] {
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[WSigmaPredef].asInstanceOf[WeakTypeTag[To]]
     }

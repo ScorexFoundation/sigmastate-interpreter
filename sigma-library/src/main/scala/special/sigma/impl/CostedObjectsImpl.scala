@@ -130,7 +130,6 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(anyValueElement))
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SizeAnyValue].asInstanceOf[WeakTypeTag[To]]
     }
@@ -283,7 +282,6 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(sigmaPropElement))
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SizeSigmaProp].asInstanceOf[WeakTypeTag[To]]
     }
@@ -493,7 +491,6 @@ object SizeBox extends EntityObject("SizeBox") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(boxElement))
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SizeBox].asInstanceOf[WeakTypeTag[To]]
     }
@@ -796,7 +793,6 @@ object SizeContext extends EntityObject("SizeContext") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(contextElement))
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SizeContext].asInstanceOf[WeakTypeTag[To]]
     }
@@ -1043,8 +1039,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SizeBuilder].asInstanceOf[WeakTypeTag[To]]
     }
