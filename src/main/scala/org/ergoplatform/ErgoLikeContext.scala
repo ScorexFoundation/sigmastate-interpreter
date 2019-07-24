@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import io.circe._
+import io.circe.syntax._
 import org.ergoplatform.ErgoLikeContext.Height
 import scalan.RType
 import sigmastate.Values._
@@ -196,6 +198,14 @@ object ErgoLikeContext {
       if (ebox == null) return null
       new CostingBox(isCost, ebox)
     }
+  }
+
+  implicit val encoder: Encoder[ErgoLikeContext] = { ctx =>
+    Json.obj(
+      "currentHeight" -> ctx.currentHeight.asJson,
+//      "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
+      "minerPubkey" -> ctx.minerPubkey.asJson
+    )
   }
 }
 
