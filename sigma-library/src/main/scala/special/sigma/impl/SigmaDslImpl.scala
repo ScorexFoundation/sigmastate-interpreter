@@ -246,8 +246,6 @@ object CostModel extends EntityObject("CostModel") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[CostModel].asInstanceOf[WeakTypeTag[To]]
     }
@@ -813,8 +811,6 @@ object BigInt extends EntityObject("BigInt") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[BigInt].asInstanceOf[WeakTypeTag[To]]
     }
@@ -1284,8 +1280,6 @@ object GroupElement extends EntityObject("GroupElement") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[GroupElement].asInstanceOf[WeakTypeTag[To]]
     }
@@ -1564,8 +1558,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SigmaProp].asInstanceOf[WeakTypeTag[To]]
     }
@@ -1775,8 +1767,6 @@ object AnyValue extends EntityObject("AnyValue") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[AnyValue].asInstanceOf[WeakTypeTag[To]]
     }
@@ -2043,8 +2033,6 @@ object Box extends EntityObject("Box") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[Box].asInstanceOf[WeakTypeTag[To]]
     }
@@ -2615,8 +2603,6 @@ object AvlTree extends EntityObject("AvlTree") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[AvlTree].asInstanceOf[WeakTypeTag[To]]
     }
@@ -3010,8 +2996,6 @@ object PreHeader extends EntityObject("PreHeader") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[PreHeader].asInstanceOf[WeakTypeTag[To]]
     }
@@ -3413,8 +3397,6 @@ object Header extends EntityObject("Header") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[Header].asInstanceOf[WeakTypeTag[To]]
     }
@@ -3892,8 +3874,6 @@ object Context extends EntityObject("Context") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[Context].asInstanceOf[WeakTypeTag[To]]
     }
@@ -4205,8 +4185,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SigmaContract].asInstanceOf[WeakTypeTag[To]]
     }
@@ -4918,8 +4896,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         ))
     }
 
-    lazy val parent: Option[Elem[_]] = None
-    override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs()
     override lazy val tag = {
       weakTypeTag[SigmaDslBuilder].asInstanceOf[WeakTypeTag[To]]
     }
