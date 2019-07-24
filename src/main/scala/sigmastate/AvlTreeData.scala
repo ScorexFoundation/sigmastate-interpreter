@@ -1,7 +1,11 @@
 package sigmastate
 
 import java.util
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
+
+import io.circe._
+import io.circe.syntax._
+import org.ergoplatform.settings.Algos
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -96,6 +100,15 @@ object AvlTreeData {
       val valueLengthOpt = r.getOption(r.getUInt().toInt)
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
+  }
+
+  implicit val jsonEncoder: Encoder[AvlTreeData] = { v =>
+    Json.obj(
+      "digest" -> Algos.encode(v.digest).asJson,
+      "treeFlags" -> v.treeFlags.serializeToByte.asJson,
+      "keyLength" -> v.keyLength.asJson,
+      "valueLength" -> v.valueLengthOpt.asJson
+    )
   }
 
 }

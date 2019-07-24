@@ -13,11 +13,12 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, PreHeader, Header}
+import special.sigma.{AnyValue, Box, Header, PreHeader}
 import SType._
 import RType._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
-import org.ergoplatform.validation.{ValidationRules, SigmaValidationSettings}
+import org.ergoplatform.settings.Algos
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import spire.syntax.all.cfor
 import scala.util.Try
 
@@ -117,7 +118,7 @@ class ErgoLikeContext(val currentHeight: Height,
 
 }
 
-object ErgoLikeContext {
+object ErgoLikeContext extends JsonCodecs {
   type Height = Int
 
   val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
@@ -200,11 +201,22 @@ object ErgoLikeContext {
     }
   }
 
-  implicit val encoder: Encoder[ErgoLikeContext] = { ctx =>
+  implicit val jsonEncoder: Encoder[ErgoLikeContext] = { ctx =>
     Json.obj(
       "currentHeight" -> ctx.currentHeight.asJson,
-//      "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
-      "minerPubkey" -> ctx.minerPubkey.asJson
+      "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
+      "minerPubkey" -> Algos.encode(ctx.minerPubkey).asJson,
+      "headers" -> ctx.headers.toArray.toSeq.asJson,
+      // TODO: implement the rest
+//      "preHeader" -> ctx.preHeader.asJson,
+//      "dataBoxes" -> ctx.dataBoxes.asJson,
+//      "boxesToSpend" -> ctx.boxesToSpend.asJson,
+//      "spendingTransaction" -> ctx.spendingTransaction.asJson,
+//      "self" -> ctx.self.asJson,
+//      "extension" -> ctx.extension.asJson,
+//      "validationSettings" -> ctx.validationSettings.asJson,
+      "costLimit" -> ctx.costLimit.asJson,
+      "initCost" -> ctx.initCost.asJson
     )
   }
 }
