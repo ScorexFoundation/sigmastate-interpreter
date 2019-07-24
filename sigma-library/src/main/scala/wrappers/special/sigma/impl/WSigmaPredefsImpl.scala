@@ -49,7 +49,6 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
         case e => !!!(s"Expected $x to have WSigmaPredefElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val wSigmaPredefElement: Elem[WSigmaPredef] =
@@ -57,7 +56,6 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
 
   implicit case object WSigmaPredefCompanionElem extends CompanionElem[WSigmaPredefCompanionCtor] {
     lazy val tag = weakTypeTag[WSigmaPredefCompanionCtor]
-    protected def getDefaultRep = RWSigmaPredef
   }
 
   abstract class WSigmaPredefCompanionCtor extends CompanionDef[WSigmaPredefCompanionCtor] with WSigmaPredefCompanion {

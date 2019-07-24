@@ -145,7 +145,6 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
         case e => !!!(s"Expected $x to have SizeAnyValueElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sizeAnyValueElement: Elem[SizeAnyValue] =
@@ -153,7 +152,6 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
 
   implicit case object SizeAnyValueCompanionElem extends CompanionElem[SizeAnyValueCompanionCtor] {
     lazy val tag = weakTypeTag[SizeAnyValueCompanionCtor]
-    protected def getDefaultRep = RSizeAnyValue
   }
 
   abstract class SizeAnyValueCompanionCtor extends CompanionDef[SizeAnyValueCompanionCtor] with SizeAnyValueCompanion {
@@ -300,7 +298,6 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
         case e => !!!(s"Expected $x to have SizeSigmaPropElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sizeSigmaPropElement: Elem[SizeSigmaProp] =
@@ -308,7 +305,6 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
 
   implicit case object SizeSigmaPropCompanionElem extends CompanionElem[SizeSigmaPropCompanionCtor] {
     lazy val tag = weakTypeTag[SizeSigmaPropCompanionCtor]
-    protected def getDefaultRep = RSizeSigmaProp
   }
 
   abstract class SizeSigmaPropCompanionCtor extends CompanionDef[SizeSigmaPropCompanionCtor] with SizeSigmaPropCompanion {
@@ -512,7 +508,6 @@ object SizeBox extends EntityObject("SizeBox") {
         case e => !!!(s"Expected $x to have SizeBoxElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sizeBoxElement: Elem[SizeBox] =
@@ -520,7 +515,6 @@ object SizeBox extends EntityObject("SizeBox") {
 
   implicit case object SizeBoxCompanionElem extends CompanionElem[SizeBoxCompanionCtor] {
     lazy val tag = weakTypeTag[SizeBoxCompanionCtor]
-    protected def getDefaultRep = RSizeBox
   }
 
   abstract class SizeBoxCompanionCtor extends CompanionDef[SizeBoxCompanionCtor] with SizeBoxCompanion {
@@ -817,7 +811,6 @@ object SizeContext extends EntityObject("SizeContext") {
         case e => !!!(s"Expected $x to have SizeContextElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sizeContextElement: Elem[SizeContext] =
@@ -825,7 +818,6 @@ object SizeContext extends EntityObject("SizeContext") {
 
   implicit case object SizeContextCompanionElem extends CompanionElem[SizeContextCompanionCtor] {
     lazy val tag = weakTypeTag[SizeContextCompanionCtor]
-    protected def getDefaultRep = RSizeContext
   }
 
   abstract class SizeContextCompanionCtor extends CompanionDef[SizeContextCompanionCtor] with SizeContextCompanion {
@@ -1067,7 +1059,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
         case e => !!!(s"Expected $x to have SizeBuilderElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sizeBuilderElement: Elem[SizeBuilder] =
@@ -1075,7 +1066,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
   implicit case object SizeBuilderCompanionElem extends CompanionElem[SizeBuilderCompanionCtor] {
     lazy val tag = weakTypeTag[SizeBuilderCompanionCtor]
-    protected def getDefaultRep = RSizeBuilder
   }
 
   abstract class SizeBuilderCompanionCtor extends CompanionDef[SizeBuilderCompanionCtor] with SizeBuilderCompanion {

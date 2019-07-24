@@ -48,7 +48,6 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
         case e => !!!(s"Expected $x to have SigmaPredefWrapSpecElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sigmaPredefWrapSpecElement: Elem[SigmaPredefWrapSpec] =
@@ -56,7 +55,6 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
 
   implicit case object SigmaPredefWrapSpecCompanionElem extends CompanionElem[SigmaPredefWrapSpecCompanionCtor] {
     lazy val tag = weakTypeTag[SigmaPredefWrapSpecCompanionCtor]
-    protected def getDefaultRep = RSigmaPredefWrapSpec
   }
 
   abstract class SigmaPredefWrapSpecCompanionCtor extends CompanionDef[SigmaPredefWrapSpecCompanionCtor] with SigmaPredefWrapSpecCompanion {
