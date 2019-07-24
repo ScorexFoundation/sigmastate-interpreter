@@ -262,7 +262,6 @@ object CostModel extends EntityObject("CostModel") {
         case e => !!!(s"Expected $x to have CostModelElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val costModelElement: Elem[CostModel] =
@@ -270,7 +269,6 @@ object CostModel extends EntityObject("CostModel") {
 
   implicit case object CostModelCompanionElem extends CompanionElem[CostModelCompanionCtor] {
     lazy val tag = weakTypeTag[CostModelCompanionCtor]
-    protected def getDefaultRep = RCostModel
   }
 
   abstract class CostModelCompanionCtor extends CompanionDef[CostModelCompanionCtor] with CostModelCompanion {
@@ -831,7 +829,6 @@ object BigInt extends EntityObject("BigInt") {
         case e => !!!(s"Expected $x to have BigIntElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val bigIntElement: Elem[BigInt] =
@@ -839,7 +836,6 @@ object BigInt extends EntityObject("BigInt") {
 
   implicit case object BigIntCompanionElem extends CompanionElem[BigIntCompanionCtor] {
     lazy val tag = weakTypeTag[BigIntCompanionCtor]
-    protected def getDefaultRep = RBigInt
   }
 
   abstract class BigIntCompanionCtor extends CompanionDef[BigIntCompanionCtor] with BigIntCompanion {
@@ -1304,7 +1300,6 @@ object GroupElement extends EntityObject("GroupElement") {
         case e => !!!(s"Expected $x to have GroupElementElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val groupElementElement: Elem[GroupElement] =
@@ -1312,7 +1307,6 @@ object GroupElement extends EntityObject("GroupElement") {
 
   implicit case object GroupElementCompanionElem extends CompanionElem[GroupElementCompanionCtor] {
     lazy val tag = weakTypeTag[GroupElementCompanionCtor]
-    protected def getDefaultRep = RGroupElement
   }
 
   abstract class GroupElementCompanionCtor extends CompanionDef[GroupElementCompanionCtor] with GroupElementCompanion {
@@ -1586,7 +1580,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         case e => !!!(s"Expected $x to have SigmaPropElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sigmaPropElement: Elem[SigmaProp] =
@@ -1594,7 +1587,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   implicit case object SigmaPropCompanionElem extends CompanionElem[SigmaPropCompanionCtor] {
     lazy val tag = weakTypeTag[SigmaPropCompanionCtor]
-    protected def getDefaultRep = RSigmaProp
   }
 
   abstract class SigmaPropCompanionCtor extends CompanionDef[SigmaPropCompanionCtor] with SigmaPropCompanion {
@@ -1799,7 +1791,6 @@ object AnyValue extends EntityObject("AnyValue") {
         case e => !!!(s"Expected $x to have AnyValueElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val anyValueElement: Elem[AnyValue] =
@@ -1807,7 +1798,6 @@ object AnyValue extends EntityObject("AnyValue") {
 
   implicit case object AnyValueCompanionElem extends CompanionElem[AnyValueCompanionCtor] {
     lazy val tag = weakTypeTag[AnyValueCompanionCtor]
-    protected def getDefaultRep = RAnyValue
   }
 
   abstract class AnyValueCompanionCtor extends CompanionDef[AnyValueCompanionCtor] with AnyValueCompanion {
@@ -2069,7 +2059,6 @@ object Box extends EntityObject("Box") {
         case e => !!!(s"Expected $x to have BoxElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val boxElement: Elem[Box] =
@@ -2077,7 +2066,6 @@ object Box extends EntityObject("Box") {
 
   implicit case object BoxCompanionElem extends CompanionElem[BoxCompanionCtor] {
     lazy val tag = weakTypeTag[BoxCompanionCtor]
-    protected def getDefaultRep = RBox
   }
 
   abstract class BoxCompanionCtor extends CompanionDef[BoxCompanionCtor] with BoxCompanion {
@@ -2643,7 +2631,6 @@ object AvlTree extends EntityObject("AvlTree") {
         case e => !!!(s"Expected $x to have AvlTreeElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val avlTreeElement: Elem[AvlTree] =
@@ -2651,7 +2638,6 @@ object AvlTree extends EntityObject("AvlTree") {
 
   implicit case object AvlTreeCompanionElem extends CompanionElem[AvlTreeCompanionCtor] {
     lazy val tag = weakTypeTag[AvlTreeCompanionCtor]
-    protected def getDefaultRep = RAvlTree
   }
 
   abstract class AvlTreeCompanionCtor extends CompanionDef[AvlTreeCompanionCtor] with AvlTreeCompanion {
@@ -3040,7 +3026,6 @@ object PreHeader extends EntityObject("PreHeader") {
         case e => !!!(s"Expected $x to have PreHeaderElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val preHeaderElement: Elem[PreHeader] =
@@ -3048,7 +3033,6 @@ object PreHeader extends EntityObject("PreHeader") {
 
   implicit case object PreHeaderCompanionElem extends CompanionElem[PreHeaderCompanionCtor] {
     lazy val tag = weakTypeTag[PreHeaderCompanionCtor]
-    protected def getDefaultRep = RPreHeader
   }
 
   abstract class PreHeaderCompanionCtor extends CompanionDef[PreHeaderCompanionCtor] with PreHeaderCompanion {
@@ -3445,7 +3429,6 @@ object Header extends EntityObject("Header") {
         case e => !!!(s"Expected $x to have HeaderElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val headerElement: Elem[Header] =
@@ -3453,7 +3436,6 @@ object Header extends EntityObject("Header") {
 
   implicit case object HeaderCompanionElem extends CompanionElem[HeaderCompanionCtor] {
     lazy val tag = weakTypeTag[HeaderCompanionCtor]
-    protected def getDefaultRep = RHeader
   }
 
   abstract class HeaderCompanionCtor extends CompanionDef[HeaderCompanionCtor] with HeaderCompanion {
@@ -3926,7 +3908,6 @@ object Context extends EntityObject("Context") {
         case e => !!!(s"Expected $x to have ContextElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val contextElement: Elem[Context] =
@@ -3934,7 +3915,6 @@ object Context extends EntityObject("Context") {
 
   implicit case object ContextCompanionElem extends CompanionElem[ContextCompanionCtor] {
     lazy val tag = weakTypeTag[ContextCompanionCtor]
-    protected def getDefaultRep = RContext
   }
 
   abstract class ContextCompanionCtor extends CompanionDef[ContextCompanionCtor] with ContextCompanion {
@@ -4241,7 +4221,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         case e => !!!(s"Expected $x to have SigmaContractElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sigmaContractElement: Elem[SigmaContract] =
@@ -4249,7 +4228,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
 
   implicit case object SigmaContractCompanionElem extends CompanionElem[SigmaContractCompanionCtor] {
     lazy val tag = weakTypeTag[SigmaContractCompanionCtor]
-    protected def getDefaultRep = RSigmaContract
   }
 
   abstract class SigmaContractCompanionCtor extends CompanionDef[SigmaContractCompanionCtor] with SigmaContractCompanion {
@@ -4956,7 +4934,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         case e => !!!(s"Expected $x to have SigmaDslBuilderElem[_], but got $e", x)
       }
     }
-    override def getDefaultRep: Rep[To] = ???
   }
 
   implicit lazy val sigmaDslBuilderElement: Elem[SigmaDslBuilder] =
@@ -4964,7 +4941,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   implicit case object SigmaDslBuilderCompanionElem extends CompanionElem[SigmaDslBuilderCompanionCtor] {
     lazy val tag = weakTypeTag[SigmaDslBuilderCompanionCtor]
-    protected def getDefaultRep = RSigmaDslBuilder
   }
 
   abstract class SigmaDslBuilderCompanionCtor extends CompanionDef[SigmaDslBuilderCompanionCtor] with SigmaDslBuilderCompanion {
