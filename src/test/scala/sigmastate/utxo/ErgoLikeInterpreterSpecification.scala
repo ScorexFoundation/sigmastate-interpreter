@@ -74,7 +74,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -104,7 +104,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -131,7 +131,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get

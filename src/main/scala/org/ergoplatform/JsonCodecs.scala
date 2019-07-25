@@ -28,7 +28,7 @@ trait JsonCodecs {
 
   implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
 
-  implicit val modifierIdEncoder: Encoder[ModifierId] = _.asJson
+  implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
 
   implicit val headerEncoder: Encoder[Header] = { h: Header =>
     Map(

@@ -2,10 +2,10 @@ package sigmastate.serialization
 
 import java.util
 
-import org.ergoplatform.ErgoLikeContext
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Assertion
-import sigmastate.Values.{Value, SigmaPropConstant, SigmaBoolean, SigmaPropValue}
+import sigmastate.Values.{SigmaBoolean, SigmaPropConstant, SigmaPropValue, Value}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
@@ -77,7 +77,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
-        spendingTransaction = null,
+        spendingTransaction = ErgoLikeTransaction.dummy,
         self = fakeSelf)
 
       // get sigma conjectures out of transformers

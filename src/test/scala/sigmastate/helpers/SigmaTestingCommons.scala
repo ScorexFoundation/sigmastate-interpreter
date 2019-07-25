@@ -171,7 +171,7 @@ trait SigmaTestingCommons extends PropSpec
     catch {
       case e: Throwable =>
         if (!assertion(e))
-          fail(s"exception check failed on $e (root cause: ${rootCause(e)})")
+          fail(s"exception check failed on $e (root cause: ${rootCause(e)}) \n trace:\n${e.getStackTrace.mkString("\n")}}")
     }
   }
 

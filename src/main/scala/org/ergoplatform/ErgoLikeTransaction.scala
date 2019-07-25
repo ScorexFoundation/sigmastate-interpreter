@@ -171,6 +171,8 @@ object ErgoLikeTransaction extends JsonCodecs {
 
   val TransactionIdBytesSize: Short = 32
 
+  val dummy = ErgoLikeTransaction(IndexedSeq(), IndexedSeq())
+
   /**
     * Bytes that should be signed by provers.
     * Contains all the transaction bytes except of signatures

@@ -84,7 +84,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContext.dummyPubkey,
         headers     = noHeaders,
-        preHeader   = dummyPreHeader,
+        preHeader   = dummyPreHeader(tx.block.height, ErgoLikeContext.dummyPubkey),
         dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
         spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),

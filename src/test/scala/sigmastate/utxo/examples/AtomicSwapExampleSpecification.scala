@@ -1,6 +1,6 @@
 package sigmastate.utxo.examples
 
-import org.ergoplatform.{ErgoLikeContext, Height}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, Height}
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 import sigmastate.Values._
@@ -102,7 +102,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
     proverB.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
@@ -114,7 +114,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
-      boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = null, self = fakeSelf)
+      boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = ErgoLikeTransaction.dummy, self = fakeSelf)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
@@ -125,7 +125,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
     val pr = proverA.prove(env, prop2, ctx1, fakeMessage).get
     verifier.verify(env, prop2, ctx1, pr, fakeMessage).get._1 shouldBe true
@@ -140,7 +140,7 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContext.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
     val pr2 = proverB2.prove(env, prop1, ctx2, fakeMessage).get
     verifier.verify(env, prop1, ctx2, pr2, fakeMessage).get._1 shouldBe true

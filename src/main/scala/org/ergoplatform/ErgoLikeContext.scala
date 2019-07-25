@@ -8,12 +8,12 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext}
-import sigmastate.serialization.OpCodes
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, InterpreterContext}
+import sigmastate.serialization.{GroupElementSerializer, OpCodes, SigmaSerializer}
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, Header, PreHeader}
+import special.sigma.{AnyValue, Box, GroupElement, Header, PreHeader}
 import SType._
 import RType._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
@@ -58,14 +58,16 @@ class ErgoLikeContext(val currentHeight: Height,
                       val initCost: Long
                  ) extends InterpreterContext {
 
-  assert(self == null || boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
-  assert(preHeader == null || preHeader.height == currentHeight, "Incorrect preHeader height")
-  assert(preHeader == null || java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
+  assert(preHeader != null)
+  assert(spendingTransaction != null)
+  assert(boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
+  assert(preHeader.height == currentHeight, "Incorrect preHeader height")
+  assert(java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
-  assert(preHeader == null || headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
@@ -99,10 +101,7 @@ class ErgoLikeContext(val currentHeight: Height,
     implicit val IRForBox: Evaluation = IR
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
-    val outputs = if (spendingTransaction == null)
-        noOutputs.toColl
-      else
-        spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
+    val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
       toAnyValue(v.value.asWrappedType)(tVal)
@@ -121,11 +120,18 @@ class ErgoLikeContext(val currentHeight: Height,
 object ErgoLikeContext extends JsonCodecs {
   type Height = Int
 
-  val dummyPubkey: Array[Byte] = Array.fill(32)(0: Byte)
+  val dummyPubkey: Array[Byte] = Array.fill(CryptoConstants.groupSize + 1)(0: Byte)
 
   val noBoxes = IndexedSeq.empty[ErgoBox]
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
-  val dummyPreHeader: PreHeader = null
+  def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
+    parentId = Colls.emptyColl[Byte],
+    timestamp = 3,
+    nBits = 0,
+    height = currentHeight,
+    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)),
+    votes = Colls.emptyColl[Byte]
+  )
 
   /** Maximimum number of headers in `headers` collection of the context. */
   val MaxHeaders = ErgoConstants.MaxHeaders.value
@@ -140,7 +146,7 @@ object ErgoLikeContext extends JsonCodecs {
             vs: SigmaValidationSettings = ValidationRules.currentSettings) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
-      dummyPreHeader,
+      dummyPreHeader(currentHeight, minerPubkey),
       noBoxes,
       boxesToSpend, spendingTransaction, self, extension, vs, ScriptCostLimit.value, 0L)
 
@@ -153,13 +159,13 @@ object ErgoLikeContext extends JsonCodecs {
             self: ErgoBox) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
-      dummyPreHeader,
+      dummyPreHeader(currentHeight, minerPubkey),
       dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
     lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
-    spendingTransaction = null, self = selfDesc)
+    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc)
 
   def fromTransaction(tx: ErgoLikeTransaction,
                       blockchainState: BlockchainState,
@@ -196,7 +202,6 @@ object ErgoLikeContext extends JsonCodecs {
 
   implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
     def toTestBox(isCost: Boolean): Box = {
-      if (ebox == null) return null
       new CostingBox(isCost, ebox)
     }
   }
