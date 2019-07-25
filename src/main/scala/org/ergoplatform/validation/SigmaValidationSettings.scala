@@ -1,5 +1,9 @@
 package org.ergoplatform.validation
 
+import io.circe._
+import io.circe.syntax._
+import org.ergoplatform.JsonCodecs
+
 /**
   * Configuration of validation. Each `ValidationRule` instance should be
   * implemented as an `object` to facilitate type-safe usage. It then should be
@@ -37,6 +41,7 @@ package org.ergoplatform.validation
   * when isSoftFork returns true), for example when a new opCode is added in the
   * newer version of the protocol, and this fact can be recognized by the old
   * code.
+  *
   * @see SoftForkWhenCodeAdded
   */
 abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule, RuleStatus))] {
@@ -51,6 +56,17 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
       case Some((rule, status)) => rule.isSoftFork(this, rule.id, status, ve.args)
       case None => false
     }
+  }
+}
+
+object SigmaValidationSettings extends JsonCodecs {
+  implicit val jsonEncoder: Encoder[SigmaValidationSettings] = { v =>
+    Json.fromValues(v.toSeq.map { case (_, (rule, status)) =>
+      Json.obj(
+        "rule" -> rule.asJson,
+        "status" -> status.statusCode.asJson
+      )
+    })
   }
 }
 

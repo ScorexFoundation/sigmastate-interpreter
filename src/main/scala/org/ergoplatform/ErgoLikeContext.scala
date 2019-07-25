@@ -205,7 +205,7 @@ object ErgoLikeContext extends JsonCodecs {
     Json.obj(
       "currentHeight" -> ctx.currentHeight.asJson,
       "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
-      "minerPubkey" -> Algos.encode(ctx.minerPubkey).asJson,
+      "minerPubkey" -> ctx.minerPubkey.asJson,
       "headers" -> ctx.headers.toArray.toSeq.asJson,
       "preHeader" -> ctx.preHeader.asJson,
       "dataBoxes" -> ctx.dataBoxes.asJson,
@@ -214,8 +214,7 @@ object ErgoLikeContext extends JsonCodecs {
       "spendingTransaction" -> ctx.spendingTransaction.asInstanceOf[ErgoLikeTransaction].asJson,
       "self" -> ctx.self.asJson,
       "extension" -> ctx.extension.asJson,
-      // TODO: implement the rest
-//      "validationSettings" -> ctx.validationSettings.asJson,
+      "validationSettings" -> ctx.validationSettings.asJson,
       "costLimit" -> ctx.costLimit.asJson,
       "initCost" -> ctx.initCost.asJson
     )
