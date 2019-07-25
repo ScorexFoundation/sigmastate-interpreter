@@ -529,7 +529,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
     d match {
       // Rule: cast(eTo, x) if x.elem <:< eTo  ==>  x
-      case Cast(eTo: Elem[to], x) if eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass) =>
+      case Cast(eTo: Elem[to], x) if eTo.getClass.isAssignableFrom(x.elem.getClass) =>
         x
 
       // Rule: ThunkDef(x, Nil).force => x

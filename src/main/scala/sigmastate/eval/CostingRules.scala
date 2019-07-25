@@ -191,7 +191,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   }
 
   def tryCast[To](x: Rep[Def[_]])(implicit eTo: Elem[To]): Rep[To] = {
-    if (eTo.runtimeClass.isAssignableFrom(x.elem.runtimeClass))
+    if (eTo.getClass.isAssignableFrom(x.elem.getClass))
       asRep[To](x)
     else
       Cast(eTo, x)
