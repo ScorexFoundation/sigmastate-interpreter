@@ -2,6 +2,8 @@ package org.ergoplatform
 
 import java.util
 
+import io.circe._
+import io.circe.syntax._
 import org.ergoplatform.ErgoBox.BoxId
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
@@ -15,6 +17,15 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * @param boxId - id of a box to add into context (should be in UTXO)
   */
 case class DataInput(boxId: BoxId)
+
+object DataInput extends JsonCodecs {
+
+  implicit val jsonEncoder: Encoder[DataInput] = { input =>
+    Json.obj(
+      "boxId" -> input.boxId.asJson,
+    )
+  }
+}
 
 /**
   * Inputs of formed, but unsigned transaction
@@ -52,7 +63,7 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   override def toString: String = s"Input(${Base16.encode(boxId)},$spendingProof)"
 }
 
-object Input {
+object Input extends JsonCodecs {
 
   object serializer extends SigmaSerializer[Input, Input] {
 
@@ -66,6 +77,13 @@ object Input {
       val spendingProof = ProverResult.serializer.parse(r)
       Input(ADKey @@ boxId, spendingProof)
     }
+  }
+
+  implicit val jsonEncoder: Encoder[Input] = { input =>
+    Json.obj(
+      "boxId" -> input.boxId.asJson,
+      "spendingProof" -> input.spendingProof.asJson
+    )
   }
 
 }

@@ -2,6 +2,8 @@ package org.ergoplatform
 
 import java.util
 
+import io.circe._
+import io.circe.syntax._
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -165,7 +167,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
 }
 
 
-object ErgoLikeTransaction {
+object ErgoLikeTransaction extends JsonCodecs {
 
   val TransactionIdBytesSize: Short = 32
 
@@ -190,4 +192,12 @@ object ErgoLikeTransaction {
   // TODO unify serialization approach in Ergo/sigma with BytesSerializable
   val serializer: SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] = ErgoLikeTransactionSerializer
 
+  implicit val jsonEncoder: Encoder[ErgoLikeTransaction] = { tx =>
+    Json.obj(
+      "id" -> tx.id.asJson,
+      "inputs" -> tx.inputs.asJson,
+      "dataInputs" -> tx.dataInputs.asJson,
+      "outputs" -> tx.outputs.asJson
+    )
+  }
 }

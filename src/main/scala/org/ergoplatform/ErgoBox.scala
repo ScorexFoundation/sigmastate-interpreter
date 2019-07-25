@@ -1,17 +1,19 @@
 package org.ergoplatform
 
+import io.circe._
+import io.circe.syntax._
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import scorex.crypto.authds.ADKey
 import scorex.util.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values._
 import sigmastate.SType.AnyOps
 import sigmastate._
-import sigmastate.serialization.SigmaSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
 import sigmastate.eval._
@@ -89,7 +91,7 @@ class ErgoBox(
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
-object ErgoBox {
+object ErgoBox extends JsonCodecs {
   type BoxId = ADKey
   object BoxId {
     val size: Short = 32
@@ -196,6 +198,20 @@ object ErgoBox {
       val index = r.getUShort()
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
+  }
+
+  // TODO remove in ergo
+  implicit val jsonEncoder: Encoder[ErgoBox] = { box =>
+    Json.obj(
+      "boxId" -> box.id.asJson,
+      "value" -> box.value.asJson,
+      "ergoTree" -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
+      "assets" -> box.additionalTokens.toArray.toSeq.asJson,
+      "creationHeight" -> box.creationHeight.asJson,
+      "additionalRegisters" -> box.additionalRegisters.map { case (key, value) =>
+        s"R${key.number}" -> evaluatedValueEncoder(value)
+        }.asJson
+    )
   }
 
 }

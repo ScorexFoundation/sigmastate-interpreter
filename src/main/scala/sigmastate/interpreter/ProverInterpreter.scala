@@ -2,10 +2,13 @@ package sigmastate.interpreter
 
 import java.util
 
+import io.circe._
+import io.circe.syntax._
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.ergoplatform.JsonCodecs
 import scalan.util.CollectionUtil._
 import scorex.util.encode.Base16
 import sigmastate.Values._
@@ -37,7 +40,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
   override def toString: Idn = s"ProverResult(${Base16.encode(proof)},$extension)"
 }
 
-object ProverResult {
+object ProverResult extends JsonCodecs {
   val empty: ProverResult = ProverResult(Array[Byte](), ContextExtension.empty)
 
   def apply(proof: Array[Byte], extension: ContextExtension): ProverResult =
@@ -59,6 +62,12 @@ object ProverResult {
     }
   }
 
+  implicit val jsonEncoder: Encoder[ProverResult] = { v =>
+    Json.obj(
+      "proofBytes" -> v.proof.asJson,
+      "extension" -> v.extension.asJson
+    )
+  }
 }
 
 case class CostedProverResult(override val proof: Array[Byte],
