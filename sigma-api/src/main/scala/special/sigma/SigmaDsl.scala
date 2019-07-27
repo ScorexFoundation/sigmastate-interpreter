@@ -118,7 +118,7 @@ trait BigInt {
     * @return { @code this + that}
     */
   def add(that: BigInt): BigInt
-  def +(that: BigInt): BigInt = add(that)
+  @Internal def +(that: BigInt): BigInt = add(that)
 
   /** Returns a BigInt whose value is {@code (this - that)}.
     *
@@ -126,7 +126,7 @@ trait BigInt {
     * @return { @code this - that}
     */
   def subtract(that: BigInt): BigInt
-  def -(that: BigInt): BigInt = subtract(that)
+  @Internal def -(that: BigInt): BigInt = subtract(that)
 
   /** Returns a BigInt whose value is {@code (this * that)}.
     *
@@ -136,7 +136,7 @@ trait BigInt {
     * @return { @code this * that}
     */
   def multiply(that: BigInt): BigInt
-  def *(that: BigInt): BigInt = multiply(that)
+  @Internal def *(that: BigInt): BigInt = multiply(that)
 
   /** Returns a BigInt whose value is {@code (this / that)}.
     *
@@ -145,7 +145,7 @@ trait BigInt {
     * @throws ArithmeticException if { @code that} is zero.
     */
   def divide(that: BigInt): BigInt
-  def /(that: BigInt): BigInt = divide(that)
+  @Internal def /(that: BigInt): BigInt = divide(that)
 
   /**
     * Returns a BigInt whose value is {@code (this mod m}).  This method
@@ -158,7 +158,7 @@ trait BigInt {
     * @see #remainder
     */
   def mod(m: BigInt): BigInt
-  def %(m: BigInt): BigInt = mod(m)
+  @Internal def %(m: BigInt): BigInt = mod(m)
 
   /**
     * Returns a BigInt whose value is {@code (this % that)}.
@@ -654,10 +654,10 @@ trait SigmaDslBuilder {
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
-  def BigInt(n: BigInteger): BigInt
+  @Internal def BigInt(n: BigInteger): BigInt
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
-  def toBigInteger(n: BigInt): BigInteger
+  @Internal def toBigInteger(n: BigInt): BigInteger
 
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
