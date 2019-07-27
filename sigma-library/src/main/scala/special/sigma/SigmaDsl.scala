@@ -180,6 +180,8 @@ package special.sigma {
       def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDlog(g);
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
       def groupGenerator: Rep[GroupElement] = this.builder.groupGenerator;
+      def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement] = this.builder.decodePoint(encoded);
+      @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues);
       @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
       def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
     };
@@ -207,7 +209,8 @@ package special.sigma {
       def groupGenerator: Rep[GroupElement];
       @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]];
       def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement];
-      def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree]
+      def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree];
+      def xor(l: Rep[Coll[Byte]], r: Rep[Coll[Byte]]): Rep[Coll[Byte]]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;
