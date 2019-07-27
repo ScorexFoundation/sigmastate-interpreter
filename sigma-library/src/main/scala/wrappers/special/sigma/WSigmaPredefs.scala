@@ -7,6 +7,8 @@ package wrappers.special.sigma {
 
   import special.sigma.wrappers.SigmaPredefWrapSpec
 
+  import scala.collection.mutable.WrappedArray
+
   trait WSigmaPredefs extends Base { self: WrappersModule =>
     import WSigmaPredef._;
     @External("SigmaPredef") trait WSigmaPredef extends Def[WSigmaPredef];

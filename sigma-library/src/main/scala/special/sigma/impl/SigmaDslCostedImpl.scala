@@ -3,6 +3,7 @@ package special.sigma
 import scalan._
 import scala.reflect.runtime.universe._
 import scala.reflect._
+import scala.collection.mutable.WrappedArray
 
 package impl {
 // Abs -----------------------------------
@@ -44,7 +45,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     override def dataSize: Rep[Long] = {
       asRep[Long](mkMethodCall(self,
         thisClass.getMethod("dataSize"),
-        List(),
+        WrappedArray.empty,
         true, false, element[Long]))
     }
   }
@@ -53,6 +54,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     extends SizeAnyValueElem[CSizeAnyValue]
     with ConcreteElem[CSizeAnyValueData, CSizeAnyValue] {
     override lazy val parent: Option[Elem[_]] = Some(sizeAnyValueElement)
+
     override def convertSizeAnyValue(x: Rep[SizeAnyValue]) = RCSizeAnyValue(x.tVal, x.valueSize)
   }
 
@@ -77,9 +79,6 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     def productElement(n: Int) = ???
   }
   case class CSizeAnyValueIsoElem() extends Elem[CSizeAnyValueIso] {
-    lazy val tag = {
-      weakTypeTag[CSizeAnyValueIso]
-    }
   }
   // 4) constructor and deconstructor
   class CSizeAnyValueCompanionCtor extends CompanionDef[CSizeAnyValueCompanionCtor] with CSizeAnyValueCompanion {
@@ -105,12 +104,14 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
       proxyOps[CSizeAnyValueCompanionCtor](p)
   }
 
-  implicit case object CSizeAnyValueCompanionElem extends CompanionElem[CSizeAnyValueCompanionCtor] {
-    lazy val tag = weakTypeTag[CSizeAnyValueCompanionCtor]
-  }
+  implicit case object CSizeAnyValueCompanionElem extends CompanionElem[CSizeAnyValueCompanionCtor]
 
-  implicit def proxyCSizeAnyValue(p: Rep[CSizeAnyValue]): CSizeAnyValue =
-    proxyOps[CSizeAnyValue](p)
+  implicit def proxyCSizeAnyValue(p: Rep[CSizeAnyValue]): CSizeAnyValue = {
+    if (p.rhs.isInstanceOf[CSizeAnyValue])
+      p.rhs.asInstanceOf[CSizeAnyValue]
+    else
+      proxyOps[CSizeAnyValue](p)
+  }
 
   implicit class ExtendedCSizeAnyValue(p: Rep[CSizeAnyValue]) {
     def toData: Rep[CSizeAnyValueData] = {
@@ -136,7 +137,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     object CSizeAnyValueMethods {
     object dataSize {
       def unapply(d: Def[_]): Nullable[Rep[CSizeAnyValue]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CSizeAnyValueElem] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeAnyValueElem] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CSizeAnyValue]]]
         case _ => Nullable.None
@@ -165,7 +166,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     override def dataSize: Rep[Long] = {
       asRep[Long](mkMethodCall(self,
         thisClass.getMethod("dataSize"),
-        List(),
+        WrappedArray.empty,
         true, false, element[Long]))
     }
   }
@@ -174,6 +175,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     extends SizeSigmaPropElem[CSizeSigmaProp]
     with ConcreteElem[CSizeSigmaPropData, CSizeSigmaProp] {
     override lazy val parent: Option[Elem[_]] = Some(sizeSigmaPropElement)
+
     override def convertSizeSigmaProp(x: Rep[SizeSigmaProp]) = RCSizeSigmaProp(x.propBytes)
   }
 
@@ -198,9 +200,6 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     def productElement(n: Int) = ???
   }
   case class CSizeSigmaPropIsoElem() extends Elem[CSizeSigmaPropIso] {
-    lazy val tag = {
-      weakTypeTag[CSizeSigmaPropIso]
-    }
   }
   // 4) constructor and deconstructor
   class CSizeSigmaPropCompanionCtor extends CompanionDef[CSizeSigmaPropCompanionCtor] with CSizeSigmaPropCompanion {
@@ -222,12 +221,14 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
       proxyOps[CSizeSigmaPropCompanionCtor](p)
   }
 
-  implicit case object CSizeSigmaPropCompanionElem extends CompanionElem[CSizeSigmaPropCompanionCtor] {
-    lazy val tag = weakTypeTag[CSizeSigmaPropCompanionCtor]
-  }
+  implicit case object CSizeSigmaPropCompanionElem extends CompanionElem[CSizeSigmaPropCompanionCtor]
 
-  implicit def proxyCSizeSigmaProp(p: Rep[CSizeSigmaProp]): CSizeSigmaProp =
-    proxyOps[CSizeSigmaProp](p)
+  implicit def proxyCSizeSigmaProp(p: Rep[CSizeSigmaProp]): CSizeSigmaProp = {
+    if (p.rhs.isInstanceOf[CSizeSigmaProp])
+      p.rhs.asInstanceOf[CSizeSigmaProp]
+    else
+      proxyOps[CSizeSigmaProp](p)
+  }
 
   implicit class ExtendedCSizeSigmaProp(p: Rep[CSizeSigmaProp]) {
     def toData: Rep[CSizeSigmaPropData] = {
@@ -253,7 +254,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     object CSizeSigmaPropMethods {
     object dataSize {
       def unapply(d: Def[_]): Nullable[Rep[CSizeSigmaProp]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CSizeSigmaPropElem] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeSigmaPropElem] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CSizeSigmaProp]]]
         case _ => Nullable.None
@@ -282,14 +283,14 @@ object CSizeBox extends EntityObject("CSizeBox") {
     override def dataSize: Rep[Long] = {
       asRep[Long](mkMethodCall(self,
         thisClass.getMethod("dataSize"),
-        List(),
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(self,
         thisClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
-        List(id, tT),
+        Array[AnyRef](id, tT),
         true, false, element[Size[WOption[T]]]))
     }
   }
@@ -298,6 +299,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
     extends SizeBoxElem[CSizeBox]
     with ConcreteElem[CSizeBoxData, CSizeBox] {
     override lazy val parent: Option[Elem[_]] = Some(sizeBoxElement)
+
     override def convertSizeBox(x: Rep[SizeBox]) = RCSizeBox(x.propositionBytes, x.bytes, x.bytesWithoutRef, x.registers, x.tokens)
   }
 
@@ -322,9 +324,6 @@ object CSizeBox extends EntityObject("CSizeBox") {
     def productElement(n: Int) = ???
   }
   case class CSizeBoxIsoElem() extends Elem[CSizeBoxIso] {
-    lazy val tag = {
-      weakTypeTag[CSizeBoxIso]
-    }
   }
   // 4) constructor and deconstructor
   class CSizeBoxCompanionCtor extends CompanionDef[CSizeBoxCompanionCtor] with CSizeBoxCompanion {
@@ -350,12 +349,14 @@ object CSizeBox extends EntityObject("CSizeBox") {
       proxyOps[CSizeBoxCompanionCtor](p)
   }
 
-  implicit case object CSizeBoxCompanionElem extends CompanionElem[CSizeBoxCompanionCtor] {
-    lazy val tag = weakTypeTag[CSizeBoxCompanionCtor]
-  }
+  implicit case object CSizeBoxCompanionElem extends CompanionElem[CSizeBoxCompanionCtor]
 
-  implicit def proxyCSizeBox(p: Rep[CSizeBox]): CSizeBox =
-    proxyOps[CSizeBox](p)
+  implicit def proxyCSizeBox(p: Rep[CSizeBox]): CSizeBox = {
+    if (p.rhs.isInstanceOf[CSizeBox])
+      p.rhs.asInstanceOf[CSizeBox]
+    else
+      proxyOps[CSizeBox](p)
+  }
 
   implicit class ExtendedCSizeBox(p: Rep[CSizeBox]) {
     def toData: Rep[CSizeBoxData] = {
@@ -381,7 +382,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
     object CSizeBoxMethods {
     object dataSize {
       def unapply(d: Def[_]): Nullable[Rep[CSizeBox]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CSizeBoxElem] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeBoxElem] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CSizeBox]]]
         case _ => Nullable.None
@@ -394,7 +395,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
 
     object getReg {
       def unapply(d: Def[_]): Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBoxElem] && method.getName == "getReg" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "getReg" && receiver.elem.isInstanceOf[CSizeBoxElem] =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
@@ -423,14 +424,14 @@ object CSizeContext extends EntityObject("CSizeContext") {
     override def dataSize: Rep[Long] = {
       asRep[Long](mkMethodCall(self,
         thisClass.getMethod("dataSize"),
-        List(),
+        WrappedArray.empty,
         true, false, element[Long]))
     }
 
     override def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(self,
         thisClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
-        List(id, tT),
+        Array[AnyRef](id, tT),
         true, false, element[Size[WOption[T]]]))
     }
   }
@@ -439,6 +440,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
     extends SizeContextElem[CSizeContext]
     with ConcreteElem[CSizeContextData, CSizeContext] {
     override lazy val parent: Option[Elem[_]] = Some(sizeContextElement)
+
     override def convertSizeContext(x: Rep[SizeContext]) = // Converter is not generated by meta
 !!!("Cannot convert from SizeContext to CSizeContext: missing fields List(vars)")
   }
@@ -464,9 +466,6 @@ object CSizeContext extends EntityObject("CSizeContext") {
     def productElement(n: Int) = ???
   }
   case class CSizeContextIsoElem() extends Elem[CSizeContextIso] {
-    lazy val tag = {
-      weakTypeTag[CSizeContextIso]
-    }
   }
   // 4) constructor and deconstructor
   class CSizeContextCompanionCtor extends CompanionDef[CSizeContextCompanionCtor] with CSizeContextCompanion {
@@ -492,12 +491,14 @@ object CSizeContext extends EntityObject("CSizeContext") {
       proxyOps[CSizeContextCompanionCtor](p)
   }
 
-  implicit case object CSizeContextCompanionElem extends CompanionElem[CSizeContextCompanionCtor] {
-    lazy val tag = weakTypeTag[CSizeContextCompanionCtor]
-  }
+  implicit case object CSizeContextCompanionElem extends CompanionElem[CSizeContextCompanionCtor]
 
-  implicit def proxyCSizeContext(p: Rep[CSizeContext]): CSizeContext =
-    proxyOps[CSizeContext](p)
+  implicit def proxyCSizeContext(p: Rep[CSizeContext]): CSizeContext = {
+    if (p.rhs.isInstanceOf[CSizeContext])
+      p.rhs.asInstanceOf[CSizeContext]
+    else
+      proxyOps[CSizeContext](p)
+  }
 
   implicit class ExtendedCSizeContext(p: Rep[CSizeContext]) {
     def toData: Rep[CSizeContextData] = {
@@ -523,7 +524,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
     object CSizeContextMethods {
     object dataSize {
       def unapply(d: Def[_]): Nullable[Rep[CSizeContext]] = d match {
-        case MethodCall(receiver, method, _, _) if receiver.elem.isInstanceOf[CSizeContextElem] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeContextElem] =>
           val res = receiver
           Nullable(res).asInstanceOf[Nullable[Rep[CSizeContext]]]
         case _ => Nullable.None
@@ -536,7 +537,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
 
     object getVar {
       def unapply(d: Def[_]): Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeContextElem] && method.getName == "getVar" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "getVar" && receiver.elem.isInstanceOf[CSizeContextElem] =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
@@ -565,6 +566,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     extends SizeBuilderElem[CSizeBuilder]
     with ConcreteElem[CSizeBuilderData, CSizeBuilder] {
     override lazy val parent: Option[Elem[_]] = Some(sizeBuilderElement)
+
     override def convertSizeBuilder(x: Rep[SizeBuilder]) = RCSizeBuilder()
   }
 
@@ -589,9 +591,6 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     def productElement(n: Int) = ???
   }
   case class CSizeBuilderIsoElem() extends Elem[CSizeBuilderIso] {
-    lazy val tag = {
-      weakTypeTag[CSizeBuilderIso]
-    }
   }
   // 4) constructor and deconstructor
   class CSizeBuilderCompanionCtor extends CompanionDef[CSizeBuilderCompanionCtor] with CSizeBuilderCompanion {
@@ -617,12 +616,14 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
       proxyOps[CSizeBuilderCompanionCtor](p)
   }
 
-  implicit case object CSizeBuilderCompanionElem extends CompanionElem[CSizeBuilderCompanionCtor] {
-    lazy val tag = weakTypeTag[CSizeBuilderCompanionCtor]
-  }
+  implicit case object CSizeBuilderCompanionElem extends CompanionElem[CSizeBuilderCompanionCtor]
 
-  implicit def proxyCSizeBuilder(p: Rep[CSizeBuilder]): CSizeBuilder =
-    proxyOps[CSizeBuilder](p)
+  implicit def proxyCSizeBuilder(p: Rep[CSizeBuilder]): CSizeBuilder = {
+    if (p.rhs.isInstanceOf[CSizeBuilder])
+      p.rhs.asInstanceOf[CSizeBuilder]
+    else
+      proxyOps[CSizeBuilder](p)
+  }
 
   implicit class ExtendedCSizeBuilder(p: Rep[CSizeBuilder]) {
     def toData: Rep[CSizeBuilderData] = {
@@ -648,7 +649,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     object CSizeBuilderMethods {
     object mkSizeAnyValue {
       def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBuilderElem] && method.getName == "mkSizeAnyValue" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeAnyValue" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
           val res = (receiver, args(0), args(1))
           Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])]]
         case _ => Nullable.None
@@ -661,7 +662,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
 
     object mkSizeBox {
       def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBuilderElem] && method.getName == "mkSizeBox" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeBox" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
           val res = (receiver, args(0), args(1), args(2), args(3), args(4))
           Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])]]
         case _ => Nullable.None
@@ -674,7 +675,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
 
     object mkSizeContext {
       def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[CSizeBuilderElem] && method.getName == "mkSizeContext" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeContext" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
           val res = (receiver, args(0), args(1), args(2), args(3), args(4), args(5), args(6), args(7))
           Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])]]
         case _ => Nullable.None

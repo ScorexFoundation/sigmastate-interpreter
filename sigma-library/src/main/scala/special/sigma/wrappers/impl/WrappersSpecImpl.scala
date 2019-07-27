@@ -3,6 +3,7 @@ package special.sigma.wrappers
 import scalan._
 import scala.reflect.runtime.universe._
 import scala.reflect._
+import scala.collection.mutable.WrappedArray
 
 package impl {
 // Abs -----------------------------------
@@ -15,9 +16,12 @@ import WrapSpecBase._
 import SigmaPredefWrapSpec._
 
 object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
+  private val SigmaPredefWrapSpecClass = classOf[SigmaPredefWrapSpec]
+
   // entityAdapter for SigmaPredefWrapSpec trait
   case class SigmaPredefWrapSpecAdapter(source: Rep[SigmaPredefWrapSpec])
-      extends SigmaPredefWrapSpec with Def[SigmaPredefWrapSpec] {
+      extends SigmaPredefWrapSpec
+      with Def[SigmaPredefWrapSpec] {
     val selfType: Elem[SigmaPredefWrapSpec] = element[SigmaPredefWrapSpec]
     override def transform(t: Transformer) = SigmaPredefWrapSpecAdapter(t(source))
   }
@@ -33,6 +37,7 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
   class SigmaPredefWrapSpecElem[To <: SigmaPredefWrapSpec]
     extends WrapSpecBaseElem[To] {
     override lazy val parent: Option[Elem[_]] = Some(wrapSpecBaseElement)
+
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SigmaPredefWrapSpec] => convertSigmaPredefWrapSpec(x) }
       tryConvert(element[SigmaPredefWrapSpec], this, x, conv)
@@ -49,16 +54,14 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
   implicit lazy val sigmaPredefWrapSpecElement: Elem[SigmaPredefWrapSpec] =
     new SigmaPredefWrapSpecElem[SigmaPredefWrapSpec]
 
-  implicit case object SigmaPredefWrapSpecCompanionElem extends CompanionElem[SigmaPredefWrapSpecCompanionCtor] {
-    lazy val tag = weakTypeTag[SigmaPredefWrapSpecCompanionCtor]
-  }
+  implicit case object SigmaPredefWrapSpecCompanionElem extends CompanionElem[SigmaPredefWrapSpecCompanionCtor]
 
   abstract class SigmaPredefWrapSpecCompanionCtor extends CompanionDef[SigmaPredefWrapSpecCompanionCtor] with SigmaPredefWrapSpecCompanion {
     def selfType = SigmaPredefWrapSpecCompanionElem
     override def toString = "SigmaPredefWrapSpec"
   }
   implicit def proxySigmaPredefWrapSpecCompanionCtor(p: Rep[SigmaPredefWrapSpecCompanionCtor]): SigmaPredefWrapSpecCompanionCtor =
-    proxyOps[SigmaPredefWrapSpecCompanionCtor](p)
+    p.rhs.asInstanceOf[SigmaPredefWrapSpecCompanionCtor]
 
   lazy val RSigmaPredefWrapSpec: Rep[SigmaPredefWrapSpecCompanionCtor] = new SigmaPredefWrapSpecCompanionCtor {
     private val thisClass = classOf[SigmaPredefWrapSpecCompanion]
@@ -67,7 +70,7 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
   object SigmaPredefWrapSpecMethods {
     object dataSize {
       def unapply(d: Def[_]): Nullable[(Rep[SigmaPredefWrapSpec], Rep[Any])] = d match {
-        case MethodCall(receiver, method, args, _) if receiver.elem.isInstanceOf[SigmaPredefWrapSpecElem[_]] && method.getName == "dataSize" =>
+        case MethodCall(receiver, method, args, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[SigmaPredefWrapSpecElem[_]] =>
           val res = (receiver, args(0))
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaPredefWrapSpec], Rep[Any])]]
         case _ => Nullable.None
