@@ -33,9 +33,6 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
   class SigmaPredefWrapSpecElem[To <: SigmaPredefWrapSpec]
     extends WrapSpecBaseElem[To] {
     override lazy val parent: Option[Elem[_]] = Some(wrapSpecBaseElement)
-    override lazy val tag = {
-      weakTypeTag[SigmaPredefWrapSpec].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SigmaPredefWrapSpec] => convertSigmaPredefWrapSpec(x) }
       tryConvert(element[SigmaPredefWrapSpec], this, x, conv)

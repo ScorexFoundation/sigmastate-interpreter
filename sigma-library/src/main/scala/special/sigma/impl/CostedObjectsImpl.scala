@@ -130,9 +130,6 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(anyValueElement))
-    override lazy val tag = {
-      weakTypeTag[SizeAnyValue].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SizeAnyValue] => convertSizeAnyValue(x) }
       tryConvert(element[SizeAnyValue], this, x, conv)
@@ -282,9 +279,6 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(sigmaPropElement))
-    override lazy val tag = {
-      weakTypeTag[SizeSigmaProp].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SizeSigmaProp] => convertSizeSigmaProp(x) }
       tryConvert(element[SizeSigmaProp], this, x, conv)
@@ -491,9 +485,6 @@ object SizeBox extends EntityObject("SizeBox") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(boxElement))
-    override lazy val tag = {
-      weakTypeTag[SizeBox].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SizeBox] => convertSizeBox(x) }
       tryConvert(element[SizeBox], this, x, conv)
@@ -793,9 +784,6 @@ object SizeContext extends EntityObject("SizeContext") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(contextElement))
-    override lazy val tag = {
-      weakTypeTag[SizeContext].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SizeContext] => convertSizeContext(x) }
       tryConvert(element[SizeContext], this, x, conv)
@@ -1039,9 +1027,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[SizeBuilder].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SizeBuilder] => convertSizeBuilder(x) }
       tryConvert(element[SizeBuilder], this, x, conv)

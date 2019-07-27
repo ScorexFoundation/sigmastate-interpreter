@@ -246,9 +246,6 @@ object CostModel extends EntityObject("CostModel") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[CostModel].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[CostModel] => convertCostModel(x) }
       tryConvert(element[CostModel], this, x, conv)
@@ -811,9 +808,6 @@ object BigInt extends EntityObject("BigInt") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[BigInt].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[BigInt] => convertBigInt(x) }
       tryConvert(element[BigInt], this, x, conv)
@@ -1280,9 +1274,6 @@ object GroupElement extends EntityObject("GroupElement") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[GroupElement].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[GroupElement] => convertGroupElement(x) }
       tryConvert(element[GroupElement], this, x, conv)
@@ -1558,9 +1549,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[SigmaProp].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SigmaProp] => convertSigmaProp(x) }
       tryConvert(element[SigmaProp], this, x, conv)
@@ -1767,9 +1755,6 @@ object AnyValue extends EntityObject("AnyValue") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[AnyValue].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[AnyValue] => convertAnyValue(x) }
       tryConvert(element[AnyValue], this, x, conv)
@@ -2033,9 +2018,6 @@ object Box extends EntityObject("Box") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[Box].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[Box] => convertBox(x) }
       tryConvert(element[Box], this, x, conv)
@@ -2603,9 +2585,6 @@ object AvlTree extends EntityObject("AvlTree") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[AvlTree].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[AvlTree] => convertAvlTree(x) }
       tryConvert(element[AvlTree], this, x, conv)
@@ -2996,9 +2975,6 @@ object PreHeader extends EntityObject("PreHeader") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[PreHeader].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[PreHeader] => convertPreHeader(x) }
       tryConvert(element[PreHeader], this, x, conv)
@@ -3397,9 +3373,6 @@ object Header extends EntityObject("Header") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[Header].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[Header] => convertHeader(x) }
       tryConvert(element[Header], this, x, conv)
@@ -3874,9 +3847,6 @@ object Context extends EntityObject("Context") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[Context].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[Context] => convertContext(x) }
       tryConvert(element[Context], this, x, conv)
@@ -4185,9 +4155,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[SigmaContract].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SigmaContract] => convertSigmaContract(x) }
       tryConvert(element[SigmaContract], this, x, conv)
@@ -4896,9 +4863,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         ))
     }
 
-    override lazy val tag = {
-      weakTypeTag[SigmaDslBuilder].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[SigmaDslBuilder] => convertSigmaDslBuilder(x) }
       tryConvert(element[SigmaDslBuilder], this, x, conv)
