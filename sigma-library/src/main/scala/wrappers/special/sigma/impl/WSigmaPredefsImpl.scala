@@ -33,9 +33,6 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
   // familyElem
   class WSigmaPredefElem[To <: WSigmaPredef]
     extends EntityElem[To] {
-    override lazy val tag = {
-      weakTypeTag[WSigmaPredef].asInstanceOf[WeakTypeTag[To]]
-    }
     override def convert(x: Rep[Def[_]]) = {
       val conv = fun {x: Rep[WSigmaPredef] => convertWSigmaPredef(x) }
       tryConvert(element[WSigmaPredef], this, x, conv)
