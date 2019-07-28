@@ -232,7 +232,7 @@ object CostModel extends EntityObject("CostModel") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyCostModel(p: Rep[CostModel]): CostModel = {
-    if (p.rhs.isInstanceOf[CostModel@unchecked]) p.rhs.asInstanceOf[CostModel]
+    if (p.rhs.isInstanceOf[CostModel]) p.rhs.asInstanceOf[CostModel]
     else
       CostModelAdapter(p)
   }
@@ -247,18 +247,6 @@ object CostModel extends EntityObject("CostModel") {
         Elem.declaredMethods(classOf[CostModel], classOf[SCostModel], Set(
         "AccessBox", "AccessAvlTree", "GetVar", "DeserializeVar", "GetRegister", "DeserializeRegister", "SelectField", "CollectionConst", "AccessKiloByteOfData", "dataSize", "PubKeySize"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[CostModel] => convertCostModel(x) }
-      tryConvert(element[CostModel], this, x, conv)
-    }
-
-    def convertCostModel(x: Rep[CostModel]): Rep[To] = {
-      x.elem match {
-        case _: CostModelElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have CostModelElem[_], but got $e", x)
-      }
     }
   }
 
@@ -794,7 +782,7 @@ object BigInt extends EntityObject("BigInt") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyBigInt(p: Rep[BigInt]): BigInt = {
-    if (p.rhs.isInstanceOf[BigInt@unchecked]) p.rhs.asInstanceOf[BigInt]
+    if (p.rhs.isInstanceOf[BigInt]) p.rhs.asInstanceOf[BigInt]
     else
       BigIntAdapter(p)
   }
@@ -809,18 +797,6 @@ object BigInt extends EntityObject("BigInt") {
         Elem.declaredMethods(classOf[BigInt], classOf[SBigInt], Set(
         "toByte", "toShort", "toInt", "toLong", "toBytes", "toBits", "toAbs", "compareTo", "modQ", "plusModQ", "minusModQ", "multModQ", "inverseModQ", "signum", "add", "subtract", "multiply", "divide", "mod", "remainder", "min", "max", "negate"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[BigInt] => convertBigInt(x) }
-      tryConvert(element[BigInt], this, x, conv)
-    }
-
-    def convertBigInt(x: Rep[BigInt]): Rep[To] = {
-      x.elem match {
-        case _: BigIntElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have BigIntElem[_], but got $e", x)
-      }
     }
   }
 
@@ -1260,7 +1236,7 @@ object GroupElement extends EntityObject("GroupElement") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyGroupElement(p: Rep[GroupElement]): GroupElement = {
-    if (p.rhs.isInstanceOf[GroupElement@unchecked]) p.rhs.asInstanceOf[GroupElement]
+    if (p.rhs.isInstanceOf[GroupElement]) p.rhs.asInstanceOf[GroupElement]
     else
       GroupElementAdapter(p)
   }
@@ -1275,18 +1251,6 @@ object GroupElement extends EntityObject("GroupElement") {
         Elem.declaredMethods(classOf[GroupElement], classOf[SGroupElement], Set(
         "isInfinity", "exp", "multiply", "negate", "getEncoded"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[GroupElement] => convertGroupElement(x) }
-      tryConvert(element[GroupElement], this, x, conv)
-    }
-
-    def convertGroupElement(x: Rep[GroupElement]): Rep[To] = {
-      x.elem match {
-        case _: GroupElementElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have GroupElementElem[_], but got $e", x)
-      }
     }
   }
 
@@ -1536,7 +1500,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySigmaProp(p: Rep[SigmaProp]): SigmaProp = {
-    if (p.rhs.isInstanceOf[SigmaProp@unchecked]) p.rhs.asInstanceOf[SigmaProp]
+    if (p.rhs.isInstanceOf[SigmaProp]) p.rhs.asInstanceOf[SigmaProp]
     else
       SigmaPropAdapter(p)
   }
@@ -1551,18 +1515,6 @@ object SigmaProp extends EntityObject("SigmaProp") {
         Elem.declaredMethods(classOf[SigmaProp], classOf[SSigmaProp], Set(
         "isValid", "propBytes", "$amp$amp", "$amp$amp", "$bar$bar", "$bar$bar"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SigmaProp] => convertSigmaProp(x) }
-      tryConvert(element[SigmaProp], this, x, conv)
-    }
-
-    def convertSigmaProp(x: Rep[SigmaProp]): Rep[To] = {
-      x.elem match {
-        case _: SigmaPropElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SigmaPropElem[_], but got $e", x)
-      }
     }
   }
 
@@ -1741,7 +1693,7 @@ object AnyValue extends EntityObject("AnyValue") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyAnyValue(p: Rep[AnyValue]): AnyValue = {
-    if (p.rhs.isInstanceOf[AnyValue@unchecked]) p.rhs.asInstanceOf[AnyValue]
+    if (p.rhs.isInstanceOf[AnyValue]) p.rhs.asInstanceOf[AnyValue]
     else
       AnyValueAdapter(p)
   }
@@ -1756,18 +1708,6 @@ object AnyValue extends EntityObject("AnyValue") {
         Elem.declaredMethods(classOf[AnyValue], classOf[SAnyValue], Set(
         "value", "tVal"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[AnyValue] => convertAnyValue(x) }
-      tryConvert(element[AnyValue], this, x, conv)
-    }
-
-    def convertAnyValue(x: Rep[AnyValue]): Rep[To] = {
-      x.elem match {
-        case _: AnyValueElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have AnyValueElem[_], but got $e", x)
-      }
     }
   }
 
@@ -2004,7 +1944,7 @@ object Box extends EntityObject("Box") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyBox(p: Rep[Box]): Box = {
-    if (p.rhs.isInstanceOf[Box@unchecked]) p.rhs.asInstanceOf[Box]
+    if (p.rhs.isInstanceOf[Box]) p.rhs.asInstanceOf[Box]
     else
       BoxAdapter(p)
   }
@@ -2019,18 +1959,6 @@ object Box extends EntityObject("Box") {
         Elem.declaredMethods(classOf[Box], classOf[SBox], Set(
         "id", "value", "propositionBytes", "bytes", "bytesWithoutRef", "registers", "getReg", "R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "tokens", "creationInfo", "executeFromRegister"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[Box] => convertBox(x) }
-      tryConvert(element[Box], this, x, conv)
-    }
-
-    def convertBox(x: Rep[Box]): Rep[To] = {
-      x.elem match {
-        case _: BoxElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have BoxElem[_], but got $e", x)
-      }
     }
   }
 
@@ -2571,7 +2499,7 @@ object AvlTree extends EntityObject("AvlTree") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyAvlTree(p: Rep[AvlTree]): AvlTree = {
-    if (p.rhs.isInstanceOf[AvlTree@unchecked]) p.rhs.asInstanceOf[AvlTree]
+    if (p.rhs.isInstanceOf[AvlTree]) p.rhs.asInstanceOf[AvlTree]
     else
       AvlTreeAdapter(p)
   }
@@ -2586,18 +2514,6 @@ object AvlTree extends EntityObject("AvlTree") {
         Elem.declaredMethods(classOf[AvlTree], classOf[SAvlTree], Set(
         "digest", "enabledOperations", "keyLength", "valueLengthOpt", "isInsertAllowed", "isUpdateAllowed", "isRemoveAllowed", "updateDigest", "updateOperations", "contains", "get", "getMany", "insert", "update", "remove"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[AvlTree] => convertAvlTree(x) }
-      tryConvert(element[AvlTree], this, x, conv)
-    }
-
-    def convertAvlTree(x: Rep[AvlTree]): Rep[To] = {
-      x.elem match {
-        case _: AvlTreeElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have AvlTreeElem[_], but got $e", x)
-      }
     }
   }
 
@@ -2961,7 +2877,7 @@ object PreHeader extends EntityObject("PreHeader") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyPreHeader(p: Rep[PreHeader]): PreHeader = {
-    if (p.rhs.isInstanceOf[PreHeader@unchecked]) p.rhs.asInstanceOf[PreHeader]
+    if (p.rhs.isInstanceOf[PreHeader]) p.rhs.asInstanceOf[PreHeader]
     else
       PreHeaderAdapter(p)
   }
@@ -2976,18 +2892,6 @@ object PreHeader extends EntityObject("PreHeader") {
         Elem.declaredMethods(classOf[PreHeader], classOf[SPreHeader], Set(
         "version", "parentId", "timestamp", "nBits", "height", "minerPk", "votes"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[PreHeader] => convertPreHeader(x) }
-      tryConvert(element[PreHeader], this, x, conv)
-    }
-
-    def convertPreHeader(x: Rep[PreHeader]): Rep[To] = {
-      x.elem match {
-        case _: PreHeaderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have PreHeaderElem[_], but got $e", x)
-      }
     }
   }
 
@@ -3359,7 +3263,7 @@ object Header extends EntityObject("Header") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyHeader(p: Rep[Header]): Header = {
-    if (p.rhs.isInstanceOf[Header@unchecked]) p.rhs.asInstanceOf[Header]
+    if (p.rhs.isInstanceOf[Header]) p.rhs.asInstanceOf[Header]
     else
       HeaderAdapter(p)
   }
@@ -3374,18 +3278,6 @@ object Header extends EntityObject("Header") {
         Elem.declaredMethods(classOf[Header], classOf[SHeader], Set(
         "id", "version", "parentId", "ADProofsRoot", "stateRoot", "transactionsRoot", "timestamp", "nBits", "height", "extensionRoot", "minerPk", "powOnetimePk", "powNonce", "powDistance", "votes"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[Header] => convertHeader(x) }
-      tryConvert(element[Header], this, x, conv)
-    }
-
-    def convertHeader(x: Rep[Header]): Rep[To] = {
-      x.elem match {
-        case _: HeaderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have HeaderElem[_], but got $e", x)
-      }
     }
   }
 
@@ -3833,7 +3725,7 @@ object Context extends EntityObject("Context") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyContext(p: Rep[Context]): Context = {
-    if (p.rhs.isInstanceOf[Context@unchecked]) p.rhs.asInstanceOf[Context]
+    if (p.rhs.isInstanceOf[Context]) p.rhs.asInstanceOf[Context]
     else
       ContextAdapter(p)
   }
@@ -3848,18 +3740,6 @@ object Context extends EntityObject("Context") {
         Elem.declaredMethods(classOf[Context], classOf[SContext], Set(
         "builder", "OUTPUTS", "INPUTS", "dataInputs", "HEIGHT", "SELF", "selfBoxIndex", "LastBlockUtxoRootHash", "headers", "preHeader", "minerPubKey", "getVar", "vars"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[Context] => convertContext(x) }
-      tryConvert(element[Context], this, x, conv)
-    }
-
-    def convertContext(x: Rep[Context]): Rep[To] = {
-      x.elem match {
-        case _: ContextElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have ContextElem[_], but got $e", x)
-      }
     }
   }
 
@@ -4141,7 +4021,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySigmaContract(p: Rep[SigmaContract]): SigmaContract = {
-    if (p.rhs.isInstanceOf[SigmaContract@unchecked]) p.rhs.asInstanceOf[SigmaContract]
+    if (p.rhs.isInstanceOf[SigmaContract]) p.rhs.asInstanceOf[SigmaContract]
     else
       SigmaContractAdapter(p)
   }
@@ -4156,18 +4036,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
         "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants", "canOpen", "asFunction"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SigmaContract] => convertSigmaContract(x) }
-      tryConvert(element[SigmaContract], this, x, conv)
-    }
-
-    def convertSigmaContract(x: Rep[SigmaContract]): Rep[To] = {
-      x.elem match {
-        case _: SigmaContractElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SigmaContractElem[_], but got $e", x)
-      }
     }
   }
 
@@ -4889,7 +4757,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySigmaDslBuilder(p: Rep[SigmaDslBuilder]): SigmaDslBuilder = {
-    if (p.rhs.isInstanceOf[SigmaDslBuilder@unchecked]) p.rhs.asInstanceOf[SigmaDslBuilder]
+    if (p.rhs.isInstanceOf[SigmaDslBuilder]) p.rhs.asInstanceOf[SigmaDslBuilder]
     else
       SigmaDslBuilderAdapter(p)
   }
@@ -4904,18 +4772,6 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
         Elem.declaredMethods(classOf[SigmaDslBuilder], classOf[SSigmaDslBuilder], Set(
         "Colls", "Monoids", "Costing", "CostModel", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "substConstants", "decodePoint", "avlTree", "xor"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SigmaDslBuilder] => convertSigmaDslBuilder(x) }
-      tryConvert(element[SigmaDslBuilder], this, x, conv)
-    }
-
-    def convertSigmaDslBuilder(x: Rep[SigmaDslBuilder]): Rep[To] = {
-      x.elem match {
-        case _: SigmaDslBuilderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SigmaDslBuilderElem[_], but got $e", x)
-      }
     }
   }
 

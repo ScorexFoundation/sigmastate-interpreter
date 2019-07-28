@@ -115,7 +115,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySizeAnyValue(p: Rep[SizeAnyValue]): SizeAnyValue = {
-    if (p.rhs.isInstanceOf[SizeAnyValue@unchecked]) p.rhs.asInstanceOf[SizeAnyValue]
+    if (p.rhs.isInstanceOf[SizeAnyValue]) p.rhs.asInstanceOf[SizeAnyValue]
     else
       SizeAnyValueAdapter(p)
   }
@@ -133,18 +133,6 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(anyValueElement))
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SizeAnyValue] => convertSizeAnyValue(x) }
-      tryConvert(element[SizeAnyValue], this, x, conv)
-    }
-
-    def convertSizeAnyValue(x: Rep[SizeAnyValue]): Rep[To] = {
-      x.elem match {
-        case _: SizeAnyValueElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SizeAnyValueElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val sizeAnyValueElement: Elem[SizeAnyValue] =
@@ -265,7 +253,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySizeSigmaProp(p: Rep[SizeSigmaProp]): SizeSigmaProp = {
-    if (p.rhs.isInstanceOf[SizeSigmaProp@unchecked]) p.rhs.asInstanceOf[SizeSigmaProp]
+    if (p.rhs.isInstanceOf[SizeSigmaProp]) p.rhs.asInstanceOf[SizeSigmaProp]
     else
       SizeSigmaPropAdapter(p)
   }
@@ -283,18 +271,6 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(sigmaPropElement))
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SizeSigmaProp] => convertSizeSigmaProp(x) }
-      tryConvert(element[SizeSigmaProp], this, x, conv)
-    }
-
-    def convertSizeSigmaProp(x: Rep[SizeSigmaProp]): Rep[To] = {
-      x.elem match {
-        case _: SizeSigmaPropElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SizeSigmaPropElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val sizeSigmaPropElement: Elem[SizeSigmaProp] =
@@ -472,7 +448,7 @@ object SizeBox extends EntityObject("SizeBox") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySizeBox(p: Rep[SizeBox]): SizeBox = {
-    if (p.rhs.isInstanceOf[SizeBox@unchecked]) p.rhs.asInstanceOf[SizeBox]
+    if (p.rhs.isInstanceOf[SizeBox]) p.rhs.asInstanceOf[SizeBox]
     else
       SizeBoxAdapter(p)
   }
@@ -490,18 +466,6 @@ object SizeBox extends EntityObject("SizeBox") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(boxElement))
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SizeBox] => convertSizeBox(x) }
-      tryConvert(element[SizeBox], this, x, conv)
-    }
-
-    def convertSizeBox(x: Rep[SizeBox]): Rep[To] = {
-      x.elem match {
-        case _: SizeBoxElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SizeBoxElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val sizeBoxElement: Elem[SizeBox] =
@@ -772,7 +736,7 @@ object SizeContext extends EntityObject("SizeContext") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySizeContext(p: Rep[SizeContext]): SizeContext = {
-    if (p.rhs.isInstanceOf[SizeContext@unchecked]) p.rhs.asInstanceOf[SizeContext]
+    if (p.rhs.isInstanceOf[SizeContext]) p.rhs.asInstanceOf[SizeContext]
     else
       SizeContextAdapter(p)
   }
@@ -790,18 +754,6 @@ object SizeContext extends EntityObject("SizeContext") {
     }
 
     override lazy val parent: Option[Elem[_]] = Some(sizeElement(contextElement))
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SizeContext] => convertSizeContext(x) }
-      tryConvert(element[SizeContext], this, x, conv)
-    }
-
-    def convertSizeContext(x: Rep[SizeContext]): Rep[To] = {
-      x.elem match {
-        case _: SizeContextElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SizeContextElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val sizeContextElement: Elem[SizeContext] =
@@ -1017,7 +969,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySizeBuilder(p: Rep[SizeBuilder]): SizeBuilder = {
-    if (p.rhs.isInstanceOf[SizeBuilder@unchecked]) p.rhs.asInstanceOf[SizeBuilder]
+    if (p.rhs.isInstanceOf[SizeBuilder]) p.rhs.asInstanceOf[SizeBuilder]
     else
       SizeBuilderAdapter(p)
   }
@@ -1032,18 +984,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
         Elem.declaredMethods(classOf[SizeBuilder], classOf[SSizeBuilder], Set(
         "mkSizeAnyValue", "mkSizeBox", "mkSizeContext"
         ))
-    }
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SizeBuilder] => convertSizeBuilder(x) }
-      tryConvert(element[SizeBuilder], this, x, conv)
-    }
-
-    def convertSizeBuilder(x: Rep[SizeBuilder]): Rep[To] = {
-      x.elem match {
-        case _: SizeBuilderElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SizeBuilderElem[_], but got $e", x)
-      }
     }
   }
 
