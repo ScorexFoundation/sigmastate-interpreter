@@ -68,12 +68,17 @@ the conversation should be opened during PR review and addressed by PR authors.
 (by pressing `Resolve conversation` button), this can be done by reviewers, after the 
 questions are resolved.*
 
-This is responsibility of a reviewer to identify suspicious changes.
+It is a responsibility of an author to identify suspicious changes and wither avoid them
+altogether or provide NO-HF-PROOF comment (see below) in advance, without request.
+The responsibility of reviewer is to catch suspicious changes, not proved by the author, and
+raise a conversation.
 The responsibility of the author is to dispel those suspicions by providing a NO-HF-PROOF comment
 in the source code (not in github PR comment).
 
 Reviewers should request NO-HF-PROOF comment for ALL suspicious changes
-in the code. The template for comment is as the following:
+in the code. 
+
+The example (and a template) for a comment is as the following:
 ```scala
 /* NO HF PROOF: 
   Changed: the `if (spendingTransaction == null)` condition was removed
@@ -95,7 +100,7 @@ If the change is semantic the author need to have strong reasons,
 which should be motivated in the NO-HF-PROOF comment.
 
 Even if suspicious change is approved, there is still a chance that some 
-negative impact has been ovelooked. 
+negative impact has been overlooked. 
 Thus, by default, we allow only one such change per release, to simplify root cause analysis 
 in case of any errors.
 
