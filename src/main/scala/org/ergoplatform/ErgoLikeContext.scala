@@ -120,7 +120,7 @@ class ErgoLikeContext(val currentHeight: Height,
 object ErgoLikeContext extends JsonCodecs {
   type Height = Int
 
-  val dummyPubkey: Array[Byte] = Array.fill(CryptoConstants.groupSize + 1)(0: Byte)
+  val dummyPubkey: Array[Byte] = GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator )
 
   val noBoxes = IndexedSeq.empty[ErgoBox]
   val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
