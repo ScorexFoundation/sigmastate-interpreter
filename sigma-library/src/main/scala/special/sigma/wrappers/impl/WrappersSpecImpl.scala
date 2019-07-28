@@ -28,7 +28,7 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
 
   // entityProxy: single proxy for each type family
   implicit def proxySigmaPredefWrapSpec(p: Rep[SigmaPredefWrapSpec]): SigmaPredefWrapSpec = {
-    if (p.rhs.isInstanceOf[SigmaPredefWrapSpec@unchecked]) p.rhs.asInstanceOf[SigmaPredefWrapSpec]
+    if (p.rhs.isInstanceOf[SigmaPredefWrapSpec]) p.rhs.asInstanceOf[SigmaPredefWrapSpec]
     else
       SigmaPredefWrapSpecAdapter(p)
   }
@@ -37,18 +37,6 @@ object SigmaPredefWrapSpec extends EntityObject("SigmaPredefWrapSpec") {
   class SigmaPredefWrapSpecElem[To <: SigmaPredefWrapSpec]
     extends WrapSpecBaseElem[To] {
     override lazy val parent: Option[Elem[_]] = Some(wrapSpecBaseElement)
-
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[SigmaPredefWrapSpec] => convertSigmaPredefWrapSpec(x) }
-      tryConvert(element[SigmaPredefWrapSpec], this, x, conv)
-    }
-
-    def convertSigmaPredefWrapSpec(x: Rep[SigmaPredefWrapSpec]): Rep[To] = {
-      x.elem match {
-        case _: SigmaPredefWrapSpecElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have SigmaPredefWrapSpecElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val sigmaPredefWrapSpecElement: Elem[SigmaPredefWrapSpec] =

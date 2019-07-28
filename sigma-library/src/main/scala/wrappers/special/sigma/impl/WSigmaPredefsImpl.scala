@@ -29,7 +29,7 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
 
   // entityProxy: single proxy for each type family
   implicit def proxyWSigmaPredef(p: Rep[WSigmaPredef]): WSigmaPredef = {
-    if (p.rhs.isInstanceOf[WSigmaPredef@unchecked]) p.rhs.asInstanceOf[WSigmaPredef]
+    if (p.rhs.isInstanceOf[WSigmaPredef]) p.rhs.asInstanceOf[WSigmaPredef]
     else
       WSigmaPredefAdapter(p)
   }
@@ -37,17 +37,6 @@ object WSigmaPredef extends EntityObject("WSigmaPredef") {
   // familyElem
   class WSigmaPredefElem[To <: WSigmaPredef]
     extends EntityElem[To] {
-    override def convert(x: Rep[Def[_]]) = {
-      val conv = fun {x: Rep[WSigmaPredef] => convertWSigmaPredef(x) }
-      tryConvert(element[WSigmaPredef], this, x, conv)
-    }
-
-    def convertWSigmaPredef(x: Rep[WSigmaPredef]): Rep[To] = {
-      x.elem match {
-        case _: WSigmaPredefElem[_] => asRep[To](x)
-        case e => !!!(s"Expected $x to have WSigmaPredefElem[_], but got $e", x)
-      }
-    }
   }
 
   implicit lazy val wSigmaPredefElement: Elem[WSigmaPredef] =
