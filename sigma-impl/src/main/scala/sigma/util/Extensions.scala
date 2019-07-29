@@ -5,7 +5,6 @@ import java.nio.ByteBuffer
 
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.Ints
-import scalan.{Nullable, RType}
 
 import scala.language.higherKinds
 
