@@ -33,6 +33,6 @@ class CosterException(message: String, source: Option[SourceContext], cause: Opt
 class InterpreterException(message: String, source: Option[SourceContext] = None, cause: Option[Throwable] = None)
   extends SigmaException(message, source, cause)
 
-class CostLimitException(estimatedCost: Long, message: String, cause: Option[Throwable] = None)
+class CostLimitException(val estimatedCost: Long, message: String, cause: Option[Throwable] = None)
     extends SigmaException(message, None, cause)
 

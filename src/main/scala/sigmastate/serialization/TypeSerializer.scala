@@ -17,10 +17,10 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
   val embeddableIdToType = Array[SType](null, SBoolean, SByte, SShort, SInt, SLong, SBigInt, SGroupElement, SSigmaProp)
 
 
-  def getEmbeddableType(code: Int): SType =
-    CheckPrimitiveTypeCode(code.toByte) {
-      embeddableIdToType(code)
-    }
+  def getEmbeddableType(code: Int): SType = {
+    CheckPrimitiveTypeCode(code.toByte)
+    embeddableIdToType(code)
+  }
 
   override def serialize(tpe: SType, w: SigmaByteWriter) = tpe match {
     case p: SEmbeddable => w.put(p.typeCode)
@@ -191,7 +191,8 @@ object TypeSerializer extends ByteBufferSerializer[SType] {
         case SPreHeader.typeCode => SPreHeader
         case SGlobal.typeCode => SGlobal
         case _ =>
-          CheckTypeCode(c.toByte) { NoType }
+          CheckTypeCode(c.toByte)
+          NoType
       }
     }
     tpe

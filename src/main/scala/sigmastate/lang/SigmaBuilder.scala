@@ -28,7 +28,7 @@ import special.sigma.{AvlTree, GroupElement, SigmaProp}
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
 import special.sigma.{GroupElement, SigmaProp}
-
+import spire.syntax.all.cfor
 import scala.util.DynamicVariable
 
 trait SigmaBuilder {
@@ -651,13 +651,19 @@ class StdSigmaBuilder extends SigmaBuilder {
 
 trait TypeConstraintCheck {
 
+  /** @hotspot called during script deserialization (don't beautify this code)
+    * @consensus
+    */
   def check2[T <: SType](left: Value[T],
                          right: Value[T],
-                         constraints: Seq[TypeConstraint2]): Unit =
-    constraints.foreach { c =>
+                         constraints: Seq[TypeConstraint2]): Unit = {
+    val n = constraints.length
+    cfor(0)(_ < n, _ + 1) { i =>
+      val c = constraints(i)  // to be efficient constraints should be WrappedArray (not List)
       if (!c(left.tpe, right.tpe))
         throw new ConstraintFailed(s"Failed constraint $c for binary operation parameters ($left(tpe: ${left.tpe}), $right(tpe: ${right.tpe}))")
     }
+  }
 }
 
 trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
@@ -677,16 +683,16 @@ trait TransformingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck 
                                                    right: Value[T],
                                                    cons: (Value[T], Value[T]) => R): R = {
     val (l, r) = applyUpcast(left, right)
-    check2(l, r, Seq(sameType2))
+    check2(l, r, Array(sameType2))
     cons(l, r)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
                                                      right: Value[T],
                                                      cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Seq(onlyNumeric2))
+    check2(left, right, Array(onlyNumeric2))
     val (l, r) = applyUpcast(left, right)
-    check2(l, r, Seq(sameType2))
+    check2(l, r, Array(sameType2))
     cons(l, r)
   }
 
@@ -703,21 +709,21 @@ trait CheckingSigmaBuilder extends StdSigmaBuilder with TypeConstraintCheck {
   override protected def equalityOp[T <: SType, R](left: Value[T],
                                                    right: Value[T],
                                                    cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Seq(sameType2))
+    check2(left, right, Array(sameType2))
     cons(left, right)
   }
 
   override protected def comparisonOp[T <: SType, R](left: Value[T],
                                                      right: Value[T],
                                                      cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Seq(onlyNumeric2, sameType2))
+    check2(left, right, Array(onlyNumeric2, sameType2))
     cons(left, right)
   }
 
   override protected def arithOp[T <: SNumericType, R](left: Value[T],
                                                        right: Value[T],
                                                        cons: (Value[T], Value[T]) => R): R = {
-    check2(left, right, Seq(sameType2))
+    check2(left, right, Array(sameType2))
     cons(left, right)
   }
 }

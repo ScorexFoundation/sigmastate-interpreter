@@ -357,8 +357,6 @@ class CostingSpecification extends SigmaTestingData {
 
   property("ErgoTree with TrueLeaf costs") {
     val tree = ErgoTree(16, IndexedSeq(TrueLeaf), BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)))
-    tree.toString shouldBe
-      "ErgoTree(16,Vector(TrueLeaf$(127)),Right(BoolToSigmaProp(ConstantPlaceholder(0,SBoolean))),0)"
 
     val pr = interpreter.prove(tree, context, fakeMessage).get
     val expressionCost =
@@ -377,4 +375,10 @@ class CostingSpecification extends SigmaTestingData {
     cost shouldBe expectedCost
   }
 
+  property("laziness of AND, OR costs") {
+    cost("{ val cond = getVar[Boolean](2).get; !(!cond && (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost * 3 + multiply + comparisonCost)
+    cost("{ val cond = getVar[Boolean](2).get; (cond || (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost + multiply + comparisonCost)
+  }
 }

@@ -254,7 +254,9 @@ trait STypeCompanion {
     * It delegate to getMethodById to lookup method.
     * @see getMethodById
     */
-  def methodById(methodId: Byte): SMethod = ValidationRules.CheckAndGetMethod(this, methodId) { m => m }
+  def methodById(methodId: Byte): SMethod = {
+    ValidationRules.CheckAndGetMethod(this, methodId)
+  }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -274,7 +276,7 @@ trait SProduct extends SType {
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)` */
-  protected def getMethods(): Seq[SMethod] = Seq()
+  protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
   lazy val methods: Seq[SMethod] = {
@@ -401,9 +403,8 @@ object SMethod {
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
-      SType.types(typeId)
-    }
+    ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId))
+    val typeCompanion = SType.types(typeId)
     val method = typeCompanion.methodById(methodId)
     method
   }
@@ -1229,8 +1230,8 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override def mkConstant(v: Coll[Any]): Value[this.type] =
     Constant[STuple](v, this).asValue[this.type]
 
-  val typeParams = Seq()
-  val tparamSubst = Map()
+  val typeParams = Nil
+  val tparamSubst = Map.empty
 
   override def toTermString = s"(${items.map(_.toTermString).mkString(",")})"
   override def toString = s"(${items.mkString(",")})"
@@ -1292,7 +1293,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
   val typeParams: Seq[STypeParam] = tpeParams
-  val tparamSubst: Map[STypeVar, SType] = Map() // defined in MethodCall.typeSubst
+  val tparamSubst: Map[STypeVar, SType] = Map.empty // defined in MethodCall.typeSubst
 
   def getGenericType: SFunc = {
     val typeParams: Seq[STypeParam] = tDom.zipWithIndex
@@ -1307,7 +1308,7 @@ object SFunc {
   val tD = STypeVar("D")
   val tR = STypeVar("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // @hotspot
   val identity = { x: Any => x }
 }
 

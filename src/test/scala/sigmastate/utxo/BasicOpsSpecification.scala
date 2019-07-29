@@ -487,13 +487,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         )
     }
 
-    check(BigInteger.TWO.negate().pow(255), false)
-    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
-    check(BigInteger.TWO.pow(255).subtract(BigInteger.ONE), false)
-    check(BigInteger.TWO.pow(255), true)
-    check(BigInteger.TWO.pow(255).add(BigInteger.ONE), true)
-    check(BigInteger.TWO.pow(256), true)
-    check(BigInteger.TWO.negate().pow(256).subtract(BigInteger.ONE), true)
+    val two = BigInteger.valueOf(2) // BigInteger.TWO is not exported in JDK 1.8
+    check(two.negate().pow(255), false)
+    check(two.negate().pow(256).subtract(BigInteger.ONE), true)
+    check(two.pow(255).subtract(BigInteger.ONE), false)
+    check(two.pow(255), true)
+    check(two.pow(255).add(BigInteger.ONE), true)
+    check(two.pow(256), true)
+    check(two.negate().pow(256).subtract(BigInteger.ONE), true)
   }
 
   property("ExtractCreationInfo") {
@@ -616,6 +617,22 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("Option.filter") {
     test("Option.filter", env, ext,
       "getVar[Int](intVar1).filter({(i: Int) => i > 0}).get == 1",
+      null,
+      true
+    )
+  }
+
+  property("lazy OR") {
+    test("lazy OR", env, ext,
+      "true || ((1/0) == 1)",
+      null,
+      true
+    )
+  }
+
+  property("lazy AND") {
+    test("lazy AND", env, ext,
+      "(false && ((1/0) == 1)) == false",
       null,
       true
     )

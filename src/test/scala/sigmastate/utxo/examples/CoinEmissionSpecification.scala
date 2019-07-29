@@ -156,14 +156,16 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       ut.toSigned(IndexedSeq(proverResult))
     }
 
-    val st = System.currentTimeMillis()
+    var st = System.currentTimeMillis()
 
     def chainGen(state: ValidationState,
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 1000 == 0) {
-        println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+      if (height % 100 == 0) {
+        val t = System.currentTimeMillis()
+        println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain")
+        st = t
         IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
