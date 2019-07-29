@@ -63,9 +63,7 @@ class CostingSpecification extends SigmaTestingData {
   lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(
-      currentHeight = preHeader.height,
       lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-      minerPubkey = preHeader.minerPk.getEncoded.toArray,
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),

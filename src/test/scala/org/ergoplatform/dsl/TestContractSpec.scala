@@ -81,9 +81,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       val propSpec = utxoBox.propSpec
       val boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq
       val ctx = new ErgoLikeContext(
-        currentHeight = tx.block.height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
         headers     = noHeaders,
         preHeader   = dummyPreHeader(tx.block.height, ErgoLikeContext.dummyPubkey),
         dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,

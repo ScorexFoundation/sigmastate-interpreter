@@ -25,13 +25,10 @@ import scala.util.Try
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
 
 /**
-  * TODO currentHeight and minerPubkey should be calculated from PreHeader
   * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
   *
   * @param selfIndex - index of the box in `boxesToSpend` that contains the script we're evaluating
-  * @param currentHeight - height of a block with the current `spendingTransaction`
   * @param lastBlockUtxoRoot - state root before current block application
-  * @param minerPubkey - public key of a miner of the block with the current `spendingTransaction`
   * @param headers - fixed number of last block headers in descending order (first header is the newest one)
   * @param preHeader - fields of block header with the current `spendingTransaction`, that can be predicted
   *                  by a miner before it's formation
@@ -43,9 +40,7 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
   * @param costLimit  hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
   * @param initCost   initial value of execution cost already accumulated before Interpreter.verify is called
   */
-class ErgoLikeContext(val currentHeight: Height,
-                      val lastBlockUtxoRoot: AvlTreeData,
-                      val minerPubkey: Array[Byte],
+class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val headers: Coll[Header],
                       val preHeader: PreHeader,
                       val dataBoxes: IndexedSeq[ErgoBox],
@@ -61,39 +56,43 @@ class ErgoLikeContext(val currentHeight: Height,
   assert(preHeader != null)
   assert(spendingTransaction != null)
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
-  assert(preHeader.height == currentHeight, "Incorrect preHeader height")
-  assert(java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
   assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
+  // height of a block with the current `spendingTransaction`
+  val currentHeight: Height = preHeader.height
+
+  //  public key of a miner of the block with the current `spendingTransaction`
+  val minerPubkey: GroupElement = preHeader.minerPk
+
   val self: ErgoBox = boxesToSpend(selfIndex)
 
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
-      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, newCostLimit, initCost)
 
   override def withInitCost(newCost: Long): ErgoLikeContext =
     new ErgoLikeContext(
-      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, newCost)
 
   override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
     new ErgoLikeContext(
-      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, newVs, costLimit, initCost)
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
-      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, newExtension, validationSettings, costLimit, initCost)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
-      currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
+      lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
 
   import ErgoLikeContext._
@@ -110,9 +109,9 @@ class ErgoLikeContext(val currentHeight: Height,
     }
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
-    new CostingDataContext(
+    CostingDataContext(
       dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
-      minerPubkey.toColl,
+      minerPubkey.getEncoded,
       vars,
       isCost)
   }
@@ -146,10 +145,7 @@ object ErgoLikeContext extends JsonCodecs {
             self: ErgoBox,
             extension: ContextExtension = ContextExtension.empty,
             vs: SigmaValidationSettings = ValidationRules.currentSettings) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
-      noHeaders,
-      dummyPreHeader(currentHeight, minerPubkey),
-      noBoxes,
+    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
       boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
 
   def apply(currentHeight: Height,
@@ -159,9 +155,7 @@ object ErgoLikeContext extends JsonCodecs {
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
             selfIndex: Int) =
-    new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
-      noHeaders,
-      dummyPreHeader(currentHeight, minerPubkey),
+    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
       dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
 
 
@@ -212,7 +206,7 @@ object ErgoLikeContext extends JsonCodecs {
     Json.obj(
       "currentHeight" -> ctx.currentHeight.asJson,
       "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
-      "minerPubkey" -> ctx.minerPubkey.asJson,
+      "minerPubkey" -> ctx.minerPubkey.getEncoded.asJson,
       "headers" -> ctx.headers.toArray.toSeq.asJson,
       "preHeader" -> ctx.preHeader.asJson,
       "dataBoxes" -> ctx.dataBoxes.asJson,

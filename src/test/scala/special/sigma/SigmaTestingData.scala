@@ -91,9 +91,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     votes = Colls.emptyColl[Byte]
   )
   val ergoCtx = new ErgoLikeContext(
-    currentHeight = preHeader.height,
     lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    preHeader.minerPk.getEncoded.toArray,
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
     selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
