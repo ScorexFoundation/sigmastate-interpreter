@@ -214,4 +214,15 @@ object ErgoBox extends JsonCodecs {
     )
   }
 
+  implicit val jsonDecoder: Decoder[ErgoBox] = { cursor =>
+    for {
+      value <- cursor.downField("value").as[Long]
+      ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
+      additionalTokens <- cursor.downField("assets").as[Seq[(TokenId, Long)]]
+      creationHeight <- cursor.downField("creationHeight").as[Int]
+      // TODO: decode
+      additionalRegisters <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]]
+    } yield ErgoBox(value, ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes), creationHeight,  additionalTokens)
+  }
+
 }

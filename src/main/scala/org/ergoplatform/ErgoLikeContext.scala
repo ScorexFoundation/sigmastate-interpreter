@@ -218,6 +218,23 @@ object ErgoLikeContext extends JsonCodecs {
       "initCost" -> ctx.initCost.asJson
     )
   }
+
+  implicit val jsonDecoder: Decoder[ErgoLikeContext] = { cursor =>
+    for {
+      lastBlockUtxoRoot <- cursor.downField("lastBlockUtxoRoot").as[AvlTreeData]
+      headers <- cursor.downField("headers").as[Seq[Header]]
+      preHeader <- cursor.downField("preHeader").as[PreHeader]
+      dataBoxes <- cursor.downField("dataBoxes").as[IndexedSeq[ErgoBox]]
+      boxesToSpend <- cursor.downField("boxesToSpend").as[IndexedSeq[ErgoBox]]
+      spendingTransaction <- cursor.downField("spendingTransaction").as[ErgoLikeTransaction]
+      selfIndex <- cursor.downField("selfIndex").as[Int]
+      extension <- cursor.downField("extension").as[ContextExtension]
+      validationSettings <- cursor.downField("validationSettings").as[SigmaValidationSettings]
+      costLimit <- cursor.downField("costLimit").as[Long]
+      initCost <- cursor.downField("initCost").as[Long]
+    } yield new ErgoLikeContext(lastBlockUtxoRoot, Colls.fromArray(headers.toArray), preHeader,
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
+  }
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */

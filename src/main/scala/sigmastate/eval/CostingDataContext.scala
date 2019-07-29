@@ -44,6 +44,10 @@ case class CGroupElement(override val wrappedValue: EcPointType) extends TestGro
 
 }
 
+object CGroupElement {
+  def decode(bytes: Coll[Byte]): CGroupElement = CGroupElement(GroupElementSerializer.parse(bytes.toArray))
+}
+
 case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[SigmaBoolean] {
   override def wrappedValue: SigmaBoolean = sigmaTree
 

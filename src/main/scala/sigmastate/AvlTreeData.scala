@@ -111,4 +111,12 @@ object AvlTreeData {
     )
   }
 
+  implicit val jsonDecoder: Decoder[AvlTreeData] = { cursor =>
+    for {
+      digest <- cursor.downField("digest").as[Array[Byte]]
+      treeFlagsByte <- cursor.downField("treeFlags").as[Byte]
+      keyLength <- cursor.downField("keyLength").as[Int]
+      valueLength <- cursor.downField("valueLength").as[Option[Int]]
+    } yield new AvlTreeData(ADDigest @@ digest, AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
+  }
 }
