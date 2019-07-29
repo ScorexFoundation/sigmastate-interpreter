@@ -215,9 +215,9 @@ object ErgoLikeContext extends JsonCodecs {
       "preHeader" -> ctx.preHeader.asJson,
       "dataBoxes" -> ctx.dataBoxes.asJson,
       "boxesToSpend" -> ctx.boxesToSpend.asJson,
-      // TODO: fix
+      // TODO: handle unsigned tx
       "spendingTransaction" -> ctx.spendingTransaction.asInstanceOf[ErgoLikeTransaction].asJson,
-      "self" -> ctx.self.asJson,
+      "selfIndex" -> ctx.boxesToSpend.indexOf(ctx.self).asJson,
       "extension" -> ctx.extension.asJson,
       "validationSettings" -> ctx.validationSettings.asJson,
       "costLimit" -> ctx.costLimit.asJson,
