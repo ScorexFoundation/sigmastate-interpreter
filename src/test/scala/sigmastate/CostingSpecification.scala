@@ -69,7 +69,7 @@ class CostingSpecification extends SigmaTestingData {
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
+      spendingTransaction = tx, selfIndex = 0, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
 
   def cost(script: String)(expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)

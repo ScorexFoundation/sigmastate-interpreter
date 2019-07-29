@@ -28,7 +28,7 @@ case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData
   * TODO currentHeight and minerPubkey should be calculated from PreHeader
   * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
   *
-  * @param self - box that contains the script we're evaluating
+  * @param selfIndex - index of the box in `boxesToSpend` that contains the script we're evaluating
   * @param currentHeight - height of a block with the current `spendingTransaction`
   * @param lastBlockUtxoRoot - state root before current block application
   * @param minerPubkey - public key of a miner of the block with the current `spendingTransaction`
@@ -51,7 +51,7 @@ class ErgoLikeContext(val currentHeight: Height,
                       val dataBoxes: IndexedSeq[ErgoBox],
                       val boxesToSpend: IndexedSeq[ErgoBox],
                       val spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-                      val self: ErgoBox,
+                      val selfIndex: Int,
                       val extension: ContextExtension,
                       val validationSettings: SigmaValidationSettings,
                       val costLimit: Long,
@@ -60,7 +60,7 @@ class ErgoLikeContext(val currentHeight: Height,
 
   assert(preHeader != null)
   assert(spendingTransaction != null)
-  assert(boxesToSpend.exists(box => box.id == self.id), s"Self box if defined should be among boxesToSpend")
+  assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
   assert(preHeader.height == currentHeight, "Incorrect preHeader height")
   assert(java.util.Arrays.equals(minerPubkey, preHeader.minerPk.getEncoded.toArray), "Incorrect preHeader minerPubkey")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
@@ -69,30 +69,32 @@ class ErgoLikeContext(val currentHeight: Height,
   }
   assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
 
+  val self: ErgoBox = boxesToSpend(selfIndex)
+
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, newCostLimit, initCost)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, newCostLimit, initCost)
 
   override def withInitCost(newCost: Long): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, extension, validationSettings, costLimit, newCost)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, newCost)
 
   override def withValidationSettings(newVs: SigmaValidationSettings): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, extension, newVs, costLimit, initCost)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, newVs, costLimit, initCost)
 
   override def withExtension(newExtension: ContextExtension): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, self, newExtension, validationSettings, costLimit, initCost)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, newExtension, validationSettings, costLimit, initCost)
 
   def withTransaction(newSpendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput]): ErgoLikeContext =
     new ErgoLikeContext(
       currentHeight, lastBlockUtxoRoot, minerPubkey, headers, preHeader,
-      dataBoxes, boxesToSpend, newSpendingTransaction, self, extension, validationSettings, costLimit, initCost)
+      dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
 
   import ErgoLikeContext._
   import Evaluation._
@@ -148,7 +150,7 @@ object ErgoLikeContext extends JsonCodecs {
       noHeaders,
       dummyPreHeader(currentHeight, minerPubkey),
       noBoxes,
-      boxesToSpend, spendingTransaction, self, extension, vs, ScriptCostLimit.value, 0L)
+      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
 
   def apply(currentHeight: Height,
             lastBlockUtxoRoot: AvlTreeData,
@@ -156,11 +158,11 @@ object ErgoLikeContext extends JsonCodecs {
             dataBoxes: IndexedSeq[ErgoBox],
             boxesToSpend: IndexedSeq[ErgoBox],
             spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-            self: ErgoBox) =
+            selfIndex: Int) =
     new ErgoLikeContext(currentHeight, lastBlockUtxoRoot, minerPubkey,
       noHeaders,
       dummyPreHeader(currentHeight, minerPubkey),
-      dataBoxes, boxesToSpend, spendingTransaction, self, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
+      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
 
 
   def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
@@ -217,7 +219,7 @@ object ErgoLikeContext extends JsonCodecs {
       "boxesToSpend" -> ctx.boxesToSpend.asJson,
       // TODO: handle unsigned tx
       "spendingTransaction" -> ctx.spendingTransaction.asInstanceOf[ErgoLikeTransaction].asJson,
-      "selfIndex" -> ctx.boxesToSpend.indexOf(ctx.self).asJson,
+      "selfIndex" -> ctx.selfIndex.asJson,
       "extension" -> ctx.extension.asJson,
       "validationSettings" -> ctx.validationSettings.asJson,
       "costLimit" -> ctx.costLimit.asJson,
@@ -264,7 +266,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 }
 
 
-/** When interpreted evaluates to a BoxConstant built from Context.self */
+/** When interpreted evaluates to a BoxConstant built from Context.selfIndex */
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode

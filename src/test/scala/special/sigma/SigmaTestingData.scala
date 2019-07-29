@@ -96,7 +96,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     preHeader.minerPk.getEncoded.toArray,
     boxesToSpend = IndexedSeq(inBox),
     spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
-    self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
+    selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension.empty,
     validationSettings = ValidationRules.currentSettings,
     costLimit = ScriptCostLimit.value, initCost = 0L)
