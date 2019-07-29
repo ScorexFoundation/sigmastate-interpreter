@@ -204,9 +204,7 @@ object ErgoLikeContext extends JsonCodecs {
 
   implicit val jsonEncoder: Encoder[ErgoLikeContext] = { ctx =>
     Json.obj(
-      "currentHeight" -> ctx.currentHeight.asJson,
       "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
-      "minerPubkey" -> ctx.minerPubkey.getEncoded.asJson,
       "headers" -> ctx.headers.toArray.toSeq.asJson,
       "preHeader" -> ctx.preHeader.asJson,
       "dataBoxes" -> ctx.dataBoxes.asJson,
