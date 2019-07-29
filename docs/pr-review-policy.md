@@ -7,7 +7,7 @@ This is part of network consensus protocol and thus critical for long-term survi
 of Ergo blockchain.
 
 From Sigma development point of view, consensus critical part of Ergo
-is BlockCandidate validation code. More concretely `ErgoTransaciton.validateStateful` method.
+is BlockCandidate validation code. More concretely `ErgoTransaction.validateStateful` method.
 
 To achieve network consensus, block validation should be the same on all the nodes. 
 If some nodes have different validation results, this may lead to a network fork 
@@ -33,7 +33,7 @@ and hence `red` zone.
 
 Before the first mainnet has been released we tried to keep sigma release versions in sync with ergo versions. 
 Now it doesn’t look possible, since ergo will have more frequent changes.
-For example (at the time of writing) `v3.0.1` из next release branch in sigma and `v3.0.5` is next in ergo.
+For example (at the time of writing) `v3.0.1` is next release branch in sigma and `v3.0.5` is next in ergo.
 Thus between ergo and sigma we should keep only first two numbers of the version in sync.
 So when ergo will switch to `v3.1.x`, sigma will also switch to `3.1.x`, but the last digit may differ.
 
@@ -51,7 +51,7 @@ much stronger than in typical software development projects.
 The only way a new code can go to mainnet is after the following has been done:
 1) the new PR is based on `v3.x` branch
 2) the new PR passes all tests in `v3.x` branch (including ergo-unit, ergo-it and spam tests)
-3) the PR is reviewed and merged in `v3.x` branch 
+3) the PR is reviewed 
 4) at least 2 approving reviews are presented (@aslesarenko and @kushti are strictly required)
 5) the PR is merged into `v3.x` branch
 6) the commits are merged into master as part of `v3.x` branch and released after that
@@ -68,7 +68,7 @@ the conversation should be opened during PR review and addressed by PR authors.
 (by pressing `Resolve conversation` button), this can be done by reviewers, after the 
 questions are resolved.*
 
-It is a responsibility of an author to identify suspicious changes and wither avoid them
+It is a responsibility of an author to identify suspicious changes and whether to avoid them
 altogether or provide NO-HF-PROOF comment (see below) in advance, without request.
 The responsibility of reviewer is to catch suspicious changes, not proved by the author, and
 raise a conversation.
