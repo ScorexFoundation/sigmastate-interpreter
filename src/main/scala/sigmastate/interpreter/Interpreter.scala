@@ -240,7 +240,7 @@ trait Interpreter extends ScorexLogging {
       checkingResult -> cost
     })
     if (outputComputedResults) {
-      res.foreach { case (ok, cost) =>
+      res.foreach { case (_, cost) =>
         val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds
         val error = if (scaledCost > timeMicro) {
