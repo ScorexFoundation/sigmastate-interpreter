@@ -10,10 +10,4 @@ object CryptoFunctions {
     Blake2b256.hash(input).take(soundnessBytes)
   }
 
-  def showECPoint(p: ECPoint): String = {
-    val rawX = p.getRawXCoord.toString.substring(0, 6)
-    val rawY = p.getRawYCoord.toString.substring(0, 6)
-    s"ECPoint($rawX,$rawY,...)"
-  }
-
 }
