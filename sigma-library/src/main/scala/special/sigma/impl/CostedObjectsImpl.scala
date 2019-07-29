@@ -53,7 +53,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
       asRep[WRType[Any]](mkMethodCall(self,
         SizeAnyValueClass.getMethod("tVal"),
         WrappedArray.empty,
-        true, false, wRTypeElement(AnyElement)))
+        true, false, wRTypeAnyElement))
     }
 
     // manual fix
@@ -61,7 +61,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
       asRep[Size[Any]](mkMethodCall(self,
         SizeAnyValueClass.getMethod("valueSize"),
         WrappedArray.empty,
-        true, false, sizeElement(AnyElement)))
+        true, false, sizeAnyElement))
     }
   }
 
@@ -94,7 +94,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
       asRep[WRType[Any]](mkMethodCall(source,
         SizeAnyValueClass.getMethod("tVal"),
         WrappedArray.empty,
-        true, true, wRTypeElement(AnyElement)))
+        true, true, wRTypeAnyElement))
     }
 
     // manual fix
@@ -102,7 +102,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
       asRep[Size[Any]](mkMethodCall(source,
         SizeAnyValueClass.getMethod("valueSize"),
         WrappedArray.empty,
-        true, true, sizeElement(AnyElement)))
+        true, true, sizeAnyElement))
     }
 
     def dataSize: Rep[Long] = {

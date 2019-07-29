@@ -91,15 +91,6 @@ trait SigmaLibrary extends Library
     case AllZk(_,items,_) if items.length == 1 => items(0)
     case AnyZk(_,items,_) if items.length == 1 => items(0)
 
-    case ApplyBinOp(op, lhs, rhs) =>
-      op.asInstanceOf[BinOp[_, _]] match {
-        case And =>
-          sigmaDslBuilder.allOf(sigmaDslBuilder.Colls.fromItems(Seq(asRep[Boolean](lhs), asRep[Boolean](rhs)):_*))
-        case Or =>
-          sigmaDslBuilder.anyOf(sigmaDslBuilder.Colls.fromItems(Seq(asRep[Boolean](lhs), asRep[Boolean](rhs)):_*))
-        case _ => super.rewriteDef(d)
-      }
-
     case SDBM.sigmaProp(_, SM.isValid(p)) => p
     case SM.isValid(SDBM.sigmaProp(_, bool)) => bool
 
