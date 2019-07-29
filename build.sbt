@@ -201,7 +201,7 @@ lazy val sigma = (project in file("."))
     .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "master"
+  val ergoBranch = "ergobox-opt"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")

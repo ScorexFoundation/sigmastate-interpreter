@@ -28,6 +28,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import sigma.util.Extensions.ByteOps
+import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
@@ -660,6 +661,7 @@ object Values {
         }
       }
 
+      /** @hotspot don't beautify this code */
       override def parse(r: SigmaByteReader): SigmaBoolean = {
         val depth = r.level
         r.level = depth + 1
@@ -671,16 +673,25 @@ object Values {
           case ProveDHTupleCode => dhtSerializer.parse(r)
           case AndCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             CAND(children)
           case OrCode =>
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             COR(children)
           case AtLeastCode =>
             val k = r.getUShort()
             val n = r.getUShort()
-            val children = (0 until n).map(_ => serializer.parse(r))
+            val children = new Array[SigmaBoolean](n)
+            cfor(0)(_ < n, _ + 1) { i =>
+              children(i) = serializer.parse(r)
+            }
             CTHRESHOLD(k, children)
         }
         r.level = r.level - 1
@@ -947,18 +958,33 @@ object Values {
     *                     instead of some Constant nodes. Otherwise, it may not contain placeholders.
     *                     It is possible to have both constants and placeholders in the tree, but for every placeholder
     *                     there should be a constant in `constants` array.
+    *  @param givenComplexity  structural complexity of the tree or 0 if is not specified at construction time.
+    *                          Access to this private value is provided via `complexity` property.
+    *                          In case of 0, the complexity is computed using ErgoTree deserializer, which can do this.
+    *                          When specified it should be computed as the sum of complexity values taken
+    *                          from ComplexityTable for all tree nodes. It approximates the time needed to process
+    *                          the tree by sigma compiler to obtain cost formula. Overly complex trees can thus
+    *                          be rejected even before compiler starts working.
+    *  @param propositionBytes original bytes of this tree from which it has been deserialized.
+    *                          If null then the bytes are not provided, and will be lazily generated when `bytes`
+    *                          method is called.
+    *                          These bytes are obtained in two ways:
+    *                          1) in the ErgoTreeSerializer from Reader
+    *                          2) in the alternative constructor using ErgoTreeSerializer.serializeErgoTree
+    *
     */
   case class ErgoTree private[sigmastate](
     header: Byte,
     constants: IndexedSeq[Constant[SType]],
     root: Either[UnparsedErgoTree, SigmaPropValue],
-    givenComplexity: Int
+    private val givenComplexity: Int,
+    private val propositionBytes: Array[Byte]
   ) {
 
     def this(header: Byte,
              constants: IndexedSeq[Constant[SType]],
              root: Either[UnparsedErgoTree, SigmaPropValue]) =
-      this(header, constants, root, 0)
+      this(header, constants, root, 0, DefaultSerializer.serializeErgoTree(ErgoTree(header, constants, root, 0, null)))
 
     require(isConstantSegregation || constants.isEmpty)
     require(version == 0 || hasSize, s"For newer version the size bit is required: $this")
@@ -969,13 +995,26 @@ object Values {
     @deprecated("Use toProposition instead", "v2.1")
     lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
-    @inline def version: Byte = ErgoTree.getVersion(header)
-    @inline def isRightParsed: Boolean = root.isRight
-    @inline def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
-    @inline def hasSize: Boolean = ErgoTree.hasSize(header)
-    @inline def bytes: Array[Byte] = DefaultSerializer.serializeErgoTree(this)
+    @inline final def version: Byte = ErgoTree.getVersion(header)
+    @inline final def isRightParsed: Boolean = root.isRight
+    @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
+    @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
+
+    private var _bytes: Array[Byte] = propositionBytes
+
+    /** Serialized bytes of this tree. */
+    final def bytes: Array[Byte] = {
+      if (_bytes == null) {
+        _bytes = DefaultSerializer.serializeErgoTree(this)
+      }
+      _bytes
+    }
 
     private var _complexity: Int = givenComplexity
+
+    /** Structural complexity estimation of this tree.
+      * @see ComplexityTable
+      */
     lazy val complexity: Int = {
       if (_complexity == 0) {
         _complexity = DefaultSerializer.deserializeErgoTree(bytes).complexity
@@ -1034,9 +1073,9 @@ object Values {
     /** Default header with constant segregation enabled. */
     val ConstantSegregationHeader: Byte = (DefaultHeader | ConstantSegregationFlag).toByte
 
-    @inline def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
-    @inline def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
-    @inline def getVersion(header: Byte): Byte = (header & VersionMask).toByte
+    @inline final def isConstantSegregation(header: Byte): Boolean = (header & ConstantSegregationFlag) != 0
+    @inline final def hasSize(header: Byte): Boolean = (header & SizeFlag) != 0
+    @inline final def getVersion(header: Byte): Byte = (header & VersionMask).toByte
 
     def substConstants(root: SValue, constants: IndexedSeq[Constant[SType]]): SValue = {
       val store = new ConstantStore(constants)

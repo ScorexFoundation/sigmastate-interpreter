@@ -2,7 +2,6 @@ package sigmastate.serialization.trees
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -34,16 +33,17 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
     }
   }
 
+  /** @hotspot don't beautify this code */
   override def parse(r: SigmaByteReader): R = {
     if (r.peekByte() == ConcreteCollectionBooleanConstantCode) {
       val _ = r.getByte() // skip collection op code
       val booleans = r.getBits(2)
-      val firstArg = BooleanConstant.fromBoolean(booleans(0)).asValue[S1]
-      val secondArg = BooleanConstant.fromBoolean(booleans(1)).asValue[S2]
+      val firstArg = BooleanConstant.fromBoolean(booleans(0)).asInstanceOf[Value[S1]]
+      val secondArg = BooleanConstant.fromBoolean(booleans(1)).asInstanceOf[Value[S2]]
       constructor(firstArg, secondArg).asInstanceOf[R]
     } else {
-      val firstArg = r.getValue().asValue[S1]
-      val secondArg = r.getValue().asValue[S2]
+      val firstArg = r.getValue().asInstanceOf[Value[S1]]
+      val secondArg = r.getValue().asInstanceOf[Value[S2]]
       constructor(firstArg, secondArg).asInstanceOf[R]
     }
   }
