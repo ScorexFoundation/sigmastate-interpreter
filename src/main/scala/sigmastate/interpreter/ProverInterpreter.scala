@@ -68,6 +68,14 @@ object ProverResult extends JsonCodecs {
       "extension" -> v.extension.asJson
     )
   }
+
+  implicit val jsonDecoder: Decoder[ProverResult] = { cursor =>
+    for {
+      proofBytes <- cursor.downField("proofBytes").as[Array[Byte]]
+      extMap <- cursor.downField("extension").as[Map[Byte, EvaluatedValue[SType]]]
+    } yield ProverResult(proofBytes, ContextExtension(extMap))
+  }
+
 }
 
 case class CostedProverResult(override val proof: Array[Byte],

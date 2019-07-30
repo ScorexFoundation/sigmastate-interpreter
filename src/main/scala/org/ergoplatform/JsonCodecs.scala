@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
@@ -7,9 +8,9 @@ import org.ergoplatform.settings.Algos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
-import sigmastate.Values.EvaluatedValue
+import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.{CGroupElement, CPreHeader, WrapperOf, _}
-import sigmastate.serialization.ValueSerializer
+import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, SType}
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
@@ -25,6 +26,10 @@ trait JsonCodecs {
 
   def fromOption[T](maybeResult: Option[T])(implicit cursor: ACursor): Either[DecodingFailure, T] = {
     maybeResult.fold[Either[DecodingFailure, T]](Left(DecodingFailure("No value found", cursor.history)))(Right.apply)
+  }
+
+  def fromThrows[T](throwsBlock: => T)(implicit cursor: ACursor): Either[DecodingFailure, T] = {
+    Either.catchNonFatal(throwsBlock).leftMap(e => DecodingFailure(e.toString, cursor.history))
   }
 
   private def bytesDecoder[T](transform: Array[Byte] => T): Decoder[T] = { implicit cursor =>
@@ -49,12 +54,13 @@ trait JsonCodecs {
   implicit val arrayBytesDecoder: Decoder[Array[Byte]] = bytesDecoder(x => x)
 
   implicit val collBytesEncoder: Encoder[Coll[Byte]] = Algos.encode(_).asJson
-  implicit val collBytesDecoder: Decoder[Coll[Byte]] = bytesDecoder(x => Colls.fromArray(x))
+  implicit val collBytesDecoder: Decoder[Coll[Byte]] = bytesDecoder(Colls.fromArray(_))
 
   implicit val adKeyEncoder: Encoder[ADKey] = _.array.asJson
+  implicit val adKeyDecoder: Decoder[ADKey] = bytesDecoder(ADKey @@ _)
 
   implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
-  implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(x => Digest32 @@ x)
+  implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
 
   implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
 
@@ -138,10 +144,27 @@ trait JsonCodecs {
     ValueSerializer.serialize(value).asJson
   }
 
-  implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[SType]] = Decoder.decodeString.emap { str =>
-    Algos.decode(str).flatMap { bytes =>
-      Try { ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]] }
-    }.toEither.left.map(_.getMessage)
+  implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[SType]] = {
+    decodeEvaluatedValue(_.asInstanceOf[EvaluatedValue[SType]])
   }
 
+  def decodeEvaluatedValue[T](transform: EvaluatedValue[SType] => T): Decoder[T] = { implicit cursor: ACursor =>
+    cursor.as[Array[Byte]] flatMap { bytes =>
+      fromThrows(transform(ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]]))
+    }
+  }
+
+  implicit val ergoTreeEncoder: Encoder[ErgoTree] = { value =>
+    ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(value).asJson
+  }
+
+  def decodeErgoTree[T](transform: ErgoTree => T): Decoder[T] = { implicit cursor: ACursor =>
+    cursor.as[Array[Byte]] flatMap { bytes =>
+      fromThrows(transform(ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(bytes)))
+    }
+  }
+
+  implicit val ergoTreeDecoder: Decoder[ErgoTree] = {
+    decodeErgoTree(_.asInstanceOf[ErgoTree])
+  }
 }

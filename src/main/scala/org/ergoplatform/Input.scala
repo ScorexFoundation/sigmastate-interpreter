@@ -25,6 +25,13 @@ object DataInput extends JsonCodecs {
       "boxId" -> input.boxId.asJson,
     )
   }
+
+  implicit val jsonDecoder: Decoder[DataInput] = { cursor =>
+    for {
+      boxId <- cursor.downField("boxId").as[ADKey]
+    } yield DataInput(boxId)
+  }
+
 }
 
 /**
@@ -84,6 +91,13 @@ object Input extends JsonCodecs {
       "boxId" -> input.boxId.asJson,
       "spendingProof" -> input.spendingProof.asJson
     )
+  }
+
+  implicit val jsonDecoder: Decoder[Input] = { cursor =>
+    for {
+      boxId <- cursor.downField("boxId").as[ADKey]
+      proof <- cursor.downField("spendingProof").as[ProverResult]
+    } yield Input(boxId, proof)
   }
 
 }
