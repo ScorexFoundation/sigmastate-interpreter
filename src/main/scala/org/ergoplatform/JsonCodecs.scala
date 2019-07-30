@@ -54,6 +54,7 @@ trait JsonCodecs {
   implicit val adKeyEncoder: Encoder[ADKey] = _.array.asJson
 
   implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
+  implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(x => Digest32 @@ x)
 
   implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
 
