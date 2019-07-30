@@ -114,7 +114,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 //  beginPass(costPass)
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
-    override def transform(t: Transformer): Def[Int] = this
+    override def mirror(t: Transformer): Rep[Int] = self
 
     def eval: Int = {
       val operId = OperationId(opName, opType)
@@ -729,15 +729,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       costedPrimToPair(v, c, asSizePair(s))
     case _ =>
       super.rewriteNonInvokableMethodCall(mc)
-  }
-
-  override def transformDef[A](d: Def[A], t: Transformer): Rep[A] = d match {
-    case c: CostOf => c.self
-    case OpCost(_, id, args, cost) =>
-      if (args.contains(cost))
-        !!!(s"Invalid OpCost($id, $args, $cost)")
-      super.transformDef(d, t)
-    case _ => super.transformDef(d, t)
   }
 
   /** Should be specified in the final cake */
