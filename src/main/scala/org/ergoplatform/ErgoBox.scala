@@ -208,9 +208,7 @@ object ErgoBox extends JsonCodecs {
       "ergoTree" -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
       "assets" -> box.additionalTokens.toArray.toSeq.asJson,
       "creationHeight" -> box.creationHeight.asJson,
-      "additionalRegisters" -> box.additionalRegisters.map { case (key, value) =>
-        s"R${key.number}" -> evaluatedValueEncoder(value)
-        }.asJson
+      "additionalRegisters" -> box.additionalRegisters.asJson
     )
   }
 
@@ -220,9 +218,8 @@ object ErgoBox extends JsonCodecs {
       ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
       additionalTokens <- cursor.downField("assets").as[Seq[(TokenId, Long)]]
       creationHeight <- cursor.downField("creationHeight").as[Int]
-      // TODO: decode
-      additionalRegisters <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]]]
-    } yield ErgoBox(value, ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes), creationHeight,  additionalTokens)
+      additionalRegisters <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
+    } yield ErgoBox(value, ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes), creationHeight,  additionalTokens, additionalRegisters)
   }
 
 }

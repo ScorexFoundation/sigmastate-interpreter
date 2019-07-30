@@ -2,13 +2,14 @@ package org.ergoplatform
 
 import io.circe._
 import io.circe.syntax._
+import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
 import org.ergoplatform.settings.Algos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values.EvaluatedValue
 import sigmastate.eval.{CGroupElement, CPreHeader, WrapperOf, _}
-import sigmastate.serialization.{GroupElementSerializer, ValueSerializer}
+import sigmastate.serialization.ValueSerializer
 import sigmastate.{AvlTreeData, SType}
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
@@ -55,6 +56,16 @@ trait JsonCodecs {
   implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
 
   implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
+
+  implicit val registerIdEncoder: KeyEncoder[NonMandatoryRegisterId] = { regId =>
+    s"R${regId.number}"
+  }
+
+  implicit val registerIdDecoder: KeyDecoder[NonMandatoryRegisterId] = { key =>
+    ErgoBox.registerByName.get(key).collect {
+      case nonMandatoryId: NonMandatoryRegisterId => nonMandatoryId
+    }
+  }
 
   implicit val headerEncoder: Encoder[Header] = { h: Header =>
     Map(
@@ -125,4 +136,11 @@ trait JsonCodecs {
   implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[SType]] = { value =>
     ValueSerializer.serialize(value).asJson
   }
+
+  implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[SType]] = Decoder.decodeString.emap { str =>
+    Algos.decode(str).flatMap { bytes =>
+      Try { ValueSerializer.deserialize(bytes).asInstanceOf[EvaluatedValue[SType]] }
+    }.toEither.left.map(_.getMessage)
+  }
+
 }
