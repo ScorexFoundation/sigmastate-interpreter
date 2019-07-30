@@ -46,6 +46,12 @@ object ContextExtension extends JsonCodecs {
       key -> evaluatedValueEncoder(value)
     }.asJson
   }
+
+  implicit val jsonDecoder: Decoder[ContextExtension] = { cursor =>
+    for {
+      values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
+    } yield ContextExtension(values)
+  }
 }
 
 

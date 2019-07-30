@@ -62,16 +62,6 @@ case class ValidationRule(
 
 }
 
-object ValidationRule extends JsonCodecs {
-
-  implicit val jsonEncoder: Encoder[ValidationRule] = { v =>
-    Json.obj(
-      "id" -> v.id.asJson,
-      "description" -> v.description.asJson
-    )
-  }
-}
-
 /** Base class for all exceptions which may be thrown by validation rules.
   * Instances of this class are used as messages to communicate soft-fork information,
   * from the context where the soft-fork condition is detected (such as in ValidationRules),

@@ -84,6 +84,10 @@ trait SigmaSerializer[TFamily, T <: TFamily] extends Serializer[TFamily, T, Sigm
     serialize(obj, w)
     w.toBytes
   }
+
+  final def fromBytes(bytes: Array[Byte]): TFamily = {
+    parse(SigmaSerializer.startReader(bytes))
+  }
 }
 
 trait SigmaSerializerCompanion[TFamily] {

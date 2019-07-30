@@ -60,13 +60,15 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
 }
 
 object SigmaValidationSettings extends JsonCodecs {
+
   implicit val jsonEncoder: Encoder[SigmaValidationSettings] = { v =>
-    Json.fromValues(v.toSeq.map { case (_, (rule, status)) =>
-      Json.obj(
-        "rule" -> rule.asJson,
-        "status" -> status.statusCode.asJson
-      )
-    })
+    SigmaValidationSettingsSerializer.toBytes(v).asJson
+  }
+
+  implicit val jsonDecoder: Decoder[SigmaValidationSettings] = { implicit cursor: ACursor =>
+    cursor.as[Array[Byte]] flatMap { bytes =>
+      fromThrows(SigmaValidationSettingsSerializer.fromBytes(bytes))
+    }
   }
 }
 

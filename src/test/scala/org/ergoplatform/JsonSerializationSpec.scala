@@ -6,7 +6,7 @@ import sigmastate.helpers.SigmaTestingCommons
 
 class JsonSerializationSpec extends SigmaTestingCommons {
 
-  property("ErgoFullBlock should be encoded into JSON and decoded back correctly") {
+  property("ErgoLikeContext should be encoded into JSON and decoded back correctly") {
 
     // TODO: implement ErgoLikeContext generator
     val ctx: ErgoLikeContext = ???
