@@ -53,6 +53,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val initCost: Long
                  ) extends InterpreterContext {
 
+  // TODO assert dataBoxes correspond to spendingTransaction.dataInputs
+  // TODO assert boxesToSpend correspond to spendingTransaction.inputs
   assert(preHeader != null)
   assert(spendingTransaction != null)
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
