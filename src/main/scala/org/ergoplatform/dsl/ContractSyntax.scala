@@ -41,7 +41,6 @@ object ContractSyntax {
 }
 
 trait SigmaContractSyntax extends SigmaContract with ContractSyntax {
-  override def canOpen(ctx: Context): Boolean = ???
 }
 
 
