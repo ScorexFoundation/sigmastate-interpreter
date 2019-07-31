@@ -10,16 +10,14 @@ class SigmaLibraryConfig extends LibraryConfig {
   def baseDir = ""
   val specialLibrary = new SpecialLibraryConfig
 
-  def wrapperConfigs: Map[String, WrapperConf] = List(
-    WrapperConf(baseDir,
-      packageName = "special.sigma",
-      name = "SigmaPredef"
-    )
+  def wrapperConfigs: Map[String, WrapperConf] = List[WrapperConf](
+// example wrapper declaration
+//    WrapperConf(baseDir, packageName = "special.sigma", name = "SigmaPredef",
+//      annotations = List(classOf[WithMethodCallRecognizers]).map(_.getSimpleName))
   ).map(w => (w.name, w)).toMap
 
   val ApiModule: SourceModuleConf = new SourceModuleConf(baseDir, "sigma-api")
       .moduleDependencies(specialLibrary.ApiModule)
-      .addUnit("special/sigma/wrappers/WrappersSpec.scala", wrapperConfigs)
       .addUnit("special/sigma/SigmaDsl.scala")
       .addUnit("special/sigma/CostedObjects.scala")
 

@@ -79,8 +79,4 @@ trait ContractsTestkit {
       ctx.copy(vars = contextVars(vars.map { case (k, v) => (k.toByte, v) }))
   }
 
-  case class NoEnvContract(condition: Context => Boolean) extends SigmaContract {
-    override def builder: SigmaDslBuilder = new TestSigmaDslBuilder
-    override def canOpen(ctx: Context): Boolean = condition(ctx)
-  }
 }

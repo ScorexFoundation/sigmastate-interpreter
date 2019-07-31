@@ -33,6 +33,7 @@ trait CostModel {
   * So it is globally and implicitly used in all methods.
   * */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait BigInt {
   @Internal
   private[sigma] def value: BigInteger
@@ -196,6 +197,7 @@ trait BigInt {
 /** Base class for points on elliptic curves.
   */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait GroupElement {
   @Internal
   private[sigma] def value: ECPoint
@@ -225,6 +227,7 @@ trait GroupElement {
 
 /** Proposition which can be proven and verified by sigma protocol. */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SigmaProp {
   def isValid: Boolean
   /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
@@ -250,12 +253,14 @@ trait SigmaProp {
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait AnyValue {
   def value: Any
   def tVal: RType[Any]
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
@@ -518,6 +523,7 @@ trait Header {
 
 /** Represents data available in Sigma language using `CONTEXT` global variable*/
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait Context {
   def builder: SigmaDslBuilder
 
@@ -602,13 +608,10 @@ trait SigmaContract {
       positions: Coll[Int],
       newValues: Coll[T])
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
-
-  @clause def canOpen(ctx: Context): Boolean
-
-  def asFunction: Context => Boolean = (ctx: Context) => this.canOpen(ctx)
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SigmaDslBuilder {
   def Colls: CollBuilder
   def Monoids: MonoidBuilder
