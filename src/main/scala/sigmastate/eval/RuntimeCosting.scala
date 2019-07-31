@@ -454,9 +454,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }
 
   object CostedFoldExtractors {
-    val CM = CostedMethods
-    val COM = CostedOptionMethods
-    val WOM = WOptionMethods
     type Result = (ROption[A], Th[B], RFunc[A, Costed[B]]) forSome {type A; type B}
   }
 
@@ -506,14 +503,9 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     val SigmaM = SigmaPropMethods
     val CCM = CostedCollMethods
     val CostedM = CostedMethods
-    val CostedOptionM = CostedOptionMethods
     val WOptionM = WOptionMethods
-    val CM = CollMethods
-    val CostedBuilderM = CostedBuilderMethods
-    val SPCM = WSpecialPredefCompanionMethods
     val SDBM = SigmaDslBuilderMethods
     val SM = SizeMethods
-    val SBM = SizeBoxMethods
   }
 
   def mkNormalizedOpCost(costedValue: Sym, costs: Seq[Rep[Int]]): Rep[Int] = {
