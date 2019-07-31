@@ -79,7 +79,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   private val SigmaM = SigmaPropMethods
   private val CollM = CollMethods
   private val BoxM = BoxMethods
-  private val AvlM = AvlTreeMethods
   private val CBM = CollBuilderMethods
   private val SDBM = SigmaDslBuilderMethods
   private val OM = WOptionMethods

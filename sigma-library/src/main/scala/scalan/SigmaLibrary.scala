@@ -21,10 +21,8 @@ trait SigmaLibrary extends Library
   implicit lazy val wRTypeAnyElement = wRTypeElement(AnyElement)
   implicit lazy val sizeAnyElement = sizeElement(AnyElement)
 
-  private val CM = CollMethods
   private val CBM = CollBuilderMethods
   private val SM = SigmaPropMethods
-  private val SCM = SigmaContractMethods
   private val SDBM = SigmaDslBuilderMethods
 
   def sigmaDslBuilder: Rep[SigmaDslBuilder]

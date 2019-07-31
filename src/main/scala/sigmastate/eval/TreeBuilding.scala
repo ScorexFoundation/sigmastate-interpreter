@@ -38,7 +38,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
   private val SDBM = SigmaDslBuilderMethods
   private val OM = WOptionMethods
   private val BIM = BigIntMethods
-  private val AvlM = AvlTreeMethods
   private val GM = GroupElementMethods
 
   /** Describes assignment of valIds for symbols which become ValDefs.
