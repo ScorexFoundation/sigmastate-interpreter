@@ -666,8 +666,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     height, extensionRoot, minerPk, powOnetimePk, powNonce, powDistance, votes)
 
   def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
-    size <- Gen.chooseNum(1, 10)
-  } yield (0 to size)
+    size <- Gen.chooseNum(0, 10)
+  } yield if (size == 0) Seq() else
+    (0 to size)
     .foldLeft(List[Header](headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get)) { (h, _) =>
       h :+ headerGen(stateRoot, h.last.id).sample.get
     }.reverse
@@ -685,7 +686,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val ergoLikeContextGen: Gen[ErgoLikeContext] = for {
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
-    preHeader <- preHeaderGen(headers.head.id)
+    preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
     tokens <- tokensGen
     dataBoxes <- Gen.nonEmptyListOf(ergoBoxGen)
     boxesToSpend <- Gen.nonEmptyListOf(ergoBoxGen)

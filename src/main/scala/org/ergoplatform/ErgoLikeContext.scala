@@ -55,8 +55,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val initCost: Long
                  ) extends InterpreterContext {
 
-  assert(preHeader != null)
-  assert(spendingTransaction != null)
+  assert(preHeader != null, "preHeader cannot be null")
+  assert(spendingTransaction != null, "spendingTransaction cannot be null")
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
