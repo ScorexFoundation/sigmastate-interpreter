@@ -80,13 +80,14 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
     private [dsl] def toErgoContext: ErgoLikeContext = {
       val propSpec = utxoBox.propSpec
       val boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq
+      val dataBoxes = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq
       val ctx = new ErgoLikeContext(
         lastBlockUtxoRoot = AvlTreeData.dummy,
         headers     = noHeaders,
         preHeader   = dummyPreHeader(tx.block.height, ErgoLikeContext.dummyPubkey),
-        dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
+        dataBoxes   = dataBoxes,
         boxesToSpend = boxesToSpend,
-        spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
+        spendingTransaction = testSuite.createTransaction(dataBoxes, tx.outputs.map(_.ergoBox).toIndexedSeq),
         selfIndex = boxesToSpend.indexOf(utxoBox.ergoBox),
         extension = ContextExtension.empty,
         validationSettings = ValidationRules.currentSettings,

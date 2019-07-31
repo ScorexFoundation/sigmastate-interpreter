@@ -55,6 +55,8 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   lazy val messageToSign: Array[Byte] = ErgoLikeTransaction.bytesToSign(this)
 
   lazy val inputIds: IndexedSeq[ADKey] = inputs.map(_.boxId)
+
+  override def toString = s"ErgoLikeTransactionTemplate(dataInputs=$dataInputs, inputs=$inputs, outputCandidates=$outputCandidates)"
 }
 
 

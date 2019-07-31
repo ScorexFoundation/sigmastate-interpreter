@@ -4,8 +4,8 @@ import io.circe._
 import io.circe.syntax._
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.settings.Algos
 import scorex.crypto.authds.ADKey
-import scorex.util.encode.Base16
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values._
@@ -86,8 +86,8 @@ class ErgoBox(
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2)}), $transactionId, " +
+  override def toString: String = s"ErgoBox(${Algos.encode(id)},$value,$ergoTree," +
+    s"tokens: (${additionalTokens.map(t => Algos.encode(t._1) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 

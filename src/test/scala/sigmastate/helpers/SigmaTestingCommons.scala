@@ -83,6 +83,10 @@ trait SigmaTestingCommons extends PropSpec
 
   def createTransaction(box: ErgoBoxCandidate): ErgoLikeTransaction = createTransaction(IndexedSeq(box))
 
+  def createTransaction(dataInputs: IndexedSeq[ErgoBox],
+                        outputCandidates: IndexedSeq[ErgoBoxCandidate]): ErgoLikeTransaction =
+    new ErgoLikeTransaction(IndexedSeq(), dataInputs.map(b => DataInput(b.id)), outputCandidates)
+
   class TestingIRContext extends TestContext with IRContext with CompiletimeCosting {
     override def onCostingResult[T](env: ScriptEnv, tree: SValue, res: RCostingResultEx[T]): Unit = {
       env.get(ScriptNameProp) match {

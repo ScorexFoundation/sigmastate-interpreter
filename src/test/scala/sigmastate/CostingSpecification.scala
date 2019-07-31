@@ -3,7 +3,7 @@ package sigmastate
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
@@ -60,7 +60,7 @@ class CostingSpecification extends SigmaTestingData {
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
   lazy val outBoxA = ErgoBox(10, pkA, 0)
   lazy val outBoxB = ErgoBox(20, pkB, 0)
-  lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
+  lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(
       lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,

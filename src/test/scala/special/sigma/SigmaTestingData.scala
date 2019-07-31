@@ -10,8 +10,8 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.crypto.authds.{ADKey, ADValue}
 
 trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
@@ -93,7 +93,7 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
   val ergoCtx = new ErgoLikeContext(
     lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
     boxesToSpend = IndexedSeq(inBox),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
+    spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
     selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension.empty,
     validationSettings = ValidationRules.currentSettings,

@@ -9,8 +9,8 @@ import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
 import org.ergoplatform.JsonCodecs
+import org.ergoplatform.settings.Algos
 import scalan.util.CollectionUtil._
-import scorex.util.encode.Base16
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.basics.DLogProtocol._
@@ -37,7 +37,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
     case _ => false
   }
 
-  override def toString: Idn = s"ProverResult(${Base16.encode(proof)},$extension)"
+  override def toString: Idn = s"ProverResult(${Algos.encode(proof)},$extension)"
 }
 
 object ProverResult extends JsonCodecs {

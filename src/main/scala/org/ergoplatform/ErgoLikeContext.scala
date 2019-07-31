@@ -1,5 +1,7 @@
 package org.ergoplatform
 
+import java.util
+
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoLikeContext.Height
@@ -53,8 +55,6 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val initCost: Long
                  ) extends InterpreterContext {
 
-  // TODO assert dataBoxes correspond to spendingTransaction.dataInputs
-  // TODO assert boxesToSpend correspond to spendingTransaction.inputs
   assert(preHeader != null)
   assert(spendingTransaction != null)
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
@@ -63,6 +63,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
   assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  assert(spendingTransaction.dataInputs.length == dataBoxes.length &&
+    spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
+    "dataBoxes do not correspond to spendingTransaction.dataInputs")
+
+  // TODO assert boxesToSpend correspond to spendingTransaction.inputs
 
   // height of a block with the current `spendingTransaction`
   val currentHeight: Height = preHeader.height
