@@ -131,24 +131,6 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     case _ =>
       None
   }
-
-    object CSizeAnyValueMethods {
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[CSizeAnyValue]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeAnyValueElem] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CSizeAnyValue]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CSizeAnyValue]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CSizeAnyValueCompanionMethods {
-  }
 } // of object CSizeAnyValue
   registerEntityObject("CSizeAnyValue", CSizeAnyValue)
 
@@ -245,24 +227,6 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
       Some((asRep[CSizeSigmaProp](p).propBytes))
     case _ =>
       None
-  }
-
-    object CSizeSigmaPropMethods {
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[CSizeSigmaProp]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeSigmaPropElem] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CSizeSigmaProp]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CSizeSigmaProp]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CSizeSigmaPropCompanionMethods {
   }
 } // of object CSizeSigmaProp
   registerEntityObject("CSizeSigmaProp", CSizeSigmaProp)
@@ -372,37 +336,6 @@ object CSizeBox extends EntityObject("CSizeBox") {
     case _ =>
       None
   }
-
-    object CSizeBoxMethods {
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[CSizeBox]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeBoxElem] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CSizeBox]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CSizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getReg {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "getReg" && receiver.elem.isInstanceOf[CSizeBoxElem] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBox], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CSizeBoxCompanionMethods {
-  }
 } // of object CSizeBox
   registerEntityObject("CSizeBox", CSizeBox)
 
@@ -511,37 +444,6 @@ object CSizeContext extends EntityObject("CSizeContext") {
     case _ =>
       None
   }
-
-    object CSizeContextMethods {
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[Rep[CSizeContext]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CSizeContextElem] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CSizeContext]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CSizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getVar {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "getVar" && receiver.elem.isInstanceOf[CSizeContextElem] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeContext], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CSizeContextCompanionMethods {
-  }
 } // of object CSizeContext
   registerEntityObject("CSizeContext", CSizeContext)
 
@@ -633,50 +535,6 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
       Some(())
     case _ =>
       None
-  }
-
-    object CSizeBuilderMethods {
-    object mkSizeAnyValue {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeAnyValue" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object mkSizeBox {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeBox" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object mkSizeContext {
-      def unapply(d: Def[_]): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeContext" && receiver.elem.isInstanceOf[CSizeBuilderElem] =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4), args(5), args(6), args(7))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CSizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CSizeBuilderCompanionMethods {
   }
 } // of object CSizeBuilder
   registerEntityObject("CSizeBuilder", CSizeBuilder)

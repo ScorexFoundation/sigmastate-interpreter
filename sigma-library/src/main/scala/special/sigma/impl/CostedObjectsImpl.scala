@@ -159,10 +159,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = unapply(exp.rhs)
     }
 
     object valueSize {
@@ -172,10 +169,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = unapply(exp.rhs)
     }
   }
 
@@ -297,10 +291,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeSigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeSigmaProp]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeSigmaProp]] = unapply(exp.rhs)
     }
   }
 
@@ -492,10 +483,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
     }
 
     object bytes {
@@ -505,10 +493,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
     }
 
     object bytesWithoutRef {
@@ -518,10 +503,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
     }
 
     object registers {
@@ -531,10 +513,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
     }
 
     object getReg {
@@ -544,10 +523,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object tokens {
@@ -557,10 +533,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
     }
   }
 
@@ -780,10 +753,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object inputs {
@@ -793,10 +763,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object dataInputs {
@@ -806,10 +773,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object selfBox {
@@ -819,10 +783,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object lastBlockUtxoRootHash {
@@ -832,10 +793,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object headers {
@@ -845,10 +803,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object preHeader {
@@ -858,10 +813,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
     }
 
     object getVar {
@@ -871,10 +823,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
   }
 
@@ -1001,50 +950,6 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
   lazy val RSizeBuilder: Rep[SizeBuilderCompanionCtor] = new SizeBuilderCompanionCtor {
     private val thisClass = classOf[SizeBuilderCompanion]
-  }
-
-  object SizeBuilderMethods {
-    object mkSizeAnyValue {
-      def unapply(d: Def[_]): Nullable[(Rep[SizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeAnyValue" && receiver.elem.isInstanceOf[SizeBuilderElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SizeBuilder], Rep[WRType[Any]], Rep[Size[Any]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object mkSizeBox {
-      def unapply(d: Def[_]): Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeBox" && receiver.elem.isInstanceOf[SizeBuilderElem[_]] =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[Byte]]], Rep[Size[Coll[WOption[AnyValue]]]], Rep[Size[Coll[(Coll[Byte], Long)]]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object mkSizeContext {
-      def unapply(d: Def[_]): Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "mkSizeContext" && receiver.elem.isInstanceOf[SizeBuilderElem[_]] =>
-          val res = (receiver, args(0), args(1), args(2), args(3), args(4), args(5), args(6), args(7))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SizeBuilder], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Coll[Box]]], Rep[Size[Box]], Rep[Size[AvlTree]], Rep[Size[Coll[Header]]], Rep[Size[PreHeader]], Rep[Coll[Size[AnyValue]]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object SizeBuilderCompanionMethods {
   }
 } // of object SizeBuilder
   registerEntityObject("SizeBuilder", SizeBuilder)

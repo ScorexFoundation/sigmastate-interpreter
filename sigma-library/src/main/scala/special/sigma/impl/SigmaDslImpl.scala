@@ -229,7 +229,7 @@ object CostModel extends EntityObject("CostModel") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[CostModel], classOf[SCostModel], Set(
-        "AccessBox", "AccessAvlTree", "GetVar", "DeserializeVar", "GetRegister", "DeserializeRegister", "SelectField", "CollectionConst", "AccessKiloByteOfData", "dataSize", "PubKeySize"
+        "AccessBox", "AccessAvlTree", "GetVar", "DeserializeVar", "GetRegister", "DeserializeRegister", "SelectField", "CollectionConst", "AccessKiloByteOfData", "PubKeySize"
         ))
     }
   }
@@ -248,154 +248,6 @@ object CostModel extends EntityObject("CostModel") {
 
   lazy val RCostModel: Rep[CostModelCompanionCtor] = new CostModelCompanionCtor {
     private val thisClass = classOf[CostModelCompanion]
-  }
-
-  object CostModelMethods {
-    object AccessBox {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "AccessBox" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object AccessAvlTree {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "AccessAvlTree" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object GetVar {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "GetVar" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object DeserializeVar {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "DeserializeVar" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object GetRegister {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "GetRegister" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object DeserializeRegister {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "DeserializeRegister" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object SelectField {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "SelectField" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object CollectionConst {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "CollectionConst" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object AccessKiloByteOfData {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "AccessKiloByteOfData" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object dataSize {
-      def unapply(d: Def[_]): Nullable[(Rep[CostModel], Rep[T], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "dataSize" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[CostModel], Rep[T], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[CostModel], Rep[T], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object PubKeySize {
-      def unapply(d: Def[_]): Nullable[Rep[CostModel]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "PubKeySize" && receiver.elem.isInstanceOf[CostModelElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[CostModel]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[CostModel]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object CostModelCompanionMethods {
   }
 } // of object CostModel
   registerEntityObject("CostModel", CostModel)
@@ -808,10 +660,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toShort {
@@ -821,10 +670,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toInt {
@@ -834,10 +680,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toLong {
@@ -847,10 +690,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toBytes {
@@ -860,10 +700,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toBits {
@@ -873,10 +710,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object toAbs {
@@ -886,10 +720,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object compareTo {
@@ -899,10 +730,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object modQ {
@@ -912,10 +740,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object plusModQ {
@@ -925,10 +750,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object minusModQ {
@@ -938,10 +760,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object multModQ {
@@ -951,10 +770,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object inverseModQ {
@@ -964,10 +780,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object signum {
@@ -977,10 +790,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
 
     object add {
@@ -990,10 +800,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object subtract {
@@ -1003,10 +810,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object multiply {
@@ -1016,10 +820,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object divide {
@@ -1029,10 +830,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object mod {
@@ -1042,10 +840,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object remainder {
@@ -1055,10 +850,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object min {
@@ -1068,10 +860,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object max {
@@ -1081,10 +870,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Rep[BigInt], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[BigInt], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object negate {
@@ -1094,10 +880,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Rep[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[BigInt]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[BigInt]] = unapply(exp.rhs)
     }
   }
 
@@ -1262,10 +1045,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Rep[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = unapply(exp.rhs)
     }
 
     object exp {
@@ -1275,10 +1055,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[(Rep[GroupElement], Rep[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[GroupElement], Rep[BigInt])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[GroupElement], Rep[BigInt])] = unapply(exp.rhs)
     }
 
     object multiply {
@@ -1288,10 +1065,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[(Rep[GroupElement], Rep[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[GroupElement], Rep[GroupElement])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[GroupElement], Rep[GroupElement])] = unapply(exp.rhs)
     }
 
     object negate {
@@ -1301,10 +1075,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Rep[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = unapply(exp.rhs)
     }
 
     object getEncoded {
@@ -1314,10 +1085,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Rep[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[GroupElement]] = unapply(exp.rhs)
     }
   }
 
@@ -1526,10 +1294,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaProp]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaProp]] = unapply(exp.rhs)
     }
 
     object propBytes {
@@ -1539,10 +1304,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaProp]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaProp]] = unapply(exp.rhs)
     }
 
     object and_sigma_&& {
@@ -1552,10 +1314,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaProp], Rep[SigmaProp])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[SigmaProp])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[SigmaProp])] = unapply(exp.rhs)
     }
 
     object and_bool_&& {
@@ -1565,10 +1324,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaProp], Rep[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[Boolean])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[Boolean])] = unapply(exp.rhs)
     }
 
     object or_sigma_|| {
@@ -1578,10 +1334,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaProp], Rep[SigmaProp])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[SigmaProp])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[SigmaProp])] = unapply(exp.rhs)
     }
 
     object or_bool_|| {
@@ -1591,10 +1344,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaProp], Rep[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[Boolean])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaProp], Rep[Boolean])] = unapply(exp.rhs)
     }
   }
 
@@ -1719,10 +1469,7 @@ object AnyValue extends EntityObject("AnyValue") {
           Nullable(res).asInstanceOf[Nullable[Rep[AnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[AnyValue]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[AnyValue]] = unapply(exp.rhs)
     }
 
     object tVal {
@@ -1732,10 +1479,7 @@ object AnyValue extends EntityObject("AnyValue") {
           Nullable(res).asInstanceOf[Nullable[Rep[AnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[AnyValue]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[AnyValue]] = unapply(exp.rhs)
     }
   }
 
@@ -1970,10 +1714,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object value {
@@ -1983,10 +1724,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object propositionBytes {
@@ -1996,10 +1734,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object bytes {
@@ -2009,10 +1744,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object bytesWithoutRef {
@@ -2022,10 +1754,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object registers {
@@ -2035,10 +1764,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object getReg {
@@ -2048,10 +1774,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Rep[Int], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Rep[Int], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Rep[Int], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R0 {
@@ -2061,10 +1784,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R1 {
@@ -2074,10 +1794,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R2 {
@@ -2087,10 +1804,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R3 {
@@ -2100,10 +1814,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R4 {
@@ -2113,10 +1824,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R5 {
@@ -2126,10 +1834,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R6 {
@@ -2139,10 +1844,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R7 {
@@ -2152,10 +1854,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R8 {
@@ -2165,10 +1864,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object R9 {
@@ -2178,10 +1874,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object tokens {
@@ -2191,10 +1884,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object creationInfo {
@@ -2204,10 +1894,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Rep[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Box]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Box]] = unapply(exp.rhs)
     }
 
     object executeFromRegister {
@@ -2217,10 +1904,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Box], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Box], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Box], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
   }
 
@@ -2516,206 +2200,6 @@ object AvlTree extends EntityObject("AvlTree") {
   lazy val RAvlTree: Rep[AvlTreeCompanionCtor] = new AvlTreeCompanionCtor {
     private val thisClass = classOf[AvlTreeCompanion]
   }
-
-  object AvlTreeMethods {
-    object digest {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "digest" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object enabledOperations {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "enabledOperations" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object keyLength {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "keyLength" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object valueLengthOpt {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "valueLengthOpt" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object isInsertAllowed {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "isInsertAllowed" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object isUpdateAllowed {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "isUpdateAllowed" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object isRemoveAllowed {
-      def unapply(d: Def[_]): Nullable[Rep[AvlTree]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "isRemoveAllowed" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[AvlTree]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[AvlTree]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object updateDigest {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "updateDigest" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object updateOperations {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Byte])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "updateOperations" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Byte])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Byte])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object contains {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "contains" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object get {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "get" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object getMany {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "getMany" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object insert {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "insert" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object update {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "update" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[(Coll[Byte], Coll[Byte])]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object remove {
-      def unapply(d: Def[_]): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "remove" && receiver.elem.isInstanceOf[AvlTreeElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[AvlTree], Rep[Coll[Coll[Byte]]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object AvlTreeCompanionMethods {
-  }
 } // of object AvlTree
   registerEntityObject("AvlTree", AvlTree)
 
@@ -2893,102 +2377,6 @@ object PreHeader extends EntityObject("PreHeader") {
 
   lazy val RPreHeader: Rep[PreHeaderCompanionCtor] = new PreHeaderCompanionCtor {
     private val thisClass = classOf[PreHeaderCompanion]
-  }
-
-  object PreHeaderMethods {
-    object version {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "version" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object parentId {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "parentId" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object timestamp {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "timestamp" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object nBits {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "nBits" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object height {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "height" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object minerPk {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "minerPk" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object votes {
-      def unapply(d: Def[_]): Nullable[Rep[PreHeader]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "votes" && receiver.elem.isInstanceOf[PreHeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[PreHeader]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[PreHeader]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object PreHeaderCompanionMethods {
   }
 } // of object PreHeader
   registerEntityObject("PreHeader", PreHeader)
@@ -3280,206 +2668,6 @@ object Header extends EntityObject("Header") {
   lazy val RHeader: Rep[HeaderCompanionCtor] = new HeaderCompanionCtor {
     private val thisClass = classOf[HeaderCompanion]
   }
-
-  object HeaderMethods {
-    object id {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "id" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object version {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "version" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object parentId {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "parentId" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object ADProofsRoot {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "ADProofsRoot" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object stateRoot {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "stateRoot" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object transactionsRoot {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "transactionsRoot" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object timestamp {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "timestamp" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object nBits {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "nBits" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object height {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "height" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object extensionRoot {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "extensionRoot" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object minerPk {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "minerPk" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object powOnetimePk {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "powOnetimePk" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object powNonce {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "powNonce" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object powDistance {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "powDistance" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object votes {
-      def unapply(d: Def[_]): Nullable[Rep[Header]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "votes" && receiver.elem.isInstanceOf[HeaderElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[Header]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[Header]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object HeaderCompanionMethods {
-  }
 } // of object Header
   registerEntityObject("Header", Header)
 
@@ -3751,10 +2939,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object OUTPUTS {
@@ -3764,10 +2949,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object INPUTS {
@@ -3777,10 +2959,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object dataInputs {
@@ -3790,10 +2969,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object HEIGHT {
@@ -3803,10 +2979,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object SELF {
@@ -3816,10 +2989,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object selfBoxIndex {
@@ -3829,10 +2999,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object LastBlockUtxoRootHash {
@@ -3842,10 +3009,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object headers {
@@ -3855,10 +3019,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object preHeader {
@@ -3868,10 +3029,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object minerPubKey {
@@ -3881,10 +3039,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
 
     object getVar {
@@ -3894,10 +3049,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[Context], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object vars {
@@ -3907,10 +3059,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Rep[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[Context]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[Context]] = unapply(exp.rhs)
     }
   }
 
@@ -3948,13 +3097,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         SigmaContractClass.getMethod("Collection", classOf[Seq[_]], classOf[Elem[_]]),
         Array[AnyRef](items, cT),
         true, false, element[Coll[T]]))
-    }
-
-    override def canOpen(ctx: Rep[Context]): Rep[Boolean] = {
-      asRep[Boolean](mkMethodCall(self,
-        SigmaContractClass.getMethod("canOpen", classOf[Sym]),
-        Array[AnyRef](ctx),
-        true, false, element[Boolean]))
     }
   }
 
@@ -3994,13 +3136,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
         Array[AnyRef](items, cT),
         true, true, element[Coll[T]]))
     }
-
-    def canOpen(ctx: Rep[Context]): Rep[Boolean] = {
-      asRep[Boolean](mkMethodCall(source,
-        SigmaContractClass.getMethod("canOpen", classOf[Sym]),
-        Array[AnyRef](ctx),
-        true, true, element[Boolean]))
-    }
   }
 
   // entityProxy: single proxy for each type family
@@ -4018,7 +3153,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override protected def collectMethods: Map[java.lang.reflect.Method, MethodDesc] = {
       super.collectMethods ++
         Elem.declaredMethods(classOf[SigmaContract], classOf[SSigmaContract], Set(
-        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants", "canOpen", "asFunction"
+        "builder", "Collection", "verifyZK", "atLeast", "allOf", "allZK", "anyOf", "anyZK", "xorOf", "PubKey", "sigmaProp", "blake2b256", "sha256", "byteArrayToBigInt", "longToByteArray", "byteArrayToLong", "proveDlog", "proveDHTuple", "groupGenerator", "decodePoint", "substConstants"
         ))
     }
   }
@@ -4037,310 +3172,6 @@ object SigmaContract extends EntityObject("SigmaContract") {
 
   lazy val RSigmaContract: Rep[SigmaContractCompanionCtor] = new SigmaContractCompanionCtor {
     private val thisClass = classOf[SigmaContractCompanion]
-  }
-
-  object SigmaContractMethods {
-    object builder {
-      def unapply(d: Def[_]): Nullable[Rep[SigmaContract]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "builder" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SigmaContract]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[SigmaContract]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object Collection {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Seq[Rep[T]], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "Collection" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Seq[Rep[T]], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Seq[Rep[T]], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object verifyZK {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Thunk[SigmaProp]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "verifyZK" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Thunk[SigmaProp]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Thunk[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object atLeast {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Int], Rep[Coll[SigmaProp]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "atLeast" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Int], Rep[Coll[SigmaProp]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Int], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object allOf {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "allOf" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object allZK {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "allZK" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object anyOf {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "anyOf" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object anyZK {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "anyZK" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object xorOf {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "xorOf" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object PubKey {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[String])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "PubKey" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[String])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[String])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object sigmaProp {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Boolean])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "sigmaProp" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Boolean])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Boolean])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object blake2b256 {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "blake2b256" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object sha256 {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "sha256" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object byteArrayToBigInt {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "byteArrayToBigInt" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object longToByteArray {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Long])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "longToByteArray" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Long])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Long])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object byteArrayToLong {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "byteArrayToLong" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object proveDlog {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[GroupElement])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "proveDlog" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[GroupElement])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[GroupElement])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object proveDHTuple {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "proveDHTuple" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0), args(1), args(2), args(3))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object groupGenerator {
-      def unapply(d: Def[_]): Nullable[Rep[SigmaContract]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "groupGenerator" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SigmaContract]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[SigmaContract]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object decodePoint {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "decodePoint" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object substConstants {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "substConstants" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0), args(1), args(2), args(3))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object canOpen {
-      def unapply(d: Def[_]): Nullable[(Rep[SigmaContract], Rep[Context])] = d match {
-        case MethodCall(receiver, method, args, _) if method.getName == "canOpen" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = (receiver, args(0))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SigmaContract], Rep[Context])]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaContract], Rep[Context])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-
-    object asFunction {
-      def unapply(d: Def[_]): Nullable[Rep[SigmaContract]] = d match {
-        case MethodCall(receiver, method, _, _) if method.getName == "asFunction" && receiver.elem.isInstanceOf[SigmaContractElem[_]] =>
-          val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SigmaContract]]]
-        case _ => Nullable.None
-      }
-      def unapply(exp: Sym): Nullable[Rep[SigmaContract]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
-    }
-  }
-
-  object SigmaContractCompanionMethods {
   }
 } // of object SigmaContract
   registerEntityObject("SigmaContract", SigmaContract)
@@ -4783,10 +3614,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = unapply(exp.rhs)
     }
 
     object Monoids {
@@ -4796,10 +3624,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = unapply(exp.rhs)
     }
 
     object Costing {
@@ -4809,10 +3634,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = unapply(exp.rhs)
     }
 
     object CostModel {
@@ -4822,10 +3644,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = unapply(exp.rhs)
     }
 
     object verifyZK {
@@ -4835,10 +3654,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Thunk[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Thunk[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Thunk[SigmaProp]])] = unapply(exp.rhs)
     }
 
     object atLeast {
@@ -4848,10 +3664,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Int], Rep[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Int], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Int], Rep[Coll[SigmaProp]])] = unapply(exp.rhs)
     }
 
     object allOf {
@@ -4861,10 +3674,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = unapply(exp.rhs)
     }
 
     object allZK {
@@ -4874,10 +3684,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])] = unapply(exp.rhs)
     }
 
     object anyOf {
@@ -4887,10 +3694,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = unapply(exp.rhs)
     }
 
     object anyZK {
@@ -4900,10 +3704,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[SigmaProp]])] = unapply(exp.rhs)
     }
 
     object xorOf {
@@ -4913,10 +3714,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Boolean]])] = unapply(exp.rhs)
     }
 
     object PubKey {
@@ -4926,10 +3724,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[String])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[String])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[String])] = unapply(exp.rhs)
     }
 
     object sigmaProp {
@@ -4939,10 +3734,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Boolean])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Boolean])] = unapply(exp.rhs)
     }
 
     object blake2b256 {
@@ -4952,10 +3744,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
 
     object sha256 {
@@ -4965,10 +3754,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
 
     object byteArrayToBigInt {
@@ -4978,10 +3764,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
 
     object longToByteArray {
@@ -4991,10 +3774,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Long])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Long])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Long])] = unapply(exp.rhs)
     }
 
     object byteArrayToLong {
@@ -5004,10 +3784,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
 
     object proveDlog {
@@ -5017,10 +3794,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement])] = unapply(exp.rhs)
     }
 
     object proveDHTuple {
@@ -5030,10 +3804,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement], Rep[GroupElement])] = unapply(exp.rhs)
     }
 
     object groupGenerator {
@@ -5043,10 +3814,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Rep[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[Rep[SigmaDslBuilder]] = unapply(exp.rhs)
     }
 
     object substConstants {
@@ -5056,10 +3824,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Int]], Rep[Coll[T]], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object decodePoint {
@@ -5069,10 +3834,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
 
     object avlTree {
@@ -5082,10 +3844,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Byte], Rep[Coll[Byte]], Rep[Int], Rep[WOption[Int]])] = unapply(exp.rhs)
     }
 
     object xor {
@@ -5095,10 +3854,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Byte]])] = exp match {
-        case Def(d) => unapply(d)
-        case _ => Nullable.None
-      }
+      def unapply(exp: Sym): Nullable[(Rep[SigmaDslBuilder], Rep[Coll[Byte]], Rep[Coll[Byte]])] = unapply(exp.rhs)
     }
   }
 
