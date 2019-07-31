@@ -118,6 +118,32 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       isCost)
   }
 
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[ErgoLikeContext]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: ErgoLikeContext =>
+      (that canEqual this) &&
+        lastBlockUtxoRoot == that.lastBlockUtxoRoot &&
+        headers == that.headers &&
+        preHeader == that.preHeader &&
+        dataBoxes == that.dataBoxes &&
+        boxesToSpend == that.boxesToSpend &&
+        spendingTransaction == that.spendingTransaction &&
+        selfIndex == that.selfIndex &&
+        extension == that.extension &&
+        validationSettings == that.validationSettings &&
+        costLimit == that.costLimit &&
+        initCost == that.initCost
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
+
+  override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost)"
 }
 
 object ErgoLikeContext extends JsonCodecs {

@@ -3,7 +3,7 @@ package org.ergoplatform
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
-import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.Algos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Digest32
@@ -63,6 +63,7 @@ trait JsonCodecs {
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
 
   implicit val modifierIdEncoder: Encoder[ModifierId] = _.asInstanceOf[String].asJson
+  implicit val modifierIdDecoder: Decoder[ModifierId] = ModifierId @@ _.as[String]
 
   implicit val registerIdEncoder: KeyEncoder[NonMandatoryRegisterId] = { regId =>
     s"R${regId.number}"

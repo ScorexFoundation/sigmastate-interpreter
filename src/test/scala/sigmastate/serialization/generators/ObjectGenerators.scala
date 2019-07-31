@@ -21,7 +21,8 @@ import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 import sigmastate.lang.TransformingSigmaBuilder.{mkAppend, mkAtLeast, mkBoolToSigmaProp, mkByteArrayToBigInt, mkByteArrayToLong, mkCollectionConstant, mkConstant, mkDeserializeContext, mkDeserializeRegister, mkDivide, mkDowncast, mkEQ, mkExists, mkExtractAmount, mkExtractBytes, mkExtractBytesWithNoRef, mkExtractCreationInfo, mkExtractId, mkExtractScriptBytes, mkFilter, mkFold, mkForAll, mkGE, mkGT, mkLE, mkLT, mkMapCollection, mkMax, mkMin, mkMinus, mkModulo, mkMultiply, mkNEQ, mkPlus, mkSigmaAnd, mkSigmaOr, mkSizeOf, mkSlice, mkTaggedVariable, mkTuple}
 import sigmastate._
 import sigmastate.utxo.{Append, ByIndex, DeserializeContext, DeserializeRegister, Exists, ExtractAmount, ExtractBytes, ExtractBytesWithNoRef, ExtractCreationInfo, ExtractId, ExtractRegisterAs, ExtractScriptBytes, Filter, Fold, ForAll, GetVar, MapCollection, OptionGet, OptionGetOrElse, OptionIsDefined, SizeOf, Slice, Transformer}
-import special.sigma.{AvlTree, Header, PreHeader, SigmaProp}
+import special.collection.Coll
+import special.sigma._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -109,6 +110,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     length <- Gen.chooseNum(1, 100)
     ints <- Gen.listOfN(length, arbInt.arbitrary)
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
+
+  val heightGen: Gen[Int] = Gen.chooseNum(0, 1000000)
 
   val groupElementGen: Gen[EcPointType] = for {
     _ <- Gen.const(1)
@@ -237,8 +240,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     remove <- arbBool.arbitrary
   } yield AvlTreeFlags(insert, update, remove)
 
+  val aDDigestGen: Gen[ADDigest] = Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(ADDigest @@ _.toArray)
+
   def avlTreeDataGen: Gen[AvlTreeData] = for {
-    digest <- Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(_.toArray)
+    digest <- aDDigestGen
     flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
@@ -289,6 +294,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   lazy val modifierIdGen: Gen[ModifierId] = Gen.listOfN(32, arbByte.arbitrary)
     .map(id => bytesToId(id.toArray))
 
+  lazy val modifierIdBytesGen: Gen[ModifierIdBytes] = Gen.listOfN(32, arbByte.arbitrary)
+    .map(id => ModifierIdBytes @@ bytesToId(id.toArray).toBytes.toColl)
+
   val ergoBoxGen: Gen[ErgoBox] = for {
     tId <- modifierIdGen
     boxId <- unsignedShortGen
@@ -309,19 +317,23 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       Gen.oneOf(Seq(List[Digest32]()))
     }
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
-    creationHeight <- Gen.chooseNum(0, 100000)
+    creationHeight <- heightGen
   } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(false, v)) }
 
-  val tokenIdGen: Gen[Digest32] = for {
+  val digest32Gen: Gen[Digest32] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
   } yield Digest32 @@ bytes
+
+  val tokenIdGen: Gen[Digest32] = digest32Gen
 
   val tokensGen: Gen[Seq[Digest32]] = for {
     count <- Gen.chooseNum(10, 50)
     tokens <- Gen.listOfN(count, tokenIdGen)
   } yield tokens
+
+  val digest32CollGen: Gen[Digest32Coll] = digest32Gen.map(Digest32Coll @@ _.toColl)
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
     inputs <- Gen.nonEmptyListOf(inputGen)
@@ -352,10 +364,20 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     }
   }
 
-  val byteArrayGen: Gen[Array[Byte]] = for {
-    length <- Gen.chooseNum(1, 10)
+  def byteArrayGen(length: Int): Gen[Array[Byte]] = for {
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield bytes.toArray
+
+  def byteArrayGen(minLength: Int, maxLength: Int): Gen[Array[Byte]] = for {
+    length <- Gen.chooseNum(minLength, maxLength)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+  } yield bytes.toArray
+
+  def byteCollGen(length: Int): Gen[Coll[Byte]] = byteArrayGen(length).map(_.toColl)
+
+  val minerVotesGen: Gen[MinerVotes] = byteCollGen(MinerVotes.size).map(MinerVotes @@ _)
+
+  val nonceBytesGen: Gen[NonceBytes] = byteCollGen(NonceBytes.size).map(NonceBytes @@ _)
 
   import ValidationRules._
 
@@ -368,7 +390,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val statusGen: Gen[RuleStatus] = Gen.oneOf(
     Gen.oneOf(EnabledRule, DisabledRule),
     replacedRuleIdGen.map(id => ReplacedRule(id)),
-    byteArrayGen.map(xs => ChangedRule(xs))
+    byteArrayGen(1, 10).map(xs => ChangedRule(xs))
   )
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
@@ -626,25 +648,55 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
 
-  val headerGen: Gen[Header] = ???
-  val preHeaderGen: Gen[PreHeader] = ???
-  val validationSettingsGen: Gen[SigmaValidationSettings] = ???
+  def headerGen(stateRoot: AvlTree, parentId: ModifierIdBytes): Gen[Header] = for {
+    id <- modifierIdBytesGen
+    version <- arbByte.arbitrary
+    adProofsRoot <- digest32CollGen
+    transactionRoot <- digest32CollGen
+    timestamp <- arbLong.arbitrary
+    nBits <- arbLong.arbitrary
+    height <- heightGen
+    extensionRoot <- digest32CollGen
+    minerPk <- groupElementGen
+    powOnetimePk <- groupElementGen
+    powNonce <- nonceBytesGen
+    powDistance <- arbBigInt.arbitrary
+    votes <- minerVotesGen
+  } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
+    height, extensionRoot, minerPk, powOnetimePk, powNonce, powDistance, votes)
+
+  def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
+    size <- Gen.chooseNum(1, 10)
+  } yield (0 to size)
+    .foldLeft(List[Header](headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get)) { (h, _) =>
+      h :+ headerGen(stateRoot, h.last.id).sample.get
+    }.reverse
+
+  def preHeaderGen(parentId: ModifierIdBytes): Gen[PreHeader] = for {
+    version <- arbByte.arbitrary
+    timestamp <- arbLong.arbitrary
+    nBits <- arbLong.arbitrary
+    height <- heightGen
+    minerPk <- groupElementGen
+    votes <- minerVotesGen
+  } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
+
 
   val ergoLikeContextGen: Gen[ErgoLikeContext] = for {
-    avlTreeData <- avlTreeDataGen
-    headers <- Gen.nonEmptyListOf(headerGen)
-    preHeader <- preHeaderGen
+    stateRoot <- avlTreeGen
+    headers <- headersGen(stateRoot)
+    preHeader <- preHeaderGen(headers.head.id)
     tokens <- tokensGen
     dataBoxes <- Gen.nonEmptyListOf(ergoBoxGen)
     boxesToSpend <- Gen.nonEmptyListOf(ergoBoxGen)
     extension <- contextExtensionGen
     outputsCount <- Gen.chooseNum(50, 200)
     outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
-    validationSettings <- validationSettingsGen
     costLimit <- arbLong.arbitrary
     initCost <- arbLong.arbitrary
+    avlTreeFlags <- avlTreeFlagsGen
   } yield new ErgoLikeContext(
-    lastBlockUtxoRoot = avlTreeData,
+    lastBlockUtxoRoot = AvlTreeData(ADDigest @@ stateRoot.digest.toArray, avlTreeFlags, unsignedIntGen.sample.get),
     headers = headers.toColl,
     preHeader = preHeader,
     dataBoxes = dataBoxes.toIndexedSeq,
@@ -655,7 +707,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       outputCandidates.toIndexedSeq),
     selfIndex = 0,
     extension = extension,
-    validationSettings = validationSettings,
+    validationSettings = ValidationRules.currentSettings,
     costLimit = costLimit,
     initCost = initCost
   )
