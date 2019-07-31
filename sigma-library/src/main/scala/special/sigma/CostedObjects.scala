@@ -17,14 +17,14 @@ package special.sigma {
     import SizeContext._;
     import WOption._;
     import WRType._;
-    @Liftable trait SizeAnyValue extends Size[AnyValue] {
+    @Liftable @WithMethodCallRecognizers trait SizeAnyValue extends Size[AnyValue] {
       def tVal: Rep[WRType[Any]];
       def valueSize: Rep[Size[Any]]
     };
-    @Liftable trait SizeSigmaProp extends Size[SigmaProp] {
+    @Liftable @WithMethodCallRecognizers trait SizeSigmaProp extends Size[SigmaProp] {
       def propBytes: Rep[Size[Coll[Byte]]]
     };
-    @Liftable trait SizeBox extends Size[Box] {
+    @Liftable @WithMethodCallRecognizers trait SizeBox extends Size[Box] {
       def propositionBytes: Rep[Size[Coll[Byte]]];
       def bytes: Rep[Size[Coll[Byte]]];
       def bytesWithoutRef: Rep[Size[Coll[Byte]]];
@@ -32,7 +32,7 @@ package special.sigma {
       def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]];
       def tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]
     };
-    @Liftable trait SizeContext extends Size[Context] {
+    @Liftable @WithMethodCallRecognizers trait SizeContext extends Size[Context] {
       def outputs: Rep[Size[Coll[Box]]];
       def inputs: Rep[Size[Coll[Box]]];
       def dataInputs: Rep[Size[Coll[Box]]];

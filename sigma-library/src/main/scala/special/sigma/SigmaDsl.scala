@@ -33,7 +33,7 @@ package special.sigma {
       def AccessKiloByteOfData: Rep[Int];
       def PubKeySize: Rep[Long]
     };
-    @Liftable trait BigInt extends Def[BigInt] {
+    @Liftable @WithMethodCallRecognizers trait BigInt extends Def[BigInt] {
       def toByte: Rep[Byte];
       def toShort: Rep[Short];
       def toInt: Rep[Int];
@@ -58,14 +58,14 @@ package special.sigma {
       def max(that: Rep[BigInt]): Rep[BigInt];
       def negate: Rep[BigInt]
     };
-    @Liftable trait GroupElement extends Def[GroupElement] {
+    @Liftable @WithMethodCallRecognizers trait GroupElement extends Def[GroupElement] {
       def isInfinity: Rep[Boolean];
       def exp(k: Rep[BigInt]): Rep[GroupElement];
       def multiply(that: Rep[GroupElement]): Rep[GroupElement];
       def negate: Rep[GroupElement];
       def getEncoded: Rep[Coll[Byte]]
     };
-    @Liftable trait SigmaProp extends Def[SigmaProp] {
+    @Liftable @WithMethodCallRecognizers trait SigmaProp extends Def[SigmaProp] {
       def isValid: Rep[Boolean];
       def propBytes: Rep[Coll[Byte]];
       @OverloadId(value = "and_sigma") def &&(other: Rep[SigmaProp]): Rep[SigmaProp];
@@ -75,11 +75,11 @@ package special.sigma {
       // manual fix
       @OverloadId(value = "or_bool") def ||(other: Rep[Boolean])(implicit o: Overloaded1): Rep[SigmaProp];
     };
-    @Liftable trait AnyValue extends Def[AnyValue] {
+    @Liftable @WithMethodCallRecognizers trait AnyValue extends Def[AnyValue] {
       def value: Rep[Any];
       def tVal: Rep[WRType[Any]]
     };
-    @Liftable trait Box extends Def[Box] {
+    @Liftable @WithMethodCallRecognizers trait Box extends Def[Box] {
       def id: Rep[Coll[Byte]];
       def value: Rep[Long];
       def propositionBytes: Rep[Coll[Byte]];
@@ -144,7 +144,7 @@ package special.sigma {
       def powDistance: Rep[BigInt];
       def votes: Rep[Coll[Byte]]
     };
-    @Liftable trait Context extends Def[Context] {
+    @Liftable @WithMethodCallRecognizers trait Context extends Def[Context] {
       def builder: Rep[SigmaDslBuilder];
       def OUTPUTS: Rep[Coll[Box]];
       def INPUTS: Rep[Coll[Box]];
@@ -180,11 +180,9 @@ package special.sigma {
       def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
       def groupGenerator: Rep[GroupElement] = this.builder.groupGenerator;
       def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement] = this.builder.decodePoint(encoded);
-      @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues);
-      @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
-      def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
+      @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues)
     };
-    @Liftable trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
+    @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
       def Colls: Rep[CollBuilder];
       def Monoids: Rep[MonoidBuilder];
       def Costing: Rep[CostedBuilder];
