@@ -23,7 +23,6 @@ trait CostModel {
   def SelectField: Int // costOf("SelectField")
   def CollectionConst: Int // costOf("Const: () => Array[IV]")
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
-  @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
   def PubKeySize: Long
 }

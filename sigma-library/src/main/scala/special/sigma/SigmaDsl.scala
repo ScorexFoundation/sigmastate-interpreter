@@ -31,7 +31,6 @@ package special.sigma {
       def SelectField: Rep[Int];
       def CollectionConst: Rep[Int];
       def AccessKiloByteOfData: Rep[Int];
-      @Reified(value = "T") def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long];
       def PubKeySize: Rep[Long]
     };
     @Liftable trait BigInt extends Def[BigInt] {
