@@ -112,14 +112,6 @@ object CostModel extends EntityObject("CostModel") {
         true, false, element[Int]))
     }
 
-    override def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long] = {
-      implicit val eT = x.elem
-      asRep[Long](mkMethodCall(self,
-        CostModelClass.getMethod("dataSize", classOf[Sym], classOf[Elem[_]]),
-        Array[AnyRef](x, cT),
-        true, false, element[Long]))
-    }
-
     override def PubKeySize: Rep[Long] = {
       asRep[Long](mkMethodCall(self,
         CostModelClass.getMethod("PubKeySize"),
@@ -212,14 +204,6 @@ object CostModel extends EntityObject("CostModel") {
         CostModelClass.getMethod("AccessKiloByteOfData"),
         WrappedArray.empty,
         true, true, element[Int]))
-    }
-
-    def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long] = {
-      implicit val eT = x.elem
-      asRep[Long](mkMethodCall(source,
-        CostModelClass.getMethod("dataSize", classOf[Sym], classOf[Elem[_]]),
-        Array[AnyRef](x, cT),
-        true, true, element[Long]))
     }
 
     def PubKeySize: Rep[Long] = {

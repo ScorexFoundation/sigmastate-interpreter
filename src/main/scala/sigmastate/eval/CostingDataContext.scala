@@ -458,8 +458,6 @@ class CCostModel extends CostModel {
 
   def AccessKiloByteOfData: Int = costOf("AccessKiloByteOfData", SFunc(IndexedSeq(), SUnit))
 
-  def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
-
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
