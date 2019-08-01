@@ -7,7 +7,7 @@ import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.CostTable
 
-trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
+trait CostingRules extends SigmaLibrary { IR: IRContext =>
   import Coll._
   import BigInt._
   import SigmaProp._
