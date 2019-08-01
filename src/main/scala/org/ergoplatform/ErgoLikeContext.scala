@@ -154,6 +154,13 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 object ErgoLikeContext extends JsonCodecs {
   type Height = Int
 
+  /* NO HF PROOF:
+  Changed: val dummyPubkey from `Array[Byte] = Array.fill(32)(0: Byte)` to `GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)`
+  Motivation: to avoid exception on deserialization(wrong size, needs to be 33 bytes) and later in GroupElement.toString (infinity was not handled) and to provide more practical value in tests.
+  Safety:
+  Used only in tests and not used in ergo.
+  Examined ergo code: all (with IDE's "find usages" action).
+*/
   val dummyPubkey: Array[Byte] = GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)
 
   val noBoxes = IndexedSeq.empty[ErgoBox]
