@@ -19,7 +19,7 @@ import special.sigma.{AnyValue, Box, GroupElement, Header, PreHeader}
 import SType._
 import RType._
 import org.ergoplatform.ErgoConstants.ScriptCostLimit
-import org.ergoplatform.settings.Algos
+import org.ergoplatform.settings.SigmaAlgos
 import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import spire.syntax.all.cfor
 import scala.util.Try
