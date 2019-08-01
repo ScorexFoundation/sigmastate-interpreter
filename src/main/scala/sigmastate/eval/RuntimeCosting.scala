@@ -35,6 +35,7 @@ import scalan.util.ReflectionUtil
 import sigmastate.eval.ExactNumeric._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 
 trait RuntimeCosting extends CostingRules { IR: IRContext =>
@@ -498,15 +499,13 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   val EValOfSizeColl = ElemAccessor[Coll[Size[Any]]](_.elem.eItem.eVal)
 
-  private object Methods {
-    val CBM = CollBuilderMethods
-    val SigmaM = SigmaPropMethods
-    val CCM = CostedCollMethods
-    val CostedM = CostedMethods
-    val WOptionM = WOptionMethods
-    val SDBM = SigmaDslBuilderMethods
-    val SM = SizeMethods
-  }
+  private val CBM      = CollBuilderMethods
+  private val SigmaM   = SigmaPropMethods
+  private val CCM      = CostedCollMethods
+  private val CostedM  = CostedMethods
+  private val WOptionM = WOptionMethods
+  private val SDBM     = SigmaDslBuilderMethods
+  private val SM       = SizeMethods
 
   def mkNormalizedOpCost(costedValue: Sym, costs: Seq[Rep[Int]]): Rep[Int] = {
     val (args, rests) = costs.partition(_.rhs.isInstanceOf[OpCost])
@@ -516,9 +515,60 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     opCost(costedValue, args, restSum)
   }
 
-  override def rewriteDef[T](d: Def[T]): Rep[_] = {
-    import Methods._
+  object AnyOf {
+    def unapply(d: Def[_]): Nullable[(Rep[CollBuilder], Seq[Rep[A]], Elem[A]) forSome {type A}] = d match {
+      case SDBM.anyOf(_, xs) =>
+        CBM.fromItems.unapply(xs)
+      case _ => Nullable.None
+    }
+  }
+  object AllOf {
+    def unapply(d: Def[_]): Nullable[(Rep[CollBuilder], Seq[Rep[A]], Elem[A]) forSome {type A}] = d match {
+      case SDBM.allOf(_, xs) =>
+        CBM.fromItems.unapply(xs)
+      case _ => Nullable.None
+    }
+  }
+  object AnyZk {
+    def unapply(d: Def[_]): Nullable[(Rep[CollBuilder], Seq[Rep[SigmaProp]], Elem[SigmaProp])] = d match {
+      case SDBM.anyZK(_, xs) =>
+        CBM.fromItems.unapply(xs).asInstanceOf[Nullable[(Rep[CollBuilder], Seq[Rep[SigmaProp]], Elem[SigmaProp])]]
+      case _ => Nullable.None
+    }
+  }
+  object AllZk {
+    def unapply(d: Def[_]): Nullable[(Rep[CollBuilder], Seq[Rep[SigmaProp]], Elem[SigmaProp])] = d match {
+      case SDBM.allZK(_, xs) =>
+        CBM.fromItems.unapply(xs).asInstanceOf[Nullable[(Rep[CollBuilder], Seq[Rep[SigmaProp]], Elem[SigmaProp])]]
+      case _ => Nullable.None
+    }
+  }
+  object HasSigmas {
+    def unapply(items: Seq[Sym]): Option[(Seq[Rep[Boolean]], Seq[Rep[SigmaProp]])] = {
+      val bs = ArrayBuffer.empty[Rep[Boolean]]
+      val ss = ArrayBuffer.empty[Rep[SigmaProp]]
+      for (i <- items) {
+        i match {
+          case SigmaM.isValid(s) => ss += s
+          case b => bs += asRep[Boolean](b)
+        }
+      }
+      assert(items.length == bs.length + ss.length)
+      if (ss.isEmpty) None
+      else Some((bs,ss))
+    }
+  }
 
+  /** For performance reasons the patterns are organized in special (non-declarative) way.
+    * Unfortunately, this is less readable, but gives significant performance boost
+    * Look at comments to understand the logic of the rules.
+    *
+    * @hotspot executed for each node of the graph, don't beautify.
+    */
+  override def rewriteDef[T](d: Def[T]): Rep[_] = {
+    // First we match on node type, and then depending on it, we have further branching logic.
+    // On each branching level each node type should be matched exactly once,
+    // for the rewriting to be sound.
     d match {
       // Rule: cast(eTo, x) if x.elem <:< eTo  ==>  x
       case Cast(eTo: Elem[to], x) if eTo.getClass.isAssignableFrom(x.elem.getClass) =>
@@ -527,15 +577,14 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       // Rule: ThunkDef(x, Nil).force => x
       case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
 
-      case SM.dataSize(Def(CSizeCollCtor(CBM.replicate(_, n, s: RSize[a]@unchecked)))) => s.dataSize * n.toLong
-
-      case SM.dataSize(Def(CSizeCollCtor(sizes @ EValOfSizeColl(eVal)))) if eVal.isConstantSize =>
-        sizes.length.toLong * typeSize(eVal)
-
-//      case CM.map(CM.zip(CBM.replicate(_, n, x: Rep[a]), ys: RColl[b]@unchecked), _f) =>
-//        val f = asRep[((a,b)) => Any](_f)
-//        implicit val eb = ys.elem.eItem
-//        ys.map(fun { y: Rep[b] => f(Pair(x, y))})
+      case SM.dataSize(size) => size.rhs match {
+        case CSizeCollCtor(sizes) => sizes match {
+          case CBM.replicate(_, n, s: RSize[a]@unchecked) => s.dataSize * n.toLong
+          case EValOfSizeColl(eVal) if eVal.isConstantSize => sizes.length.toLong * typeSize(eVal)
+          case _ => super.rewriteDef(d)
+        }
+        case _ => super.rewriteDef(d)
+      }
 
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
@@ -560,6 +609,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case SDBM.Colls(_) => colBuilder
 
       case SDBM.sigmaProp(_, SigmaM.isValid(p)) => p
+      case SigmaM.isValid(SDBM.sigmaProp(_, bool)) => bool
 
       case CCM.foldCosted(xs: RCostedColl[a], zero: RCosted[b], _f) =>
         val f = asRep[Costed[(b,a)] => Costed[b]](_f)
@@ -592,43 +642,47 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val cost = opCost(resV, Array(preFoldCost), resC)
         RCCostedPrim(resV, cost, resS)
 
-      case CostedM.cost(Def(CCostedCollCtor(values, costs, _, accCost))) =>
-        accCost.rhs match {
-          case _: OpCost =>
-            opCost(values, Array(accCost), costs.sum(intPlusMonoid))    // OpCost should be in args position
-          case _ =>
-            opCost(values, Nil, costs.sum(intPlusMonoid) + accCost)
-        }
+      case CostedM.cost(costed) => costed.rhs match {
+        case CCostedCollCtor(values, costs, _, accCost) =>
+          accCost.rhs match {
+            case _: OpCost =>
+              opCost(values, Array(accCost), costs.sum(intPlusMonoid))    // OpCost should be in args position
+            case _ =>
+              opCost(values, Nil, costs.sum(intPlusMonoid) + accCost)
+          }
+        case CCostedOptionCtor(v, costOpt, _, accCost) =>
+          accCost.rhs match {
+            case _: OpCost =>
+              opCost(v, Array(accCost), costOpt.getOrElse(Thunk(IntZero)))  // OpCost should be in args position
+            case _ =>
+              opCost(v, Nil, costOpt.getOrElse(Thunk(IntZero)) + accCost)
+          }
+        case CCostedPairCtor(l, r, accCost) =>
+          val costs = Array(l.cost, r.cost, accCost)
+          val v = Pair(l.value, r.value)
+          mkNormalizedOpCost(v, costs)
 
-      case CostedM.cost(Def(CCostedOptionCtor(v, costOpt, _, accCost))) =>
-        accCost.rhs match {
-          case _: OpCost =>
-            opCost(v, Array(accCost), costOpt.getOrElse(Thunk(IntZero)))  // OpCost should be in args position
-          case _ =>
-            opCost(v, Nil, costOpt.getOrElse(Thunk(IntZero)) + accCost)
-        }
+        // Rule: opt.fold(default, f).cost ==> opt.fold(default.cost, x => f(x).cost)
+        case WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f) =>
+          implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+          val th = asRep[Thunk[Costed[Any]]](_th)
+          val f = asRep[Any => Costed[Any]](_f)
+          opt.fold(Thunk(forceThunkByMirror(th).cost), fun { x: Rep[Any] => f(x).cost })
+        case _ => super.rewriteDef(d)
+      }
 
-      case CostedM.cost(Def(CCostedPairCtor(l, r, accCost))) =>
-        val costs = Array(l.cost, r.cost, accCost)
-        val v = Pair(l.value, r.value)
-        mkNormalizedOpCost(v, costs)
+      case CostedM.value(costed) => costed.rhs match {
+        case CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_) => func.sliceCalc
 
-      case CostedM.value(Def(CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_))) =>
-        func.sliceCalc
+        // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
+        case WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f) =>
+          implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+          val th = asRep[Thunk[Costed[Any]]](_th)
+          val f = asRep[Any => Costed[Any]](_f)
+          opt.fold(Thunk(forceThunkByMirror(th).value), fun { x: Rep[Any] => f(x).value })
 
-      // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
-      case CostedM.value(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
-        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
-        val th = asRep[Thunk[Costed[Any]]](_th)
-        val f = asRep[Any => Costed[Any]](_f)
-        opt.fold(Thunk(forceThunkByMirror(th).value), fun { x: Rep[Any] => f(x).value })
-
-      // Rule: opt.fold(default, f).cost ==> opt.fold(default.cost, x => f(x).cost)
-      case CostedM.cost(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
-        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
-        val th = asRep[Thunk[Costed[Any]]](_th)
-        val f = asRep[Any => Costed[Any]](_f)
-        opt.fold(Thunk(forceThunkByMirror(th).cost), fun { x: Rep[Any] => f(x).cost })
+        case _ => super.rewriteDef(d)
+      }
 
       // Rule: opt.fold(default, f).size ==> opt.fold(default.size, x => f(x).size)
       case CostedM.size(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
@@ -677,8 +731,47 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           }
           super.rewriteDef(d)
         }
+
+//      case AllOf(b, items, _) =>
+//        if (items.length == 1 && SigmaM.isValid.unapply(items(0)).isEmpty) items(0)
+//        else {
+//
+//        }
+
+      case AllOf(b, HasSigmas(bools, sigmas), _) =>
+        val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
+        if (bools.isEmpty)
+          zkAll.isValid
+        else
+          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
+      case AnyOf(b, HasSigmas(bs, ss), _) =>
+        val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
+        if (bs.isEmpty)
+          zkAny.isValid
+        else
+          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
+      case AllOf(_,items,_) if items.length == 1 => items(0)
+      case AnyOf(_,items,_) if items.length == 1 => items(0)
+      case AllZk(_,items,_) if items.length == 1 => items(0)
+      case AnyZk(_,items,_) if items.length == 1 => items(0)
+
+
       case _ =>
-        super.rewriteDef(d)
+        if (currentPass.config.constantPropagation) {
+          // additional constant propagation rules (see other similar cases)
+          d match {
+            case AnyOf(_,items,_) if (items.forall(_.isConst)) =>
+              val bs = items.map { case Def(Const(b: Boolean)) => b }
+              toRep(bs.exists(_ == true))
+            case AllOf(_,items,_) if (items.forall(_.isConst)) =>
+              val bs = items.map { case Def(Const(b: Boolean)) => b }
+              toRep(bs.forall(_ == true))
+            case _ =>
+              super.rewriteDef(d)
+          }
+        }
+        else
+          super.rewriteDef(d)
     }
   }
 
