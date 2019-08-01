@@ -1,11 +1,13 @@
 package org.ergoplatform
 
+import java.math.BigInteger
+
 import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.Algos
-import scorex.crypto.authds.ADKey
+import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
@@ -40,13 +42,13 @@ trait JsonCodecs {
   }
 
   implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = { bigInt =>
-    JsonNumber.fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInt]].wrappedValue.toString).asJson
+    JsonNumber.fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInteger]].wrappedValue.toString).asJson
   }
 
   implicit val sigmaBigIntDecoder: Decoder[special.sigma.BigInt] = { implicit cursor =>
     for {
-      str <- cursor.as[String]
-      bigInt <- fromOption(JsonNumber.fromString(str).flatMap(_.toBigInt))
+      jsonNumber <- cursor.as[JsonNumber]
+      bigInt <- fromOption(jsonNumber.toBigInt)
     } yield CBigInt(bigInt.bigInteger)
   }
 
@@ -58,6 +60,9 @@ trait JsonCodecs {
 
   implicit val adKeyEncoder: Encoder[ADKey] = _.array.asJson
   implicit val adKeyDecoder: Decoder[ADKey] = bytesDecoder(ADKey @@ _)
+
+  implicit val adDigestEncoder: Encoder[ADDigest] = _.array.asJson
+  implicit val adDigestDecoder: Decoder[ADDigest] = bytesDecoder(ADDigest @@ _)
 
   implicit val digest32Encoder: Encoder[Digest32] = _.array.asJson
   implicit val digest32Decoder: Decoder[Digest32] = bytesDecoder(Digest32 @@ _)
@@ -131,14 +136,14 @@ trait JsonCodecs {
 
   implicit val preHeaderDecoder: Decoder[PreHeader] = { cursor =>
     for {
-      versionId <- cursor.downField("versionId").as[Byte]
+      version <- cursor.downField("version").as[Byte]
       parentId <- cursor.downField("parentId").as[Coll[Byte]]
-      timeStamp <- cursor.downField("timeStamp").as[Long]
+      timestamp <- cursor.downField("timestamp").as[Long]
       nBits <- cursor.downField("nBits").as[Long]
       height <- cursor.downField("height").as[Int]
       minerPk <- cursor.downField("minerPk").as[Coll[Byte]]
       votes <- cursor.downField("votes").as[Coll[Byte]]
-    } yield CPreHeader(versionId, parentId, timeStamp, nBits, height, CGroupElement.decode(minerPk), votes)
+    } yield CPreHeader(version, parentId, timestamp, nBits, height, CGroupElement.decode(minerPk), votes)
   }
 
   implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[SType]] = { value =>
