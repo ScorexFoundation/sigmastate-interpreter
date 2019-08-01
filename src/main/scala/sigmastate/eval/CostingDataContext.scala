@@ -433,6 +433,11 @@ case class CHeader(
                   ) extends Header {
 }
 
+object CHeader {
+  val VotesSize = 3
+  val NonceSize = 8
+}
+
 class CCostModel extends CostModel {
   private def costOf(opName: String, opType: SFunc): Int = {
     val operId = OperationId(opName, opType)

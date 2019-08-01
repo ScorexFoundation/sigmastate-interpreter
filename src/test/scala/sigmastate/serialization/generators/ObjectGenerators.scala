@@ -294,8 +294,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   lazy val modifierIdGen: Gen[ModifierId] = Gen.listOfN(32, arbByte.arbitrary)
     .map(id => bytesToId(id.toArray))
 
-  lazy val modifierIdBytesGen: Gen[ModifierIdBytes] = Gen.listOfN(32, arbByte.arbitrary)
-    .map(id => ModifierIdBytes @@ bytesToId(id.toArray).toBytes.toColl)
+  lazy val modifierIdBytesGen: Gen[Coll[Byte]] = Gen.listOfN(32, arbByte.arbitrary)
+    .map(id => bytesToId(id.toArray).toBytes.toColl)
 
   val ergoBoxGen: Gen[ErgoBox] = for {
     tId <- modifierIdGen
@@ -375,9 +375,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
 
   def byteCollGen(length: Int): Gen[Coll[Byte]] = byteArrayGen(length).map(_.toColl)
 
-  val minerVotesGen: Gen[MinerVotes] = byteCollGen(MinerVotes.size).map(MinerVotes @@ _)
+  val minerVotesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.VotesSize)
 
-  val nonceBytesGen: Gen[NonceBytes] = byteCollGen(NonceBytes.size).map(NonceBytes @@ _)
+  val nonceBytesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.NonceSize)
 
   import ValidationRules._
 
@@ -648,7 +648,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
 
-  def headerGen(stateRoot: AvlTree, parentId: ModifierIdBytes): Gen[Header] = for {
+  def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen
     version <- arbByte.arbitrary
     adProofsRoot <- digest32CollGen
@@ -673,7 +673,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       h :+ headerGen(stateRoot, h.last.id).sample.get
     }.reverse
 
-  def preHeaderGen(parentId: ModifierIdBytes): Gen[PreHeader] = for {
+  def preHeaderGen(parentId: Coll[Byte]): Gen[PreHeader] = for {
     version <- arbByte.arbitrary
     timestamp <- arbLong.arbitrary
     nBits <- arbLong.arbitrary
