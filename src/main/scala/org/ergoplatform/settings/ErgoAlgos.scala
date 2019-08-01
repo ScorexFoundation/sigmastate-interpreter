@@ -9,7 +9,7 @@ import special.collection.Coll
 import scala.util.Try
 
 // TODO: use it in ergo (delete ergo's own)
-object SigmaAlgos extends ScorexEncoding {
+trait ErgoAlgos extends ScorexEncoding {
 
   type HF = Blake2b256.type
 
@@ -23,3 +23,5 @@ object SigmaAlgos extends ScorexEncoding {
 
   @inline def decodeUnsafe(str: String): Array[Byte] = decode(str).get
 }
+
+object ErgoAlgos extends ErgoAlgos

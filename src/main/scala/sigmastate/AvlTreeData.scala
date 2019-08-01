@@ -6,7 +6,7 @@ import java.util.{Arrays, Objects}
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.JsonCodecs
-import org.ergoplatform.settings.SigmaAlgos
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer

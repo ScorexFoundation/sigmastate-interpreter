@@ -5,7 +5,7 @@ import java.util
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox.BoxId
-import org.ergoplatform.settings.SigmaAlgos
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
@@ -17,7 +17,7 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   * @param boxId - id of a box to add into context (should be in UTXO)
   */
 case class DataInput(boxId: BoxId) {
-  override def toString: String = s"DataInput(${SigmaAlgos.encode(boxId)})"
+  override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
 }
 
 object DataInput extends JsonCodecs {
@@ -69,7 +69,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
   */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId, spendingProof.extension) {
-  override def toString: String = s"Input(${SigmaAlgos.encode(boxId)},$spendingProof)"
+  override def toString: String = s"Input(${ErgoAlgos.encode(boxId)},$spendingProof)"
 }
 
 object Input extends JsonCodecs {

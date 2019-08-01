@@ -6,7 +6,7 @@ import cats.syntax.either._
 import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
-import org.ergoplatform.settings.SigmaAlgos
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
@@ -37,7 +37,7 @@ trait JsonCodecs {
   private def bytesDecoder[T](transform: Array[Byte] => T): Decoder[T] = { implicit cursor =>
     for {
       str <- cursor.as[String]
-      bytes <- fromTry(SigmaAlgos.decode(str))
+      bytes <- fromTry(ErgoAlgos.decode(str))
     } yield transform(bytes)
   }
 
@@ -52,10 +52,10 @@ trait JsonCodecs {
     } yield CBigInt(bigInt.bigInteger)
   }
 
-  implicit val arrayBytesEncoder: Encoder[Array[Byte]] = SigmaAlgos.encode(_).asJson
+  implicit val arrayBytesEncoder: Encoder[Array[Byte]] = ErgoAlgos.encode(_).asJson
   implicit val arrayBytesDecoder: Decoder[Array[Byte]] = bytesDecoder(x => x)
 
-  implicit val collBytesEncoder: Encoder[Coll[Byte]] = SigmaAlgos.encode(_).asJson
+  implicit val collBytesEncoder: Encoder[Coll[Byte]] = ErgoAlgos.encode(_).asJson
   implicit val collBytesDecoder: Decoder[Coll[Byte]] = bytesDecoder(Colls.fromArray(_))
 
   implicit val adKeyEncoder: Encoder[ADKey] = _.array.asJson
