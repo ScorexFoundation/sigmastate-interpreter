@@ -33,7 +33,7 @@ import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
 import sigmastate.eval.ExactNumeric._
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -732,30 +732,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           super.rewriteDef(d)
         }
 
-//      case AllOf(b, items, _) =>
-//        if (items.length == 1 && SigmaM.isValid.unapply(items(0)).isEmpty) items(0)
-//        else {
-//
-//        }
-
-      case AllOf(b, HasSigmas(bools, sigmas), _) =>
-        val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
-        if (bools.isEmpty)
-          zkAll.isValid
-        else
-          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
-      case AnyOf(b, HasSigmas(bs, ss), _) =>
-        val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
-        if (bs.isEmpty)
-          zkAny.isValid
-        else
-          (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
-      case AllOf(_,items,_) if items.length == 1 => items(0)
-      case AnyOf(_,items,_) if items.length == 1 => items(0)
-      case AllZk(_,items,_) if items.length == 1 => items(0)
-      case AnyZk(_,items,_) if items.length == 1 => items(0)
-
-
       case _ =>
         if (currentPass.config.constantPropagation) {
           // additional constant propagation rules (see other similar cases)
@@ -1136,11 +1112,20 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   /** Mutable IR context state, make sure it is reset in onReset() to its initial state. */
   private[this] var _contextDependantNodes = debox.Set.ofSize[Int](InitDependantNodes)
 
-  def isContextDependant(sym: Sym): Boolean =
+  @inline final def isContextDependant(sym: Sym): Boolean =
     if (sym.isConst) true
     else {
       _contextDependantNodes(sym.rhs.nodeId)
     }
+
+  /** @hotspot don't beautify the code */
+  @inline final def allContextDependant(syms: Array[Sym]): Boolean = {
+    val len = syms.length
+    cfor(0)(_ < len, _ + 1) { i =>
+      if (!isContextDependant(syms(i))) return false
+    }
+    true
+  }
 
   /** Here we hook into graph building process at the point where each new graph node is added to the graph.
     * First, we call `super.createDefinition`, which adds the new node `d` to the graph (`s` is the node's symbol).
@@ -1153,17 +1138,15 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     */
   override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Rep[T], d: Def[T]): Rep[T] = {
     val res = super.createDefinition(optScope, s, d)
-    res.rhs match {
-      case d if d.selfType.isInstanceOf[ContextElem[_]] =>
-        // the node is of Context type  => `context-dependent`
-        _contextDependantNodes += (d.nodeId)
-      case d =>
-        val allArgs = d.deps.forall(isContextDependant)
-        if (allArgs) {
-          // all arguments are `context-dependent`  =>  d is `context-dependent`
-          _contextDependantNodes += (d.nodeId)
-        }
-    }
+    val d1 = res.rhs
+    // the node is of Context type  => `context-dependent`
+    // all arguments are `context-dependent`  =>  d is `context-dependent`
+    val isDependent =
+       d1.selfType.isInstanceOf[ContextElem[_]] ||
+       allContextDependant(d1.deps)
+    if (isDependent)
+      _contextDependantNodes += (d1.nodeId)
+    else false  // this is to avoid boxing in `then` branch
     res
   }
 
