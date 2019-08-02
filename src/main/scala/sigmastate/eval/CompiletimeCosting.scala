@@ -16,6 +16,32 @@ import sigma.util.Extensions._
 
 trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
   import builder._
+  import SigmaProp._
+  import CollBuilder._
+  import SigmaDslBuilder._
+
+  override def rewriteDef[T](d: Def[T]): Rep[_] = d match {
+    case AllOf(b, HasSigmas(bools, sigmas), _) =>
+      val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
+      if (bools.isEmpty)
+        zkAll.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.allOf(b.fromItems(bools:_*))) && zkAll).isValid
+
+    case AnyOf(b, HasSigmas(bs, ss), _) =>
+      val zkAny = sigmaDslBuilder.anyZK(b.fromItems(ss:_*))
+      if (bs.isEmpty)
+        zkAny.isValid
+      else
+        (sigmaDslBuilder.sigmaProp(sigmaDslBuilder.anyOf(b.fromItems(bs:_*))) || zkAny).isValid
+
+    case AllOf(_,items,_) if items.length == 1 => items(0)
+    case AnyOf(_,items,_) if items.length == 1 => items(0)
+    case AllZk(_,items,_) if items.length == 1 => items(0)
+    case AnyZk(_,items,_) if items.length == 1 => items(0)
+
+    case _ => super.rewriteDef(d)
+  }
 
   override def evalNode[T <: SType](ctx: RCosted[Context], env: CostingEnv, node: Value[T]): RCosted[T#WrappedType] = {
     def eval[T <: SType](node: Value[T]): RCosted[T#WrappedType] = evalNode(ctx, env, node)
