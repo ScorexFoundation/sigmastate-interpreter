@@ -771,8 +771,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case Apply(In(_f), In(x: AnyRef), _) =>
             val f = _f.asInstanceOf[AnyRef => Any]
             out(f(x))
-          case First(In(p: Tuple2[_,_])) => out(p._1)
-          case Second(In(p: Tuple2[_,_])) => out(p._2)
           case ThunkDef(y, schedule) =>
             val th = () => {
               costAccumulator.startScope()
