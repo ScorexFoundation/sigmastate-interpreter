@@ -6,6 +6,7 @@ import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.utxo.CostTable
+import spire.syntax.all.cfor
 
 trait CostingRules extends SigmaLibrary { IR: IRContext =>
   import Coll._
@@ -260,8 +261,16 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     * This class defines generic costing helpers, to unify and simplify costing rules of individual methods.
     */
   abstract class Coster[T](obj: RCosted[T], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) {
-    def costOfArgs: Seq[Rep[Int]] = (obj +: costedArgs).map(_.cost)
-    def sizeOfArgs: Rep[Long] = costedArgs.foldLeft(obj.size.dataSize)({ case (s, e) => s + e.size.dataSize })
+    def costOfArgs: Seq[Rep[Int]] = {
+      val len = costedArgs.length
+      val res = new Array[Rep[Int]](1 + len)
+      res(0) = obj.cost
+      cfor(0)(_ < len, _ + 1) { i =>
+        res(i + 1) = costedArgs(i).asInstanceOf[Rep[Costed[Any]]].cost
+      }
+      res
+    }
+    def sizeOfArgs: Rep[Long] = costedArgs.foldLeft(obj.size.dataSize)((s, e) => s + e.size.dataSize)
 
     def constantSizePropertyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] = {
       val value = prop(obj.value)
