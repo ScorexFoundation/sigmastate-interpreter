@@ -146,11 +146,11 @@ trait JsonCodecs {
     } yield CPreHeader(version, parentId, timestamp, nBits, height, CGroupElement.decode(minerPk), votes)
   }
 
-  implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[SType]] = { value =>
+  implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[_ <: SType]] = { value =>
     ValueSerializer.serialize(value).asJson
   }
 
-  implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[SType]] = {
+  implicit val evaluatedValueDecoder: Decoder[EvaluatedValue[_ <: SType]] = {
     decodeEvaluatedValue(_.asInstanceOf[EvaluatedValue[SType]])
   }
 
