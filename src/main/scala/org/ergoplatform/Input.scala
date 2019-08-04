@@ -2,8 +2,6 @@ package org.ergoplatform
 
 import java.util
 
-import io.circe._
-import io.circe.syntax._
 import org.ergoplatform.ErgoBox.BoxId
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
@@ -18,22 +16,6 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   */
 case class DataInput(boxId: BoxId) {
   override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
-}
-
-object DataInput extends JsonCodecs {
-
-  implicit val jsonEncoder: Encoder[DataInput] = { input =>
-    Json.obj(
-      "boxId" -> input.boxId.asJson,
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[DataInput] = { cursor =>
-    for {
-      boxId <- cursor.downField("boxId").as[ADKey]
-    } yield DataInput(boxId)
-  }
-
 }
 
 /**
@@ -72,7 +54,7 @@ case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   override def toString: String = s"Input(${ErgoAlgos.encode(boxId)},$spendingProof)"
 }
 
-object Input extends JsonCodecs {
+object Input {
 
   object serializer extends SigmaSerializer[Input, Input] {
 
@@ -86,20 +68,6 @@ object Input extends JsonCodecs {
       val spendingProof = ProverResult.serializer.parse(r)
       Input(ADKey @@ boxId, spendingProof)
     }
-  }
-
-  implicit val jsonEncoder: Encoder[Input] = { input =>
-    Json.obj(
-      "boxId" -> input.boxId.asJson,
-      "spendingProof" -> input.spendingProof.asJson
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[Input] = { cursor =>
-    for {
-      boxId <- cursor.downField("boxId").as[ADKey]
-      proof <- cursor.downField("spendingProof").as[ProverResult]
-    } yield Input(boxId, proof)
   }
 
 }

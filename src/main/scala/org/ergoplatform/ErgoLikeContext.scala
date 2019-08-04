@@ -2,26 +2,24 @@ package org.ergoplatform
 
 import java.util
 
-import io.circe._
-import io.circe.syntax._
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.Height
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import scalan.RType
+import scalan.RType._
+import sigmastate.SType._
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.eval._
 import sigmastate.eval.Extensions._
+import sigmastate.eval._
 import sigmastate.interpreter.{ContextExtension, CryptoConstants, InterpreterContext}
-import sigmastate.serialization.{GroupElementSerializer, OpCodes, SigmaSerializer}
 import sigmastate.serialization.OpCodes.OpCode
+import sigmastate.serialization.{GroupElementSerializer, OpCodes, SigmaSerializer}
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, Box, GroupElement, Header, PreHeader}
-import SType._
-import RType._
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
-import org.ergoplatform.settings.ErgoAlgos
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
 import spire.syntax.all.cfor
+
 import scala.util.Try
 
 case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
@@ -151,7 +149,7 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost)"
 }
 
-object ErgoLikeContext extends JsonCodecs {
+object ErgoLikeContext {
   type Height = Int
 
   /* NO HF PROOF:
@@ -240,40 +238,6 @@ object ErgoLikeContext extends JsonCodecs {
     def toTestBox(isCost: Boolean): Box = {
       new CostingBox(isCost, ebox)
     }
-  }
-
-  implicit val jsonEncoder: Encoder[ErgoLikeContext] = { ctx =>
-    Json.obj(
-      "lastBlockUtxoRoot" -> ctx.lastBlockUtxoRoot.asJson,
-      "headers" -> ctx.headers.toArray.toSeq.asJson,
-      "preHeader" -> ctx.preHeader.asJson,
-      "dataBoxes" -> ctx.dataBoxes.asJson,
-      "boxesToSpend" -> ctx.boxesToSpend.asJson,
-      // TODO: handle unsigned tx
-      "spendingTransaction" -> ctx.spendingTransaction.asInstanceOf[ErgoLikeTransaction].asJson,
-      "selfIndex" -> ctx.selfIndex.asJson,
-      "extension" -> ctx.extension.asJson,
-      "validationSettings" -> ctx.validationSettings.asJson,
-      "costLimit" -> ctx.costLimit.asJson,
-      "initCost" -> ctx.initCost.asJson
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[ErgoLikeContext] = { cursor =>
-    for {
-      lastBlockUtxoRoot <- cursor.downField("lastBlockUtxoRoot").as[AvlTreeData]
-      headers <- cursor.downField("headers").as[Seq[Header]]
-      preHeader <- cursor.downField("preHeader").as[PreHeader]
-      dataBoxes <- cursor.downField("dataBoxes").as[IndexedSeq[ErgoBox]]
-      boxesToSpend <- cursor.downField("boxesToSpend").as[IndexedSeq[ErgoBox]]
-      spendingTransaction <- cursor.downField("spendingTransaction").as[ErgoLikeTransaction]
-      selfIndex <- cursor.downField("selfIndex").as[Int]
-      extension <- cursor.downField("extension").as[ContextExtension]
-      validationSettings <- cursor.downField("validationSettings").as[SigmaValidationSettings]
-      costLimit <- cursor.downField("costLimit").as[Long]
-      initCost <- cursor.downField("initCost").as[Long]
-    } yield new ErgoLikeContext(lastBlockUtxoRoot, Colls.fromArray(headers.toArray), preHeader,
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
   }
 }
 

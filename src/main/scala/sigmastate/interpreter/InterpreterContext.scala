@@ -1,8 +1,5 @@
 package sigmastate.interpreter
 
-import io.circe._
-import io.circe.syntax._
-import org.ergoplatform.JsonCodecs
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType
 import sigmastate.Values.EvaluatedValue
@@ -22,7 +19,7 @@ case class ContextExtension(values: Map[Byte, EvaluatedValue[_ <: SType]]) {
     ContextExtension(values ++ bindings)
 }
 
-object ContextExtension extends JsonCodecs {
+object ContextExtension {
   val empty = ContextExtension(Map())
 
   object serializer extends SigmaSerializer[ContextExtension, ContextExtension] {
@@ -39,18 +36,6 @@ object ContextExtension extends JsonCodecs {
         .toMap[Byte, EvaluatedValue[_ <: SType]]
       ContextExtension(ext)
     }
-  }
-
-  implicit val jsonEncoder: Encoder[ContextExtension] = { extension =>
-    extension.values.map { case (key, value) =>
-      key -> evaluatedValueEncoder(value)
-    }.asJson
-  }
-
-  implicit val jsonDecoder: Decoder[ContextExtension] = { cursor =>
-    for {
-      values <- cursor.as[Map[Byte, EvaluatedValue[SType]]]
-    } yield ContextExtension(values)
   }
 }
 

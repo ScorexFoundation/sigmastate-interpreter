@@ -1,9 +1,5 @@
 package org.ergoplatform.validation
 
-import io.circe._
-import io.circe.syntax._
-import org.ergoplatform.JsonCodecs
-
 /**
   * Configuration of validation. Each `ValidationRule` instance should be
   * implemented as an `object` to facilitate type-safe usage. It then should be
@@ -55,19 +51,6 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
       case Some((_, ReplacedRule(newRuleId))) => true
       case Some((rule, status)) => rule.isSoftFork(this, rule.id, status, ve.args)
       case None => false
-    }
-  }
-}
-
-object SigmaValidationSettings extends JsonCodecs {
-
-  implicit val jsonEncoder: Encoder[SigmaValidationSettings] = { v =>
-    SigmaValidationSettingsSerializer.toBytes(v).asJson
-  }
-
-  implicit val jsonDecoder: Decoder[SigmaValidationSettings] = { implicit cursor: ACursor =>
-    cursor.as[Array[Byte]] flatMap { bytes =>
-      fromThrows(SigmaValidationSettingsSerializer.fromBytes(bytes))
     }
   }
 }

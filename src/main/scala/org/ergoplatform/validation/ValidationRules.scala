@@ -4,22 +4,19 @@ import java.nio.ByteBuffer
 import java.util
 
 import org.ergoplatform.ErgoConstants.MaxLoopLevelInCostFunction
-import org.ergoplatform.JsonCodecs
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import sigma.util.Extensions.toUByte
-import sigmastate.eval.IRContext
-import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
+import sigmastate._
+import sigmastate.eval.IRContext
+import sigmastate.lang.exceptions._
+import sigmastate.serialization.OpCodes.{OpCode, OpCodeExtra}
+import sigmastate.serialization.TypeSerializer.embeddableIdToType
 import sigmastate.serialization.{OpCodes, ValueSerializer}
 import sigmastate.utxo.DeserializeContext
-import sigmastate.lang.exceptions._
-import sigmastate.serialization.TypeSerializer.embeddableIdToType
-import sigmastate._
 
 import scala.collection.mutable
-import io.circe._
-import io.circe.syntax._
 
 /** Base class for different validation rules registered in ValidationRules.currentSettings.
   * Each rule is identified by `id` and have a description.

@@ -2,13 +2,10 @@ package sigmastate.interpreter
 
 import java.util
 
-import io.circe._
-import io.circe.syntax._
 import gf2t.{GF2_192, GF2_192_Poly}
 import org.bitbucket.inkytonik.kiama.attribution.AttributionCore
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{everywherebu, everywheretd, rule}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
-import org.ergoplatform.JsonCodecs
 import org.ergoplatform.settings.ErgoAlgos
 import scalan.util.CollectionUtil._
 import sigmastate.Values._
@@ -40,7 +37,7 @@ class ProverResult(val proof: Array[Byte], val extension: ContextExtension) {
   override def toString: Idn = s"ProverResult(${ErgoAlgos.encode(proof)},$extension)"
 }
 
-object ProverResult extends JsonCodecs {
+object ProverResult {
   val empty: ProverResult = ProverResult(Array[Byte](), ContextExtension.empty)
 
   def apply(proof: Array[Byte], extension: ContextExtension): ProverResult =
@@ -61,21 +58,6 @@ object ProverResult extends JsonCodecs {
       ProverResult(proofBytes, ce)
     }
   }
-
-  implicit val jsonEncoder: Encoder[ProverResult] = { v =>
-    Json.obj(
-      "proofBytes" -> v.proof.asJson,
-      "extension" -> v.extension.asJson
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[ProverResult] = { cursor =>
-    for {
-      proofBytes <- cursor.downField("proofBytes").as[Array[Byte]]
-      extMap <- cursor.downField("extension").as[Map[Byte, EvaluatedValue[SType]]]
-    } yield ProverResult(proofBytes, ContextExtension(extMap))
-  }
-
 }
 
 case class CostedProverResult(override val proof: Array[Byte],

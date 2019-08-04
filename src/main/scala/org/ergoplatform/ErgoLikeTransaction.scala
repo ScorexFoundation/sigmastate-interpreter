@@ -1,26 +1,20 @@
 package org.ergoplatform
 
-import java.util
-
-import io.circe._
-import io.circe.syntax._
-import org.ergoplatform.ErgoBox.{BoxId, NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import sigmastate.SType
+import sigmastate.SType._
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
-import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
 import scala.util.Try
-import sigmastate.SType._
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval._
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
@@ -172,7 +166,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
 }
 
 
-object ErgoLikeTransaction extends JsonCodecs {
+object ErgoLikeTransaction {
 
   val TransactionIdBytesSize: Short = 32
 
@@ -198,32 +192,4 @@ object ErgoLikeTransaction extends JsonCodecs {
 
   // TODO unify serialization approach in Ergo/sigma with BytesSerializable
   val serializer: SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] = ErgoLikeTransactionSerializer
-
-  implicit val jsonEncoder: Encoder[ErgoLikeTransaction] = { tx =>
-    Json.obj(
-      "id" -> tx.id.asJson,
-      "inputs" -> tx.inputs.asJson,
-      "dataInputs" -> tx.dataInputs.asJson,
-      "outputs" -> tx.outputs.asJson
-    )
-  }
-
-  private implicit val outputDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] = { cursor =>
-    for {
-      maybeId <- cursor.downField("boxId").as[Option[BoxId]]
-      value <- cursor.downField("value").as[Long]
-      creationHeight <- cursor.downField("creationHeight").as[Int]
-      ergoTree <- cursor.downField("ergoTree").as[ErgoTree]
-      assets <- cursor.downField("assets").as[Seq[(ErgoBox.TokenId, Long)]] // TODO optimize: encode directly into Coll avoiding allocation of Tuple2 for each element
-      registers <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
-    } yield (new ErgoBoxCandidate(value, ergoTree, creationHeight, assets.toColl, registers), maybeId)
-  }
-
-  implicit val jsonDecoder: Decoder[ErgoLikeTransaction] = { implicit cursor =>
-    for {
-      inputs <- cursor.downField("inputs").as[IndexedSeq[Input]]
-      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
-      outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
-    } yield new ErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
-  }
 }

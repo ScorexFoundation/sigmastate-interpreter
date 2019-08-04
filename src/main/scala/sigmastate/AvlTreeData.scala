@@ -3,10 +3,6 @@ package sigmastate
 import java.util
 import java.util.{Arrays, Objects}
 
-import io.circe._
-import io.circe.syntax._
-import org.ergoplatform.JsonCodecs
-import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -75,7 +71,7 @@ case class AvlTreeData(digest: ADDigest,
         keyLength.hashCode()) * 31 + Objects.hash(valueLengthOpt, treeFlags)
 }
 
-object AvlTreeData extends JsonCodecs {
+object AvlTreeData {
   val DigestSize: Int = CryptoConstants.hashLength + 1 //please read class comments above for details
   val TreeDataSize = DigestSize + 3 + 4 + 4
 
@@ -101,23 +97,5 @@ object AvlTreeData extends JsonCodecs {
       val valueLengthOpt = r.getOption(r.getUInt().toInt)
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
-  }
-
-  implicit val jsonEncoder: Encoder[AvlTreeData] = { v =>
-    Json.obj(
-      "digest" -> v.digest.asJson,
-      "treeFlags" -> v.treeFlags.serializeToByte.asJson,
-      "keyLength" -> v.keyLength.asJson,
-      "valueLength" -> v.valueLengthOpt.asJson
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[AvlTreeData] = { cursor =>
-    for {
-      digest <- cursor.downField("digest").as[ADDigest]
-      treeFlagsByte <- cursor.downField("treeFlags").as[Byte]
-      keyLength <- cursor.downField("keyLength").as[Int]
-      valueLength <- cursor.downField("valueLength").as[Option[Int]]
-    } yield new AvlTreeData(digest, AvlTreeFlags(treeFlagsByte), keyLength, valueLength)
   }
 }

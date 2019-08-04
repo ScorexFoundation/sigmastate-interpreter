@@ -1,23 +1,21 @@
 package org.ergoplatform
 
-import io.circe._
-import io.circe.syntax._
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import sigmastate.Values._
-import sigmastate.SType.AnyOps
-import sigmastate._
-import sigmastate.serialization.{ErgoTreeSerializer, SigmaSerializer}
 import sigmastate.SCollection.SByteArray
+import sigmastate.SType.AnyOps
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
+import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
 
 import scala.runtime.ScalaRunTime
 
@@ -91,7 +89,7 @@ class ErgoBox(
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
-object ErgoBox extends JsonCodecs {
+object ErgoBox {
   type BoxId = ADKey
   object BoxId {
     val size: Short = 32
@@ -199,38 +197,4 @@ object ErgoBox extends JsonCodecs {
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
   }
-
-  // TODO remove in ergo
-  implicit val jsonEncoder: Encoder[ErgoBox] = { box =>
-    Json.obj(
-      "boxId" -> box.id.asJson,
-      "value" -> box.value.asJson,
-      "ergoTree" -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
-      "assets" -> box.additionalTokens.toArray.toSeq
-        .asJson(Encoder.encodeSeq(Encoder.encodeTuple2(digest32Encoder, Encoder.encodeLong))),
-      "creationHeight" -> box.creationHeight.asJson,
-      "additionalRegisters" -> box.additionalRegisters.asInstanceOf[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]].asJson
-    )
-  }
-
-  implicit val jsonDecoder: Decoder[ErgoBox] = { cursor =>
-    for {
-      value <- cursor.downField("value").as[Long]
-      ergoTreeBytes <- cursor.downField("ergoTree").as[Array[Byte]]
-      additionalTokens <- cursor.downField("assets").as(Decoder.decodeSeq(Decoder.decodeTuple2(digest32Decoder, Decoder.decodeLong)))
-      creationHeight <- cursor.downField("creationHeight").as[Int]
-      additionalRegisters <- cursor.downField("additionalRegisters").as[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]]
-      transactionId <- cursor.downField("transactionId").as[ModifierId]
-      index <- cursor.downField("index").as[Short]
-    } yield new ErgoBox(
-      value = value,
-      ergoTree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(ergoTreeBytes),
-      additionalTokens = additionalTokens.toColl,
-      additionalRegisters = additionalRegisters,
-      transactionId = transactionId,
-      index = index,
-      creationHeight = creationHeight
-    )
-  }
-
 }
