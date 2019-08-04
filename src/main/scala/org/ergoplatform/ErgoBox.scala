@@ -210,8 +210,6 @@ object ErgoBox extends JsonCodecs {
         .asJson(Encoder.encodeSeq(Encoder.encodeTuple2(digest32Encoder, Encoder.encodeLong))),
       "creationHeight" -> box.creationHeight.asJson,
       "additionalRegisters" -> box.additionalRegisters.asInstanceOf[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]].asJson,
-      "transactionId" -> box.transactionId.asJson,
-      "index" -> box.index.asJson
     )
   }
 
