@@ -102,8 +102,7 @@ trait JsonCodecs {
       "version" -> h.version.asJson,
       "parentId" -> h.parentId.asJson,
       "adProofsRoot" -> h.ADProofsRoot.asJson,
-      // TODO: fix
-      "stateRoot" -> h.stateRoot.asInstanceOf[WrapperOf[AvlTreeData]].wrappedValue.asJson,
+      "stateRoot" -> AvlTreeData(h.stateRoot).asJson,
       "transactionsRoot" -> h.transactionsRoot.asJson,
       "timestamp" -> h.timestamp.asJson,
       "nBits" -> h.nBits.asJson,
