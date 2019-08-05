@@ -23,7 +23,6 @@ import special.sigma.{Header, PreHeader}
 import scala.util.Try
 
 trait JsonCodecs {
-  //TODO: remove in ergo
 
   def fromTry[T](tryResult: Try[T])(implicit cursor: ACursor): Either[DecodingFailure, T] = {
     tryResult.fold(e => Left(DecodingFailure(e.toString, cursor.history)), Right.apply)

@@ -8,7 +8,6 @@ import special.collection.Coll
 
 import scala.util.Try
 
-// TODO: use it in ergo (delete ergo's own)
 trait ErgoAlgos extends ScorexEncoding {
 
   type HF = Blake2b256.type
