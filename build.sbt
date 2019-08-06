@@ -262,7 +262,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "master"
+  val spamBranch = "i4-add-input-hash"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)
