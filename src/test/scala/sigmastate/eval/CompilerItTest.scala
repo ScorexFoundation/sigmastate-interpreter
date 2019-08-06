@@ -106,8 +106,8 @@ class CompilerItTest extends BaseCtxTests
     import SigmaDslBuilder._
     val p1Dsl = dslValue.SigmaProp(p1)
     val p2Dsl = dslValue.SigmaProp(p2)
-    val p1Sym: Rep[SigmaProp] = liftConst(p1Dsl)
-    val p2Sym: Rep[SigmaProp] = liftConst(p2Dsl)
+    val p1Sym: Ref[SigmaProp] = liftConst(p1Dsl)
+    val p2Sym: Ref[SigmaProp] = liftConst(p2Dsl)
     Case(env, "andSigmaPropConsts", "p1 && p2", ergoCtx,
       calc = {_ => dsl.allZK(colBuilder.fromItems(p1Sym, p2Sym)) },
       cost = null,
@@ -133,7 +133,7 @@ class CompilerItTest extends BaseCtxTests
 //      {_ =>
 //        val arr = liftConst(bigIntArr1)
 //        val opType = SFunc(Vector(SBigInt,SBigInt), SBigInt)
-//        val f = fun { in: Rep[(Int, Long)] =>
+//        val f = fun { in: Ref[(Int, Long)] =>
 //          val Pair(c, s) = in
 //          val c1 = c + constCost[WBigInteger] + costOf("+", opType)
 //          val c2 = costOf("+_per_item", opType) * ((s max sizeOf(liftConst(n1))) + 1L).toInt
@@ -242,7 +242,7 @@ class CompilerItTest extends BaseCtxTests
 
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     Case(env, "crowdFunding_Case", crowdFundingScript, ergoCtx,
-      { ctx: Rep[Context] =>
+      { ctx: Ref[Context] =>
         val backerPubKey = liftConst(dslValue.SigmaProp(backerPK))
         val projectPubKey = liftConst(dslValue.SigmaProp(projectPK))
         val c1 = asRep[SigmaProp](dsl.sigmaProp(ctx.HEIGHT >= toRep(timeout))) && backerPubKey

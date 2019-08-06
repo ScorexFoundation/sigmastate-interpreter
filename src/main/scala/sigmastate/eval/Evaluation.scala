@@ -339,7 +339,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
   /** Checks if the function (Lambda node) given by the symbol `costF` contains only allowed operations
     * in the schedule. */
-  def verifyCostFunc(costF: Rep[Any => Int]): Try[Unit] = {
+  def verifyCostFunc(costF: Ref[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
       traverseScope(lam, level = 0)
@@ -379,7 +379,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   }
 
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
-  def findIsProven[T](f: Rep[Context => T]): Option[Sym] = {
+  def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
     val s = lam.flatSchedule.find(sym => sym.rhs match {
       case SigmaM.isValid(_) => true
@@ -390,7 +390,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
   /** Checks that if SigmaProp.isProven method calls exists in the given Lambda's schedule,
     * then it is the last operation. */
-  def verifyIsProven[T](f: Rep[Context => T]): Try[Unit] = {
+  def verifyIsProven[T](f: Ref[Context => T]): Try[Unit] = {
     val isProvenOpt = findIsProven(f)
     Try {
       isProvenOpt match {
@@ -620,7 +620,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Transform graph IR into the corresponding Scala function
     * @param f          simbol of the graph representing function from type A to B
     * @param costLimit  when Some(value) is specified, then OpCost nodes will be used to accumulate total cost of execution. */
-  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Rep[A => B], costLimit: Option[Long] = None)
+  def compile[SA, SB, A, B](dataEnv: Map[Sym, AnyRef], f: Ref[A => B], costLimit: Option[Long] = None)
                            (implicit lA: Liftable[SA, A], lB: Liftable[SB, B]): SA => (SB, Int) =
   {
     val costAccumulator = new CostAccumulator(0, costLimit)

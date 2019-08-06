@@ -20,7 +20,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
   import CollBuilder._
   import SigmaDslBuilder._
 
-  override def rewriteDef[T](d: Def[T]): Rep[_] = d match {
+  override def rewriteDef[T](d: Def[T]): Ref[_] = d match {
     case AllOf(b, HasSigmas(bools, sigmas), _) =>
       val zkAll = sigmaDslBuilder.allZK(b.fromItems(sigmas:_*))
       if (bools.isEmpty)

@@ -24,13 +24,13 @@ trait IRContext extends Evaluation with TreeBuilding {
   override val costedBuilderValue = sigmaDslBuilderValue.Costing
   override val monoidBuilderValue = sigmaDslBuilderValue.Monoids
 
-  type RCostingResult[T] = Rep[(Context => T, ((Int, Size[Context])) => Int)]
+  type RCostingResult[T] = Ref[(Context => T, ((Int, Size[Context])) => Int)]
 
   case class RCostingResultEx[T](
-    costedGraph: Rep[Costed[Context] => Costed[T]],
-    costF: Rep[((Context, (Int, Size[Context]))) => Int]
+    costedGraph: Ref[Costed[Context] => Costed[T]],
+    costF: Ref[((Context, (Int, Size[Context]))) => Int]
   ) {
-    lazy val calcF: Rep[Context => Any] = costedGraph.sliceCalc(true)
+    lazy val calcF: Ref[Context => Any] = costedGraph.sliceCalc(true)
   }
 
   def doCosting[T](env: ScriptEnv, typed: SValue): RCostingResult[T] = {
@@ -88,7 +88,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   import Context._;
 
   def checkCost(ctx: SContext, exp: Value[SType],
-                costF: Rep[Size[Context] => Int], maxCost: Long): Int = {
+                costF: Ref[Size[Context] => Int], maxCost: Long): Int = {
     val costFun = compile[SSize[SContext], Int, Size[Context], Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun(Sized.sizeOf(ctx))
     if (estimatedCost > maxCost) {
@@ -98,7 +98,7 @@ trait IRContext extends Evaluation with TreeBuilding {
   }
 
   def checkCostEx(ctx: SContext, exp: Value[SType],
-                costF: Rep[((Int, Size[Context])) => Int], maxCost: Long): Int = {
+                costF: Ref[((Int, Size[Context])) => Int], maxCost: Long): Int = {
     val costFun = compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(ctx)))
     if (estimatedCost > maxCost) {
@@ -126,7 +126,7 @@ trait IRContext extends Evaluation with TreeBuilding {
     * the old scripts at some point will die out of the blockchain.
     */
   def checkCostWithContext(ctx: SContext, exp: Value[SType],
-                costF: Rep[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
+                costF: Ref[((Context, (Int, Size[Context]))) => Int], maxCost: Long, initCost: Long): Try[Int] = Try {
     val costFun = compile[(SContext, (Int, SSize[SContext])), Int, (Context, (Int, Size[Context])), Int](
                     getDataEnv, costF, Some(maxCost))
     val (estimatedCost, accCost) = costFun((ctx, (0, Sized.sizeOf(ctx))))

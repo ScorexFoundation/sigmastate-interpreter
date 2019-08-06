@@ -119,7 +119,7 @@ object ValidationRules {
 
   object CheckIsSupportedIndexExpression extends ValidationRule(1003,
     "Check the index expression for accessing collection element is supported.") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Rep[Int]): Unit = {
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(coll: Value[SCollection[_]], i: IntValue, iSym: ctx.Ref[Int]): Unit = {
       checkRule()
       if (!ctx.isSupportedIndexExpression(iSym))
         throwValidationException(
@@ -130,7 +130,7 @@ object ValidationRules {
 
   object CheckCostFunc extends ValidationRule(1004,
     "Cost function should contain only operations from specified list.") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Rep[Any => Int]): Unit = {
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(costF: ctx.Ref[Any => Int]): Unit = {
       checkRule()
       val verification = ctx.verifyCostFunc(ctx.asRep[Any => Int](costF))
       if (!verification.isSuccess) {
@@ -141,7 +141,7 @@ object ValidationRules {
 
   object CheckCalcFunc extends ValidationRule(1005,
     "If SigmaProp.isProven method calls exists in the given function,\n then it is the last operation") {
-    final def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Rep[ctx.Context => Any]): Unit = {
+    final def apply[Ctx <: IRContext, T](ctx: Ctx)(calcF: ctx.Ref[ctx.Context => Any]): Unit = {
       checkRule()
       val verification = ctx.verifyIsProven(calcF)
       if (!verification.isSuccess) {

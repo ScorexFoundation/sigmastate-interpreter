@@ -22,7 +22,7 @@ trait SigmaLibrary extends Library
   implicit lazy val sizeAnyElement = sizeElement(AnyElement)
 
 
-  def sigmaDslBuilder: Rep[SigmaDslBuilder]
+  def sigmaDslBuilder: Ref[SigmaDslBuilder]
 
 
 }

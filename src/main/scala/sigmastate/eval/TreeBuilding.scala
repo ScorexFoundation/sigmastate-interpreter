@@ -116,7 +116,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  def buildValue(ctx: Rep[Context],
+  def buildValue(ctx: Ref[Context],
                  mainG: PGraph,
                  env: DefEnv,
                  s: Sym,
@@ -253,7 +253,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkFilter(col.asCollection[SType], p.asFunc)
 
       case Def(MethodCall(receiver, m, argsSyms, _)) if receiver.elem.isInstanceOf[CollElem[_, _]] =>
-        val colSym = receiver.asInstanceOf[Rep[Coll[Any]]]
+        val colSym = receiver.asInstanceOf[Ref[Coll[Any]]]
         val args = argsSyms.map(_.asInstanceOf[Sym]).map(recurse)
         val col = recurse(colSym).asCollection[SType]
         val colTpe = col.tpe
@@ -403,7 +403,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  private def processAstGraph(ctx: Rep[Context],
+  private def processAstGraph(ctx: Ref[Context],
                               mainG: PGraph,
                               env: DefEnv,
                               subG: AstGraph,
@@ -436,7 +436,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     res
   }
 
-  def buildTree[T <: SType](f: Rep[Context => Any],
+  def buildTree[T <: SType](f: Ref[Context => Any],
                             constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)

@@ -87,7 +87,7 @@ trait Interpreter extends ScorexLogging {
     (res, currContext.value)
   }
 
-  def checkCost(context: CTX, exp: Value[SType], costF: Rep[((Int, IR.Size[IR.Context])) => Int]): Int = {
+  def checkCost(context: CTX, exp: Value[SType], costF: Ref[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._
     import IR.Context._;
     val costingCtx = context.toSigmaContext(IR, isCost = true)
@@ -100,7 +100,7 @@ trait Interpreter extends ScorexLogging {
     estimatedCost
   }
 
-  def calcResult(context: special.sigma.Context, calcF: Rep[IR.Context => Any]): special.sigma.SigmaProp = {
+  def calcResult(context: special.sigma.Context, calcF: Ref[IR.Context => Any]): special.sigma.SigmaProp = {
     import IR._
     import Context._
     import SigmaProp._

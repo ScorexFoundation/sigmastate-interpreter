@@ -107,9 +107,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       script: Script,
       ergoCtx: Option[ErgoLikeContext] = None,
       testContract: Option[DContext => Any] = None,
-      expectedCalc: Option[Rep[Context] => Rep[Any]] = None,
-      expectedCost: Option[Rep[Context] => Rep[Int]] = None,
-      expectedSize: Option[Rep[Context] => Rep[Long]] = None,
+      expectedCalc: Option[Ref[Context] => Ref[Any]] = None,
+      expectedCost: Option[Ref[Context] => Ref[Int]] = None,
+      expectedSize: Option[Ref[Context] => Ref[Long]] = None,
       expectedTree: Option[SValue] = None,
       expectedResult: Result = NoResult,
       printGraphs: Boolean = true,
@@ -130,7 +130,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
     }
 
-    def checkExpectedFunc[A,B](block: => Rep[A => B], expected: Option[Rep[A => B]], messageFmt: String) = {
+    def checkExpectedFunc[A,B](block: => Ref[A => B], expected: Option[Ref[A => B]], messageFmt: String) = {
       if (expected.isDefined) {
         val x = block
         assert(alphaEqual(x, expected.get), messageFmt)
@@ -143,7 +143,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       case _ => Pair(xs.head, pairify(xs.tail))
     }
 
-    def doCosting: Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] = {
+    def doCosting: Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] = {
       val costed = cost[Any](env, tree)
       val calcF = costed.sliceCalc
       val costF = fun { sCtx: RSize[Context] => costed.sliceCost(Pair(0, sCtx)) }
@@ -217,9 +217,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   }
 
   def Case(env: ScriptEnv, name: String, script: String, ctx: ErgoLikeContext,
-           calc: Rep[Context] => Rep[Any],
-           cost: Rep[Context] => Rep[Int],
-           size: Rep[Context] => Rep[Long],
+           calc: Ref[Context] => Ref[Any],
+           cost: Ref[Context] => Ref[Int],
+           size: Ref[Context] => Ref[Long],
            tree: SValue,
            result: Result) =
     EsTestCase(name, env, Code(script), Option(ctx), None,
@@ -227,9 +227,9 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       Option(tree), result)
 
   def checkAll(env: ScriptEnv, name: String, script: String, ergoCtx: ErgoLikeContext,
-               calc: Rep[Context] => Rep[Any],
-               cost: Rep[Context] => Rep[Int],
-               size: Rep[Context] => Rep[Long],
+               calc: Ref[Context] => Ref[Any],
+               cost: Ref[Context] => Ref[Int],
+               size: Ref[Context] => Ref[Long],
                tree: SValue,
                result: Result): Unit =
   {
@@ -238,11 +238,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   }
 
   def checkInEnv(env: ScriptEnv, name: String, script: String,
-                 expectedCalc: Rep[Context] => Rep[Any],
-                 expectedCost: Rep[Context] => Rep[Int] = null,
-                 expectedSize: Rep[Context] => Rep[Long] = null,
+                 expectedCalc: Ref[Context] => Ref[Any],
+                 expectedCost: Ref[Context] => Ref[Int] = null,
+                 expectedSize: Ref[Context] => Ref[Long] = null,
                  printGraphs: Boolean = true
-                ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
+                ): Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
     val tc = EsTestCase(name, env, Code(script), None, None,
       Option(expectedCalc),
@@ -253,11 +253,11 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   }
 
   def check(name: String, script: String,
-      expectedCalc: Rep[Context] => Rep[Any],
-      expectedCost: Rep[Context] => Rep[Int] = null,
-      expectedSize: Rep[Context] => Rep[Long] = null,
+      expectedCalc: Ref[Context] => Ref[Any],
+      expectedCost: Ref[Context] => Ref[Int] = null,
+      expectedSize: Ref[Context] => Ref[Long] = null,
       printGraphs: Boolean = true
-      ): Rep[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
+      ): Ref[(Context => Any, (Size[Context] => Int, Size[Context] => Long))] =
   {
     checkInEnv(Map(), name, script, expectedCalc, expectedCost, expectedSize, printGraphs)
   }
@@ -272,7 +272,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
     tcase.doReduce()
   }
 
-  def compileAndCost[T](env: ScriptEnv, code: String): Rep[Costed[Context] => Costed[T]] = {
+  def compileAndCost[T](env: ScriptEnv, code: String): Ref[Costed[Context] => Costed[T]] = {
     val typed = compiler.typecheck(env, code)
     cost[T](env, typed)
   }

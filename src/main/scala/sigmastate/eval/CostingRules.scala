@@ -109,12 +109,12 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
   @inline def SizeGroupElement: RSize[GroupElement] = _sizeGroupElement.value
 
   private val _wRTypeSigmaProp: LazyRep[WRType[SigmaProp]] = MutableLazy(liftElem(element[SigmaProp]))
-  @inline def WRTypeSigmaProp: Rep[WRType[SigmaProp]] = _wRTypeSigmaProp.value
+  @inline def WRTypeSigmaProp: Ref[WRType[SigmaProp]] = _wRTypeSigmaProp.value
 
   class KnownCollInfo[T](len: Int, itemSizeCreator: => RSize[T]) {
 
-    private val _length: LazyRep[Int] = MutableLazy { len: Rep[Int] }
-    def length: Rep[Int] = _length.value
+    private val _length: LazyRep[Int] = MutableLazy { len: Ref[Int] }
+    def length: Ref[Int] = _length.value
 
     private val _itemSize: LazyRep[Size[T]] = MutableLazy(itemSizeCreator)
     def itemSize: RSize[T] = _itemSize.value
@@ -148,7 +148,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       * @param   valuesCost   accumulated cost to be added to resulting node
       * @return               Costed node representing cost information of the input collection `coll`.
       */
-    def mkCostedColl(coll: Rep[Coll[T]], valuesCost: Rep[Int]): Rep[CostedColl[T]] = {
+    def mkCostedColl(coll: Ref[Coll[T]], valuesCost: Ref[Int]): Ref[CostedColl[T]] = {
       RCCostedColl(coll, costZeros, sizesColl, valuesCost)
     }
   }
@@ -187,69 +187,69 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
         .foreach(_.reset())
   }
 
-  case class Cast[To](eTo: Elem[To], x: Rep[Def[_]]) extends BaseDef[To]()(eTo) {
+  case class Cast[To](eTo: Elem[To], x: Ref[Def[_]]) extends BaseDef[To]()(eTo) {
     override def transform(t: Transformer) = Cast(eTo, t(x))
   }
 
-  def tryCast[To](x: Rep[Def[_]])(implicit eTo: Elem[To]): Rep[To] = {
+  def tryCast[To](x: Ref[Def[_]])(implicit eTo: Elem[To]): Ref[To] = {
     if (eTo.getClass.isAssignableFrom(x.elem.getClass))
       asRep[To](x)
     else
       Cast(eTo, x)
   }
 
-  def asCostedColl[T](collC: RCosted[Coll[T]]): Rep[CostedColl[T]] = {
+  def asCostedColl[T](collC: RCosted[Coll[T]]): Ref[CostedColl[T]] = {
     implicit val eT = collC.elem.eVal.eItem
     tryCast[CostedColl[T]](collC)
   }
-  def asCostedPair[A,B](pC: RCosted[(A,B)]): Rep[CostedPair[A,B]] = {
+  def asCostedPair[A,B](pC: RCosted[(A,B)]): Ref[CostedPair[A,B]] = {
     implicit val eA = pC.elem.eVal.eFst
     implicit val eB = pC.elem.eVal.eSnd
     tryCast[CostedPair[A,B]](pC)
   }
-  def asCostedFunc[A,B](fC: RCosted[A => B]): Rep[CostedFunc[Unit,A,B]] = {
+  def asCostedFunc[A,B](fC: RCosted[A => B]): Ref[CostedFunc[Unit,A,B]] = {
     implicit val eA = fC.elem.eVal.eDom
     implicit val eB = fC.elem.eVal.eRange
     tryCast[CostedFunc[Unit, A, B]](fC)(costedFuncElement(UnitElement, eA, eB))
   }
-  def asSizeColl[T](collS: RSize[Coll[T]]): Rep[SizeColl[T]] = {
+  def asSizeColl[T](collS: RSize[Coll[T]]): Ref[SizeColl[T]] = {
     implicit val eT = collS.elem.eVal.eItem
     tryCast[SizeColl[T]](collS)
   }
-  def asSizePair[A, B](s: RSize[(A,B)]): Rep[SizePair[A,B]] = {
+  def asSizePair[A, B](s: RSize[(A,B)]): Ref[SizePair[A,B]] = {
     implicit val eA = s.elem.eVal.eFst
     implicit val eB = s.elem.eVal.eSnd
     tryCast[SizePair[A,B]](s)
   }
-  def asSizeOption[T](optS: RSize[WOption[T]]): Rep[SizeOption[T]] = {
+  def asSizeOption[T](optS: RSize[WOption[T]]): Ref[SizeOption[T]] = {
     implicit val eA = optS.elem.eVal.eItem
     tryCast[SizeOption[T]](optS)
   }
-  def asSizeBox(ctx: RSize[Box]): Rep[SizeBox] = tryCast[SizeBox](ctx)
-  def asSizeContext(ctx: RSize[Context]): Rep[SizeContext] = tryCast[SizeContext](ctx)
+  def asSizeBox(ctx: RSize[Box]): Ref[SizeBox] = tryCast[SizeBox](ctx)
+  def asSizeContext(ctx: RSize[Context]): Ref[SizeContext] = tryCast[SizeContext](ctx)
 
-  def SOME[A](x: Rep[A]): Rep[WOption[A]] = specialPredef.some(x)
+  def SOME[A](x: Ref[A]): Ref[WOption[A]] = specialPredef.some(x)
 
-  def mkSizeColl[T:Elem](len: Rep[Int]): Rep[Size[Coll[T]]] = {
+  def mkSizeColl[T:Elem](len: Ref[Int]): Ref[Size[Coll[T]]] = {
     val sizes = colBuilder.replicate(len, costedBuilder.mkSizePrim(typeSize[T], element[T]): RSize[T])
     costedBuilder.mkSizeColl(sizes)
   }
 
-  def mkSizeColl[T](len: Rep[Int], sItem: RSize[T]): Rep[Size[Coll[T]]] = {
+  def mkSizeColl[T](len: Ref[Int], sItem: RSize[T]): Ref[Size[Coll[T]]] = {
     val sizes = colBuilder.replicate(len, sItem)
     costedBuilder.mkSizeColl(sizes)
   }
 
-  def mkSizeOption[T](size: RSize[T]): Rep[Size[WOption[T]]] = costedBuilder.mkSizeOption(SOME(size))
-  def mkSizePair[A, B](l: RSize[A], r: RSize[B]): Rep[Size[(A,B)]] = costedBuilder.mkSizePair(l, r)
+  def mkSizeOption[T](size: RSize[T]): Ref[Size[WOption[T]]] = costedBuilder.mkSizeOption(SOME(size))
+  def mkSizePair[A, B](l: RSize[A], r: RSize[B]): Ref[Size[(A,B)]] = costedBuilder.mkSizePair(l, r)
 
-  def mkCostedColl[T](values: RColl[T], costs: RColl[Int], sizes: RColl[Size[T]], valuesCost: Rep[Int]): RCostedColl[T] =
+  def mkCostedColl[T](values: RColl[T], costs: RColl[Int], sizes: RColl[Size[T]], valuesCost: Ref[Int]): RCostedColl[T] =
     costedBuilder.mkCostedColl(values, costs, sizes, valuesCost)
 
-  def mkCostedOption[T](value: ROption[T], costOpt: ROption[Int], sizeOpt: ROption[Size[T]], accCost: Rep[Int]): RCostedOption[T] =
+  def mkCostedOption[T](value: ROption[T], costOpt: ROption[Int], sizeOpt: ROption[Size[T]], accCost: Ref[Int]): RCostedOption[T] =
     costedBuilder.mkCostedOption(value, costOpt, sizeOpt, accCost)
 
-  def mkCostedFunc[A,R](f: RFuncCosted[A,R], cost: Rep[Int], codeSize: Rep[Long], eArg: Elem[A], eRes: Elem[R]): Rep[CostedFunc[Unit, A, R]] = {
+  def mkCostedFunc[A,R](f: RFuncCosted[A,R], cost: Ref[Int], codeSize: Ref[Long], eArg: Elem[A], eRes: Elem[R]): Ref[CostedFunc[Unit, A, R]] = {
     val envC = RCCostedPrim((), IntZero, SizeUnit)
     val sFunc = costedBuilder.mkSizeFunc(SizeUnit, codeSize, eArg, eRes)
     RCCostedFunc(envC, f, cost, sFunc)
@@ -261,53 +261,53 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     * This class defines generic costing helpers, to unify and simplify costing rules of individual methods.
     */
   abstract class Coster[T](obj: RCosted[T], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) {
-    def costOfArgs: Seq[Rep[Int]] = {
+    def costOfArgs: Seq[Ref[Int]] = {
       val len = costedArgs.length
-      val res = new Array[Rep[Int]](1 + len)
+      val res = new Array[Ref[Int]](1 + len)
       res(0) = obj.cost
       cfor(0)(_ < len, _ + 1) { i =>
-        res(i + 1) = costedArgs(i).asInstanceOf[Rep[Costed[Any]]].cost
+        res(i + 1) = costedArgs(i).asInstanceOf[Ref[Costed[Any]]].cost
       }
       res
     }
-    def sizeOfArgs: Rep[Long] = costedArgs.foldLeft(obj.size.dataSize)((s, e) => s + e.size.dataSize)
+    def sizeOfArgs: Ref[Long] = costedArgs.foldLeft(obj.size.dataSize)((s, e) => s + e.size.dataSize)
 
-    def constantSizePropertyAccess[R](prop: Rep[T] => Rep[R]): RCosted[R] = {
+    def constantSizePropertyAccess[R](prop: Ref[T] => Ref[R]): RCosted[R] = {
       val value = prop(obj.value)
       withConstantSize(value, opCost(value, costOfArgs, selectFieldCost))
     }
 
-    def knownSizePropertyAccess[R](prop: Rep[T] => Rep[R], size: RSize[R]): RCosted[R] = {
+    def knownSizePropertyAccess[R](prop: Ref[T] => Ref[R], size: RSize[R]): RCosted[R] = {
       val value = prop(obj.value)
       RCCostedPrim(value, opCost(value, costOfArgs, selectFieldCost), size)
     }
 
-    def knownLengthCollPropertyAccess[R](prop: Rep[T] => Rep[Coll[R]], info: KnownCollInfo[R]): Rep[CostedColl[R]] = {
+    def knownLengthCollPropertyAccess[R](prop: Ref[T] => Ref[Coll[R]], info: KnownCollInfo[R]): Ref[CostedColl[R]] = {
       val value = prop(obj.value)
       info.mkCostedColl(value, opCost(value, costOfArgs, selectFieldCost))
     }
 
-    def digest32PropertyAccess(prop: Rep[T] => Rep[Coll[Byte]]): Rep[CostedColl[Byte]] =
+    def digest32PropertyAccess(prop: Ref[T] => Ref[Coll[Byte]]): Ref[CostedColl[Byte]] =
       knownLengthCollPropertyAccess(prop, HashInfo)
 
-    def groupElementPropertyAccess(prop: Rep[T] => Rep[GroupElement]): RCosted[GroupElement] =
+    def groupElementPropertyAccess(prop: Ref[T] => Ref[GroupElement]): RCosted[GroupElement] =
       knownSizePropertyAccess(prop, SizeGroupElement)
 
-    def bigIntPropertyAccess(prop: Rep[T] => Rep[BigInt]): RCosted[BigInt] =
+    def bigIntPropertyAccess(prop: Ref[T] => Ref[BigInt]): RCosted[BigInt] =
       knownSizePropertyAccess(prop, SizeBigInt)
 
-    def defaultPropertyAccess[R](prop: Rep[T] => Rep[R], propSize: RSize[T] => RSize[R]): RCosted[R] = {
+    def defaultPropertyAccess[R](prop: Ref[T] => Ref[R], propSize: RSize[T] => RSize[R]): RCosted[R] = {
       val value = prop(obj.value)
       RCCostedPrim(value, opCost(value, costOfArgs, selectFieldCost), propSize(obj.size))
     }
 
-    def defaultOptionPropertyAccess[R: Elem](prop: Rep[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Rep[Int]): RCostedOption[R] = {
+    def defaultOptionPropertyAccess[R: Elem](prop: Ref[T] => ROption[R], propSize: RSize[T] => RSize[WOption[R]], itemCost: Ref[Int]): RCostedOption[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
       RCCostedOption(v, SOME(itemCost), asSizeOption(s).sizeOpt, opCost(v, costOfArgs, selectFieldCost))
     }
 
-    def defaultCollPropertyAccess[R: Elem](prop: Rep[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Rep[Int]): RCostedColl[R] = {
+    def defaultCollPropertyAccess[R: Elem](prop: Ref[T] => RColl[R], propSize: RSize[T] => RSize[Coll[R]], itemCost: Ref[Int]): RCostedColl[R] = {
       val v = prop(obj.value)
       val s = propSize(obj.size)
       val sizes = asSizeColl(s).sizes
@@ -315,7 +315,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       RCCostedColl(v, costs, sizes, opCost(v, costOfArgs, selectFieldCost))
     }
 
-    def boxPropertyAccess(prop: Rep[T] => Rep[Box], propSize: RSize[T] => RSize[Box]): RCosted[Box] = {
+    def boxPropertyAccess(prop: Ref[T] => Ref[Box], propSize: RSize[T] => RSize[Box]): RCosted[Box] = {
       val v = prop(obj.value)
       val c = opCost(v, costOfArgs, sigmaDslBuilder.CostModel.AccessBox)
       val s = propSize(obj.size)
@@ -390,7 +390,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       res
     }
 
-    private def treeModifierMethod(meth: Rep[AvlTree] => Rep[WOption[AvlTree]]): RCosted[WOption[AvlTree]] = {
+    private def treeModifierMethod(meth: Ref[AvlTree] => Ref[WOption[AvlTree]]): RCosted[WOption[AvlTree]] = {
       val value = meth(obj.value)
       val size = sizeOfArgs
       RCCostedOption(value,
@@ -414,7 +414,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
   /** Costing rules for SContext methods */
   class ContextCoster(obj: RCosted[Context], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[Context](obj, method, costedArgs, args){
     import Context._
-    def boxCollProperty(prop: Rep[Context] => Rep[Coll[Box]], propSize: Rep[SizeContext] => RSize[Coll[Box]]) = {
+    def boxCollProperty(prop: Ref[Context] => Ref[Coll[Box]], propSize: Ref[SizeContext] => RSize[Coll[Box]]) = {
       defaultCollPropertyAccess(prop, ctxS => propSize(asSizeContext(ctxS)), sigmaDslBuilder.CostModel.AccessBox)
     }
     def headers() = {
@@ -444,7 +444,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     def minerPubKey: RCostedColl[Byte] =
       knownLengthCollPropertyAccess(_.minerPubKey, EncodedGroupElementInfo)
 
-    def getVar[T](id: RCosted[Byte])(implicit tT: Rep[WRType[T]]): RCostedOption[T] = { ???
+    def getVar[T](id: RCosted[Byte])(implicit tT: Ref[WRType[T]]): RCostedOption[T] = { ???
 //      defaultOptionPropertyAccess(_.getVar(id.value)(tT.eA), asSizeContext(_).reg)
 //      val opt = ctx.getVar(id)(cT)
 //      dsl.costOption(opt, dsl.CostModel.GetVar)
@@ -473,7 +473,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       TokensInfo.mkCostedColl(value, opCost(value, costOfArgs, costOf(method)))
     }
 
-    def getReg[T](i: RCosted[Int])(implicit tT: Rep[WRType[T]]): RCosted[WOption[T]] = {
+    def getReg[T](i: RCosted[Int])(implicit tT: Ref[WRType[T]]): RCosted[WOption[T]] = {
       val sBox = asSizeBox(obj.size)
       implicit val elem = tT.eA
       val valueOpt = obj.value.getReg(i.value)(elem)
@@ -612,7 +612,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       }
       val isConstSize = eT.sourceType.isConstantSize
       val mapperCost = if (isConstSize) {
-        val mcost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        val mcost: Ref[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
         len * (mcost + CostTable.lambdaInvoke)
       } else {
         zeros.zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
@@ -631,7 +631,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       val zeros = colBuilder.replicate(len, IntZero)
       val isConstSize = eT.sourceType.isConstantSize
       val predicateCost = if (isConstSize) {
-        val predCost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+        val predCost: Ref[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
         len * (predCost + CostTable.lambdaInvoke)
       } else {
         zeros.zip(sizes).map(costF).sum(intPlusMonoid) + len * CostTable.lambdaInvoke
@@ -658,7 +658,7 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
 
           val isConstSize = eT.sourceType.isConstantSize
           val mapperCost = if (isConstSize) {
-            val mcost: Rep[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
+            val mcost: Ref[Int] = Apply(costF, Pair(IntZero, constantTypeSize(eT)), false)
             len * (mcost + CostTable.lambdaInvoke)
           } else {
             colBuilder.replicate(len, IntZero)
@@ -685,8 +685,8 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
       val xsC = asCostedColl(obj)
       val ysC = asCostedColl(ys)
       // TODO optimize: it make sence to add more high level operations to avoid building large graphs
-      val costs = xsC.costs.zip(ysC.costs).map(fun { in: Rep[(Int,Int)] => in._1 + in._2 })
-      val sizes = xsC.sizes.zip(ysC.sizes).map(fun { in: Rep[(Size[T],Size[B])] => RCSizePair(in._1, in._2): RSize[(T,B)] })
+      val costs = xsC.costs.zip(ysC.costs).map(fun { in: Ref[(Int,Int)] => in._1 + in._2 })
+      val sizes = xsC.sizes.zip(ysC.sizes).map(fun { in: Ref[(Size[T],Size[B])] => RCSizePair(in._1, in._2): RSize[(T,B)] })
       val c = opCost(values, costOfArgs, costOf(method))
       RCCostedColl(values, costs, sizes, c)
     }
