@@ -126,7 +126,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   test("context data") {
 //    check("var1", "getVar[BigInt](1)", ctx => ctx.getVar[BigInteger](1.toByte), _ => 1)
-    def plus[T: Elem](x: Rep[T], y: Rep[T]) = ApplyBinOp(opcodeToEndoBinOp(OpCodes.PlusCode, element[T]), x, y)
+    def plus[T: Elem](x: Ref[T], y: Ref[T]) = ApplyBinOp(opcodeToEndoBinOp(OpCodes.PlusCode, element[T]), x, y)
     check("height1", "HEIGHT + 1", ctx => plus(ctx.HEIGHT, 1))
     check("height2", "HEIGHT > 1", ctx => ctx.HEIGHT > 1)
     check("size", "INPUTS.size + OUTPUTS.size", ctx => { plus(ctx.INPUTS.length, ctx.OUTPUTS.length) })
@@ -146,13 +146,13 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
   ignore("lambdas") {
     check("lam1", "{ (out: Box) => out.value >= 0L }",
-      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
+      ctx => fun { out: Ref[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam2", "{ val f = { (out: Box) => out.value >= 0L }; f }",
-      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
+      ctx => fun { out: Ref[Box] => out.value >= 0L }, null, {_ => 8L})
     check("lam3", "{ val f = { (out: Box) => out.value >= 0L }; f(SELF) }",
-      ctx => { val f = fun { out: Rep[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
+      ctx => { val f = fun { out: Ref[Box] => out.value >= 0L }; Apply(f, ctx.SELF, false) })
     check("lam4", "{ def f(out: Box) = out.value >= 0L ; f }",
-      ctx => fun { out: Rep[Box] => out.value >= 0L }, null, {_ => 8L})
+      ctx => fun { out: Ref[Box] => out.value >= 0L }, null, {_ => 8L})
   }
 
   test("if then else") {
@@ -167,7 +167,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
 
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     checkInEnv(env, "CrowdFunding", crowdFundingScript,
-      { ctx: Rep[Context] =>
+      { ctx: Ref[Context] =>
         val backerPubKey = liftConst(dslValue.SigmaProp(backerPK))
         val projectPubKey = liftConst(dslValue.SigmaProp(projectPK))
         val projectBytes = projectPubKey.propBytes
@@ -197,7 +197,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
     }
 
     println("Warming up ...")
-    var res: Rep[Any] = null
+    var res: Ref[Any] = null
     for (i <- 1 to 1000)
       res = eval(i)
 
@@ -226,7 +226,7 @@ class CostingTest extends BaseCtxTests with LangTests with ExampleContracts with
   }
 
   test("measure: costed context data") {
-    var res: Rep[Any] = null
+    var res: Ref[Any] = null
     measure(2) { j => // 10 warm up iterations when j == 0
       measure(j*1000 + 10, false) { i =>
         res = check("", s"INPUTS.size + OUTPUTS.size + $i", null

@@ -49,7 +49,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     private val SizeAnyValueClass = classOf[SizeAnyValue]
 
     // manual fix
-    override def tVal: Rep[WRType[Any]] = {
+    override def tVal: Ref[WRType[Any]] = {
       asRep[WRType[Any]](mkMethodCall(self,
         SizeAnyValueClass.getMethod("tVal"),
         WrappedArray.empty,
@@ -57,7 +57,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     }
 
     // manual fix
-    override def valueSize: Rep[Size[Any]] = {
+    override def valueSize: Ref[Size[Any]] = {
       asRep[Size[Any]](mkMethodCall(self,
         SizeAnyValueClass.getMethod("valueSize"),
         WrappedArray.empty,
@@ -71,8 +71,8 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     lazy val sourceType: RType[SSizeAnyValue] = {
       RType[SSizeAnyValue]
     }
-    def lift(x: SSizeAnyValue): Rep[SizeAnyValue] = SizeAnyValueConst(x)
-    def unlift(w: Rep[SizeAnyValue]): SSizeAnyValue = w match {
+    def lift(x: SSizeAnyValue): Ref[SizeAnyValue] = SizeAnyValueConst(x)
+    def unlift(w: Ref[SizeAnyValue]): SSizeAnyValue = w match {
       case Def(SizeAnyValueConst(x: SSizeAnyValue))
             => x.asInstanceOf[SSizeAnyValue]
       case _ => unliftError(w)
@@ -82,7 +82,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
   private val SizeAnyValueClass = classOf[SizeAnyValue]
 
   // entityAdapter for SizeAnyValue trait
-  case class SizeAnyValueAdapter(source: Rep[SizeAnyValue])
+  case class SizeAnyValueAdapter(source: Ref[SizeAnyValue])
       extends SizeAnyValue
       with Def[SizeAnyValue] {
     override lazy val eVal: Elem[AnyValue] = implicitly[Elem[AnyValue]]
@@ -90,7 +90,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     override def transform(t: Transformer) = SizeAnyValueAdapter(t(source))
 
     // manual fix
-    def tVal: Rep[WRType[Any]] = {
+    def tVal: Ref[WRType[Any]] = {
       asRep[WRType[Any]](mkMethodCall(source,
         SizeAnyValueClass.getMethod("tVal"),
         WrappedArray.empty,
@@ -98,14 +98,14 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     }
 
     // manual fix
-    def valueSize: Rep[Size[Any]] = {
+    def valueSize: Ref[Size[Any]] = {
       asRep[Size[Any]](mkMethodCall(source,
         SizeAnyValueClass.getMethod("valueSize"),
         WrappedArray.empty,
         true, true, sizeAnyElement))
     }
 
-    def dataSize: Rep[Long] = {
+    def dataSize: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         SizeAnyValueClass.getMethod("dataSize"),
         WrappedArray.empty,
@@ -114,7 +114,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
   }
 
   // entityProxy: single proxy for each type family
-  implicit def proxySizeAnyValue(p: Rep[SizeAnyValue]): SizeAnyValue = {
+  implicit def proxySizeAnyValue(p: Ref[SizeAnyValue]): SizeAnyValue = {
     if (p.rhs.isInstanceOf[SizeAnyValue]) p.rhs.asInstanceOf[SizeAnyValue]
     else
       SizeAnyValueAdapter(p)
@@ -144,32 +144,32 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     def resultType = SizeAnyValueCompanionElem
     override def toString = "SizeAnyValue"
   }
-  implicit def proxySizeAnyValueCompanionCtor(p: Rep[SizeAnyValueCompanionCtor]): SizeAnyValueCompanionCtor =
+  implicit def proxySizeAnyValueCompanionCtor(p: Ref[SizeAnyValueCompanionCtor]): SizeAnyValueCompanionCtor =
     p.rhs.asInstanceOf[SizeAnyValueCompanionCtor]
 
-  lazy val RSizeAnyValue: Rep[SizeAnyValueCompanionCtor] = new SizeAnyValueCompanionCtor {
+  lazy val RSizeAnyValue: Ref[SizeAnyValueCompanionCtor] = new SizeAnyValueCompanionCtor {
     private val thisClass = classOf[SizeAnyValueCompanion]
   }
 
   object SizeAnyValueMethods {
     object tVal {
-      def unapply(d: Def[_]): Nullable[Rep[SizeAnyValue]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeAnyValue]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "tVal" && receiver.elem.isInstanceOf[SizeAnyValueElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeAnyValue]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.rhs)
     }
 
     object valueSize {
-      def unapply(d: Def[_]): Nullable[Rep[SizeAnyValue]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeAnyValue]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "valueSize" && receiver.elem.isInstanceOf[SizeAnyValueElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeAnyValue]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeAnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.rhs)
     }
   }
 
@@ -198,7 +198,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
 
     private val SizeSigmaPropClass = classOf[SizeSigmaProp]
 
-    override def propBytes: Rep[Size[Coll[Byte]]] = {
+    override def propBytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(self,
         SizeSigmaPropClass.getMethod("propBytes"),
         WrappedArray.empty,
@@ -212,8 +212,8 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     lazy val sourceType: RType[SSizeSigmaProp] = {
       RType[SSizeSigmaProp]
     }
-    def lift(x: SSizeSigmaProp): Rep[SizeSigmaProp] = SizeSigmaPropConst(x)
-    def unlift(w: Rep[SizeSigmaProp]): SSizeSigmaProp = w match {
+    def lift(x: SSizeSigmaProp): Ref[SizeSigmaProp] = SizeSigmaPropConst(x)
+    def unlift(w: Ref[SizeSigmaProp]): SSizeSigmaProp = w match {
       case Def(SizeSigmaPropConst(x: SSizeSigmaProp))
             => x.asInstanceOf[SSizeSigmaProp]
       case _ => unliftError(w)
@@ -223,21 +223,21 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
   private val SizeSigmaPropClass = classOf[SizeSigmaProp]
 
   // entityAdapter for SizeSigmaProp trait
-  case class SizeSigmaPropAdapter(source: Rep[SizeSigmaProp])
+  case class SizeSigmaPropAdapter(source: Ref[SizeSigmaProp])
       extends SizeSigmaProp
       with Def[SizeSigmaProp] {
     override lazy val eVal: Elem[SigmaProp] = implicitly[Elem[SigmaProp]]
     val resultType: Elem[SizeSigmaProp] = element[SizeSigmaProp]
     override def transform(t: Transformer) = SizeSigmaPropAdapter(t(source))
 
-    def propBytes: Rep[Size[Coll[Byte]]] = {
+    def propBytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(source,
         SizeSigmaPropClass.getMethod("propBytes"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Byte]]]))
     }
 
-    def dataSize: Rep[Long] = {
+    def dataSize: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         SizeSigmaPropClass.getMethod("dataSize"),
         WrappedArray.empty,
@@ -246,7 +246,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
   }
 
   // entityProxy: single proxy for each type family
-  implicit def proxySizeSigmaProp(p: Rep[SizeSigmaProp]): SizeSigmaProp = {
+  implicit def proxySizeSigmaProp(p: Ref[SizeSigmaProp]): SizeSigmaProp = {
     if (p.rhs.isInstanceOf[SizeSigmaProp]) p.rhs.asInstanceOf[SizeSigmaProp]
     else
       SizeSigmaPropAdapter(p)
@@ -276,22 +276,22 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     def resultType = SizeSigmaPropCompanionElem
     override def toString = "SizeSigmaProp"
   }
-  implicit def proxySizeSigmaPropCompanionCtor(p: Rep[SizeSigmaPropCompanionCtor]): SizeSigmaPropCompanionCtor =
+  implicit def proxySizeSigmaPropCompanionCtor(p: Ref[SizeSigmaPropCompanionCtor]): SizeSigmaPropCompanionCtor =
     p.rhs.asInstanceOf[SizeSigmaPropCompanionCtor]
 
-  lazy val RSizeSigmaProp: Rep[SizeSigmaPropCompanionCtor] = new SizeSigmaPropCompanionCtor {
+  lazy val RSizeSigmaProp: Ref[SizeSigmaPropCompanionCtor] = new SizeSigmaPropCompanionCtor {
     private val thisClass = classOf[SizeSigmaPropCompanion]
   }
 
   object SizeSigmaPropMethods {
     object propBytes {
-      def unapply(d: Def[_]): Nullable[Rep[SizeSigmaProp]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeSigmaProp]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "propBytes" && receiver.elem.isInstanceOf[SizeSigmaPropElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeSigmaProp]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeSigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeSigmaProp]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeSigmaProp]] = unapply(exp.rhs)
     }
   }
 
@@ -320,42 +320,42 @@ object SizeBox extends EntityObject("SizeBox") {
 
     private val SizeBoxClass = classOf[SizeBox]
 
-    override def propositionBytes: Rep[Size[Coll[Byte]]] = {
+    override def propositionBytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(self,
         SizeBoxClass.getMethod("propositionBytes"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Byte]]]))
     }
 
-    override def bytes: Rep[Size[Coll[Byte]]] = {
+    override def bytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(self,
         SizeBoxClass.getMethod("bytes"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Byte]]]))
     }
 
-    override def bytesWithoutRef: Rep[Size[Coll[Byte]]] = {
+    override def bytesWithoutRef: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(self,
         SizeBoxClass.getMethod("bytesWithoutRef"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Byte]]]))
     }
 
-    override def registers: Rep[Size[Coll[WOption[AnyValue]]]] = {
+    override def registers: Ref[Size[Coll[WOption[AnyValue]]]] = {
       asRep[Size[Coll[WOption[AnyValue]]]](mkMethodCall(self,
         SizeBoxClass.getMethod("registers"),
         WrappedArray.empty,
         true, false, element[Size[Coll[WOption[AnyValue]]]]))
     }
 
-    override def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+    override def getReg[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(self,
         SizeBoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](id, tT),
         true, false, element[Size[WOption[T]]]))
     }
 
-    override def tokens: Rep[Size[Coll[(Coll[Byte], Long)]]] = {
+    override def tokens: Ref[Size[Coll[(Coll[Byte], Long)]]] = {
       asRep[Size[Coll[(Coll[Byte], Long)]]](mkMethodCall(self,
         SizeBoxClass.getMethod("tokens"),
         WrappedArray.empty,
@@ -369,8 +369,8 @@ object SizeBox extends EntityObject("SizeBox") {
     lazy val sourceType: RType[SSizeBox] = {
       RType[SSizeBox]
     }
-    def lift(x: SSizeBox): Rep[SizeBox] = SizeBoxConst(x)
-    def unlift(w: Rep[SizeBox]): SSizeBox = w match {
+    def lift(x: SSizeBox): Ref[SizeBox] = SizeBoxConst(x)
+    def unlift(w: Ref[SizeBox]): SSizeBox = w match {
       case Def(SizeBoxConst(x: SSizeBox))
             => x.asInstanceOf[SSizeBox]
       case _ => unliftError(w)
@@ -380,56 +380,56 @@ object SizeBox extends EntityObject("SizeBox") {
   private val SizeBoxClass = classOf[SizeBox]
 
   // entityAdapter for SizeBox trait
-  case class SizeBoxAdapter(source: Rep[SizeBox])
+  case class SizeBoxAdapter(source: Ref[SizeBox])
       extends SizeBox
       with Def[SizeBox] {
     override lazy val eVal: Elem[Box] = implicitly[Elem[Box]]
     val resultType: Elem[SizeBox] = element[SizeBox]
     override def transform(t: Transformer) = SizeBoxAdapter(t(source))
 
-    def propositionBytes: Rep[Size[Coll[Byte]]] = {
+    def propositionBytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(source,
         SizeBoxClass.getMethod("propositionBytes"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Byte]]]))
     }
 
-    def bytes: Rep[Size[Coll[Byte]]] = {
+    def bytes: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(source,
         SizeBoxClass.getMethod("bytes"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Byte]]]))
     }
 
-    def bytesWithoutRef: Rep[Size[Coll[Byte]]] = {
+    def bytesWithoutRef: Ref[Size[Coll[Byte]]] = {
       asRep[Size[Coll[Byte]]](mkMethodCall(source,
         SizeBoxClass.getMethod("bytesWithoutRef"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Byte]]]))
     }
 
-    def registers: Rep[Size[Coll[WOption[AnyValue]]]] = {
+    def registers: Ref[Size[Coll[WOption[AnyValue]]]] = {
       asRep[Size[Coll[WOption[AnyValue]]]](mkMethodCall(source,
         SizeBoxClass.getMethod("registers"),
         WrappedArray.empty,
         true, true, element[Size[Coll[WOption[AnyValue]]]]))
     }
 
-    def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+    def getReg[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(source,
         SizeBoxClass.getMethod("getReg", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](id, tT),
         true, true, element[Size[WOption[T]]]))
     }
 
-    def tokens: Rep[Size[Coll[(Coll[Byte], Long)]]] = {
+    def tokens: Ref[Size[Coll[(Coll[Byte], Long)]]] = {
       asRep[Size[Coll[(Coll[Byte], Long)]]](mkMethodCall(source,
         SizeBoxClass.getMethod("tokens"),
         WrappedArray.empty,
         true, true, element[Size[Coll[(Coll[Byte], Long)]]]))
     }
 
-    def dataSize: Rep[Long] = {
+    def dataSize: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         SizeBoxClass.getMethod("dataSize"),
         WrappedArray.empty,
@@ -438,7 +438,7 @@ object SizeBox extends EntityObject("SizeBox") {
   }
 
   // entityProxy: single proxy for each type family
-  implicit def proxySizeBox(p: Rep[SizeBox]): SizeBox = {
+  implicit def proxySizeBox(p: Ref[SizeBox]): SizeBox = {
     if (p.rhs.isInstanceOf[SizeBox]) p.rhs.asInstanceOf[SizeBox]
     else
       SizeBoxAdapter(p)
@@ -468,72 +468,72 @@ object SizeBox extends EntityObject("SizeBox") {
     def resultType = SizeBoxCompanionElem
     override def toString = "SizeBox"
   }
-  implicit def proxySizeBoxCompanionCtor(p: Rep[SizeBoxCompanionCtor]): SizeBoxCompanionCtor =
+  implicit def proxySizeBoxCompanionCtor(p: Ref[SizeBoxCompanionCtor]): SizeBoxCompanionCtor =
     p.rhs.asInstanceOf[SizeBoxCompanionCtor]
 
-  lazy val RSizeBox: Rep[SizeBoxCompanionCtor] = new SizeBoxCompanionCtor {
+  lazy val RSizeBox: Ref[SizeBoxCompanionCtor] = new SizeBoxCompanionCtor {
     private val thisClass = classOf[SizeBoxCompanion]
   }
 
   object SizeBoxMethods {
     object propositionBytes {
-      def unapply(d: Def[_]): Nullable[Rep[SizeBox]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeBox]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "propositionBytes" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
     }
 
     object bytes {
-      def unapply(d: Def[_]): Nullable[Rep[SizeBox]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeBox]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "bytes" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
     }
 
     object bytesWithoutRef {
-      def unapply(d: Def[_]): Nullable[Rep[SizeBox]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeBox]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "bytesWithoutRef" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
     }
 
     object registers {
-      def unapply(d: Def[_]): Nullable[Rep[SizeBox]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeBox]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "registers" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
     }
 
     object getReg {
-      def unapply(d: Def[_]): Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}] = d match {
+      def unapply(d: Def[_]): Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "getReg" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}]]
+          Nullable(res).asInstanceOf[Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SizeBox], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
 
     object tokens {
-      def unapply(d: Def[_]): Nullable[Rep[SizeBox]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeBox]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "tokens" && receiver.elem.isInstanceOf[SizeBoxElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeBox]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
     }
   }
 
@@ -562,56 +562,56 @@ object SizeContext extends EntityObject("SizeContext") {
 
     private val SizeContextClass = classOf[SizeContext]
 
-    override def outputs: Rep[Size[Coll[Box]]] = {
+    override def outputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(self,
         SizeContextClass.getMethod("outputs"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Box]]]))
     }
 
-    override def inputs: Rep[Size[Coll[Box]]] = {
+    override def inputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(self,
         SizeContextClass.getMethod("inputs"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Box]]]))
     }
 
-    override def dataInputs: Rep[Size[Coll[Box]]] = {
+    override def dataInputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(self,
         SizeContextClass.getMethod("dataInputs"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Box]]]))
     }
 
-    override def selfBox: Rep[Size[Box]] = {
+    override def selfBox: Ref[Size[Box]] = {
       asRep[Size[Box]](mkMethodCall(self,
         SizeContextClass.getMethod("selfBox"),
         WrappedArray.empty,
         true, false, element[Size[Box]]))
     }
 
-    override def lastBlockUtxoRootHash: Rep[Size[AvlTree]] = {
+    override def lastBlockUtxoRootHash: Ref[Size[AvlTree]] = {
       asRep[Size[AvlTree]](mkMethodCall(self,
         SizeContextClass.getMethod("lastBlockUtxoRootHash"),
         WrappedArray.empty,
         true, false, element[Size[AvlTree]]))
     }
 
-    override def headers: Rep[Size[Coll[Header]]] = {
+    override def headers: Ref[Size[Coll[Header]]] = {
       asRep[Size[Coll[Header]]](mkMethodCall(self,
         SizeContextClass.getMethod("headers"),
         WrappedArray.empty,
         true, false, element[Size[Coll[Header]]]))
     }
 
-    override def preHeader: Rep[Size[PreHeader]] = {
+    override def preHeader: Ref[Size[PreHeader]] = {
       asRep[Size[PreHeader]](mkMethodCall(self,
         SizeContextClass.getMethod("preHeader"),
         WrappedArray.empty,
         true, false, element[Size[PreHeader]]))
     }
 
-    override def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+    override def getVar[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(self,
         SizeContextClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](id, tT),
@@ -625,8 +625,8 @@ object SizeContext extends EntityObject("SizeContext") {
     lazy val sourceType: RType[SSizeContext] = {
       RType[SSizeContext]
     }
-    def lift(x: SSizeContext): Rep[SizeContext] = SizeContextConst(x)
-    def unlift(w: Rep[SizeContext]): SSizeContext = w match {
+    def lift(x: SSizeContext): Ref[SizeContext] = SizeContextConst(x)
+    def unlift(w: Ref[SizeContext]): SSizeContext = w match {
       case Def(SizeContextConst(x: SSizeContext))
             => x.asInstanceOf[SSizeContext]
       case _ => unliftError(w)
@@ -636,70 +636,70 @@ object SizeContext extends EntityObject("SizeContext") {
   private val SizeContextClass = classOf[SizeContext]
 
   // entityAdapter for SizeContext trait
-  case class SizeContextAdapter(source: Rep[SizeContext])
+  case class SizeContextAdapter(source: Ref[SizeContext])
       extends SizeContext
       with Def[SizeContext] {
     override lazy val eVal: Elem[Context] = implicitly[Elem[Context]]
     val resultType: Elem[SizeContext] = element[SizeContext]
     override def transform(t: Transformer) = SizeContextAdapter(t(source))
 
-    def outputs: Rep[Size[Coll[Box]]] = {
+    def outputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(source,
         SizeContextClass.getMethod("outputs"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Box]]]))
     }
 
-    def inputs: Rep[Size[Coll[Box]]] = {
+    def inputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(source,
         SizeContextClass.getMethod("inputs"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Box]]]))
     }
 
-    def dataInputs: Rep[Size[Coll[Box]]] = {
+    def dataInputs: Ref[Size[Coll[Box]]] = {
       asRep[Size[Coll[Box]]](mkMethodCall(source,
         SizeContextClass.getMethod("dataInputs"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Box]]]))
     }
 
-    def selfBox: Rep[Size[Box]] = {
+    def selfBox: Ref[Size[Box]] = {
       asRep[Size[Box]](mkMethodCall(source,
         SizeContextClass.getMethod("selfBox"),
         WrappedArray.empty,
         true, true, element[Size[Box]]))
     }
 
-    def lastBlockUtxoRootHash: Rep[Size[AvlTree]] = {
+    def lastBlockUtxoRootHash: Ref[Size[AvlTree]] = {
       asRep[Size[AvlTree]](mkMethodCall(source,
         SizeContextClass.getMethod("lastBlockUtxoRootHash"),
         WrappedArray.empty,
         true, true, element[Size[AvlTree]]))
     }
 
-    def headers: Rep[Size[Coll[Header]]] = {
+    def headers: Ref[Size[Coll[Header]]] = {
       asRep[Size[Coll[Header]]](mkMethodCall(source,
         SizeContextClass.getMethod("headers"),
         WrappedArray.empty,
         true, true, element[Size[Coll[Header]]]))
     }
 
-    def preHeader: Rep[Size[PreHeader]] = {
+    def preHeader: Ref[Size[PreHeader]] = {
       asRep[Size[PreHeader]](mkMethodCall(source,
         SizeContextClass.getMethod("preHeader"),
         WrappedArray.empty,
         true, true, element[Size[PreHeader]]))
     }
 
-    def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]] = {
+    def getVar[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]] = {
       asRep[Size[WOption[T]]](mkMethodCall(source,
         SizeContextClass.getMethod("getVar", classOf[Sym], classOf[Elem[_]]),
         Array[AnyRef](id, tT),
         true, true, element[Size[WOption[T]]]))
     }
 
-    def dataSize: Rep[Long] = {
+    def dataSize: Ref[Long] = {
       asRep[Long](mkMethodCall(source,
         SizeContextClass.getMethod("dataSize"),
         WrappedArray.empty,
@@ -708,7 +708,7 @@ object SizeContext extends EntityObject("SizeContext") {
   }
 
   // entityProxy: single proxy for each type family
-  implicit def proxySizeContext(p: Rep[SizeContext]): SizeContext = {
+  implicit def proxySizeContext(p: Ref[SizeContext]): SizeContext = {
     if (p.rhs.isInstanceOf[SizeContext]) p.rhs.asInstanceOf[SizeContext]
     else
       SizeContextAdapter(p)
@@ -738,92 +738,92 @@ object SizeContext extends EntityObject("SizeContext") {
     def resultType = SizeContextCompanionElem
     override def toString = "SizeContext"
   }
-  implicit def proxySizeContextCompanionCtor(p: Rep[SizeContextCompanionCtor]): SizeContextCompanionCtor =
+  implicit def proxySizeContextCompanionCtor(p: Ref[SizeContextCompanionCtor]): SizeContextCompanionCtor =
     p.rhs.asInstanceOf[SizeContextCompanionCtor]
 
-  lazy val RSizeContext: Rep[SizeContextCompanionCtor] = new SizeContextCompanionCtor {
+  lazy val RSizeContext: Ref[SizeContextCompanionCtor] = new SizeContextCompanionCtor {
     private val thisClass = classOf[SizeContextCompanion]
   }
 
   object SizeContextMethods {
     object outputs {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "outputs" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object inputs {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "inputs" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object dataInputs {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "dataInputs" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object selfBox {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "selfBox" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object lastBlockUtxoRootHash {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "lastBlockUtxoRootHash" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object headers {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "headers" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object preHeader {
-      def unapply(d: Def[_]): Nullable[Rep[SizeContext]] = d match {
+      def unapply(d: Def[_]): Nullable[Ref[SizeContext]] = d match {
         case MethodCall(receiver, method, _, _) if method.getName == "preHeader" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = receiver
-          Nullable(res).asInstanceOf[Nullable[Rep[SizeContext]]]
+          Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Rep[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
     }
 
     object getVar {
-      def unapply(d: Def[_]): Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}] = d match {
+      def unapply(d: Def[_]): Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}] = d match {
         case MethodCall(receiver, method, args, _) if method.getName == "getVar" && receiver.elem.isInstanceOf[SizeContextElem[_]] =>
           val res = (receiver, args(0), args(1))
-          Nullable(res).asInstanceOf[Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}]]
+          Nullable(res).asInstanceOf[Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Rep[SizeContext], Rep[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
     }
   }
 
@@ -849,21 +849,21 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
     private val SizeBuilderClass = classOf[SizeBuilder]
 
-    override def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue] = {
+    override def mkSizeAnyValue(tVal: Ref[WRType[Any]], valueSize: Ref[Size[Any]]): Ref[SizeAnyValue] = {
       asRep[SizeAnyValue](mkMethodCall(self,
         SizeBuilderClass.getMethod("mkSizeAnyValue", classOf[Sym], classOf[Sym]),
         Array[AnyRef](tVal, valueSize),
         true, false, element[SizeAnyValue]))
     }
 
-    override def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[(Coll[Byte], Long)]]]): Rep[SizeBox] = {
+    override def mkSizeBox(propositionBytes: Ref[Size[Coll[Byte]]], bytes: Ref[Size[Coll[Byte]]], bytesWithoutRef: Ref[Size[Coll[Byte]]], registers: Ref[Size[Coll[WOption[AnyValue]]]], tokens: Ref[Size[Coll[(Coll[Byte], Long)]]]): Ref[SizeBox] = {
       asRep[SizeBox](mkMethodCall(self,
         SizeBuilderClass.getMethod("mkSizeBox", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](propositionBytes, bytes, bytesWithoutRef, registers, tokens),
         true, false, element[SizeBox]))
     }
 
-    override def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext] = {
+    override def mkSizeContext(outputs: Ref[Size[Coll[Box]]], inputs: Ref[Size[Coll[Box]]], dataInputs: Ref[Size[Coll[Box]]], selfBox: Ref[Size[Box]], lastBlockUtxoRootHash: Ref[Size[AvlTree]], headers: Ref[Size[Coll[Header]]], preHeader: Ref[Size[PreHeader]], vars: Ref[Coll[Size[AnyValue]]]): Ref[SizeContext] = {
       asRep[SizeContext](mkMethodCall(self,
         SizeBuilderClass.getMethod("mkSizeContext", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars),
@@ -877,8 +877,8 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
     lazy val sourceType: RType[SSizeBuilder] = {
       RType[SSizeBuilder]
     }
-    def lift(x: SSizeBuilder): Rep[SizeBuilder] = SizeBuilderConst(x)
-    def unlift(w: Rep[SizeBuilder]): SSizeBuilder = w match {
+    def lift(x: SSizeBuilder): Ref[SizeBuilder] = SizeBuilderConst(x)
+    def unlift(w: Ref[SizeBuilder]): SSizeBuilder = w match {
       case Def(SizeBuilderConst(x: SSizeBuilder))
             => x.asInstanceOf[SSizeBuilder]
       case _ => unliftError(w)
@@ -888,27 +888,27 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
   private val SizeBuilderClass = classOf[SizeBuilder]
 
   // entityAdapter for SizeBuilder trait
-  case class SizeBuilderAdapter(source: Rep[SizeBuilder])
+  case class SizeBuilderAdapter(source: Ref[SizeBuilder])
       extends SizeBuilder
       with Def[SizeBuilder] {
     val resultType: Elem[SizeBuilder] = element[SizeBuilder]
     override def transform(t: Transformer) = SizeBuilderAdapter(t(source))
 
-    def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue] = {
+    def mkSizeAnyValue(tVal: Ref[WRType[Any]], valueSize: Ref[Size[Any]]): Ref[SizeAnyValue] = {
       asRep[SizeAnyValue](mkMethodCall(source,
         SizeBuilderClass.getMethod("mkSizeAnyValue", classOf[Sym], classOf[Sym]),
         Array[AnyRef](tVal, valueSize),
         true, true, element[SizeAnyValue]))
     }
 
-    def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[(Coll[Byte], Long)]]]): Rep[SizeBox] = {
+    def mkSizeBox(propositionBytes: Ref[Size[Coll[Byte]]], bytes: Ref[Size[Coll[Byte]]], bytesWithoutRef: Ref[Size[Coll[Byte]]], registers: Ref[Size[Coll[WOption[AnyValue]]]], tokens: Ref[Size[Coll[(Coll[Byte], Long)]]]): Ref[SizeBox] = {
       asRep[SizeBox](mkMethodCall(source,
         SizeBuilderClass.getMethod("mkSizeBox", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](propositionBytes, bytes, bytesWithoutRef, registers, tokens),
         true, true, element[SizeBox]))
     }
 
-    def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext] = {
+    def mkSizeContext(outputs: Ref[Size[Coll[Box]]], inputs: Ref[Size[Coll[Box]]], dataInputs: Ref[Size[Coll[Box]]], selfBox: Ref[Size[Box]], lastBlockUtxoRootHash: Ref[Size[AvlTree]], headers: Ref[Size[Coll[Header]]], preHeader: Ref[Size[PreHeader]], vars: Ref[Coll[Size[AnyValue]]]): Ref[SizeContext] = {
       asRep[SizeContext](mkMethodCall(source,
         SizeBuilderClass.getMethod("mkSizeContext", classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym], classOf[Sym]),
         Array[AnyRef](outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars),
@@ -917,7 +917,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
   }
 
   // entityProxy: single proxy for each type family
-  implicit def proxySizeBuilder(p: Rep[SizeBuilder]): SizeBuilder = {
+  implicit def proxySizeBuilder(p: Ref[SizeBuilder]): SizeBuilder = {
     if (p.rhs.isInstanceOf[SizeBuilder]) p.rhs.asInstanceOf[SizeBuilder]
     else
       SizeBuilderAdapter(p)
@@ -945,10 +945,10 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
     def resultType = SizeBuilderCompanionElem
     override def toString = "SizeBuilder"
   }
-  implicit def proxySizeBuilderCompanionCtor(p: Rep[SizeBuilderCompanionCtor]): SizeBuilderCompanionCtor =
+  implicit def proxySizeBuilderCompanionCtor(p: Ref[SizeBuilderCompanionCtor]): SizeBuilderCompanionCtor =
     p.rhs.asInstanceOf[SizeBuilderCompanionCtor]
 
-  lazy val RSizeBuilder: Rep[SizeBuilderCompanionCtor] = new SizeBuilderCompanionCtor {
+  lazy val RSizeBuilder: Ref[SizeBuilderCompanionCtor] = new SizeBuilderCompanionCtor {
     private val thisClass = classOf[SizeBuilderCompanion]
   }
 } // of object SizeBuilder
