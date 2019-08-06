@@ -186,7 +186,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }
 
   case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
-    def selfType: Elem[T] = eT.value
+    def resultType: Elem[T] = eT.value
   }
 
   def constantPlaceholder[T](index: Int)(implicit eT: LElem[T]): Rep[T] = ConstantPlaceholder[T](index)
@@ -243,7 +243,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val fields = sizeFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[SizeElem[_, _]].eVal) }
       structElement(fields)
     }
-    val selfType: Elem[Size[Struct]] = sizeElement(eVal)
+    val resultType: Elem[Size[Struct]] = sizeElement(eVal)
 
     def dataSize: Rep[Long] = {
       val sizes = sizeFields.fields.map { case (_, cf: RSize[a]@unchecked) => cf.dataSize }
@@ -262,7 +262,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
       structElement(fields)
     }
-    val selfType: Elem[Costed[Struct]] = costedElement(eVal)
+    val resultType: Elem[Costed[Struct]] = costedElement(eVal)
 
     def builder: Rep[CostedBuilder] = costedBuilder
 
@@ -287,7 +287,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   case class SizeThunkCtor[A](sizeBlock: Rep[Thunk[Size[A]]]) extends SizeThunk[A] {
     override def transform(t: Transformer) = SizeThunkCtor(t(sizeBlock))
     implicit val eVal: Elem[Thunk[A]] = thunkElement(sizeBlock.elem.eItem.eVal)
-    val selfType: Elem[Size[Thunk[A]]] = sizeElement(eVal)
+    val resultType: Elem[Size[Thunk[A]]] = sizeElement(eVal)
 
     override def dataSize: Rep[Long] = sizeBlock.force().dataSize
   }
@@ -302,7 +302,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   case class CostedThunkCtor[A](costedBlock: Rep[Thunk[Costed[A]]], thunkCost: Rep[Int]) extends CostedThunk[A] {
     override def transform(t: Transformer) = CostedThunkCtor(t(costedBlock), t(thunkCost))
     implicit val eVal: Elem[Thunk[A]] = thunkElement(costedBlock.elem.eItem.eVal)
-    val selfType: Elem[Costed[Thunk[A]]] = costedElement(eVal)
+    val resultType: Elem[Costed[Thunk[A]]] = costedElement(eVal)
 
     def builder: Rep[CostedBuilder] = costedBuilder
     def value: Rep[Thunk[A]] = Thunk { costedBlock.force().value }
@@ -459,7 +459,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }
 
   object IsConstSizeCostedColl {
-    def unapply(d: Def[_]): Nullable[Rep[Costed[Coll[A]]] forSome {type A}] = d.selfType match {
+    def unapply(d: Def[_]): Nullable[Rep[Costed[Coll[A]]] forSome {type A}] = d.resultType match {
       case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedCollElem[_, _]] =>
         ce.eVal match {
           case colE: CollElem[a,_] if colE.eItem.isConstantSize =>
@@ -472,7 +472,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }
 
   object IsCostedPair {
-    def unapply(d: Def[_]): Nullable[Rep[Costed[(A, B)]] forSome {type A; type B}] = d.selfType match {
+    def unapply(d: Def[_]): Nullable[Rep[Costed[(A, B)]] forSome {type A; type B}] = d.resultType match {
       case ce: CostedElem[_,_] if !ce.isInstanceOf[CostedPairElem[_, _, _]] =>
         ce.eVal match {
           case _: PairElem[a,b]  =>
@@ -1142,7 +1142,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     // the node is of Context type  => `context-dependent`
     // all arguments are `context-dependent`  =>  d is `context-dependent`
     val isDependent =
-       d1.selfType.isInstanceOf[ContextElem[_]] ||
+       d1.resultType.isInstanceOf[ContextElem[_]] ||
        allContextDependant(d1.deps)
     if (isDependent)
       _contextDependantNodes += (d1.nodeId)

@@ -42,7 +42,7 @@ object CostModel extends EntityObject("CostModel") {
       ) extends CostModel with LiftedConst[SCostModel, CostModel]
         with Def[CostModel] with CostModelConstMethods {
     val liftable: Liftable[SCostModel, CostModel] = LiftableCostModel
-    val selfType: Elem[CostModel] = liftable.eW
+    val resultType: Elem[CostModel] = liftable.eW
   }
 
   trait CostModelConstMethods extends CostModel  { thisConst: Def[_] =>
@@ -140,7 +140,7 @@ object CostModel extends EntityObject("CostModel") {
   case class CostModelAdapter(source: Rep[CostModel])
       extends CostModel
       with Def[CostModel] {
-    val selfType: Elem[CostModel] = element[CostModel]
+    val resultType: Elem[CostModel] = element[CostModel]
     override def transform(t: Transformer) = CostModelAdapter(t(source))
 
     def AccessBox: Rep[Int] = {
@@ -240,7 +240,7 @@ object CostModel extends EntityObject("CostModel") {
   implicit case object CostModelCompanionElem extends CompanionElem[CostModelCompanionCtor]
 
   abstract class CostModelCompanionCtor extends CompanionDef[CostModelCompanionCtor] with CostModelCompanion {
-    def selfType = CostModelCompanionElem
+    def resultType = CostModelCompanionElem
     override def toString = "CostModel"
   }
   implicit def proxyCostModelCompanionCtor(p: Rep[CostModelCompanionCtor]): CostModelCompanionCtor =
@@ -262,7 +262,7 @@ object BigInt extends EntityObject("BigInt") {
       ) extends BigInt with LiftedConst[SBigInt, BigInt]
         with Def[BigInt] with BigIntConstMethods {
     val liftable: Liftable[SBigInt, BigInt] = LiftableBigInt
-    val selfType: Elem[BigInt] = liftable.eW
+    val resultType: Elem[BigInt] = liftable.eW
   }
 
   trait BigIntConstMethods extends BigInt  { thisConst: Def[_] =>
@@ -451,7 +451,7 @@ object BigInt extends EntityObject("BigInt") {
   case class BigIntAdapter(source: Rep[BigInt])
       extends BigInt
       with Def[BigInt] {
-    val selfType: Elem[BigInt] = element[BigInt]
+    val resultType: Elem[BigInt] = element[BigInt]
     override def transform(t: Transformer) = BigIntAdapter(t(source))
 
     def toByte: Rep[Byte] = {
@@ -642,7 +642,7 @@ object BigInt extends EntityObject("BigInt") {
   implicit case object BigIntCompanionElem extends CompanionElem[BigIntCompanionCtor]
 
   abstract class BigIntCompanionCtor extends CompanionDef[BigIntCompanionCtor] with BigIntCompanion {
-    def selfType = BigIntCompanionElem
+    def resultType = BigIntCompanionElem
     override def toString = "BigInt"
   }
   implicit def proxyBigIntCompanionCtor(p: Rep[BigIntCompanionCtor]): BigIntCompanionCtor =
@@ -899,7 +899,7 @@ object GroupElement extends EntityObject("GroupElement") {
       ) extends GroupElement with LiftedConst[SGroupElement, GroupElement]
         with Def[GroupElement] with GroupElementConstMethods {
     val liftable: Liftable[SGroupElement, GroupElement] = LiftableGroupElement
-    val selfType: Elem[GroupElement] = liftable.eW
+    val resultType: Elem[GroupElement] = liftable.eW
   }
 
   trait GroupElementConstMethods extends GroupElement  { thisConst: Def[_] =>
@@ -962,7 +962,7 @@ object GroupElement extends EntityObject("GroupElement") {
   case class GroupElementAdapter(source: Rep[GroupElement])
       extends GroupElement
       with Def[GroupElement] {
-    val selfType: Elem[GroupElement] = element[GroupElement]
+    val resultType: Elem[GroupElement] = element[GroupElement]
     override def transform(t: Transformer) = GroupElementAdapter(t(source))
 
     def isInfinity: Rep[Boolean] = {
@@ -1027,7 +1027,7 @@ object GroupElement extends EntityObject("GroupElement") {
   implicit case object GroupElementCompanionElem extends CompanionElem[GroupElementCompanionCtor]
 
   abstract class GroupElementCompanionCtor extends CompanionDef[GroupElementCompanionCtor] with GroupElementCompanion {
-    def selfType = GroupElementCompanionElem
+    def resultType = GroupElementCompanionElem
     override def toString = "GroupElement"
   }
   implicit def proxyGroupElementCompanionCtor(p: Rep[GroupElementCompanionCtor]): GroupElementCompanionCtor =
@@ -1104,7 +1104,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
       ) extends SigmaProp with LiftedConst[SSigmaProp, SigmaProp]
         with Def[SigmaProp] with SigmaPropConstMethods {
     val liftable: Liftable[SSigmaProp, SigmaProp] = LiftableSigmaProp
-    val selfType: Elem[SigmaProp] = liftable.eW
+    val resultType: Elem[SigmaProp] = liftable.eW
   }
 
   trait SigmaPropConstMethods extends SigmaProp  { thisConst: Def[_] =>
@@ -1178,7 +1178,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
   case class SigmaPropAdapter(source: Rep[SigmaProp])
       extends SigmaProp
       with Def[SigmaProp] {
-    val selfType: Elem[SigmaProp] = element[SigmaProp]
+    val resultType: Elem[SigmaProp] = element[SigmaProp]
     override def transform(t: Transformer) = SigmaPropAdapter(t(source))
 
     def isValid: Rep[Boolean] = {
@@ -1276,7 +1276,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
   implicit case object SigmaPropCompanionElem extends CompanionElem[SigmaPropCompanionCtor]
 
   abstract class SigmaPropCompanionCtor extends CompanionDef[SigmaPropCompanionCtor] with SigmaPropCompanion {
-    def selfType = SigmaPropCompanionElem
+    def resultType = SigmaPropCompanionElem
     override def toString = "SigmaProp"
   }
   implicit def proxySigmaPropCompanionCtor(p: Rep[SigmaPropCompanionCtor]): SigmaPropCompanionCtor =
@@ -1363,7 +1363,7 @@ object AnyValue extends EntityObject("AnyValue") {
       ) extends AnyValue with LiftedConst[SAnyValue, AnyValue]
         with Def[AnyValue] with AnyValueConstMethods {
     val liftable: Liftable[SAnyValue, AnyValue] = LiftableAnyValue
-    val selfType: Elem[AnyValue] = liftable.eW
+    val resultType: Elem[AnyValue] = liftable.eW
   }
 
   trait AnyValueConstMethods extends AnyValue  { thisConst: Def[_] =>
@@ -1406,7 +1406,7 @@ object AnyValue extends EntityObject("AnyValue") {
   case class AnyValueAdapter(source: Rep[AnyValue])
       extends AnyValue
       with Def[AnyValue] {
-    val selfType: Elem[AnyValue] = element[AnyValue]
+    val resultType: Elem[AnyValue] = element[AnyValue]
     override def transform(t: Transformer) = AnyValueAdapter(t(source))
 
     // manual fix
@@ -1451,7 +1451,7 @@ object AnyValue extends EntityObject("AnyValue") {
   implicit case object AnyValueCompanionElem extends CompanionElem[AnyValueCompanionCtor]
 
   abstract class AnyValueCompanionCtor extends CompanionDef[AnyValueCompanionCtor] with AnyValueCompanion {
-    def selfType = AnyValueCompanionElem
+    def resultType = AnyValueCompanionElem
     override def toString = "AnyValue"
   }
   implicit def proxyAnyValueCompanionCtor(p: Rep[AnyValueCompanionCtor]): AnyValueCompanionCtor =
@@ -1498,7 +1498,7 @@ object Box extends EntityObject("Box") {
       ) extends Box with LiftedConst[SBox, Box]
         with Def[Box] with BoxConstMethods {
     val liftable: Liftable[SBox, Box] = LiftableBox
-    val selfType: Elem[Box] = liftable.eW
+    val resultType: Elem[Box] = liftable.eW
   }
 
   trait BoxConstMethods extends Box  { thisConst: Def[_] =>
@@ -1596,7 +1596,7 @@ object Box extends EntityObject("Box") {
   case class BoxAdapter(source: Rep[Box])
       extends Box
       with Def[Box] {
-    val selfType: Elem[Box] = element[Box]
+    val resultType: Elem[Box] = element[Box]
     override def transform(t: Transformer) = BoxAdapter(t(source))
 
     def id: Rep[Coll[Byte]] = {
@@ -1696,7 +1696,7 @@ object Box extends EntityObject("Box") {
   implicit case object BoxCompanionElem extends CompanionElem[BoxCompanionCtor]
 
   abstract class BoxCompanionCtor extends CompanionDef[BoxCompanionCtor] with BoxCompanion {
-    def selfType = BoxCompanionElem
+    def resultType = BoxCompanionElem
     override def toString = "Box"
   }
   implicit def proxyBoxCompanionCtor(p: Rep[BoxCompanionCtor]): BoxCompanionCtor =
@@ -1923,7 +1923,7 @@ object AvlTree extends EntityObject("AvlTree") {
       ) extends AvlTree with LiftedConst[SAvlTree, AvlTree]
         with Def[AvlTree] with AvlTreeConstMethods {
     val liftable: Liftable[SAvlTree, AvlTree] = LiftableAvlTree
-    val selfType: Elem[AvlTree] = liftable.eW
+    val resultType: Elem[AvlTree] = liftable.eW
   }
 
   trait AvlTreeConstMethods extends AvlTree  { thisConst: Def[_] =>
@@ -2056,7 +2056,7 @@ object AvlTree extends EntityObject("AvlTree") {
   case class AvlTreeAdapter(source: Rep[AvlTree])
       extends AvlTree
       with Def[AvlTree] {
-    val selfType: Elem[AvlTree] = element[AvlTree]
+    val resultType: Elem[AvlTree] = element[AvlTree]
     override def transform(t: Transformer) = AvlTreeAdapter(t(source))
 
     def digest: Rep[Coll[Byte]] = {
@@ -2191,7 +2191,7 @@ object AvlTree extends EntityObject("AvlTree") {
   implicit case object AvlTreeCompanionElem extends CompanionElem[AvlTreeCompanionCtor]
 
   abstract class AvlTreeCompanionCtor extends CompanionDef[AvlTreeCompanionCtor] with AvlTreeCompanion {
-    def selfType = AvlTreeCompanionElem
+    def resultType = AvlTreeCompanionElem
     override def toString = "AvlTree"
   }
   implicit def proxyAvlTreeCompanionCtor(p: Rep[AvlTreeCompanionCtor]): AvlTreeCompanionCtor =
@@ -2213,7 +2213,7 @@ object PreHeader extends EntityObject("PreHeader") {
       ) extends PreHeader with LiftedConst[SPreHeader, PreHeader]
         with Def[PreHeader] with PreHeaderConstMethods {
     val liftable: Liftable[SPreHeader, PreHeader] = LiftablePreHeader
-    val selfType: Elem[PreHeader] = liftable.eW
+    val resultType: Elem[PreHeader] = liftable.eW
   }
 
   trait PreHeaderConstMethods extends PreHeader  { thisConst: Def[_] =>
@@ -2290,7 +2290,7 @@ object PreHeader extends EntityObject("PreHeader") {
   case class PreHeaderAdapter(source: Rep[PreHeader])
       extends PreHeader
       with Def[PreHeader] {
-    val selfType: Elem[PreHeader] = element[PreHeader]
+    val resultType: Elem[PreHeader] = element[PreHeader]
     override def transform(t: Transformer) = PreHeaderAdapter(t(source))
 
     def version: Rep[Byte] = {
@@ -2369,7 +2369,7 @@ object PreHeader extends EntityObject("PreHeader") {
   implicit case object PreHeaderCompanionElem extends CompanionElem[PreHeaderCompanionCtor]
 
   abstract class PreHeaderCompanionCtor extends CompanionDef[PreHeaderCompanionCtor] with PreHeaderCompanion {
-    def selfType = PreHeaderCompanionElem
+    def resultType = PreHeaderCompanionElem
     override def toString = "PreHeader"
   }
   implicit def proxyPreHeaderCompanionCtor(p: Rep[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
@@ -2391,7 +2391,7 @@ object Header extends EntityObject("Header") {
       ) extends Header with LiftedConst[SHeader, Header]
         with Def[Header] with HeaderConstMethods {
     val liftable: Liftable[SHeader, Header] = LiftableHeader
-    val selfType: Elem[Header] = liftable.eW
+    val resultType: Elem[Header] = liftable.eW
   }
 
   trait HeaderConstMethods extends Header  { thisConst: Def[_] =>
@@ -2524,7 +2524,7 @@ object Header extends EntityObject("Header") {
   case class HeaderAdapter(source: Rep[Header])
       extends Header
       with Def[Header] {
-    val selfType: Elem[Header] = element[Header]
+    val resultType: Elem[Header] = element[Header]
     override def transform(t: Transformer) = HeaderAdapter(t(source))
 
     def id: Rep[Coll[Byte]] = {
@@ -2659,7 +2659,7 @@ object Header extends EntityObject("Header") {
   implicit case object HeaderCompanionElem extends CompanionElem[HeaderCompanionCtor]
 
   abstract class HeaderCompanionCtor extends CompanionDef[HeaderCompanionCtor] with HeaderCompanion {
-    def selfType = HeaderCompanionElem
+    def resultType = HeaderCompanionElem
     override def toString = "Header"
   }
   implicit def proxyHeaderCompanionCtor(p: Rep[HeaderCompanionCtor]): HeaderCompanionCtor =
@@ -2681,7 +2681,7 @@ object Context extends EntityObject("Context") {
       ) extends Context with LiftedConst[SContext, Context]
         with Def[Context] with ContextConstMethods {
     val liftable: Liftable[SContext, Context] = LiftableContext
-    val selfType: Elem[Context] = liftable.eW
+    val resultType: Elem[Context] = liftable.eW
   }
 
   trait ContextConstMethods extends Context  { thisConst: Def[_] =>
@@ -2800,7 +2800,7 @@ object Context extends EntityObject("Context") {
   case class ContextAdapter(source: Rep[Context])
       extends Context
       with Def[Context] {
-    val selfType: Elem[Context] = element[Context]
+    val resultType: Elem[Context] = element[Context]
     override def transform(t: Transformer) = ContextAdapter(t(source))
 
     def builder: Rep[SigmaDslBuilder] = {
@@ -2921,7 +2921,7 @@ object Context extends EntityObject("Context") {
   implicit case object ContextCompanionElem extends CompanionElem[ContextCompanionCtor]
 
   abstract class ContextCompanionCtor extends CompanionDef[ContextCompanionCtor] with ContextCompanion {
-    def selfType = ContextCompanionElem
+    def resultType = ContextCompanionElem
     override def toString = "Context"
   }
   implicit def proxyContextCompanionCtor(p: Rep[ContextCompanionCtor]): ContextCompanionCtor =
@@ -3078,7 +3078,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
       ) extends SigmaContract with LiftedConst[SSigmaContract, SigmaContract]
         with Def[SigmaContract] with SigmaContractConstMethods {
     val liftable: Liftable[SSigmaContract, SigmaContract] = LiftableSigmaContract
-    val selfType: Elem[SigmaContract] = liftable.eW
+    val resultType: Elem[SigmaContract] = liftable.eW
   }
 
   trait SigmaContractConstMethods extends SigmaContract  { thisConst: Def[_] =>
@@ -3120,7 +3120,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
   case class SigmaContractAdapter(source: Rep[SigmaContract])
       extends SigmaContract
       with Def[SigmaContract] {
-    val selfType: Elem[SigmaContract] = element[SigmaContract]
+    val resultType: Elem[SigmaContract] = element[SigmaContract]
     override def transform(t: Transformer) = SigmaContractAdapter(t(source))
 
     def builder: Rep[SigmaDslBuilder] = {
@@ -3164,7 +3164,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
   implicit case object SigmaContractCompanionElem extends CompanionElem[SigmaContractCompanionCtor]
 
   abstract class SigmaContractCompanionCtor extends CompanionDef[SigmaContractCompanionCtor] with SigmaContractCompanion {
-    def selfType = SigmaContractCompanionElem
+    def resultType = SigmaContractCompanionElem
     override def toString = "SigmaContract"
   }
   implicit def proxySigmaContractCompanionCtor(p: Rep[SigmaContractCompanionCtor]): SigmaContractCompanionCtor =
@@ -3186,7 +3186,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
       ) extends SigmaDslBuilder with LiftedConst[SSigmaDslBuilder, SigmaDslBuilder]
         with Def[SigmaDslBuilder] with SigmaDslBuilderConstMethods {
     val liftable: Liftable[SSigmaDslBuilder, SigmaDslBuilder] = LiftableSigmaDslBuilder
-    val selfType: Elem[SigmaDslBuilder] = liftable.eW
+    val resultType: Elem[SigmaDslBuilder] = liftable.eW
   }
 
   trait SigmaDslBuilderConstMethods extends SigmaDslBuilder  { thisConst: Def[_] =>
@@ -3390,7 +3390,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   case class SigmaDslBuilderAdapter(source: Rep[SigmaDslBuilder])
       extends SigmaDslBuilder
       with Def[SigmaDslBuilder] {
-    val selfType: Elem[SigmaDslBuilder] = element[SigmaDslBuilder]
+    val resultType: Elem[SigmaDslBuilder] = element[SigmaDslBuilder]
     override def transform(t: Transformer) = SigmaDslBuilderAdapter(t(source))
 
     def Colls: Rep[CollBuilder] = {
@@ -3596,7 +3596,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   implicit case object SigmaDslBuilderCompanionElem extends CompanionElem[SigmaDslBuilderCompanionCtor]
 
   abstract class SigmaDslBuilderCompanionCtor extends CompanionDef[SigmaDslBuilderCompanionCtor] with SigmaDslBuilderCompanion {
-    def selfType = SigmaDslBuilderCompanionElem
+    def resultType = SigmaDslBuilderCompanionElem
     override def toString = "SigmaDslBuilder"
   }
   implicit def proxySigmaDslBuilderCompanionCtor(p: Rep[SigmaDslBuilderCompanionCtor]): SigmaDslBuilderCompanionCtor =
