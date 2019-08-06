@@ -214,8 +214,8 @@ object CostModel extends EntityObject("CostModel") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyCostModel(p: Ref[CostModel]): CostModel = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefCostModel(p: Ref[CostModel]): CostModel = {
     if (p.rhs.isInstanceOf[CostModel]) p.rhs.asInstanceOf[CostModel]
     else
       CostModelAdapter(p)
@@ -243,7 +243,7 @@ object CostModel extends EntityObject("CostModel") {
     def resultType = CostModelCompanionElem
     override def toString = "CostModel"
   }
-  implicit def proxyCostModelCompanionCtor(p: Ref[CostModelCompanionCtor]): CostModelCompanionCtor =
+  implicit def unrefCostModelCompanionCtor(p: Ref[CostModelCompanionCtor]): CostModelCompanionCtor =
     p.rhs.asInstanceOf[CostModelCompanionCtor]
 
   lazy val RCostModel: Ref[CostModelCompanionCtor] = new CostModelCompanionCtor {
@@ -616,8 +616,8 @@ object BigInt extends EntityObject("BigInt") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyBigInt(p: Ref[BigInt]): BigInt = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefBigInt(p: Ref[BigInt]): BigInt = {
     if (p.rhs.isInstanceOf[BigInt]) p.rhs.asInstanceOf[BigInt]
     else
       BigIntAdapter(p)
@@ -645,7 +645,7 @@ object BigInt extends EntityObject("BigInt") {
     def resultType = BigIntCompanionElem
     override def toString = "BigInt"
   }
-  implicit def proxyBigIntCompanionCtor(p: Ref[BigIntCompanionCtor]): BigIntCompanionCtor =
+  implicit def unrefBigIntCompanionCtor(p: Ref[BigIntCompanionCtor]): BigIntCompanionCtor =
     p.rhs.asInstanceOf[BigIntCompanionCtor]
 
   lazy val RBigInt: Ref[BigIntCompanionCtor] = new BigIntCompanionCtor {
@@ -1001,8 +1001,8 @@ object GroupElement extends EntityObject("GroupElement") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyGroupElement(p: Ref[GroupElement]): GroupElement = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefGroupElement(p: Ref[GroupElement]): GroupElement = {
     if (p.rhs.isInstanceOf[GroupElement]) p.rhs.asInstanceOf[GroupElement]
     else
       GroupElementAdapter(p)
@@ -1030,7 +1030,7 @@ object GroupElement extends EntityObject("GroupElement") {
     def resultType = GroupElementCompanionElem
     override def toString = "GroupElement"
   }
-  implicit def proxyGroupElementCompanionCtor(p: Ref[GroupElementCompanionCtor]): GroupElementCompanionCtor =
+  implicit def unrefGroupElementCompanionCtor(p: Ref[GroupElementCompanionCtor]): GroupElementCompanionCtor =
     p.rhs.asInstanceOf[GroupElementCompanionCtor]
 
   lazy val RGroupElement: Ref[GroupElementCompanionCtor] = new GroupElementCompanionCtor {
@@ -1250,8 +1250,8 @@ object SigmaProp extends EntityObject("SigmaProp") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxySigmaProp(p: Ref[SigmaProp]): SigmaProp = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefSigmaProp(p: Ref[SigmaProp]): SigmaProp = {
     if (p.rhs.isInstanceOf[SigmaProp]) p.rhs.asInstanceOf[SigmaProp]
     else
       SigmaPropAdapter(p)
@@ -1279,7 +1279,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
     def resultType = SigmaPropCompanionElem
     override def toString = "SigmaProp"
   }
-  implicit def proxySigmaPropCompanionCtor(p: Ref[SigmaPropCompanionCtor]): SigmaPropCompanionCtor =
+  implicit def unrefSigmaPropCompanionCtor(p: Ref[SigmaPropCompanionCtor]): SigmaPropCompanionCtor =
     p.rhs.asInstanceOf[SigmaPropCompanionCtor]
 
   lazy val RSigmaProp: Ref[SigmaPropCompanionCtor] = new SigmaPropCompanionCtor {
@@ -1425,8 +1425,8 @@ object AnyValue extends EntityObject("AnyValue") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyAnyValue(p: Ref[AnyValue]): AnyValue = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefAnyValue(p: Ref[AnyValue]): AnyValue = {
     if (p.rhs.isInstanceOf[AnyValue]) p.rhs.asInstanceOf[AnyValue]
     else
       AnyValueAdapter(p)
@@ -1454,7 +1454,7 @@ object AnyValue extends EntityObject("AnyValue") {
     def resultType = AnyValueCompanionElem
     override def toString = "AnyValue"
   }
-  implicit def proxyAnyValueCompanionCtor(p: Ref[AnyValueCompanionCtor]): AnyValueCompanionCtor =
+  implicit def unrefAnyValueCompanionCtor(p: Ref[AnyValueCompanionCtor]): AnyValueCompanionCtor =
     p.rhs.asInstanceOf[AnyValueCompanionCtor]
 
   lazy val RAnyValue: Ref[AnyValueCompanionCtor] = new AnyValueCompanionCtor {
@@ -1670,8 +1670,8 @@ object Box extends EntityObject("Box") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyBox(p: Ref[Box]): Box = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefBox(p: Ref[Box]): Box = {
     if (p.rhs.isInstanceOf[Box]) p.rhs.asInstanceOf[Box]
     else
       BoxAdapter(p)
@@ -1699,7 +1699,7 @@ object Box extends EntityObject("Box") {
     def resultType = BoxCompanionElem
     override def toString = "Box"
   }
-  implicit def proxyBoxCompanionCtor(p: Ref[BoxCompanionCtor]): BoxCompanionCtor =
+  implicit def unrefBoxCompanionCtor(p: Ref[BoxCompanionCtor]): BoxCompanionCtor =
     p.rhs.asInstanceOf[BoxCompanionCtor]
 
   lazy val RBox: Ref[BoxCompanionCtor] = new BoxCompanionCtor {
@@ -2165,8 +2165,8 @@ object AvlTree extends EntityObject("AvlTree") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyAvlTree(p: Ref[AvlTree]): AvlTree = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefAvlTree(p: Ref[AvlTree]): AvlTree = {
     if (p.rhs.isInstanceOf[AvlTree]) p.rhs.asInstanceOf[AvlTree]
     else
       AvlTreeAdapter(p)
@@ -2194,7 +2194,7 @@ object AvlTree extends EntityObject("AvlTree") {
     def resultType = AvlTreeCompanionElem
     override def toString = "AvlTree"
   }
-  implicit def proxyAvlTreeCompanionCtor(p: Ref[AvlTreeCompanionCtor]): AvlTreeCompanionCtor =
+  implicit def unrefAvlTreeCompanionCtor(p: Ref[AvlTreeCompanionCtor]): AvlTreeCompanionCtor =
     p.rhs.asInstanceOf[AvlTreeCompanionCtor]
 
   lazy val RAvlTree: Ref[AvlTreeCompanionCtor] = new AvlTreeCompanionCtor {
@@ -2343,8 +2343,8 @@ object PreHeader extends EntityObject("PreHeader") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyPreHeader(p: Ref[PreHeader]): PreHeader = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefPreHeader(p: Ref[PreHeader]): PreHeader = {
     if (p.rhs.isInstanceOf[PreHeader]) p.rhs.asInstanceOf[PreHeader]
     else
       PreHeaderAdapter(p)
@@ -2372,7 +2372,7 @@ object PreHeader extends EntityObject("PreHeader") {
     def resultType = PreHeaderCompanionElem
     override def toString = "PreHeader"
   }
-  implicit def proxyPreHeaderCompanionCtor(p: Ref[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
+  implicit def unrefPreHeaderCompanionCtor(p: Ref[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
     p.rhs.asInstanceOf[PreHeaderCompanionCtor]
 
   lazy val RPreHeader: Ref[PreHeaderCompanionCtor] = new PreHeaderCompanionCtor {
@@ -2633,8 +2633,8 @@ object Header extends EntityObject("Header") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyHeader(p: Ref[Header]): Header = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefHeader(p: Ref[Header]): Header = {
     if (p.rhs.isInstanceOf[Header]) p.rhs.asInstanceOf[Header]
     else
       HeaderAdapter(p)
@@ -2662,7 +2662,7 @@ object Header extends EntityObject("Header") {
     def resultType = HeaderCompanionElem
     override def toString = "Header"
   }
-  implicit def proxyHeaderCompanionCtor(p: Ref[HeaderCompanionCtor]): HeaderCompanionCtor =
+  implicit def unrefHeaderCompanionCtor(p: Ref[HeaderCompanionCtor]): HeaderCompanionCtor =
     p.rhs.asInstanceOf[HeaderCompanionCtor]
 
   lazy val RHeader: Ref[HeaderCompanionCtor] = new HeaderCompanionCtor {
@@ -2895,8 +2895,8 @@ object Context extends EntityObject("Context") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxyContext(p: Ref[Context]): Context = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefContext(p: Ref[Context]): Context = {
     if (p.rhs.isInstanceOf[Context]) p.rhs.asInstanceOf[Context]
     else
       ContextAdapter(p)
@@ -2924,7 +2924,7 @@ object Context extends EntityObject("Context") {
     def resultType = ContextCompanionElem
     override def toString = "Context"
   }
-  implicit def proxyContextCompanionCtor(p: Ref[ContextCompanionCtor]): ContextCompanionCtor =
+  implicit def unrefContextCompanionCtor(p: Ref[ContextCompanionCtor]): ContextCompanionCtor =
     p.rhs.asInstanceOf[ContextCompanionCtor]
 
   lazy val RContext: Ref[ContextCompanionCtor] = new ContextCompanionCtor {
@@ -3138,8 +3138,8 @@ object SigmaContract extends EntityObject("SigmaContract") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxySigmaContract(p: Ref[SigmaContract]): SigmaContract = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefSigmaContract(p: Ref[SigmaContract]): SigmaContract = {
     if (p.rhs.isInstanceOf[SigmaContract]) p.rhs.asInstanceOf[SigmaContract]
     else
       SigmaContractAdapter(p)
@@ -3167,7 +3167,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     def resultType = SigmaContractCompanionElem
     override def toString = "SigmaContract"
   }
-  implicit def proxySigmaContractCompanionCtor(p: Ref[SigmaContractCompanionCtor]): SigmaContractCompanionCtor =
+  implicit def unrefSigmaContractCompanionCtor(p: Ref[SigmaContractCompanionCtor]): SigmaContractCompanionCtor =
     p.rhs.asInstanceOf[SigmaContractCompanionCtor]
 
   lazy val RSigmaContract: Ref[SigmaContractCompanionCtor] = new SigmaContractCompanionCtor {
@@ -3570,8 +3570,8 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     }
   }
 
-  // entityProxy: single proxy for each type family
-  implicit def proxySigmaDslBuilder(p: Ref[SigmaDslBuilder]): SigmaDslBuilder = {
+  // entityUnref: single unref method for each type family
+  implicit def unrefSigmaDslBuilder(p: Ref[SigmaDslBuilder]): SigmaDslBuilder = {
     if (p.rhs.isInstanceOf[SigmaDslBuilder]) p.rhs.asInstanceOf[SigmaDslBuilder]
     else
       SigmaDslBuilderAdapter(p)
@@ -3599,7 +3599,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     def resultType = SigmaDslBuilderCompanionElem
     override def toString = "SigmaDslBuilder"
   }
-  implicit def proxySigmaDslBuilderCompanionCtor(p: Ref[SigmaDslBuilderCompanionCtor]): SigmaDslBuilderCompanionCtor =
+  implicit def unrefSigmaDslBuilderCompanionCtor(p: Ref[SigmaDslBuilderCompanionCtor]): SigmaDslBuilderCompanionCtor =
     p.rhs.asInstanceOf[SigmaDslBuilderCompanionCtor]
 
   lazy val RSigmaDslBuilder: Ref[SigmaDslBuilderCompanionCtor] = new SigmaDslBuilderCompanionCtor {
