@@ -38,7 +38,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
       (override val tVal: Rep[WRType[Any]], override val valueSize: Rep[Size[Any]])
     extends CSizeAnyValue(tVal, valueSize) with Def[CSizeAnyValue] {
     override lazy val eVal: Elem[AnyValue] = implicitly[Elem[AnyValue]]
-    lazy val selfType = element[CSizeAnyValue]
+    lazy val resultType = element[CSizeAnyValue]
     override def transform(t: Transformer) = CSizeAnyValueCtor(t(tVal), t(valueSize))
     private val thisClass = classOf[SizeAnyValue]
 
@@ -72,7 +72,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     }
     lazy val eFrom = pairElement(element[WRType[Any]], element[Size[Any]])
     lazy val eTo = new CSizeAnyValueElem(self)
-    lazy val selfType = new CSizeAnyValueIsoElem
+    lazy val resultType = new CSizeAnyValueIsoElem
     def productArity = 0
     def productElement(n: Int) = ???
   }
@@ -80,7 +80,7 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
   }
   // 4) constructor and deconstructor
   class CSizeAnyValueCompanionCtor extends CompanionDef[CSizeAnyValueCompanionCtor] with CSizeAnyValueCompanion {
-    def selfType = CSizeAnyValueCompanionElem
+    def resultType = CSizeAnyValueCompanionElem
     override def toString = "CSizeAnyValueCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Rep[CSizeAnyValueData]): Rep[CSizeAnyValue] = {
@@ -139,7 +139,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
       (override val propBytes: Rep[Size[Coll[Byte]]])
     extends CSizeSigmaProp(propBytes) with Def[CSizeSigmaProp] {
     override lazy val eVal: Elem[SigmaProp] = implicitly[Elem[SigmaProp]]
-    lazy val selfType = element[CSizeSigmaProp]
+    lazy val resultType = element[CSizeSigmaProp]
     override def transform(t: Transformer) = CSizeSigmaPropCtor(t(propBytes))
     private val thisClass = classOf[SizeSigmaProp]
 
@@ -173,7 +173,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     }
     lazy val eFrom = element[Size[Coll[Byte]]]
     lazy val eTo = new CSizeSigmaPropElem(self)
-    lazy val selfType = new CSizeSigmaPropIsoElem
+    lazy val resultType = new CSizeSigmaPropIsoElem
     def productArity = 0
     def productElement(n: Int) = ???
   }
@@ -181,7 +181,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
   }
   // 4) constructor and deconstructor
   class CSizeSigmaPropCompanionCtor extends CompanionDef[CSizeSigmaPropCompanionCtor] with CSizeSigmaPropCompanion {
-    def selfType = CSizeSigmaPropCompanionElem
+    def resultType = CSizeSigmaPropCompanionElem
     override def toString = "CSizeSigmaPropCompanion"
 
     @scalan.OverloadId("fromFields")
@@ -236,7 +236,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
       (override val propositionBytes: Rep[Size[Coll[Byte]]], override val bytes: Rep[Size[Coll[Byte]]], override val bytesWithoutRef: Rep[Size[Coll[Byte]]], override val registers: Rep[Size[Coll[WOption[AnyValue]]]], override val tokens: Rep[Size[Coll[(Coll[Byte], Long)]]])
     extends CSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens) with Def[CSizeBox] {
     override lazy val eVal: Elem[Box] = implicitly[Elem[Box]]
-    lazy val selfType = element[CSizeBox]
+    lazy val resultType = element[CSizeBox]
     override def transform(t: Transformer) = CSizeBoxCtor(t(propositionBytes), t(bytes), t(bytesWithoutRef), t(registers), t(tokens))
     private val thisClass = classOf[SizeBox]
 
@@ -277,7 +277,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
     }
     lazy val eFrom = pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[WOption[AnyValue]]]], element[Size[Coll[(Coll[Byte], Long)]]]))))
     lazy val eTo = new CSizeBoxElem(self)
-    lazy val selfType = new CSizeBoxIsoElem
+    lazy val resultType = new CSizeBoxIsoElem
     def productArity = 0
     def productElement(n: Int) = ???
   }
@@ -285,7 +285,7 @@ object CSizeBox extends EntityObject("CSizeBox") {
   }
   // 4) constructor and deconstructor
   class CSizeBoxCompanionCtor extends CompanionDef[CSizeBoxCompanionCtor] with CSizeBoxCompanion {
-    def selfType = CSizeBoxCompanionElem
+    def resultType = CSizeBoxCompanionElem
     override def toString = "CSizeBoxCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Rep[CSizeBoxData]): Rep[CSizeBox] = {
@@ -344,7 +344,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
       (override val outputs: Rep[Size[Coll[Box]]], override val inputs: Rep[Size[Coll[Box]]], override val dataInputs: Rep[Size[Coll[Box]]], override val selfBox: Rep[Size[Box]], override val lastBlockUtxoRootHash: Rep[Size[AvlTree]], override val headers: Rep[Size[Coll[Header]]], override val preHeader: Rep[Size[PreHeader]], override val vars: Rep[Coll[Size[AnyValue]]])
     extends CSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars) with Def[CSizeContext] {
     override lazy val eVal: Elem[Context] = implicitly[Elem[Context]]
-    lazy val selfType = element[CSizeContext]
+    lazy val resultType = element[CSizeContext]
     override def transform(t: Transformer) = CSizeContextCtor(t(outputs), t(inputs), t(dataInputs), t(selfBox), t(lastBlockUtxoRootHash), t(headers), t(preHeader), t(vars))
     private val thisClass = classOf[SizeContext]
 
@@ -385,7 +385,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
     }
     lazy val eFrom = pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Box]], pairElement(element[Size[AvlTree]], pairElement(element[Size[Coll[Header]]], pairElement(element[Size[PreHeader]], element[Coll[Size[AnyValue]]])))))))
     lazy val eTo = new CSizeContextElem(self)
-    lazy val selfType = new CSizeContextIsoElem
+    lazy val resultType = new CSizeContextIsoElem
     def productArity = 0
     def productElement(n: Int) = ???
   }
@@ -393,7 +393,7 @@ object CSizeContext extends EntityObject("CSizeContext") {
   }
   // 4) constructor and deconstructor
   class CSizeContextCompanionCtor extends CompanionDef[CSizeContextCompanionCtor] with CSizeContextCompanion {
-    def selfType = CSizeContextCompanionElem
+    def resultType = CSizeContextCompanionElem
     override def toString = "CSizeContextCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Rep[CSizeContextData]): Rep[CSizeContext] = {
@@ -451,7 +451,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
   case class CSizeBuilderCtor
       ()
     extends CSizeBuilder() with Def[CSizeBuilder] {
-    lazy val selfType = element[CSizeBuilder]
+    lazy val resultType = element[CSizeBuilder]
     override def transform(t: Transformer) = CSizeBuilderCtor()
   }
   // elem for concrete class
@@ -477,7 +477,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     }
     lazy val eFrom = UnitElement
     lazy val eTo = new CSizeBuilderElem(self)
-    lazy val selfType = new CSizeBuilderIsoElem
+    lazy val resultType = new CSizeBuilderIsoElem
     def productArity = 0
     def productElement(n: Int) = ???
   }
@@ -485,7 +485,7 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
   }
   // 4) constructor and deconstructor
   class CSizeBuilderCompanionCtor extends CompanionDef[CSizeBuilderCompanionCtor] with CSizeBuilderCompanion {
-    def selfType = CSizeBuilderCompanionElem
+    def resultType = CSizeBuilderCompanionElem
     override def toString = "CSizeBuilderCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Rep[CSizeBuilderData]): Rep[CSizeBuilder] = {

@@ -683,7 +683,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             val dataRes = obj.elem match {
               case _: CollElem[_, _] => mc match {
                 case CollMethods.flatMap(_, f) =>
-                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange.eItem)(mc.selfType, mc.isAdapterCall)
+                  val newMC = mc.copy(args = mc.args :+ f.elem.eRange.eItem)(mc.resultType, mc.isAdapterCall)
                   costAccumulator.startLoop(f)
                   val res = invokeUnlifted(obj.elem, newMC, dataEnv)
                   costAccumulator.endLoop()
