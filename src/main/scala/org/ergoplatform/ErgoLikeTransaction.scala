@@ -69,6 +69,11 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     new ErgoLikeTransaction(ins, dataInputs, outputCandidates)
   }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case tx: UnsignedErgoLikeTransaction => this.id == tx.id
+    case _ => false
+  }
 }
 
 object UnsignedErgoLikeTransaction {

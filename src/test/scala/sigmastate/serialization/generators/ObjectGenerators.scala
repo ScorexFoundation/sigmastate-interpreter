@@ -336,12 +336,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val digest32CollGen: Gen[Digest32Coll] = digest32Gen.map(Digest32Coll @@ _.toColl)
 
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
-    inputs <- Gen.nonEmptyListOf(inputGen)
-    tokens <- tokensGen
-    dataInputs <- Gen.listOf(dataInputGen)
-    outputsCount <- Gen.chooseNum(50, 200)
-    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
-  } yield new ErgoLikeTransaction(inputs.toIndexedSeq, dataInputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+    inputBoxIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- ergoLikeTransactionGen(inputBoxIds, dataInputBoxIds)
+  } yield tx
 
   // distinct list of elements from a given generator
   // with a maximum number of elements to discard
@@ -682,30 +680,49 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     votes <- minerVotesGen
   } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
 
+  def ergoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[ErgoLikeTransaction] = for {
+    tokens <- tokensGen
+    outputsCount <- Gen.chooseNum(50, 200)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
+    proofs <- Gen.listOfN(inputBoxesIds.length, serializedProverResultGen)
+  } yield new ErgoLikeTransaction(
+    inputs = inputBoxesIds.zip(proofs).map(t => Input(t._1, t._2)).toIndexedSeq,
+    dataInputs = dataInputBoxIds.map(DataInput).toIndexedSeq,
+    outputCandidates = outputCandidates.toIndexedSeq
+  )
+
+  def unsignedErgoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[UnsignedErgoLikeTransaction] = for {
+    tokens <- tokensGen
+    outputsCount <- Gen.chooseNum(50, 200)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
+    contextExtensions <- Gen.listOfN(inputBoxesIds.length, contextExtensionGen)
+  } yield new UnsignedErgoLikeTransaction(
+    inputs = inputBoxesIds.zip(contextExtensions).map(t => new UnsignedInput(t._1, t._2)).toIndexedSeq,
+    dataInputs = dataInputBoxIds.map(DataInput).toIndexedSeq,
+    outputCandidates = outputCandidates.toIndexedSeq
+  )
 
   val ergoLikeContextGen: Gen[ErgoLikeContext] = for {
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-    tokens <- tokensGen
     dataBoxes <- Gen.nonEmptyListOf(ergoBoxGen)
     boxesToSpend <- Gen.nonEmptyListOf(ergoBoxGen)
     extension <- contextExtensionGen
-    outputsCount <- Gen.chooseNum(50, 200)
-    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
     costLimit <- arbLong.arbitrary
     initCost <- arbLong.arbitrary
     avlTreeFlags <- avlTreeFlagsGen
+    spendingTransaction <- Gen.oneOf(
+      unsignedErgoLikeTransactionGen(boxesToSpend.map(_.id), dataBoxes.map(_.id)),
+      ergoLikeTransactionGen(boxesToSpend.map(_.id), dataBoxes.map(_.id))
+    )
   } yield new ErgoLikeContext(
     lastBlockUtxoRoot = AvlTreeData(ADDigest @@ stateRoot.digest.toArray, avlTreeFlags, unsignedIntGen.sample.get),
     headers = headers.toColl,
     preHeader = preHeader,
     dataBoxes = dataBoxes.toIndexedSeq,
     boxesToSpend = boxesToSpend.toIndexedSeq,
-    spendingTransaction = new ErgoLikeTransaction(
-      boxesToSpend.map(b => Input(b.id, serializedProverResultGen.sample.get)).toIndexedSeq,
-      dataBoxes.map(b => DataInput(b.id)).toIndexedSeq,
-      outputCandidates.toIndexedSeq),
+    spendingTransaction = spendingTransaction,
     selfIndex = 0,
     extension = extension,
     validationSettings = ValidationRules.currentSettings,

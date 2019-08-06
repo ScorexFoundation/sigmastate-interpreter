@@ -15,6 +15,7 @@ import sigmastate.Values.{ErgoTree, EvaluatedValue}
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CGroupElement, CPreHeader, WrapperOf, _}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.lang.exceptions.SigmaException
 import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
@@ -194,6 +195,7 @@ trait JsonCodecs {
     )
   }
 
+
   implicit val inputDecoder: Decoder[Input] = { cursor =>
     for {
       boxId <- cursor.downField("boxId").as[ADKey]
@@ -201,6 +203,19 @@ trait JsonCodecs {
     } yield Input(boxId, proof)
   }
 
+  implicit val unsignedInputEncoder: Encoder[UnsignedInput] = { input =>
+    Json.obj(
+      "boxId" -> input.boxId.asJson,
+      "extension" -> input.extension.asJson
+    )
+  }
+
+  implicit val unsignedInputDecoder: Decoder[UnsignedInput] = { cursor =>
+    for {
+      boxId <- cursor.downField("boxId").as[ADKey]
+      extension <- cursor.downField("extension").as[ContextExtension]
+    } yield new UnsignedInput(boxId, extension)
+  }
 
   implicit val contextExtensionEncoder: Encoder[ContextExtension] = { extension =>
     extension.values.map { case (key, value) =>
@@ -304,6 +319,21 @@ trait JsonCodecs {
     )
   }
 
+  implicit val unsignedErgoLikeTransactionEncoder: Encoder[UnsignedErgoLikeTransaction] = { tx =>
+    Json.obj(
+      "id" -> tx.id.asJson,
+      "inputs" -> tx.inputs.asJson,
+      "dataInputs" -> tx.dataInputs.asJson,
+      "outputs" -> tx.outputs.asJson
+    )
+  }
+
+  implicit def ergoLikeTransactionTemplateEncoder[T <: UnsignedInput]: Encoder[ErgoLikeTransactionTemplate[T]] = {
+    case transaction: ErgoLikeTransaction => ergoLikeTransactionEncoder(transaction)
+    case transaction: UnsignedErgoLikeTransaction => unsignedErgoLikeTransactionEncoder(transaction)
+    case t => throw new SigmaException(s"Don't know how to encode transaction $t")
+  }
+
   implicit val transactionOutputsDecoder: Decoder[(ErgoBoxCandidate, Option[BoxId])] = { cursor =>
     for {
       maybeId <- cursor.downField("boxId").as[Option[BoxId]]
@@ -323,6 +353,19 @@ trait JsonCodecs {
     } yield new ErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
   }
 
+  implicit val unsignedErgoLikeTransactionDecoder: Decoder[UnsignedErgoLikeTransaction] = { implicit cursor =>
+    for {
+      inputs <- cursor.downField("inputs").as[IndexedSeq[UnsignedInput]]
+      dataInputs <- cursor.downField("dataInputs").as[IndexedSeq[DataInput]]
+      outputsWithIndex <- cursor.downField("outputs").as[IndexedSeq[(ErgoBoxCandidate, Option[BoxId])]]
+    } yield new UnsignedErgoLikeTransaction(inputs, dataInputs, outputsWithIndex.map(_._1))
+  }
+
+  implicit val ergoLikeTransactionTemplateDecoder: Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] = {
+    ergoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]] or
+    unsignedErgoLikeTransactionDecoder.asInstanceOf[Decoder[ErgoLikeTransactionTemplate[_ <: UnsignedInput]]]
+  }
+
   implicit val sigmaValidationSettingsEncoder: Encoder[SigmaValidationSettings] = { v =>
     SigmaValidationSettingsSerializer.toBytes(v).asJson
   }
@@ -340,8 +383,7 @@ trait JsonCodecs {
       "preHeader" -> ctx.preHeader.asJson,
       "dataBoxes" -> ctx.dataBoxes.asJson,
       "boxesToSpend" -> ctx.boxesToSpend.asJson,
-      // TODO: handle unsigned tx
-      "spendingTransaction" -> ctx.spendingTransaction.asInstanceOf[ErgoLikeTransaction].asJson,
+      "spendingTransaction" -> ctx.spendingTransaction.asJson,
       "selfIndex" -> ctx.selfIndex.asJson,
       "extension" -> ctx.extension.asJson,
       "validationSettings" -> ctx.validationSettings.asJson,
@@ -357,7 +399,7 @@ trait JsonCodecs {
       preHeader <- cursor.downField("preHeader").as[PreHeader]
       dataBoxes <- cursor.downField("dataBoxes").as[IndexedSeq[ErgoBox]]
       boxesToSpend <- cursor.downField("boxesToSpend").as[IndexedSeq[ErgoBox]]
-      spendingTransaction <- cursor.downField("spendingTransaction").as[ErgoLikeTransaction]
+      spendingTransaction <- cursor.downField("spendingTransaction").as(ergoLikeTransactionTemplateDecoder)
       selfIndex <- cursor.downField("selfIndex").as[Int]
       extension <- cursor.downField("extension").as[ContextExtension]
       validationSettings <- cursor.downField("validationSettings").as[SigmaValidationSettings]
