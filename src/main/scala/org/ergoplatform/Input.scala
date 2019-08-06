@@ -16,6 +16,11 @@ import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
   */
 case class DataInput(boxId: BoxId) {
   override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
+
+  override def equals(obj: Any): Boolean = obj match {
+    case x: DataInput => util.Arrays.equals(boxId, x.boxId)
+    case _ => false
+  }
 }
 
 /**

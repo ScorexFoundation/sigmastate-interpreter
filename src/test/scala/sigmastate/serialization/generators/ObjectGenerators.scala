@@ -166,15 +166,17 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] =
     arbByte.arbitrary.map { v => TaggedAvlTree(v).asInstanceOf[TaggedAvlTree] }
 
+  val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
+    Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
+
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
     (0 until cnt)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
         for {
-          arr <- byteArrayConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
-        } yield r -> v.asInstanceOf[EvaluatedValue[SType]]
+          v <- evaluatedValueGen
+        } yield r -> v
       }
   }
 
@@ -227,11 +229,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       .map(_ + 1)
       .map { varId =>
         for {
-          arr <- byteArrayConstGen
-          longConst <- longConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr, longConst)
+          v <- evaluatedValueGen
         }
-          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
+          yield varId.toByte -> v
       }
 
   def avlTreeFlagsGen: Gen[AvlTreeFlags] = for {
@@ -372,6 +372,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   } yield bytes.toArray
 
   def byteCollGen(length: Int): Gen[Coll[Byte]] = byteArrayGen(length).map(_.toColl)
+
+  def byteCollGen(minLength: Int, maxLength: Int): Gen[Coll[Byte]] = byteArrayGen(minLength, maxLength).map(_.toColl)
 
   val minerVotesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.VotesSize)
 
@@ -646,6 +648,12 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
 
+  val headerGen: Gen[Header] = for {
+    stateRoot <- avlTreeGen
+    parentId <- modifierIdBytesGen
+    header <- headerGen(stateRoot, parentId)
+  } yield header
+
   def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
     id <- modifierIdBytesGen
     version <- arbByte.arbitrary
@@ -671,6 +679,11 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       h :+ headerGen(stateRoot, h.last.id).sample.get
     }.reverse
 
+  val preHeaderGen: Gen[PreHeader] = for {
+    parentId <- modifierIdBytesGen
+    preHeader <- preHeaderGen(parentId)
+  } yield preHeader
+
   def preHeaderGen(parentId: Coll[Byte]): Gen[PreHeader] = for {
     version <- arbByte.arbitrary
     timestamp <- arbLong.arbitrary
@@ -679,6 +692,12 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     minerPk <- groupElementGen
     votes <- minerVotesGen
   } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
+
+  val ergoLikeTransactionGen: Gen[ErgoLikeTransaction] = for {
+    inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- ergoLikeTransactionGen(inputBoxesIds, dataInputBoxIds)
+  } yield tx
 
   def ergoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[ErgoLikeTransaction] = for {
     tokens <- tokensGen
@@ -691,6 +710,12 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     outputCandidates = outputCandidates.toIndexedSeq
   )
 
+  val unsignedErgoLikeTransactionGen: Gen[UnsignedErgoLikeTransaction] = for {
+    inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- unsignedErgoLikeTransactionGen(inputBoxesIds, dataInputBoxIds)
+  } yield tx
+
   def unsignedErgoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[UnsignedErgoLikeTransaction] = for {
     tokens <- tokensGen
     outputsCount <- Gen.chooseNum(50, 200)
@@ -702,11 +727,14 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     outputCandidates = outputCandidates.toIndexedSeq
   )
 
+  val ergoLikeTransactionTemplateGen: Gen[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] =
+    Gen.oneOf(unsignedErgoLikeTransactionGen, ergoLikeTransactionGen)
+
   val ergoLikeContextGen: Gen[ErgoLikeContext] = for {
     stateRoot <- avlTreeGen
     headers <- headersGen(stateRoot)
     preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
-    dataBoxes <- Gen.nonEmptyListOf(ergoBoxGen)
+    dataBoxes <- Gen.listOf(ergoBoxGen)
     boxesToSpend <- Gen.nonEmptyListOf(ergoBoxGen)
     extension <- contextExtensionGen
     costLimit <- arbLong.arbitrary
