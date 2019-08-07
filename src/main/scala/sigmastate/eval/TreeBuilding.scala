@@ -279,7 +279,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         if (regId.isConst)
           mkExtractRegisterAs(box.asBox, ErgoBox.allRegisters(valueFromRep(regId)), tpe)
         else
-          error(s"Non constant expressions (${regId.rhs}) are not supported in getReg")
+          error(s"Non constant expressions (${regId.node}) are not supported in getReg")
       case BoxM.creationInfo(In(box)) =>
         mkExtractCreationInfo(box.asBox)
       case BoxM.id(In(box)) =>
@@ -413,7 +413,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
     var curId = defId
     var curEnv = env
     for (s <- subG.schedule) {
-      val d = s.rhs
+      val d = s.node
       val nonRootLoop = LoopOperation.unapply(d).isDefined && !subG.roots.contains(s)
       if ((mainG.hasManyUsagesGlobal(s) || nonRootLoop)
         && IsContextProperty.unapply(d).isEmpty

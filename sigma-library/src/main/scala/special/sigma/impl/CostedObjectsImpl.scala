@@ -10,7 +10,6 @@ package impl {
 trait CostedObjectsDefs extends scalan.Scalan with CostedObjects {
   self: SigmaLibrary =>
 import IsoUR._
-import Converter._
 import AnyValue._
 import AvlTree._
 import Box._
@@ -115,7 +114,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSizeAnyValue(p: Ref[SizeAnyValue]): SizeAnyValue = {
-    if (p.rhs.isInstanceOf[SizeAnyValue]) p.rhs.asInstanceOf[SizeAnyValue]
+    if (p.node.isInstanceOf[SizeAnyValue]) p.node.asInstanceOf[SizeAnyValue]
     else
       SizeAnyValueAdapter(p)
   }
@@ -145,7 +144,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     override def toString = "SizeAnyValue"
   }
   implicit def unrefSizeAnyValueCompanionCtor(p: Ref[SizeAnyValueCompanionCtor]): SizeAnyValueCompanionCtor =
-    p.rhs.asInstanceOf[SizeAnyValueCompanionCtor]
+    p.node.asInstanceOf[SizeAnyValueCompanionCtor]
 
   lazy val RSizeAnyValue: Ref[SizeAnyValueCompanionCtor] = new SizeAnyValueCompanionCtor {
     private val thisClass = classOf[SizeAnyValueCompanion]
@@ -159,7 +158,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.node)
     }
 
     object valueSize {
@@ -169,7 +168,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeAnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeAnyValue]] = unapply(exp.node)
     }
   }
 
@@ -247,7 +246,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSizeSigmaProp(p: Ref[SizeSigmaProp]): SizeSigmaProp = {
-    if (p.rhs.isInstanceOf[SizeSigmaProp]) p.rhs.asInstanceOf[SizeSigmaProp]
+    if (p.node.isInstanceOf[SizeSigmaProp]) p.node.asInstanceOf[SizeSigmaProp]
     else
       SizeSigmaPropAdapter(p)
   }
@@ -277,7 +276,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     override def toString = "SizeSigmaProp"
   }
   implicit def unrefSizeSigmaPropCompanionCtor(p: Ref[SizeSigmaPropCompanionCtor]): SizeSigmaPropCompanionCtor =
-    p.rhs.asInstanceOf[SizeSigmaPropCompanionCtor]
+    p.node.asInstanceOf[SizeSigmaPropCompanionCtor]
 
   lazy val RSizeSigmaProp: Ref[SizeSigmaPropCompanionCtor] = new SizeSigmaPropCompanionCtor {
     private val thisClass = classOf[SizeSigmaPropCompanion]
@@ -291,7 +290,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeSigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeSigmaProp]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeSigmaProp]] = unapply(exp.node)
     }
   }
 
@@ -439,7 +438,7 @@ object SizeBox extends EntityObject("SizeBox") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSizeBox(p: Ref[SizeBox]): SizeBox = {
-    if (p.rhs.isInstanceOf[SizeBox]) p.rhs.asInstanceOf[SizeBox]
+    if (p.node.isInstanceOf[SizeBox]) p.node.asInstanceOf[SizeBox]
     else
       SizeBoxAdapter(p)
   }
@@ -469,7 +468,7 @@ object SizeBox extends EntityObject("SizeBox") {
     override def toString = "SizeBox"
   }
   implicit def unrefSizeBoxCompanionCtor(p: Ref[SizeBoxCompanionCtor]): SizeBoxCompanionCtor =
-    p.rhs.asInstanceOf[SizeBoxCompanionCtor]
+    p.node.asInstanceOf[SizeBoxCompanionCtor]
 
   lazy val RSizeBox: Ref[SizeBoxCompanionCtor] = new SizeBoxCompanionCtor {
     private val thisClass = classOf[SizeBoxCompanion]
@@ -483,7 +482,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.node)
     }
 
     object bytes {
@@ -493,7 +492,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.node)
     }
 
     object bytesWithoutRef {
@@ -503,7 +502,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.node)
     }
 
     object registers {
@@ -513,7 +512,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.node)
     }
 
     object getReg {
@@ -523,7 +522,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SizeBox], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object tokens {
@@ -533,7 +532,7 @@ object SizeBox extends EntityObject("SizeBox") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeBox]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeBox]] = unapply(exp.node)
     }
   }
 
@@ -709,7 +708,7 @@ object SizeContext extends EntityObject("SizeContext") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSizeContext(p: Ref[SizeContext]): SizeContext = {
-    if (p.rhs.isInstanceOf[SizeContext]) p.rhs.asInstanceOf[SizeContext]
+    if (p.node.isInstanceOf[SizeContext]) p.node.asInstanceOf[SizeContext]
     else
       SizeContextAdapter(p)
   }
@@ -739,7 +738,7 @@ object SizeContext extends EntityObject("SizeContext") {
     override def toString = "SizeContext"
   }
   implicit def unrefSizeContextCompanionCtor(p: Ref[SizeContextCompanionCtor]): SizeContextCompanionCtor =
-    p.rhs.asInstanceOf[SizeContextCompanionCtor]
+    p.node.asInstanceOf[SizeContextCompanionCtor]
 
   lazy val RSizeContext: Ref[SizeContextCompanionCtor] = new SizeContextCompanionCtor {
     private val thisClass = classOf[SizeContextCompanion]
@@ -753,7 +752,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object inputs {
@@ -763,7 +762,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object dataInputs {
@@ -773,7 +772,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object selfBox {
@@ -783,7 +782,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object lastBlockUtxoRootHash {
@@ -793,7 +792,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object headers {
@@ -803,7 +802,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object preHeader {
@@ -813,7 +812,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[Ref[SizeContext]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SizeContext]] = unapply(exp.node)
     }
 
     object getVar {
@@ -823,7 +822,7 @@ object SizeContext extends EntityObject("SizeContext") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SizeContext], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
   }
 
@@ -918,7 +917,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSizeBuilder(p: Ref[SizeBuilder]): SizeBuilder = {
-    if (p.rhs.isInstanceOf[SizeBuilder]) p.rhs.asInstanceOf[SizeBuilder]
+    if (p.node.isInstanceOf[SizeBuilder]) p.node.asInstanceOf[SizeBuilder]
     else
       SizeBuilderAdapter(p)
   }
@@ -946,7 +945,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
     override def toString = "SizeBuilder"
   }
   implicit def unrefSizeBuilderCompanionCtor(p: Ref[SizeBuilderCompanionCtor]): SizeBuilderCompanionCtor =
-    p.rhs.asInstanceOf[SizeBuilderCompanionCtor]
+    p.node.asInstanceOf[SizeBuilderCompanionCtor]
 
   lazy val RSizeBuilder: Ref[SizeBuilderCompanionCtor] = new SizeBuilderCompanionCtor {
     private val thisClass = classOf[SizeBuilderCompanion]
