@@ -12,7 +12,6 @@ package impl {
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
   self: SigmaLibrary =>
 import IsoUR._
-import Converter._
 import AnyValue._
 import AvlTree._
 import BigInt._
@@ -216,7 +215,7 @@ object CostModel extends EntityObject("CostModel") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefCostModel(p: Ref[CostModel]): CostModel = {
-    if (p.rhs.isInstanceOf[CostModel]) p.rhs.asInstanceOf[CostModel]
+    if (p.node.isInstanceOf[CostModel]) p.node.asInstanceOf[CostModel]
     else
       CostModelAdapter(p)
   }
@@ -244,7 +243,7 @@ object CostModel extends EntityObject("CostModel") {
     override def toString = "CostModel"
   }
   implicit def unrefCostModelCompanionCtor(p: Ref[CostModelCompanionCtor]): CostModelCompanionCtor =
-    p.rhs.asInstanceOf[CostModelCompanionCtor]
+    p.node.asInstanceOf[CostModelCompanionCtor]
 
   lazy val RCostModel: Ref[CostModelCompanionCtor] = new CostModelCompanionCtor {
     private val thisClass = classOf[CostModelCompanion]
@@ -618,7 +617,7 @@ object BigInt extends EntityObject("BigInt") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefBigInt(p: Ref[BigInt]): BigInt = {
-    if (p.rhs.isInstanceOf[BigInt]) p.rhs.asInstanceOf[BigInt]
+    if (p.node.isInstanceOf[BigInt]) p.node.asInstanceOf[BigInt]
     else
       BigIntAdapter(p)
   }
@@ -646,7 +645,7 @@ object BigInt extends EntityObject("BigInt") {
     override def toString = "BigInt"
   }
   implicit def unrefBigIntCompanionCtor(p: Ref[BigIntCompanionCtor]): BigIntCompanionCtor =
-    p.rhs.asInstanceOf[BigIntCompanionCtor]
+    p.node.asInstanceOf[BigIntCompanionCtor]
 
   lazy val RBigInt: Ref[BigIntCompanionCtor] = new BigIntCompanionCtor {
     private val thisClass = classOf[BigIntCompanion]
@@ -660,7 +659,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toShort {
@@ -670,7 +669,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toInt {
@@ -680,7 +679,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toLong {
@@ -690,7 +689,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toBytes {
@@ -700,7 +699,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toBits {
@@ -710,7 +709,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object toAbs {
@@ -720,7 +719,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object compareTo {
@@ -730,7 +729,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object modQ {
@@ -740,7 +739,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object plusModQ {
@@ -750,7 +749,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object minusModQ {
@@ -760,7 +759,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object multModQ {
@@ -770,7 +769,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object inverseModQ {
@@ -780,7 +779,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object signum {
@@ -790,7 +789,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
 
     object add {
@@ -800,7 +799,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object subtract {
@@ -810,7 +809,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object multiply {
@@ -820,7 +819,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object divide {
@@ -830,7 +829,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object mod {
@@ -840,7 +839,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object remainder {
@@ -850,7 +849,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object min {
@@ -860,7 +859,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object max {
@@ -870,7 +869,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[(Ref[BigInt], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[BigInt], Ref[BigInt])] = unapply(exp.node)
     }
 
     object negate {
@@ -880,7 +879,7 @@ object BigInt extends EntityObject("BigInt") {
           Nullable(res).asInstanceOf[Nullable[Ref[BigInt]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[BigInt]] = unapply(exp.node)
     }
   }
 
@@ -1003,7 +1002,7 @@ object GroupElement extends EntityObject("GroupElement") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefGroupElement(p: Ref[GroupElement]): GroupElement = {
-    if (p.rhs.isInstanceOf[GroupElement]) p.rhs.asInstanceOf[GroupElement]
+    if (p.node.isInstanceOf[GroupElement]) p.node.asInstanceOf[GroupElement]
     else
       GroupElementAdapter(p)
   }
@@ -1031,7 +1030,7 @@ object GroupElement extends EntityObject("GroupElement") {
     override def toString = "GroupElement"
   }
   implicit def unrefGroupElementCompanionCtor(p: Ref[GroupElementCompanionCtor]): GroupElementCompanionCtor =
-    p.rhs.asInstanceOf[GroupElementCompanionCtor]
+    p.node.asInstanceOf[GroupElementCompanionCtor]
 
   lazy val RGroupElement: Ref[GroupElementCompanionCtor] = new GroupElementCompanionCtor {
     private val thisClass = classOf[GroupElementCompanion]
@@ -1045,7 +1044,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
     }
 
     object exp {
@@ -1055,7 +1054,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[(Ref[GroupElement], Ref[BigInt])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[GroupElement], Ref[BigInt])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[GroupElement], Ref[BigInt])] = unapply(exp.node)
     }
 
     object multiply {
@@ -1065,7 +1064,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[(Ref[GroupElement], Ref[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[GroupElement], Ref[GroupElement])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[GroupElement], Ref[GroupElement])] = unapply(exp.node)
     }
 
     object negate {
@@ -1075,7 +1074,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
     }
 
     object getEncoded {
@@ -1085,7 +1084,7 @@ object GroupElement extends EntityObject("GroupElement") {
           Nullable(res).asInstanceOf[Nullable[Ref[GroupElement]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[GroupElement]] = unapply(exp.node)
     }
   }
 
@@ -1252,7 +1251,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSigmaProp(p: Ref[SigmaProp]): SigmaProp = {
-    if (p.rhs.isInstanceOf[SigmaProp]) p.rhs.asInstanceOf[SigmaProp]
+    if (p.node.isInstanceOf[SigmaProp]) p.node.asInstanceOf[SigmaProp]
     else
       SigmaPropAdapter(p)
   }
@@ -1280,7 +1279,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
     override def toString = "SigmaProp"
   }
   implicit def unrefSigmaPropCompanionCtor(p: Ref[SigmaPropCompanionCtor]): SigmaPropCompanionCtor =
-    p.rhs.asInstanceOf[SigmaPropCompanionCtor]
+    p.node.asInstanceOf[SigmaPropCompanionCtor]
 
   lazy val RSigmaProp: Ref[SigmaPropCompanionCtor] = new SigmaPropCompanionCtor {
     private val thisClass = classOf[SigmaPropCompanion]
@@ -1294,7 +1293,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaProp]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaProp]] = unapply(exp.node)
     }
 
     object propBytes {
@@ -1304,7 +1303,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaProp]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaProp]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaProp]] = unapply(exp.node)
     }
 
     object and_sigma_&& {
@@ -1314,7 +1313,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[SigmaProp])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.node)
     }
 
     object and_bool_&& {
@@ -1324,7 +1323,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.node)
     }
 
     object or_sigma_|| {
@@ -1334,7 +1333,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[SigmaProp])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[SigmaProp])] = unapply(exp.node)
     }
 
     object or_bool_|| {
@@ -1344,7 +1343,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaProp], Ref[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaProp], Ref[Boolean])] = unapply(exp.node)
     }
   }
 
@@ -1427,7 +1426,7 @@ object AnyValue extends EntityObject("AnyValue") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefAnyValue(p: Ref[AnyValue]): AnyValue = {
-    if (p.rhs.isInstanceOf[AnyValue]) p.rhs.asInstanceOf[AnyValue]
+    if (p.node.isInstanceOf[AnyValue]) p.node.asInstanceOf[AnyValue]
     else
       AnyValueAdapter(p)
   }
@@ -1455,7 +1454,7 @@ object AnyValue extends EntityObject("AnyValue") {
     override def toString = "AnyValue"
   }
   implicit def unrefAnyValueCompanionCtor(p: Ref[AnyValueCompanionCtor]): AnyValueCompanionCtor =
-    p.rhs.asInstanceOf[AnyValueCompanionCtor]
+    p.node.asInstanceOf[AnyValueCompanionCtor]
 
   lazy val RAnyValue: Ref[AnyValueCompanionCtor] = new AnyValueCompanionCtor {
     private val thisClass = classOf[AnyValueCompanion]
@@ -1469,7 +1468,7 @@ object AnyValue extends EntityObject("AnyValue") {
           Nullable(res).asInstanceOf[Nullable[Ref[AnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.node)
     }
 
     object tVal {
@@ -1479,7 +1478,7 @@ object AnyValue extends EntityObject("AnyValue") {
           Nullable(res).asInstanceOf[Nullable[Ref[AnyValue]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[AnyValue]] = unapply(exp.node)
     }
   }
 
@@ -1672,7 +1671,7 @@ object Box extends EntityObject("Box") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefBox(p: Ref[Box]): Box = {
-    if (p.rhs.isInstanceOf[Box]) p.rhs.asInstanceOf[Box]
+    if (p.node.isInstanceOf[Box]) p.node.asInstanceOf[Box]
     else
       BoxAdapter(p)
   }
@@ -1700,7 +1699,7 @@ object Box extends EntityObject("Box") {
     override def toString = "Box"
   }
   implicit def unrefBoxCompanionCtor(p: Ref[BoxCompanionCtor]): BoxCompanionCtor =
-    p.rhs.asInstanceOf[BoxCompanionCtor]
+    p.node.asInstanceOf[BoxCompanionCtor]
 
   lazy val RBox: Ref[BoxCompanionCtor] = new BoxCompanionCtor {
     private val thisClass = classOf[BoxCompanion]
@@ -1714,7 +1713,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object value {
@@ -1724,7 +1723,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object propositionBytes {
@@ -1734,7 +1733,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object bytes {
@@ -1744,7 +1743,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object bytesWithoutRef {
@@ -1754,7 +1753,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object registers {
@@ -1764,7 +1763,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object getReg {
@@ -1774,7 +1773,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Ref[Int], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Int], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Int], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R0 {
@@ -1784,7 +1783,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R1 {
@@ -1794,7 +1793,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R2 {
@@ -1804,7 +1803,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R3 {
@@ -1814,7 +1813,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R4 {
@@ -1824,7 +1823,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R5 {
@@ -1834,7 +1833,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R6 {
@@ -1844,7 +1843,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R7 {
@@ -1854,7 +1853,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R8 {
@@ -1864,7 +1863,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object R9 {
@@ -1874,7 +1873,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object tokens {
@@ -1884,7 +1883,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object creationInfo {
@@ -1894,7 +1893,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[Ref[Box]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Box]] = unapply(exp.node)
     }
 
     object executeFromRegister {
@@ -1904,7 +1903,7 @@ object Box extends EntityObject("Box") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Box], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
   }
 
@@ -2167,7 +2166,7 @@ object AvlTree extends EntityObject("AvlTree") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefAvlTree(p: Ref[AvlTree]): AvlTree = {
-    if (p.rhs.isInstanceOf[AvlTree]) p.rhs.asInstanceOf[AvlTree]
+    if (p.node.isInstanceOf[AvlTree]) p.node.asInstanceOf[AvlTree]
     else
       AvlTreeAdapter(p)
   }
@@ -2195,7 +2194,7 @@ object AvlTree extends EntityObject("AvlTree") {
     override def toString = "AvlTree"
   }
   implicit def unrefAvlTreeCompanionCtor(p: Ref[AvlTreeCompanionCtor]): AvlTreeCompanionCtor =
-    p.rhs.asInstanceOf[AvlTreeCompanionCtor]
+    p.node.asInstanceOf[AvlTreeCompanionCtor]
 
   lazy val RAvlTree: Ref[AvlTreeCompanionCtor] = new AvlTreeCompanionCtor {
     private val thisClass = classOf[AvlTreeCompanion]
@@ -2345,7 +2344,7 @@ object PreHeader extends EntityObject("PreHeader") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefPreHeader(p: Ref[PreHeader]): PreHeader = {
-    if (p.rhs.isInstanceOf[PreHeader]) p.rhs.asInstanceOf[PreHeader]
+    if (p.node.isInstanceOf[PreHeader]) p.node.asInstanceOf[PreHeader]
     else
       PreHeaderAdapter(p)
   }
@@ -2373,7 +2372,7 @@ object PreHeader extends EntityObject("PreHeader") {
     override def toString = "PreHeader"
   }
   implicit def unrefPreHeaderCompanionCtor(p: Ref[PreHeaderCompanionCtor]): PreHeaderCompanionCtor =
-    p.rhs.asInstanceOf[PreHeaderCompanionCtor]
+    p.node.asInstanceOf[PreHeaderCompanionCtor]
 
   lazy val RPreHeader: Ref[PreHeaderCompanionCtor] = new PreHeaderCompanionCtor {
     private val thisClass = classOf[PreHeaderCompanion]
@@ -2635,7 +2634,7 @@ object Header extends EntityObject("Header") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefHeader(p: Ref[Header]): Header = {
-    if (p.rhs.isInstanceOf[Header]) p.rhs.asInstanceOf[Header]
+    if (p.node.isInstanceOf[Header]) p.node.asInstanceOf[Header]
     else
       HeaderAdapter(p)
   }
@@ -2663,7 +2662,7 @@ object Header extends EntityObject("Header") {
     override def toString = "Header"
   }
   implicit def unrefHeaderCompanionCtor(p: Ref[HeaderCompanionCtor]): HeaderCompanionCtor =
-    p.rhs.asInstanceOf[HeaderCompanionCtor]
+    p.node.asInstanceOf[HeaderCompanionCtor]
 
   lazy val RHeader: Ref[HeaderCompanionCtor] = new HeaderCompanionCtor {
     private val thisClass = classOf[HeaderCompanion]
@@ -2897,7 +2896,7 @@ object Context extends EntityObject("Context") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefContext(p: Ref[Context]): Context = {
-    if (p.rhs.isInstanceOf[Context]) p.rhs.asInstanceOf[Context]
+    if (p.node.isInstanceOf[Context]) p.node.asInstanceOf[Context]
     else
       ContextAdapter(p)
   }
@@ -2925,7 +2924,7 @@ object Context extends EntityObject("Context") {
     override def toString = "Context"
   }
   implicit def unrefContextCompanionCtor(p: Ref[ContextCompanionCtor]): ContextCompanionCtor =
-    p.rhs.asInstanceOf[ContextCompanionCtor]
+    p.node.asInstanceOf[ContextCompanionCtor]
 
   lazy val RContext: Ref[ContextCompanionCtor] = new ContextCompanionCtor {
     private val thisClass = classOf[ContextCompanion]
@@ -2939,7 +2938,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object OUTPUTS {
@@ -2949,7 +2948,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object INPUTS {
@@ -2959,7 +2958,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object dataInputs {
@@ -2969,7 +2968,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object HEIGHT {
@@ -2979,7 +2978,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object SELF {
@@ -2989,7 +2988,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object selfBoxIndex {
@@ -2999,7 +2998,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object LastBlockUtxoRootHash {
@@ -3009,7 +3008,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object headers {
@@ -3019,7 +3018,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object preHeader {
@@ -3029,7 +3028,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object minerPubKey {
@@ -3039,7 +3038,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
 
     object getVar {
@@ -3049,7 +3048,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[(Ref[Context], Ref[Byte], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[Context], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[Context], Ref[Byte], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object vars {
@@ -3059,7 +3058,7 @@ object Context extends EntityObject("Context") {
           Nullable(res).asInstanceOf[Nullable[Ref[Context]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[Context]] = unapply(exp.node)
     }
   }
 
@@ -3140,7 +3139,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSigmaContract(p: Ref[SigmaContract]): SigmaContract = {
-    if (p.rhs.isInstanceOf[SigmaContract]) p.rhs.asInstanceOf[SigmaContract]
+    if (p.node.isInstanceOf[SigmaContract]) p.node.asInstanceOf[SigmaContract]
     else
       SigmaContractAdapter(p)
   }
@@ -3168,7 +3167,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
     override def toString = "SigmaContract"
   }
   implicit def unrefSigmaContractCompanionCtor(p: Ref[SigmaContractCompanionCtor]): SigmaContractCompanionCtor =
-    p.rhs.asInstanceOf[SigmaContractCompanionCtor]
+    p.node.asInstanceOf[SigmaContractCompanionCtor]
 
   lazy val RSigmaContract: Ref[SigmaContractCompanionCtor] = new SigmaContractCompanionCtor {
     private val thisClass = classOf[SigmaContractCompanion]
@@ -3572,7 +3571,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   // entityUnref: single unref method for each type family
   implicit def unrefSigmaDslBuilder(p: Ref[SigmaDslBuilder]): SigmaDslBuilder = {
-    if (p.rhs.isInstanceOf[SigmaDslBuilder]) p.rhs.asInstanceOf[SigmaDslBuilder]
+    if (p.node.isInstanceOf[SigmaDslBuilder]) p.node.asInstanceOf[SigmaDslBuilder]
     else
       SigmaDslBuilderAdapter(p)
   }
@@ -3600,7 +3599,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
     override def toString = "SigmaDslBuilder"
   }
   implicit def unrefSigmaDslBuilderCompanionCtor(p: Ref[SigmaDslBuilderCompanionCtor]): SigmaDslBuilderCompanionCtor =
-    p.rhs.asInstanceOf[SigmaDslBuilderCompanionCtor]
+    p.node.asInstanceOf[SigmaDslBuilderCompanionCtor]
 
   lazy val RSigmaDslBuilder: Ref[SigmaDslBuilderCompanionCtor] = new SigmaDslBuilderCompanionCtor {
     private val thisClass = classOf[SigmaDslBuilderCompanion]
@@ -3614,7 +3613,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object Monoids {
@@ -3624,7 +3623,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object Costing {
@@ -3634,7 +3633,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object CostModel {
@@ -3644,7 +3643,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object verifyZK {
@@ -3654,7 +3653,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Thunk[SigmaProp]])] = unapply(exp.node)
     }
 
     object atLeast {
@@ -3664,7 +3663,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Int], Ref[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Int], Ref[Coll[SigmaProp]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Int], Ref[Coll[SigmaProp]])] = unapply(exp.node)
     }
 
     object allOf {
@@ -3674,7 +3673,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.node)
     }
 
     object allZK {
@@ -3684,7 +3683,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])] = unapply(exp.node)
     }
 
     object anyOf {
@@ -3694,7 +3693,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.node)
     }
 
     object anyZK {
@@ -3704,7 +3703,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[SigmaProp]])] = unapply(exp.node)
     }
 
     object xorOf {
@@ -3714,7 +3713,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Boolean]])] = unapply(exp.node)
     }
 
     object PubKey {
@@ -3724,7 +3723,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[String])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[String])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[String])] = unapply(exp.node)
     }
 
     object sigmaProp {
@@ -3734,7 +3733,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Boolean])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Boolean])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Boolean])] = unapply(exp.node)
     }
 
     object blake2b256 {
@@ -3744,7 +3743,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
     object sha256 {
@@ -3754,7 +3753,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
     object byteArrayToBigInt {
@@ -3764,7 +3763,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
     object longToByteArray {
@@ -3774,7 +3773,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Long])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Long])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Long])] = unapply(exp.node)
     }
 
     object byteArrayToLong {
@@ -3784,7 +3783,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
     object proveDlog {
@@ -3794,7 +3793,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement])] = unapply(exp.node)
     }
 
     object proveDHTuple {
@@ -3804,7 +3803,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement], Ref[GroupElement])] = unapply(exp.node)
     }
 
     object groupGenerator {
@@ -3814,7 +3813,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[Ref[SigmaDslBuilder]]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[Ref[SigmaDslBuilder]] = unapply(exp.node)
     }
 
     object substConstants {
@@ -3824,7 +3823,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Int]], Ref[Coll[T]], Elem[T]) forSome {type T}]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Int]], Ref[Coll[T]], Elem[T]) forSome {type T}] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Int]], Ref[Coll[T]], Elem[T]) forSome {type T}] = unapply(exp.node)
     }
 
     object decodePoint {
@@ -3834,7 +3833,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]])] = unapply(exp.node)
     }
 
     object avlTree {
@@ -3844,7 +3843,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Byte], Ref[Coll[Byte]], Ref[Int], Ref[WOption[Int]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Byte], Ref[Coll[Byte]], Ref[Int], Ref[WOption[Int]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Byte], Ref[Coll[Byte]], Ref[Int], Ref[WOption[Int]])] = unapply(exp.node)
     }
 
     object xor {
@@ -3854,7 +3853,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
           Nullable(res).asInstanceOf[Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Byte]])]]
         case _ => Nullable.None
       }
-      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Byte]])] = unapply(exp.rhs)
+      def unapply(exp: Sym): Nullable[(Ref[SigmaDslBuilder], Ref[Coll[Byte]], Ref[Coll[Byte]])] = unapply(exp.node)
     }
   }
 

@@ -508,7 +508,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val SM       = SizeMethods
 
   def mkNormalizedOpCost(costedValue: Sym, costs: Seq[Ref[Int]]): Ref[Int] = {
-    val (args, rests) = costs.partition(_.rhs.isInstanceOf[OpCost])
+    val (args, rests) = costs.partition(_.node.isInstanceOf[OpCost])
     val restSum =
       if (rests.isEmpty) IntZero
       else rests.reduce((x, y) => x + y)
@@ -577,7 +577,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       // Rule: ThunkDef(x, Nil).force => x
       case ThunkForce(Def(ThunkDef(root, sch))) if sch.isEmpty => root
 
-      case SM.dataSize(size) => size.rhs match {
+      case SM.dataSize(size) => size.node match {
         case CSizeCollCtor(sizes) => sizes match {
           case CBM.replicate(_, n, s: RSize[a]@unchecked) => s.dataSize * n.toLong
           case EValOfSizeColl(eVal) if eVal.isConstantSize => sizes.length.toLong * typeSize(eVal)
@@ -642,16 +642,16 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val cost = opCost(resV, Array(preFoldCost), resC)
         RCCostedPrim(resV, cost, resS)
 
-      case CostedM.cost(costed) => costed.rhs match {
+      case CostedM.cost(costed) => costed.node match {
         case CCostedCollCtor(values, costs, _, accCost) =>
-          accCost.rhs match {
+          accCost.node match {
             case _: OpCost =>
               opCost(values, Array(accCost), costs.sum(intPlusMonoid))    // OpCost should be in args position
             case _ =>
               opCost(values, Nil, costs.sum(intPlusMonoid) + accCost)
           }
         case CCostedOptionCtor(v, costOpt, _, accCost) =>
-          accCost.rhs match {
+          accCost.node match {
             case _: OpCost =>
               opCost(v, Array(accCost), costOpt.getOrElse(Thunk(IntZero)))  // OpCost should be in args position
             case _ =>
@@ -671,7 +671,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         case _ => super.rewriteDef(d)
       }
 
-      case CostedM.value(costed) => costed.rhs match {
+      case CostedM.value(costed) => costed.node match {
         case CCostedFuncCtor(_, func: RFuncCosted[a,b], _,_) => func.sliceCalc
 
         // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
@@ -711,7 +711,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
       case OpCost(_, id, args, cost) =>
         val zero = IntZero
-        if (isCostingProcess && cost == zero && args.length == 1 && args(0).rhs.isInstanceOf[OpCost]) {
+        if (isCostingProcess && cost == zero && args.length == 1 && args(0).node.isInstanceOf[OpCost]) {
           args(0) // Rule: OpCode(_,_, Seq(x @ OpCode(...)), 0) ==> x,
         }
         else
@@ -757,7 +757,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val costs = colBuilder.replicate(sizes.length, IntZero)
       mkCostedColl(coll, costs, sizes, c)
     case _ =>
-      !!!(s"Expected Size[Coll[A]] node but was $s -> ${s.rhs}")
+      !!!(s"Expected Size[Coll[A]] node but was $s -> ${s.node}")
   }
 
   def costedPrimToOption[A](opt: Ref[WOption[A]], c: Ref[Int], s: RSize[WOption[A]]) = s.elem.asInstanceOf[Any] match {
@@ -765,7 +765,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val sizeOpt = asSizeOption(s).sizeOpt
       mkCostedOption(opt, SomeIntZero, sizeOpt, c)
     case _ =>
-      !!!(s"Expected RCSizeOption node but was $s -> ${s.rhs}")
+      !!!(s"Expected RCSizeOption node but was $s -> ${s.node}")
   }
 
   def costedPrimToPair[A,B](p: Ref[(A,B)], c: Ref[Int], s: RSize[(A,B)]) = s.elem.asInstanceOf[Any] match {
@@ -777,7 +777,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       val newCost = if (c == zero) zero else opCost(Pair(l, r), Array(c), zero)
       RCCostedPair(l, r, newCost)
     case _ =>
-      !!!(s"Expected RCSizePair node but was $s -> ${s.rhs}")
+      !!!(s"Expected RCSizePair node but was $s -> ${s.node}")
   }
 
   override def rewriteNonInvokableMethodCall(mc: MethodCall): Ref[_] = mc match {
@@ -1115,7 +1115,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   @inline final def isContextDependant(sym: Sym): Boolean =
     if (sym.isConst) true
     else {
-      _contextDependantNodes(sym.rhs.nodeId)
+      _contextDependantNodes(sym.node.nodeId)
     }
 
   /** @hotspot don't beautify the code */
@@ -1138,7 +1138,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     */
   override protected def createDefinition[T](optScope: Nullable[ThunkScope], s: Ref[T], d: Def[T]): Ref[T] = {
     val res = super.createDefinition(optScope, s, d)
-    val d1 = res.rhs
+    val d1 = res.node
     // the node is of Context type  => `context-dependent`
     // all arguments are `context-dependent`  =>  d is `context-dependent`
     val isDependent =
@@ -1829,7 +1829,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val costs = colBuilder.replicate(cs.length, IntZero)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
 //        val args = vs.zip(cs).map { case (v,c) =>
-//          if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+//          if (c.node.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
 //        }
         val args = mutable.ArrayBuilder.make[Ref[Int]]
         val uniqueArgs = scalan.AVHashMap[Ref[Any], (Ref[Any], Ref[Int])](10)
@@ -1841,7 +1841,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
               val v = vc._1
               val c = vc._2
               uniqueArgs.put(v, vc)
-              val arg = if (c.rhs.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
+              val arg = if (c.node.isInstanceOf[OpCost]) c else opCost(v, Nil, c)
               args += arg
           }
         }

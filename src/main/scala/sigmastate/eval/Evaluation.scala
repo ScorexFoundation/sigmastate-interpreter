@@ -323,7 +323,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Recursively traverse the hierarchy of loop operations. */
   private def traverseScope(scope: AstGraph, level: Int): Unit = {
     scope.schedule.foreach { te =>
-      te.rhs match {
+      te.node match {
         case op @ LoopOperation(bodyLam) =>
           CheckCostFuncOperation(this)(getOpCodeEx(op))
           val nextLevel = level + 1
@@ -346,7 +346,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       if (debugModeSanityChecks) {
         val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
         lam.flatSchedule.foreach { sym =>
-          sym.rhs.deps.foreach { usedSym =>
+          sym.node.deps.foreach { usedSym =>
             val usages = backDeps.getOrElseUpdate(usedSym, new ArrayBuffer())
             usages += sym
           }
@@ -362,15 +362,15 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             .foreach { sym =>
               val usages = backDeps.getOrElse(sym, new ArrayBuffer())
               usages.foreach { usageSym =>
-                usageSym.rhs match {
+                usageSym.node match {
                   case _: Lambda[_,_] => //ok
                   case _: ThunkDef[_] => //ok
                   case OpCost(_, _, args, _) if args.contains(sym) => //ok
                   case OpCost(_, _, _, opCost) if opCost == sym =>
-                    println(s"INFO: OpCost usage of node $sym -> ${sym.rhs} in opCost poistion in $usageSym -> ${usageSym.rhs}")
+                    println(s"INFO: OpCost usage of node $sym -> ${sym.node} in opCost poistion in $usageSym -> ${usageSym.node}")
                   //ok
                   case _ =>
-                    !!!(s"Non OpCost usage of node $sym -> ${sym.rhs} in $usageSym -> ${usageSym.rhs}: ${usageSym.elem}: (usages = ${usages.map(_.rhs)})")
+                    !!!(s"Non OpCost usage of node $sym -> ${sym.node} in $usageSym -> ${usageSym.node}: ${usageSym.elem}: (usages = ${usages.map(_.node)})")
                 }
               }
             }
@@ -381,7 +381,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   /** Finds SigmaProp.isProven method calls in the given Lambda `f` */
   def findIsProven[T](f: Ref[Context => T]): Option[Sym] = {
     val Def(Lambda(lam,_,_,_)) = f
-    val s = lam.flatSchedule.find(sym => sym.rhs match {
+    val s = lam.flatSchedule.find(sym => sym.node match {
       case SigmaM.isValid(_) => true
       case _ => false
     })
@@ -511,8 +511,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
         * In the latter case we expect is has already been accumulated. */
       @inline private def getArgCostFromEnv(op: OpCost, dataEnv: DataEnv, s: Sym): Int = {
         val res = getFromEnv(dataEnv, s).asInstanceOf[Int]
-        assert(!isVisited(s), s"Unexpected visited arg $s -> ${s.rhs} of $op")
-        assert(!s.rhs.isInstanceOf[OpCost], s"Unexpected not-visited OpCost arg $s -> ${s.rhs} of $op")
+        assert(!isVisited(s), s"Unexpected visited arg $s -> ${s.node} of $op")
+        assert(!s.node.isInstanceOf[OpCost], s"Unexpected not-visited OpCost arg $s -> ${s.node} of $op")
         res
       }
 
@@ -629,7 +629,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       object In { def unapply(s: Sym): Option[Any] = Some(getFromEnv(dataEnv, s)) }
       def out(v: Any): (DataEnv, Sym) = { val vBoxed = v.asInstanceOf[AnyRef]; (dataEnv + (sym -> vBoxed), sym) }
       try {
-        val res: (DataEnv, Sym) = sym.rhs match {
+        val res: (DataEnv, Sym) = sym.node match {
           case d @ ContextM.getVar(ctx @ In(ctxObj: CostingDataContext), _, elem) =>
             val mc = d.asInstanceOf[MethodCall]
             val declaredTpe = elemToSType(elem)
@@ -656,7 +656,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
                _: WSpecialPredefCompanion |
                MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) =>
-            out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.rhs}")))
+            out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>
             out(prop)
@@ -878,14 +878,14 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             out(sigmaDslBuilderValue.Colls.fromArray(items)(AnyType))
 
           case _ =>
-            !!!(s"Don't know how to evaluate($sym -> ${sym.rhs})")
+            !!!(s"Don't know how to evaluate($sym -> ${sym.node})")
         }
         onEvaluatedGraphNode(res._1, res._2, res._1(res._2))
         res
       }
       catch {
         case e: Throwable =>
-          !!!(s"Error in Evaluation.compile.evaluate($sym -> ${sym.rhs})", e)
+          !!!(s"Error in Evaluation.compile.evaluate($sym -> ${sym.node})", e)
       }
     }
 

@@ -10,7 +10,6 @@ package impl {
 trait SigmaDslCostedDefs extends scalan.Scalan with SigmaDslCosted {
   self: SigmaLibrary =>
 import IsoUR._
-import Converter._
 import AnyValue._
 import AvlTree._
 import Box._
@@ -96,8 +95,8 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
   lazy val CSizeAnyValueRef: Ref[CSizeAnyValueCompanionCtor] = new CSizeAnyValueCompanionCtor
   lazy val RCSizeAnyValue: CSizeAnyValueCompanionCtor = unrefCSizeAnyValueCompanion(CSizeAnyValueRef)
   implicit def unrefCSizeAnyValueCompanion(p: Ref[CSizeAnyValueCompanionCtor]): CSizeAnyValueCompanionCtor = {
-    if (p.rhs.isInstanceOf[CSizeAnyValueCompanionCtor])
-      p.rhs.asInstanceOf[CSizeAnyValueCompanionCtor]
+    if (p.node.isInstanceOf[CSizeAnyValueCompanionCtor])
+      p.node.asInstanceOf[CSizeAnyValueCompanionCtor]
     else
       unrefDelegate[CSizeAnyValueCompanionCtor](p)
   }
@@ -105,8 +104,8 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
   implicit case object CSizeAnyValueCompanionElem extends CompanionElem[CSizeAnyValueCompanionCtor]
 
   implicit def unrefCSizeAnyValue(p: Ref[CSizeAnyValue]): CSizeAnyValue = {
-    if (p.rhs.isInstanceOf[CSizeAnyValue])
-      p.rhs.asInstanceOf[CSizeAnyValue]
+    if (p.node.isInstanceOf[CSizeAnyValue])
+      p.node.asInstanceOf[CSizeAnyValue]
     else
       unrefDelegate[CSizeAnyValue](p)
   }
@@ -193,8 +192,8 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
   lazy val CSizeSigmaPropRef: Ref[CSizeSigmaPropCompanionCtor] = new CSizeSigmaPropCompanionCtor
   lazy val RCSizeSigmaProp: CSizeSigmaPropCompanionCtor = unrefCSizeSigmaPropCompanion(CSizeSigmaPropRef)
   implicit def unrefCSizeSigmaPropCompanion(p: Ref[CSizeSigmaPropCompanionCtor]): CSizeSigmaPropCompanionCtor = {
-    if (p.rhs.isInstanceOf[CSizeSigmaPropCompanionCtor])
-      p.rhs.asInstanceOf[CSizeSigmaPropCompanionCtor]
+    if (p.node.isInstanceOf[CSizeSigmaPropCompanionCtor])
+      p.node.asInstanceOf[CSizeSigmaPropCompanionCtor]
     else
       unrefDelegate[CSizeSigmaPropCompanionCtor](p)
   }
@@ -202,8 +201,8 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
   implicit case object CSizeSigmaPropCompanionElem extends CompanionElem[CSizeSigmaPropCompanionCtor]
 
   implicit def unrefCSizeSigmaProp(p: Ref[CSizeSigmaProp]): CSizeSigmaProp = {
-    if (p.rhs.isInstanceOf[CSizeSigmaProp])
-      p.rhs.asInstanceOf[CSizeSigmaProp]
+    if (p.node.isInstanceOf[CSizeSigmaProp])
+      p.node.asInstanceOf[CSizeSigmaProp]
     else
       unrefDelegate[CSizeSigmaProp](p)
   }
@@ -301,8 +300,8 @@ object CSizeBox extends EntityObject("CSizeBox") {
   lazy val CSizeBoxRef: Ref[CSizeBoxCompanionCtor] = new CSizeBoxCompanionCtor
   lazy val RCSizeBox: CSizeBoxCompanionCtor = unrefCSizeBoxCompanion(CSizeBoxRef)
   implicit def unrefCSizeBoxCompanion(p: Ref[CSizeBoxCompanionCtor]): CSizeBoxCompanionCtor = {
-    if (p.rhs.isInstanceOf[CSizeBoxCompanionCtor])
-      p.rhs.asInstanceOf[CSizeBoxCompanionCtor]
+    if (p.node.isInstanceOf[CSizeBoxCompanionCtor])
+      p.node.asInstanceOf[CSizeBoxCompanionCtor]
     else
       unrefDelegate[CSizeBoxCompanionCtor](p)
   }
@@ -310,8 +309,8 @@ object CSizeBox extends EntityObject("CSizeBox") {
   implicit case object CSizeBoxCompanionElem extends CompanionElem[CSizeBoxCompanionCtor]
 
   implicit def unrefCSizeBox(p: Ref[CSizeBox]): CSizeBox = {
-    if (p.rhs.isInstanceOf[CSizeBox])
-      p.rhs.asInstanceOf[CSizeBox]
+    if (p.node.isInstanceOf[CSizeBox])
+      p.node.asInstanceOf[CSizeBox]
     else
       unrefDelegate[CSizeBox](p)
   }
@@ -409,8 +408,8 @@ object CSizeContext extends EntityObject("CSizeContext") {
   lazy val CSizeContextRef: Ref[CSizeContextCompanionCtor] = new CSizeContextCompanionCtor
   lazy val RCSizeContext: CSizeContextCompanionCtor = unrefCSizeContextCompanion(CSizeContextRef)
   implicit def unrefCSizeContextCompanion(p: Ref[CSizeContextCompanionCtor]): CSizeContextCompanionCtor = {
-    if (p.rhs.isInstanceOf[CSizeContextCompanionCtor])
-      p.rhs.asInstanceOf[CSizeContextCompanionCtor]
+    if (p.node.isInstanceOf[CSizeContextCompanionCtor])
+      p.node.asInstanceOf[CSizeContextCompanionCtor]
     else
       unrefDelegate[CSizeContextCompanionCtor](p)
   }
@@ -418,8 +417,8 @@ object CSizeContext extends EntityObject("CSizeContext") {
   implicit case object CSizeContextCompanionElem extends CompanionElem[CSizeContextCompanionCtor]
 
   implicit def unrefCSizeContext(p: Ref[CSizeContext]): CSizeContext = {
-    if (p.rhs.isInstanceOf[CSizeContext])
-      p.rhs.asInstanceOf[CSizeContext]
+    if (p.node.isInstanceOf[CSizeContext])
+      p.node.asInstanceOf[CSizeContext]
     else
       unrefDelegate[CSizeContext](p)
   }
@@ -501,8 +500,8 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
   lazy val CSizeBuilderRef: Ref[CSizeBuilderCompanionCtor] = new CSizeBuilderCompanionCtor
   lazy val RCSizeBuilder: CSizeBuilderCompanionCtor = unrefCSizeBuilderCompanion(CSizeBuilderRef)
   implicit def unrefCSizeBuilderCompanion(p: Ref[CSizeBuilderCompanionCtor]): CSizeBuilderCompanionCtor = {
-    if (p.rhs.isInstanceOf[CSizeBuilderCompanionCtor])
-      p.rhs.asInstanceOf[CSizeBuilderCompanionCtor]
+    if (p.node.isInstanceOf[CSizeBuilderCompanionCtor])
+      p.node.asInstanceOf[CSizeBuilderCompanionCtor]
     else
       unrefDelegate[CSizeBuilderCompanionCtor](p)
   }
@@ -510,8 +509,8 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
   implicit case object CSizeBuilderCompanionElem extends CompanionElem[CSizeBuilderCompanionCtor]
 
   implicit def unrefCSizeBuilder(p: Ref[CSizeBuilder]): CSizeBuilder = {
-    if (p.rhs.isInstanceOf[CSizeBuilder])
-      p.rhs.asInstanceOf[CSizeBuilder]
+    if (p.node.isInstanceOf[CSizeBuilder])
+      p.node.asInstanceOf[CSizeBuilder]
     else
       unrefDelegate[CSizeBuilder](p)
   }
