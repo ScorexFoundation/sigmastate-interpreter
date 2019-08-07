@@ -2,14 +2,17 @@ package org.ergoplatform
 
 import io.circe._
 import io.circe.syntax._
+import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, R4, R5, R6, R7, R8}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
 import scorex.util.ModifierId
+import scorex.util.encode.Base16
 import sigmastate.{AvlTreeData, SType}
-import sigmastate.Values.{ErgoTree, EvaluatedValue}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongArrayConstant, SigmaPropConstant}
+import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
 import sigmastate.serialization.SerializationSpecification
 import special.collection.Coll
 import special.sigma.{Header, PreHeader}
@@ -113,5 +116,30 @@ class JsonSerializationSpec extends SigmaTestingCommons with SerializationSpecif
 
   property("SigmaValidationSettingsEncoder should be encoded into JSON and decoded back correctly") {
     jsonRoundTrip(ValidationRules.currentSettings)
+  }
+
+  property("ErgoBox.additionalRegisters should be encoded into JSON in certain order") {
+    val minerPkHex = "0326df75ea615c18acc6bb4b517ac82795872f388d5d180aac90eaa84de750b942"
+    val minerPk = Base16.decode(minerPkHex).map { point =>
+      ProveDlog(
+        CryptoConstants.dlogGroup.curve.decodePoint(point).asInstanceOf[CryptoConstants.EcPointType]
+      )
+    }.get
+    val regs = Map(
+      R7 -> LongArrayConstant(Array(1L, 2L, 1234123L)),
+      R4 -> ByteConstant(1),
+      R6 -> IntConstant(10),
+      R5 -> SigmaPropConstant(minerPk),
+      R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get),
+    )
+    // registers should be ordered by their number in Json
+    regs.asJson.spaces2 shouldEqual
+      """{
+        |  "R4" : "0201",
+        |  "R5" : "08cd0326df75ea615c18acc6bb4b517ac82795872f388d5d180aac90eaa84de750b942",
+        |  "R6" : "0414",
+        |  "R7" : "1103020496d39601",
+        |  "R8" : "0e21123456123456123456123456123456123456123456123456123456123456123456"
+        |}""".stripMargin
   }
 }

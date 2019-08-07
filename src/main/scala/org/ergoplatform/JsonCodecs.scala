@@ -276,15 +276,21 @@ trait JsonCodecs {
     decodeErgoTree(_.asInstanceOf[ErgoTree])
   }
 
+  implicit def registersEncoder[T <: EvaluatedValue[_ <: SType]]: Encoder[Map[NonMandatoryRegisterId, T]] = { m =>
+    Json.obj(
+      m.toSeq
+        .sortBy(_._1.number)
+        .map { case (k, v) => registerIdEncoder(k) -> evaluatedValueEncoder(v) }: _*)
+  }
+
   implicit val ergoBoxEncoder: Encoder[ErgoBox] = { box =>
     Json.obj(
       "boxId" -> box.id.asJson,
       "value" -> box.value.asJson,
       "ergoTree" -> ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(box.ergoTree).asJson,
-      "assets" -> box.additionalTokens.toArray.toSeq
-        .asJson, //(Encoder.encodeSeq(Encoder.encodeTuple2(digest32Encoder, Encoder.encodeLong))),
+      "assets" -> box.additionalTokens.toArray.toSeq.asJson,
       "creationHeight" -> box.creationHeight.asJson,
-      "additionalRegisters" -> box.additionalRegisters.asInstanceOf[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]].asJson,
+      "additionalRegisters" -> box.additionalRegisters.asJson,
       "transactionId" -> box.transactionId.asJson,
       "index" -> box.index.asJson
     )

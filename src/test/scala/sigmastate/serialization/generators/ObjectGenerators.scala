@@ -170,7 +170,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
 
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
-    (0 until cnt)
+    util.Random.shuffle((0 until cnt).toList)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
@@ -305,11 +305,15 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     candidate <- ergoBoxCandidateGen(tokens)
   } yield candidate.toBox(tId, boxId)
 
+  val additionalRegistersGen: Gen[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]] = for {
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
+    regs <- Gen.sequence(additionalRegistersGen(regNum))
+  } yield regs.asScala.toMap
+
   def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     b <- ergoTreeGen.filter(t => t.bytes.length < MaxPropositionBytes.value)
-    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
-    ar <- Gen.sequence(additionalRegistersGen(regNum))
+    ar <- additionalRegistersGen
     tokensCount <- Gen.chooseNum[Int](0, 20)
     tokens <- if(availableTokens.nonEmpty) {
       Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
@@ -318,7 +322,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     }
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
     creationHeight <- heightGen
-  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
+  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(false, v)) }
 
