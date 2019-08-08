@@ -197,7 +197,7 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
 
 lazy val sigma = (project in file("."))
     .aggregate(sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
-    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency, fv)
     .settings(commonSettings: _*)
 
 lazy val fv = project
