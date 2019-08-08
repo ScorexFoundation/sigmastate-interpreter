@@ -200,6 +200,11 @@ lazy val sigma = (project in file("."))
     .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
     .settings(commonSettings: _*)
 
+lazy val fv = project
+  .in(file("fv"))
+  .enablePlugins(StainlessPlugin)
+  .settings(commonSettings: _*)
+
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "master"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
