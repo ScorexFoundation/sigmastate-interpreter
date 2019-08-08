@@ -85,6 +85,14 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
 
+  /* NOHF PROOF:
+  Changed: make `self` a property returning box from `boxesToSpend`.
+  Motivation: avoid DRY and avoid user error when trying to get the box from `boxesToSpend` supplying wrong index.
+  Safety: selfIndex are used internally in ergo.
+  Examined ergo code: all that leads to ErgoLikeContext creation.
+  */
+  val self: ErgoBox = boxesToSpend(selfIndex)
+
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
       lastBlockUtxoRoot, headers, preHeader,
