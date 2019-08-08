@@ -2,7 +2,6 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
