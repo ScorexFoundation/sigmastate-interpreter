@@ -26,7 +26,7 @@ object ErgoLikeContextTesting {
   val noBoxes: IndexedSeq[ErgoBox] = IndexedSeq.empty[ErgoBox]
   val noHeaders: Coll[Header] = CostingSigmaDslBuilder.Colls.emptyColl[Header]
 
-  private def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
+  def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
     parentId = Colls.emptyColl[Byte],
     timestamp = 3,
     nBits = 0,
