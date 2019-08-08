@@ -1,15 +1,15 @@
 package sigmastate.utxo
 
 import java.math.BigInteger
+
 import org.ergoplatform.ErgoBox.{R6, R8}
-import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import special.sigma.InvalidType
@@ -77,8 +77,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       reg2 -> IntConstant(10)))
     val tx = createTransaction(newBox1)
 
-    val ctx = ErgoLikeContext(currentHeight = 0,
-      lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
+    val ctx = ErgoLikeContextTesting(currentHeight = 0,
+      lastBlockUtxoRoot = AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx, self = boxToSpend)
 
     val pr = prover.prove(env + (ScriptNameProp -> s"${name}_prove"), prop, ctx, fakeMessage).fold(t => throw t, identity)

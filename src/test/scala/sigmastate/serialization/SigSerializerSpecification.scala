@@ -9,7 +9,7 @@ import sigmastate.Values.{SigmaBoolean, SigmaPropConstant, SigmaPropValue, Value
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.Transformer
 
@@ -72,10 +72,10 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
       val expr = sb.toSigmaProp
       val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
-      val ctx = ErgoLikeContext(
+      val ctx = ErgoLikeContextTesting(
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
         spendingTransaction = ErgoLikeTransaction.dummy,
         self = fakeSelf)

@@ -2,27 +2,20 @@ package org.ergoplatform
 
 import java.util
 
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.Height
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules}
-import scalan.RType
-import scalan.RType._
+import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, InterpreterContext}
+import sigmastate.interpreter.{ContextExtension, InterpreterContext}
+import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
-import sigmastate.serialization.{GroupElementSerializer, OpCodes, SigmaSerializer}
 import special.collection.Coll
 import special.sigma
 import special.sigma.{AnyValue, Box, GroupElement, Header, PreHeader}
 import spire.syntax.all.cfor
-
-import scala.util.Try
-
-case class BlockchainState(currentHeight: Height, lastBlockUtxoRoot: AvlTreeData)
 
 /**
   * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
@@ -53,26 +46,47 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val initCost: Long
                  ) extends InterpreterContext {
 
+  /* NOHF PROOF:
+
+   */
   assert(preHeader != null, "preHeader cannot be null")
+  /* NOHF PROOF:
+
+   */
   assert(spendingTransaction != null, "spendingTransaction cannot be null")
+  /* NOHF PROOF:
+
+ */
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
   cfor(0)(_ < headers.length, _ + 1) { i =>
     if (i > 0) assert(headers(i - 1).parentId == headers(i).id, s"Incorrect chain: ${headers(i - 1).parentId},${headers(i).id}")
   }
   assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
+  /* NOHF PROOF:
+
+ */
   assert(spendingTransaction.dataInputs.length == dataBoxes.length &&
     spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
 
+  /* NOHF PROOF:
+
+ */
   // height of a block with the current `spendingTransaction`
   val currentHeight: Height = preHeader.height
 
+  /* NOHF PROOF:
+
+ */
   //  public key of a miner of the block with the current `spendingTransaction`
   val minerPubkey: GroupElement = preHeader.minerPk
 
+  /* NOHF PROOF:
+
+ */
   val self: ErgoBox = boxesToSpend(selfIndex)
 
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
@@ -100,13 +114,35 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       lastBlockUtxoRoot, headers, preHeader,
       dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
 
-  import ErgoLikeContext._
-  import Evaluation._
 
   override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     implicit val IRForBox: Evaluation = IR
+    import Evaluation._
+
+    def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
+      val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
+      val res = new Array[AnyValue](maxKey + 1)
+      for ((id, v) <- m) {
+        assert(res(id) == null, s"register $id is defined more then once")
+        res(id) = v
+      }
+      IR.sigmaDslBuilderValue.Colls.fromArray(res)
+    }
+
+    implicit class ErgoBoxOps(val ebox: ErgoBox) {
+      def toTestBox(isCost: Boolean): Box = {
+        /* NOHF PROOF:
+
+  */
+        new CostingBox(isCost, ebox)
+      }
+    }
+
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
+    /* NOHF PROOF:
+
+*/
     val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
@@ -150,95 +186,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 }
 
 object ErgoLikeContext {
+
   type Height = Int
-
-  /* NO HF PROOF:
-  Changed: val dummyPubkey from `Array[Byte] = Array.fill(32)(0: Byte)` to `GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)`
-  Motivation: to avoid exception on deserialization(wrong size, needs to be 33 bytes) and later in GroupElement.toString (infinity was not handled) and to provide more practical value in tests.
-  Safety:
-  Used only in tests and not used in ergo.
-  Examined ergo code: all (with IDE's "find usages" action).
-*/
-  val dummyPubkey: Array[Byte] = GroupElementSerializer.toBytes(CryptoConstants.dlogGroup.generator)
-
-  val noBoxes = IndexedSeq.empty[ErgoBox]
-  val noHeaders = CostingSigmaDslBuilder.Colls.emptyColl[Header]
-  def dummyPreHeader(currentHeight: Height, minerPk: Array[Byte]): PreHeader = CPreHeader(0,
-    parentId = Colls.emptyColl[Byte],
-    timestamp = 3,
-    nBits = 0,
-    height = currentHeight,
-    minerPk = GroupElementSerializer.parse(SigmaSerializer.startReader(minerPk)),
-    votes = Colls.emptyColl[Byte]
-  )
 
   /** Maximimum number of headers in `headers` collection of the context. */
   val MaxHeaders = ErgoConstants.MaxHeaders.value
-
-  def apply(currentHeight: Height,
-            lastBlockUtxoRoot: AvlTreeData,
-            minerPubkey: Array[Byte],
-            boxesToSpend: IndexedSeq[ErgoBox],
-            spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-            self: ErgoBox,
-            extension: ContextExtension = ContextExtension.empty,
-            vs: SigmaValidationSettings = ValidationRules.currentSettings) =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey), noBoxes,
-      boxesToSpend, spendingTransaction, boxesToSpend.indexOf(self), extension, vs, ScriptCostLimit.value, 0L)
-
-  def apply(currentHeight: Height,
-            lastBlockUtxoRoot: AvlTreeData,
-            minerPubkey: Array[Byte],
-            dataBoxes: IndexedSeq[ErgoBox],
-            boxesToSpend: IndexedSeq[ErgoBox],
-            spendingTransaction: ErgoLikeTransactionTemplate[_ <: UnsignedInput],
-            selfIndex: Int) =
-    new ErgoLikeContext(lastBlockUtxoRoot, noHeaders, dummyPreHeader(currentHeight, minerPubkey),
-      dataBoxes, boxesToSpend, spendingTransaction, selfIndex, ContextExtension.empty, ValidationRules.currentSettings, ScriptCostLimit.value, 0L)
-
-
-  def dummy(selfDesc: ErgoBox) = ErgoLikeContext(currentHeight = 0,
-    lastBlockUtxoRoot = AvlTreeData.dummy, dummyPubkey, boxesToSpend = IndexedSeq(selfDesc),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq()), self = selfDesc)
-
-  def fromTransaction(tx: ErgoLikeTransaction,
-                      blockchainState: BlockchainState,
-                      boxesReader: ErgoBoxReader,
-                      inputIndex: Int): Try[ErgoLikeContext] = Try {
-
-    val boxes = tx.inputs.map(_.boxId).map(id => boxesReader.byId(id).get)
-
-    val proverExtension = tx.inputs(inputIndex).spendingProof.extension
-
-    ErgoLikeContext(blockchainState.currentHeight,
-      blockchainState.lastBlockUtxoRoot,
-      dummyPubkey,
-      boxes,
-      tx,
-      boxes(inputIndex),
-      proverExtension)
-  }
-
-  val noInputs: Array[Box] = Array[Box]()
-  val noOutputs: Array[Box] = Array[Box]()
-
-  import special.sigma._
-
-  def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
-    val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
-    val res = new Array[AnyValue](maxKey + 1)
-    for ((id, v) <- m) {
-      assert(res(id) == null, s"register $id is defined more then once")
-      res(id) = v
-    }
-    IR.sigmaDslBuilderValue.Colls.fromArray(res)
-  }
-
-  implicit class ErgoBoxOps(val ebox: ErgoBox) extends AnyVal {
-    def toTestBox(isCost: Boolean): Box = {
-      new CostingBox(isCost, ebox)
-    }
-  }
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */

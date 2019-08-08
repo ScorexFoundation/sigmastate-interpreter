@@ -11,7 +11,7 @@ import sigmastate.Values.{BlockValue, ErgoTree, GetVarInt, IntConstant, SValue, 
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, CostedProverResult, CryptoConstants}
 import sigmastate.lang.Terms._
@@ -263,7 +263,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
     assertExceptionThrown({
       val verifier = new ErgoLikeTestInterpreter
       val pr = CostedProverResult(Array[Byte](), ContextExtension(Map()), 0L)
-      val ctx = ErgoLikeContext.dummy(fakeSelf)
+      val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
       val (res, calcTime) = BenchmarkUtil.measureTime {
         verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
           ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)

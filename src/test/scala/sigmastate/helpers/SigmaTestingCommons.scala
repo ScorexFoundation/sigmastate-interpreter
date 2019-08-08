@@ -2,29 +2,34 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationSpecification
+import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules, ValidationSpecification}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
-import org.scalatest.{PropSpec, Assertion, Matchers}
-import scalan.{TestUtils, TestContexts, RType}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.{Assertion, Matchers, PropSpec}
+import scalan.{RType, TestContexts, TestUtils}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.serialization.{VLQByteStringReader, VLQByteStringWriter}
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
-import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
-import sigmastate.{SGroupElement, SType}
-import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
+import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
+import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
+import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
+import sigmastate.{AvlTreeData, SGroupElement, SType}
+import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.collection.Coll
 import special.sigma
+import special.sigma.{Box, Header, PreHeader}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
+import scala.util.Try
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -33,7 +38,7 @@ trait SigmaTestingCommons extends PropSpec
 
   val fakeSelf: ErgoBox = createBox(0, TrueProp)
 
-  val fakeContext: ErgoLikeContext = ErgoLikeContext.dummy(fakeSelf)
+  val fakeContext: ErgoLikeContext = ErgoLikeContextTesting.dummy(fakeSelf)
 
   //fake message, in a real-life a message is to be derived from a spending transaction
   val fakeMessage = Blake2b256("Hello World")
@@ -159,7 +164,7 @@ trait SigmaTestingCommons extends PropSpec
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
       val context =
-        ErgoLikeContext.dummy(createBox(0, TrueProp))
+        ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val (res, _) = valueFun(calcCtx)

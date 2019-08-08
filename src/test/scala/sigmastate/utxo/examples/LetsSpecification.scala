@@ -6,9 +6,9 @@ import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.{AvlTreeData, AvlTreeFlags, TrivialProp}
-import sigmastate.Values.{ByteArrayConstant, AvlTreeConstant, SigmaPropConstant, LongConstant}
+import sigmastate.Values.{AvlTreeConstant, ByteArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.eval.{IRContext, SigmaDsl}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.lang.Terms._
@@ -302,10 +302,10 @@ class LetsSpecification extends SigmaTestingCommons {
 
     val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, userBox, feeBox))
 
-    val fundingContext = ErgoLikeContext(
+    val fundingContext = ErgoLikeContextTesting(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = issuanceTx,
       self = projectBoxBefore)
@@ -349,10 +349,10 @@ class LetsSpecification extends SigmaTestingCommons {
 
     val issuanceTx = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(directoryDataInput), IndexedSeq(userBoxAfter0, userBoxAfter1))
 
-    val exchangeContext = ErgoLikeContext(
+    val exchangeContext = ErgoLikeContextTesting(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       dataBoxes = IndexedSeq(directoryBox),
       boxesToSpend = IndexedSeq(userBoxBefore0, userBoxBefore1),
       spendingTransaction = issuanceTx,

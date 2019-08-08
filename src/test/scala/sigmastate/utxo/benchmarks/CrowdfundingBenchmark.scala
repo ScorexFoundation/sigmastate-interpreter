@@ -1,10 +1,10 @@
 package sigmastate.utxo.benchmarks
 
 
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox, ErgoScriptPredef}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, ErgoScriptPredef}
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import scalan.util.BenchmarkUtil._
 
 class CrowdfundingBenchmark extends SigmaTestingCommons {
@@ -16,10 +16,10 @@ class CrowdfundingBenchmark extends SigmaTestingCommons {
     val tx1Output2 = ErgoBox(1, contract.projectPubKey, 0)
     //normally this transaction would invalid, but we're not checking it in this test
     val tx = createTransaction(IndexedSeq(tx1Output1, tx1Output2))
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = contract.timeout - 1, // HEIGHT < timeout,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(),
       spendingTransaction = tx,
       self = outputToSpend)

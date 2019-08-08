@@ -6,7 +6,7 @@ import scorex.utils.Random
 import sigmastate.Values._
 import sigmastate._
 import interpreter.Interpreter._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.utxo.SizeOf
 
@@ -97,10 +97,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     //Preliminary checks:
 
     //B can't spend coins of A in chain1 (generate a valid proof)
-    val ctxf1 = ErgoLikeContext(
+    val ctxf1 = ErgoLikeContextTesting(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
@@ -110,20 +110,20 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     proverA.prove(env, prop1, ctxf1, fakeMessage).isSuccess shouldBe false
 
     //B cant't withdraw his coins in chain2 (generate a valid proof)
-    val ctxf2 = ErgoLikeContext(
+    val ctxf2 = ErgoLikeContextTesting(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf), spendingTransaction = ErgoLikeTransaction.dummy, self = fakeSelf)
     proverB.prove(env, prop2, ctxf2, fakeMessage).isSuccess shouldBe false
 
     //Successful run below:
 
     //A spends coins of B in chain2
-    val ctx1 = ErgoLikeContext(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight = height2 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
@@ -135,10 +135,10 @@ class AtomicSwapExampleSpecification extends SigmaTestingCommons {
     val proverB2 = proverB.withContextExtender(1, t.asInstanceOf[CollectionConstant[SByte.type]])
 
     //B spends coins of A in chain1 with knowledge of x
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight = height1 + 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = ErgoLikeTransaction.dummy,
       self = fakeSelf)
