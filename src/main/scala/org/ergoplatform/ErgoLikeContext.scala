@@ -125,23 +125,14 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       IR.sigmaDslBuilderValue.Colls.fromArray(res)
     }
 
-    implicit class ErgoBoxOps(val ebox: ErgoBox) {
-      def toTestBox(isCost: Boolean): Box = {
-        /* NOHF PROOF:
-  Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
-  Motivation: to fail early, rather than when going into evaluation
-  Safety: dataBoxes and spendingTransaction are supplied separately in ergo. No checks in ergo.
-  Examined ergo code: all that leads to ErgoLikeContext creation.
-  */
-        new CostingBox(isCost, ebox)
-      }
-    }
-
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl
     val inputs = boxesToSpend.toArray.map(_.toTestBox(isCost)).toColl
     /* NOHF PROOF:
-
-*/
+    Changed: removed check for spendingTransaction == null
+    Motivation: spendingTransaction cannot be null
+    Safety: in ergo spendingTransaction cannot be null
+    Examined ergo code: all that leads to ErgoLikeContext creation.
+    */
     val outputs = spendingTransaction.outputs.toArray.map(_.toTestBox(isCost)).toColl
     val varMap = extension.values.mapValues { case v: EvaluatedValue[_] =>
       val tVal = stypeToRType[SType](v.tpe)
