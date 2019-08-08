@@ -253,6 +253,11 @@ lazy val rootSettings = Seq(
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
 )
 
+lazy val fv = project
+  .in(file("fv"))
+  .enablePlugins(StainlessPlugin)
+  .settings(commonSettings: _*)
+
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "ergolikectx-json"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
