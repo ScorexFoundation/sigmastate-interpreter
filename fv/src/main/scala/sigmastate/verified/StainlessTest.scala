@@ -13,7 +13,13 @@ object StainlessTest {
     lines.foldLeft(BigInt(0)) { (sum, s) => sum + s.bigLength }
   }
 
-  def fromParserIndex(index: BigInt, lines: List[String]): SourceContext = {
+  // TODO: switch from BigInt to Int
+
+  @extern @pure
+  def fromArray[T](arr: Array[T]): List[T] = List(arr: _*)
+
+  def fromParserIndex(index: BigInt, lines1: Array[String]): SourceContext = {
+    val lines = fromArray(lines1)
     if (lines.isEmpty)
         SourceContext(0, 0, "")
     else
