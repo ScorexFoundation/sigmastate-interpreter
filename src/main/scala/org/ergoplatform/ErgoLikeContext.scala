@@ -47,15 +47,25 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                  ) extends InterpreterContext {
 
   /* NOHF PROOF:
-
+  Added: assert(preHeader != null)
+  Motivation: to fail early, rather then on evaluation on `CONTEXT.preHeader` access
+  Safety: According to ergo design PreHeader should always exist.
+  Examined ergo code: all that leads to ErgoLikeContext creation.
+  Fixed some cases in ergo where PreHeader might be null.
    */
   assert(preHeader != null, "preHeader cannot be null")
   /* NOHF PROOF:
-
+  Added: assert(spendingTransaction != null)
+  Motivation: to fail early
+  Safety: According to ergo design spendingTransaction should always exist.
+  Examined ergo code: all that leads to ErgoLikeContext creation.
    */
   assert(spendingTransaction != null, "spendingTransaction cannot be null")
   /* NOHF PROOF:
-
+  Added: assert that box with `selfIndex` exist in boxesToSpend
+  Motivation: to fail early, rather than when going into evaluation
+  Safety: ergo itself uses index to identify the box
+  Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   assert(boxesToSpend.isDefinedAt(selfIndex), s"Self box if defined should be among boxesToSpend")
   assert(headers.toArray.headOption.forall(h => java.util.Arrays.equals(h.stateRoot.digest.toArray, lastBlockUtxoRoot.digest)), "Incorrect lastBlockUtxoRoot")
@@ -64,30 +74,16 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   }
   assert(headers.toArray.headOption.forall(_.id == preHeader.parentId), s"preHeader.parentId should be id of the best header")
   /* NOHF PROOF:
-
+  Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
+  Motivation: to fail early, rather than when going into evaluation
+  Safety: dataBoxes and spendingTransaction are supplied separately in ergo. No checks in ergo.
+  Examined ergo code: all that leads to ErgoLikeContext creation.
  */
   assert(spendingTransaction.dataInputs.length == dataBoxes.length &&
     spendingTransaction.dataInputs.forall(dataInput => dataBoxes.exists(b => util.Arrays.equals(b.id, dataInput.boxId))),
     "dataBoxes do not correspond to spendingTransaction.dataInputs")
 
   // TODO assert boxesToSpend correspond to spendingTransaction.inputs
-
-  /* NOHF PROOF:
-
- */
-  // height of a block with the current `spendingTransaction`
-  val currentHeight: Height = preHeader.height
-
-  /* NOHF PROOF:
-
- */
-  //  public key of a miner of the block with the current `spendingTransaction`
-  val minerPubkey: GroupElement = preHeader.minerPk
-
-  /* NOHF PROOF:
-
- */
-  val self: ErgoBox = boxesToSpend(selfIndex)
 
   override def withCostLimit(newCostLimit: Long): ErgoLikeContext =
     new ErgoLikeContext(
@@ -132,7 +128,10 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     implicit class ErgoBoxOps(val ebox: ErgoBox) {
       def toTestBox(isCost: Boolean): Box = {
         /* NOHF PROOF:
-
+  Added: assert that dataBoxes corresponds to spendingTransaction.dataInputs
+  Motivation: to fail early, rather than when going into evaluation
+  Safety: dataBoxes and spendingTransaction are supplied separately in ergo. No checks in ergo.
+  Examined ergo code: all that leads to ErgoLikeContext creation.
   */
         new CostingBox(isCost, ebox)
       }
@@ -151,10 +150,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
     val vars = contextVars(varMap ++ extensions)
     val avlTree = CAvlTree(lastBlockUtxoRoot)
     CostingDataContext(
-      dataInputs, headers, preHeader, inputs, outputs, currentHeight, self.toTestBox(isCost), avlTree,
-      minerPubkey.getEncoded,
-      vars,
-      isCost)
+      dataInputs, headers, preHeader, inputs, outputs, preHeader.height, boxesToSpend(selfIndex).toTestBox(isCost), avlTree,
+      preHeader.minerPk.getEncoded, vars, isCost)
   }
 
 

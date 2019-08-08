@@ -128,7 +128,7 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
       spendingTransaction = tx3,
       self = selfBox)
 
-    assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
+    assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.boxesToSpend(ctx3.selfIndex).propositionBytes)
 
     val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
     val _ctx3: ErgoLikeContext = ctx3.withExtension(mProverRes1.extension)
