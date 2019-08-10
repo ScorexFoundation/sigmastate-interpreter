@@ -664,7 +664,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
         // Rule: opt.fold(default, f).cost ==> opt.fold(default.cost, x => f(x).cost)
         case WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f) =>
-          implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+          implicit val eA: Elem[Any] = opt.elem.eItem.asInstanceOf[Elem[Any]]
           val th = asRep[Thunk[Costed[Any]]](_th)
           val f = asRep[Any => Costed[Any]](_f)
           opt.fold(Thunk(forceThunkByMirror(th).cost), fun { x: Ref[Any] => f(x).cost })
@@ -676,7 +676,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
         // Rule: opt.fold(default, f).value ==> opt.fold(default.value, x => f(x).value)
         case WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f) =>
-          implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+          implicit val eA: Elem[Any] = opt.elem.eItem.asInstanceOf[Elem[Any]]
           val th = asRep[Thunk[Costed[Any]]](_th)
           val f = asRep[Any => Costed[Any]](_f)
           opt.fold(Thunk(forceThunkByMirror(th).value), fun { x: Ref[Any] => f(x).value })
@@ -686,7 +686,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
       // Rule: opt.fold(default, f).size ==> opt.fold(default.size, x => f(x).size)
       case CostedM.size(WOptionM.fold(opt, _th @ Def(ThunkDef(_, _)), _f)) =>
-        implicit val eA: Elem[Any] = opt.elem.eItem.asElem[Any]
+        implicit val eA: Elem[Any] = opt.elem.eItem.asInstanceOf[Elem[Any]]
         val th = asRep[Thunk[Costed[Any]]](_th)
         val f = asRep[Any => Costed[Any]](_f)
         opt.fold(Thunk(forceThunkByMirror(th).size), fun { x: Ref[Any] => f(x).size })
@@ -876,7 +876,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
     case _ => error(s"Don't know how to convert SType $t to Elem")
-  }).asElem[T#WrappedType]
+  }).asInstanceOf[Elem[T#WrappedType]]
 
   def elemToSType[T](e: Elem[T]): SType = e match {
     case BooleanElement => SBoolean
@@ -1270,7 +1270,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           val treeV = liftConst(tree)
           RCCostedPrim(treeV, opCost(treeV, Nil, costOf(c)), SizeAvlTree)
         case s: String =>
-          val resV = toRep(s)(stypeToElem(tpe).asElem[String])
+          val resV = toRep(s)(stypeToElem(tpe).asInstanceOf[Elem[String]])
           RCCostedPrim(resV, opCost(resV, Nil, costOf(c)), SizeString)
         case _ =>
           val resV = toRep(v)(stypeToElem(tpe))
@@ -1604,7 +1604,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case utxo.ExtractCreationInfo(In(box)) =>
         BoxCoster(box, SBox.creationInfoMethod, Nil)
       case utxo.ExtractRegisterAs(In(box), regId, optTpe) =>
-        implicit val elem = stypeToElem(optTpe.elemType).asElem[Any]
+        implicit val elem = stypeToElem(optTpe.elemType).asInstanceOf[Elem[Any]]
         val i: RCosted[Int] = RCCostedPrim(regId.number.toInt, IntZero, SizeInt)
         BoxCoster(box, SBox.getRegMethod, Array(i), Array(liftElem(elem)))
 
@@ -1806,7 +1806,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         }
 
       case l @ Terms.Lambda(_, Seq((n, argTpe)), tpe, Some(body)) =>
-        val eArg = stypeToElem(argTpe).asElem[Any]
+        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val eCostedArg = elemToCostedElem(eArg)
         val f = fun { x: Ref[Costed[Any]] =>
           evalNode(ctx, env + (n -> x), body)
@@ -1815,7 +1815,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         mkCostedFunc(f, opCost(f, Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
 
       case l @ FuncValue(Seq((n, argTpe)), body) =>
-        val eArg = stypeToElem(argTpe).asElem[Any]
+        val eArg = stypeToElem(argTpe).asInstanceOf[Elem[Any]]
         val xElem = elemToCostedElem(eArg)
         val f = fun { x: Ref[Costed[Any]] =>
           evalNode(ctx, env + (n -> x), body)
@@ -1824,7 +1824,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         mkCostedFunc(f, opCost(f, Nil, costOf(node)), l.tpe.dataSize(SType.DummyValue), eArg, eRes)
 
       case col @ ConcreteCollection(InSeqUnzipped(vs, cs, ss), elemType) =>
-        implicit val eAny = stypeToElem(elemType).asElem[Any]
+        implicit val eAny = stypeToElem(elemType).asInstanceOf[Elem[Any]]
         val values = colBuilder.fromItems(vs: _*)(eAny)
         val costs = colBuilder.replicate(cs.length, IntZero)
         val sizes = colBuilder.fromItems(ss: _*)(sizeElement(eAny))
@@ -1886,7 +1886,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case Terms.MethodCall(obj, method, args, typeSubst) if method.objType.coster.isDefined =>
         val objC = eval(obj)
         val argsC = args.map(eval)
-        val elems = typeSubst.values.toSeq.map(tpe => liftElem(stypeToElem(tpe).asElem[Any]))
+        val elems = typeSubst.values.toSeq.map(tpe => liftElem(stypeToElem(tpe).asInstanceOf[Elem[Any]]))
         method.objType.coster.get(IR)(objC, method, argsC, elems)
 
       case _ =>
