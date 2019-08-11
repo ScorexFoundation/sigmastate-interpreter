@@ -181,15 +181,16 @@ object EmissionRulesVerified {
 //  }.holds
 
 
-  def proveCorrectSumFromMinerAndFoundationParts(height: Int): (Long, Long) = {
+  def proveCorrectSumFromMinerAndFoundationParts(height: Int): Boolean  = {
     require(height > 0)
+
     val currentRate = emissionAtHeight(height, MonetarySettingsErgoLaunch)
     val minerPart = minersRewardAtHeight(height, MonetarySettingsErgoLaunch)
     val foundationPart = foundationRewardAtHeight(height, MonetarySettingsErgoLaunch)
 
-    (foundationPart + minerPart, currentRate)
+    foundationPart + minerPart == currentRate
 
-  } ensuring(res => res._1 == res._2)
+  }.holds
 
   /* Range from start (inclusive) to until (exclusive) */
   def range(start: Int, until: Int): List[Int] = {
