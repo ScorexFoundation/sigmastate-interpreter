@@ -4,6 +4,7 @@ import stainless.lang._
 import stainless.collection._
 import stainless.annotation._
 import stainless.math._
+import stainless.proof._
 
 import scala.annotation.tailrec
 
@@ -36,9 +37,23 @@ object EmissionRulesVerified {
 
   val CoinsInOneErgo: Long = 1000000000
 
+  // TODO: extract
   def max(i1: Long, i2: Long): Long = {
     if (i1 >= i2) i1 else i2
     }.ensuring(res => (res == i1 && res >= i2) || (res == i2 && res >= i1))
+
+  // TODO: extract
+  def sum(start: Int, end: Int, f: Int => Long): Long = {
+    var s = 0L
+    var i = start
+    while (i <= end) {
+      decreases(end - start)
+      s = s + f(i)
+      i = i + 1
+    }
+    s
+  }
+
 
   val blocksTotal: Int = 2080799
   val coinsTotal: Long = 97739925L * CoinsInOneErgo
@@ -50,6 +65,17 @@ object EmissionRulesVerified {
 //    blocksTotal == 2080799 &&
 //    coinsTotal == 97739925L * CoinsInOneErgo
 //  }.holds
+
+  val foundersCoinsTotal: Long = remainingFoundationRewardAtHeight(0, MonetarySettingsErgoLaunch)
+
+  def checkFoundersCoinsTotal: Boolean = {
+    foundersCoinsTotal == 4330792 * CoinsInOneErgo + (CoinsInOneErgo / 2)
+    }.holds
+
+  def minersCoinsTotal: Long = {
+    coinsTotal - foundersCoinsTotal
+  } ensuring (_ == 93409132 * CoinsInOneErgo + (CoinsInOneErgo / 2))
+
 
   @extern @pure @library
   def totalCoinsAndBlocks(settings: MonetarySettings): (Long, Int) = {
@@ -78,11 +104,10 @@ object EmissionRulesVerified {
     }
   }
 
-  // TODO: fix frozen prover
-  def emissionAtHeightErgoLaunch(h: Int): Long = {
+  def proveEmissionAtHeightErgoLaunch(h: Int): Long = {
     require(h > 0)
     emissionAtHeight(h, MonetarySettingsErgoLaunch)
-  } // ensuring(res => res >= 0)
+  } ensuring(res => res >= 0)
 
   /**
     * Returns number of coins issued at height `h` in favour of a miner
@@ -96,6 +121,11 @@ object EmissionRulesVerified {
       max(settings.fixedRate - settings.oneEpochReduction * epoch, 0)
     }
   }
+
+  def proveMinersRewardAtHeightErgoLaunch(h: Int): Long = {
+    require(h > 0)
+    minersRewardAtHeight(h, MonetarySettingsErgoLaunch)
+  } ensuring (res => res >= 0)
 
   /**
     * Returns number of coins issued at height `h` in favour of the foundation
@@ -111,6 +141,11 @@ object EmissionRulesVerified {
       0
     }
   }
+
+  def proveFoundationRewardAtHeightErgoLaunch(h: Int): Long = {
+    require(h > 0)
+    foundationRewardAtHeight(h, MonetarySettingsErgoLaunch)
+  } ensuring (res => res >= 0)
 
   /**
     * Returns number of coins which should be kept in the foundation box at height `h`
@@ -134,32 +169,19 @@ object EmissionRulesVerified {
     }
   }
 
-  val foundersCoinsTotal: Long = remainingFoundationRewardAtHeight(0, MonetarySettingsErgoLaunch)
-
-  def checkFoundersCoinsTotal: Boolean = {
-    foundersCoinsTotal == 4330792 * CoinsInOneErgo + (CoinsInOneErgo / 2)
-  }.holds
-
-  def minersCoinsTotal: Long = {
-    coinsTotal - foundersCoinsTotal
-  } ensuring(_ == 93409132 * CoinsInOneErgo + (CoinsInOneErgo / 2))
-
-
   def epochsIssued(epoch: Int, settings: MonetarySettings): Long = {
-    require(epoch >= 0)
-    if (epoch == 0)
+    if (epoch <= 0)
       0L
-    else
-      range(1, epoch).foldLeft(0L) { case (s, e) =>
-        s + max(settings.fixedRate - settings.oneEpochReduction * e, 0) * settings.epochLength
-      }
+    else {
+      sum(1, epoch, { i => max(settings.fixedRate - settings.oneEpochReduction * i, 0) * settings.epochLength})
+    }
   }
 
   /**
     * Returns number of coins issued at height `h` and before that
     */
   def issuedCoinsAfterHeight(h: Int, settings: MonetarySettings): Long = {
-    require(h > 0 && settings == MonetarySettingsErgoLaunch)
+    require(h > 0 && settings.epochLength > 0)
     if (h < settings.fixedRatePeriod) {
       settings.fixedRate * h
     } else {
@@ -174,12 +196,13 @@ object EmissionRulesVerified {
     }
   }
 
-  // TODO: fix frozen prover
-//  def proveIssuedCoinsAfterHeight: Boolean = {
-//    issuedCoinsAfterHeight(1, MonetarySettingsErgoLaunch) == MonetarySettingsErgoLaunch.fixedRate &&
-//    issuedCoinsAfterHeight(blocksTotal, MonetarySettingsErgoLaunch) == coinsTotal
-//  }.holds
+  def proveIssuedCoinsAfterHeight1ErgoLaunch: Boolean = {
+    issuedCoinsAfterHeight(1, MonetarySettingsErgoLaunch) == MonetarySettingsErgoLaunch.fixedRate
+  }.holds
 
+  def proveIssuedCoinsAfterHeightBlocksTotalErgoLaunch: Boolean = {
+    issuedCoinsAfterHeight(blocksTotal, MonetarySettingsErgoLaunch) == coinsTotal
+  }.holds
 
   def proveCorrectSumFromMinerAndFoundationParts(height: Int): Boolean  = {
     require(height > 0)
@@ -192,19 +215,18 @@ object EmissionRulesVerified {
 
   }.holds
 
-  /* Range from start (inclusive) to until (exclusive) */
-  def range(start: Int, until: Int): List[Int] = {
-    require(start <= until)
-    decreases(until - start)
-    if (until <= start) Nil[Int]() else Cons(start, range(start + 1, until))
-  }
-
   def collectedFoundationReward(height: Int): Long = {
     require(height > 0)
-    range(1, height).foldLeft(0L) { case(s, h) =>
-      s + foundationRewardAtHeight(h, MonetarySettingsErgoLaunch)
-    }
+    sum(0, height, { i => foundationRewardAtHeight(i, MonetarySettingsErgoLaunch)})
   }
+
+  // TODO fix frozen prover
+//  def proveCollectedFoundationReward(height: Int): Boolean = {
+//    require(height <= blocksTotal && height > 0)
+//    collectedFoundationReward(height) >= 0
+//  } holds because {
+//    foundationRewardAtHeight(height, MonetarySettingsErgoLaunch) > 0
+//  }
 
   val totalFoundersReward: Long = collectedFoundationReward(blocksTotal)
 
