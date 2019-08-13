@@ -21,6 +21,8 @@ case class DataInput(boxId: BoxId) {
     case x: DataInput => util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
+
+  override def hashCode(): Int = boxId.hashCode
 }
 
 /**
@@ -40,6 +42,8 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
     case x: UnsignedInput => util.Arrays.equals(boxId, x.boxId)
     case _ => false
   }
+
+  override def hashCode(): Int = boxId.hashCode
 
   /**
     * Input, that should be signed by prover and verified by verifier.
