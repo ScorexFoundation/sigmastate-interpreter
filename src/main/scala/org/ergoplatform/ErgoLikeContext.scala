@@ -231,7 +231,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
 }
 
 
-/** When interpreted evaluates to a BoxConstant built from Context.selfIndex */
+/** When interpreted evaluates to a BoxConstant built from context.boxesToSpend(context.selfIndex) */
 case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
