@@ -135,7 +135,7 @@ trait JsonCodecs {
       powDistance <- cursor.downField("powDistance").as[special.sigma.BigInt]
       votes <- cursor.downField("votes").as[Coll[Byte]]
     } yield new CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionsRoot, timestamp, nBits,
-      height, extensionRoot, CGroupElement.decode(minerPk), CGroupElement.decode(powOnetimePk), powNonce, powDistance, votes)
+      height, extensionRoot, SigmaDsl.decodePoint(minerPk), SigmaDsl.decodePoint(powOnetimePk), powNonce, powDistance, votes)
   }
 
   implicit val preHeaderEncoder: Encoder[PreHeader] = { v: PreHeader =>
@@ -159,7 +159,7 @@ trait JsonCodecs {
       height <- cursor.downField("height").as[Int]
       minerPk <- cursor.downField("minerPk").as[Coll[Byte]]
       votes <- cursor.downField("votes").as[Coll[Byte]]
-    } yield CPreHeader(version, parentId, timestamp, nBits, height, CGroupElement.decode(minerPk), votes)
+    } yield CPreHeader(version, parentId, timestamp, nBits, height, SigmaDsl.decodePoint(minerPk), votes)
   }
 
   implicit val evaluatedValueEncoder: Encoder[EvaluatedValue[_ <: SType]] = { value =>
