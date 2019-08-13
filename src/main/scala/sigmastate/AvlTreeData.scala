@@ -81,8 +81,7 @@ object AvlTreeData {
     AvlTreeFlags.AllOperationsAllowed,
     keyLength = 32)
 
-  def apply(avlTree: AvlTree): AvlTreeData = new AvlTreeData(ADDigest @@ avlTree.digest.toArray,
-    AvlTreeFlags.apply(avlTree.enabledOperations), avlTree.keyLength, avlTree.valueLengthOpt)
+  def apply(avlTree: AvlTree): AvlTreeData = sigmastate.eval.SigmaDsl.toAvlTreeData(avlTree)
 
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 
