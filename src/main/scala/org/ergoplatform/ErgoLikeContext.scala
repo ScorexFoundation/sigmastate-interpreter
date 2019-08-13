@@ -127,7 +127,6 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
       val res = new Array[AnyValue](maxKey + 1)
       for ((id, v) <- m) {
-        assert(res(id) == null, s"register $id is defined more then once")
         res(id) = v
       }
       IR.sigmaDslBuilderValue.Colls.fromArray(res)
