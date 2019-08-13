@@ -37,8 +37,11 @@ object ICOContractVerification {
 
     def enabledOperations: Byte = ???
 
-    @extern @pure
+    def getMany(keys: List[List[Byte]], proof: List[Byte]): List[Option[List[Byte]]] = ???
+
     def insert(toAdd: List[(List[Byte], List[Byte])], proof: List[Byte]): Option[AvlTree] = ???
+
+    def remove(operations: List[List[Byte]], proof: List[Byte]): Option[AvlTree] = ???
   }
 
 
@@ -58,6 +61,7 @@ object ICOContractVerification {
   @extern @pure
   def getVar[T](id: Byte): Option[T] = ???
   def longToByteArray(l: Long): List[Byte] = ???
+  def byteArrayToLong(bytes: List[Byte]): Long = ???
   def blake2b256(bytes: List[Byte]): List[Byte] = ???
 
   def ICOFundingContract(ctx: FundingContext): Boolean = {
@@ -147,6 +151,67 @@ object ICOContractVerification {
     val treeIsCorrect = digestPreserved && valueLengthPreserved && keyLengthPreserved && treeIsClosed
 
     ctx.projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
+  }
+
+  case class WithdrawalContext(OUTPUTS: List[Box],
+                               INPUTS: List[Box],
+                               SELF: Box,
+                               HEIGHT: Int) {
+
+    require(HEIGHT > 0 &&
+      OUTPUTS.nonEmpty &&
+      INPUTS.nonEmpty)
+  }
+
+  def ICOWithdrawalContract(ctx: WithdrawalContext): Boolean = {
+    // TODO: make verifier green
+    val removeProof = getVar[List[Byte]](2).get
+    val lookupProof = getVar[List[Byte]](3).get
+    val withdrawIndexes = getVar[List[BigInt]](4).get
+
+    val out0 = ctx.OUTPUTS(0)
+
+    val tokenId: List[Byte] = ctx.SELF.R4[List[Byte]].get
+
+    val withdrawals = withdrawIndexes.map({ (idx: BigInt) =>
+      val b = ctx.OUTPUTS(idx)
+      if (b.tokens(0)._1 == tokenId) {
+        (blake2b256(b.propositionBytes), b.tokens(0)._2)
+      } else {
+        (blake2b256(b.propositionBytes), 0L)
+      }
+    })
+
+    //val withdrawals = OUTPUTS.slice(1, OUTPUTS.size-1).map(...)
+
+    val withdrawValues = withdrawals.map({ (t: (List[Byte], Long)) => t._2 })
+
+    val withdrawTotal = withdrawValues.foldLeft(0L) { (l1: Long, l2: Long) => l1 + l2 }
+
+    val toRemove = withdrawals.map({ (t: (List[Byte], Long)) => t._1 })
+
+    val initialTree = ctx.SELF.R5[AvlTree].get
+
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[List[Byte]]) => byteArrayToLong(o.get) })
+    val valuesCorrect = removedValues == withdrawValues
+
+    val modifiedTree = initialTree.remove(toRemove, removeProof).get
+
+    val expectedTree = out0.R5[AvlTree].get
+
+    val selfTokensCorrect = ctx.SELF.tokens(0)._1 == tokenId
+    val selfOutTokensAmount = ctx.SELF.tokens(0)._2
+    val soutTokensCorrect = out0.tokens(0)._1 == tokenId
+    val soutTokensAmount = out0.tokens(0)._2
+
+    val tokensPreserved = selfTokensCorrect && soutTokensCorrect && (soutTokensAmount + withdrawTotal == selfOutTokensAmount)
+
+    val properTreeModification = modifiedTree == expectedTree
+
+    val selfOutputCorrect = out0.propositionBytes == ctx.SELF.propositionBytes
+
+    selfOutputCorrect
+    // properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
   }
 
 }
