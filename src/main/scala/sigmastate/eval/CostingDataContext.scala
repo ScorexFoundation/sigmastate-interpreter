@@ -430,8 +430,10 @@ case class CHeader(
 }
 
 object CHeader {
-  val VotesSize = 3
-  val NonceSize = 8
+  // size of Header.votes array
+  val VotesSize: Int = 3
+  // size of Header.powNonce array (nonce from Autolykos PoW solution)
+  val NonceSize: Int = 8
 }
 
 class CCostModel extends CostModel {
