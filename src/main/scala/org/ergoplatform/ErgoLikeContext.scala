@@ -175,7 +175,11 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
 
   override def hashCode(): Int = {
     val state = Array(lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+    var hashCode = 0
+    cfor(0)(_ < state.length, _ + 1) { i =>
+      hashCode = 31 * hashCode + state(i).hashCode
+    }
+    hashCode
   }
 
   override def toString = s"ErgoLikeContext(lastBlockUtxoRoot=$lastBlockUtxoRoot, headers=$headers, preHeader=$preHeader, dataBoxes=$dataBoxes, boxesToSpend=$boxesToSpend, spendingTransaction=$spendingTransaction, selfIndex=$selfIndex, extension=$extension, validationSettings=$validationSettings, costLimit=$costLimit, initCost=$initCost)"
