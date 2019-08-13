@@ -8,6 +8,7 @@ import stainless.proof._
 
 object ICOContractVerification {
 
+  @extern @pure
   def arrayEquals(arr1: Array[Byte], arr2: Array[Byte]): Boolean = ???
 
   case class Box(value: Long) {
@@ -54,19 +55,23 @@ object ICOContractVerification {
 
     val selfIndexIsZero = arrayEquals(ctx.INPUTS(0).id, ctx.SELF.id)
 
-    val proof = getVar[List[Byte]](1).get
+    // TODO: proper option handling
+    val proof = getVar[List[Byte]](1).getOrElse(List())
 
     val inputsCount = ctx.INPUTS.size
 
     val toAdd: List[(List[Byte], List[Byte])] = ctx.INPUTS.slice(1, inputsCount).map({ (b: Box) =>
-      val pk = b.R4[List[Byte]].get
+      // TODO: proper option handling
+      val pk = b.R4[List[Byte]].getOrElse(List())
       val value = longToByteArray(b.value)
       (pk, value)
     })
 
-    val modifiedTree = ctx.SELF.R5[AvlTree].get.insert(toAdd, proof).get
+    // TODO: proper option handling
+    val modifiedTree = ctx.SELF.R5[AvlTree].getOrElse(AvlTree()).insert(toAdd, proof).getOrElse(AvlTree())
 
-    val expectedTree = ctx.OUTPUTS(0).R5[AvlTree].get
+    // TODO: proper option handling
+    val expectedTree = ctx.OUTPUTS(0).R5[AvlTree].getOrElse(AvlTree())
 
     val properTreeModification = modifiedTree == expectedTree
 
@@ -78,7 +83,7 @@ object ICOContractVerification {
       arrayEquals(blake2b256(ctx.OUTPUTS(0).propositionBytes), ctx.nextStageScriptHash)
     }
 
-    val feeOutputCorrect = (ctx.OUTPUTS(1).value <= 1) && (arrayEquals(ctx.OUTPUTS(1).propositionBytes, ctx.feeBytes))
+    val feeOutputCorrect = outputsCount && (ctx.OUTPUTS(1).value <= 1) && (arrayEquals(ctx.OUTPUTS(1).propositionBytes, ctx.feeBytes))
 
     val outputsCorrect = outputsCount && feeOutputCorrect && selfOutputCorrect
 
