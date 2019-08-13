@@ -4,7 +4,7 @@ import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction}
 import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import sigmastate.Values.{ConcreteCollection, FalseLeaf, IntConstant, SigmaPropConstant, SigmaPropValue, TrueLeaf}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CosterException
 
@@ -39,7 +39,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val env = Map("pubkeyA" -> pubkeyA, "pubkeyB" -> pubkeyB, "pubkeyC" -> pubkeyC)
@@ -118,7 +118,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     case class TestCase(numTrue: Int, vector: Seq[SigmaPropValue], dlogOnlyVector: DlogOnlyVector)
@@ -288,7 +288,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val verifier = new ErgoLikeTestInterpreter
@@ -335,7 +335,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val verifier = new ErgoLikeTestInterpreter

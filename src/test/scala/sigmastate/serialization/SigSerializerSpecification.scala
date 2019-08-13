@@ -9,7 +9,7 @@ import sigmastate.Values.{SigmaBoolean, SigmaPropConstant, SigmaPropValue, Value
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTransactionTesting, SigmaTestingCommons}
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.Transformer
 
@@ -77,7 +77,7 @@ class SigSerializerSpecification extends SigmaTestingCommons with ObjectGenerato
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
-        spendingTransaction = ErgoLikeTransaction.dummy,
+        spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
 
       // get sigma conjectures out of transformers

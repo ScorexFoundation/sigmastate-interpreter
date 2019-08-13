@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
 
 import scala.util.Random
 
@@ -41,7 +41,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -74,7 +74,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -108,7 +108,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -143,7 +143,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -174,7 +174,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -215,7 +215,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -252,7 +252,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -285,7 +285,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -325,7 +325,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -366,7 +366,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -410,7 +410,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -448,7 +448,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
     verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
@@ -461,7 +461,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
     val prC = proverC.prove(compiledProp, ctx2, fakeMessage).get
     verifier.verify(compiledProp, ctx2, prC, fakeMessage).get._1 shouldBe true
@@ -490,7 +490,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
@@ -505,7 +505,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
@@ -538,7 +538,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
@@ -553,7 +553,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
@@ -588,7 +588,7 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         lastBlockUtxoRoot = AvlTreeData.dummy,
         minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
-        spendingTransaction = ErgoLikeTransaction.dummy,
+        spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
 
       // any prover alone (no added secrets) should fail

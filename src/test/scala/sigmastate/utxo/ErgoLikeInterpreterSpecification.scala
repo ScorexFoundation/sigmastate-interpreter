@@ -14,7 +14,7 @@ import sigmastate.eval._
 import sigmastate.interpreter.Interpreter._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
@@ -74,7 +74,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val pr = prover.prove(prop, ctx, fakeMessage).get
@@ -104,7 +104,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -131,7 +131,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = ErgoLikeTransaction.dummy,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
