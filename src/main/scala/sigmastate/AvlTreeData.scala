@@ -4,6 +4,7 @@ import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
+import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
@@ -81,7 +82,7 @@ object AvlTreeData {
     AvlTreeFlags.AllOperationsAllowed,
     keyLength = 32)
 
-  def apply(avlTree: AvlTree): AvlTreeData = sigmastate.eval.SigmaDsl.toAvlTreeData(avlTree)
+  def apply(avlTree: AvlTree): AvlTreeData = SigmaDsl.toAvlTreeData(avlTree)
 
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 
