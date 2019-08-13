@@ -74,6 +74,8 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
     case tx: UnsignedErgoLikeTransaction => this.id == tx.id
     case _ => false
   }
+
+  override def hashCode(): Int = id.hashCode()
 }
 
 object UnsignedErgoLikeTransaction {
