@@ -81,32 +81,30 @@ sealed abstract class ICOContract {
 
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
-      INPUTS.nonEmpty)
+      INPUTS.length > 1 &&
+      getVar[List[Byte]](1).isDefined &&
+      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+      SELF.R5[AvlTree].isDefined &&
+      OUTPUTS(0).R5[AvlTree].isDefined
+    )
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
 
     val inputsCount = INPUTS.size
 
-    val properTreeModification: Boolean = getVar[List[Byte]](1).map { proof =>
+    val proof = getVar[List[Byte]](1).get
 
-      val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).flatMap({ (b: Box) =>
-        b.R4[List[Byte]]
-          .map({ (pk: List[Byte]) =>
-            (pk, longToByteArray(b.value))
-          })
-          .map({ (pair: (List[Byte], List[Byte])) => List(pair) })
-          .getOrElse(List())
-      })
+    val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
+      val pk = b.R4[List[Byte]].getOrElse(List())
+      val value = longToByteArray(b.value)
+      (pk, value)
+    })
 
-      val mayBeModifiedTree = SELF.R5[AvlTree].flatMap({ (tree: AvlTree) =>
-        tree.insert(toAdd, proof)
-      })
-      val mayBeExpectedTree = OUTPUTS(0).R5[AvlTree]
+    val modifiedTree = SELF.R5[AvlTree].get.insert(toAdd, proof)
 
-      val allPksAreLoaded = toAdd.length == inputsCount - 1
+    val expectedTree = OUTPUTS(0).R5[AvlTree]
 
-      allPksAreLoaded && mayBeModifiedTree == mayBeExpectedTree
-    }.getOrElse(false)
+    val properTreeModification = modifiedTree == expectedTree
 
     val outputsCount = OUTPUTS.size == 2
 
@@ -125,36 +123,43 @@ sealed abstract class ICOContract {
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
 
-//  def proveICOFundingContract(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
-//    import ctx._
-//    require(
-//      HEIGHT > 0 &&
-//        INPUTS.nonEmpty &&
-//        OUTPUTS.length == 2 &&
-//        INPUTS(0).id == SELF.id
-//    )
-//    ICOFundingContract(ctx)
-//  }.holds
+  def proveICOFundingContractForHeightAbove2000(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
+    import ctx._
+    require(
+      HEIGHT > 0 &&
+        INPUTS.length > 1 &&
+        OUTPUTS.length == 2 &&
+        INPUTS(0).id == SELF.id &&
+        getVar[List[Byte]](1).isDefined &&
+        INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+        SELF.R5[AvlTree].isDefined &&
+        OUTPUTS(0).R5[AvlTree].isDefined &&
+        OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
+          val pk = b.R4[List[Byte]].getOrElse(List())
+          val value = longToByteArray(b.value)
+          (pk, value)
+        }), getVar[List[Byte]](1).get) &&
+        HEIGHT >= 2000 &&
+        blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash &&
+        OUTPUTS(1).value <= 1 &&
+        OUTPUTS(1).propositionBytes == feeBytes
+    )
+    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
+  }.holds
 
   def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
     import ctx._
-    require(
-      HEIGHT > 0 &&
-        INPUTS.nonEmpty &&
-        OUTPUTS.nonEmpty &&
-        INPUTS(0).id != SELF.id
-    )
-    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
-  } ensuring (_ == false)
+    require(HEIGHT > 0 &&
+      OUTPUTS.nonEmpty &&
+      INPUTS.length > 1 &&
+      getVar[List[Byte]](1).isDefined &&
+      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+      SELF.R5[AvlTree].isDefined &&
+      OUTPUTS(0).R5[AvlTree].isDefined &&
 
-  def failICOFundingIfNoTreeProof(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
-    import ctx._
-    require(
-      HEIGHT > 0 &&
-        INPUTS.nonEmpty &&
-        OUTPUTS.nonEmpty &&
-        getVar[List[Byte]](1) == None[List[Byte]]()
+      INPUTS (0).id != SELF.id
     )
+
     ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
   } ensuring (_ == false)
 
