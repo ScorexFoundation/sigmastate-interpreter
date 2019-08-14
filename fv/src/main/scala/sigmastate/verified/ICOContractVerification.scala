@@ -55,6 +55,22 @@ trait FundingContext extends Context {
   def feeBytes: List[Byte]
 }
 
+case class DummyFundingContext(HEIGHT: Int,
+                               INPUTS: List[Box],
+                               OUTPUTS: List[Box],
+                               SELF: Box,
+                               nextStageScriptHash: List[Byte],
+                               feeBytes: List[Byte]) extends FundingContext {
+
+  override def getVar[T](id: Byte): Option[T] = ???
+
+  override def longToByteArray(l: Long): List[Byte] = ???
+
+  override def byteArrayToLong(bytes: List[Byte]): Long = ???
+
+  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
+}
+
 trait IssuanceContext extends Context {
   def nextStageScriptHash: List[Byte]
   def projectPubKey: SigmaProp
@@ -63,7 +79,7 @@ trait IssuanceContext extends Context {
 trait WithdrawalContext extends Context {
 }
 
-trait ICOContractVerification {
+abstract class ICOContract {
 
   def ICOFundingContract(ctx: FundingContext): Boolean = {
     import ctx._
@@ -74,25 +90,28 @@ trait ICOContractVerification {
 
     val selfIndexIsZero = INPUTS(0).id == SELF.id
 
-    // TODO: proper option handling
-    val proof = getVar[List[Byte]](1).getOrElse(List())
-
     val inputsCount = INPUTS.size
 
-    val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
-      // TODO: proper option handling
-      val pk = b.R4[List[Byte]].getOrElse(List())
-      val value = longToByteArray(b.value)
-      (pk, value)
-    })
+    val properTreeModification: Boolean = getVar[List[Byte]](1).map { proof =>
 
-    // TODO: proper option handling
-    val modifiedTree = SELF.R5[AvlTree].getOrElse(AvlTree()).insert(toAdd, proof).getOrElse(AvlTree())
+      val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).flatMap({ (b: Box) =>
+        b.R4[List[Byte]]
+          .map({ (pk: List[Byte]) =>
+            (pk, longToByteArray(b.value))
+          })
+          .map({ (pair: (List[Byte], List[Byte])) => List(pair) })
+          .getOrElse(List())
+      })
 
-    // TODO: proper option handling
-    val expectedTree = OUTPUTS(0).R5[AvlTree].getOrElse(AvlTree())
+      val mayBeModifiedTree = SELF.R5[AvlTree].flatMap({ (tree: AvlTree) =>
+        tree.insert(toAdd, proof)
+      })
+      val mayBeExpectedTree = OUTPUTS(0).R5[AvlTree]
 
-    val properTreeModification = modifiedTree == expectedTree
+      val allPksAreLoaded = toAdd.length == inputsCount - 1
+
+      allPksAreLoaded && mayBeModifiedTree == mayBeExpectedTree
+    }.getOrElse(false)
 
     val outputsCount = OUTPUTS.size == 2
 
@@ -110,6 +129,17 @@ trait ICOContractVerification {
 
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
+
+  def ICOFundingProp1(ctx: DummyFundingContext): Boolean = {
+    import ctx._
+    require(
+      HEIGHT > 0 &&
+        INPUTS.nonEmpty &&
+        OUTPUTS.length == 2
+    )
+    ICOFundingContract(ctx)
+    }.holds
+
 
   def ICOIssuanceContract(ctx: IssuanceContext): Boolean = {
     import ctx._
@@ -220,5 +250,18 @@ trait ICOContractVerification {
 
      properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
   }
+
+  //  def dummyContract(ctx: FundingContext): Boolean = {
+  //    import ctx._
+  //    INPUTS.nonEmpty
+  ////    blake2b256(List[Byte]()) == List[Byte]()
+  //  }
+
+//
+//  def dummyProp(ctx: FundingContext): Boolean = {
+//    import ctx._
+//    require(INPUTS.nonEmpty)
+//    dummyContract(ctx)
+//    }.holds
 
 }
