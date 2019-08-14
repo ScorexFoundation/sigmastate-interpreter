@@ -48,42 +48,29 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
         true, false, element[Long]))
     }
   }
+
+  implicit lazy val cSizeAnyValueElement: Elem[CSizeAnyValue] =
+    new CSizeAnyValueElem
+
   // elem for concrete class
-  class CSizeAnyValueElem(val iso: Iso[CSizeAnyValueData, CSizeAnyValue])
+  class CSizeAnyValueElem
     extends SizeAnyValueElem[CSizeAnyValue]
     with ConcreteElem[CSizeAnyValueData, CSizeAnyValue] {
     override lazy val parent: Option[Elem[_]] = Some(sizeAnyValueElement)
+    override def iso = ???
   }
 
   // state representation type
   type CSizeAnyValueData = (WRType[Any], Size[Any])
 
-  // 3) Iso for concrete class
-  class CSizeAnyValueIso
-    extends EntityIso[CSizeAnyValueData, CSizeAnyValue] with Def[CSizeAnyValueIso] {
-    override def transform(t: Transformer) = new CSizeAnyValueIso()
-    private lazy val _safeFrom = fun { p: Ref[CSizeAnyValue] => (p.tVal, p.valueSize) }
-    override def from(p: Ref[CSizeAnyValue]) =
-      tryConvert[CSizeAnyValue, (WRType[Any], Size[Any])](eTo, eFrom, p, _safeFrom)
-    override def to(p: Ref[(WRType[Any], Size[Any])]) = {
-      val Pair(tVal, valueSize) = p
-      RCSizeAnyValue(tVal, valueSize)
-    }
-    lazy val eFrom = pairElement(element[WRType[Any]], element[Size[Any]])
-    lazy val eTo = new CSizeAnyValueElem(self)
-    lazy val resultType = new CSizeAnyValueIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CSizeAnyValueIsoElem() extends Elem[CSizeAnyValueIso] {
-  }
   // 4) constructor and deconstructor
   class CSizeAnyValueCompanionCtor extends CompanionDef[CSizeAnyValueCompanionCtor] with CSizeAnyValueCompanion {
     def resultType = CSizeAnyValueCompanionElem
     override def toString = "CSizeAnyValueCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Ref[CSizeAnyValueData]): Ref[CSizeAnyValue] = {
-      isoCSizeAnyValue.to(p)
+      val Pair(tVal, valueSize) = p
+      mkCSizeAnyValue(tVal, valueSize)
     }
 
     @scalan.OverloadId("fromFields")
@@ -109,16 +96,6 @@ object CSizeAnyValue extends EntityObject("CSizeAnyValue") {
     else
       unrefDelegate[CSizeAnyValue](p)
   }
-
-  implicit class ExtendedCSizeAnyValue(p: Ref[CSizeAnyValue]) {
-    def toData: Ref[CSizeAnyValueData] = {
-      isoCSizeAnyValue.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoCSizeAnyValue: Iso[CSizeAnyValueData, CSizeAnyValue] =
-    reifyObject(new CSizeAnyValueIso())
 
   def mkCSizeAnyValue
     (tVal: Ref[WRType[Any]], valueSize: Ref[Size[Any]]): Ref[CSizeAnyValue] = {
@@ -150,34 +127,19 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
     }
   }
   // elem for concrete class
-  class CSizeSigmaPropElem(val iso: Iso[CSizeSigmaPropData, CSizeSigmaProp])
+  implicit lazy val cSizeSigmaPropElement: Elem[CSizeSigmaProp] =
+    new CSizeSigmaPropElem
+
+  class CSizeSigmaPropElem
     extends SizeSigmaPropElem[CSizeSigmaProp]
     with ConcreteElem[CSizeSigmaPropData, CSizeSigmaProp] {
     override lazy val parent: Option[Elem[_]] = Some(sizeSigmaPropElement)
+    override def iso = ???
   }
 
   // state representation type
   type CSizeSigmaPropData = Size[Coll[Byte]]
 
-  // 3) Iso for concrete class
-  class CSizeSigmaPropIso
-    extends EntityIso[CSizeSigmaPropData, CSizeSigmaProp] with Def[CSizeSigmaPropIso] {
-    override def transform(t: Transformer) = new CSizeSigmaPropIso()
-    private lazy val _safeFrom = fun { p: Ref[CSizeSigmaProp] => p.propBytes }
-    override def from(p: Ref[CSizeSigmaProp]) =
-      tryConvert[CSizeSigmaProp, Size[Coll[Byte]]](eTo, eFrom, p, _safeFrom)
-    override def to(p: Ref[Size[Coll[Byte]]]) = {
-      val propBytes = p
-      RCSizeSigmaProp(propBytes)
-    }
-    lazy val eFrom = element[Size[Coll[Byte]]]
-    lazy val eTo = new CSizeSigmaPropElem(self)
-    lazy val resultType = new CSizeSigmaPropIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CSizeSigmaPropIsoElem() extends Elem[CSizeSigmaPropIso] {
-  }
   // 4) constructor and deconstructor
   class CSizeSigmaPropCompanionCtor extends CompanionDef[CSizeSigmaPropCompanionCtor] with CSizeSigmaPropCompanion {
     def resultType = CSizeSigmaPropCompanionElem
@@ -207,16 +169,7 @@ object CSizeSigmaProp extends EntityObject("CSizeSigmaProp") {
       unrefDelegate[CSizeSigmaProp](p)
   }
 
-  implicit class ExtendedCSizeSigmaProp(p: Ref[CSizeSigmaProp]) {
-    def toData: Ref[CSizeSigmaPropData] = {
-      isoCSizeSigmaProp.from(p)
-    }
-  }
-
   // 5) implicit resolution of Iso
-  implicit def isoCSizeSigmaProp: Iso[CSizeSigmaPropData, CSizeSigmaProp] =
-    reifyObject(new CSizeSigmaPropIso())
-
   def mkCSizeSigmaProp
     (propBytes: Ref[Size[Coll[Byte]]]): Ref[CSizeSigmaProp] = {
     new CSizeSigmaPropCtor(propBytes)
@@ -253,42 +206,29 @@ object CSizeBox extends EntityObject("CSizeBox") {
         true, false, element[Size[WOption[T]]]))
     }
   }
+
   // elem for concrete class
-  class CSizeBoxElem(val iso: Iso[CSizeBoxData, CSizeBox])
+  implicit lazy val cSizeBoxElement: Elem[CSizeBox] =
+    new CSizeBoxElem
+
+  class CSizeBoxElem
     extends SizeBoxElem[CSizeBox]
     with ConcreteElem[CSizeBoxData, CSizeBox] {
     override lazy val parent: Option[Elem[_]] = Some(sizeBoxElement)
+    def iso = ???
   }
 
   // state representation type
   type CSizeBoxData = (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))
 
-  // 3) Iso for concrete class
-  class CSizeBoxIso
-    extends EntityIso[CSizeBoxData, CSizeBox] with Def[CSizeBoxIso] {
-    override def transform(t: Transformer) = new CSizeBoxIso()
-    private lazy val _safeFrom = fun { p: Ref[CSizeBox] => (p.propositionBytes, p.bytes, p.bytesWithoutRef, p.registers, p.tokens) }
-    override def from(p: Ref[CSizeBox]) =
-      tryConvert[CSizeBox, (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))](eTo, eFrom, p, _safeFrom)
-    override def to(p: Ref[(Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[Byte]], (Size[Coll[WOption[AnyValue]]], Size[Coll[(Coll[Byte], Long)]]))))]) = {
-      val Pair(propositionBytes, Pair(bytes, Pair(bytesWithoutRef, Pair(registers, tokens)))) = p
-      RCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
-    }
-    lazy val eFrom = pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[Byte]]], pairElement(element[Size[Coll[WOption[AnyValue]]]], element[Size[Coll[(Coll[Byte], Long)]]]))))
-    lazy val eTo = new CSizeBoxElem(self)
-    lazy val resultType = new CSizeBoxIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CSizeBoxIsoElem() extends Elem[CSizeBoxIso] {
-  }
   // 4) constructor and deconstructor
   class CSizeBoxCompanionCtor extends CompanionDef[CSizeBoxCompanionCtor] with CSizeBoxCompanion {
     def resultType = CSizeBoxCompanionElem
     override def toString = "CSizeBoxCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Ref[CSizeBoxData]): Ref[CSizeBox] = {
-      isoCSizeBox.to(p)
+      val Pair(propositionBytes, Pair(bytes, Pair(bytesWithoutRef, Pair(registers, tokens)))) = p
+      mkCSizeBox(propositionBytes, bytes, bytesWithoutRef, registers, tokens)
     }
 
     @scalan.OverloadId("fromFields")
@@ -314,16 +254,6 @@ object CSizeBox extends EntityObject("CSizeBox") {
     else
       unrefDelegate[CSizeBox](p)
   }
-
-  implicit class ExtendedCSizeBox(p: Ref[CSizeBox]) {
-    def toData: Ref[CSizeBoxData] = {
-      isoCSizeBox.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoCSizeBox: Iso[CSizeBoxData, CSizeBox] =
-    reifyObject(new CSizeBoxIso())
 
   def mkCSizeBox
     (propositionBytes: Ref[Size[Coll[Byte]]], bytes: Ref[Size[Coll[Byte]]], bytesWithoutRef: Ref[Size[Coll[Byte]]], registers: Ref[Size[Coll[WOption[AnyValue]]]], tokens: Ref[Size[Coll[(Coll[Byte], Long)]]]): Ref[CSizeBox] = {
@@ -362,41 +292,27 @@ object CSizeContext extends EntityObject("CSizeContext") {
     }
   }
   // elem for concrete class
-  class CSizeContextElem(val iso: Iso[CSizeContextData, CSizeContext])
+  implicit lazy val cSizeContextElement: Elem[CSizeContext] =
+    new CSizeContextElem
+
+  class CSizeContextElem
     extends SizeContextElem[CSizeContext]
     with ConcreteElem[CSizeContextData, CSizeContext] {
     override lazy val parent: Option[Elem[_]] = Some(sizeContextElement)
+    def iso = ???
   }
 
   // state representation type
   type CSizeContextData = (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))
 
-  // 3) Iso for concrete class
-  class CSizeContextIso
-    extends EntityIso[CSizeContextData, CSizeContext] with Def[CSizeContextIso] {
-    override def transform(t: Transformer) = new CSizeContextIso()
-    private lazy val _safeFrom = fun { p: Ref[CSizeContext] => (p.outputs, p.inputs, p.dataInputs, p.selfBox, p.lastBlockUtxoRootHash, p.headers, p.preHeader, p.vars) }
-    override def from(p: Ref[CSizeContext]) =
-      tryConvert[CSizeContext, (Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))](eTo, eFrom, p, _safeFrom)
-    override def to(p: Ref[(Size[Coll[Box]], (Size[Coll[Box]], (Size[Coll[Box]], (Size[Box], (Size[AvlTree], (Size[Coll[Header]], (Size[PreHeader], Coll[Size[AnyValue]])))))))]) = {
-      val Pair(outputs, Pair(inputs, Pair(dataInputs, Pair(selfBox, Pair(lastBlockUtxoRootHash, Pair(headers, Pair(preHeader, vars))))))) = p
-      RCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
-    }
-    lazy val eFrom = pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Coll[Box]]], pairElement(element[Size[Box]], pairElement(element[Size[AvlTree]], pairElement(element[Size[Coll[Header]]], pairElement(element[Size[PreHeader]], element[Coll[Size[AnyValue]]])))))))
-    lazy val eTo = new CSizeContextElem(self)
-    lazy val resultType = new CSizeContextIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CSizeContextIsoElem() extends Elem[CSizeContextIso] {
-  }
   // 4) constructor and deconstructor
   class CSizeContextCompanionCtor extends CompanionDef[CSizeContextCompanionCtor] with CSizeContextCompanion {
     def resultType = CSizeContextCompanionElem
     override def toString = "CSizeContextCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Ref[CSizeContextData]): Ref[CSizeContext] = {
-      isoCSizeContext.to(p)
+      val Pair(outputs, Pair(inputs, Pair(dataInputs, Pair(selfBox, Pair(lastBlockUtxoRootHash, Pair(headers, Pair(preHeader, vars))))))) = p
+      mkCSizeContext(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
     }
 
     @scalan.OverloadId("fromFields")
@@ -423,16 +339,6 @@ object CSizeContext extends EntityObject("CSizeContext") {
       unrefDelegate[CSizeContext](p)
   }
 
-  implicit class ExtendedCSizeContext(p: Ref[CSizeContext]) {
-    def toData: Ref[CSizeContextData] = {
-      isoCSizeContext.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoCSizeContext: Iso[CSizeContextData, CSizeContext] =
-    reifyObject(new CSizeContextIso())
-
   def mkCSizeContext
     (outputs: Ref[Size[Coll[Box]]], inputs: Ref[Size[Coll[Box]]], dataInputs: Ref[Size[Coll[Box]]], selfBox: Ref[Size[Box]], lastBlockUtxoRootHash: Ref[Size[AvlTree]], headers: Ref[Size[Coll[Header]]], preHeader: Ref[Size[PreHeader]], vars: Ref[Coll[Size[AnyValue]]]): Ref[CSizeContext] = {
     new CSizeContextCtor(outputs, inputs, dataInputs, selfBox, lastBlockUtxoRootHash, headers, preHeader, vars)
@@ -454,41 +360,26 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     override def transform(t: Transformer) = CSizeBuilderCtor()
   }
   // elem for concrete class
-  class CSizeBuilderElem(val iso: Iso[CSizeBuilderData, CSizeBuilder])
+  implicit lazy val cSizeBuilderElement: Elem[CSizeBuilder] =
+    new CSizeBuilderElem
+
+  class CSizeBuilderElem
     extends SizeBuilderElem[CSizeBuilder]
     with ConcreteElem[CSizeBuilderData, CSizeBuilder] {
     override lazy val parent: Option[Elem[_]] = Some(sizeBuilderElement)
+    def iso = ???
   }
 
   // state representation type
   type CSizeBuilderData = Unit
 
-  // 3) Iso for concrete class
-  class CSizeBuilderIso
-    extends EntityIso[CSizeBuilderData, CSizeBuilder] with Def[CSizeBuilderIso] {
-    override def transform(t: Transformer) = new CSizeBuilderIso()
-    private lazy val _safeFrom = fun { p: Ref[CSizeBuilder] => () }
-    override def from(p: Ref[CSizeBuilder]) =
-      tryConvert[CSizeBuilder, Unit](eTo, eFrom, p, _safeFrom)
-    override def to(p: Ref[Unit]) = {
-      val unit = p
-      RCSizeBuilder()
-    }
-    lazy val eFrom = UnitElement
-    lazy val eTo = new CSizeBuilderElem(self)
-    lazy val resultType = new CSizeBuilderIsoElem
-    def productArity = 0
-    def productElement(n: Int) = ???
-  }
-  case class CSizeBuilderIsoElem() extends Elem[CSizeBuilderIso] {
-  }
   // 4) constructor and deconstructor
   class CSizeBuilderCompanionCtor extends CompanionDef[CSizeBuilderCompanionCtor] with CSizeBuilderCompanion {
     def resultType = CSizeBuilderCompanionElem
     override def toString = "CSizeBuilderCompanion"
     @scalan.OverloadId("fromData")
     def apply(p: Ref[CSizeBuilderData]): Ref[CSizeBuilder] = {
-      isoCSizeBuilder.to(p)
+      mkCSizeBuilder()
     }
 
     @scalan.OverloadId("fromFields")
@@ -514,16 +405,6 @@ object CSizeBuilder extends EntityObject("CSizeBuilder") {
     else
       unrefDelegate[CSizeBuilder](p)
   }
-
-  implicit class ExtendedCSizeBuilder(p: Ref[CSizeBuilder]) {
-    def toData: Ref[CSizeBuilderData] = {
-      isoCSizeBuilder.from(p)
-    }
-  }
-
-  // 5) implicit resolution of Iso
-  implicit def isoCSizeBuilder: Iso[CSizeBuilderData, CSizeBuilder] =
-    reifyObject(new CSizeBuilderIso())
 
   def mkCSizeBuilder
     (): Ref[CSizeBuilder] = {
