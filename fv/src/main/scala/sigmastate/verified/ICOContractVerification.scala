@@ -55,21 +55,21 @@ trait FundingContext extends Context {
   def feeBytes: List[Byte]
 }
 
-case class DummyFundingContext(HEIGHT: Int,
-                               INPUTS: List[Box],
-                               OUTPUTS: List[Box],
-                               SELF: Box,
-                               nextStageScriptHash: List[Byte],
-                               feeBytes: List[Byte]) extends FundingContext {
-
-  override def getVar[T](id: Byte): Option[T] = ???
-
-  override def longToByteArray(l: Long): List[Byte] = ???
-
-  override def byteArrayToLong(bytes: List[Byte]): Long = ???
-
-  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
-}
+//case class DummyFundingContext(HEIGHT: Int,
+//                               INPUTS: List[Box],
+//                               OUTPUTS: List[Box],
+//                               SELF: Box,
+//                               nextStageScriptHash: List[Byte],
+//                               feeBytes: List[Byte]) extends FundingContext {
+//
+//  override def getVar[T](id: Byte): Option[T] = ???
+//
+//  override def longToByteArray(l: Long): List[Byte] = ???
+//
+//  override def byteArrayToLong(bytes: List[Byte]): Long = ???
+//
+//  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
+//}
 
 trait IssuanceContext extends Context {
   def nextStageScriptHash: List[Byte]
@@ -79,7 +79,7 @@ trait IssuanceContext extends Context {
 trait WithdrawalContext extends Context {
 }
 
-abstract class ICOContract {
+sealed abstract class ICOContract {
 
   def ICOFundingContract(ctx: FundingContext): Boolean = {
     import ctx._
@@ -130,15 +130,27 @@ abstract class ICOContract {
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
 
-  def ICOFundingProp1(ctx: DummyFundingContext): Boolean = {
+  def failICOFundingSelfIndexNotZero(ctx: FundingContext): Boolean = {
     import ctx._
     require(
       HEIGHT > 0 &&
         INPUTS.nonEmpty &&
-        OUTPUTS.length == 2
+        OUTPUTS.nonEmpty &&
+        INPUTS(0).id != SELF.id
     )
     ICOFundingContract(ctx)
-    }.holds
+  } ensuring (_ == false)
+
+  def failICOFundingIfNoTreeProof(ctx: FundingContext): Boolean = {
+    import ctx._
+    require(
+      HEIGHT > 0 &&
+        INPUTS.nonEmpty &&
+        OUTPUTS.nonEmpty &&
+        getVar[List[Byte]](1) == None[List[Byte]]()
+    )
+    ICOFundingContract(ctx)
+  } ensuring (_ == false)
 
 
   def ICOIssuanceContract(ctx: IssuanceContext): Boolean = {
@@ -252,16 +264,23 @@ abstract class ICOContract {
   }
 
   //  def dummyContract(ctx: FundingContext): Boolean = {
-  //    import ctx._
-  //    INPUTS.nonEmpty
-  ////    blake2b256(List[Byte]()) == List[Byte]()
-  //  }
-
+//    import ctx._
+//    require(INPUTS.nonEmpty)
+////    INPUTS.nonEmpty
+//    INPUTS(0).id == SELF.id
+//    //    blake2b256(List[Byte]()) == List[Byte]()
+//  }
 //
 //  def dummyProp(ctx: FundingContext): Boolean = {
 //    import ctx._
-//    require(INPUTS.nonEmpty)
+//    require(
+//      INPUTS.nonEmpty &&
+//        INPUTS(0).id != SELF.id
+//    )
+//    //    val contract = new ICOContract {}
+//    //    contract.dummyContract(ctx)
 //    dummyContract(ctx)
-//    }.holds
-
+//  } ensuring (_ == false)
 }
+
+case object ICOContractVerification extends ICOContract
