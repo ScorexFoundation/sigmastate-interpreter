@@ -177,12 +177,16 @@ object ICOContractVerification {
     // TODO: proper option handling
     val tokenId: List[Byte] = ctx.SELF.R4[List[Byte]].getOrElse(List())
 
-    val withdrawals = withdrawIndexes.map({ (idx: BigInt) =>
-      val b = ctx.OUTPUTS(idx)
-      if (b.tokens(0)._1 == tokenId) {
-        (blake2b256(b.propositionBytes), b.tokens(0)._2)
+    val withdrawals: List[(List[Byte], Long)] = withdrawIndexes.flatMap({ (idx: BigInt) =>
+      if (idx >= 0 && idx < ctx.OUTPUTS.length) {
+        val b = ctx.OUTPUTS(idx)
+        if (b.tokens.nonEmpty && b.tokens(0)._1 == tokenId) {
+          List((blake2b256(b.propositionBytes), b.tokens(0)._2))
+        } else {
+          List((blake2b256(b.propositionBytes), 0L))
+        }
       } else {
-        (blake2b256(b.propositionBytes), 0L)
+        List()
       }
     })
 
@@ -207,10 +211,10 @@ object ICOContractVerification {
     // TODO: proper option handling
     val expectedTree = out0.R5[AvlTree].getOrElse(AvlTree())
 
-    val selfTokensCorrect = ctx.SELF.tokens(0)._1 == tokenId
-    val selfOutTokensAmount = ctx.SELF.tokens(0)._2
-    val soutTokensCorrect = out0.tokens(0)._1 == tokenId
-    val soutTokensAmount = out0.tokens(0)._2
+    val selfTokensCorrect = ctx.SELF.tokens.nonEmpty && ctx.SELF.tokens(0)._1 == tokenId
+    val selfOutTokensAmount = if (selfTokensCorrect) ctx.SELF.tokens(0)._2 else 0
+    val soutTokensCorrect = out0.tokens.nonEmpty && out0.tokens(0)._1 == tokenId
+    val soutTokensAmount = if (soutTokensCorrect) out0.tokens(0)._2 else 0
 
     val tokensPreserved = selfTokensCorrect && soutTokensCorrect && (soutTokensAmount + withdrawTotal == selfOutTokensAmount)
 
@@ -218,8 +222,7 @@ object ICOContractVerification {
 
     val selfOutputCorrect = out0.propositionBytes == ctx.SELF.propositionBytes
 
-    selfOutputCorrect
-    // properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
+     properTreeModification && valuesCorrect && selfOutputCorrect && tokensPreserved
   }
 
 }
