@@ -165,13 +165,17 @@ object ICOContractVerification {
 
   def ICOWithdrawalContract(ctx: WithdrawalContext): Boolean = {
     // TODO: make verifier green
-    val removeProof = getVar[List[Byte]](2).get
-    val lookupProof = getVar[List[Byte]](3).get
-    val withdrawIndexes = getVar[List[BigInt]](4).get
+    // TODO: proper option handling
+    val removeProof = getVar[List[Byte]](2).getOrElse(List())
+    // TODO: proper option handling
+    val lookupProof = getVar[List[Byte]](3).getOrElse(List())
+    // TODO: proper option handling
+    val withdrawIndexes = getVar[List[BigInt]](4).getOrElse(List())
 
     val out0 = ctx.OUTPUTS(0)
 
-    val tokenId: List[Byte] = ctx.SELF.R4[List[Byte]].get
+    // TODO: proper option handling
+    val tokenId: List[Byte] = ctx.SELF.R4[List[Byte]].getOrElse(List())
 
     val withdrawals = withdrawIndexes.map({ (idx: BigInt) =>
       val b = ctx.OUTPUTS(idx)
@@ -190,14 +194,18 @@ object ICOContractVerification {
 
     val toRemove = withdrawals.map({ (t: (List[Byte], Long)) => t._1 })
 
-    val initialTree = ctx.SELF.R5[AvlTree].get
+    // TODO: proper option handling
+    val initialTree = ctx.SELF.R5[AvlTree].getOrElse(AvlTree())
 
-    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[List[Byte]]) => byteArrayToLong(o.get) })
+    // TODO: proper option handling
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[List[Byte]]) => byteArrayToLong(o.getOrElse(List())) })
     val valuesCorrect = removedValues == withdrawValues
 
-    val modifiedTree = initialTree.remove(toRemove, removeProof).get
+    // TODO: proper option handling
+    val modifiedTree = initialTree.remove(toRemove, removeProof).getOrElse(AvlTree())
 
-    val expectedTree = out0.R5[AvlTree].get
+    // TODO: proper option handling
+    val expectedTree = out0.R5[AvlTree].getOrElse(AvlTree())
 
     val selfTokensCorrect = ctx.SELF.tokens(0)._1 == tokenId
     val selfOutTokensAmount = ctx.SELF.tokens(0)._2
