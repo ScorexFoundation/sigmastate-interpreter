@@ -50,11 +50,6 @@ trait Context {
   def blake2b256(bytes: List[Byte]): List[Byte]
 }
 
-trait FundingContext extends Context {
-  def nextStageScriptHash: List[Byte]
-  def feeBytes: List[Byte]
-}
-
 //case class DummyFundingContext(HEIGHT: Int,
 //                               INPUTS: List[Box],
 //                               OUTPUTS: List[Box],
@@ -81,7 +76,7 @@ trait WithdrawalContext extends Context {
 
 sealed abstract class ICOContract {
 
-  def ICOFundingContract(ctx: FundingContext): Boolean = {
+  def ICOFundingContract(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
@@ -130,7 +125,18 @@ sealed abstract class ICOContract {
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
 
-  def failICOFundingSelfIndexNotZero(ctx: FundingContext): Boolean = {
+//  def proveICOFundingContract(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
+//    import ctx._
+//    require(
+//      HEIGHT > 0 &&
+//        INPUTS.nonEmpty &&
+//        OUTPUTS.length == 2 &&
+//        INPUTS(0).id == SELF.id
+//    )
+//    ICOFundingContract(ctx)
+//  }.holds
+
+  def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
     import ctx._
     require(
       HEIGHT > 0 &&
@@ -138,10 +144,10 @@ sealed abstract class ICOContract {
         OUTPUTS.nonEmpty &&
         INPUTS(0).id != SELF.id
     )
-    ICOFundingContract(ctx)
+    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
   } ensuring (_ == false)
 
-  def failICOFundingIfNoTreeProof(ctx: FundingContext): Boolean = {
+  def failICOFundingIfNoTreeProof(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
     import ctx._
     require(
       HEIGHT > 0 &&
@@ -149,7 +155,7 @@ sealed abstract class ICOContract {
         OUTPUTS.nonEmpty &&
         getVar[List[Byte]](1) == None[List[Byte]]()
     )
-    ICOFundingContract(ctx)
+    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
   } ensuring (_ == false)
 
 
