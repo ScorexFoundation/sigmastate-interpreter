@@ -50,7 +50,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   import SigmaProp._;
   import Box._
   import CCostedBuilder._
-  import CSizeBuilder._
   import Size._;
   import SizeBox._;
   import SizeColl._;
@@ -185,12 +184,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _ => CostTable.MinimalCost
   }
 
-  case class ConstantPlaceholder[T](index: Int)(implicit eT: LElem[T]) extends Def[T] {
-    def resultType: Elem[T] = eT.value
-  }
-
-  def constantPlaceholder[T](index: Int)(implicit eT: LElem[T]): Ref[T] = ConstantPlaceholder[T](index)
-
   def perKbCostOf(opName: String, opType: SFunc, dataSize: Ref[Long]): Ref[Int] = {
     val opNamePerKb = s"${opName}_per_kb"
     PerKbCostOf(OperationId(opNamePerKb, opType), dataSize)
@@ -312,26 +305,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 
   def RCostedThunk[A](costedBlock: Ref[Thunk[Costed[A]]], thunkCost: Ref[Int]): Ref[Costed[Thunk[A]]] = CostedThunkCtor(costedBlock, thunkCost)
   // ---------------------------------------------------------
-
-  object ConstantSizeType {
-    def unapply(e: Elem[_]): Nullable[SType] = {
-      val tpe = elemToSType(e)
-      if (tpe.isConstantSize) Nullable(tpe)
-      else Nullable.None
-    }
-  }
-
-  override def sizeOf[T](value: Ref[T]): Ref[Long] = value.elem match {
-    case ConstantSizeType(tpe) =>
-      typeSize(tpe)
-    case _ =>
-      !!!(s"Cannot get sizeOf($value: ${value.elem})", value)
-  }
-
-  /** Graph node to represent computation of size for types with isConstantSize == true. */
-  case class TypeSize(tpe: SType) extends BaseDef[Long] {
-    assert(tpe.isConstantSize, s"Expected isConstantSize type but was TypeSize($tpe)")
-  }
 
   def typeSize(tpe: SType): Ref[Long] = {
     assert(tpe.isConstantSize, {
@@ -804,8 +777,8 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val _colBuilder: LazyRep[CollBuilder] = MutableLazy(variable[CollBuilder])
   @inline def colBuilder: Ref[CollBuilder] = _colBuilder.value
 
-  private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
-  @inline def sizeBuilder: Ref[SizeBuilder] = _sizeBuilder.value
+//  private val _sizeBuilder: LazyRep[SizeBuilder] = MutableLazy(RCSizeBuilder())
+//  @inline def sizeBuilder: Ref[SizeBuilder] = _sizeBuilder.value
 
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
   @inline def costedBuilder: Ref[CostedBuilder] = _costedBuilder.value
@@ -832,7 +805,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   protected override def onReset(): Unit = {
     super.onReset()
     // WARNING: every lazy value should be listed here, otherwise bevavior after resetContext is undefined and may throw.
-    Array(_sigmaDslBuilder, _colBuilder, _sizeBuilder, _costedBuilder,
+    Array(_sigmaDslBuilder, _colBuilder, _costedBuilder,
       _monoidBuilder, _intPlusMonoid, _longPlusMonoid, _costedGlobal,
       _costOfProveDlog, _costOfDHTuple)
         .foreach(_.reset())
@@ -905,28 +878,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _ => error(s"Don't know how to convert Elem $e to SType")
   }
 
-  def rtypeToElem(t: RType[_]): Elem[_] = t match {
-    case BooleanType => BooleanElement
-    case ByteType => ByteElement
-    case ShortType => ShortElement
-    case IntType => IntElement
-    case LongType => LongElement
-    case StringType => StringElement
-    case AnyType => AnyElement
-    case BigIntRType => bigIntElement
-    case GroupElementRType => groupElementElement
-    case AvlTreeRType => avlTreeElement
-    case ot: OptionType[_] => wOptionElement(rtypeToElem(ot.tA))
-    case BoxRType => boxElement
-    case SigmaPropRType => sigmaPropElement
-    case tup: TupleType => tupleStructElement(tup.items.map(t => rtypeToElem(t)):_*)
-    case ct:  CollType[_] => collElement(rtypeToElem(ct.tItem))
-    case ft:  FuncType[_,_] => funcElement(rtypeToElem(ft.tDom), rtypeToElem(ft.tRange))
-    case pt:  PairType[_,_] => pairElement(rtypeToElem(pt.tFst), rtypeToElem(pt.tSnd))
-    case pvt: PrimViewType[_,_] => rtypeToElem(pvt.tVal)
-    case _ => sys.error(s"Don't know how to convert RType $t to Elem")
-  }
-
   /** For a given data type returns the corresponding specific descendant of CostedElem[T] */
   def elemToCostedElem[T](implicit e: Elem[T]): Elem[Costed[T]] = (e match {
     case oe: WOptionElem[a,_] => costedOptionElement(oe.eItem)
@@ -982,17 +933,10 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (LongElement, implicitly[Ordering[Long]]),
     (bigIntElement, implicitly[Ordering[SBigInt]])
   )
-  private lazy val elemToExactNumeric = Map[Elem[_], ExactNumeric[_]](
-    (ByteElement,   ByteIsExactNumeric),
-    (ShortElement,  ShortIsExactNumeric),
-    (IntElement,    IntIsExactNumeric),
-    (LongElement,   LongIsExactNumeric),
-  )
 
   def elemToNumeric [T](e: Elem[T]): Numeric[T]  = elemToNumericMap(e).asInstanceOf[Numeric[T]]
   def elemToIntegral[T](e: Elem[T]): Integral[T] = elemToIntegralMap(e).asInstanceOf[Integral[T]]
   def elemToOrdering[T](e: Elem[T]): Ordering[T] = elemToOrderingMap(e).asInstanceOf[Ordering[T]]
-  def elemToExactNumeric[T](e: Elem[T]): ExactNumeric[T] = elemToExactNumeric(e).asInstanceOf[ExactNumeric[T]]
 
   def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
     case OpCodes.PlusCode => NumericPlus(elemToNumeric(eT))(eT)

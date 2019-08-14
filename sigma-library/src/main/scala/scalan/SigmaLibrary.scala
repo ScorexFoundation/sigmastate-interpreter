@@ -8,7 +8,6 @@ trait SigmaLibrary extends Library
     with special.sigma.wrappers.WrappersModule
     with SigmaDslModule
     with CostedObjectsModule
-    with SigmaDslCostedModule
 {
   import Coll._
   import CollBuilder._

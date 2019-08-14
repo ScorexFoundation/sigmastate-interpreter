@@ -57,12 +57,12 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   import SizeFunc._
   import CSizeFunc._
   import SizeAnyValue._
-  import CSizeAnyValue._
+//  import CSizeAnyValue._
   import SizeSigmaProp._
   import SizeBox._
-  import CSizeBox._
+//  import CSizeBox._
   import SizeContext._
-  import CSizeContext._
+//  import CSizeContext._
   import MonoidBuilder._
   import OpCodes._
 
@@ -212,9 +212,9 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: CSizeFuncCtor[_, _, _] => CSizeFuncCtorCode
     case _: CSizeOptionCtor[_] => CSizeOptionCtorCode
     case _: CSizeCollCtor[_] => CSizeCollCtorCode
-    case _: CSizeBoxCtor => CSizeBoxCtorCode
-    case _: CSizeContextCtor => CSizeContextCtorCode
-    case _: CSizeAnyValueCtor => CSizeAnyValueCtorCode
+//    case _: CSizeBoxCtor => CSizeBoxCtorCode
+//    case _: CSizeContextCtor => CSizeContextCtorCode
+//    case _: CSizeAnyValueCtor => CSizeAnyValueCtorCode
     case CollM.sum(_, _) => CollMSumCode
     case CBM.replicate(_, _, _) => CBMReplicateCode
     case CBM.fromItems(_, _, _) => CBMFromItemsCode
@@ -821,15 +821,15 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case CSizeOptionCtor(In(optSize: Option[SSize[_]] @unchecked)) =>
             val res = new special.collection.CSizeOption(optSize)
             out(res)
-          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
-            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
-            out(res)
-          case CSizeBoxCtor(
-                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
-                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
-                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
-            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
-            out(res)
+//          case CSizeAnyValueCtor(tVal, In(valueSize: SSize[Any] @unchecked)) =>
+//            val res = new special.sigma.CSizeAnyValue(tVal.eA.sourceType.asInstanceOf[RType[Any]], valueSize)
+//            out(res)
+//          case CSizeBoxCtor(
+//                 In(propBytes: SSize[SColl[Byte]]@unchecked), In(bytes: SSize[SColl[Byte]]@unchecked),
+//                 In(bytesWithoutRef: SSize[SColl[Byte]]@unchecked), In(regs: SSize[SColl[Option[SAnyValue]]]@unchecked),
+//                 In(tokens: SSize[SColl[(SColl[Byte], Long)]]@unchecked)) =>
+//            val res = new EvalSizeBox(propBytes, bytes, bytesWithoutRef, regs, tokens)
+//            out(res)
 
           case costOp: CostOf =>
             out(costOp.eval)
@@ -850,10 +850,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
                   tpe.dataSize(data.asWrappedType)
               }
             }
-            out(size)
-          case TypeSize(tpe) =>
-            assert(tpe.isConstantSize)
-            val size = tpe.dataSize(SType.DummyValue)
             out(size)
           case c @ Cast(eTo, In(v)) =>
             if (!eTo.sourceType.classTag.runtimeClass.isAssignableFrom(v.getClass)) {
