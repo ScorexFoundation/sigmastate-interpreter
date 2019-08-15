@@ -212,20 +212,22 @@ sealed abstract class ICOContract {
 
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
-      INPUTS.nonEmpty)
+      INPUTS.nonEmpty &&
+      getVar[List[Byte]](2).isDefined &&
+      getVar[List[Byte]](3).isDefined &&
+      getVar[List[BigInt]](4).isDefined &&
+      SELF.R4[List[Byte]].isDefined &&
+      SELF.R5[AvlTree].isDefined &&
+      OUTPUTS(0).R5[AvlTree].isDefined
+    )
 
-    // TODO: make verifier green
-    // TODO: proper option handling
-    val removeProof = getVar[List[Byte]](2).getOrElse(List())
-    // TODO: proper option handling
-    val lookupProof = getVar[List[Byte]](3).getOrElse(List())
-    // TODO: proper option handling
-    val withdrawIndexes = getVar[List[BigInt]](4).getOrElse(List())
+    val removeProof = getVar[List[Byte]](2).get
+    val lookupProof = getVar[List[Byte]](3).get
+    val withdrawIndexes = getVar[List[BigInt]](4).get
 
     val out0 = OUTPUTS(0)
 
-    // TODO: proper option handling
-    val tokenId: List[Byte] = SELF.R4[List[Byte]].getOrElse(List())
+    val tokenId: List[Byte] = SELF.R4[List[Byte]].get
 
     val withdrawals: List[(List[Byte], Long)] = withdrawIndexes.flatMap({ (idx: BigInt) =>
       if (idx >= 0 && idx < OUTPUTS.length) {
@@ -248,18 +250,15 @@ sealed abstract class ICOContract {
 
     val toRemove = withdrawals.map({ (t: (List[Byte], Long)) => t._1 })
 
-    // TODO: proper option handling
-    val initialTree = SELF.R5[AvlTree].getOrElse(AvlTree())
+    val initialTree = SELF.R5[AvlTree].get
 
     // TODO: proper option handling
     val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[List[Byte]]) => byteArrayToLong(o.getOrElse(List())) })
     val valuesCorrect = removedValues == withdrawValues
 
-    // TODO: proper option handling
-    val modifiedTree = initialTree.remove(toRemove, removeProof).getOrElse(AvlTree())
+    val modifiedTree = initialTree.remove(toRemove, removeProof)
 
-    // TODO: proper option handling
-    val expectedTree = out0.R5[AvlTree].getOrElse(AvlTree())
+    val expectedTree = out0.R5[AvlTree]
 
     val selfTokensCorrect = SELF.tokens.nonEmpty && SELF.tokens(0)._1 == tokenId
     val selfOutTokensAmount = if (selfTokensCorrect) SELF.tokens(0)._2 else 0
