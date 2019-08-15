@@ -7,7 +7,7 @@ import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 
 /**
   * Inputs, that are used to enrich script context, but won't be spent by the transaction
@@ -22,7 +22,7 @@ case class DataInput(boxId: BoxId) {
     case _ => false
   }
 
-  override def hashCode(): Int = boxId.hashCode
+  override def hashCode(): Int = Helpers.deepHashCode(boxId)
 }
 
 /**
@@ -43,7 +43,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
     case _ => false
   }
 
-  override def hashCode(): Int = boxId.hashCode
+  override def hashCode(): Int = Helpers.deepHashCode(boxId)
 
   /**
     * Input, that should be signed by prover and verified by verifier.
