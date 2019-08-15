@@ -148,7 +148,7 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       val calcF = costed.sliceCalc
       val costF = fun { sCtx: RSize[Context] => costed.sliceCost(Pair(0, sCtx)) }
       val sizeF = fun { sCtx: RSize[Context] => costed.sliceSize(sCtx).dataSize }
-      val res = Tuple(calcF, costF, sizeF)
+      val res = Pair(calcF, Pair(costF, sizeF))
       if (printGraphs) {
         val str = struct(
           "calc" -> calcF,
