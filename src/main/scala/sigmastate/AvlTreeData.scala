@@ -82,8 +82,6 @@ object AvlTreeData {
     AvlTreeFlags.AllOperationsAllowed,
     keyLength = 32)
 
-  def apply(avlTree: AvlTree): AvlTreeData = SigmaDsl.toAvlTreeData(avlTree)
-
   object serializer extends SigmaSerializer[AvlTreeData, AvlTreeData] {
 
     override def serialize(data: AvlTreeData, w: SigmaByteWriter): Unit = {

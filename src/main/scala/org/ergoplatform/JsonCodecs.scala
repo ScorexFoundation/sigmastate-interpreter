@@ -103,7 +103,7 @@ trait JsonCodecs {
       "version" -> h.version.asJson,
       "parentId" -> h.parentId.asJson,
       "adProofsRoot" -> h.ADProofsRoot.asJson,
-      "stateRoot" -> AvlTreeData(h.stateRoot).asJson,
+      "stateRoot" -> SigmaDsl.toAvlTreeData(h.stateRoot).asJson,
       "transactionsRoot" -> h.transactionsRoot.asJson,
       "timestamp" -> h.timestamp.asJson,
       "nBits" -> h.nBits.asJson,
