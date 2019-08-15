@@ -9,7 +9,6 @@ package impl {
 // Abs -----------------------------------
 trait CostedObjectsDefs extends scalan.Scalan with CostedObjects {
   self: SigmaLibrary =>
-import IsoUR._
 import AnyValue._
 import AvlTree._
 import Box._
