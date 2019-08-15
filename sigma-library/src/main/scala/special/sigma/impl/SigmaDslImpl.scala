@@ -11,7 +11,6 @@ package impl {
   // Abs -----------------------------------
 trait SigmaDslDefs extends scalan.Scalan with SigmaDsl {
   self: SigmaLibrary =>
-import IsoUR._
 import AnyValue._
 import AvlTree._
 import BigInt._
