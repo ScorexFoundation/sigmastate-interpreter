@@ -1,6 +1,6 @@
 package sigmastate
 
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}

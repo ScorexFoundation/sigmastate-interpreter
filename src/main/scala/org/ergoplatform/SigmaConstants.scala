@@ -14,7 +14,7 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
   * but due to versioned execution, all versions of the values should be
   * available simultaneously.
   */
-object ErgoConstants {
+object SigmaConstants {
 
   object MaxBoxSize extends SizeConstant[Int](4 * 1024, 1,
     "Box size should not be greater than provided value") {

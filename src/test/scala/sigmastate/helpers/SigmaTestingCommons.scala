@@ -2,7 +2,7 @@ package sigmastate.helpers
 
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._

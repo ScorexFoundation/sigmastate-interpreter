@@ -3,7 +3,7 @@ package org.ergoplatform.validation
 import java.nio.ByteBuffer
 import java.util
 
-import org.ergoplatform.ErgoConstants.MaxLoopLevelInCostFunction
+import org.ergoplatform.SigmaConstants.MaxLoopLevelInCostFunction
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
 import sigma.util.Extensions.toUByte

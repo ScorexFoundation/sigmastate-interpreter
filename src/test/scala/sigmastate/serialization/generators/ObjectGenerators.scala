@@ -1,7 +1,7 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.MaxPropositionBytes
+import org.ergoplatform.SigmaConstants.MaxPropositionBytes
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.ergoplatform._

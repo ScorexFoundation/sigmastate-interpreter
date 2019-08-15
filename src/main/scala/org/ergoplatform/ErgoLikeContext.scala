@@ -189,7 +189,7 @@ object ErgoLikeContext {
   type Height = Int
 
   /** Maximimum number of headers in `headers` collection of the context. */
-  val MaxHeaders = ErgoConstants.MaxHeaders.value
+  val MaxHeaders = SigmaConstants.MaxHeaders.value
 }
 
 /** When interpreted evaluates to a ByteArrayConstant built from Context.minerPubkey */

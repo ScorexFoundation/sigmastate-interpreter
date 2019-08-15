@@ -1,6 +1,6 @@
 package special.sigma
 
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
 import sigmastate.interpreter.ContextExtension
 import org.scalacheck.Gen.containerOfN

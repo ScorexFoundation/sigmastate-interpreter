@@ -7,7 +7,7 @@ import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResul
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
