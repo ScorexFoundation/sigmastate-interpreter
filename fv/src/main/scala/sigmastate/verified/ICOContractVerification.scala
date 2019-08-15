@@ -169,13 +169,15 @@ sealed abstract class ICOContract {
 
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
-      INPUTS.nonEmpty)
+      INPUTS.nonEmpty &&
+      SELF.R5[AvlTree].isDefined &&
+      OUTPUTS(0).R5[AvlTree].isDefined &&
+      OUTPUTS(0).R4[List[Byte]].isDefined
+    )
 
-    // TODO: proper option handling
-    val openTree = SELF.R5[AvlTree].getOrElse(AvlTree())
+    val openTree = SELF.R5[AvlTree].get
 
-    // TODO: proper option handling
-    val closedTree = OUTPUTS(0).R5[AvlTree].getOrElse(AvlTree())
+    val closedTree = OUTPUTS(0).R5[AvlTree].get
 
     val digestPreserved = openTree.digest == closedTree.digest
     val keyLengthPreserved = openTree.keyLength == closedTree.keyLength
@@ -193,8 +195,7 @@ sealed abstract class ICOContract {
     val correctTokensIssued = OUTPUTS(0).tokens.size == 1 && SELF.value == OUTPUTS(0).tokens(0)._2
 
     val correctTokenId = outputsCountCorrect &&
-    // TODO: proper option handling
-    OUTPUTS(0).R4[List[Byte]].getOrElse(List()) == tokenId &&
+    OUTPUTS(0).R4[List[Byte]].get == tokenId &&
       OUTPUTS(0).tokens.size == 1 &&
       OUTPUTS(0).tokens(0)._1 == tokenId
 
