@@ -1,20 +1,81 @@
-package sigmastate.verified
+package sigmastate.contract.verification
 
-import sigmastate.verified.CrowdFundingContractVerification.SigmaProp
-import stainless.annotation._
+import scalan.{RType => ERType}
+import sigmastate.contract.verification.Helpers._
+import special.collection.Coll
+import special.sigma.{Box => EBox, SigmaProp => ESigmaProp}
+import stainless.annotation.{extern, library, pure}
 import stainless.collection._
 import stainless.lang._
-import stainless.math._
-import stainless.proof._
 
+@library
+case class SigmaProp(@extern v: ESigmaProp) {
+  @extern @pure
+  def isValid: Boolean = v.isValid
+}
+
+@library
+object Helpers {
+
+  @library @extern
+  type RType[T] = ERType[T]
+
+//  @library
+//  case class ListType[A](tItem: RType[A]) extends RType[List[A]] {
+//    @library @extern
+//    val classTag: ClassTag[List[A]] = ClassTag[List[A]](classOf[List[A]])
+//    override def name: String = s"List[${tItem.name}]"
+//    override def isConstantSize: Boolean = false
+//  }
+//
+  @library @extern
+  implicit def collToList[T](coll: Coll[T]): List[T] = ???
+  @library @extern
+  implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
+
+  @library @extern
+  implicit def listRType[A](implicit tA: RType[A]): RType[List[A]] = ??? //ListType[A](tA)
+
+//  @library @extern
+//  implicit def listByteRType: RType[List[Byte]] = ???
+
+  @library @extern
+  implicit val ByteType: RType[Byte] = scalan.RType.ByteType
+}
+
+@library
 trait Box {
+  @library
   def value: Long
+  @library
   def id: List[Byte]
-  def R4[T]: Option[T]
+  @library
+  def R4[T](implicit cT: RType[T]): Option[T]
+  @library
   def R5[T]: Option[T]
+  @library
   def tokens: List[(List[Byte], Long)]
+  @library
   def propositionBytes: List[Byte]
 }
+
+@library
+case class CBox(@extern v: EBox) extends Box{
+  @extern @pure
+  def value: Long = v.value
+  @extern @pure
+  def id: List[Byte] = v.id
+  @extern @pure
+  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
+  @extern @pure
+  def R5[T]: Option[T] = ???
+  @extern @pure
+  def tokens: List[(List[Byte], Long)] = ??? //v.tokens
+  @extern @pure
+  def propositionBytes: List[Byte] = v.propositionBytes
+}
+
+
 
 trait AvlTree {
   def digest: List[Byte]
@@ -65,14 +126,6 @@ trait Context {
 //
 //  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
 //}
-
-trait IssuanceContext extends Context {
-  def nextStageScriptHash: List[Byte]
-  def projectPubKey: SigmaProp
-}
-
-trait WithdrawalContext extends Context {
-}
 
 sealed abstract class ICOContract {
 
@@ -164,7 +217,7 @@ sealed abstract class ICOContract {
   } ensuring (_ == false)
 
 
-  def ICOIssuanceContract(ctx: IssuanceContext): Boolean = {
+  def ICOIssuanceContract(ctx: Context, nextStageScriptHash: List[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
@@ -207,7 +260,7 @@ sealed abstract class ICOContract {
     projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
   }
 
-  def ICOWithdrawalContract(ctx: WithdrawalContext): Boolean = {
+  def ICOWithdrawalContract(ctx: Context): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
