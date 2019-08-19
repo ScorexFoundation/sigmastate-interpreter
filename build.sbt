@@ -298,9 +298,15 @@ lazy val rootSettings = Seq(
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
-lazy val fv = project
-  .in(file("fv"))
+//lazy val fv = project
+//  .in(file("fv"))
+//  .enablePlugins(StainlessPlugin)
+//  .settings(commonSettings: _*)
+
+lazy val contractVerification = project
+  .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
+  .dependsOn(sigmaapi)
   .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
@@ -394,3 +400,4 @@ commands += Command.command("spamTest") { state =>
     "spamTestTask" ::
     state
 }
+
