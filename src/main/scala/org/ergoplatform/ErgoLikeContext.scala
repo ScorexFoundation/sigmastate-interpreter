@@ -153,8 +153,6 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
   }
 
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[ErgoLikeContext]
-
   override def equals(other: Any): Boolean = other match {
     case that: ErgoLikeContext =>
       (that canEqual this) &&
@@ -171,6 +169,8 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
         initCost == that.initCost
     case _ => false
   }
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[ErgoLikeContext]
 
   override def hashCode(): Int = {
     val state = Array(lastBlockUtxoRoot, headers, preHeader, dataBoxes, boxesToSpend, spendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
