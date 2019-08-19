@@ -20,18 +20,18 @@ import spire.syntax.all.cfor
 /**
   * TODO lastBlockUtxoRoot should be calculated from headers if it is nonEmpty
   *
-  * @param selfIndex - index of the box in `boxesToSpend` that contains the script we're evaluating
-  * @param lastBlockUtxoRoot - state root before current block application
-  * @param headers - fixed number of last block headers in descending order (first header is the newest one)
-  * @param preHeader - fields of block header with the current `spendingTransaction`, that can be predicted
-  *                  by a miner before it's formation
-  * @param dataBoxes -  boxes, that corresponds to id's of `spendingTransaction.dataInputs`
-  * @param boxesToSpend - boxes, that corresponds to id's of `spendingTransaction.inputs`
+  * @param selfIndex           - index of the box in `boxesToSpend` that contains the script we're evaluating
+  * @param lastBlockUtxoRoot   - state root before current block application
+  * @param headers             - fixed number of last block headers in descending order (first header is the newest one)
+  * @param preHeader           - fields of block header with the current `spendingTransaction`, that can be predicted
+  *                            by a miner before it's formation
+  * @param dataBoxes           -  boxes, that corresponds to id's of `spendingTransaction.dataInputs`
+  * @param boxesToSpend        - boxes, that corresponds to id's of `spendingTransaction.inputs`
   * @param spendingTransaction - transaction that contains `self` box
-  * @param extension - prover-defined key-value pairs, that may be used inside a script
+  * @param extension           - prover-defined key-value pairs, that may be used inside a script
   * @param validationSettings  validataion parameters passed to Interpreter.verify to detect soft-fork conditions
-  * @param costLimit  hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
-  * @param initCost   initial value of execution cost already accumulated before Interpreter.verify is called
+  * @param costLimit           hard limit on accumulated execution cost, if exceeded lead to CostLimitException to be thrown
+  * @param initCost            initial value of execution cost already accumulated before Interpreter.verify is called
   */
 class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
                       val headers: Coll[Header],
