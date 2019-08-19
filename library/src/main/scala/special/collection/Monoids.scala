@@ -1,0 +1,25 @@
+package special.collection {
+  import scalan._
+
+  trait Monoids extends Base { self: Library =>
+    import Monoid._;
+    import MonoidBuilder._;
+    trait Monoid[T] extends Def[Monoid[T]] {
+      implicit def eT: Elem[T];
+      def zero: Ref[T];
+      def plus(x: Ref[T], y: Ref[T]): Ref[T];
+      def power(x: Ref[T], n: Ref[Int]): Ref[T]
+    };
+    @WithMethodCallRecognizers trait MonoidBuilder extends Def[MonoidBuilder] {
+      def intPlusMonoid: Ref[Monoid[Int]];
+      def intMaxMonoid: Ref[Monoid[Int]];
+      def intMinMonoid: Ref[Monoid[Int]];
+      def longPlusMonoid: Ref[Monoid[Long]];
+      def longMaxMonoid: Ref[Monoid[Long]];
+      def longMinMonoid: Ref[Monoid[Long]];
+      def pairMonoid[A, B](m1: Ref[Monoid[A]], m2: Ref[Monoid[B]]): Ref[Monoid[scala.Tuple2[A, B]]]
+    };
+    trait MonoidCompanion;
+    trait MonoidBuilderCompanion
+  }
+}
