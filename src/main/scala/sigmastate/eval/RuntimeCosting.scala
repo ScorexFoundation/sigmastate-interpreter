@@ -226,53 +226,53 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       costOf(v.opName, v.opType)
   }
 
-  trait SizeStruct extends Size[Struct] {
-    def sizeFields: Ref[Struct]
-  }
-  case class SizeStructCtor(sizeFields: Ref[Struct]) extends SizeStruct {
-    override def transform(t: Transformer) = SizeStructCtor(t(sizeFields))
+//  trait SizeStruct extends Size[Struct] {
+//    def sizeFields: Ref[Struct]
+//  }
+//  case class SizeStructCtor(sizeFields: Ref[Struct]) extends SizeStruct {
+//    override def transform(t: Transformer) = SizeStructCtor(t(sizeFields))
+//
+//    implicit val eVal: Elem[Struct] = {
+//      val fields = sizeFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[SizeElem[_, _]].eVal) }
+//      structElement(fields)
+//    }
+//    val resultType: Elem[Size[Struct]] = sizeElement(eVal)
+//
+//    def dataSize: Ref[Long] = {
+//      val sizes = sizeFields.fields.map { case (_, cf: RSize[a]@unchecked) => cf.dataSize }
+//      val sizesColl = colBuilder.fromItems(sizes:_*)
+//      sizesColl.sum(longPlusMonoid)
+//    }
+//  }
+//  def RSizeStruct(sizeFields: Ref[Struct]): Ref[Size[Struct]] = SizeStructCtor(sizeFields)
 
-    implicit val eVal: Elem[Struct] = {
-      val fields = sizeFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[SizeElem[_, _]].eVal) }
-      structElement(fields)
-    }
-    val resultType: Elem[Size[Struct]] = sizeElement(eVal)
+//  trait CostedStruct extends Costed[Struct] { }
 
-    def dataSize: Ref[Long] = {
-      val sizes = sizeFields.fields.map { case (_, cf: RSize[a]@unchecked) => cf.dataSize }
-      val sizesColl = colBuilder.fromItems(sizes:_*)
-      sizesColl.sum(longPlusMonoid)
-    }
-  }
-  def RSizeStruct(sizeFields: Ref[Struct]): Ref[Size[Struct]] = SizeStructCtor(sizeFields)
+//  case class CostedStructCtor(costedFields: Ref[Struct], structCost: Ref[Int]) extends CostedStruct {
+//    override def transform(t: Transformer) = CostedStructCtor(t(costedFields), t(structCost))
+//
+//    implicit val eVal: Elem[Struct] = {
+//      val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
+//      structElement(fields)
+//    }
+//    val resultType: Elem[Costed[Struct]] = costedElement(eVal)
+//
+//    def builder: Ref[CostedBuilder] = costedBuilder
+//
+//    def value: Ref[Struct] = costedFields.mapFields { case cf: RCosted[a]@unchecked => cf.value }
+//
+//    def cost: Ref[Int] = {
+//      val costs = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.cost }
+//      opCost(value, costs, structCost)
+//    }
+//
+//    override def size: Ref[Size[Struct]] = {
+//      val sizeFields = costedFields.mapFields { case cf: RCosted[a]@unchecked => cf.size }
+//      SizeStructCtor(sizeFields)
+//    }
+//  }
 
-  trait CostedStruct extends Costed[Struct] { }
-
-  case class CostedStructCtor(costedFields: Ref[Struct], structCost: Ref[Int]) extends CostedStruct {
-    override def transform(t: Transformer) = CostedStructCtor(t(costedFields), t(structCost))
-
-    implicit val eVal: Elem[Struct] = {
-      val fields = costedFields.elem.fields.map { case (fn, cE) => (fn, cE.asInstanceOf[CostedElem[_, _]].eVal) }
-      structElement(fields)
-    }
-    val resultType: Elem[Costed[Struct]] = costedElement(eVal)
-
-    def builder: Ref[CostedBuilder] = costedBuilder
-
-    def value: Ref[Struct] = costedFields.mapFields { case cf: RCosted[a]@unchecked => cf.value }
-
-    def cost: Ref[Int] = {
-      val costs = costedFields.fields.map { case (_, cf: RCosted[a]@unchecked) => cf.cost }
-      opCost(value, costs, structCost)
-    }
-
-    override def size: Ref[Size[Struct]] = {
-      val sizeFields = costedFields.mapFields { case cf: RCosted[a]@unchecked => cf.size }
-      SizeStructCtor(sizeFields)
-    }
-  }
-
-  def RCostedStruct(costedFields: Ref[Struct], structCost: Ref[Int]): Ref[Costed[Struct]] = CostedStructCtor(costedFields, structCost)
+//  def RCostedStruct(costedFields: Ref[Struct], structCost: Ref[Int]): Ref[Costed[Struct]] = CostedStructCtor(costedFields, structCost)
 
   // SizeThunk =============================================
   trait SizeThunk[A] extends Size[Thunk[A]] { }
@@ -844,7 +844,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case SAvlTree => avlTreeElement
     case SSigmaProp => sigmaPropElement
     case STuple(Seq(a, b)) => pairElement(stypeToElem(a), stypeToElem(b))
-    case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
+//    case STuple(items) => tupleStructElement(items.map(stypeToElem(_)):_*)
     case c: SCollectionType[a] => collElement(stypeToElem(c.elemType))
     case o: SOption[a] => wOptionElement(stypeToElem(o.elemType))
     case SFunc(Seq(tpeArg), tpeRange, Nil) => funcElement(stypeToElem(tpeArg), stypeToElem(tpeRange))
@@ -869,9 +869,9 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     case _: HeaderElem[_] => SHeader
     case _: PreHeaderElem[_] => SPreHeader
     case _: SigmaPropElem[_] => SSigmaProp
-    case se: StructElem[_] =>
-      assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
-      STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
+//    case se: StructElem[_] =>
+//      assert(se.fieldNames.zipWithIndex.forall { case (n,i) => n == s"_${i+1}" })
+//      STuple(se.fieldElems.map(elemToSType(_)).toIndexedSeq)
     case ce: CollElem[_, _] => SCollection(elemToSType(ce.eItem))
     case fe: FuncElem[_, _] => SFunc(elemToSType(fe.eDom), elemToSType(fe.eRange))
     case pe: PairElem[_, _] => STuple(elemToSType(pe.eFst), elemToSType(pe.eSnd))
@@ -1348,12 +1348,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         val c = mkNormalizedOpCost(v, costs)
         RCCostedPair(x, y, c)
 
-      case Values.Tuple(InSeq(items)) =>
-        val fields = items.zipWithIndex.map { case (x, i) => (s"_${i+1}", x)}
-        val value = struct(fields)
-        val cost = opCost(value, items.map(_.cost), costedBuilder.ConstructTupleCost)
-        RCostedStruct(value, cost)
-
       case node: BooleanTransformer[_] =>
         val tpeIn = node.input.tpe.elemType
         val eIn = stypeToElem(tpeIn)
@@ -1480,10 +1474,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
           case ce: CollElem[a,_] =>
             val xsC = asRep[Costed[Coll[a]]](xs)
             val v = xsC.value.length
-            RCCostedPrim(v, opCost(v, Array(xsC.cost), costOf(node)), SizeInt)
-          case se: StructElem[_] =>
-            val xsC = asRep[Costed[Struct]](xs)
-            val v = se.fields.length
             RCCostedPrim(v, opCost(v, Array(xsC.cost), costOf(node)), SizeInt)
           case pe: PairElem[a,b] =>
             val xsC = asRep[Costed[(a,b)]](xs)

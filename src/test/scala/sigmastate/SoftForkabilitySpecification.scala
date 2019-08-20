@@ -1,18 +1,18 @@
 package sigmastate
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckCostFunc, CheckCostFuncOperation, CheckDeserializedScriptIsSigmaProp, CheckTupleType, CheckValidOpCode, trySoftForkable, _}
+import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftForkable, CheckCostFuncOperation, CheckTupleType, CheckCostFunc, CheckDeserializedScriptIsSigmaProp, _}
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
-import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
+import sigmastate.Values.{UnparsedErgoTree, NotReadyValueInt, ByteArrayConstant, Tuple, IntConstant, ErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoLikeTestInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ContextExtension, ProverResult}
+import sigmastate.interpreter.{ProverResult, ContextExtension}
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.{CosterException, SerializerException}
-import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode, OpCodeExtra}
+import sigmastate.lang.exceptions.{SerializerException, SigmaException, CosterException}
+import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
@@ -257,10 +257,12 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   }
 
   property("CheckTupleType rule") {
-    val exp = SelectField(Tuple(IntConstant(1), IntConstant(2), IntConstant(3)), 3)
+    val tuple = Tuple(IntConstant(1), IntConstant(2), IntConstant(3))
+    val exp = SelectField(tuple, 3)
     val v2vs = vs.updated(CheckTupleType.id, ReplacedRule(0))
     checkRule(CheckTupleType, v2vs, {
-      IR.doCosting(emptyEnv, exp)
+      // simulate throwing of exception in
+      CheckTupleType.throwValidationException(new SigmaException(s"Invalid tuple type"), Array[IR.Elem[_]]())
     })
   }
 

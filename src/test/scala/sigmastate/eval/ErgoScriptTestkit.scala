@@ -149,17 +149,12 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       val sizeF = fun { sCtx: RSize[Context] => costed.sliceSize(sCtx).dataSize }
       val res = Pair(calcF, Pair(costF, sizeF))
       if (printGraphs) {
-        val str = struct(
-          "calc" -> calcF,
-          "cost" -> costF,
-          "size" -> sizeF
-        )
-        val strExp = struct(
-          expectedCalcF.map("calc" -> _).toSeq ++
-          expectedCostF.map("cost" -> _).toSeq ++
-          expectedSizeF.map("size" -> _).toSeq
-        )
-        val graphs = Seq(str, strExp)
+        val str = Pair(calcF, Pair(costF, sizeF))
+        val strExp =
+          expectedCalcF.toSeq ++
+          expectedCostF.toSeq ++
+          expectedSizeF.toSeq
+        val graphs = str +: strExp
         emit(name, graphs:_*)
       }
       checkExpectedFunc(calcF, expectedCalcF, "Calc function actual: %s, expected: %s")
