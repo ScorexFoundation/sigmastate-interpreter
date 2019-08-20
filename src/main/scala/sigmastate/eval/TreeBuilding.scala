@@ -374,17 +374,11 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkSelectField(recurse(pair), 1)
       case Def(Second(pair)) =>
         mkSelectField(recurse(pair), 2)
-      case Def(FieldApply(In(data), IsTupleFN(i))) =>
-        mkSelectField(data.asTuple, i)
 
       case Def(Downcast(inputSym, toSym)) =>
         mkDowncast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
       case Def(Upcast(inputSym, toSym)) =>
         mkUpcast(recurse(inputSym).asNumValue, elemToSType(toSym).asNumType)
-
-      case Def(SimpleStruct(_, fields)) =>
-        val items = fields.map { case (n, v) => recurse(v) }
-        mkTuple(items)
 
       case GM.exp(In(obj), In(arg)) =>
         mkExponentiate(obj.asGroupElement, arg.asBigInt)

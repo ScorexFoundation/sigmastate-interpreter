@@ -225,7 +225,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
       case _: Const[_] => ConstantCode
       case _: Tup[_, _] => TupleCode
       case _: First[_, _] | _: Second[_, _] => SelectFieldCode
-      case _: FieldApply[_] => SelectFieldCode
       case _: Lambda[_, _] => FuncValueCode
       case _: Apply[_, _] => FuncApplyCode
       case _: Upcast[_, _] => UpcastCode
@@ -644,12 +643,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
           case Tup(In(a), In(b)) => out((a,b))
           case First(In(p: Tuple2[_,_])) => out(p._1)
           case Second(In(p: Tuple2[_,_])) => out(p._2)
-          case FieldApply(In(data), IsTupleFN(i)) => data match {
-            case coll: special.collection.Coll[a] =>
-              out(coll(i - 1))
-            case tup: Product =>
-              out(tup.productElement(i - 1))
-          }
 
           case wc: LiftedConst[_,_] => out(wc.constValue)
 
@@ -868,10 +861,6 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
               out(SBigInt.upcast(from.asInstanceOf[AnyVal]))
             else
               out(tpe.upcast(from.asInstanceOf[AnyVal]))
-
-          case SimpleStruct(_, fields) =>
-            val items = fields.map { case (_, In(fieldValue)) => fieldValue }.toArray
-            out(sigmaDslBuilderValue.Colls.fromArray(items)(AnyType))
 
           case _ =>
             !!!(s"Don't know how to evaluate($sym -> ${sym.node})")

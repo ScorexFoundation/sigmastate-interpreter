@@ -33,8 +33,6 @@ class Scalan
   with GraphVizExport
   with Thunks
   with Entities
-  with Structs
-//  with TypeSum
   with Modules
   with DefRewriting
 

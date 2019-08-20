@@ -48,7 +48,7 @@ case class ValidationRule(
     * Should be used in all validation rules to unify ValidationException instances
     * which can be thrown (to simplify handling).
     */
-  protected def throwValidationException(cause: Throwable, args: Seq[Any]) = {
+  def throwValidationException(cause: Throwable, args: Seq[Any]) = {
     if (cause.isInstanceOf[ValidationException]) {
       throw cause
     }

@@ -363,8 +363,6 @@ trait GraphVizExport extends Base { self: Scalan =>
     }
 
     private def partsIterator(td: TypeDesc) = td match {
-      case se: StructElem[_] =>
-        se.fieldElems.iterator
       case e: Elem[_] =>
         e.typeArgsDescs
       case _: Cont[_] =>
