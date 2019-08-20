@@ -2,7 +2,6 @@ package sigmastate.serialization
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.serialization.OpCodes._
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 
 case class TaggedVariableSerializer(cons: (Byte, SType) => Value[SType])

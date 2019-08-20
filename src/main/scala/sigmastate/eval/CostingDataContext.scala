@@ -461,8 +461,7 @@ class CCostModel extends CostModel {
   def PubKeySize: Long = CryptoConstants.EncodedGroupElementLength
 }
 
-class CostingSigmaDslBuilder extends TestSigmaDslBuilder {
-  dsl =>
+class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   implicit val validationSettings = ValidationRules.currentSettings
 
   override val Costing: CostedBuilder = new CCostedBuilder {

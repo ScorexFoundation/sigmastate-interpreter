@@ -2,7 +2,6 @@ package sigmastate.serialization.trees
 
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.lang.Terms._
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
