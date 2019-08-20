@@ -49,9 +49,7 @@ object Values {
   type Idn = String
 
   trait Value[+S <: SType] extends SigmaNode {
-    def companion: ValueCompanion /*=
-      sys.error(s"Companion object is not defined for AST node ${this.getClass}")*/
-
+    def companion: ValueCompanion
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode = companion.opCode
 
@@ -72,8 +70,6 @@ object Values {
     def opType: SFunc
 
     def opName: String = this.getClass.getSimpleName
-
-    def opId: OperationId = OperationId(opName, opType)
 
     /** Parser has some source information like line,column in the text. We need to keep it up until RuntimeCosting.
     * The way to do this is to add Nullable property to every Value. Since Parser is always using SigmaBuilder
@@ -116,8 +112,6 @@ object Values {
 
     implicit def liftSigmaProp(g: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(g)
     implicit def liftSigmaBoolean(sb: SigmaBoolean): Value[SSigmaProp.type] = SigmaPropConstant(SigmaDsl.SigmaProp(sb))
-
-    def apply[S <: SType](tS: S)(const: tS.WrappedType): Value[S] = tS.mkConstant(const)
 
     object Typed {
       def unapply(v: SValue): Option[(SValue, SType)] = Some((v, v.tpe))
@@ -299,17 +293,9 @@ object Values {
 
   object ByteConstant {
     def apply(value: Byte): Constant[SByte.type] = Constant[SByte.type](value, SByte)
-    def unapply(v: SValue): Option[Byte] = v match {
-      case Constant(value: Byte, SByte) => Some(value)
-      case _ => None
-    }
   }
   object ShortConstant {
     def apply(value: Short): Constant[SShort.type]  = Constant[SShort.type](value, SShort)
-    def unapply(v: SValue): Option[Short] = v match {
-      case Constant(value: Short, SShort) => Some(value)
-      case _ => None
-    }
   }
   object IntConstant {
     def apply(value: Int): Constant[SInt.type]  = Constant[SInt.type](value, SInt)
@@ -319,7 +305,6 @@ object Values {
     }
 
     def Zero = IntConstant(0)
-    def One = IntConstant(1)
   }
   object LongConstant {
     def apply(value: Long): Constant[SLong.type]  = Constant[SLong.type](value, SLong)
@@ -332,10 +317,6 @@ object Values {
     def apply(value: BigInt): Constant[SBigInt.type] = Constant[SBigInt.type](value, SBigInt)
     def apply(value: BigInteger): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(value), SBigInt)
     def apply(value: Long): Constant[SBigInt.type] = Constant[SBigInt.type](SigmaDsl.BigInt(BigInteger.valueOf(value)), SBigInt)
-    def unapply(v: SValue): Option[BigInt] = v match {
-      case Constant(value: BigInt, SBigInt) => Some(value)
-      case _ => None
-    }
   }
 
   object StringConstant {
@@ -344,15 +325,10 @@ object Values {
       case Constant(value: String, SString) => Some(value)
       case _ => None
     }
-    def Empty = StringConstant("")
   }
 
   object BoxConstant {
     def apply(value: Box): Constant[SBox.type] = Constant[SBox.type](value, SBox)
-    def unapply(v: SValue): Option[Box] = v match {
-      case Constant(value: Box, SBox) => Some(value)
-      case _ => None
-    }
   }
 
   object GroupElementConstant {
@@ -379,27 +355,6 @@ object Values {
 
   object AvlTreeConstant {
     def apply(value: AvlTree): Constant[SAvlTree.type] = Constant[SAvlTree.type](value, SAvlTree)
-    def unapply(v: SValue): Option[AvlTree] = v match {
-      case Constant(value: AvlTree, SAvlTree) => Some(value)
-      case _ => None
-    }
-  }
-
-  implicit class AvlTreeConstantOps(val c: AvlTreeConstant) extends AnyVal {
-    def createVerifier(proof: SerializedAdProof) =
-      new BatchAVLVerifier[Digest32, Blake2b256.type](
-        ADDigest @@ c.value.digest.toArray,
-        proof,
-        c.value.keyLength,
-        c.value.valueLengthOpt)
-  }
-
-  object ContextConstant {
-    def apply(value: ErgoLikeContext): Constant[SContext.type]  = Constant[SContext.type](value, SContext)
-    def unapply(v: SValue): Option[ErgoLikeContext] = v match {
-      case Constant(value: ErgoLikeContext, SContext) => Some(value)
-      case _ => None
-    }
   }
 
   object PreHeaderConstant {
@@ -416,14 +371,6 @@ object Values {
       case Constant(value: Header, SHeader) => Some(value)
       case _ => None
     }
-  }
-
-  trait NotReadyValueByte extends NotReadyValue[SByte.type] {
-    override def tpe = SByte
-  }
-
-  trait NotReadyValueShort extends NotReadyValue[SShort.type] {
-    override def tpe = SShort
   }
 
   trait NotReadyValueInt extends NotReadyValue[SInt.type] {
@@ -450,35 +397,11 @@ object Values {
   type TaggedAvlTree = TaggedVariable[SAvlTree.type]
   type TaggedByteArray = TaggedVariable[SCollection[SByte.type]]
 
-  def TaggedBoolean(id: Byte): Value[SBoolean.type] = mkTaggedVariable(id, SBoolean)
-  def TaggedByte(id: Byte): Value[SByte.type] = mkTaggedVariable(id, SByte)
-  def TaggedShort(id: Byte): Value[SShort.type] = mkTaggedVariable(id, SShort)
-  def TaggedInt(id: Byte): Value[SInt.type] = mkTaggedVariable(id, SInt)
-  def TaggedLong(id: Byte): Value[SLong.type] = mkTaggedVariable(id, SLong)
-  def TaggedBigInt(id: Byte): Value[SBigInt.type] = mkTaggedVariable(id, SBigInt)
   def TaggedBox(id: Byte): Value[SBox.type] = mkTaggedVariable(id, SBox)
-  def TaggedGroupElement(id: Byte): Value[SGroupElement.type] =
-    mkTaggedVariable(id, SGroupElement)
-  def TaggedSigmaProp(id: Byte): TaggedSigmaProp = TaggedVariable(id, SSigmaProp)
   def TaggedAvlTree(id: Byte): Value[SAvlTree.type] = mkTaggedVariable(id, SAvlTree)
-  def TaggedByteArray (id: Byte): Value[SCollection[SByte.type]] =
-    mkTaggedVariable(id, SByteArray)
 
   trait EvaluatedCollection[T <: SType, C <: SCollection[T]] extends EvaluatedValue[C] {
     def elementType: T
-  }
-
-  type OptionConstant[T <: SType] = Constant[SOption[T]]
-  object OptionConstant {
-    def apply[T <: SType](value: Option[T#WrappedType], elementType: T): Constant[SOption[T]] =
-      Constant[SOption[T]](value, SOption(elementType))
-    def unapply[T <: SType](node: Value[SOption[T]]): Option[(Option[T#WrappedType], T)] = node match {
-      case opt: Constant[SOption[a]] @unchecked if opt.tpe.isOption =>
-        val v = opt.value.asInstanceOf[Option[T#WrappedType]]
-        val t = opt.tpe.elemType.asInstanceOf[T]
-        Some((v, t))
-      case _ => None
-    }
   }
 
   type CollectionConstant[T <: SType] = Constant[SCollection[T]]

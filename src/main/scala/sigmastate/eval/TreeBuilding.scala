@@ -174,9 +174,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       case Def(ApplyUnOp(IsLogicalUnOp(mkNode), xSym)) =>
         mkNode(recurse(xSym))
 
-//      case CBM.fromArray(_, arr @ Def(wc: LiftedConst[a,_])) =>
-//        val colTpe = elemToSType(s.elem)
-//        mkConstant[colTpe.type](wc.constValue.asInstanceOf[colTpe.WrappedType], colTpe)
       case CBM.fromItems(_, colSyms, elemT) =>
         val elemTpe = elemToSType(elemT)
         val col = colSyms.map(recurse(_).asValue[elemTpe.type])
@@ -304,8 +301,6 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         SigmaAnd(Seq(p1.asSigmaProp, p2.asSigmaProp))
       case SigmaM.or_sigma_||(In(p1), In(p2)) =>
         SigmaOr(Seq(p1.asSigmaProp, p2.asSigmaProp))
-      case SigmaM.isValid(In(prop)) =>
-        mkSigmaPropIsProven(prop.asSigmaProp)
       case SigmaM.propBytes(In(prop)) =>
         mkSigmaPropBytes(prop.asSigmaProp)
 

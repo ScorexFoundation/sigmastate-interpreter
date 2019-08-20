@@ -12,8 +12,6 @@ case class ConstantSerializer(builder: SigmaBuilder)
   extends ByteBufferSerializer[Constant[SType]] with ValueSerializer[Constant[SType]] {
   override def opDesc = Constant
 
-  override def opCost(opId: OperationId): Int = Cost.ConstantNode
-
   override def parse(r: SigmaByteReader): Value[SType] = deserialize(r)
 
   override def serialize(c: Constant[SType], w: SigmaByteWriter): Unit = {
