@@ -30,9 +30,6 @@ trait ValueSerializer[V <: Value[SType]] extends SigmaSerializer[Value[SType], V
   /** Code of the corresponding tree node (Value.opCode) which is used to lookup this serizalizer
     * during deserialization. It is emitted immediately before the body of this node in serialized byte array. */
   @inline final def opCode: OpCode = opDesc.opCode
-
-  def opCost(opId: OperationId): ExpressionCost =
-    sys.error(s"Operation opCost is not defined for AST node ${this.getClass}")
 }
 
 object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
@@ -138,9 +135,15 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaTransformerSerializer(SigmaAnd, mkSigmaAnd),
     SigmaTransformerSerializer(SigmaOr, mkSigmaOr),
     BoolToSigmaPropSerializer(mkBoolToSigmaProp),
+
+    // TODO hard-fork: this ModQ serializers should be removed only as part of hard-fork
+    // because their removal may break deserialization of transaction, when for example
+    // ModQ operation happen to be in one of the outputs (i.e. script is not executed
+    // during validation, however deserializer is still used)
     ModQSerializer,
     ModQArithOpSerializer(ModQArithOp.PlusModQ, mkPlusModQ),
     ModQArithOpSerializer(ModQArithOp.MinusModQ, mkMinusModQ),
+
     SubstConstantsSerializer,
     CreateProveDlogSerializer(mkCreateProveDlog),
     CreateProveDHTupleSerializer(mkCreateProveDHTuple),

@@ -270,7 +270,6 @@ trait MethodByNameUnapply extends STypeCompanion {
 
 /** Base trait for all types which have methods (and properties) */
 trait SProduct extends SType {
-  def ancestors: Seq[SType]
   /** Returns -1 if `method` is not found. */
   def methodIndex(name: String): Int = methods.indexWhere(_.name == name)
   def hasMethod(name: String): Boolean = methodIndex(name) != -1
@@ -459,7 +458,6 @@ object SPrimType {
 /** Marker trait for all numeric types. */
 trait SNumericType extends SProduct {
   import SNumericType._
-  override def ancestors: Seq[SType] = Nil
   protected override def getMethods(): Seq[SMethod] = {
     super.getMethods() ++ SNumericType.methods.map {
       m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
@@ -476,10 +474,6 @@ trait SNumericType extends SProduct {
 
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
-
-  def castOpDesc(toType: SNumericType): ValueCompanion = {
-    if ((this max toType) == this) Downcast else Upcast
-  }
 
   override def toString: Idn = this.getClass.getSimpleName
 }
@@ -537,7 +531,6 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def typeId = typeCode
-  override def ancestors: Seq[SType] = Nil
   val ToByte = "toByte"
   protected override def getMethods() = super.getMethods()
   /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
@@ -699,7 +692,6 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
 /** NOTE: this descriptor both type and type companion */
 case object SString extends SProduct with SMonoType {
   override type WrappedType = String
-  override def ancestors: Seq[SType] = Nil
   override val typeCode: TypeCode = 102: Byte
   override def typeId = typeCode
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
@@ -738,7 +730,6 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override def mkConstant(v: GroupElement): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
   override def isConstantSize = true
-  def ancestors = Nil
 }
 
 case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLogical with SMonoType {
@@ -754,7 +745,6 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
   override def isConstantSize = true
-  def ancestors = Nil
   val PropBytes = "propBytes"
   val IsProven = "isProven"
   protected override def getMethods() = super.getMethods() ++ Seq(
@@ -792,7 +782,6 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with 
     1L + opt.fold(0L)(x => elemType.dataSize(x))
   }
   override def isConstantSize = elemType.isConstantSize
-  def ancestors = Nil
   protected override def getMethods() = super.getMethods() ++ SOption.methods
 //  override lazy val methods: Seq[SMethod] = {
 //    val subst = Map(SOption.tT -> elemType)
@@ -907,7 +896,6 @@ object SOption extends STypeCompanion {
 trait SCollection[T <: SType] extends SProduct with SGenericType {
   def elemType: T
   override type WrappedType = Coll[T#WrappedType]
-  def ancestors = Nil
   override def isConstantSize = false
 }
 
@@ -1348,7 +1336,6 @@ case object SBox extends SProduct with SPredefType with SMonoType {
     Sized.sizeOf(box).dataSize
   }
   override def isConstantSize = false
-  def ancestors = Nil
 
   val tT = STypeVar("T")
   def registers(idOfs: Int): Seq[SMethod] = {
@@ -1418,7 +1405,6 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = AvlTreeData.TreeDataSize
   override def isConstantSize = true
-  def ancestors = Nil
 
   import SOption._
   val TCollOptionCollByte = SCollection(SByteArrayOption)
@@ -1558,14 +1544,14 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   override type WrappedType = ErgoLikeContext
   override val typeCode: TypeCode = 101: Byte
   override def typeId = typeCode
-  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] = ContextConstant(v)
+  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] =
+    sys.error(s"Cannot create constant of type Context")
 
   /** Approximate data size of the given context without ContextExtension. */
   override def dataSize(v: SType#WrappedType): Long = {
     sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
   }
   override def isConstantSize = false
-  def ancestors = Nil
 
   val tT = STypeVar("T")
   val dataInputsMethod = property("dataInputs", SBoxArray, 1)
@@ -1612,7 +1598,6 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
     3   // votes
   }
   override def isConstantSize = true
-  def ancestors = Nil
 
   val idMethod               = property("id", SByteArray, 1)
   val versionMethod          = property("version",  SByte,      2)
@@ -1655,7 +1640,6 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
         3   // votes
   }
   override def isConstantSize = true
-  def ancestors = Nil
 
   val versionMethod          = property("version",  SByte,      1)
   val parentIdMethod         = property("parentId", SByteArray, 2)
@@ -1697,7 +1681,6 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     sys.error(s"Should not be used, use SizeContext and Sized typeclass instead")
   }
   override def isConstantSize = true  // only fixed amount of global information is allowed
-  def ancestors = Nil
 
   val tT = STypeVar("T")
   val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
