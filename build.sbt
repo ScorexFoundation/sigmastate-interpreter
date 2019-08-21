@@ -221,12 +221,26 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
         bouncycastleBcprov
       ))
 
+lazy val sigmastate = (project in file("sigmastate"))
+  .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+  .settings(libraryDefSettings)
+  .settings(libraryDependencies ++= Seq(scorexUtil, kiama, fastparse)) // ++= Seq(scorexUtil))
+
 lazy val sigma = (project in file("."))
-    .aggregate(
-      common, core, libraryapi, libraryimpl, library,
-      sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
-    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
-    .settings(commonSettings: _*)
+//    .aggregate(
+//      common, core, libraryapi, libraryimpl, library,
+//      sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer, sigmastate)
+    .settings(commonSettings, rootSettings)
+
+lazy val aggregateCompile = ScopeFilter(
+  inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
+    sigmalibrary, sigmaconf, scalanizer, sigmastate),
+  inConfigurations(Compile))
+
+lazy val rootSettings = Seq(
+  sources in Compile := sources.all(aggregateCompile).value.flatten,
+  libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten
+)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "sigma-core-opt"
