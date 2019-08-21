@@ -2,7 +2,6 @@ package org.ergoplatform
 
 import java.util
 
-import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.validation.SigmaValidationSettings
 import sigmastate.SType._
 import sigmastate.Values._
@@ -14,7 +13,7 @@ import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Box, GroupElement, Header, PreHeader}
+import special.sigma.{AnyValue, Header, PreHeader}
 import spire.syntax.all.cfor
 
 /**
