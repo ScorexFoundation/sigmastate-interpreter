@@ -4,11 +4,9 @@ import java.util
 import java.util.{Arrays, Objects}
 
 import scorex.crypto.authds.ADDigest
-import sigmastate.eval.SigmaDsl
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import special.sigma.AvlTree
 
 
 case class AvlTreeFlags(insertAllowed: Boolean, updateAllowed: Boolean, removeAllowed: Boolean) {

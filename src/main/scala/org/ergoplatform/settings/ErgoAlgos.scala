@@ -1,8 +1,6 @@
 package org.ergoplatform.settings
 
-import scorex.crypto.authds.LeafData
-import scorex.crypto.authds.merkle.MerkleTree
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.Blake2b256
 import scorex.util._
 import special.collection.Coll
 

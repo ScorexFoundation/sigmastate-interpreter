@@ -1,6 +1,5 @@
 package sigmastate.interpreter
 
-import org.bouncycastle.math.ec.ECPoint
 import scorex.crypto.hash.Blake2b256
 
 object CryptoFunctions {

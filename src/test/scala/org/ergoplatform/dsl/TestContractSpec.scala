@@ -77,7 +77,6 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   case class TestInputBox(tx: TransactionCandidate, utxoBox: OutBox) extends InputBox {
     private [dsl] def toErgoContext: ErgoLikeContext = {
-      val propSpec = utxoBox.propSpec
       val boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq
       val dataBoxes = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq
       val ctx = ErgoLikeContextTesting(
