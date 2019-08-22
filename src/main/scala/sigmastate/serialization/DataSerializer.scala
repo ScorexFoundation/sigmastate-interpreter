@@ -134,6 +134,7 @@ object DataSerializer {
       case SBoolean =>
         Colls.fromArray(r.getBits(len)).asInstanceOf[Coll[T#WrappedType]]
       case SByte =>
+        // TODO make covered
         Colls.fromArray(r.getBytes(len)).asInstanceOf[Coll[T#WrappedType]]
       case _ =>
         implicit val tItem = (tpeElem match {

@@ -418,14 +418,6 @@ object Values {
     }
   }
 
-  implicit class CollectionConstantOps[T <: SType](val c: CollectionConstant[T]) extends AnyVal {
-    def toConcreteCollection: ConcreteCollection[T] = {
-      val tElem = c.tpe.elemType
-      val items = c.value.toArray.map(v => tElem.mkConstant(v.asInstanceOf[tElem.WrappedType]))
-      ConcreteCollection(items, tElem)
-    }
-  }
-
   val ByteArrayTypeCode = (SCollectionType.CollectionTypeCode + SByte.typeCode).toByte
 
   object ByteArrayConstant {
@@ -707,12 +699,6 @@ object Values {
       case tuple: Tuple => whenTuple(tuple)
       case _ => sys.error(s"Unexpected node $coll")
     }
-    def toConcreteCollection: ConcreteCollection[T] =
-      matchCase(
-        cc => cc,
-        _.toConcreteCollection,
-        t => ConcreteCollection(t.items.map(_.asValue[T]), SAny.asInstanceOf[T])
-      )
   }
 
   implicit class SigmaPropValueOps(val p: Value[SSigmaProp.type]) extends AnyVal {
