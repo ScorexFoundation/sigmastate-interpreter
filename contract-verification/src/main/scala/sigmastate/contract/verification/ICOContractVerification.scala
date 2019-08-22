@@ -1,17 +1,27 @@
 package sigmastate.contract.verification
 
+import scalan.RType.GeneralType
 import scalan.{RType => ERType}
 import sigmastate.contract.verification.Helpers._
 import special.collection.Coll
 import special.sigma.{Box => EBox, SigmaProp => ESigmaProp}
-import stainless.annotation.{extern, library, pure}
+import stainless.annotation.{extern, ignore, library, opaque, pure}
 import stainless.collection._
 import stainless.lang._
 
+import scala.reflect.ClassTag
+
+//@library
+//case class SigmaProp(@extern v: ESigmaProp) {
+//  @extern @pure
+//  def isValid: Boolean = v.isValid
+//}
+
+
 @library
-case class SigmaProp(@extern v: ESigmaProp) {
+trait SigmaProp extends SigmaPropT {
   @extern @pure
-  def isValid: Boolean = v.isValid
+  override def isValid: Boolean
 }
 
 @library
@@ -20,27 +30,34 @@ object Helpers {
   @library @extern
   type RType[T] = ERType[T]
 
-//  @library
-//  case class ListType[A](tItem: RType[A]) extends RType[List[A]] {
-//    @library @extern
-//    val classTag: ClassTag[List[A]] = ClassTag[List[A]](classOf[List[A]])
-//    override def name: String = s"List[${tItem.name}]"
-//    override def isConstantSize: Boolean = false
-//  }
-//
+  @library @extern
+  type SigmaPropT = ESigmaProp
+
+  @library @extern
+  case class ListType[A](tItem: RType[A]) extends RType[List[A]] {
+    @library @extern
+    val classTag: ClassTag[List[A]] = ClassTag[List[A]](classOf[List[A]])
+    override def name: String = s"List[${tItem.name}]"
+    override def isConstantSize: Boolean = false
+  }
+
   @library @extern
   implicit def collToList[T](coll: Coll[T]): List[T] = ???
   @library @extern
   implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
 
-  @library @extern
-  implicit def listRType[A](implicit tA: RType[A]): RType[List[A]] = ??? //ListType[A](tA)
+  @library @extern @pure @opaque
+  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ListType[A](cT)
 
 //  @library @extern
 //  implicit def listByteRType: RType[List[Byte]] = ???
 
-  @library @extern
+  @library @extern @pure @opaque
   implicit val ByteType: RType[Byte] = scalan.RType.ByteType
+  @library @extern @pure @opaque
+  implicit val AvlTreeRType: RType[AvlTree] = new GeneralType(scala.reflect.classTag[AvlTree]) {
+    override def isConstantSize: Boolean = true
+  }
 }
 
 @library
@@ -49,33 +66,44 @@ trait Box {
   def value: Long
   @library
   def id: List[Byte]
-  @library
-  def R4[T](implicit cT: RType[T]): Option[T]
-  @library
+  @library @pure @opaque
+  def R4[T]: Option[T]
+  //  def R4[T](implicit cT: RType[T]): Option[T]
+
+  @library @pure @opaque
   def R5[T]: Option[T]
+//  def R5[T](implicit cT: RType[T]): Option[T]
+
   @library
   def tokens: List[(List[Byte], Long)]
   @library
   def propositionBytes: List[Byte]
 }
 
+/*
+
 @library
 case class CBox(@extern v: EBox) extends Box{
+
   @extern @pure
   def value: Long = v.value
   @extern @pure
   def id: List[Byte] = v.id
   @extern @pure
-  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
+  def R4[T]: Option[T] = ???
+//  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
+
   @extern @pure
-  def R5[T]: Option[T] = ???
+  def R5[T]: Option[T] = ??? // v.R5[T]
+  //  def R5[T](implicit @extern cT: RType[T]): Option[T] = v.R5[T]
+
   @extern @pure
   def tokens: List[(List[Byte], Long)] = ??? //v.tokens
   @extern @pure
   def propositionBytes: List[Byte] = v.propositionBytes
 }
 
-
+ */
 
 trait AvlTree {
   def digest: List[Byte]
@@ -148,6 +176,7 @@ sealed abstract class ICOContract {
     val proof = getVar[List[Byte]](1).get
 
     val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
+      // TODO avoid getOrElse
       val pk = b.R4[List[Byte]].getOrElse(List())
       val value = longToByteArray(b.value)
       (pk, value)
@@ -210,13 +239,16 @@ sealed abstract class ICOContract {
       SELF.R5[AvlTree].isDefined &&
       OUTPUTS(0).R5[AvlTree].isDefined &&
 
-      INPUTS (0).id != SELF.id
+      // reason to fail
+      INPUTS(0).id != SELF.id
     )
 
     ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
   } ensuring (_ == false)
 
 
+  // TODO fix
+  @ignore
   def ICOIssuanceContract(ctx: Context, nextStageScriptHash: List[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
 
@@ -260,6 +292,8 @@ sealed abstract class ICOContract {
     projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
   }
 
+  // TODO fix
+  @ignore
   def ICOWithdrawalContract(ctx: Context): Boolean = {
     import ctx._
 
