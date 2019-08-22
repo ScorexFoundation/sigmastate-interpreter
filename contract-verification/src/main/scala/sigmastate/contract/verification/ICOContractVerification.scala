@@ -1,22 +1,16 @@
 package sigmastate.contract.verification
 
-import scalan.RType.GeneralType
 import scalan.{RType => ERType}
 import sigmastate.contract.verification.Helpers._
 import special.collection.Coll
 import special.sigma.{Box => EBox, SigmaProp => ESigmaProp}
-import stainless.annotation.{extern, ignore, library, opaque, pure}
+import stainless.annotation.{extern, ignore, library, opaque, partialEval, pure}
 import stainless.collection._
 import stainless.lang._
 
-import scala.reflect.ClassTag
+import scala.language.implicitConversions
 
-//@library
-//case class SigmaProp(@extern v: ESigmaProp) {
-//  @extern @pure
-//  def isValid: Boolean = v.isValid
-//}
-
+// TODO: bring in the Coll
 
 @library
 trait SigmaProp extends SigmaPropT {
@@ -34,30 +28,17 @@ object Helpers {
   type SigmaPropT = ESigmaProp
 
   @library @extern
-  case class ListType[A](tItem: RType[A]) extends RType[List[A]] {
-    @library @extern
-    val classTag: ClassTag[List[A]] = ClassTag[List[A]](classOf[List[A]])
-    override def name: String = s"List[${tItem.name}]"
-    override def isConstantSize: Boolean = false
-  }
-
-  @library @extern
   implicit def collToList[T](coll: Coll[T]): List[T] = ???
   @library @extern
   implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
 
-  @library @extern @pure @opaque
-  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ListType[A](cT)
+  @library @extern @pure
+  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ???
 
-//  @library @extern
-//  implicit def listByteRType: RType[List[Byte]] = ???
-
-  @library @extern @pure @opaque
-  implicit val ByteType: RType[Byte] = scalan.RType.ByteType
-  @library @extern @pure @opaque
-  implicit val AvlTreeRType: RType[AvlTree] = new GeneralType(scala.reflect.classTag[AvlTree]) {
-    override def isConstantSize: Boolean = true
-  }
+  @library @extern @pure
+  implicit def ByteType: RType[Byte] = ???
+  @extern @pure
+  implicit def AvlTreeRType: RType[AvlTree] = ???
 }
 
 @library
@@ -66,14 +47,10 @@ trait Box {
   def value: Long
   @library
   def id: List[Byte]
-  @library @pure @opaque
-  def R4[T]: Option[T]
-  //  def R4[T](implicit cT: RType[T]): Option[T]
-
-  @library @pure @opaque
-  def R5[T]: Option[T]
-//  def R5[T](implicit cT: RType[T]): Option[T]
-
+  @library @pure
+  def R4[T](implicit cT: RType[T]): Option[T]
+  @library @pure
+  def R5[T](implicit cT: RType[T]): Option[T]
   @library
   def tokens: List[(List[Byte], Long)]
   @library
@@ -113,18 +90,6 @@ trait AvlTree {
   def getMany(keys: List[List[Byte]], proof: List[Byte]): List[Option[List[Byte]]]
   def insert(toAdd: List[(List[Byte], List[Byte])], proof: List[Byte]): Option[AvlTree]
   def remove(operations: List[List[Byte]], proof: List[Byte]): Option[AvlTree]
-}
-
-// TODO remove after getOrElse are removed
-case object AvlTree extends AvlTree {
-  def apply(): AvlTree = ???
-  override def digest: List[Byte] = ???
-  override def keyLength: Int = ???
-  override def valueLengthOpt: Option[Int] = ???
-  override def enabledOperations: Byte = ???
-  override def getMany(keys: List[List[Byte]], proof: List[Byte]): List[Option[List[Byte]]] = ???
-  override def insert(toAdd: List[(List[Byte], List[Byte])], proof: List[Byte]): Option[AvlTree] = ???
-  override def remove(operations: List[List[Byte]], proof: List[Byte]): Option[AvlTree] = ???
 }
 
 trait Context {
@@ -247,8 +212,6 @@ sealed abstract class ICOContract {
   } ensuring (_ == false)
 
 
-  // TODO fix
-  @ignore
   def ICOIssuanceContract(ctx: Context, nextStageScriptHash: List[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
 
@@ -292,8 +255,6 @@ sealed abstract class ICOContract {
     projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
   }
 
-  // TODO fix
-  @ignore
   def ICOWithdrawalContract(ctx: Context): Boolean = {
     import ctx._
 
