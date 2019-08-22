@@ -234,7 +234,7 @@ lazy val sigma = (project in file("."))
 
 lazy val aggregateCompile = ScopeFilter(
   inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
-    sigmalibrary, sigmaconf, scalanizer, sigmastate),
+    sigmalibrary, sigmastate),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
