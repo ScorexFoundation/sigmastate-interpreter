@@ -2,7 +2,6 @@ package special.sigma
 
 import java.math.BigInteger
 
-import org.ergoplatform.ErgoLikeContext.dummyPubkey
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
@@ -426,7 +425,7 @@ class SigmaDslTest extends PropSpec
       byteArrayToBigInt(x)
     }
     forAll { x: Array[Byte] =>
-      whenever(x.length <= ErgoConstants.MaxBigIntSizeInBytes.value) {
+      whenever(x.length <= SigmaConstants.MaxBigIntSizeInBytes.value) {
         eq(Builder.DefaultCollBuilder.fromArray(x))
       }
     }

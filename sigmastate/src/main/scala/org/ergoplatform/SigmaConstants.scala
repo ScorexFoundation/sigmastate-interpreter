@@ -14,7 +14,7 @@ case class SizeConstant[T: Numeric](value: T, id: Short, description: String)
   * but due to versioned execution, all versions of the values should be
   * available simultaneously.
   */
-object ErgoConstants {
+object SigmaConstants {
 
   object MaxBoxSize extends SizeConstant[Int](4 * 1024, 1,
     "Box size should not be greater than provided value") {
@@ -68,6 +68,14 @@ object ErgoConstants {
     "Maximum allowed loop level in a cost function") {
   }
 
+  object VotesArraySize extends SizeConstant[Int](3, 14,
+    "Size of of Header.votes array") {
+  }
+
+  object AutolykosPowSolutionNonceArraySize extends SizeConstant[Int](8, 15,
+    "size of nonce array from Autolykos POW solution in Header.powNonce array") {
+  }
+
   val ConstTable: Seq[SizeConstant[_]] = {
     val rows = Seq(
       MaxBoxSize,
@@ -82,7 +90,9 @@ object ErgoConstants {
       MaxHeaders,
       MaxChildrenCountForAtLeastOp,
       ScriptCostLimit,
-      MaxLoopLevelInCostFunction
+      MaxLoopLevelInCostFunction,
+      VotesArraySize,
+      AutolykosPowSolutionNonceArraySize
     )
     require(rows.length == rows.distinctBy(_.id).length, s"Duplicate constant id in $rows")
     rows

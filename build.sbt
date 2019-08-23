@@ -113,6 +113,13 @@ libraryDependencies ++= Seq(
   kiama, fastparse, debox
 ) ++ testingDependencies
 
+val circeVersion = "0.10.0"
+val circeCore = "io.circe" %% "circe-core" % circeVersion 
+val circeGeneric = "io.circe" %% "circe-generic" % circeVersion 
+val circeParser = "io.circe" %% "circe-parser" % circeVersion 
+
+libraryDependencies ++= Seq( circeCore, circeGeneric, circeParser )
+
 scalacOptions ++= Seq("-feature", "-deprecation")
 
 // set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
@@ -224,7 +231,8 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
 lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
-  .settings(libraryDependencies ++= Seq(scorexUtil, kiama, fastparse)) // ++= Seq(scorexUtil))
+  .settings(libraryDependencies ++= Seq(
+    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser)) 
 
 lazy val sigma = (project in file("."))
 //    .aggregate(
@@ -300,7 +308,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "master"
+  val spamBranch = "i4-add-input-hash"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)

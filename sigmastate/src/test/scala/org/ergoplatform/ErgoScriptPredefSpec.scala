@@ -5,17 +5,17 @@ import org.ergoplatform.ErgoBox.R4
 import org.ergoplatform.mining.emission.EmissionRules
 import org.ergoplatform.settings.MonetarySettings
 import org.scalacheck.Gen
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util.Random
-import sigmastate.Values.{SigmaPropConstant, CollectionConstant, ByteArrayConstant, IntConstant, ErgoTree}
+import sigmastate.Values.{ByteArrayConstant, CollectionConstant, ErgoTree, IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.interpreter.{ProverResult, ContextExtension}
+import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.serialization.ValueSerializer
-import sigmastate.utxo.{CostTable, ExtractCreationInfo, ByIndex, SelectField}
+import sigmastate.utxo.{ByIndex, CostTable, ExtractCreationInfo, SelectField}
 import scalan.util.BenchmarkUtil._
 import ErgoScriptPredef._
 
@@ -48,7 +48,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(minerBox))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = nextHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = pk,
@@ -106,10 +106,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val newFoundersBox = ErgoBox(remainingAmount, newProp, 0, Seq(), Map(R4 -> outputR4Val))
       val collectedBox = ErgoBox(inputBoxes.head.value - remainingAmount, TrueProp, 0)
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newFoundersBox, collectedBox))
-      val ctx = ErgoLikeContext(
+      val ctx = ErgoLikeContextTesting(
         currentHeight = height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head)
@@ -127,17 +127,17 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
     val inputs = inputBoxes.map(b => Input(b.id, emptyProverResult))
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(inputBoxes.head.value, TrueProp, 0)))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
-    val prevBlockCtx = ErgoLikeContext(
+    val prevBlockCtx = ErgoLikeContextTesting(
       currentHeight = inputBoxes.head.creationHeight + settings.minerRewardDelay - 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction,
       self = inputBoxes.head)
@@ -216,10 +216,10 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
       val amount = inputBoxes.map(_.value).sum
       val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(ErgoBox(amount, pubkey.toSigmaProp, 0)))
 
-      val ctx = ErgoLikeContext(
+      val ctx = ErgoLikeContextTesting(
         currentHeight = 50,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = inputBoxes,
         spendingTransaction,
         self = inputBoxes.head).withCostLimit(CostTable.ScriptLimit * 10)
@@ -293,7 +293,7 @@ class ErgoScriptPredefSpec extends SigmaTestingCommons {
 
     val spendingTransaction = ErgoLikeTransaction(inputs, IndexedSeq(newEmissionBox, minerBox))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = nextHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = pkBytes,

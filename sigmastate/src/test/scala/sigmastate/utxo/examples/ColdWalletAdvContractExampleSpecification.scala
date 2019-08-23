@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.{R4, R5, R6}
 import org.ergoplatform._
 import sigmastate.AvlTreeData
 import sigmastate.Values.{IntConstant, LongConstant}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -127,10 +127,10 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx1Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput1Key, firstWithdrawOutput1Key))
 
-    val firstWithdrawContext1Key = ErgoLikeContext(
+    val firstWithdrawContext1Key = ErgoLikeContextTesting(
       currentHeight = firstWithdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx1Key,
       self = depositOutput
@@ -163,10 +163,10 @@ class ColdWalletAdvContractExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx2Key = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput2Key, firstWithdrawOutput2Key))
 
-    val firstWithdrawContext2Key = ErgoLikeContext(
+    val firstWithdrawContext2Key = ErgoLikeContextTesting(
       currentHeight = firstWithdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx2Key,
       self = depositOutput

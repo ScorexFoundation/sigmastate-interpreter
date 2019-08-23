@@ -11,6 +11,7 @@ import sigmastate.utxo.CostTable
 import scalan.BaseCtxTests
 import sigmastate.lang.{LangTests, SigmaCompiler}
 import sigmastate.helpers.ContextEnrichingTestProvingInterpreter
+import sigmastate.helpers.ErgoLikeContextTesting
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.serialization.ErgoTreeSerializer
@@ -36,10 +37,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
 
   def newErgoContext(height: Int, boxToSpend: ErgoBox, extension: Map[Byte, EvaluatedValue[SType]] = Map()): ErgoLikeContext = {
     val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(boxToSpend))
-    val ergoCtx = ErgoLikeContext(
+    val ergoCtx = ErgoLikeContextTesting(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(boxToSpend),
       spendingTransaction = tx1,
       self = boxToSpend,
@@ -75,10 +76,10 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
   lazy val tx1Output1 = ErgoBox(minToRaise, projectPubKey, 0)
   lazy val tx1Output2 = ErgoBox(1, projectPubKey, 0)
   lazy val tx1 = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(), IndexedSeq(tx1Output1, tx1Output2))
-  lazy val ergoCtx = ErgoLikeContext(
+  lazy val ergoCtx = ErgoLikeContextTesting(
     currentHeight = timeout - 1,
     lastBlockUtxoRoot = AvlTreeData.dummy,
-    minerPubkey = ErgoLikeContext.dummyPubkey,
+    minerPubkey = ErgoLikeContextTesting.dummyPubkey,
     boxesToSpend = IndexedSeq(boxToSpend),
     spendingTransaction = tx1,
     self = boxToSpend,

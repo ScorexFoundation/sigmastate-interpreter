@@ -11,7 +11,7 @@ import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
 import sigmastate.Values.{IntConstant, LongConstant}
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
+import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.eval._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -36,9 +36,9 @@ class BlockchainSimulationSpecification extends SigmaTestingCommons {
         new ErgoBoxCandidate(10, minerPubKey, height, Colls.emptyColl[(TokenId, Long)], Map(heightReg -> IntConstant(height + windowSize)))
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
-      val context = ErgoLikeContext(height + 1,
+      val context = ErgoLikeContextTesting(height + 1,
         state.state.lastBlockUtxoRoot,
-        ErgoLikeContext.dummyPubkey,
+        ErgoLikeContextTesting.dummyPubkey,
         IndexedSeq(box),
         tx,
         box,
@@ -215,7 +215,7 @@ object BlockchainSimulationSpecification {
         val boxes = (1 to 30).map(_ => ErgoBox(10, GE(Height, IntConstant(i)).toSigmaProp, 0, Seq(), Map(heightReg -> IntConstant(i)), txId))
         ergoplatform.ErgoLikeTransaction(IndexedSeq(), boxes)
       },
-      ErgoLikeContext.dummyPubkey
+      ErgoLikeContextTesting.dummyPubkey
     )
 
     def initialState(block: Block = initBlock)(implicit IR: IRContext): ValidationState = {

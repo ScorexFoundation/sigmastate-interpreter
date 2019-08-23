@@ -36,7 +36,7 @@ class ErgoTransactionValidator(implicit IR: IRContext) {
       val proverExtension = tx.inputs(idx).spendingProof.extension
 
       val context =
-        ErgoLikeContext(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
+        ErgoLikeContextTesting(blockchainState.currentHeight, blockchainState.lastBlockUtxoRoot, minerPubkey, boxes,
           tx, box, proverExtension)
       val verificationResult = verifier.verify(
         emptyEnv + (ScriptNameProp -> s"height_${blockchainState.currentHeight }_verify"),
