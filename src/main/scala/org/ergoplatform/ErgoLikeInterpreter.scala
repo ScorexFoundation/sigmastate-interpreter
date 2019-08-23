@@ -13,7 +13,7 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
 
   override def substDeserialize(context: CTX, updateContext: CTX => Unit, node: SValue): Option[SValue] = node match {
       case d: DeserializeRegister[_] =>
-        context.self.get(d.reg).flatMap { v =>
+        context.boxesToSpend(context.selfIndex).get(d.reg).flatMap { v =>
           v match {
             case eba: EvaluatedValue[SByteArray]@unchecked =>
               val (ctx1, outVal) = deserializeMeasured(context, eba.value.toArray)

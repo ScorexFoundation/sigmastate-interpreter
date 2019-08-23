@@ -8,7 +8,7 @@ import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -144,10 +144,10 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val abortHalfGameTx = createTransaction(abortHalfGameOutput)
 
-    val abortHalfGameContext = ErgoLikeContext(
+    val abortHalfGameContext = ErgoLikeContextTesting(
       currentHeight = abortHalfGameHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = abortHalfGameTx,
       self = halfGameOutput // what is the use of self?
@@ -180,10 +180,10 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val fullGameTx = createTransaction(fullGameOutput)
 
-    val fullGameContext = ErgoLikeContext(
+    val fullGameContext = ErgoLikeContextTesting(
       currentHeight = fullGameCreationHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = fullGameTx,
       self = halfGameOutput // what is the use of self?
@@ -230,10 +230,10 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val gameOverTx = createTransaction(gameOverOutput)
 
-    val gameOverContext = ErgoLikeContext(
+    val gameOverContext = ErgoLikeContextTesting(
       currentHeight = gameOverHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = gameOverTx,
       self = fullGameOutput // what is the use of self?
@@ -257,10 +257,10 @@ class XorGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)
 
-    val defaultWinContext = ErgoLikeContext(
+    val defaultWinContext = ErgoLikeContextTesting(
       currentHeight = defaultWinHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput),
       spendingTransaction = defaultWinTx,
       self = fullGameOutput // what is the use of self?

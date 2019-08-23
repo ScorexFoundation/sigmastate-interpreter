@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeInterpreter, ErgoLikeTransaction}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.scalatest.TryValues._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
@@ -36,13 +36,13 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val o1 = ErgoBox(101L, TrueProp, 5001)
     val o2 = ErgoBox(99L, TrueProp, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2))
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContext.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }
@@ -70,13 +70,13 @@ class FailingToProveSpec extends SigmaTestingCommons {
     val o2 = ErgoBox(98L, TrueProp, 5001)
     val o3 = ErgoBox(100L, TrueProp, 5001)
     val tx =  createTransaction(IndexedSeq(o1, o2, o3))
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 5001,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
       self = selfBox,
-      minerPubkey = ErgoLikeContext.dummyPubkey)
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey)
     val proof = interpreter.prove(emptyEnv + (ScriptNameProp -> "prove"), compiledScript, ctx, fakeMessage).success.value.proof
     verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), compiledScript, ctx, proof, fakeMessage) should be a 'success
   }

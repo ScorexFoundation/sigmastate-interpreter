@@ -1,27 +1,28 @@
 package sigmastate.serialization.generators
 
 import org.ergoplatform.ErgoBox._
-import org.ergoplatform.ErgoConstants.MaxPropositionBytes
+import org.ergoplatform.SigmaConstants.MaxPropositionBytes
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.ergoplatform._
-import org.scalacheck.Arbitrary.{arbOption, arbAnyVal, arbShort, arbitrary, arbUnit, arbString, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary.{arbAnyVal, arbBool, arbByte, arbInt, arbLong, arbOption, arbShort, arbString, arbUnit, arbitrary}
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
-import scorex.util.encode.{Base64, Base58}
-import scorex.util.{bytesToId, ModifierId}
-import sigmastate.Values.{ShortConstant, LongConstant, StringConstant, BoxConstant, FuncValue, FalseLeaf, EvaluatedValue, TrueLeaf, TaggedAvlTree, TaggedLong, BigIntConstant, BlockValue, AvlTreeConstant, GetVarInt, SigmaPropConstant, CollectionConstant, ConstantPlaceholder, Value, SigmaPropValue, Tuple, IntConstant, ErgoTree, SigmaBoolean, TaggedBox, ByteConstant, TaggedInt, ValDef, GroupElementConstant, ValUse, TaggedVariable}
+import scorex.util.encode.{Base58, Base64}
+import scorex.util.{ModifierId, bytesToId}
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BlockValue, BoxConstant, ByteConstant, CollectionConstant, ConstantPlaceholder, ErgoTree, EvaluatedValue, FalseLeaf, FuncValue, GetVarInt, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaBoolean, SigmaPropConstant, SigmaPropValue, StringConstant, TaggedAvlTree, TaggedBox, TaggedInt, TaggedLong, TaggedVariable, TrueLeaf, Tuple, ValDef, ValUse, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
-import sigmastate.lang.TransformingSigmaBuilder.{mkModulo, mkExtractCreationInfo, mkExtractScriptBytes, mkFilter, mkPlus, mkTaggedVariable, mkSlice, mkFold, mkAtLeast, mkExtractBytesWithNoRef, mkExists, mkByteArrayToBigInt, mkForAll, mkDivide, mkSigmaOr, mkSigmaAnd, mkGT, mkGE, mkMapCollection, mkDeserializeRegister, mkExtractBytes, mkBoolToSigmaProp, mkNEQ, mkExtractAmount, mkMultiply, mkByteArrayToLong, mkConstant, mkExtractId, mkTuple, mkMax, mkLT, mkLE, mkDowncast, mkSizeOf, mkCollectionConstant, mkMin, mkDeserializeContext, mkEQ, mkAppend, mkMinus}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
+import sigmastate.lang.TransformingSigmaBuilder.{mkAppend, mkAtLeast, mkBoolToSigmaProp, mkByteArrayToBigInt, mkByteArrayToLong, mkCollectionConstant, mkConstant, mkDeserializeContext, mkDeserializeRegister, mkDivide, mkDowncast, mkEQ, mkExists, mkExtractAmount, mkExtractBytes, mkExtractBytesWithNoRef, mkExtractCreationInfo, mkExtractId, mkExtractScriptBytes, mkFilter, mkFold, mkForAll, mkGE, mkGT, mkLE, mkLT, mkMapCollection, mkMax, mkMin, mkMinus, mkModulo, mkMultiply, mkNEQ, mkPlus, mkSigmaAnd, mkSigmaOr, mkSizeOf, mkSlice, mkTaggedVariable, mkTuple}
 import sigmastate._
-import sigmastate.utxo.{ExtractBytesWithNoRef, OptionGet, ExtractRegisterAs, Append, ExtractScriptBytes, ExtractCreationInfo, GetVar, ExtractId, MapCollection, ExtractAmount, ForAll, ByIndex, OptionGetOrElse, OptionIsDefined, DeserializeContext, Exists, DeserializeRegister, Transformer, Fold, Slice, SizeOf, Filter, ExtractBytes}
-import special.sigma.{AvlTree, SigmaProp}
+import sigmastate.utxo.{Append, ByIndex, DeserializeContext, DeserializeRegister, Exists, ExtractAmount, ExtractBytes, ExtractBytesWithNoRef, ExtractCreationInfo, ExtractId, ExtractRegisterAs, ExtractScriptBytes, Filter, Fold, ForAll, GetVar, MapCollection, OptionGet, OptionGetOrElse, OptionIsDefined, SizeOf, Slice, Transformer}
+import special.collection.Coll
+import special.sigma._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -110,6 +111,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     ints <- Gen.listOfN(length, arbInt.arbitrary)
   } yield mkCollectionConstant[SInt.type](ints.toArray, SInt)
 
+  val heightGen: Gen[Int] = Gen.chooseNum(0, 1000000)
+
   val groupElementGen: Gen[EcPointType] = for {
     _ <- Gen.const(1)
   } yield CryptoConstants.dlogGroup.createRandomElement()
@@ -163,15 +166,17 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val taggedAvlTreeGen: Gen[TaggedAvlTree] =
     arbByte.arbitrary.map { v => TaggedAvlTree(v).asInstanceOf[TaggedAvlTree] }
 
+  val evaluatedValueGen: Gen[EvaluatedValue[SType]] =
+    Gen.oneOf(booleanConstGen.asInstanceOf[Gen[EvaluatedValue[SType]]], byteArrayConstGen, longConstGen)
+
   def additionalRegistersGen(cnt: Byte): Seq[Gen[(NonMandatoryRegisterId, EvaluatedValue[SType])]] = {
-    (0 until cnt)
+    util.Random.shuffle((0 until cnt).toList)
       .map(_ + ErgoBox.startingNonMandatoryIndex)
       .map(rI => ErgoBox.registerByIndex(rI).asInstanceOf[NonMandatoryRegisterId])
       .map { r =>
         for {
-          arr <- byteArrayConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr)
-        } yield r -> v.asInstanceOf[EvaluatedValue[SType]]
+          v <- evaluatedValueGen
+        } yield r -> v
       }
   }
 
@@ -224,11 +229,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       .map(_ + 1)
       .map { varId =>
         for {
-          arr <- byteArrayConstGen
-          longConst <- longConstGen
-          v <- Gen.oneOf(TrueLeaf, FalseLeaf, arr, longConst)
+          v <- evaluatedValueGen
         }
-          yield varId.toByte -> v.asInstanceOf[EvaluatedValue[SType]]
+          yield varId.toByte -> v
       }
 
   def avlTreeFlagsGen: Gen[AvlTreeFlags] = for {
@@ -237,8 +240,10 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     remove <- arbBool.arbitrary
   } yield AvlTreeFlags(insert, update, remove)
 
+  val aDDigestGen: Gen[ADDigest] = Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(ADDigest @@ _.toArray)
+
   def avlTreeDataGen: Gen[AvlTreeData] = for {
-    digest <- Gen.listOfN(AvlTreeData.DigestSize, arbByte.arbitrary).map(_.toArray)
+    digest <- aDDigestGen
     flags <- avlTreeFlagsGen
     keyLength <- unsignedIntGen
     vl <- arbOption[Int](Arbitrary(unsignedIntGen)).arbitrary
@@ -289,6 +294,9 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   lazy val modifierIdGen: Gen[ModifierId] = Gen.listOfN(32, arbByte.arbitrary)
     .map(id => bytesToId(id.toArray))
 
+  lazy val modifierIdBytesGen: Gen[Coll[Byte]] = Gen.listOfN(32, arbByte.arbitrary)
+    .map(id => bytesToId(id.toArray).toBytes.toColl)
+
   val ergoBoxGen: Gen[ErgoBox] = for {
     tId <- modifierIdGen
     boxId <- unsignedShortGen
@@ -297,11 +305,15 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     candidate <- ergoBoxCandidateGen(tokens)
   } yield candidate.toBox(tId, boxId)
 
+  val additionalRegistersGen: Gen[Map[NonMandatoryRegisterId, EvaluatedValue[SType]]] = for {
+    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
+    regs <- Gen.sequence(additionalRegistersGen(regNum))
+  } yield regs.asScala.toMap
+
   def ergoBoxCandidateGen(availableTokens: Seq[Digest32]): Gen[ErgoBoxCandidate] = for {
     l <- arbLong.arbitrary
     b <- ergoTreeGen.filter(t => t.bytes.length < MaxPropositionBytes.value)
-    regNum <- Gen.chooseNum[Byte](0, ErgoBox.nonMandatoryRegistersCount)
-    ar <- Gen.sequence(additionalRegistersGen(regNum))
+    ar <- additionalRegistersGen
     tokensCount <- Gen.chooseNum[Int](0, 20)
     tokens <- if(availableTokens.nonEmpty) {
       Gen.listOfN(tokensCount, Gen.oneOf(availableTokens))
@@ -309,27 +321,29 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
       Gen.oneOf(Seq(List[Digest32]()))
     }
     tokenAmounts <- Gen.listOfN(tokensCount, Gen.oneOf(1, 500, 20000, 10000000, Long.MaxValue))
-    creationHeight <- Gen.chooseNum(0, 100000)
-  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar.asScala.toMap)
+    creationHeight <- heightGen
+  } yield new ErgoBoxCandidate(l, b, creationHeight, tokens.toColl.zip(tokenAmounts.toColl), ar)
 
   val boxConstantGen: Gen[BoxConstant] = ergoBoxGen.map { v => BoxConstant(CostingBox(false, v)) }
 
-  val tokenIdGen: Gen[Digest32] = for {
+  val digest32Gen: Gen[Digest32] = for {
     bytes <- Gen.listOfN(TokenId.size, arbByte.arbitrary).map(_.toArray)
   } yield Digest32 @@ bytes
+
+  val tokenIdGen: Gen[Digest32] = digest32Gen
 
   val tokensGen: Gen[Seq[Digest32]] = for {
     count <- Gen.chooseNum(10, 50)
     tokens <- Gen.listOfN(count, tokenIdGen)
   } yield tokens
 
+  val digest32CollGen: Gen[Digest32Coll] = digest32Gen.map(Digest32Coll @@ _.toColl)
+
   val ergoTransactionGen: Gen[ErgoLikeTransaction] = for {
-    inputs <- Gen.nonEmptyListOf(inputGen)
-    tokens <- tokensGen
-    dataInputs <- Gen.listOf(dataInputGen)
-    outputsCount <- Gen.chooseNum(50, 200)
-    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
-  } yield new ErgoLikeTransaction(inputs.toIndexedSeq, dataInputs.toIndexedSeq, outputCandidates.toIndexedSeq)
+    inputBoxIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- ergoLikeTransactionGen(inputBoxIds, dataInputBoxIds)
+  } yield tx
 
   // distinct list of elements from a given generator
   // with a maximum number of elements to discard
@@ -352,10 +366,22 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     }
   }
 
-  val byteArrayGen: Gen[Array[Byte]] = for {
-    length <- Gen.chooseNum(1, 10)
+  def byteArrayGen(length: Int): Gen[Array[Byte]] = for {
     bytes <- Gen.listOfN(length, arbByte.arbitrary)
   } yield bytes.toArray
+
+  def byteArrayGen(minLength: Int, maxLength: Int): Gen[Array[Byte]] = for {
+    length <- Gen.chooseNum(minLength, maxLength)
+    bytes <- Gen.listOfN(length, arbByte.arbitrary)
+  } yield bytes.toArray
+
+  def byteCollGen(length: Int): Gen[Coll[Byte]] = byteArrayGen(length).map(_.toColl)
+
+  def byteCollGen(minLength: Int, maxLength: Int): Gen[Coll[Byte]] = byteArrayGen(minLength, maxLength).map(_.toColl)
+
+  val minerVotesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.VotesSize)
+
+  val nonceBytesGen: Gen[Coll[Byte]] = byteCollGen(CHeader.NonceSize)
 
   import ValidationRules._
 
@@ -368,7 +394,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   val statusGen: Gen[RuleStatus] = Gen.oneOf(
     Gen.oneOf(EnabledRule, DisabledRule),
     replacedRuleIdGen.map(id => ReplacedRule(id)),
-    byteArrayGen.map(xs => ChangedRule(xs))
+    byteArrayGen(1, 10).map(xs => ChangedRule(xs))
   )
 
   val mapCollectionGen: Gen[MapCollection[SInt.type, SInt.type]] = for {
@@ -625,4 +651,115 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     treeBuilder <- Gen.oneOf(Seq[SigmaPropValue => ErgoTree](ErgoTree.withSegregation,
       ErgoTree.withoutSegregation))
   } yield treeBuilder(prop)
+
+  val headerGen: Gen[Header] = for {
+    stateRoot <- avlTreeGen
+    parentId <- modifierIdBytesGen
+    header <- headerGen(stateRoot, parentId)
+  } yield header
+
+  def headerGen(stateRoot: AvlTree, parentId: Coll[Byte]): Gen[Header] = for {
+    id <- modifierIdBytesGen
+    version <- arbByte.arbitrary
+    adProofsRoot <- digest32CollGen
+    transactionRoot <- digest32CollGen
+    timestamp <- arbLong.arbitrary
+    nBits <- arbLong.arbitrary
+    height <- heightGen
+    extensionRoot <- digest32CollGen
+    minerPk <- groupElementGen
+    powOnetimePk <- groupElementGen
+    powNonce <- nonceBytesGen
+    powDistance <- arbBigInt.arbitrary
+    votes <- minerVotesGen
+  } yield CHeader(id, version, parentId, adProofsRoot, stateRoot, transactionRoot, timestamp, nBits,
+    height, extensionRoot, minerPk, powOnetimePk, powNonce, powDistance, votes)
+
+  def headersGen(stateRoot: AvlTree): Gen[Seq[Header]] = for {
+    size <- Gen.chooseNum(0, 10)
+  } yield if (size == 0) Seq() else
+    (0 to size)
+    .foldLeft(List[Header](headerGen(stateRoot, modifierIdBytesGen.sample.get).sample.get)) { (h, _) =>
+      h :+ headerGen(stateRoot, h.last.id).sample.get
+    }.reverse
+
+  val preHeaderGen: Gen[PreHeader] = for {
+    parentId <- modifierIdBytesGen
+    preHeader <- preHeaderGen(parentId)
+  } yield preHeader
+
+  def preHeaderGen(parentId: Coll[Byte]): Gen[PreHeader] = for {
+    version <- arbByte.arbitrary
+    timestamp <- arbLong.arbitrary
+    nBits <- arbLong.arbitrary
+    height <- heightGen
+    minerPk <- groupElementGen
+    votes <- minerVotesGen
+  } yield CPreHeader(version, parentId, timestamp, nBits, height, minerPk, votes)
+
+  val ergoLikeTransactionGen: Gen[ErgoLikeTransaction] = for {
+    inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- ergoLikeTransactionGen(inputBoxesIds, dataInputBoxIds)
+  } yield tx
+
+  def ergoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[ErgoLikeTransaction] = for {
+    tokens <- tokensGen
+    outputsCount <- Gen.chooseNum(50, 200)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
+    proofs <- Gen.listOfN(inputBoxesIds.length, serializedProverResultGen)
+  } yield new ErgoLikeTransaction(
+    inputs = inputBoxesIds.zip(proofs).map(t => Input(t._1, t._2)).toIndexedSeq,
+    dataInputs = dataInputBoxIds.map(DataInput).toIndexedSeq,
+    outputCandidates = outputCandidates.toIndexedSeq
+  )
+
+  val unsignedErgoLikeTransactionGen: Gen[UnsignedErgoLikeTransaction] = for {
+    inputBoxesIds <- Gen.nonEmptyListOf(boxIdGen)
+    dataInputBoxIds <- Gen.listOf(boxIdGen)
+    tx <- unsignedErgoLikeTransactionGen(inputBoxesIds, dataInputBoxIds)
+  } yield tx
+
+  def unsignedErgoLikeTransactionGen(inputBoxesIds: Seq[BoxId], dataInputBoxIds: Seq[BoxId]): Gen[UnsignedErgoLikeTransaction] = for {
+    tokens <- tokensGen
+    outputsCount <- Gen.chooseNum(50, 200)
+    outputCandidates <- Gen.listOfN(outputsCount, ergoBoxCandidateGen(tokens))
+    contextExtensions <- Gen.listOfN(inputBoxesIds.length, contextExtensionGen)
+  } yield new UnsignedErgoLikeTransaction(
+    inputs = inputBoxesIds.zip(contextExtensions).map(t => new UnsignedInput(t._1, t._2)).toIndexedSeq,
+    dataInputs = dataInputBoxIds.map(DataInput).toIndexedSeq,
+    outputCandidates = outputCandidates.toIndexedSeq
+  )
+
+  val ergoLikeTransactionTemplateGen: Gen[ErgoLikeTransactionTemplate[_ <: UnsignedInput]] =
+    Gen.oneOf(unsignedErgoLikeTransactionGen, ergoLikeTransactionGen)
+
+  val ergoLikeContextGen: Gen[ErgoLikeContext] = for {
+    stateRoot <- avlTreeGen
+    headers <- headersGen(stateRoot)
+    preHeader <- preHeaderGen(headers.headOption.map(_.id).getOrElse(modifierIdBytesGen.sample.get))
+    dataBoxes <- Gen.listOf(ergoBoxGen)
+    boxesToSpend <- Gen.nonEmptyListOf(ergoBoxGen)
+    extension <- contextExtensionGen
+    costLimit <- arbLong.arbitrary
+    initCost <- arbLong.arbitrary
+    avlTreeFlags <- avlTreeFlagsGen
+    spendingTransaction <- Gen.oneOf(
+      unsignedErgoLikeTransactionGen(boxesToSpend.map(_.id), dataBoxes.map(_.id)),
+      ergoLikeTransactionGen(boxesToSpend.map(_.id), dataBoxes.map(_.id))
+    )
+  } yield new ErgoLikeContext(
+    lastBlockUtxoRoot = AvlTreeData(ADDigest @@ stateRoot.digest.toArray, avlTreeFlags, unsignedIntGen.sample.get),
+    headers = headers.toColl,
+    preHeader = preHeader,
+    dataBoxes = dataBoxes.toIndexedSeq,
+    boxesToSpend = boxesToSpend.toIndexedSeq,
+    spendingTransaction = spendingTransaction,
+    selfIndex = 0,
+    extension = extension,
+    validationSettings = ValidationRules.currentSettings,
+    costLimit = costLimit,
+    initCost = initCost
+  )
+
 }

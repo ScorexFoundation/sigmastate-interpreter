@@ -17,7 +17,7 @@ import sigmastate.utxo.CostTable.Cost
 import sigmastate.utxo._
 import scalan.compilation.GraphVizConfig
 import SType._
-import org.ergoplatform.ErgoConstants._
+import org.ergoplatform.SigmaConstants._
 import scalan.RType._
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import sigmastate.interpreter.Interpreter.ScriptEnv

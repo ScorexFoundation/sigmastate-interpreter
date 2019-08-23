@@ -1,6 +1,6 @@
 package sigmastate
 
-import org.ergoplatform.ErgoConstants
+import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
@@ -269,7 +269,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
 
 object AtLeast extends ValueCompanion {
   override def opCode: OpCode = AtLeastCode
-  val MaxChildrenCount: Int = ErgoConstants.MaxChildrenCountForAtLeastOp.value
+  val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
     AtLeast(bound, ConcreteCollection(children.toIndexedSeq))

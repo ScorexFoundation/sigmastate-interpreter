@@ -1,21 +1,20 @@
 package org.ergoplatform
 
-import java.util
-
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
+import sigmastate.SType._
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
 import sigmastate.interpreter.ProverResult
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.collection.ExtensionMethods._
-import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
+
 import scala.collection.mutable
 import scala.util.Try
-import sigmastate.SType._
-import sigmastate.eval._
 
 trait ErgoBoxReader {
   def byId(boxId: ADKey): Try[ErgoBox]
@@ -50,6 +49,8 @@ trait ErgoLikeTransactionTemplate[IT <: UnsignedInput] {
   lazy val messageToSign: Array[Byte] = ErgoLikeTransaction.bytesToSign(this)
 
   lazy val inputIds: IndexedSeq[ADKey] = inputs.map(_.boxId)
+
+  override def toString = s"ErgoLikeTransactionTemplate(dataInputs=$dataInputs, inputs=$inputs, outputCandidates=$outputCandidates)"
 }
 
 
@@ -68,6 +69,13 @@ class UnsignedErgoLikeTransaction(override val inputs: IndexedSeq[UnsignedInput]
     val ins = inputs.zip(proofs).map { case (ui, proof) => Input(ui.boxId, proof) }
     new ErgoLikeTransaction(ins, dataInputs, outputCandidates)
   }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case tx: UnsignedErgoLikeTransaction => this.id == tx.id
+    case _ => false
+  }
+
+  override def hashCode(): Int = id.hashCode()
 }
 
 object UnsignedErgoLikeTransaction {
@@ -189,5 +197,4 @@ object ErgoLikeTransaction {
 
   // TODO unify serialization approach in Ergo/sigma with BytesSerializable
   val serializer: SigmaSerializer[ErgoLikeTransaction, ErgoLikeTransaction] = ErgoLikeTransactionSerializer
-
 }

@@ -4,7 +4,7 @@ import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
@@ -58,10 +58,10 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTx = createTransaction(IndexedSeq(timedWithdrawOutput))
 
-    val withdrawContext = ErgoLikeContext(
+    val withdrawContext = ErgoLikeContextTesting(
       currentHeight = 109,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
       self = depositOutput
@@ -75,10 +75,10 @@ class TimedPaymentExampleSpecification extends SigmaTestingCommons {
 
     verifier.verify(env, script, withdrawContext, proofWithdraw, fakeMessage).get._1 shouldBe true
 
-    val withdrawContextBad = ErgoLikeContext(
+    val withdrawContextBad = ErgoLikeContextTesting(
       currentHeight = 111,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
       self = depositOutput
