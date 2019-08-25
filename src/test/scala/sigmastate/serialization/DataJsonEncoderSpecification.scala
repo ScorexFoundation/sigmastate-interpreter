@@ -77,16 +77,19 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { x: String => roundtrip[SString.type](x, SString) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
+    forAll { x: Option[Byte] => roundtrip[SOption[SByte.type]](x, SOption[SByte.type]) }
     testCollection(SByte)
     testCollection(SShort)
     testCollection(SInt)
     testCollection(SLong)
     testCollection(SBigInt)
+    testCollection(SOption[SLong.type])
     testTuples(SByte)
     testTuples(SShort)
     testTuples(SInt)
     testTuples(SLong)
     testTuples(SBigInt)
-//    forAll { t: SPredefType => testTuples(t) }
+    testTuples(SOption[SLong.type])
+    //    forAll { t: SPredefType => testTuples(t) }
   }
 }

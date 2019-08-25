@@ -31,6 +31,8 @@ object DataJsonEncoder {
     case SString => "String"
     case tColl: SCollectionType[a] =>
       "Coll[" + encodeName(tColl.elemType) + "]"
+    case tOpt: SOption[a] =>
+      "Option[" + encodeName(tOpt.elemType) + "]"
     case t: STuple =>
       "(" + t.items.map((x: SType) => s"${encodeName(x)}").mkString(",") + ")"
     case t => throw new SerializerException(s"Not defined DataJsonEncoder for ${t}")
@@ -65,6 +67,13 @@ object DataJsonEncoder {
         jsons += encodeData(x, tColl.elemType)
       }
       Json.fromValues(jsons.toList)
+    case tOpt: SOption[a] =>
+      val opt = v.asInstanceOf[tOpt.WrappedType]
+      if (opt.isDefined) {
+        encodeData(opt.get, tOpt.elemType)
+      } else {
+        Json.Null
+      }
     case t: STuple =>
       val arr = Evaluation.fromDslTuple(v, t).asInstanceOf[t.WrappedType]
       val tArr = t.items.toArray
@@ -103,6 +112,12 @@ object DataJsonEncoder {
       case tColl: SCollectionType[a] =>
         val tpeElem = tColl.elemType
         decodeColl(json, tpeElem)
+      case tOpt: SOption[a] =>
+        if (json == Json.Null) {
+          None
+        } else {
+          Some(decodeData(json, tOpt.elemType))
+        }
       case t: STuple =>
         val tArr = t.items.toArray
         val collSource = mutable.ArrayBuilder.make[Any]()

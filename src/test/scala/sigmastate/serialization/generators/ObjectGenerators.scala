@@ -5,22 +5,23 @@ import org.ergoplatform.ErgoConstants.MaxPropositionBytes
 import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.ergoplatform._
-import org.scalacheck.Arbitrary.{arbOption, arbAnyVal, arbShort, arbitrary, arbUnit, arbString, arbInt, arbLong, arbBool, arbByte}
+import org.scalacheck.Arbitrary.{arbAnyVal, arbBool, arbByte, arbInt, arbLong, arbOption, arbShort, arbString, arbUnit, arbitrary}
+import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
-import scorex.util.encode.{Base64, Base58}
-import scorex.util.{bytesToId, ModifierId}
-import sigmastate.Values.{ShortConstant, LongConstant, StringConstant, BoxConstant, FuncValue, FalseLeaf, EvaluatedValue, TrueLeaf, TaggedAvlTree, TaggedLong, BigIntConstant, BlockValue, AvlTreeConstant, GetVarInt, SigmaPropConstant, CollectionConstant, ConstantPlaceholder, Value, SigmaPropValue, Tuple, IntConstant, ErgoTree, SigmaBoolean, TaggedBox, ByteConstant, TaggedInt, ValDef, GroupElementConstant, ValUse, TaggedVariable}
+import scorex.util.encode.{Base58, Base64}
+import scorex.util.{ModifierId, bytesToId}
+import sigmastate.Values.{AvlTreeConstant, BigIntConstant, BlockValue, BoxConstant, ByteConstant, CollectionConstant, ConstantPlaceholder, ErgoTree, EvaluatedValue, FalseLeaf, FuncValue, GetVarInt, GroupElementConstant, IntConstant, LongConstant, ShortConstant, SigmaBoolean, SigmaPropConstant, SigmaPropValue, StringConstant, TaggedAvlTree, TaggedBox, TaggedInt, TaggedLong, TaggedVariable, TrueLeaf, Tuple, ValDef, ValUse, Value}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{CostingBox, SigmaDsl, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
-import sigmastate.lang.TransformingSigmaBuilder.{mkModulo, mkExtractCreationInfo, mkExtractScriptBytes, mkFilter, mkPlus, mkTaggedVariable, mkSlice, mkFold, mkAtLeast, mkExtractBytesWithNoRef, mkExists, mkByteArrayToBigInt, mkForAll, mkDivide, mkSigmaOr, mkSigmaAnd, mkGT, mkGE, mkMapCollection, mkDeserializeRegister, mkExtractBytes, mkBoolToSigmaProp, mkNEQ, mkExtractAmount, mkMultiply, mkByteArrayToLong, mkConstant, mkExtractId, mkTuple, mkMax, mkLT, mkLE, mkDowncast, mkSizeOf, mkCollectionConstant, mkMin, mkDeserializeContext, mkEQ, mkAppend, mkMinus}
+import sigmastate.interpreter.{ContextExtension, CryptoConstants, ProverResult}
+import sigmastate.lang.TransformingSigmaBuilder.{mkAppend, mkAtLeast, mkBoolToSigmaProp, mkByteArrayToBigInt, mkByteArrayToLong, mkCollectionConstant, mkConstant, mkDeserializeContext, mkDeserializeRegister, mkDivide, mkDowncast, mkEQ, mkExists, mkExtractAmount, mkExtractBytes, mkExtractBytesWithNoRef, mkExtractCreationInfo, mkExtractId, mkExtractScriptBytes, mkFilter, mkFold, mkForAll, mkGE, mkGT, mkLE, mkLT, mkMapCollection, mkMax, mkMin, mkMinus, mkModulo, mkMultiply, mkNEQ, mkPlus, mkSigmaAnd, mkSigmaOr, mkSizeOf, mkSlice, mkTaggedVariable, mkTuple}
 import sigmastate._
-import sigmastate.utxo.{ExtractBytesWithNoRef, OptionGet, ExtractRegisterAs, Append, ExtractScriptBytes, ExtractCreationInfo, GetVar, ExtractId, MapCollection, ExtractAmount, ForAll, ByIndex, OptionGetOrElse, OptionIsDefined, DeserializeContext, Exists, DeserializeRegister, Transformer, Fold, Slice, SizeOf, Filter, ExtractBytes}
+import sigmastate.utxo.{Append, ByIndex, DeserializeContext, DeserializeRegister, Exists, ExtractAmount, ExtractBytes, ExtractBytesWithNoRef, ExtractCreationInfo, ExtractId, ExtractRegisterAs, ExtractScriptBytes, Filter, Fold, ForAll, GetVar, MapCollection, OptionGet, OptionGetOrElse, OptionIsDefined, SizeOf, Slice, Transformer}
 import special.sigma.{AvlTree, SigmaProp}
 
 import scala.collection.JavaConverters._
@@ -266,6 +267,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     case SAvlTree => arbAvlTree
     case SAny => arbAnyVal
     case SUnit => arbUnit
+    case opt: SOption[a] =>
+      Arbitrary(frequency((5, None), (5, for (x <- wrappedTypeGen(opt.elemType)) yield Some(x))))
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 
   def tupleGen(min: Int, max: Int): Gen[Tuple] = for {
