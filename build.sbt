@@ -88,9 +88,9 @@ val libraryapi  = "io.github.scalan" %% "library-api" % specialVersion
 val libraryimpl = "io.github.scalan" %% "library-impl" % specialVersion
 val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
 
-val circeVersion = "0.11.1"
-val circecore = "io.circe" %% "circe-core" % circeVersion
-val circegeneric = "io.circe" %% "circe-generic" % circeVersion
+val circeVersion = "0.10.0"
+val circeCore = "io.circe" %% "circe-core" % circeVersion
+val circeGeneric = "io.circe" %% "circe-generic" % circeVersion
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
@@ -115,8 +115,8 @@ lazy val testSettings = Seq(
 libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
-  circecore,
-  circegeneric,
+  circeCore,
+  circeGeneric,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
