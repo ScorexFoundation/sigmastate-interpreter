@@ -2,15 +2,13 @@ package sigmastate.contract.verification
 
 import scalan.{RType => ERType}
 import sigmastate.contract.verification.Helpers._
-import special.collection.Coll
 import special.sigma.{Box => EBox, SigmaProp => ESigmaProp}
 import stainless.annotation.{extern, ignore, library, opaque, partialEval, pure}
 import stainless.collection._
 import stainless.lang._
+import CollOverList._
 
 import scala.language.implicitConversions
-
-// TODO: bring in the Coll
 
 @library
 trait SigmaProp extends SigmaPropT {
@@ -28,33 +26,38 @@ object Helpers {
   type SigmaPropT = ESigmaProp
 
   @library @extern
-  implicit def collToList[T](coll: Coll[T]): List[T] = ???
-  @library @extern
   implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
 
   @library @extern @pure
   implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ???
 
   @library @extern @pure
+  implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
+
+  @library @extern @pure
+  implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = ???
+
+  @library @extern @pure
   implicit def ByteType: RType[Byte] = ???
-  @extern @pure
+  @library @extern @pure
   implicit def AvlTreeRType: RType[AvlTree] = ???
 }
 
+// TODO define via BoxT (see SigmaPropT)
 @library
 trait Box {
   @library
   def value: Long
   @library
-  def id: List[Byte]
+  def id: Coll[Byte]
   @library @pure
   def R4[T](implicit cT: RType[T]): Option[T]
   @library @pure
   def R5[T](implicit cT: RType[T]): Option[T]
   @library
-  def tokens: List[(List[Byte], Long)]
+  def tokens: Coll[(Coll[Byte], Long)]
   @library
-  def propositionBytes: List[Byte]
+  def propositionBytes: Coll[Byte]
 }
 
 /*
@@ -83,25 +86,25 @@ case class CBox(@extern v: EBox) extends Box{
  */
 
 trait AvlTree {
-  def digest: List[Byte]
+  def digest: Coll[Byte]
   def keyLength: Int
   def valueLengthOpt: Option[Int]
   def enabledOperations: Byte
-  def getMany(keys: List[List[Byte]], proof: List[Byte]): List[Option[List[Byte]]]
-  def insert(toAdd: List[(List[Byte], List[Byte])], proof: List[Byte]): Option[AvlTree]
-  def remove(operations: List[List[Byte]], proof: List[Byte]): Option[AvlTree]
+  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
+  def insert(toAdd: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
+  def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
 
 trait Context {
-  def OUTPUTS: List[Box]
-  def INPUTS: List[Box]
+  def OUTPUTS: Coll[Box]
+  def INPUTS: Coll[Box]
   def SELF: Box
   def HEIGHT: Int
 
   def getVar[T](id: Byte): Option[T]
-  def longToByteArray(l: Long): List[Byte]
-  def byteArrayToLong(bytes: List[Byte]): Long
-  def blake2b256(bytes: List[Byte]): List[Byte]
+  def longToByteArray(l: Long): Coll[Byte]
+  def byteArrayToLong(bytes: Coll[Byte]): Long
+  def blake2b256(bytes: Coll[Byte]): Coll[Byte]
 }
 
 //case class DummyFundingContext(HEIGHT: Int,
@@ -122,14 +125,14 @@ trait Context {
 
 sealed abstract class ICOContract {
 
-  def ICOFundingContract(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
+  def ICOFundingContract(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
       INPUTS.length > 1 &&
-      getVar[List[Byte]](1).isDefined &&
-      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+      getVar[Coll[Byte]](1).isDefined &&
+      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
       SELF.R5[AvlTree].isDefined &&
       OUTPUTS(0).R5[AvlTree].isDefined
     )
@@ -138,11 +141,10 @@ sealed abstract class ICOContract {
 
     val inputsCount = INPUTS.size
 
-    val proof = getVar[List[Byte]](1).get
-
-    val toAdd: List[(List[Byte], List[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
+    val proof = getVar[Coll[Byte]](1).get
+    val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
       // TODO avoid getOrElse
-      val pk = b.R4[List[Byte]].getOrElse(List())
+      val pk = b.R4[Coll[Byte]].getOrElse(CollOverList.empty)
       val value = longToByteArray(b.value)
       (pk, value)
     })
@@ -170,37 +172,38 @@ sealed abstract class ICOContract {
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
 
-  def proveICOFundingContractForHeightAbove2000(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
+  def proveICOFundingContractForHeightAbove2000(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
     import ctx._
     require(
       HEIGHT > 0 &&
         INPUTS.length > 1 &&
         OUTPUTS.length == 2 &&
         INPUTS(0).id == SELF.id &&
-        getVar[List[Byte]](1).isDefined &&
-        INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+        getVar[Coll[Byte]](1).isDefined &&
+        INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
         SELF.R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
-          val pk = b.R4[List[Byte]].getOrElse(List())
+          val pk = b.R4[Coll[Byte]].getOrElse(CollOverList.empty)
           val value = longToByteArray(b.value)
           (pk, value)
-        }), getVar[List[Byte]](1).get) &&
+        }), getVar[Coll[Byte]](1).get) &&
         HEIGHT >= 2000 &&
         blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash &&
         OUTPUTS(1).value <= 1 &&
         OUTPUTS(1).propositionBytes == feeBytes
     )
+
     ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
   }.holds
 
-  def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: List[Byte], feeBytes: List[Byte]): Boolean = {
+  def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
     import ctx._
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
       INPUTS.length > 1 &&
-      getVar[List[Byte]](1).isDefined &&
-      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[List[Byte]].isDefined }) &&
+      getVar[Coll[Byte]](1).isDefined &&
+      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
       SELF.R5[AvlTree].isDefined &&
       OUTPUTS(0).R5[AvlTree].isDefined &&
 
@@ -212,7 +215,9 @@ sealed abstract class ICOContract {
   } ensuring (_ == false)
 
 
-  def ICOIssuanceContract(ctx: Context, nextStageScriptHash: List[Byte], projectPubKey: SigmaProp): Boolean = {
+  // TODO restore
+  @ignore
+  def ICOIssuanceContract(ctx: Context, nextStageScriptHash: Coll[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
@@ -220,7 +225,7 @@ sealed abstract class ICOContract {
       INPUTS.nonEmpty &&
       SELF.R5[AvlTree].isDefined &&
       OUTPUTS(0).R5[AvlTree].isDefined &&
-      OUTPUTS(0).R4[List[Byte]].isDefined
+      OUTPUTS(0).R4[Coll[Byte]].isDefined
     )
 
     val openTree = SELF.R5[AvlTree].get
@@ -232,7 +237,7 @@ sealed abstract class ICOContract {
     val valueLengthPreserved = openTree.valueLengthOpt == closedTree.valueLengthOpt
     val treeIsClosed = closedTree.enabledOperations == 4
 
-    val tokenId: List[Byte] = INPUTS(0).id
+    val tokenId: Coll[Byte] = INPUTS(0).id
 
     val outputsCountCorrect = OUTPUTS.size == 3
     val secondOutputNoTokens = outputsCountCorrect &&
@@ -243,7 +248,7 @@ sealed abstract class ICOContract {
     val correctTokensIssued = OUTPUTS(0).tokens.size == 1 && SELF.value == OUTPUTS(0).tokens(0)._2
 
     val correctTokenId = outputsCountCorrect &&
-    OUTPUTS(0).R4[List[Byte]].get == tokenId &&
+    OUTPUTS(0).R4[Coll[Byte]].get == tokenId &&
       OUTPUTS(0).tokens.size == 1 &&
       OUTPUTS(0).tokens(0)._1 == tokenId
 
@@ -255,53 +260,55 @@ sealed abstract class ICOContract {
     projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
   }
 
+  // TODO restore
+  @ignore
   def ICOWithdrawalContract(ctx: Context): Boolean = {
     import ctx._
 
     require(HEIGHT > 0 &&
       OUTPUTS.nonEmpty &&
       INPUTS.nonEmpty &&
-      getVar[List[Byte]](2).isDefined &&
-      getVar[List[Byte]](3).isDefined &&
-      getVar[List[BigInt]](4).isDefined &&
-      SELF.R4[List[Byte]].isDefined &&
+      getVar[Coll[Byte]](2).isDefined &&
+      getVar[Coll[Byte]](3).isDefined &&
+      getVar[Coll[Int]](4).isDefined &&
+      SELF.R4[Coll[Byte]].isDefined &&
       SELF.R5[AvlTree].isDefined &&
       OUTPUTS(0).R5[AvlTree].isDefined
     )
 
-    val removeProof = getVar[List[Byte]](2).get
-    val lookupProof = getVar[List[Byte]](3).get
-    val withdrawIndexes = getVar[List[BigInt]](4).get
+    val removeProof = getVar[Coll[Byte]](2).get
+    val lookupProof = getVar[Coll[Byte]](3).get
+    val withdrawIndexes = getVar[Coll[Int]](4).get
 
     val out0 = OUTPUTS(0)
 
-    val tokenId: List[Byte] = SELF.R4[List[Byte]].get
+    val tokenId: Coll[Byte] = SELF.R4[Coll[Byte]].get
 
-    val withdrawals: List[(List[Byte], Long)] = withdrawIndexes.flatMap({ (idx: BigInt) =>
+    val withdrawals: Coll[(Coll[Byte], Long)] = withdrawIndexes.flatMap({ (idx: Int) =>
       if (idx >= 0 && idx < OUTPUTS.length) {
         val b = OUTPUTS(idx)
         if (b.tokens.nonEmpty && b.tokens(0)._1 == tokenId) {
-          List((blake2b256(b.propositionBytes), b.tokens(0)._2))
+          CollOverList((blake2b256(b.propositionBytes), b.tokens(0)._2))
         } else {
-          List((blake2b256(b.propositionBytes), 0L))
+          CollOverList((blake2b256(b.propositionBytes), 0L))
         }
       } else {
-        List()
+        CollOverList.empty[(Coll[Byte], Long)]
       }
     })
 
     //val withdrawals = OUTPUTS.slice(1, OUTPUTS.size-1).map(...)
 
-    val withdrawValues = withdrawals.map({ (t: (List[Byte], Long)) => t._2 })
+    val withdrawValues = withdrawals.map({ (t: (Coll[Byte], Long)) => t._2 })
 
-    val withdrawTotal = withdrawValues.foldLeft(0L) { (l1: Long, l2: Long) => l1 + l2 }
+    val withdrawTotal = withdrawValues.foldLeft(0L, { (t: (Long, Long)) => t._1 + t._2 })
 
-    val toRemove = withdrawals.map({ (t: (List[Byte], Long)) => t._1 })
+    val toRemove = withdrawals.map({ (t: (Coll[Byte], Long)) => t._1 })
 
     val initialTree = SELF.R5[AvlTree].get
 
     // TODO: proper option handling
-    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[List[Byte]]) => byteArrayToLong(o.getOrElse(List())) })
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(CollOverList.empty)) })
     val valuesCorrect = removedValues == withdrawValues
 
     val modifiedTree = initialTree.remove(toRemove, removeProof)
