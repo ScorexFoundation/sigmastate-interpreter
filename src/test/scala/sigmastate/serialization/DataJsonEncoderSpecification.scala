@@ -22,7 +22,6 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
 
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
     val json = DataJsonEncoder.encode(obj, tpe)
-    val str = json.toString.replaceAll("\n", "").replaceAll(" ", "").strip()
     val res = DataJsonEncoder.decode(json)
     res shouldBe obj
   }

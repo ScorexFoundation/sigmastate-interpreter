@@ -134,7 +134,7 @@ object DataJsonEncoder {
     implicit val tItem = (tpe match {
       case tTup: STuple if tTup.items.length == 2 =>
         Evaluation.stypeToRType(tpe)
-      case tTup: STuple =>
+      case _: STuple =>
         collRType(RType.AnyType)
       case _ =>
         Evaluation.stypeToRType(tpe)
@@ -152,7 +152,6 @@ object DataJsonEncoder {
   }
 
   def decode(json: Json): (SType#WrappedType)= {
-    val cursor: HCursor = json.hcursor
     val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
     val value = json.hcursor.downField("value").focus.get
     val data = decodeData(value, tpe)
