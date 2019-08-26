@@ -37,7 +37,6 @@ object ContextExtension {
       ContextExtension(ext)
     }
   }
-
 }
 
 

@@ -1,11 +1,11 @@
 package sigmastate.utxo
 
-import org.ergoplatform.{ErgoLikeContext, Height}
+import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, Height}
 import org.scalacheck.Gen
 import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTransactionTesting, SigmaTestingCommons}
 
 import scala.util.Random
 
@@ -36,12 +36,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -69,12 +69,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(pubkeyA, pubkeyB, pubkeyC)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -103,12 +103,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -138,12 +138,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(pubkeyA1, pubkeyA2, pubkeyA3, pubkeyA4)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -169,12 +169,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -210,12 +210,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -247,12 +247,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaAnd(pubkeyA, pubkeyB)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -280,12 +280,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaAnd(pubkeyA, pubkeyB), pubkeyC)
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -320,12 +320,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaAnd(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -361,12 +361,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaAnd(SigmaAnd(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     proverA.prove(compiledProp, ctx, fakeMessage).isFailure shouldBe true
@@ -405,12 +405,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaOr(pubkeyC, pubkeyD))
     compiledProp shouldBe prop
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx, fakeMessage).get
@@ -443,12 +443,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(GT(Height, IntConstant(500)).toSigmaProp, SigmaOr(pubkeyA, pubkeyB))
     compiledProp shouldBe prop
 
-    val ctx1 = ErgoLikeContext(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
     verifier.verify(compiledProp, ctx1, prA, fakeMessage).get._1 shouldBe true
@@ -456,12 +456,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     verifier.verify(compiledProp, ctx1, prB, fakeMessage).get._1 shouldBe true
     proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
     val prC = proverC.prove(compiledProp, ctx2, fakeMessage).get
     verifier.verify(compiledProp, ctx2, prC, fakeMessage).get._1 shouldBe true
@@ -485,12 +485,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
-    val ctx1 = ErgoLikeContext(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
@@ -500,12 +500,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
@@ -533,12 +533,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     val prop = SigmaOr(SigmaOr(pubkeyA, pubkeyB), SigmaAnd(pubkeyC, GT(Height, IntConstant(500)).toSigmaProp))
     compiledProp shouldBe prop
 
-    val ctx1 = ErgoLikeContext(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA = proverA.prove(compiledProp, ctx1, fakeMessage).get
@@ -548,12 +548,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
     proverC.prove(compiledProp, ctx1, fakeMessage).isFailure shouldBe true
 
 
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight = 501,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction = null,
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
       self = fakeSelf)
 
     val prA2 = proverA.prove(compiledProp, ctx2, fakeMessage).get
@@ -583,12 +583,12 @@ class ComplexSigSpecification extends SigmaTestingCommons {
         kNumKeysCombinations.map(combs => CAND(combs.map(_.publicImage)))
       )
 
-      val ctx = ErgoLikeContext(
+      val ctx = ErgoLikeContextTesting(
         currentHeight = 1,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = IndexedSeq(fakeSelf),
-        spendingTransaction = null,
+        spendingTransaction = ErgoLikeTransactionTesting.dummy,
         self = fakeSelf)
 
       // any prover alone (no added secrets) should fail

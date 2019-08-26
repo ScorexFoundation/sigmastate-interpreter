@@ -1,7 +1,7 @@
 package sigmastate.eval
 
-import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPropositionBytes}
-import org.ergoplatform.{ErgoLikeContext, ErgoConstants}
+import org.ergoplatform.SigmaConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPropositionBytes}
+import org.ergoplatform.{ErgoLikeContext, SigmaConstants}
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
@@ -166,7 +166,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
       costedBuilder.mkSizePrim(Sized.SizeHeader.dataSize, element[Header]))
 
-  val TokensInfo = new KnownCollInfo(ErgoConstants.MaxTokens.value,
+  val TokensInfo = new KnownCollInfo(SigmaConstants.MaxTokens.value,
       mkSizePair(HashInfo.size, SizeLong))
 
 

@@ -1,7 +1,8 @@
 package sigmastate
 
 import java.util
-import java.util.{Objects, Arrays}
+import java.util.{Arrays, Objects}
+
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -97,5 +98,4 @@ object AvlTreeData {
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
   }
-
 }

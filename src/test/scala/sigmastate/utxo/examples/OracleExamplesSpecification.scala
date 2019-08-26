@@ -6,16 +6,16 @@ import com.google.common.primitives.Longs
 import org.ergoplatform.ErgoBox.RegisterId
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import org.ergoplatform._
-import org.ergoplatform.dsl.{SigmaContractSyntax, ContractSpec, TestContractSpec, StdContracts}
+import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, TestContractSpec}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import special.sigma.Context
@@ -172,10 +172,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val propBob = withinTimeframe(sinceHeight, timeout, bobPubKey.isProven)(propAlong).toSigmaProp
     val sBob = ErgoBox(10, propBob, 0, Seq(), Map(), boxIndex = 4)
 
-   val ctx = ErgoLikeContext(
+   val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = treeData,
-      ErgoLikeContext.dummyPubkey,
+      ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sAlice, sBob),
       spendingTransaction,
       self = sAlice)
@@ -249,10 +249,10 @@ class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
     val newBoxes = IndexedSeq(newBox1)
     val spendingTransaction = createTransaction(newBoxes)
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(sOracle, sAlice, sBob),
       spendingTransaction,
       self = sOracle)

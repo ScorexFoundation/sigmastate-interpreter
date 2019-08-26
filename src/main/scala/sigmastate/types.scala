@@ -647,7 +647,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.value
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -749,7 +749,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
 
   /** The maximum size of SigmaProp value in serialized byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxSigmaPropSizeInBytes.value
+  val MaxSizeInBytes: Long = SigmaConstants.MaxSigmaPropSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -1266,7 +1266,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.value
+  val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)

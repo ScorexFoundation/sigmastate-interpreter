@@ -5,7 +5,7 @@ import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{IntConstant, SigmaPropConstant}
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 
@@ -143,10 +143,10 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val withdrawTx = createTransaction(reversibleWithdrawOutput)
 
-    val withdrawContext = ErgoLikeContext(
+    val withdrawContext = ErgoLikeContextTesting(
       currentHeight = withdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTx,
       self = depositOutput
@@ -172,10 +172,10 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val bobSpendTx = createTransaction(bobSpendOutput)
 
-    val bobSpendContext = ErgoLikeContext(
+    val bobSpendContext = ErgoLikeContextTesting(
       currentHeight = bobSpendHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = bobSpendTx,
       self = reversibleWithdrawOutput
@@ -199,10 +199,10 @@ class ReversibleTxExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid (why?), but we're not checking it in this test
     val carolSpendTx = createTransaction(carolSpendOutput)
 
-    val carolSpendContext = ErgoLikeContext(
+    val carolSpendContext = ErgoLikeContextTesting(
       currentHeight = carolSpendHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(reversibleWithdrawOutput),
       spendingTransaction = carolSpendTx,
       self = reversibleWithdrawOutput

@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.util.ScorexLogging
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
@@ -145,7 +145,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         )
       }
 
-      val context = ErgoLikeContext(height,
+      val context = ErgoLikeContextTesting(height,
         state.state.lastBlockUtxoRoot,
         minerPubkey,
         IndexedSeq(emissionBox),

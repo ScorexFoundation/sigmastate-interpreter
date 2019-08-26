@@ -6,7 +6,7 @@ import scalan.RType._
 import sigmastate._
 import special.sigma._
 import SType.AnyOps
-import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxTokens}
+import org.ergoplatform.SigmaConstants.{MaxBoxSize, MaxTokens}
 import sigmastate.interpreter.CryptoConstants
 
 /** Type-class to give types a capability to build a Size structure. */

@@ -4,7 +4,7 @@ import sigmastate.interpreter.Interpreter._
 import org.ergoplatform._
 import sigmastate.Values.ShortConstant
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 
@@ -84,10 +84,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
 
     val tx1 = createTransaction(createBox(outValue, prop, currentHeight1))
     val selfBox = createBox(inValue, prop, inHeight)
-    val ctx1 = ErgoLikeContext(
+    val ctx1 = ErgoLikeContextTesting(
       currentHeight1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx1,
       self = selfBox,
@@ -104,10 +104,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //case 2: demurrage time has come
     val currentHeight2 = inHeight + demurragePeriod
     val tx2 = createTransaction(createBox(outValue, prop, currentHeight2))
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx2,
       self = selfBox,
@@ -120,15 +120,15 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can spend "demurrageCoeff * demurragePeriod" tokens
     val b = createBox(outValue, prop, currentHeight2)
     val tx3 = createTransaction(b)
-    val ctx3 = ErgoLikeContext(
+    val ctx3 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b, selfBox),
       spendingTransaction = tx3,
       self = selfBox)
 
-    assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.self.propositionBytes)
+    assert(ctx3.spendingTransaction.outputs.head.propositionBytes sameElements ctx3.boxesToSpend(ctx3.selfIndex).propositionBytes)
 
     val mProverRes1 = minerProver.prove(prop, ctx3, fakeMessage).get
     val _ctx3: ErgoLikeContext = ctx3.withExtension(mProverRes1.extension)
@@ -137,10 +137,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can't spend more
     val b2 = createBox(outValue - 1, prop, currentHeight2)
     val tx4 = createTransaction(b2)
-    val ctx4 = ErgoLikeContext(
+    val ctx4 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b2, selfBox),
       spendingTransaction = tx4,
       self = selfBox,
@@ -152,10 +152,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     //miner can spend less
     val tx5 = createTransaction(createBox(outValue + 1, prop, currentHeight2))
 
-    val ctx5 = ErgoLikeContext(
+    val ctx5 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx5,
       self = selfBox,
@@ -169,10 +169,10 @@ class DemurrageExampleSpecification extends SigmaTestingCommons {
     val b3 = createBox(iv, ErgoScriptPredef.FalseProp, currentHeight2)
     val tx6 = createTransaction(b3)
     val selfBox6 = createBox(iv, prop, inHeight)
-    val ctx6 = ErgoLikeContext(
+    val ctx6 = ErgoLikeContextTesting(
       currentHeight = currentHeight2,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(b3, selfBox6),
       spendingTransaction = tx6,
       self = selfBox6,
