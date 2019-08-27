@@ -8,7 +8,7 @@ import scorex.utils.Random
 import sigmastate.Values.{ByteArrayConstant, ByteConstant, IntConstant, SigmaBoolean, SigmaPropConstant}
 import sigmastate._
 import sigmastate.basics.DLogProtocol.ProveDlog
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
@@ -155,10 +155,10 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val fullGameTx = createTransaction(IndexedSeq(fullGameOutput0, fullGameOutput1))
 
-    val fullGameContext = ErgoLikeContext(
+    val fullGameContext = ErgoLikeContextTesting(
       currentHeight = fullGameCreationHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfGameOutput),
       spendingTransaction = fullGameTx,
       self = halfGameOutput // what is the use of self?
@@ -191,19 +191,19 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     val aliceProver = alice.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
     val bobProver = bob.withContextExtender(0, ByteArrayConstant(s)).withContextExtender(1, ByteConstant(a))
 
-    val winContext0 = ErgoLikeContext(
+    val winContext0 = ErgoLikeContextTesting(
       currentHeight = gameOverHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
       self = fullGameOutput0
     )
 
-    val winContext1 = ErgoLikeContext(
+    val winContext1 = ErgoLikeContextTesting(
       currentHeight = gameOverHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = gameOverTx,
       self = fullGameOutput1
@@ -216,10 +216,10 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         // Possibility 1.1: draw
         /////////////////////////////////////////////////////////
 
-        val drawContextAlice = ErgoLikeContext(
+        val drawContextAlice = ErgoLikeContextTesting(
           currentHeight = gameOverHeight,
           lastBlockUtxoRoot = AvlTreeData.dummy,
-          minerPubkey = ErgoLikeContext.dummyPubkey,
+          minerPubkey = ErgoLikeContextTesting.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput0),
           spendingTransaction = gameOverTx,
           self = fullGameOutput0
@@ -228,10 +228,10 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
         val proofAliceDraw = aliceProver.prove(fullGameEnv, fullGameScript, drawContextAlice, fakeMessage).get
         verifier.verify(fullGameEnv, fullGameScript, drawContextAlice, proofAliceDraw, fakeMessage).get._1 shouldBe true
 
-        val drawContextBob = ErgoLikeContext(
+        val drawContextBob = ErgoLikeContextTesting(
           currentHeight = gameOverHeight,
           lastBlockUtxoRoot = AvlTreeData.dummy,
-          minerPubkey = ErgoLikeContext.dummyPubkey,
+          minerPubkey = ErgoLikeContextTesting.dummyPubkey,
           boxesToSpend = IndexedSeq(fullGameOutput1),
           spendingTransaction = gameOverTx,
           self = fullGameOutput1
@@ -277,18 +277,18 @@ class RPSGameExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would invalid (why?), but we're not checking it in this test
     val defaultWinTx = createTransaction(defaultWinOutput)
 
-    val defaultWinContext0 = ErgoLikeContext(
+    val defaultWinContext0 = ErgoLikeContextTesting(
       currentHeight = defaultWinHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
       self = fullGameOutput0 // what is the use of self?
     )
-    val defaultWinContext1 = ErgoLikeContext(
+    val defaultWinContext1 = ErgoLikeContextTesting(
       currentHeight = defaultWinHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fullGameOutput0, fullGameOutput1),
       spendingTransaction = defaultWinTx,
       self = fullGameOutput1 // what is the use of self?

@@ -6,7 +6,7 @@ import org.scalatest.TryValues._
 import sigmastate.basics.DLogProtocol.ProveDlog
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values.{ByteArrayConstant, SigmaPropValue, Value}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import sigmastate.{AvlTreeData, SBoolean}
 
@@ -20,10 +20,10 @@ class CoopExampleSpecification extends SigmaTestingCommons {
   def mkCtx(height: Int,
             tx: ErgoLikeTransaction,
             self: ErgoBox): ErgoLikeContext = {
-    ErgoLikeContext(
+    ErgoLikeContextTesting(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(self),
       spendingTransaction = tx,
       self = self)

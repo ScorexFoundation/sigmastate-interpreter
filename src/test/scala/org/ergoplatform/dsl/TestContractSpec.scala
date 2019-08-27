@@ -3,25 +3,24 @@ package org.ergoplatform.dsl
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 
 import scala.collection.mutable
-import sigmastate.interpreter.{ProverResult, ContextExtension, CostedProverResult}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, ProverResult}
 
 import scala.collection.mutable.ArrayBuffer
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
-import org.ergoplatform.ErgoLikeContext.{dummyPreHeader, noHeaders}
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import scalan.Nullable
 import scorex.crypto.hash.Digest32
 
 import scala.util.Try
-import org.ergoplatform.{ErgoLikeContext, ErgoBox}
-import org.ergoplatform.dsl.ContractSyntax.{Token, TokenId, ErgoScript, Proposition}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition, Token, TokenId}
 import org.ergoplatform.validation.ValidationRules
 import sigmastate.{AvlTreeData, SType}
 import sigmastate.Values.{ErgoTree, EvaluatedValue}
-import sigmastate.eval.{IRContext, CSigmaProp, Evaluation}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.eval.{CSigmaProp, Evaluation, IRContext}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms.ValueOps
-import special.sigma.{AnyValue, TestValue, SigmaProp}
+import special.sigma.{AnyValue, SigmaProp, TestValue}
 
 case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRContext) extends ContractSpec {
 
@@ -78,21 +77,16 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
 
   case class TestInputBox(tx: TransactionCandidate, utxoBox: OutBox) extends InputBox {
     private [dsl] def toErgoContext: ErgoLikeContext = {
-      val propSpec = utxoBox.propSpec
-      val ctx = new ErgoLikeContext(
+      val boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq
+      val dataBoxes = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq
+      val ctx = ErgoLikeContextTesting(
         currentHeight = tx.block.height,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
-        headers     = noHeaders,
-        preHeader   = dummyPreHeader,
-        dataBoxes  = tx.dataInputs.map(_.utxoBox.ergoBox).toIndexedSeq,
-        boxesToSpend = tx.inputs.map(_.utxoBox.ergoBox).toIndexedSeq,
-        spendingTransaction = testSuite.createTransaction(tx.outputs.map(_.ergoBox).toIndexedSeq),
-        self = utxoBox.ergoBox,
-        extension = ContextExtension.empty,
-        validationSettings = ValidationRules.currentSettings,
-        costLimit = ScriptCostLimit.value,
-        initCost = 0L)
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+        dataBoxes   = dataBoxes,
+        boxesToSpend = boxesToSpend,
+        spendingTransaction = testSuite.createTransaction(dataBoxes, tx.outputs.map(_.ergoBox).toIndexedSeq),
+        selfIndex = boxesToSpend.indexOf(utxoBox.ergoBox) )
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {

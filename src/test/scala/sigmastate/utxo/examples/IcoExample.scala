@@ -10,6 +10,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigmastate.Values.{AvlTreeConstant, IntArrayConstant, CollectionConstant, ByteArrayConstant, SigmaPropValue}
 import sigmastate._
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.ErgoLikeContextTesting
 import sigmastate.interpreter.Interpreter.ScriptNameProp
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ErgoTreeSerializer
@@ -406,10 +407,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfter, feeBox))
 
-    val fundingContext = ErgoLikeContext(
+    val fundingContext = ErgoLikeContextTesting(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = inputBoxes,
       spendingTransaction = fundingTx,
       self = projectBoxBefore)
@@ -443,10 +444,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
 
     val issuanceTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(projectBoxAfterClosing, ergoWithdrawalBox, feeBox))
 
-    val issuanceContext = ErgoLikeContext(
+    val issuanceContext = ErgoLikeContextTesting(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBeforeClosing),
       spendingTransaction = issuanceTx,
       self = projectBoxBeforeClosing)
@@ -515,10 +516,10 @@ class IcoExample extends SigmaTestingCommons { suite =>
     val outputs = IndexedSeq(projectBoxAfter) ++ withdrawBoxes ++ IndexedSeq(feeBox)
     val fundingTx = ErgoLikeTransaction(IndexedSeq(), outputs)
 
-    val fundingContext = ErgoLikeContext(
+    val fundingContext = ErgoLikeContextTesting(
       currentHeight = 1000,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(projectBoxBefore),
       spendingTransaction = fundingTx,
       self = projectBoxBefore)

@@ -3,8 +3,8 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox._
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.hash.Digest32
-import scorex.util.encode.Base16
 import scorex.util.ModifierId
 import sigmastate.Values._
 import sigmastate._
@@ -75,7 +75,7 @@ class ErgoBoxCandidate(val value: Long,
     ScalaRunTime._hashCode((value, ergoTree, additionalTokens, additionalRegisters, creationHeight))
 
   override def toString: Idn = s"ErgoBoxCandidate($value, $ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
+    s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2).toArray.mkString(", ")}), " +
     s"$additionalRegisters, creationHeight: $creationHeight)"
 }
 

@@ -37,6 +37,7 @@ package org.ergoplatform.validation
   * when isSoftFork returns true), for example when a new opCode is added in the
   * newer version of the protocol, and this fact can be recognized by the old
   * code.
+  *
   * @see SoftForkWhenCodeAdded
   */
 abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule, RuleStatus))] {

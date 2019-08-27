@@ -1,16 +1,16 @@
 package sigmastate.utxo.examples
 
 import org.ergoplatform._
-import scorex.crypto.authds.avltree.batch.{Lookup, BatchAVLProver, Insert}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Lookup}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.utxo._
@@ -143,10 +143,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition12 ++ script1Hash)))
     val transition12Proof = avlProver.generateProof()
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       createTransaction(fsmBox2),
       self = fsmBox1)
@@ -163,10 +163,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition21 ++ script2Hash)))
     val transition21Proof = avlProver.generateProof()
 
-    val ctx2 = ErgoLikeContext(
+    val ctx2 = ErgoLikeContextTesting(
       currentHeight = 51,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(fsmBox1),
       self = fsmBox2)
@@ -191,10 +191,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition13 ++ script1Hash)))
     val transition13Proof = avlProver.generateProof()
 
-    val ctx3 = ErgoLikeContext(
+    val ctx3 = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox1),
       createTransaction(fsmBox3),
       self = fsmBox1)
@@ -218,10 +218,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition23 ++ script3Hash)))
     val transition23Proof = avlProver.generateProof()
 
-    val ctx23 = ErgoLikeContext(
+    val ctx23 = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(fsmBox3),
       self = fsmBox2)
@@ -240,10 +240,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     avlProver.performOneOperation(Lookup(ADKey @@ (transition30 ++ script4Hash)))
     val transition30Proof = avlProver.generateProof()
 
-    val ctx30 = ErgoLikeContext(
+    val ctx30 = ErgoLikeContextTesting(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox3),
       createTransaction(freeBox),
       self = fsmBox3)
@@ -256,10 +256,10 @@ class FsmExampleSpecification extends SigmaTestingCommons {
     (new ErgoLikeTestInterpreter).verify(fsmScript, ctx30, spendingProof30, fakeMessage).get._1 shouldBe true
 
     //it is impossible to leave FSM at state2
-    val ctx20 = ErgoLikeContext(
+    val ctx20 = ErgoLikeContextTesting(
       currentHeight = 52,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fsmBox2),
       createTransaction(freeBox),
       self = fsmBox2)

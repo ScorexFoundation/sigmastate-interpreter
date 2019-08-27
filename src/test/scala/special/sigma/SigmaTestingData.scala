@@ -1,6 +1,6 @@
 package special.sigma
 
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.validation.ValidationRules
 import sigmastate.interpreter.ContextExtension
 import org.scalacheck.Gen.containerOfN
@@ -10,8 +10,8 @@ import org.scalacheck.{Arbitrary, Gen}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import org.ergoplatform.{ErgoLikeContext, ErgoLikeTransaction, ErgoBox}
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import org.ergoplatform.{DataInput, ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.crypto.authds.{ADKey, ADValue}
 
 trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
@@ -91,12 +91,10 @@ trait SigmaTestingData extends SigmaTestingCommons with SigmaTypeGens {
     votes = Colls.emptyColl[Byte]
   )
   val ergoCtx = new ErgoLikeContext(
-    currentHeight = preHeader.height,
     lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-    preHeader.minerPk.getEncoded.toArray,
     boxesToSpend = IndexedSeq(inBox),
-    spendingTransaction = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(outBox)),
-    self = inBox, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
+    spendingTransaction = new ErgoLikeTransaction(IndexedSeq(), IndexedSeq(DataInput(dataBox.id)), IndexedSeq(outBox)),
+    selfIndex = 0, headers = headers, preHeader = preHeader, dataBoxes = IndexedSeq(dataBox),
     extension = ContextExtension.empty,
     validationSettings = ValidationRules.currentSettings,
     costLimit = ScriptCostLimit.value, initCost = 0L)

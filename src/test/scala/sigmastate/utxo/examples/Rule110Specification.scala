@@ -3,10 +3,10 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.crypto.hash.Blake2b256
 import scorex.util._
-import sigmastate.Values.{LongConstant, FalseLeaf, TrueLeaf, GetVarByteArray, Value, ByteArrayConstant, IntConstant, BooleanConstant, ByteConstant}
+import sigmastate.Values.{BooleanConstant, ByteArrayConstant, ByteConstant, FalseLeaf, GetVarByteArray, IntConstant, LongConstant, TrueLeaf, Value}
 import sigmastate._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.lang.Terms._
 import sigmastate.serialization.ValueSerializer
@@ -55,10 +55,10 @@ class Rule110Specification extends SigmaTestingCommons {
     val output = ErgoBox(1, prop, 0, Seq(), Map(reg1 -> ByteArrayConstant(Array[Byte](1, 1, 1, 1, 1, 0))))
     val tx = UnsignedErgoLikeTransaction(IndexedSeq(new UnsignedInput(input.id)), IndexedSeq(output))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(input),
       tx,
       self = input).withCostLimit(maxCost)
@@ -217,10 +217,10 @@ class Rule110Specification extends SigmaTestingCommons {
     val nProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(normalCaseBytes))
 
-    val nCtx = ErgoLikeContext(
+    val nCtx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(nIn0, nIn1, nIn2),
       nTx,
       self = nIn0)
@@ -239,10 +239,10 @@ class Rule110Specification extends SigmaTestingCommons {
     val rProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(rightmostBytes))
 
-    val rCtx = ErgoLikeContext(
+    val rCtx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(rIn0, rIn1),
       rTx,
       self = rIn0)
@@ -261,10 +261,10 @@ class Rule110Specification extends SigmaTestingCommons {
     val lnProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(nLeftmostBytes))
 
-    val lnCtx = ErgoLikeContext(
+    val lnCtx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lnIn0, lnIn1),
       lnTx,
       self = lnIn0)
@@ -282,10 +282,10 @@ class Rule110Specification extends SigmaTestingCommons {
     val lProver = new ContextEnrichingTestProvingInterpreter()
       .withContextExtender(scriptId, ByteArrayConstant(leftmostBytes))
 
-    val lCtx = ErgoLikeContext(
+    val lCtx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(lIn0),
       lTx,
       self = lIn0)
@@ -405,7 +405,7 @@ class Rule110Specification extends SigmaTestingCommons {
 
     val initBlock = FullBlock(
       IndexedSeq(createTransaction(coins)),
-      ErgoLikeContext.dummyPubkey
+      ErgoLikeContextTesting.dummyPubkey
     )
 
     val genesisState = ValidationState.initialState(initBlock)
@@ -438,27 +438,27 @@ class Rule110Specification extends SigmaTestingCommons {
           IndexedSeq(c, left.toCandidate, center.toCandidate, right.toCandidate)
         )
 
-        val contextLeft = ErgoLikeContext(row,
+        val contextLeft = ErgoLikeContextTesting(row,
           state.state.lastBlockUtxoRoot,
-          ErgoLikeContext.dummyPubkey,
+          ErgoLikeContextTesting.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           left,
           ContextExtension.empty)
         val proverResultLeft = prover.prove(left.ergoTree, contextLeft, ut.messageToSign).get
 
-        val contextCenter = ErgoLikeContext(row,
+        val contextCenter = ErgoLikeContextTesting(row,
           state.state.lastBlockUtxoRoot,
-          ErgoLikeContext.dummyPubkey,
+          ErgoLikeContextTesting.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           center,
           ContextExtension.empty)
         val proverResultCenter = prover.prove(center.ergoTree, contextCenter, ut.messageToSign).get
 
-        val contextRight = ErgoLikeContext(row,
+        val contextRight = ErgoLikeContextTesting(row,
           state.state.lastBlockUtxoRoot,
-          ErgoLikeContext.dummyPubkey,
+          ErgoLikeContextTesting.dummyPubkey,
           IndexedSeq(left, center, right),
           ut,
           right,
@@ -468,7 +468,7 @@ class Rule110Specification extends SigmaTestingCommons {
       }
     }
 
-    val firstRowBlock = FullBlock(generateTransactionsForRow(genesisState, 1), ErgoLikeContext.dummyPubkey)
+    val firstRowBlock = FullBlock(generateTransactionsForRow(genesisState, 1), ErgoLikeContextTesting.dummyPubkey)
 
     val t0 = System.currentTimeMillis()
     val firstRowState = genesisState.applyBlock(firstRowBlock, 10000000).get
