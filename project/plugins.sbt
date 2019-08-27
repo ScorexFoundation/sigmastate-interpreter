@@ -15,4 +15,4 @@ resolvers ++= Seq(
   "uuverifiers" at "http://logicrunch.research.it.uu.se/maven",
 )
 
-addSbtPlugin("ch.epfl.lara" % "sbt-stainless" % "0.3.2")
+addSbtPlugin("ch.epfl.lara" % "sbt-stainless" % "0.4.0")
