@@ -1,45 +1,48 @@
-package sigmastate.contract.verification
+package sigmastate.verification.contract
 
 import scalan.{RType => ERType}
-import sigmastate.contract.verification.Helpers._
-import special.sigma.{Box => EBox, SigmaProp => ESigmaProp}
-import stainless.annotation.{extern, ignore, library, opaque, partialEval, pure}
+import sigmastate.verification
+import sigmastate.verification.{AvlTree, Coll, Context, SigmaProp}
+import sigmastate.verification.Coll._
+import stainless.annotation.{extern, ignore, library, pure}
 import stainless.collection._
 import stainless.lang._
-import CollOverList._
+import Helpers._
 
 import scala.language.implicitConversions
 
-@library
-trait SigmaProp extends SigmaPropT {
-  @extern @pure
-  override def isValid: Boolean
-}
+trait RType[T]
 
 @library
 object Helpers {
 
-  @library @extern
-  type RType[T] = ERType[T]
+  @extern
+  type CollT[T] = special.collection.Coll[T]
 
-  @library @extern
-  type SigmaPropT = ESigmaProp
+  @extern
+  type ContextT = special.sigma.Context
 
-  @library @extern
-  implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
+  @extern
+  type AvlTreeT = special.sigma.AvlTree
+  //  @library @extern
+//  implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
 
-  @library @extern @pure
-  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ???
+//  @extern @pure
+//  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ???
 
-  @library @extern @pure
+  @extern @pure
   implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
 
-  @library @extern @pure
+  @extern @pure
   implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = ???
 
-  @library @extern @pure
+  @extern @pure
   implicit def ByteType: RType[Byte] = ???
-  @library @extern @pure
+
+  @extern @pure
+  implicit def LongType: RType[Long] = ???
+
+  @extern @pure
   implicit def AvlTreeRType: RType[AvlTree] = ???
 }
 
@@ -85,28 +88,6 @@ case class CBox(@extern v: EBox) extends Box{
 
  */
 
-trait AvlTree {
-  def digest: Coll[Byte]
-  def keyLength: Int
-  def valueLengthOpt: Option[Int]
-  def enabledOperations: Byte
-  def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
-  def insert(toAdd: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
-  def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
-}
-
-trait Context {
-  def OUTPUTS: Coll[Box]
-  def INPUTS: Coll[Box]
-  def SELF: Box
-  def HEIGHT: Int
-
-  def getVar[T](id: Byte): Option[T]
-  def longToByteArray(l: Long): Coll[Byte]
-  def byteArrayToLong(bytes: Coll[Byte]): Long
-  def blake2b256(bytes: Coll[Byte]): Coll[Byte]
-}
-
 //case class DummyFundingContext(HEIGHT: Int,
 //                               INPUTS: List[Box],
 //                               OUTPUTS: List[Box],
@@ -144,7 +125,7 @@ sealed abstract class ICOContract {
     val proof = getVar[Coll[Byte]](1).get
     val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
       // TODO avoid getOrElse
-      val pk = b.R4[Coll[Byte]].getOrElse(CollOverList.empty)
+      val pk = b.R4[Coll[Byte]].getOrElse(Coll.empty[Byte])
       val value = longToByteArray(b.value)
       (pk, value)
     })
@@ -184,7 +165,7 @@ sealed abstract class ICOContract {
         SELF.R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
-          val pk = b.R4[Coll[Byte]].getOrElse(CollOverList.empty)
+          val pk = b.R4[Coll[Byte]].getOrElse(Coll.empty)
           val value = longToByteArray(b.value)
           (pk, value)
         }), getVar[Coll[Byte]](1).get) &&
@@ -288,12 +269,12 @@ sealed abstract class ICOContract {
       if (idx >= 0 && idx < OUTPUTS.length) {
         val b = OUTPUTS(idx)
         if (b.tokens.nonEmpty && b.tokens(0)._1 == tokenId) {
-          CollOverList((blake2b256(b.propositionBytes), b.tokens(0)._2))
+          Coll((blake2b256(b.propositionBytes), b.tokens(0)._2))
         } else {
-          CollOverList((blake2b256(b.propositionBytes), 0L))
+          Coll((blake2b256(b.propositionBytes), 0L))
         }
       } else {
-        CollOverList.empty[(Coll[Byte], Long)]
+        Coll.empty[(Coll[Byte], Long)]
       }
     })
 
@@ -308,7 +289,7 @@ sealed abstract class ICOContract {
     val initialTree = SELF.R5[AvlTree].get
 
     // TODO: proper option handling
-    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(CollOverList.empty)) })
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(Coll.empty)) })
     val valuesCorrect = removedValues == withdrawValues
 
     val modifiedTree = initialTree.remove(toRemove, removeProof)

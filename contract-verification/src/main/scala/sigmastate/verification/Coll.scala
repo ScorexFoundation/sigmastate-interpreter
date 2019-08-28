@@ -1,49 +1,48 @@
-package sigmastate.contract.verification
+package sigmastate.verification
 
+import sigmastate.verification.contract.Helpers.CollT
+import sigmastate.verification.contract.RType
 import stainless.collection._
-import stainless.lang._
-//import java.util
-//import java.util.Objects
-
-//import special.SpecialPredef
-
-//import scala.reflect.ClassTag
-//import scalan._
-//import scalan.util.CollectionUtil
-//import scalan.{Internal, NeverInline, Reified}
-import Helpers._
-//import debox.Buffer
-//import scalan.RType._
-import CollOverList._
-import special.collection.{CReplColl, CollBuilder, CollOverArrayBuilder, Monoid, PairColl, ReplColl, Coll => EColl}
-//import special.collection.Helpers.requireSameLength
-//import spire.syntax.all._
 import stainless.annotation.{extern, library, pure}
 
-@library
-trait Coll[A] extends CollT[A] {
-  override def length: Int
+final case class Coll[A](toColl: CollT[A]) {
 
-  override def size: Int = {
+  @extern @pure
+  def length: Int = ???
+
+  @extern @pure
+  def size: Int = {
     this.length
   } ensuring(_ == length)
 
-  override def nonEmpty: Boolean = {
+  @extern @pure
+  def nonEmpty: Boolean = {
     length > 0
   } ensuring(_ == length > 0)
 
-  override def isEmpty: Boolean = length == 0
+  @extern @pure
+  def isEmpty: Boolean = length == 0
 
-  override def apply(i: Int): A
+  @extern @pure
+  def apply(i: Int): A = ???
 
-  override def slice(from: Int, until: Int): Coll[A]
+  @extern @pure
+  def slice(from: Int, until: Int): Coll[A] = ???
 
-  def map[@specialized B: RType](f: A => B): Coll[B]
+  @extern @pure
+  def map[B: RType](f: A => B): Coll[B] = ???
 
-  def flatMap[B: RType](f: A => Coll[B]): Coll[B]
+  @extern @pure
+  def flatMap[B: RType](f: A => Coll[B]): Coll[B] = ???
 
-  override def forall(p: A => Boolean): Boolean
+  @extern @pure
+  def forall(p: A => Boolean): Boolean = ???
+
+  @extern @pure
+  def foldLeft[B](zero: B, op: ((B, A)) => B): B =  ???
 }
+
+
 /*
 import CollOverList._
 
@@ -125,31 +124,27 @@ case class CollOverList[A](toList: List[A]) extends Coll[A] {
 }
 */
 
-@library
-object CollOverList {
+object Coll {
 
-  @library @extern
-  type CollT[T] = EColl[T]
-
-  @library @extern
+  @extern @pure
   def empty[A]: Coll[A] = ??? //new CollOverList(List())
 
-  @library @extern
+  @extern @pure
   def apply[A](a: A): Coll[A] = ??? // new CollOverList(List(a))
 
-  @library @extern
-  def apply[A](list: List[A]): Coll[A] = ??? // new CollOverList(list)
+//  @library @extern
+//  def apply[A](list: List[A]): Coll[A] = ??? // new CollOverList(list)
 
-  @library
-  implicit class ListOps[A](val list: List[A]) {
-    @extern
-    def toColl: Coll[A] = CollOverList(list)
-  }
+//  @library
+//  implicit class ListOps[A](val list: List[A]) {
+//    @extern
+//    def toColl: Coll[A] = Coll(list)
+//  }
 
-  @library
-  implicit class CollOps[A](val coll: Coll[A]) {
-    @extern
-    def toList: List[A] = ???
-  }
+//  @library
+//  implicit class CollOps[A](val coll: Coll[A]) {
+//    @extern
+//    def toList: List[A] = ???
+//  }
 }
 
