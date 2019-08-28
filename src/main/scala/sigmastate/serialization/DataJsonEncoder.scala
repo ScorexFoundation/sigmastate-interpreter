@@ -17,29 +17,8 @@ import spire.syntax.all.cfor
 import scala.collection.mutable
 
 object DataJsonEncoder {
-  implicit private val encodeBytes: Encoder[Array[Byte]] = (bytes: Array[Byte]) =>
-    Json.fromString(bytes.toString)
-
-  private def encodeName[T <: SType](tpe: T): String = tpe match {
-    case SUnit => "Unit"
-    case SBoolean => "Boolean"
-    case SByte => "Byte"
-    case SShort => "Short"
-    case SInt => "Int"
-    case SLong => "Long"
-    case SBigInt => "BigInt"
-    case SString => "String"
-    case tColl: SCollectionType[a] =>
-      "Coll[" + encodeName(tColl.elemType) + "]"
-    case tOpt: SOption[a] =>
-      "Option[" + encodeName(tOpt.elemType) + "]"
-    case t: STuple =>
-      "(" + t.items.map((x: SType) => s"${encodeName(x)}").mkString(",") + ")"
-    case t => throw new SerializerException(s"Not defined DataJsonEncoder for ${t}")
-  }
-
   def encode[T <: SType](v: T#WrappedType, tpe: T): Json = {
-    val encodedType = encodeName(tpe)
+    val encodedType = tpe.toTermString
     val encodedData = encodeData(v, tpe)
     Json.obj(
       "type" -> Json.fromString(encodedType),
