@@ -3,10 +3,10 @@ package sigmastate.verification.contract
 import stainless.annotation._
 import stainless.lang._
 import Helpers._
-import sigmastate.verification.Coll
+import sigmastate.verification.SigmaDsl.Coll
 import sigmastate.verification.SigmaDsl.api._
 import sigmastate.verification.SigmaDsl.api.collection.Coll
-import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaContract, SigmaProp}
+import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaContract, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
 
@@ -37,61 +37,6 @@ object Helpers {
   @extern @pure
   implicit def AvlTreeRType: RType[AvlTree] = ???
 }
-
-//@library
-//trait Box {
-//  @library
-//  def value: Long
-//  @library
-//  def id: Coll[Byte]
-//  @library @pure
-//  def R4[T](implicit cT: RType[T]): Option[T]
-//  @library @pure
-//  def R5[T](implicit cT: RType[T]): Option[T]
-//  @library
-//  def tokens: Coll[(Coll[Byte], Long)]
-//  @library
-//  def propositionBytes: Coll[Byte]
-//}
-//
-
-//@library
-//case class CBox(@extern v: EBox) extends Box{
-//
-//  @extern @pure
-//  def value: Long = v.value
-//  @extern @pure
-//  def id: List[Byte] = v.id
-//  @extern @pure
-//  def R4[T]: Option[T] = ???
-////  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
-//
-//  @extern @pure
-//  def R5[T]: Option[T] = ??? // v.R5[T]
-//  //  def R5[T](implicit @extern cT: RType[T]): Option[T] = v.R5[T]
-//
-//  @extern @pure
-//  def tokens: List[(List[Byte], Long)] = ??? //v.tokens
-//  @extern @pure
-//  def propositionBytes: List[Byte] = v.propositionBytes
-//}
-
-
-//case class DummyFundingContext(HEIGHT: Int,
-//                               INPUTS: List[Box],
-//                               OUTPUTS: List[Box],
-//                               SELF: Box,
-//                               nextStageScriptHash: List[Byte],
-//                               feeBytes: List[Byte]) extends FundingContext {
-//
-//  override def getVar[T](id: Byte): Option[T] = ???
-//
-//  override def longToByteArray(l: Long): List[Byte] = ???
-//
-//  override def byteArrayToLong(bytes: List[Byte]): Long = ???
-//
-//  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
-//}
 
 sealed abstract class ICOContract extends SigmaContract {
 
@@ -319,4 +264,10 @@ sealed abstract class ICOContract extends SigmaContract {
 //  } ensuring (_ == false)
 }
 
-case object ICOContractVerification extends ICOContract
+case object ICOContractVerification extends ICOContract {
+  @extern
+  override def builder: SigmaDslBuilder = ???
+
+  @extern
+  override def canOpen(ctx: Context): Boolean = ???
+}
