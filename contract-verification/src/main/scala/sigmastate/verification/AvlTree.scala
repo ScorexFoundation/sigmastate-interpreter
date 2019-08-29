@@ -1,6 +1,6 @@
 package sigmastate.verification
 
-import sigmastate.verification.SigmaDsl.api.Coll
+import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.contract.Helpers.AvlTreeT
 import stainless.annotation.extern
 import stainless.lang.Option
