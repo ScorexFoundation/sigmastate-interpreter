@@ -1,5 +1,6 @@
 package sigmastate.verification
 
+import sigmastate.verification.SigmaDsl.api.Coll
 import sigmastate.verification.contract.Box
 import sigmastate.verification.contract.Helpers.ContextT
 import stainless.annotation.{extern, pure}
