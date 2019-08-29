@@ -7,6 +7,7 @@ import scalan.{Internal, NeverInline, OverloadId, Reified}
 import sigmastate.verification.SigmaDsl.api.collection.{Coll, CollBuilder}
 import sigmastate.verification.SigmaDsl.api.{MonoidBuilder, RType}
 import special.sigma.clause
+import stainless.annotation.{extern, ignore}
 import stainless.lang._
 
 import scala.reflect.ClassTag
@@ -25,6 +26,7 @@ trait CostModel {
   def SelectField: Int // costOf("SelectField")
   def CollectionConst: Int // costOf("Const: () => Array[IV]")
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
+  @ignore
   @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
   def PubKeySize: Long
@@ -37,7 +39,7 @@ trait CostModel {
   * */
 @scalan.Liftable
 trait BigInt {
-  @Internal
+  @Internal @ignore
   private[sigma] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
@@ -200,7 +202,7 @@ trait BigInt {
   */
 @scalan.Liftable
 trait GroupElement {
-  @Internal
+  @Internal @ignore
   private[sigma] def value: ECPoint
 
   def isInfinity: Boolean
@@ -330,7 +332,7 @@ trait Box {
     */
   def executeFromRegister[@Reified T](regId: Byte)(implicit cT:RType[T]): T
 
-  @Internal
+  @Internal @ignore
   override def toString = s"Box(id=$id; value=$value; regs=$registers)"
 }
 
@@ -342,7 +344,7 @@ trait Box {
   * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
   */
 @scalan.Liftable
-trait AvlTree {
+sealed trait AvlTree {
   /** Returns digest of the state represented by this tree.
     * Authenticated tree digest = root hash bytes ++ tree height
     * @since 2.0
@@ -437,6 +439,10 @@ trait AvlTree {
     * @param proof
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
+}
+
+abstract case class CAvlTree() extends AvlTree {
+
 }
 
 /** Only header fields that can be predicted by a miner.
@@ -565,7 +571,7 @@ trait SigmaContract {
   def builder: SigmaDslBuilder
 
   @NeverInline
-  @Reified("T")
+  @Reified("T") @ignore
   def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
 
   /** !!! all methods should delegate to builder */
@@ -656,9 +662,11 @@ trait SigmaDslBuilder {
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
+  @ignore
   def BigInt(n: BigInteger): BigInt
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
+  @ignore
   def toBigInteger(n: BigInt): BigInteger
 
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */

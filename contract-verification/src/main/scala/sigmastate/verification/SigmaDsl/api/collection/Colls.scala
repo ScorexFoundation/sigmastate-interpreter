@@ -3,11 +3,10 @@ package sigmastate.verification.SigmaDsl.api.collection
 import scalan.{ContainerType, FunctorType, Internal, Liftable, NeverInline, Reified}
 import sigmastate.verification.SigmaDsl.api.{Monoid, MonoidBuilder, RType}
 import sigmastate.verification.contract.Helpers._
-import stainless.annotation.extern
+import stainless.annotation.{extern, ignore}
 import stainless.lang._
 
 import scala.collection.immutable
-import scala.reflect.ClassTag
 
 /** Indexed (zero-based) collection of elements of type `A`
   * @define Coll `Coll`
@@ -18,7 +17,7 @@ import scala.reflect.ClassTag
 @ContainerType
 @FunctorType
 @scalan.Liftable
-trait Coll[@specialized A] {
+sealed trait Coll[@specialized A] {
   def builder: CollBuilder
   def toArray: Array[A]
 
@@ -314,7 +313,7 @@ trait Coll[@specialized A] {
     *                part of the result, but any following occurrences will.
     *  @since 2.0
     */
-  @NeverInline
+  @NeverInline @extern
   def diff(that: Coll[A]): Coll[A] = {
     val res = toArray.diff(that.toArray)
     builder.fromArray(res)
@@ -330,7 +329,7 @@ trait Coll[@specialized A] {
     *                in the result, but any following occurrences will be omitted.
     *  @since 2.0
     */
-  @NeverInline
+  @NeverInline @extern
   def intersect(that: Coll[A]): Coll[A] = {
     val res = toArray.intersect(that.toArray)
     builder.fromArray(res)
@@ -436,6 +435,7 @@ trait CollBuilder {
   /** Construct a new collection from the given list of arguments.
     * The arguments should be of the same type for which there should be
     * an implicit type descriptor at the call site. */
+  @ignore
   @Reified("T") def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T]
 
   /** Deconstruct collection of (A,B) pairs into pair of collections.
