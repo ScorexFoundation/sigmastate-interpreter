@@ -8,7 +8,8 @@ import stainless.annotation.{extern, ignore, library, pure}
 import stainless.collection._
 import stainless.lang._
 import Helpers._
-import sigmastate.verification.SigmaDsl.api.{Coll, RType}
+import sigmastate.verification.SigmaDsl.api.RType
+import sigmastate.verification.SigmaDsl.api.collection.Coll
 
 import scala.language.implicitConversions
 

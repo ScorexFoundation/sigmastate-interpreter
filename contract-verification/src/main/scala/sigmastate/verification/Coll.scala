@@ -1,6 +1,7 @@
 package sigmastate.verification
 
-import sigmastate.verification.SigmaDsl.api.{Coll, RType}
+import sigmastate.verification.SigmaDsl.api.RType
+import sigmastate.verification.SigmaDsl.api.collection.Coll
 import stainless.collection._
 import stainless.annotation.{extern, library, pure}
 

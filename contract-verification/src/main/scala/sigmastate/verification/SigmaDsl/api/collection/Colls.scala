@@ -1,6 +1,7 @@
-package sigmastate.verification.SigmaDsl.api
+package sigmastate.verification.SigmaDsl.api.collection
 
 import scalan._
+import sigmastate.verification.SigmaDsl.api.{Monoid, MonoidBuilder, RType}
 
 import scala.collection.immutable
 import scala.reflect.ClassTag
