@@ -1,11 +1,10 @@
 package sigmastate.verification
 
-import sigmastate.verification.contract.Helpers.CollT
-import sigmastate.verification.contract.RType
+import sigmastate.verification.SigmaDsl.api.{Coll, RType}
 import stainless.collection._
 import stainless.annotation.{extern, library, pure}
 
-final case class Coll[A](toColl: CollT[A]) {
+final case class CollWrapper[A](toColl: Coll[A]) {
 
   @extern @pure
   def length: Int = ???

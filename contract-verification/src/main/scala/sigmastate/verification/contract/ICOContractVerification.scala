@@ -8,16 +8,12 @@ import stainless.annotation.{extern, ignore, library, pure}
 import stainless.collection._
 import stainless.lang._
 import Helpers._
+import sigmastate.verification.SigmaDsl.api.{Coll, RType}
 
 import scala.language.implicitConversions
 
-trait RType[T]
-
 @library
 object Helpers {
-
-  @extern
-  type CollT[T] = special.collection.Coll[T]
 
   @extern
   type ContextT = special.sigma.Context
