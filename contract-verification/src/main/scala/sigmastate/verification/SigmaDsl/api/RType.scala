@@ -1,5 +1,9 @@
 package sigmastate.verification.SigmaDsl.api
 
+//import sigmastate.verification.AvlTree
+import sigmastate.verification.SigmaDsl.api.collection.Coll
+import stainless.annotation.{extern, pure}
+
 import scala.reflect.ClassTag
 
 trait RType[A] {
@@ -12,4 +16,6 @@ trait RType[A] {
   def isConstantSize: Boolean
 }
 
+object RType {
+}
 

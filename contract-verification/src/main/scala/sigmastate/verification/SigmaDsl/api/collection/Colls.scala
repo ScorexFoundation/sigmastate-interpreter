@@ -1,7 +1,10 @@
 package sigmastate.verification.SigmaDsl.api.collection
 
-import scalan._
+import scalan.{ContainerType, FunctorType, Internal, Liftable, NeverInline, Reified}
 import sigmastate.verification.SigmaDsl.api.{Monoid, MonoidBuilder, RType}
+import sigmastate.verification.contract.Helpers._
+import stainless.annotation.extern
+import stainless.lang._
 
 import scala.collection.immutable
 import scala.reflect.ClassTag
@@ -165,7 +168,7 @@ trait Coll[@specialized A] {
   @NeverInline
   def find(p: A => Boolean): Option[A] = {
     val i = segmentLength(!p(_), 0)
-    if (i < length) Some(this(i)) else None
+    if (i < length) Some(this(i)) else None()
   }
 
   /** Finds index of the first element satisfying some predicate after or at some start index.
@@ -260,11 +263,11 @@ trait Coll[@specialized A] {
     *               for which `key(x)` equals `k`.
     *  @since 2.0
     */
-  @NeverInline
-  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])] = {
-    val res = toArray.groupBy(key).mapValues(builder.fromArray(_))
-    builder.fromMap(res)
-  }
+//  @NeverInline
+//  def groupBy[K: RType](key: A => K): Coll[(K, Coll[A])] = {
+//    val res = toArray.groupBy(key).mapValues(builder.fromArray(_))
+//    builder.fromMap(res)
+//  }
 
   /** Partitions this $coll into a map of ${coll}s according to some discriminator function.
     * Additionally projecting each element to a new value.
@@ -281,12 +284,12 @@ trait Coll[@specialized A] {
     *               for which `key(x)` equals `k`.
     *  @since 2.0
     */
-  @NeverInline
-  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])] = {
-    implicit val ctV: ClassTag[V] = RType[V].classTag
-    val res = toArray.groupBy(key).mapValues(arr => builder.fromArray(arr.map(proj)))
-    builder.fromMap(res)
-  }
+//  @NeverInline
+//  def groupByProjecting[K: RType, V: RType](key: A => K, proj: A => V): Coll[(K, Coll[V])] = {
+//    implicit val ctV: ClassTag[V] = RType[V].classTag
+//    val res = toArray.groupBy(key).mapValues(arr => builder.fromArray(arr.map(proj)))
+//    builder.fromMap(res)
+//  }
 
   /** Produces a new collection which contains all distinct elements of this $coll and also all elements of
     *  a given collection that are not in this collection.
@@ -364,15 +367,15 @@ trait Coll[@specialized A] {
   @Internal
   private[collection] def isReplArray(len: Int, value: A): Boolean
 
-  @Internal
+  @Internal @extern
   private def trim[T](arr: Array[T]) = arr.take(arr.length min 100)
-  @Internal
+  @Internal @extern
   override def toString = s"Coll(${trim(toArray).mkString(",")})"
 
   @Internal
   implicit def tItem: RType[A]
 
-  @Internal
+  @Internal @extern
   def toMap[T, U](implicit ev: A <:< (T, U)): immutable.Map[T, U] = {
     var b = immutable.Map.empty[T,U]
     var i = 0
@@ -387,13 +390,13 @@ trait Coll[@specialized A] {
     b
   }
 
-  @Internal
+  @Internal @extern
   def distinctByKey[T, U](implicit ev: A <:< (T, U)): Coll[A] = {
     unionSetByKey(builder.emptyColl[A](tItem))
   }
 
 
-  @Internal
+  @Internal @extern
   def unionSetByKey[T, U](that: Coll[A])(implicit ev: A <:< (T, U)): Coll[A] = {
     import scalan.util.CollectionUtil._
     // TODO optimize representation-wise

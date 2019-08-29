@@ -1,32 +1,24 @@
 package sigmastate.verification.contract
 
-import scalan.{RType => ERType}
-import sigmastate.verification
-import sigmastate.verification.{AvlTree, Coll, Context, SigmaProp}
-import sigmastate.verification.Coll._
-import stainless.annotation.{extern, ignore, library, pure}
-import stainless.collection._
+import stainless.annotation._
 import stainless.lang._
 import Helpers._
-import sigmastate.verification.SigmaDsl.api.RType
+import sigmastate.verification.Coll
+import sigmastate.verification.SigmaDsl.api._
 import sigmastate.verification.SigmaDsl.api.collection.Coll
+import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaContract, SigmaProp}
 
 import scala.language.implicitConversions
 
-@library
 object Helpers {
 
-  @extern
-  type ContextT = special.sigma.Context
+//  @extern
+//  type ContextT = special.sigma.Context
+//
+//  @extern
+//  type AvlTreeT = special.sigma.AvlTree
 
-  @extern
-  type AvlTreeT = special.sigma.AvlTree
-  //  @library @extern
-//  implicit def optionToOption[T](@extern opt: scala.Option[T]): Option[T] = ???
-
-//  @extern @pure
-//  implicit def listRType[A](implicit cT: RType[A]): RType[List[A]] = ???
-
+  // TODO extract
   @extern @pure
   implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
 
@@ -37,53 +29,53 @@ object Helpers {
   implicit def ByteType: RType[Byte] = ???
 
   @extern @pure
+  implicit def IntType: RType[Int] = ???
+
+  @extern @pure
   implicit def LongType: RType[Long] = ???
 
   @extern @pure
   implicit def AvlTreeRType: RType[AvlTree] = ???
 }
 
-// TODO define via BoxT (see SigmaPropT)
-@library
-trait Box {
-  @library
-  def value: Long
-  @library
-  def id: Coll[Byte]
-  @library @pure
-  def R4[T](implicit cT: RType[T]): Option[T]
-  @library @pure
-  def R5[T](implicit cT: RType[T]): Option[T]
-  @library
-  def tokens: Coll[(Coll[Byte], Long)]
-  @library
-  def propositionBytes: Coll[Byte]
-}
+//@library
+//trait Box {
+//  @library
+//  def value: Long
+//  @library
+//  def id: Coll[Byte]
+//  @library @pure
+//  def R4[T](implicit cT: RType[T]): Option[T]
+//  @library @pure
+//  def R5[T](implicit cT: RType[T]): Option[T]
+//  @library
+//  def tokens: Coll[(Coll[Byte], Long)]
+//  @library
+//  def propositionBytes: Coll[Byte]
+//}
+//
 
-/*
+//@library
+//case class CBox(@extern v: EBox) extends Box{
+//
+//  @extern @pure
+//  def value: Long = v.value
+//  @extern @pure
+//  def id: List[Byte] = v.id
+//  @extern @pure
+//  def R4[T]: Option[T] = ???
+////  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
+//
+//  @extern @pure
+//  def R5[T]: Option[T] = ??? // v.R5[T]
+//  //  def R5[T](implicit @extern cT: RType[T]): Option[T] = v.R5[T]
+//
+//  @extern @pure
+//  def tokens: List[(List[Byte], Long)] = ??? //v.tokens
+//  @extern @pure
+//  def propositionBytes: List[Byte] = v.propositionBytes
+//}
 
-@library
-case class CBox(@extern v: EBox) extends Box{
-
-  @extern @pure
-  def value: Long = v.value
-  @extern @pure
-  def id: List[Byte] = v.id
-  @extern @pure
-  def R4[T]: Option[T] = ???
-//  def R4[T](implicit @extern cT: RType[T]): Option[T] = v.R4[T]
-
-  @extern @pure
-  def R5[T]: Option[T] = ??? // v.R5[T]
-  //  def R5[T](implicit @extern cT: RType[T]): Option[T] = v.R5[T]
-
-  @extern @pure
-  def tokens: List[(List[Byte], Long)] = ??? //v.tokens
-  @extern @pure
-  def propositionBytes: List[Byte] = v.propositionBytes
-}
-
- */
 
 //case class DummyFundingContext(HEIGHT: Int,
 //                               INPUTS: List[Box],
@@ -101,7 +93,7 @@ case class CBox(@extern v: EBox) extends Box{
 //  override def blake2b256(bytes: List[Byte]): List[Byte] = ???
 //}
 
-sealed abstract class ICOContract {
+sealed abstract class ICOContract extends SigmaContract {
 
   def ICOFundingContract(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
     import ctx._
