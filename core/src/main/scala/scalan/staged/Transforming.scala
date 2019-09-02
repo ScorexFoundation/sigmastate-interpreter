@@ -184,9 +184,9 @@ trait Transforming { self: Scalan =>
 
       // new effects may appear during body mirroring
       // thus we need to forget original Reify node and create a new one
-      val oldStack = lambdaStack
+//      val oldStack = lambdaStack
       try {
-        lambdaStack = newLambdaCandidate :: lambdaStack
+//        lambdaStack = newLambdaCandidate :: lambdaStack
         val newRoot = { // reifyEffects block
           val schedule = lam.scheduleIds
           val t2 = mirrorSymbols(t1, rewriter, lam, schedule)
@@ -196,7 +196,7 @@ trait Transforming { self: Scalan =>
         ySym.assignDefFrom(newRoot)
       }
       finally {
-        lambdaStack = oldStack
+//        lambdaStack = oldStack
       }
 
       // we don't use toExp here to avoid rewriting pass for new Lambda

@@ -123,7 +123,8 @@ trait AstGraphs extends Transforming { self: Scalan =>
       cfor(0)(_ < schedule.length, _ + 1) { i =>
         val sym = schedule(i)
         if (sym.node.isInstanceOf[AstGraph]) {
-          buildFlatSchedule(sym.node.asInstanceOf[AstGraph].schedule, flatBuf)
+          val subSch = sym.node.asInstanceOf[AstGraph].flatSchedule.toArray
+          flatBuf ++= subSch
         }
         flatBuf += sym
       }
@@ -146,6 +147,10 @@ trait AstGraphs extends Transforming { self: Scalan =>
         val sym = schedule(i)
         val symId = sym.node.nodeId
         nodeMap.update(symId, GraphNode(sym, DBuffer.empty[Int]))
+      }
+      cfor(0)(_ < len, _ + 1) { i =>
+        val sym = schedule(i)
+        val symId = sym.node.nodeId
 
         val deps = if (usingDeps) sym.node.deps else sym.node.syms
         cfor(0)(_ < deps.length, _ + 1) { j =>

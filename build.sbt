@@ -82,7 +82,7 @@ val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val configs            = "com.github.kxbmap" %% "configs" % "0.4.4"
 
-val specialVersion = "core-opt-b27bebdf-SNAPSHOT"
+val specialVersion = "find-hf-b27bebdf-SNAPSHOT"
 val meta        = "io.github.scalan" %% "meta" % specialVersion
 val plugin      = "io.github.scalan" %% "plugin" % specialVersion
 val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
@@ -126,7 +126,7 @@ scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
 
 parallelExecution in Test := false
-publishArtifact in Test := false
+publishArtifact in Test := true
 
 pomIncludeRepository := { _ => false }
 
