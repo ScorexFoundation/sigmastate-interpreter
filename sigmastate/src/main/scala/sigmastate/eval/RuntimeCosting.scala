@@ -559,6 +559,11 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
         case _ => super.rewriteDef(d)
       }
 
+      case CM.map(CM.zip(CBM.replicate(_, n, x: Ref[a]), ys: RColl[b]@unchecked), _f) =>
+        val f = asRep[((a,b)) => Any](_f)
+        implicit val eb = ys.elem.eItem
+        ys.map(fun { y: Ref[b] => f(Pair(x, y))})
+
       // Rule: l.isValid op Thunk {... root} => (l op TrivialSigma(root)).isValid
       case ApplyBinOpLazy(op, SigmaM.isValid(l), Def(ThunkDef(root, sch))) if root.elem == BooleanElement =>
         // don't need new Thunk because sigma logical ops always strict

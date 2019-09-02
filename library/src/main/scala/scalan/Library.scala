@@ -54,7 +54,7 @@ trait Library extends Scalan
     case _ => !!!(s"Cannot create zeroSize($eVal)")
   })
 
-  private val CM = CollMethods
+  val CM = CollMethods
   private val CBM = CollBuilderMethods
   private val WOptionM = WOptionMethods
   private val SPCM = WSpecialPredefCompanionMethods
