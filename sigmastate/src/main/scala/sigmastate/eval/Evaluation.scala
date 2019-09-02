@@ -184,7 +184,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: Cast[_] => CastCode
     case _: ThunkDef[_] => ThunkDefCode
     case _: ThunkForce[_] => ThunkForceCode
-    case MBM.intPlusMonoid(_) => IntPlusMonoidCode
+    case MBM.intPlusMonoid(_) => IntPlusMonoidCode  // TODO no HF proof
     case SCM.inputs(_) => SCMInputsCode
     case SCM.outputs(_) => SCMOutputsCode
     case SCM.dataInputs(_) => SCMDataInputsCode
@@ -321,8 +321,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
   /** Recursively traverse the hierarchy of loop operations. */
   private def traverseScope(scope: AstGraph, level: Int): Unit = {
-    scope.schedule.foreach { te =>
-      te.node match {
+    scope.schedule.foreach { sym =>
+      sym.node match {
         case op @ LoopOperation(bodyLam) =>
           CheckCostFuncOperation(this)(getOpCodeEx(op))
           val nextLevel = level + 1
@@ -368,6 +368,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
                   case OpCost(_, _, _, opCost) if opCost == sym =>
                     println(s"INFO: OpCost usage of node $sym -> ${sym.node} in opCost poistion in $usageSym -> ${usageSym.node}")
                   //ok
+                  case _: Tup[_,_] => //ok
                   case _ =>
                     !!!(s"Non OpCost usage of node $sym -> ${sym.node} in $usageSym -> ${usageSym.node}: ${usageSym.elem}: (usages = ${usages.map(_.node)})")
                 }
@@ -648,7 +649,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
                _: WSpecialPredefCompanion |
-               MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) =>
+               MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) => // TODO no HF proof
             out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")))
 
           case SigmaM.isValid(In(prop: AnyRef)) =>

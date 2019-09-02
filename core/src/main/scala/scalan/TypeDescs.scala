@@ -136,7 +136,7 @@ abstract class TypeDescs extends Base { self: Scalan =>
           be.sourceType.name
         case e =>
           val cl = e.getClass
-          val name = cl.safeSimpleName
+          val name = cl.safeSimpleName.stripSuffix("Elem")
           name
       }
       if (typeArgs.isEmpty)

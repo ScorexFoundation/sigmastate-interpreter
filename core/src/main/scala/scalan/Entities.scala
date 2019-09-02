@@ -35,7 +35,7 @@ trait Entities extends TypeDescs { self: Scalan =>
   abstract class EntityElem1[A, To, C[_]](val eItem: Elem[A], val cont: Cont[C])
     extends EntityElem[To] {
     override def getName(f: TypeDesc => String) = {
-      s"${f(cont)}[${f(eItem)}]"
+      s"$entityName[${f(eItem)}]"
     }
     override def canEqual(other: Any) = other match {
       case _: EntityElem1[_, _, _] => true
