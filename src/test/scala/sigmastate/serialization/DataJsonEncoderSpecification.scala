@@ -2,21 +2,15 @@ package sigmastate.serialization
 
 
 import java.math.BigInteger
-import java.nio.charset.StandardCharsets
 
-import org.ergoplatform.ErgoBox
+import io.circe.Json
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
-import sigmastate.Values.SigmaBoolean
+import sigmastate.SType.AnyOps
 import sigmastate._
-import sigmastate.eval.Evaluation
-import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigmastate.interpreter.CryptoConstants.EcPointType
-import special.sigma.AvlTree
-import SType.AnyOps
-import special.collection.Coll
+import sigmastate.eval.{Evaluation, _}
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
 
@@ -34,12 +28,6 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { xs: Array[T#WrappedType] =>
       roundtrip[SCollection[T]](xs.toColl, SCollection(tpe))
       roundtrip[SType](xs.toColl.map(x => (x, x)).asWrappedType, SCollection(STuple(tpe, tpe)))
-
-      val triples = xs.toColl.map(x => TupleColl(x, x, x)).asWrappedType
-      roundtrip(triples, SCollection(STuple(tpe, tpe, tpe)))
-
-      val quartets = xs.toColl.map(x => TupleColl(x, x, x, x)).asWrappedType
-      roundtrip(quartets, SCollection(STuple(tpe, tpe, tpe, tpe)))
 
       val nested = xs.toColl.map(x => Colls.fromItems[T#WrappedType](x, x))
       roundtrip[SCollection[SCollection[T]]](nested, SCollection(SCollection(tpe)))
@@ -61,11 +49,8 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { in: (T#WrappedType, T#WrappedType) =>
       val (x,y) = (in._1, in._2)
       roundtrip[SType]((x, y).asWrappedType, STuple(tpe, tpe))
-      roundtrip[SType](TupleColl(x, y, x).asWrappedType, STuple(tpe, tpe, tpe))
-      roundtrip[SType](TupleColl(x, y, x, y).asWrappedType, STuple(tpe, tpe, tpe, tpe))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, (x, y)), STuple(tpe, tpe, STuple(tpe, tpe)))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, x)), STuple(tpe, tpe, STuple(tpe, tpe, tpe)))
-      roundtrip[STuple](Colls.fromItems[Any](x, y, TupleColl(x, y, (x, y))), STuple(tpe, tpe, STuple(tpe, tpe, STuple(tpe, tpe))))
+      roundtrip[SType](((x, y), (x, y)).asWrappedType, STuple(STuple(tpe, tpe), STuple(tpe, tpe)))
+      roundtrip[SType](((x, y), ((x, y), (x, y))).asWrappedType, STuple(STuple(tpe, tpe), STuple(STuple(tpe, tpe), STuple(tpe, tpe))))
     }
   }
 
@@ -90,5 +75,27 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     testTuples(SBigInt)
     testTuples(SOption[SLong.type])
     //    forAll { t: SPredefType => testTuples(t) }
+  }
+
+  property("Example test") {
+    def toUnifiedString(from: String): String = from.toString().replaceAll("[\n ]", "")
+
+    toUnifiedString(DataJsonEncoder.encode((10, 20).asWrappedType, STuple(SInt, SInt)).toString()) shouldBe
+      toUnifiedString("{ \"type\": \"(Int, Int)\", \"value\": { \"_1\": 10, \"_2\": 20 }}")
+    toUnifiedString(DataJsonEncoder.encode(SigmaDsl.Colls.fromItems(1.toByte, 2.toByte, 3.toByte).asWrappedType, SCollectionType(SByte)).toString()) shouldBe
+      toUnifiedString("{ \"type\": \"Coll[Byte]\", \"value\": [1, 2, 3] }")
+    toUnifiedString(DataJsonEncoder.encode(SigmaDsl.Colls.fromItems((1, 10), (2, 20), (3, 30)).asWrappedType, SCollectionType(STuple(SInt, SInt))).toString()) shouldBe
+      toUnifiedString("{ \"type\": \"Coll[(Int, Int)]\", \"value\": { \"_1\": [1, 2, 3], \"_2\": [10, 20, 30] }}")
+    toUnifiedString(DataJsonEncoder.encode((SigmaDsl.Colls.fromItems((1, SigmaDsl.Colls.replicate(3, 1.toByte)), (2, SigmaDsl.Colls.replicate(2, 2.toByte)), (3, SigmaDsl.Colls.replicate(1, 3.toByte)), (4, SigmaDsl.Colls.replicate(0, 4.toByte))), 100.toLong).asWrappedType,
+      STuple(SCollectionType(STuple(SInt, SCollectionType(SByte))), SLong)).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "(Coll[(Int, Coll[Byte])], Long)",
+          |  "value": {
+          |     "_1": { "_1": [1, 2, 3, 4], "_2": [ [1, 1, 1], [2, 2], [3], [] ] },
+          |     "_2": 100
+          |  }
+          |}
+          |""".stripMargin)
   }
 }

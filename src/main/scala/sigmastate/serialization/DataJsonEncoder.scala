@@ -1,7 +1,6 @@
 package sigmastate.serialization
 
 import java.math.BigInteger
-import java.nio.charset.StandardCharsets
 
 import io.circe._
 import io.circe.syntax._
@@ -39,13 +38,37 @@ object DataJsonEncoder {
       java.util.Base64.getEncoder.encodeToString(v.asInstanceOf[String].getBytes).asJson
     case tColl: SCollectionType[a] =>
       val coll = v.asInstanceOf[tColl.WrappedType]
-      val arr = coll.toArray
-      var jsons = mutable.MutableList.empty[Json]
-      cfor(0)(_ < arr.length, _ + 1) { i =>
-        val x = arr(i)
-        jsons += encodeData(x, tColl.elemType)
+      tColl.elemType match {
+        case tup: STuple =>
+          val tArr = tup.items.toArray
+          if (tArr.length != 2) {
+            throw new SerializerException("Tuples with length not equal to 2 are not supported")
+          }
+          val leftSource = mutable.ArrayBuilder.make[SType#WrappedType]()(Evaluation.stypeToRType(tArr(0)).classTag)
+          val rightSource = mutable.ArrayBuilder.make[SType#WrappedType]()(Evaluation.stypeToRType(tArr(1)).classTag)
+          for (i <- 0 until coll.length) {
+            val arr = Evaluation.fromDslTuple(coll(i), tup).asInstanceOf[tup.WrappedType]
+            leftSource += arr(0)
+            rightSource += arr(1)
+          }
+          val left = Colls.fromArray(leftSource.result())(Evaluation.stypeToRType(tArr(0))).asInstanceOf[SType#WrappedType]
+          val leftType: SType = SCollectionType(tArr(0))
+          val right = Colls.fromArray(rightSource.result())(Evaluation.stypeToRType(tArr(1))).asInstanceOf[SType#WrappedType]
+          val rightType: SType = SCollectionType(tArr(1))
+
+          var obj = mutable.MutableList.empty[(String, Json)]
+          obj += (s"_1" -> encodeData[SType](left, leftType))
+          obj += (s"_2" -> encodeData[SType](right, rightType))
+          Json.fromFields(obj.toList)
+        case _ =>
+          var jsons = mutable.MutableList.empty[Json]
+          cfor(0)(_ < coll.length, _ + 1) { i =>
+            val x = coll(i)
+            jsons += encodeData(x, tColl.elemType)
+          }
+          Json.fromValues(jsons.toList)
       }
-      Json.fromValues(jsons.toList)
+
     case tOpt: SOption[a] =>
       val opt = v.asInstanceOf[tOpt.WrappedType]
       if (opt.isDefined) {
@@ -56,6 +79,9 @@ object DataJsonEncoder {
     case t: STuple =>
       val arr = Evaluation.fromDslTuple(v, t).asInstanceOf[t.WrappedType]
       val tArr = t.items.toArray
+      if (tArr.length != 2) {
+        throw new SerializerException("Tuples with length not equal to 2 are not supported")
+      }
       val len = arr.length
       assert(len == tArr.length, s"Type $t doesn't correspond to value $arr")
       var obj = mutable.MutableList.empty[(String, Json)]
@@ -99,6 +125,9 @@ object DataJsonEncoder {
         }
       case t: STuple =>
         val tArr = t.items.toArray
+        if (tArr.length != 2) {
+          throw new SerializerException("Tuples with length not equal to 2 are not supported")
+        }
         val collSource = mutable.ArrayBuilder.make[Any]()
         cfor(1)(_ <= tArr.length, _ + 1) { i =>
           collSource += decodeData(json.hcursor.downField(s"_${i}").focus.get, tArr(i - 1))
@@ -115,18 +144,34 @@ object DataJsonEncoder {
         Evaluation.stypeToRType(tpe)
       case _: STuple =>
         collRType(RType.AnyType)
+        throw new SerializerException("Tuples with length not equal to 2 are not supported")
       case _ =>
         Evaluation.stypeToRType(tpe)
     }).asInstanceOf[RType[T#WrappedType]]
-    val jsonArray = json.as[List[Json]]
-    jsonArray match {
-      case Right(jsonArray) =>
+
+    tpe match {
+      case tup: STuple =>
+        val tArr = tup.items.toArray
         val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
-        for (i <- jsonArray) {
-          collSource += decodeData(i, tpe)
+        val leftColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(0))
+        val rightColl = decodeColl(json.hcursor.downField(s"_1").focus.get, tArr(1))
+        assert(leftColl.length == rightColl.length)
+        for (i <- 0 until leftColl.length) {
+          val coll = Colls.fromItems(leftColl(i).asInstanceOf[SAny.WrappedType], rightColl(i).asInstanceOf[SAny.WrappedType])(RType.AnyType)
+          collSource += Evaluation.toDslTuple(coll, tup).asInstanceOf[T#WrappedType]
         }
         Colls.fromArray(collSource.result())
-      case Left(error) => throw new SerializerException(error.getMessage)
+      case _ =>
+        val jsonArray = json.as[List[Json]]
+        jsonArray match {
+          case Right(jsonArray) =>
+            val collSource = mutable.ArrayBuilder.make[T#WrappedType]()(tItem.classTag)
+            for (i <- jsonArray) {
+              collSource += decodeData(i, tpe)
+            }
+            Colls.fromArray(collSource.result())
+          case Left(error) => throw new SerializerException(error.getMessage)
+        }
     }
   }
 
