@@ -4,7 +4,7 @@ import java.util.Objects
 
 import scala.annotation.tailrec
 import scala.language.higherKinds
-import scalan.util.ReflectionUtil
+import scalan.util.ReflectionUtil.ClassOps
 
 trait Entities extends TypeDescs { self: Scalan =>
 
@@ -14,7 +14,7 @@ trait Entities extends TypeDescs { self: Scalan =>
     def parent: Option[Elem[_]] = None
     /** Name of the entity type without `Elem` suffix. */
     def entityName: String = {
-      val n = this.getClass.getSimpleName.stripSuffix("Elem")
+      val n = this.getClass.safeSimpleName.stripSuffix("Elem")
       n
     }
     def convert(x: Ref[Def[_]]): Ref[A] = !!!("should not be called")
