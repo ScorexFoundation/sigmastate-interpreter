@@ -137,6 +137,26 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
         val currSch = if (sch.isEmpty) g.rootIds else sch
         currSch
       }
+      if (debugModeSanityChecks) {
+        // check that every inner lambda depend on boundVars
+        cfor(0)(_ < sch.length, _ + 1) { i =>
+          getSym(sch(i)).node match {
+            case l: Lambda[_,_] =>
+              val varDeps = l.deps intersect(boundVars ++ sch.map(getSym(_)).toArray)
+              if (varDeps.isEmpty) {
+                //                val cwd = new File("").getAbsoluteFile
+                //                val dir = "test-out/errors"
+                //                emitDepGraph(roots, FileUtil.file(cwd, dir), "nested_lambda")(defaultGraphVizConfig)
+                assert(false, s"Invalid nested lambda $l inside $this")
+              }
+            case op @ OpCost(_, _, args, opCost) =>
+              if (args.contains(opCost)) {
+                !!!(s"Invalid OpCost($op)")
+              }
+            case _ =>
+          }
+        }
+      }
       sch
     }
 
@@ -144,8 +164,10 @@ trait Functions extends Base with ProgramGraphs { self: Scalan =>
 
     def isGlobalLambda: Boolean = {
       freeVars.forall { x =>
-        val xIsGlobalLambda = x.isLambda && { val lam = x.node.asInstanceOf[Lambda[_, _]]; lam.isGlobalLambda }
-        x.isConst || xIsGlobalLambda
+        x.isConst || {
+          val xIsGlobalLambda = x.isLambda && { val lam = x.node.asInstanceOf[Lambda[_, _]]; lam.isGlobalLambda }
+          xIsGlobalLambda
+        }
       }
     }
   }

@@ -357,9 +357,14 @@ abstract class Base { scalan: Scalan =>
   /** Whether Tup instances should be cached. */
   val cachePairs = true
 
-  /** Abstract REPresentation of a computable value.
+
+  /** Whether to perform extended checks of correctness, expected invariants and data consistency.
+    * NOTE: Since it may add substantial overhead, set it to `false` before using in production. */
+  val debugModeSanityChecks: Boolean = false
+
+  /** Abstract representation of a computable value.
     * Default implementation is a simple lightweight reference to the corresponding definition.
-    * Every Ref have direct access to its Def via `rhs` property.
+    * Every Ref have direct access to its Def via `node` property.
     * Every Ref is typed, and the type is avaliable via `elem` property.
     * @see SingleRep
     */

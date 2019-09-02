@@ -99,10 +99,6 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   /** Whether to output the computed results of the script. */
   var outputComputedResults: Boolean = false
 
-  /** Whether to perform extended checks of correctness, expected invariants and data consistency.
-    * NOTE: Since it may add substantial overhead, set it to `false` before using in production. */
-  val debugModeSanityChecks: Boolean = false
-
 //  /** Pass configuration which is used by default in IRContext. */
 //  val calcPass = new DefaultPass("calcPass", Pass.defaultPassConfig.copy(constantPropagation = true))
 //
@@ -114,7 +110,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
 //  beginPass(costPass)
 
   case class CostOf(opName: String, opType: SFunc) extends BaseDef[Int] {
-    override def mirror(t: Transformer): Ref[Int] = self
+    override def mirror(t: Transformer): Ref[Int] = self // TODO no HF proof
 
     def eval: Int = {
       val operId = OperationId(opName, opType)
