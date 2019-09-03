@@ -190,7 +190,6 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
     .dependsOn(sigmaconf)
     .settings(commonSettings,
       libraryDependencies ++= Seq(meta, plugin),
-//      publishArtifact in(Compile, packageBin) := false,
       assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
       artifact in(Compile, assembly) := {
         val art = (artifact in(Compile, assembly)).value
@@ -235,9 +234,6 @@ lazy val sigmastate = (project in file("sigmastate"))
   .settings(libraryDependencies ++= Seq(scorexUtil, kiama, fastparse)) // ++= Seq(scorexUtil))
 
 lazy val sigma = (project in file("."))
-//    .aggregate(
-//      common, core, libraryapi, libraryimpl, library,
-//      sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer, sigmastate)
     .settings(commonSettings, rootSettings)
 
 lazy val aggregateCompile = ScopeFilter(
