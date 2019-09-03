@@ -362,13 +362,6 @@ trait GraphVizExport extends Base { self: Scalan =>
       f(td, true)
     }
 
-    private def partsIterator(td: TypeDesc) = td match {
-      case e: Elem[_] =>
-        e.typeArgsDescs
-      case _: Cont[_] =>
-        Iterator.empty
-    }
-
     private def registerType(td: TypeDesc, maxLength: Int): GraphData = {
       if (labels.contains(td))
         this
@@ -433,6 +426,13 @@ trait GraphVizExport extends Base { self: Scalan =>
   }
   private object GraphData {
     def empty(implicit config: GraphVizConfig) = GraphData(Map.empty, Map.empty, Nil, 0)
+  }
+
+  protected def partsIterator(td: TypeDesc) = td match {
+    case e: Elem[_] =>
+      e.typeArgsDescs
+    case _: Cont[_] =>
+      Iterator.empty
   }
 
   private def emitDepGraph(exceptionOrGraph: Either[Throwable, AstGraph], name: String)(implicit stream: PrintWriter, config: GraphVizConfig): Unit = {

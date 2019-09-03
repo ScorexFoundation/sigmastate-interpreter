@@ -357,7 +357,6 @@ abstract class Base { scalan: Scalan =>
   /** Whether Tup instances should be cached. */
   val cachePairs = true
 
-
   /** Whether to perform extended checks of correctness, expected invariants and data consistency.
     * NOTE: Since it may add substantial overhead, set it to `false` before using in production. */
   val debugModeSanityChecks: Boolean = false
