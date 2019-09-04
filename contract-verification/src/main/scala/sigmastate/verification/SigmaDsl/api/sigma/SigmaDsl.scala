@@ -7,12 +7,13 @@ import scalan.{Internal, NeverInline, OverloadId, Reified}
 import sigmastate.verification.SigmaDsl.api.collection.{Coll, CollBuilder}
 import sigmastate.verification.SigmaDsl.api.{MonoidBuilder, RType}
 import special.sigma.clause
-import stainless.annotation.{extern, ignore}
+import stainless.annotation.{extern, ignore, library}
 import stainless.lang._
 
 import scala.reflect.ClassTag
 
 @scalan.Liftable
+@library
 trait CostModel {
   def AccessBox: Int // costOf("AccessBox: Context => Box")
   def AccessAvlTree: Int // costOf("AccessAvlTree: Context => AvlTree")
@@ -38,6 +39,7 @@ trait CostModel {
   * So it is globally and implicitly used in all methods.
   * */
 @scalan.Liftable
+@library
 trait BigInt {
   @Internal @ignore
   private[sigma] def value: BigInteger
@@ -201,6 +203,7 @@ trait BigInt {
 /** Base class for points on elliptic curves.
   */
 @scalan.Liftable
+@library
 trait GroupElement {
   @Internal @ignore
   private[sigma] def value: ECPoint
@@ -230,6 +233,7 @@ trait GroupElement {
 
 /** Proposition which can be proven and verified by sigma protocol. */
 @scalan.Liftable
+@library
 trait SigmaProp {
   def isValid: Boolean
   /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
@@ -255,12 +259,14 @@ trait SigmaProp {
 }
 
 @scalan.Liftable
+@library
 trait AnyValue {
   def value: Any
   def tVal: RType[Any]
 }
 
 @scalan.Liftable
+@library
 trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
@@ -344,6 +350,7 @@ trait Box {
   * the tree, thus `digest` size is always CryptoConstants.hashLength + 1 bytes.
   */
 @scalan.Liftable
+@library
 sealed trait AvlTree {
   /** Returns digest of the state represented by this tree.
     * Authenticated tree digest = root hash bytes ++ tree height
@@ -449,6 +456,7 @@ abstract case class CAvlTree() extends AvlTree {
   * @since 2.0
   */
 @scalan.Liftable
+@library
 trait PreHeader { // Testnet2
   /** Block version, to be increased on every soft and hardfork. */
   def version: Byte
@@ -476,6 +484,7 @@ trait PreHeader { // Testnet2
   * @since 2.0
   */
 @scalan.Liftable
+@library
 trait Header {
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
@@ -527,6 +536,7 @@ trait Header {
 
 /** Represents data available in Sigma language using `CONTEXT` global variable*/
 @scalan.Liftable
+@library
 trait Context {
   def builder: SigmaDslBuilder
 
@@ -567,6 +577,7 @@ trait Context {
 }
 
 @scalan.Liftable
+@library
 trait SigmaContract {
   def builder: SigmaDslBuilder
 
@@ -618,6 +629,7 @@ trait SigmaContract {
 }
 
 @scalan.Liftable
+@library
 trait SigmaDslBuilder {
   def Colls: CollBuilder
   def Monoids: MonoidBuilder

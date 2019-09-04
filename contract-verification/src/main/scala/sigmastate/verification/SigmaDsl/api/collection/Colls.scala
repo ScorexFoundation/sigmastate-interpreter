@@ -3,7 +3,7 @@ package sigmastate.verification.SigmaDsl.api.collection
 import scalan.{ContainerType, FunctorType, Internal, Liftable, NeverInline, Reified}
 import sigmastate.verification.SigmaDsl.api.{Monoid, MonoidBuilder, RType}
 import sigmastate.verification.contract.Helpers._
-import stainless.annotation.{extern, ignore}
+import stainless.annotation.{extern, ignore, library}
 import stainless.lang._
 
 import scala.collection.immutable
@@ -17,6 +17,7 @@ import scala.collection.immutable
 @ContainerType
 @FunctorType
 @scalan.Liftable
+@library
 sealed trait Coll[@specialized A] {
   def builder: CollBuilder
   def toArray: Array[A]
@@ -404,6 +405,7 @@ sealed trait Coll[@specialized A] {
   }
 }
 
+@library
 trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
   def ls: Coll[L]
   def rs: Coll[R]
@@ -412,6 +414,7 @@ trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
 }
 
 @Liftable
+@ignore
 trait ReplColl[@specialized A] extends Coll[A] {
   def value: A
   def length: Int
@@ -419,6 +422,7 @@ trait ReplColl[@specialized A] extends Coll[A] {
 }
 
 @scalan.Liftable
+@library
 trait CollBuilder {
   def Monoids: MonoidBuilder
   def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A,B]

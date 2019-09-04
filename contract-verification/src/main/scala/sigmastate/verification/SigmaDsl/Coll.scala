@@ -1,15 +1,16 @@
 package sigmastate.verification.SigmaDsl
 
 import sigmastate.verification.SigmaDsl.api.collection.Coll
-import stainless.annotation.{extern, pure}
+import stainless.annotation.{extern, library, pure}
 
+@library
 object Coll {
 
   @extern @pure
   def empty[A]: Coll[A] = ??? //new CollOverList(List())
 
   @extern @pure
-  def apply[A](a: A): Coll[A] = ??? // new CollOverList(List(a))
+  def apply[A](a: A*): Coll[A] = ??? // new CollOverList(List(a))
 
 //  @library @extern
 //  def apply[A](list: List[A]): Coll[A] = ??? // new CollOverList(list)
