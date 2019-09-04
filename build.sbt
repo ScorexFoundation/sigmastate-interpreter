@@ -147,7 +147,7 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-9c550a73-SNAPSHOT.jar"
+//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-d5422944-SNAPSHOT.jar"
   )
 )
 
@@ -187,10 +187,14 @@ lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
       ))
 
 lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-    .dependsOn(sigmaconf)
+    .dependsOn(sigmaconf, libraryapi, libraryimpl)
     .settings(commonSettings,
       libraryDependencies ++= Seq(meta, plugin),
       assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+      assemblyMergeStrategy in assembly := {
+        case PathList("scalan", xs @ _*) => MergeStrategy.first
+        case other => (assemblyMergeStrategy in assembly).value(other)
+      },
       artifact in(Compile, assembly) := {
         val art = (artifact in(Compile, assembly)).value
         art.withClassifier(Some("assembly"))

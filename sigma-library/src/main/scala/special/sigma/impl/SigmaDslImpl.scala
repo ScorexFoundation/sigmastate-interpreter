@@ -37,7 +37,7 @@ object CostModel extends EntityObject("CostModel") {
   type SCostModel = special.sigma.CostModel
   case class CostModelConst(
         constValue: SCostModel
-      ) extends CostModel with LiftedConst[SCostModel, CostModel]
+      ) extends LiftedConst[SCostModel, CostModel] with CostModel
         with Def[CostModel] with CostModelConstMethods {
     val liftable: Liftable[SCostModel, CostModel] = LiftableCostModel
     val resultType: Elem[CostModel] = liftable.eW
@@ -136,7 +136,7 @@ object CostModel extends EntityObject("CostModel") {
 
   // entityAdapter for CostModel trait
   case class CostModelAdapter(source: Ref[CostModel])
-      extends CostModel
+      extends Node with CostModel
       with Def[CostModel] {
     val resultType: Elem[CostModel] = element[CostModel]
     override def transform(t: Transformer) = CostModelAdapter(t(source))
@@ -257,7 +257,7 @@ object BigInt extends EntityObject("BigInt") {
   type SBigInt = special.sigma.BigInt
   case class BigIntConst(
         constValue: SBigInt
-      ) extends BigInt with LiftedConst[SBigInt, BigInt]
+      ) extends LiftedConst[SBigInt, BigInt] with BigInt
         with Def[BigInt] with BigIntConstMethods {
     val liftable: Liftable[SBigInt, BigInt] = LiftableBigInt
     val resultType: Elem[BigInt] = liftable.eW
@@ -447,7 +447,7 @@ object BigInt extends EntityObject("BigInt") {
 
   // entityAdapter for BigInt trait
   case class BigIntAdapter(source: Ref[BigInt])
-      extends BigInt
+      extends Node with BigInt
       with Def[BigInt] {
     val resultType: Elem[BigInt] = element[BigInt]
     override def transform(t: Transformer) = BigIntAdapter(t(source))
@@ -894,7 +894,7 @@ object GroupElement extends EntityObject("GroupElement") {
   type SGroupElement = special.sigma.GroupElement
   case class GroupElementConst(
         constValue: SGroupElement
-      ) extends GroupElement with LiftedConst[SGroupElement, GroupElement]
+      ) extends LiftedConst[SGroupElement, GroupElement] with GroupElement
         with Def[GroupElement] with GroupElementConstMethods {
     val liftable: Liftable[SGroupElement, GroupElement] = LiftableGroupElement
     val resultType: Elem[GroupElement] = liftable.eW
@@ -958,7 +958,7 @@ object GroupElement extends EntityObject("GroupElement") {
 
   // entityAdapter for GroupElement trait
   case class GroupElementAdapter(source: Ref[GroupElement])
-      extends GroupElement
+      extends Node with GroupElement
       with Def[GroupElement] {
     val resultType: Elem[GroupElement] = element[GroupElement]
     override def transform(t: Transformer) = GroupElementAdapter(t(source))
@@ -1099,7 +1099,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
   type SSigmaProp = special.sigma.SigmaProp
   case class SigmaPropConst(
         constValue: SSigmaProp
-      ) extends SigmaProp with LiftedConst[SSigmaProp, SigmaProp]
+      ) extends LiftedConst[SSigmaProp, SigmaProp] with SigmaProp
         with Def[SigmaProp] with SigmaPropConstMethods {
     val liftable: Liftable[SSigmaProp, SigmaProp] = LiftableSigmaProp
     val resultType: Elem[SigmaProp] = liftable.eW
@@ -1174,7 +1174,7 @@ object SigmaProp extends EntityObject("SigmaProp") {
 
   // entityAdapter for SigmaProp trait
   case class SigmaPropAdapter(source: Ref[SigmaProp])
-      extends SigmaProp
+      extends Node with SigmaProp
       with Def[SigmaProp] {
     val resultType: Elem[SigmaProp] = element[SigmaProp]
     override def transform(t: Transformer) = SigmaPropAdapter(t(source))
@@ -1358,7 +1358,7 @@ object AnyValue extends EntityObject("AnyValue") {
   type SAnyValue = special.sigma.AnyValue
   case class AnyValueConst(
         constValue: SAnyValue
-      ) extends AnyValue with LiftedConst[SAnyValue, AnyValue]
+      ) extends LiftedConst[SAnyValue, AnyValue] with AnyValue
         with Def[AnyValue] with AnyValueConstMethods {
     val liftable: Liftable[SAnyValue, AnyValue] = LiftableAnyValue
     val resultType: Elem[AnyValue] = liftable.eW
@@ -1402,7 +1402,7 @@ object AnyValue extends EntityObject("AnyValue") {
 
   // entityAdapter for AnyValue trait
   case class AnyValueAdapter(source: Ref[AnyValue])
-      extends AnyValue
+      extends Node with AnyValue
       with Def[AnyValue] {
     val resultType: Elem[AnyValue] = element[AnyValue]
     override def transform(t: Transformer) = AnyValueAdapter(t(source))
@@ -1493,7 +1493,7 @@ object Box extends EntityObject("Box") {
   type SBox = special.sigma.Box
   case class BoxConst(
         constValue: SBox
-      ) extends Box with LiftedConst[SBox, Box]
+      ) extends LiftedConst[SBox, Box] with Box
         with Def[Box] with BoxConstMethods {
     val liftable: Liftable[SBox, Box] = LiftableBox
     val resultType: Elem[Box] = liftable.eW
@@ -1592,7 +1592,7 @@ object Box extends EntityObject("Box") {
 
   // entityAdapter for Box trait
   case class BoxAdapter(source: Ref[Box])
-      extends Box
+      extends Node with Box
       with Def[Box] {
     val resultType: Elem[Box] = element[Box]
     override def transform(t: Transformer) = BoxAdapter(t(source))
@@ -1918,7 +1918,7 @@ object AvlTree extends EntityObject("AvlTree") {
   type SAvlTree = special.sigma.AvlTree
   case class AvlTreeConst(
         constValue: SAvlTree
-      ) extends AvlTree with LiftedConst[SAvlTree, AvlTree]
+      ) extends LiftedConst[SAvlTree, AvlTree] with AvlTree
         with Def[AvlTree] with AvlTreeConstMethods {
     val liftable: Liftable[SAvlTree, AvlTree] = LiftableAvlTree
     val resultType: Elem[AvlTree] = liftable.eW
@@ -2052,7 +2052,7 @@ object AvlTree extends EntityObject("AvlTree") {
 
   // entityAdapter for AvlTree trait
   case class AvlTreeAdapter(source: Ref[AvlTree])
-      extends AvlTree
+      extends Node with AvlTree
       with Def[AvlTree] {
     val resultType: Elem[AvlTree] = element[AvlTree]
     override def transform(t: Transformer) = AvlTreeAdapter(t(source))
@@ -2208,7 +2208,7 @@ object PreHeader extends EntityObject("PreHeader") {
   type SPreHeader = special.sigma.PreHeader
   case class PreHeaderConst(
         constValue: SPreHeader
-      ) extends PreHeader with LiftedConst[SPreHeader, PreHeader]
+      ) extends LiftedConst[SPreHeader, PreHeader] with PreHeader
         with Def[PreHeader] with PreHeaderConstMethods {
     val liftable: Liftable[SPreHeader, PreHeader] = LiftablePreHeader
     val resultType: Elem[PreHeader] = liftable.eW
@@ -2286,7 +2286,7 @@ object PreHeader extends EntityObject("PreHeader") {
 
   // entityAdapter for PreHeader trait
   case class PreHeaderAdapter(source: Ref[PreHeader])
-      extends PreHeader
+      extends Node with PreHeader
       with Def[PreHeader] {
     val resultType: Elem[PreHeader] = element[PreHeader]
     override def transform(t: Transformer) = PreHeaderAdapter(t(source))
@@ -2386,7 +2386,7 @@ object Header extends EntityObject("Header") {
   type SHeader = special.sigma.Header
   case class HeaderConst(
         constValue: SHeader
-      ) extends Header with LiftedConst[SHeader, Header]
+      ) extends LiftedConst[SHeader, Header] with Header
         with Def[Header] with HeaderConstMethods {
     val liftable: Liftable[SHeader, Header] = LiftableHeader
     val resultType: Elem[Header] = liftable.eW
@@ -2520,7 +2520,7 @@ object Header extends EntityObject("Header") {
 
   // entityAdapter for Header trait
   case class HeaderAdapter(source: Ref[Header])
-      extends Header
+      extends Node with Header
       with Def[Header] {
     val resultType: Elem[Header] = element[Header]
     override def transform(t: Transformer) = HeaderAdapter(t(source))
@@ -2676,7 +2676,7 @@ object Context extends EntityObject("Context") {
   type SContext = special.sigma.Context
   case class ContextConst(
         constValue: SContext
-      ) extends Context with LiftedConst[SContext, Context]
+      ) extends LiftedConst[SContext, Context] with Context
         with Def[Context] with ContextConstMethods {
     val liftable: Liftable[SContext, Context] = LiftableContext
     val resultType: Elem[Context] = liftable.eW
@@ -2796,7 +2796,7 @@ object Context extends EntityObject("Context") {
 
   // entityAdapter for Context trait
   case class ContextAdapter(source: Ref[Context])
-      extends Context
+      extends Node with Context
       with Def[Context] {
     val resultType: Elem[Context] = element[Context]
     override def transform(t: Transformer) = ContextAdapter(t(source))
@@ -3073,7 +3073,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
   type SSigmaContract = special.sigma.SigmaContract
   case class SigmaContractConst(
         constValue: SSigmaContract
-      ) extends SigmaContract with LiftedConst[SSigmaContract, SigmaContract]
+      ) extends LiftedConst[SSigmaContract, SigmaContract] with SigmaContract
         with Def[SigmaContract] with SigmaContractConstMethods {
     val liftable: Liftable[SSigmaContract, SigmaContract] = LiftableSigmaContract
     val resultType: Elem[SigmaContract] = liftable.eW
@@ -3116,7 +3116,7 @@ object SigmaContract extends EntityObject("SigmaContract") {
 
   // entityAdapter for SigmaContract trait
   case class SigmaContractAdapter(source: Ref[SigmaContract])
-      extends SigmaContract
+      extends Node with SigmaContract
       with Def[SigmaContract] {
     val resultType: Elem[SigmaContract] = element[SigmaContract]
     override def transform(t: Transformer) = SigmaContractAdapter(t(source))
@@ -3181,7 +3181,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
   type SSigmaDslBuilder = special.sigma.SigmaDslBuilder
   case class SigmaDslBuilderConst(
         constValue: SSigmaDslBuilder
-      ) extends SigmaDslBuilder with LiftedConst[SSigmaDslBuilder, SigmaDslBuilder]
+      ) extends LiftedConst[SSigmaDslBuilder, SigmaDslBuilder] with SigmaDslBuilder
         with Def[SigmaDslBuilder] with SigmaDslBuilderConstMethods {
     val liftable: Liftable[SSigmaDslBuilder, SigmaDslBuilder] = LiftableSigmaDslBuilder
     val resultType: Elem[SigmaDslBuilder] = liftable.eW
@@ -3386,7 +3386,7 @@ object SigmaDslBuilder extends EntityObject("SigmaDslBuilder") {
 
   // entityAdapter for SigmaDslBuilder trait
   case class SigmaDslBuilderAdapter(source: Ref[SigmaDslBuilder])
-      extends SigmaDslBuilder
+      extends Node with SigmaDslBuilder
       with Def[SigmaDslBuilder] {
     val resultType: Elem[SigmaDslBuilder] = element[SigmaDslBuilder]
     override def transform(t: Transformer) = SigmaDslBuilderAdapter(t(source))

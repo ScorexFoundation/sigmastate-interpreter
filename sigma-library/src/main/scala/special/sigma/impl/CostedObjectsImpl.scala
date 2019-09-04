@@ -33,7 +33,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
   type SSizeAnyValue = special.sigma.SizeAnyValue
   case class SizeAnyValueConst(
         constValue: SSizeAnyValue
-      ) extends SizeAnyValue with LiftedConst[SSizeAnyValue, SizeAnyValue]
+      ) extends LiftedConst[SSizeAnyValue, SizeAnyValue] with SizeAnyValue
         with Def[SizeAnyValue] with SizeAnyValueConstMethods {
 // manual fix
     def eVal: Elem[AnyValue] = element[AnyValue]
@@ -81,7 +81,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
 
   // entityAdapter for SizeAnyValue trait
   case class SizeAnyValueAdapter(source: Ref[SizeAnyValue])
-      extends SizeAnyValue
+      extends Node with SizeAnyValue
       with Def[SizeAnyValue] {
     override lazy val eVal: Elem[AnyValue] = implicitly[Elem[AnyValue]]
     val resultType: Elem[SizeAnyValue] = element[SizeAnyValue]
@@ -183,7 +183,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
   type SSizeSigmaProp = special.sigma.SizeSigmaProp
   case class SizeSigmaPropConst(
         constValue: SSizeSigmaProp
-      ) extends SizeSigmaProp with LiftedConst[SSizeSigmaProp, SizeSigmaProp]
+      ) extends LiftedConst[SSizeSigmaProp, SizeSigmaProp] with SizeSigmaProp
         with Def[SizeSigmaProp] with SizeSigmaPropConstMethods {
     // manual fix
     def eVal: Elem[SigmaProp] = element[SigmaProp]
@@ -222,7 +222,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
 
   // entityAdapter for SizeSigmaProp trait
   case class SizeSigmaPropAdapter(source: Ref[SizeSigmaProp])
-      extends SizeSigmaProp
+      extends Node with SizeSigmaProp
       with Def[SizeSigmaProp] {
     override lazy val eVal: Elem[SigmaProp] = implicitly[Elem[SigmaProp]]
     val resultType: Elem[SizeSigmaProp] = element[SizeSigmaProp]
@@ -305,7 +305,7 @@ object SizeBox extends EntityObject("SizeBox") {
   type SSizeBox = special.sigma.SizeBox
   case class SizeBoxConst(
         constValue: SSizeBox
-      ) extends SizeBox with LiftedConst[SSizeBox, SizeBox]
+      ) extends LiftedConst[SSizeBox, SizeBox] with SizeBox
         with Def[SizeBox] with SizeBoxConstMethods {
     // manual fix
     def eVal: Elem[Box] = element[Box]
@@ -379,7 +379,7 @@ object SizeBox extends EntityObject("SizeBox") {
 
   // entityAdapter for SizeBox trait
   case class SizeBoxAdapter(source: Ref[SizeBox])
-      extends SizeBox
+      extends Node with SizeBox
       with Def[SizeBox] {
     override lazy val eVal: Elem[Box] = implicitly[Elem[Box]]
     val resultType: Elem[SizeBox] = element[SizeBox]
@@ -547,7 +547,7 @@ object SizeContext extends EntityObject("SizeContext") {
   type SSizeContext = special.sigma.SizeContext
   case class SizeContextConst(
         constValue: SSizeContext
-      ) extends SizeContext with LiftedConst[SSizeContext, SizeContext]
+      ) extends LiftedConst[SSizeContext, SizeContext] with SizeContext
         with Def[SizeContext] with SizeContextConstMethods {
     // manual fix
     def eVal: Elem[Context] = element[Context]
@@ -635,7 +635,7 @@ object SizeContext extends EntityObject("SizeContext") {
 
   // entityAdapter for SizeContext trait
   case class SizeContextAdapter(source: Ref[SizeContext])
-      extends SizeContext
+      extends Node with SizeContext
       with Def[SizeContext] {
     override lazy val eVal: Elem[Context] = implicitly[Elem[Context]]
     val resultType: Elem[SizeContext] = element[SizeContext]
@@ -837,7 +837,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
   type SSizeBuilder = special.sigma.SizeBuilder
   case class SizeBuilderConst(
         constValue: SSizeBuilder
-      ) extends SizeBuilder with LiftedConst[SSizeBuilder, SizeBuilder]
+      ) extends LiftedConst[SSizeBuilder, SizeBuilder] with SizeBuilder
         with Def[SizeBuilder] with SizeBuilderConstMethods {
     val liftable: Liftable[SSizeBuilder, SizeBuilder] = LiftableSizeBuilder
     val resultType: Elem[SizeBuilder] = liftable.eW
@@ -887,7 +887,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
 
   // entityAdapter for SizeBuilder trait
   case class SizeBuilderAdapter(source: Ref[SizeBuilder])
-      extends SizeBuilder
+      extends Node with SizeBuilder
       with Def[SizeBuilder] {
     val resultType: Elem[SizeBuilder] = element[SizeBuilder]
     override def transform(t: Transformer) = SizeBuilderAdapter(t(source))
