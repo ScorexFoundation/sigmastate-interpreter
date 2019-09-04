@@ -50,6 +50,7 @@ object WSpecialPredef extends EntityObject("WSpecialPredef") {
   implicit def unrefWSpecialPredefCompanionCtor(p: Ref[WSpecialPredefCompanionCtor]): WSpecialPredefCompanionCtor =
     p.node.asInstanceOf[WSpecialPredefCompanionCtor]
 
+  // manual fix
   def RWSpecialPredef: Ref[WSpecialPredefCompanionCtor] = new WSpecialPredefCompanionCtor {
     private val thisClass = classOf[WSpecialPredefCompanion]
 

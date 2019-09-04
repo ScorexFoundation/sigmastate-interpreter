@@ -22,7 +22,7 @@ object WrapSpecBase extends EntityObject("WrapSpecBase") {
 
   // entityAdapter for WrapSpecBase trait
   case class WrapSpecBaseAdapter(source: Ref[WrapSpecBase])
-      extends WrapSpecBase
+      extends Node with WrapSpecBase
       with Def[WrapSpecBase] {
     val resultType: Elem[WrapSpecBase] = element[WrapSpecBase]
     override def transform(t: Transformer) = WrapSpecBaseAdapter(t(source))
@@ -63,7 +63,7 @@ object OptionWrapSpec extends EntityObject("OptionWrapSpec") {
 
   // entityAdapter for OptionWrapSpec trait
   case class OptionWrapSpecAdapter(source: Ref[OptionWrapSpec])
-      extends OptionWrapSpec
+      extends Node with OptionWrapSpec
       with Def[OptionWrapSpec] {
     val resultType: Elem[OptionWrapSpec] = element[OptionWrapSpec]
     override def transform(t: Transformer) = OptionWrapSpecAdapter(t(source))
@@ -122,7 +122,7 @@ object SpecialPredefWrapSpec extends EntityObject("SpecialPredefWrapSpec") {
 
   // entityAdapter for SpecialPredefWrapSpec trait
   case class SpecialPredefWrapSpecAdapter(source: Ref[SpecialPredefWrapSpec])
-      extends SpecialPredefWrapSpec
+      extends Node with SpecialPredefWrapSpec
       with Def[SpecialPredefWrapSpec] {
     val resultType: Elem[SpecialPredefWrapSpec] = element[SpecialPredefWrapSpec]
     override def transform(t: Transformer) = SpecialPredefWrapSpecAdapter(t(source))
@@ -164,7 +164,7 @@ object RTypeWrapSpec extends EntityObject("RTypeWrapSpec") {
 
   // entityAdapter for RTypeWrapSpec trait
   case class RTypeWrapSpecAdapter(source: Ref[RTypeWrapSpec])
-      extends RTypeWrapSpec
+      extends Node with RTypeWrapSpec
       with Def[RTypeWrapSpec] {
     val resultType: Elem[RTypeWrapSpec] = element[RTypeWrapSpec]
     override def transform(t: Transformer) = RTypeWrapSpecAdapter(t(source))
