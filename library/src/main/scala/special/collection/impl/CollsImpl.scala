@@ -26,7 +26,7 @@ object Coll extends EntityObject("Coll") {
         constValue: SColl[SA],
         lA: Liftable[SA, A]
       ) extends LiftedConst[SColl[SA], Coll[A]] with Coll[A]
-  with Def[Coll[A]] with CollConstMethods[A] {
+        with Def[Coll[A]] with CollConstMethods[A] {
     implicit def eA: Elem[A] = lA.eW
 
     val liftable: Liftable[SColl[SA], Coll[A]] = liftableColl(lA)
