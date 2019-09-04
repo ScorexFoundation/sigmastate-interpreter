@@ -10,6 +10,7 @@ import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaC
 
 import scala.language.implicitConversions
 
+@library
 object Helpers {
 
   // TODO extract
