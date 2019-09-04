@@ -12,12 +12,6 @@ import scala.language.implicitConversions
 
 object Helpers {
 
-//  @extern
-//  type ContextT = special.sigma.Context
-//
-//  @extern
-//  type AvlTreeT = special.sigma.AvlTree
-
   // TODO extract
   @extern @pure
   implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
@@ -130,8 +124,6 @@ sealed abstract class ICOContract extends SigmaContract {
   } ensuring (_ == false)
 
 
-  // TODO restore
-  @ignore
   def ICOIssuanceContract(ctx: Context, nextStageScriptHash: Coll[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
 
@@ -223,7 +215,7 @@ sealed abstract class ICOContract extends SigmaContract {
     val initialTree = SELF.R5[AvlTree].get
 
     // TODO: proper option handling
-    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(Coll.empty)) })
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(Coll.empty[Byte])) })
     val valuesCorrect = removedValues == withdrawValues
 
     val modifiedTree = initialTree.remove(toRemove, removeProof)
