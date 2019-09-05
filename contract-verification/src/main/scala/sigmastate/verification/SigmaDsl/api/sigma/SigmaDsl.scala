@@ -4,9 +4,8 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import scalan.{Internal, NeverInline, OverloadId, Reified}
-import sigmastate.verification.SigmaDsl.api.collection.{Coll, CollBuilder}
+import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.SigmaDsl.api.{MonoidBuilder, RType}
-import special.sigma.clause
 import stainless.annotation.{extern, ignore, library}
 import stainless.lang._
 
@@ -583,7 +582,7 @@ trait SigmaContract {
 
   @NeverInline
   @Reified("T") @ignore
-  def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = this.builder.Colls.fromItems[T](items:_*)
+  def Collection[T](items: T*)(implicit cT: RType[T]): Coll[T] = ??? //this.builder.Colls.fromItems[T](items:_*)
 
   /** !!! all methods should delegate to builder */
 
@@ -623,7 +622,7 @@ trait SigmaContract {
       newValues: Coll[T])
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 
-  @clause def canOpen(ctx: Context): Boolean
+  def canOpen(ctx: Context): Boolean
 
   def asFunction: Context => Boolean = (ctx: Context) => this.canOpen(ctx)
 }
@@ -631,7 +630,7 @@ trait SigmaContract {
 @scalan.Liftable
 @library
 trait SigmaDslBuilder {
-  def Colls: CollBuilder
+//  def Colls: CollBuilder
   def Monoids: MonoidBuilder
 //  def Costing: CostedBuilder
   def CostModel: CostModel

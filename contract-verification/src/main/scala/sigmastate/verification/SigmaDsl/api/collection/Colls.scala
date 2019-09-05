@@ -1,9 +1,8 @@
 package sigmastate.verification.SigmaDsl.api.collection
 
-import scalan.{ContainerType, FunctorType, Internal, Liftable, NeverInline, Reified}
-import sigmastate.verification.SigmaDsl.api.{Monoid, MonoidBuilder, RType}
-import sigmastate.verification.contract.Helpers._
-import stainless.annotation.{extern, ignore, library}
+import scalan.{Internal, NeverInline}
+import sigmastate.verification.SigmaDsl.api.{Monoid, RType}
+import stainless.annotation.{extern, library}
 import stainless.lang._
 
 import scala.collection.immutable
@@ -14,12 +13,9 @@ import scala.collection.immutable
   * @define colls collections
   * @tparam A the collection element type
   */
-@ContainerType
-@FunctorType
-@scalan.Liftable
 @library
-sealed trait Coll[@specialized A] {
-  def builder: CollBuilder
+sealed trait Coll[A] {
+//  def builder: CollBuilder
   def toArray: Array[A]
 
   /** The length of the collection. */
@@ -314,11 +310,11 @@ sealed trait Coll[@specialized A] {
     *                part of the result, but any following occurrences will.
     *  @since 2.0
     */
-  @NeverInline @extern
-  def diff(that: Coll[A]): Coll[A] = {
-    val res = toArray.diff(that.toArray)
-    builder.fromArray(res)
-  }
+//  @NeverInline @extern
+//  def diff(that: Coll[A]): Coll[A] = {
+//    val res = toArray.diff(that.toArray)
+//    builder.fromArray(res)
+//  }
 
   /** Computes the multiset intersection between this $coll and another sequence.
     *
@@ -330,11 +326,11 @@ sealed trait Coll[@specialized A] {
     *                in the result, but any following occurrences will be omitted.
     *  @since 2.0
     */
-  @NeverInline @extern
-  def intersect(that: Coll[A]): Coll[A] = {
-    val res = toArray.intersect(that.toArray)
-    builder.fromArray(res)
-  }
+//  @NeverInline @extern
+//  def intersect(that: Coll[A]): Coll[A] = {
+//    val res = toArray.intersect(that.toArray)
+//    builder.fromArray(res)
+//  }
 
   /** Folding through all elements of this $coll starting from m.zero and applying m.plus to accumulate
     * resulting value.
@@ -369,8 +365,6 @@ sealed trait Coll[@specialized A] {
 
   @Internal @extern
   private def trim[T](arr: Array[T]) = arr.take(arr.length min 100)
-  @Internal @extern
-  override def toString = s"Coll(${trim(toArray).mkString(",")})"
 
   @Internal
   implicit def tItem: RType[A]
@@ -390,112 +384,297 @@ sealed trait Coll[@specialized A] {
     b
   }
 
-  @Internal @extern
-  def distinctByKey[T, U](implicit ev: A <:< (T, U)): Coll[A] = {
-    unionSetByKey(builder.emptyColl[A](tItem))
-  }
+//  @Internal @extern
+//  def distinctByKey[T, U](implicit ev: A <:< (T, U)): Coll[A] = {
+//    unionSetByKey(builder.emptyColl[A](tItem))
+//  }
 
 
-  @Internal @extern
-  def unionSetByKey[T, U](that: Coll[A])(implicit ev: A <:< (T, U)): Coll[A] = {
-    import scalan.util.CollectionUtil._
-    // TODO optimize representation-wise
-    val res = append(that).toArray.toIterable.distinctBy(_._1)
-    builder.fromArray(res.toArray(tItem.classTag))
-  }
+//  @Internal @extern
+//  def unionSetByKey[T, U](that: Coll[A])(implicit ev: A <:< (T, U)): Coll[A] = {
+//    import scalan.util.CollectionUtil._
+//    // TODO optimize representation-wise
+//    val res = append(that).toArray.toIterable.distinctBy(_._1)
+//    builder.fromArray(res.toArray(tItem.classTag))
+//  }
 }
+
+//@library
+//trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
+//  def ls: Coll[L]
+//  def rs: Coll[R]
+//  def mapFirst[T1: RType](f: L => T1): Coll[(T1, R)]
+//  def mapSecond[T1: RType](f: R => T1): Coll[(L, T1)]
+//}
+
+//@Liftable
+//@ignore
+//trait ReplColl[@specialized A] extends Coll[A] {
+//  def value: A
+//  def length: Int
+//  def append(other: Coll[A]): Coll[A]
+//}
+
+//@scalan.Liftable
+//@library
+//trait CollBuilder {
+//  def Monoids: MonoidBuilder
+//  def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A,B]
+//
+//  @Internal
+//  def pairCollFromArrays[A: RType, B: RType](as: Array[A], bs: Array[B]): PairColl[A,B] =
+//    pairColl(fromArray(as), fromArray(bs))
+//
+//  /** Construct a collection of (K,V) pairs using PairColl representation,
+//    * in which keys and values are stored as separate unboxed arrays. */
+//  @Internal
+//  def fromMap[K: RType, V: RType](m: Map[K,V]): Coll[(K,V)]
+//
+//  /** Construct a new collection from the given list of arguments.
+//    * The arguments should be of the same type for which there should be
+//    * an implicit type descriptor at the call site. */
+//  @ignore
+//  @Reified("T") def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T]
+//
+//  /** Deconstruct collection of (A,B) pairs into pair of collections.
+//    * If `xs` is represented as PairColl, then this is O(1) operation (no data is touched). */
+//  def unzip[@specialized A, @specialized B](xs: Coll[(A,B)]): (Coll[A], Coll[B])
+//
+//  /** Element-wise xor of two collections. */
+//  def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte]
+//
+//  /** Wrap array into collection. */
+//  def fromArray[@specialized T: RType](arr: Array[T]): Coll[T]
+//
+//  /** Creates a new collection by replicating value `v`.
+//    * @param  n  how many times to replicate value `v`
+//    * @param  v  value to replicate
+//    * @return    collection of the form (v, v, v, ... v) of n elements.*/
+//  def replicate[@specialized T: RType](n: Int, v: T): Coll[T]
+//
+//  /** Create a new collection in which every item is executed lazily
+//    * form the corresponding item of the `source` collection.
+//    * @param  source  collection which is used as the source of items
+//    * @param  f       function to compute each item of this collection from the source item
+//    * This is O(1) operation, all executions of `f` are delayed until the corresponding
+//    * item of this collection is needed in some operation.
+//    */
+//  @NeverInline
+//  def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B]
+//
+//  @NeverInline
+//  def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B]
+//
+//  /** Create an empty collection with items of the given type.
+//    * Even though there are no items, the type of them is specified. */
+//  def emptyColl[T](implicit tT: RType[T]): Coll[T]
+//
+//  /** Performs outer join operation between left and right collections.
+//    * This is a restricted version of relational join operation.
+//    * It expects `left` and `right` collections have distinct K values in pairs (otherwise exception is thrown).
+//    * Under this condition resulting collection has size <= left.size + right.size.
+//    * @param l projection function executed for each element of `left`
+//    * @param r projection function executed for each element of `right`
+//    * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K
+//    * @return collection of (K, O) pairs, where each key comes form either left or right collection and values are produced by projections
+//    * @since 2.0
+//    */
+//  def outerJoin[K: RType, L, R, O: RType]
+//      (left: Coll[(K, L)], right: Coll[(K, R)])
+//      (l: ((K,L)) => O, r: ((K,R)) => O, inner: ((K,(L,R))) => O): Coll[(K,O)]
+//
+//  /** Flattens a two-dimensional array by concatenating all its rows
+//    *  into a single array.
+//    *
+//    *  @tparam U        Type of row elements.
+//    *  @param asTrav    A function that converts elements of this array to rows - arrays of type `U`.
+//    *  @return          An array obtained by concatenating rows of this array.
+//    */
+//  def flattenColl[A:RType](coll: Coll[Coll[A]]): Coll[A]
+//}
 
 @library
-trait PairColl[@specialized L, @specialized R] extends Coll[(L,R)] {
-  def ls: Coll[L]
-  def rs: Coll[R]
-  def mapFirst[T1: RType](f: L => T1): Coll[(T1, R)]
-  def mapSecond[T1: RType](f: R => T1): Coll[(L, T1)]
-}
+case class CollProof[A]() extends Coll[A] {
+  @Internal
+  override def tItem: RType[A] = ???
 
-@Liftable
-@ignore
-trait ReplColl[@specialized A] extends Coll[A] {
-  def value: A
-  def length: Int
-  def append(other: Coll[A]): Coll[A]
-}
+  override def toArray: Array[A] = ???
 
-@scalan.Liftable
-@library
-trait CollBuilder {
-  def Monoids: MonoidBuilder
-  def pairColl[@specialized A, @specialized B](as: Coll[A], bs: Coll[B]): PairColl[A,B]
+  //  def builder: CollBuilder = new CollOverArrayBuilder
+
+  override def length: Int = ??? //toArray.length
+
+  override def apply(i: Int): A = ???
+
+  override def isEmpty: Boolean = length == 0
+
+  override def nonEmpty: Boolean = length > 0
+
+  override def isDefinedAt(idx: Int): Boolean = (idx >= 0) && (idx < length)
+
+  def getOrElse(i: Int, default: A): A = if (i >= 0 && i < toArray.length) toArray(i) else default
+
+  def map[@specialized B: RType](f: A => B): Coll[B] = ???
+  //{
+//    implicit val ctB = RType[B].classTag
+//    builder.fromArray(toArray.map(f))
+//  }
+
+  def foreach(f: A => Unit): Unit = ??? // toArray.foreach(f)
+
+  def exists(p: A => Boolean): Boolean = ??? //toArray.exists(p)
+
+  def forall(p: A => Boolean): Boolean = ??? // toArray.forall(p)
+
+  def filter(p: A => Boolean): Coll[A] = ??? //builder.fromArray(toArray.filter(p))
+
+  def foldLeft[B](zero: B, op: ((B, A)) => B): B = ??? //toArray.foldLeft(zero)((b, a) => op((b, a)))
+
+  def slice(from: Int, until: Int): Coll[A] = ??? //builder.fromArray(toArray.slice(from, until))
+
+  def sum(m: Monoid[A]): A = ??? /// toArray.foldLeft(m.zero)((b, a) => m.plus(b, a))
+
+  override def zip[B](ys: Coll[B]): Coll[(A, B)] = ??? // builder.pairColl(this, ys)
+
+  def append(other: Coll[A]): Coll[A] = ???
+//  {
+//    if (toArray.length <= 0) return other
+//    val result = CollectionUtil.concatArrays(toArray, other.toArray)
+//    builder.fromArray(result)
+//  }
+
+  def reverse: Coll[A] = ???
+  /*{
+    val limit = length
+    val res = new Array[A](limit)
+    cfor(0)(_ < limit, _ + 1) { i =>
+      res(i) = toArray(limit - i - 1)
+    }
+    builder.fromArray(res)
+  }*/
+
+  def indices: Coll[Int] = ??? //builder.fromArray(toArray.indices.toArray)
+
+  override def flatMap[B: RType](f: A => Coll[B]): Coll[B] = ???
+  /*{
+    implicit val ctB = RType[B].classTag
+    builder.fromArray(toArray.flatMap(x => f(x).toArray))
+  }*/
+
+  override def segmentLength(p: A => Boolean, from: Int): Int = ??? //toArray.segmentLength(p, from)
+
+  override def indexWhere(p: A => Boolean, from: Int): Int = ??? // toArray.indexWhere(p, from)
+
+  override def lastIndexWhere(p: A => Boolean, end: Int): Int = ??? // toArray.lastIndexWhere(p, end)
+
+  override def take(n: Int): Coll[A] = ???
+//  {
+//    if (n <= 0) builder.emptyColl
+//    else if (n >= length) this
+//    else {
+//      val res = Array.ofDim[A](n)
+//      Array.copy(toArray, 0, res, 0, n)
+//      builder.fromArray(res)
+//    }
+//  }
+
+  override def partition(pred: A => Boolean): (Coll[A], Coll[A]) = ???
+//  {
+//    val (ls, rs) = toArray.partition(pred)
+//    (builder.fromArray(ls), builder.fromArray(rs))
+//  }
+
+  override def patch(from: Int, patch: Coll[A], replaced: Int): Coll[A] = ???
+//  {
+//    val res = toArray.patch(from, patch.toArray, replaced).toArray
+//    builder.fromArray(res)
+//  }
+
+  override def updated(index: Int, elem: A): Coll[A] = ???
+//  {
+//    val res = toArray.updated(index, elem)
+//    builder.fromArray(res)
+//  }
+
+  override def updateMany(indexes: Coll[Int], values: Coll[A]): Coll[A] = ???
+//  {
+//    requireSameLength(indexes, values)
+//    val resArr = toArray.clone()
+//    var i = 0
+//    while (i < indexes.length) {
+//      val pos = indexes(i)
+//      if (pos < 0 || pos >= toArray.length) throw new IndexOutOfBoundsException(pos.toString)
+//      resArr(pos) = values(i)
+//      i += 1
+//    }
+//    builder.fromArray(resArr)
+//  }
+
+  override def mapReduce[K: RType, V: RType](m: A => (K, V), r: ((V, V)) => V): Coll[(K, V)] = ???
+//  {
+//    val (keys, values) = Helpers.mapReduce(toArray, m, r)
+//    builder.pairCollFromArrays(keys, values)
+//  }
+
+  override def unionSet(that: Coll[A]): Coll[A] = ???
+//  {
+//    val set = debox.Set.ofSize[A](this.length)
+//    val res = Buffer.ofSize[A](this.length)
+//
+//    @inline def addItemToSet(x: A) = {
+//      if (!set(x)) {
+//        set.add(x)
+//        res += x
+//      }
+//    }
+
+//    def addToSet(arr: Array[A]) = {
+//      val limit = arr.length
+//      cfor(0)(_ < limit, _ + 1) { i =>
+//        val x = arr(i)
+//        addItemToSet(x)
+//      }
+//    }
+//
+//    addToSet(this.toArray)
+//
+//    that match {
+//      case repl: ReplColl[A@unchecked] if repl.length > 0 => // optimization
+//        addItemToSet(repl.value)
+//      case _ =>
+//        addToSet(that.toArray)
+//    }
+//    builder.fromArray(res.toArray())
+//  }
 
   @Internal
-  def pairCollFromArrays[A: RType, B: RType](as: Array[A], bs: Array[B]): PairColl[A,B] =
-    pairColl(fromArray(as), fromArray(bs))
+  protected def isAllPrimValue(value: A): Boolean = ???
+  /*{
+    cfor(0)(_ < length, _ + 1) { i =>
+      if (this (i) != value) return false
+    }
+    true
+  }*/
 
-  /** Construct a collection of (K,V) pairs using PairColl representation,
-    * in which keys and values are stored as separate unboxed arrays. */
   @Internal
-  def fromMap[K: RType, V: RType](m: Map[K,V]): Coll[(K,V)]
+  protected def isAllDeepEquals(value: Any): Boolean = ???
+  /*{
+    cfor(0)(_ < length, _ + 1) { i =>
+      if (!Objects.deepEquals(this (i), value)) return false
+    }
+    true
+  }*/
 
-  /** Construct a new collection from the given list of arguments.
-    * The arguments should be of the same type for which there should be
-    * an implicit type descriptor at the call site. */
-  @ignore
-  @Reified("T") def fromItems[T](items: T*)(implicit cT: RType[T]): Coll[T]
+  @Internal
+  def isReplArray(len: Int, value: A): Boolean = ???
+  /*{
+    length == len && {
+      if (tItem.classTag.runtimeClass.isPrimitive) {
+        isAllPrimValue(value)
+      } else {
+        isAllDeepEquals(value)
+      }
+    }
+  }*/
 
-  /** Deconstruct collection of (A,B) pairs into pair of collections.
-    * If `xs` is represented as PairColl, then this is O(1) operation (no data is touched). */
-  def unzip[@specialized A, @specialized B](xs: Coll[(A,B)]): (Coll[A], Coll[B])
-
-  /** Element-wise xor of two collections. */
-  def xor(left: Coll[Byte], right: Coll[Byte]): Coll[Byte]
-
-  /** Wrap array into collection. */
-  def fromArray[@specialized T: RType](arr: Array[T]): Coll[T]
-
-  /** Creates a new collection by replicating value `v`.
-    * @param  n  how many times to replicate value `v`
-    * @param  v  value to replicate
-    * @return    collection of the form (v, v, v, ... v) of n elements.*/
-  def replicate[@specialized T: RType](n: Int, v: T): Coll[T]
-
-  /** Create a new collection in which every item is executed lazily
-    * form the corresponding item of the `source` collection.
-    * @param  source  collection which is used as the source of items
-    * @param  f       function to compute each item of this collection from the source item
-    * This is O(1) operation, all executions of `f` are delayed until the corresponding
-    * item of this collection is needed in some operation.
-    */
-  @NeverInline
-  def makeView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B): Coll[B]
-
-  @NeverInline
-  def makePartialView[@specialized A, @specialized B: RType](source: Coll[A], f: A => B, calculated: Array[Boolean], calculatedItems: Array[B]): Coll[B]
-
-  /** Create an empty collection with items of the given type.
-    * Even though there are no items, the type of them is specified. */
-  def emptyColl[T](implicit tT: RType[T]): Coll[T]
-
-  /** Performs outer join operation between left and right collections.
-    * This is a restricted version of relational join operation.
-    * It expects `left` and `right` collections have distinct K values in pairs (otherwise exception is thrown).
-    * Under this condition resulting collection has size <= left.size + right.size.
-    * @param l projection function executed for each element of `left`
-    * @param r projection function executed for each element of `right`
-    * @param inner projection function which is executed for matching items (K, L) and (K, R) with the same K
-    * @return collection of (K, O) pairs, where each key comes form either left or right collection and values are produced by projections
-    * @since 2.0
-    */
-  def outerJoin[K: RType, L, R, O: RType]
-      (left: Coll[(K, L)], right: Coll[(K, R)])
-      (l: ((K,L)) => O, r: ((K,R)) => O, inner: ((K,(L,R))) => O): Coll[(K,O)]
-
-  /** Flattens a two-dimensional array by concatenating all its rows
-    *  into a single array.
-    *
-    *  @tparam U        Type of row elements.
-    *  @param asTrav    A function that converts elements of this array to rows - arrays of type `U`.
-    *  @return          An array obtained by concatenating rows of this array.
-    */
-  def flattenColl[A:RType](coll: Coll[Coll[A]]): Coll[A]
 }
-
