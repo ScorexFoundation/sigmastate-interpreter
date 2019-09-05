@@ -3,17 +3,18 @@ package sigmastate.serialization
 
 import java.math.BigInteger
 
-import io.circe.Json
 import org.scalacheck.Arbitrary._
 import scalan.RType
 import sigmastate.SCollection.SByteArray
 import sigmastate.SType.AnyOps
+import sigmastate.Values.SigmaBoolean
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
+import sigmastate.interpreter.CryptoConstants.EcPointType
+import special.sigma.{AvlTree, Box}
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
-
   def roundtrip[T <: SType](obj: T#WrappedType, tpe: T) = {
     val json = DataJsonEncoder.encode(obj, tpe)
     val res = DataJsonEncoder.decode(json)
@@ -60,40 +61,53 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
     forAll { x: Long => roundtrip[SLong.type](x, SLong) }
     forAll { x: String => roundtrip[SString.type](x, SString) }
     forAll { x: BigInteger => roundtrip[SBigInt.type](x, SBigInt) }
+    forAll { x: EcPointType => roundtrip[SGroupElement.type](x, SGroupElement) }
+    forAll { x: SigmaBoolean => roundtrip[SSigmaProp.type](x, SSigmaProp) }
+    forAll { x: AvlTree => roundtrip[SAvlTree.type](x, SAvlTree) }
     forAll { x: Array[Byte] => roundtrip[SByteArray](x.toColl, SByteArray) }
+    forAll { x: Box => roundtrip[SBox.type](x, SBox) }
     forAll { x: Option[Byte] => roundtrip[SOption[SByte.type]](x, SOption[SByte.type]) }
-    testCollection(SByte)
-    testCollection(SShort)
-    testCollection(SInt)
-    testCollection(SLong)
-    testCollection(SBigInt)
     testCollection(SOption[SLong.type])
-    testTuples(SByte)
-    testTuples(SShort)
-    testTuples(SInt)
-    testTuples(SLong)
-    testTuples(SBigInt)
     testTuples(SOption[SLong.type])
-    //    forAll { t: SPredefType => testTuples(t) }
+    forAll { t: SPredefType => testCollection(t) }
+    forAll { t: SPredefType => testTuples(t) }
   }
 
   property("Example test") {
-    def toUnifiedString(from: String): String = from.toString().replaceAll("[\n ]", "")
+    def toUnifiedString(from: String): String = from.replaceAll("[\n ]", "")
 
     toUnifiedString(DataJsonEncoder.encode((10, 20).asWrappedType, STuple(SInt, SInt)).toString()) shouldBe
-      toUnifiedString("{ \"type\": \"(Int, Int)\", \"value\": { \"_1\": 10, \"_2\": 20 }}")
+      toUnifiedString(
+        """
+          |{ "type": "(Int, Int)",
+          |  "value": {
+          |    "_1": 10,
+          |    "_2": 20
+          |  }
+          |}""".stripMargin)
     toUnifiedString(DataJsonEncoder.encode(SigmaDsl.Colls.fromItems(1.toByte, 2.toByte, 3.toByte).asWrappedType, SCollectionType(SByte)).toString()) shouldBe
-      toUnifiedString("{ \"type\": \"Coll[Byte]\", \"value\": [1, 2, 3] }")
+      toUnifiedString(
+        """
+          |{ "type": "Coll[Byte]",
+          |  "value": [1, 2, 3]
+          |}""".stripMargin)
     toUnifiedString(DataJsonEncoder.encode(SigmaDsl.Colls.fromItems((1, 10), (2, 20), (3, 30)).asWrappedType, SCollectionType(STuple(SInt, SInt))).toString()) shouldBe
-      toUnifiedString("{ \"type\": \"Coll[(Int, Int)]\", \"value\": { \"_1\": [1, 2, 3], \"_2\": [10, 20, 30] }}")
+      toUnifiedString(
+        """
+          |{ "type": "Coll[(Int, Int)]",
+          |  "value": {
+          |    "_1": [1, 2, 3],
+          |    "_2": [10, 20, 30]
+          |  }
+          |}""".stripMargin)
     toUnifiedString(DataJsonEncoder.encode((SigmaDsl.Colls.fromItems((1, SigmaDsl.Colls.replicate(3, 1.toByte)), (2, SigmaDsl.Colls.replicate(2, 2.toByte)), (3, SigmaDsl.Colls.replicate(1, 3.toByte)), (4, SigmaDsl.Colls.replicate(0, 4.toByte))), 100.toLong).asWrappedType,
       STuple(SCollectionType(STuple(SInt, SCollectionType(SByte))), SLong)).toString()) shouldBe
       toUnifiedString(
         """
           |{ "type": "(Coll[(Int, Coll[Byte])], Long)",
           |  "value": {
-          |     "_1": { "_1": [1, 2, 3, 4], "_2": [ [1, 1, 1], [2, 2], [3], [] ] },
-          |     "_2": 100
+          |    "_1": { "_1": [1, 2, 3, 4], "_2": [ [1, 1, 1], [2, 2], [3], [] ] },
+          |    "_2": 100
           |  }
           |}
           |""".stripMargin)
