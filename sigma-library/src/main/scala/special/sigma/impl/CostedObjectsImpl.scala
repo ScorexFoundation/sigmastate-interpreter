@@ -35,8 +35,8 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
         constValue: SSizeAnyValue
       ) extends LiftedConst[SSizeAnyValue, SizeAnyValue] with SizeAnyValue
         with Def[SizeAnyValue] with SizeAnyValueConstMethods {
-// manual fix
-    def eVal: Elem[AnyValue] = element[AnyValue]
+    // manual fix
+    final def eVal: Elem[AnyValue] = element[AnyValue]
 
     val liftable: Liftable[SSizeAnyValue, SizeAnyValue] = LiftableSizeAnyValue
     val resultType: Elem[SizeAnyValue] = liftable.eW
@@ -112,7 +112,7 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefSizeAnyValue(p: Ref[SizeAnyValue]): SizeAnyValue = {
+  implicit final def unrefSizeAnyValue(p: Ref[SizeAnyValue]): SizeAnyValue = {
     if (p.node.isInstanceOf[SizeAnyValue]) p.node.asInstanceOf[SizeAnyValue]
     else
       SizeAnyValueAdapter(p)
@@ -142,12 +142,12 @@ object SizeAnyValue extends EntityObject("SizeAnyValue") {
     def resultType = SizeAnyValueCompanionElem
     override def toString = "SizeAnyValue"
   }
-  implicit def unrefSizeAnyValueCompanionCtor(p: Ref[SizeAnyValueCompanionCtor]): SizeAnyValueCompanionCtor =
+  implicit final def unrefSizeAnyValueCompanionCtor(p: Ref[SizeAnyValueCompanionCtor]): SizeAnyValueCompanionCtor =
     p.node.asInstanceOf[SizeAnyValueCompanionCtor]
 
-  lazy val RSizeAnyValue: Ref[SizeAnyValueCompanionCtor] = new SizeAnyValueCompanionCtor {
+  lazy val RSizeAnyValue: MutableLazy[SizeAnyValueCompanionCtor] = MutableLazy(new SizeAnyValueCompanionCtor {
     private val thisClass = classOf[SizeAnyValueCompanion]
-  }
+  })
 
   object SizeAnyValueMethods {
     object tVal {
@@ -186,7 +186,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
       ) extends LiftedConst[SSizeSigmaProp, SizeSigmaProp] with SizeSigmaProp
         with Def[SizeSigmaProp] with SizeSigmaPropConstMethods {
     // manual fix
-    def eVal: Elem[SigmaProp] = element[SigmaProp]
+    final def eVal: Elem[SigmaProp] = element[SigmaProp]
 
     val liftable: Liftable[SSizeSigmaProp, SizeSigmaProp] = LiftableSizeSigmaProp
     val resultType: Elem[SizeSigmaProp] = liftable.eW
@@ -244,7 +244,7 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefSizeSigmaProp(p: Ref[SizeSigmaProp]): SizeSigmaProp = {
+  implicit final def unrefSizeSigmaProp(p: Ref[SizeSigmaProp]): SizeSigmaProp = {
     if (p.node.isInstanceOf[SizeSigmaProp]) p.node.asInstanceOf[SizeSigmaProp]
     else
       SizeSigmaPropAdapter(p)
@@ -274,12 +274,12 @@ object SizeSigmaProp extends EntityObject("SizeSigmaProp") {
     def resultType = SizeSigmaPropCompanionElem
     override def toString = "SizeSigmaProp"
   }
-  implicit def unrefSizeSigmaPropCompanionCtor(p: Ref[SizeSigmaPropCompanionCtor]): SizeSigmaPropCompanionCtor =
+  implicit final def unrefSizeSigmaPropCompanionCtor(p: Ref[SizeSigmaPropCompanionCtor]): SizeSigmaPropCompanionCtor =
     p.node.asInstanceOf[SizeSigmaPropCompanionCtor]
 
-  lazy val RSizeSigmaProp: Ref[SizeSigmaPropCompanionCtor] = new SizeSigmaPropCompanionCtor {
+  lazy val RSizeSigmaProp: MutableLazy[SizeSigmaPropCompanionCtor] = MutableLazy(new SizeSigmaPropCompanionCtor {
     private val thisClass = classOf[SizeSigmaPropCompanion]
-  }
+  })
 
   object SizeSigmaPropMethods {
     object propBytes {
@@ -308,7 +308,7 @@ object SizeBox extends EntityObject("SizeBox") {
       ) extends LiftedConst[SSizeBox, SizeBox] with SizeBox
         with Def[SizeBox] with SizeBoxConstMethods {
     // manual fix
-    def eVal: Elem[Box] = element[Box]
+    final def eVal: Elem[Box] = element[Box]
 
     val liftable: Liftable[SSizeBox, SizeBox] = LiftableSizeBox
     val resultType: Elem[SizeBox] = liftable.eW
@@ -436,7 +436,7 @@ object SizeBox extends EntityObject("SizeBox") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefSizeBox(p: Ref[SizeBox]): SizeBox = {
+  implicit final def unrefSizeBox(p: Ref[SizeBox]): SizeBox = {
     if (p.node.isInstanceOf[SizeBox]) p.node.asInstanceOf[SizeBox]
     else
       SizeBoxAdapter(p)
@@ -466,12 +466,12 @@ object SizeBox extends EntityObject("SizeBox") {
     def resultType = SizeBoxCompanionElem
     override def toString = "SizeBox"
   }
-  implicit def unrefSizeBoxCompanionCtor(p: Ref[SizeBoxCompanionCtor]): SizeBoxCompanionCtor =
+  implicit final def unrefSizeBoxCompanionCtor(p: Ref[SizeBoxCompanionCtor]): SizeBoxCompanionCtor =
     p.node.asInstanceOf[SizeBoxCompanionCtor]
 
-  lazy val RSizeBox: Ref[SizeBoxCompanionCtor] = new SizeBoxCompanionCtor {
+  lazy val RSizeBox: MutableLazy[SizeBoxCompanionCtor] = MutableLazy(new SizeBoxCompanionCtor {
     private val thisClass = classOf[SizeBoxCompanion]
-  }
+  })
 
   object SizeBoxMethods {
     object propositionBytes {
@@ -550,7 +550,7 @@ object SizeContext extends EntityObject("SizeContext") {
       ) extends LiftedConst[SSizeContext, SizeContext] with SizeContext
         with Def[SizeContext] with SizeContextConstMethods {
     // manual fix
-    def eVal: Elem[Context] = element[Context]
+    final def eVal: Elem[Context] = element[Context]
 
     val liftable: Liftable[SSizeContext, SizeContext] = LiftableSizeContext
     val resultType: Elem[SizeContext] = liftable.eW
@@ -706,7 +706,7 @@ object SizeContext extends EntityObject("SizeContext") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefSizeContext(p: Ref[SizeContext]): SizeContext = {
+  implicit final def unrefSizeContext(p: Ref[SizeContext]): SizeContext = {
     if (p.node.isInstanceOf[SizeContext]) p.node.asInstanceOf[SizeContext]
     else
       SizeContextAdapter(p)
@@ -736,12 +736,12 @@ object SizeContext extends EntityObject("SizeContext") {
     def resultType = SizeContextCompanionElem
     override def toString = "SizeContext"
   }
-  implicit def unrefSizeContextCompanionCtor(p: Ref[SizeContextCompanionCtor]): SizeContextCompanionCtor =
+  implicit final def unrefSizeContextCompanionCtor(p: Ref[SizeContextCompanionCtor]): SizeContextCompanionCtor =
     p.node.asInstanceOf[SizeContextCompanionCtor]
 
-  lazy val RSizeContext: Ref[SizeContextCompanionCtor] = new SizeContextCompanionCtor {
+  lazy val RSizeContext: MutableLazy[SizeContextCompanionCtor] = MutableLazy(new SizeContextCompanionCtor {
     private val thisClass = classOf[SizeContextCompanion]
-  }
+  })
 
   object SizeContextMethods {
     object outputs {
@@ -915,7 +915,7 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefSizeBuilder(p: Ref[SizeBuilder]): SizeBuilder = {
+  implicit final def unrefSizeBuilder(p: Ref[SizeBuilder]): SizeBuilder = {
     if (p.node.isInstanceOf[SizeBuilder]) p.node.asInstanceOf[SizeBuilder]
     else
       SizeBuilderAdapter(p)
@@ -943,14 +943,23 @@ object SizeBuilder extends EntityObject("SizeBuilder") {
     def resultType = SizeBuilderCompanionElem
     override def toString = "SizeBuilder"
   }
-  implicit def unrefSizeBuilderCompanionCtor(p: Ref[SizeBuilderCompanionCtor]): SizeBuilderCompanionCtor =
+  implicit final def unrefSizeBuilderCompanionCtor(p: Ref[SizeBuilderCompanionCtor]): SizeBuilderCompanionCtor =
     p.node.asInstanceOf[SizeBuilderCompanionCtor]
 
-  lazy val RSizeBuilder: Ref[SizeBuilderCompanionCtor] = new SizeBuilderCompanionCtor {
+  lazy val RSizeBuilder: MutableLazy[SizeBuilderCompanionCtor] = MutableLazy(new SizeBuilderCompanionCtor {
     private val thisClass = classOf[SizeBuilderCompanion]
-  }
+  })
 } // of object SizeBuilder
   registerEntityObject("SizeBuilder", SizeBuilder)
+
+  override def resetContext(): Unit = {
+    super.resetContext()
+    RSizeAnyValue.reset()
+    RSizeSigmaProp.reset()
+    RSizeBox.reset()
+    RSizeContext.reset()
+    RSizeBuilder.reset()
+  }
 
   registerModule(CostedObjectsModule)
 }

@@ -82,7 +82,7 @@ val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
 val configs            = "com.github.kxbmap" %% "configs" % "0.4.4"
 
-val specialVersion = "core-opt-5247fa0a-SNAPSHOT"
+val specialVersion = "core-opt-018fb1d0-SNAPSHOT"
 val meta        = "io.github.scalan" %% "meta" % specialVersion
 val plugin      = "io.github.scalan" %% "plugin" % specialVersion
 val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
@@ -146,7 +146,7 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-d5422944-SNAPSHOT.jar"
+//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-0d03a785-SNAPSHOT.jar"
   )
 )
 
