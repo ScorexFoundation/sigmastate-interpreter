@@ -24,7 +24,7 @@ object WOption extends EntityObject("WOption") {
         lA: Liftable[SA, A]
       ) extends LiftedConst[Option[SA], WOption[A]] with WOption[A]
         with Def[WOption[A]] with WOptionConstMethods[A] {
-    implicit def eA: Elem[A] = lA.eW
+    implicit final def eA: Elem[A] = lA.eW
 
     val liftable: Liftable[Option[SA], WOption[A]] = liftableOption(lA)
     val resultType: Elem[WOption[A]] = liftable.eW
@@ -109,7 +109,7 @@ object WOption extends EntityObject("WOption") {
       case _ => unliftError(w)
     }
   }
-  implicit def liftableOption[SA, A](implicit lA: Liftable[SA,A]): Liftable[Option[SA], WOption[A]] =
+  implicit final def liftableOption[SA, A](implicit lA: Liftable[SA,A]): Liftable[Option[SA], WOption[A]] =
     LiftableOption(lA)
 
   private val _OptionWrapSpec = new OptionWrapSpec {}
@@ -187,13 +187,13 @@ object WOption extends EntityObject("WOption") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefWOption[A](p: Ref[WOption[A]]): WOption[A] = {
+  implicit final def unrefWOption[A](p: Ref[WOption[A]]): WOption[A] = {
     if (p.node.isInstanceOf[WOption[A]@unchecked]) p.node.asInstanceOf[WOption[A]]
     else
       WOptionAdapter(p)
   }
 
-  implicit def castWOptionElement[A](elem: Elem[WOption[A]]): WOptionElem[A, WOption[A]] =
+  implicit final def castWOptionElement[A](elem: Elem[WOption[A]]): WOptionElem[A, WOption[A]] =
     elem.asInstanceOf[WOptionElem[A, WOption[A]]]
 
   implicit lazy val containerWOption: Functor[WOption] = new Functor[WOption] {
@@ -226,7 +226,7 @@ object WOption extends EntityObject("WOption") {
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
   }
 
-  implicit def wOptionElement[A](implicit eA: Elem[A]): Elem[WOption[A]] =
+  implicit final def wOptionElement[A](implicit eA: Elem[A]): Elem[WOption[A]] =
     cachedElemByClass(eA)(classOf[WOptionElem[A, WOption[A]]])
 
   implicit case object WOptionCompanionElem extends CompanionElem[WOptionCompanionCtor]
@@ -235,12 +235,12 @@ object WOption extends EntityObject("WOption") {
     def resultType = WOptionCompanionElem
     override def toString = "WOption"
   }
-  implicit def unrefWOptionCompanionCtor(p: Ref[WOptionCompanionCtor]): WOptionCompanionCtor =
+  implicit final def unrefWOptionCompanionCtor(p: Ref[WOptionCompanionCtor]): WOptionCompanionCtor =
     p.node.asInstanceOf[WOptionCompanionCtor]
 
-  lazy val RWOption: Ref[WOptionCompanionCtor] = new WOptionCompanionCtor {
+  lazy val RWOption: MutableLazy[WOptionCompanionCtor] = MutableLazy(new WOptionCompanionCtor {
     private val thisClass = classOf[WOptionCompanion]
-  }
+  })
 
   // manual fix: ViewWOption
 

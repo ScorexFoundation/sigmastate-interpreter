@@ -25,7 +25,7 @@ object WRType extends EntityObject("WRType") {
         lA: Liftable[SA, A]
       ) extends LiftedConst[RType[SA], WRType[A]] with WRType[A]
         with Def[WRType[A]] with WRTypeConstMethods[A] {
-    implicit def eA: Elem[A] = lA.eW
+    implicit final def eA: Elem[A] = lA.eW
 
     val liftable: Liftable[RType[SA], WRType[A]] = liftableRType(lA)
     val resultType: Elem[WRType[A]] = liftable.eW
@@ -57,7 +57,7 @@ object WRType extends EntityObject("WRType") {
       case _ => unliftError(w)
     }
   }
-  implicit def liftableRType[SA, A](implicit lA: Liftable[SA,A]): Liftable[RType[SA], WRType[A]] =
+  implicit final def liftableRType[SA, A](implicit lA: Liftable[SA,A]): Liftable[RType[SA], WRType[A]] =
     LiftableRType(lA)
 
   private val _RTypeWrapSpec = new RTypeWrapSpec {}
@@ -82,7 +82,7 @@ object WRType extends EntityObject("WRType") {
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefWRType[A](p: Ref[WRType[A]]): WRType[A] = {
+  implicit final def unrefWRType[A](p: Ref[WRType[A]]): WRType[A] = {
     if (p.node.isInstanceOf[WRType[A]@unchecked]) p.node.asInstanceOf[WRType[A]]
     else
       WRTypeAdapter(p)
@@ -105,7 +105,7 @@ object WRType extends EntityObject("WRType") {
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
   }
 
-  implicit def wRTypeElement[A](implicit eA: Elem[A]): Elem[WRType[A]] =
+  implicit final def wRTypeElement[A](implicit eA: Elem[A]): Elem[WRType[A]] =
     cachedElemByClass(eA)(classOf[WRTypeElem[A, WRType[A]]])
 
   implicit case object WRTypeCompanionElem extends CompanionElem[WRTypeCompanionCtor]
@@ -114,12 +114,12 @@ object WRType extends EntityObject("WRType") {
     def resultType = WRTypeCompanionElem
     override def toString = "WRType"
   }
-  implicit def unrefWRTypeCompanionCtor(p: Ref[WRTypeCompanionCtor]): WRTypeCompanionCtor =
+  implicit final def unrefWRTypeCompanionCtor(p: Ref[WRTypeCompanionCtor]): WRTypeCompanionCtor =
     p.node.asInstanceOf[WRTypeCompanionCtor]
 
-  lazy val RWRType: Ref[WRTypeCompanionCtor] = new WRTypeCompanionCtor {
+  lazy val RWRType: MutableLazy[WRTypeCompanionCtor] = MutableLazy(new WRTypeCompanionCtor {
     private val thisClass = classOf[WRTypeCompanion]
-  }
+  })
 
   object WRTypeMethods {
     object name {
@@ -137,6 +137,11 @@ object WRType extends EntityObject("WRType") {
   }
 } // of object WRType
   registerEntityObject("WRType", WRType)
+
+  override def resetContext(): Unit = {
+    super.resetContext()
+    RWRType.reset()
+  }
 
   registerModule(WRTypesModule)
 }

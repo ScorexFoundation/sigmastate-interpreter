@@ -2,7 +2,7 @@ package scalan
 
 /** Non-thread safe (but efficient on single thread) immutable lazy value with reset.
   * The `block` may execute potentially many times, but only once before each reset. */
-class MutableLazy[A] private (block: => A) {
+final class MutableLazy[A] private (block: => A) {
   @volatile private[this] var _isSet: Boolean = false
   private[this] var _value: A = _
 
@@ -27,5 +27,7 @@ class MutableLazy[A] private (block: => A) {
 }
 
 object MutableLazy {
-  def apply[A](block: => A): MutableLazy[A] = new MutableLazy(block)
+  @inline final def apply[A](block: => A): MutableLazy[A] = new MutableLazy(block)
+
+  @inline final implicit def mutableLazyToValue[T](ml: MutableLazy[T]): T = ml.value
 }

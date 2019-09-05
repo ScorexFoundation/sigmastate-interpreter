@@ -12,6 +12,7 @@ class Benchmark[T <: Scalan](createContext: => T) {
       ctx
     }
     println(s"Def count: ${ctx.defCount}, total: $total msec")
+    /*Total time: 9335 ms*/
   }
 }
 

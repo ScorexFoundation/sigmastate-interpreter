@@ -46,7 +46,7 @@ object CCostedOption extends EntityObject("CCostedOption") {
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("T" -> (eT -> scalan.util.Invariant))
   }
 
-  implicit def cCostedOptionElement[T](implicit eT: Elem[T]): Elem[CCostedOption[T]] =
+  implicit final def cCostedOptionElement[T](implicit eT: Elem[T]): Elem[CCostedOption[T]] =
     cachedElemByClass(eT)(classOf[CCostedOptionElem[T]])
 
   // 4) constructor and deconstructor
@@ -69,9 +69,8 @@ object CCostedOption extends EntityObject("CCostedOption") {
 
     def unapply[T](p: Ref[CostedOption[T]]) = unmkCCostedOption(p)
   }
-  lazy val CCostedOptionRef: Ref[CCostedOptionCompanionCtor] = new CCostedOptionCompanionCtor
-  lazy val RCCostedOption: CCostedOptionCompanionCtor = unrefCCostedOptionCompanion(CCostedOptionRef)
-  implicit def unrefCCostedOptionCompanion(p: Ref[CCostedOptionCompanionCtor]): CCostedOptionCompanionCtor = {
+  lazy val RCCostedOption: MutableLazy[CCostedOptionCompanionCtor] = MutableLazy(new CCostedOptionCompanionCtor)
+  implicit final def unrefCCostedOptionCompanion(p: Ref[CCostedOptionCompanionCtor]): CCostedOptionCompanionCtor = {
     if (p.node.isInstanceOf[CCostedOptionCompanionCtor])
       p.node.asInstanceOf[CCostedOptionCompanionCtor]
     else
@@ -80,7 +79,7 @@ object CCostedOption extends EntityObject("CCostedOption") {
 
   implicit case object CCostedOptionCompanionElem extends CompanionElem[CCostedOptionCompanionCtor]
 
-  implicit def unrefCCostedOption[T](p: Ref[CCostedOption[T]]): CCostedOption[T] = {
+  implicit final def unrefCCostedOption[T](p: Ref[CCostedOption[T]]): CCostedOption[T] = {
     if (p.node.isInstanceOf[CCostedOption[T]@unchecked])
       p.node.asInstanceOf[CCostedOption[T]]
     else
@@ -99,6 +98,12 @@ object CCostedOption extends EntityObject("CCostedOption") {
   }
 } // of object CCostedOption
   registerEntityObject("CCostedOption", CCostedOption)
+
+  override def resetContext(): Unit = {
+    super.resetContext()
+
+    RCCostedOption.reset()
+  }
 
   registerModule(CostedOptionsModule)
 }

@@ -64,6 +64,27 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
   }.ensuring(_ >= 0, s"Negative at $h")
 
 
+  /*
+block 0 in 0 ms, 2430000000000 coins remain, defs: 0
+block 0 in 41 ms, 2430000000000 coins remain
+block 100 in 1292 ms, 2280000000000 coins remain, defs: 61661
+block 200 in 965 ms, 2130000000000 coins remain, defs: 61661
+block 300 in 991 ms, 1980000000000 coins remain, defs: 61661
+block 400 in 842 ms, 1830000000000 coins remain, defs: 61661
+block 500 in 833 ms, 1680000000000 coins remain, defs: 61661
+block 600 in 788 ms, 1530000000000 coins remain, defs: 61661
+block 700 in 903 ms, 1380000000000 coins remain, defs: 61661
+block 800 in 789 ms, 1230000000000 coins remain, defs: 61661
+block 900 in 774 ms, 1080000000000 coins remain, defs: 61661
+block 1000 in 753 ms, 930000000000 coins remain, defs: 61661
+block 1000 in 8889 ms, 930000000000 coins remain
+block 1100 in 764 ms, 780000000000 coins remain, defs: 61661
+block 1200 in 886 ms, 630000000000 coins remain, defs: 61661
+block 1300 in 1371 ms, 480000000000 coins remain, defs: 61661
+block 1400 in 1908 ms, 330000000000 coins remain, defs: 61661
+block 1500 in 1626 ms, 180000000000 coins remain, defs: 61661
+block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
+  */
   property("emission specification") {
     val register = reg1
     val prover = new ContextEnrichingTestProvingInterpreter()

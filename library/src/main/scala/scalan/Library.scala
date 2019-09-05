@@ -35,7 +35,7 @@ trait Library extends Scalan
     _liftElemMemo(eT).asInstanceOf[Ref[WRType[T]]]  // asRep cannot be used for AnyRef
   }
 
-  private val _specialPredef: LazyRep[WSpecialPredefCompanionCtor] = MutableLazy(RWSpecialPredef)
+  private val _specialPredef: LazyRep[WSpecialPredefCompanionCtor] = MutableLazy(RWSpecialPredef.value)
   def specialPredef: Ref[WSpecialPredefCompanionCtor] = _specialPredef.value
 
   override protected def onReset(): Unit = {

@@ -130,7 +130,41 @@ class CollsStagingTests extends WrappersTests {
     runMeasure(1000, "noAlpha", false, true, true)
     runMeasure(1000, "noAlpha_noKeepOrig", false, false, true)
   }
-
+/*
+runMeasure(noAlpha_noKeepOrig, alphaEq = false, keepOrig = false, unfoldWithOrig = true)
+Iter 0: 1222 ms
+Iter 1: 653 ms
+Iter 2: 588 ms
+Iter 3: 300 ms
+Iter 4: 327 ms
+Iter 5: 469 ms
+Iter 6: 346 ms
+Iter 7: 372 ms
+Iter 8: 350 ms
+Iter 9: 220 ms
+Total time: 4847 ms
+Defs: 220004
+Iter 0: 845 ms
+Defs: 220005
+Iter 1: 580 ms
+Defs: 225005
+Iter 2: 491 ms
+Defs: 226671
+Iter 3: 620 ms
+Defs: 227505
+Iter 4: 405 ms
+Defs: 228005
+Iter 5: 558 ms
+Defs: 228338
+Iter 6: 530 ms
+Defs: 228576
+Iter 7: 418 ms
+Defs: 228755
+Iter 8: 426 ms
+Defs: 228893
+Iter 9: 533 ms
+Total time: 5406 ms
+*/
   test("invokeTransformedAdapterMethodCall") {
     val ctx = new Ctx {
       useAlphaEquality = true

@@ -27,7 +27,7 @@ object Coll extends EntityObject("Coll") {
         lA: Liftable[SA, A]
       ) extends LiftedConst[SColl[SA], Coll[A]] with Coll[A]
         with Def[Coll[A]] with CollConstMethods[A] {
-    implicit def eA: Elem[A] = lA.eW
+    implicit final def eA: Elem[A] = lA.eW
 
     val liftable: Liftable[SColl[SA], Coll[A]] = liftableColl(lA)
     val resultType: Elem[Coll[A]] = liftable.eW
@@ -306,7 +306,7 @@ implicit val eV = proj.elem.eRange
       case _ => unliftError(w)
     }
   }
-  implicit def liftableColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SColl[SA], Coll[A]] =
+  implicit final def liftableColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SColl[SA], Coll[A]] =
     LiftableColl(lA)
 
   private val CollClass = classOf[Coll[_]]
@@ -578,14 +578,14 @@ implicit val eV = proj.elem.eRange
   // entityUnref: single unref method for each type family
   val createCollAdapter: Ref[Coll[Any]] => Coll[Any] = x => CollAdapter(x)
 
-  implicit def unrefColl[A](p: Ref[Coll[A]]): Coll[A] = {
+  implicit final def unrefColl[A](p: Ref[Coll[A]]): Coll[A] = {
     val sym = p.asInstanceOf[SingleRef[Coll[A]]]
     sym.getAdapter(
       p.node.isInstanceOf[Coll[A]@unchecked],
       createCollAdapter.asInstanceOf[Ref[Coll[A]] => Coll[A]])
   }
 
-  implicit def castCollElement[A](elem: Elem[Coll[A]]): CollElem[A, Coll[A]] =
+  implicit final def castCollElement[A](elem: Elem[Coll[A]]): CollElem[A, Coll[A]] =
     elem.asInstanceOf[CollElem[A, Coll[A]]]
 
   implicit lazy val containerColl: Functor[Coll] = new Functor[Coll] {
@@ -618,7 +618,7 @@ implicit val eV = proj.elem.eRange
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
   }
 
-  implicit def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =
+  implicit final def collElement[A](implicit eA: Elem[A]): Elem[Coll[A]] =
     cachedElemByClass(eA)(classOf[CollElem[A, Coll[A]]])
 
   implicit case object CollCompanionElem extends CompanionElem[CollCompanionCtor]
@@ -627,12 +627,12 @@ implicit val eV = proj.elem.eRange
     def resultType = CollCompanionElem
     override def toString = "Coll"
   }
-  implicit def unrefCollCompanionCtor(p: Ref[CollCompanionCtor]): CollCompanionCtor =
+  implicit final def unrefCollCompanionCtor(p: Ref[CollCompanionCtor]): CollCompanionCtor =
     p.node.asInstanceOf[CollCompanionCtor]
 
-  lazy val RColl: Ref[CollCompanionCtor] = new CollCompanionCtor {
+  lazy val RColl: MutableLazy[CollCompanionCtor] = MutableLazy(new CollCompanionCtor {
     private val thisClass = classOf[CollCompanion]
-  }
+  })
 
   // manual fix: ViewColl
 
@@ -1310,7 +1310,7 @@ implicit val eV = proj.elem.eRange
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefPairColl[L, R](p: Ref[PairColl[L, R]]): PairColl[L, R] = {
+  implicit final def unrefPairColl[L, R](p: Ref[PairColl[L, R]]): PairColl[L, R] = {
     if (p.node.isInstanceOf[PairColl[L, R]@unchecked]) p.node.asInstanceOf[PairColl[L, R]]
     else
       PairCollAdapter(p)
@@ -1326,7 +1326,7 @@ implicit val eV = proj.elem.eRange
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("L" -> (eL -> scalan.util.Invariant), "R" -> (eR -> scalan.util.Invariant))
   }
 
-  implicit def pairCollElement[L, R](implicit eL: Elem[L], eR: Elem[R]): Elem[PairColl[L, R]] =
+  implicit final def pairCollElement[L, R](implicit eL: Elem[L], eR: Elem[R]): Elem[PairColl[L, R]] =
     cachedElemByClass(eL, eR)(classOf[PairCollElem[L, R, PairColl[L, R]]])
 
   implicit case object PairCollCompanionElem extends CompanionElem[PairCollCompanionCtor]
@@ -1335,12 +1335,12 @@ implicit val eV = proj.elem.eRange
     def resultType = PairCollCompanionElem
     override def toString = "PairColl"
   }
-  implicit def unrefPairCollCompanionCtor(p: Ref[PairCollCompanionCtor]): PairCollCompanionCtor =
+  implicit final def unrefPairCollCompanionCtor(p: Ref[PairCollCompanionCtor]): PairCollCompanionCtor =
     p.node.asInstanceOf[PairCollCompanionCtor]
 
-  lazy val RPairColl: Ref[PairCollCompanionCtor] = new PairCollCompanionCtor {
+  lazy val RPairColl: MutableLazy[PairCollCompanionCtor] = MutableLazy(new PairCollCompanionCtor {
     private val thisClass = classOf[PairCollCompanion]
-  }
+  })
 
   object PairCollMethods {
     object ls {
@@ -1399,7 +1399,7 @@ object ReplColl extends EntityObject("ReplColl") {
         lA: Liftable[SA, A]
       ) extends LiftedConst[SReplColl[SA], ReplColl[A]] with ReplColl[A]
         with Def[ReplColl[A]] with ReplCollConstMethods[A] {
-    implicit def eA: Elem[A] = lA.eW
+    implicit final def eA: Elem[A] = lA.eW
 
     val liftable: Liftable[SReplColl[SA], ReplColl[A]] = liftableReplColl(lA)
     val resultType: Elem[ReplColl[A]] = liftable.eW
@@ -1445,7 +1445,7 @@ object ReplColl extends EntityObject("ReplColl") {
       case _ => unliftError(w)
     }
   }
-  implicit def liftableReplColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SReplColl[SA], ReplColl[A]] =
+  implicit final def liftableReplColl[SA, A](implicit lA: Liftable[SA,A]): Liftable[SReplColl[SA], ReplColl[A]] =
     LiftableReplColl(lA)
 
   private val ReplCollClass = classOf[ReplColl[_]]
@@ -1722,7 +1722,7 @@ implicit val eV = proj.elem.eRange
   }
 
   // entityUnref: single unref method for each type family
-  implicit def unrefReplColl[A](p: Ref[ReplColl[A]]): ReplColl[A] = {
+  implicit final def unrefReplColl[A](p: Ref[ReplColl[A]]): ReplColl[A] = {
     if (p.node.isInstanceOf[ReplColl[A]@unchecked]) p.node.asInstanceOf[ReplColl[A]]
     else
       ReplCollAdapter(p)
@@ -1746,7 +1746,7 @@ implicit val eV = proj.elem.eRange
     override def buildTypeArgs = super.buildTypeArgs ++ TypeArgs("A" -> (eA -> scalan.util.Invariant))
   }
 
-  implicit def replCollElement[A](implicit eA: Elem[A]): Elem[ReplColl[A]] =
+  implicit final def replCollElement[A](implicit eA: Elem[A]): Elem[ReplColl[A]] =
     cachedElemByClass(eA)(classOf[ReplCollElem[A, ReplColl[A]]])
 
   implicit case object ReplCollCompanionElem extends CompanionElem[ReplCollCompanionCtor]
@@ -1755,12 +1755,12 @@ implicit val eV = proj.elem.eRange
     def resultType = ReplCollCompanionElem
     override def toString = "ReplColl"
   }
-  implicit def unrefReplCollCompanionCtor(p: Ref[ReplCollCompanionCtor]): ReplCollCompanionCtor =
+  implicit final def unrefReplCollCompanionCtor(p: Ref[ReplCollCompanionCtor]): ReplCollCompanionCtor =
     p.node.asInstanceOf[ReplCollCompanionCtor]
 
-  lazy val RReplColl: Ref[ReplCollCompanionCtor] = new ReplCollCompanionCtor {
+  lazy val RReplColl: MutableLazy[ReplCollCompanionCtor] = MutableLazy(new ReplCollCompanionCtor {
     private val thisClass = classOf[ReplCollCompanion]
-  }
+  })
 
   object ReplCollMethods {
     object value {
@@ -1990,7 +1990,7 @@ implicit val eO = l.elem.eRange
   // entityUnref: single unref method for each type family
   val createCollBuilderAdapter: Ref[CollBuilder] => CollBuilder = x => CollBuilderAdapter(x)
 
-  implicit def unrefCollBuilder(p: Ref[CollBuilder]): CollBuilder =
+  implicit final def unrefCollBuilder(p: Ref[CollBuilder]): CollBuilder =
     p.asInstanceOf[SingleRef[CollBuilder]].getAdapter(
       p.node.isInstanceOf[CollBuilder],
       createCollBuilderAdapter.asInstanceOf[Ref[CollBuilder] => CollBuilder])
@@ -2017,12 +2017,12 @@ implicit val eO = l.elem.eRange
     def resultType = CollBuilderCompanionElem
     override def toString = "CollBuilder"
   }
-  implicit def unrefCollBuilderCompanionCtor(p: Ref[CollBuilderCompanionCtor]): CollBuilderCompanionCtor =
+  implicit final def unrefCollBuilderCompanionCtor(p: Ref[CollBuilderCompanionCtor]): CollBuilderCompanionCtor =
     p.node.asInstanceOf[CollBuilderCompanionCtor]
 
-  lazy val RCollBuilder: Ref[CollBuilderCompanionCtor] = new CollBuilderCompanionCtor {
+  lazy val RCollBuilder: MutableLazy[CollBuilderCompanionCtor] = MutableLazy(new CollBuilderCompanionCtor {
     private val thisClass = classOf[CollBuilderCompanion]
-  }
+  })
 
   object CollBuilderMethods {
     object Monoids {
@@ -2120,6 +2120,14 @@ implicit val eO = l.elem.eRange
   }
 } // of object CollBuilder
   registerEntityObject("CollBuilder", CollBuilder)
+
+  override def resetContext(): Unit = {
+    super.resetContext()
+    RColl.reset()
+    RPairColl.reset()
+    RReplColl.reset()
+    RCollBuilder.reset()
+  }
 
   registerModule(CollsModule)
 }
