@@ -3,7 +3,6 @@ package sigmastate.verification.contract
 import stainless.annotation._
 import stainless.lang._
 import Helpers._
-import sigmastate.verification.SigmaDsl.Coll
 import sigmastate.verification.SigmaDsl.api._
 import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaContract, SigmaDslBuilder, SigmaProp}
@@ -54,7 +53,7 @@ sealed abstract class ICOContract extends SigmaContract {
     val proof = getVar[Coll[Byte]](1).get
     val toAdd: Coll[(Coll[Byte], Coll[Byte])] = INPUTS.slice(1, inputsCount).map({ (b: Box) =>
       // TODO avoid getOrElse
-      val pk = b.R4[Coll[Byte]].getOrElse(Coll.empty[Byte])
+      val pk = b.R4[Coll[Byte]].getOrElse(Coll[Byte]())
       val value = longToByteArray(b.value)
       (pk, value)
     })
@@ -94,7 +93,7 @@ sealed abstract class ICOContract extends SigmaContract {
         SELF.R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree].isDefined &&
         OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
-          val pk = b.R4[Coll[Byte]].getOrElse(Coll.empty)
+          val pk = b.R4[Coll[Byte]].getOrElse(Coll[Byte]())
           val value = longToByteArray(b.value)
           (pk, value)
         }), getVar[Coll[Byte]](1).get) &&
@@ -168,8 +167,6 @@ sealed abstract class ICOContract extends SigmaContract {
     projectPubKey.isValid && treeIsCorrect && valuePreserved && stateChanged
   }
 
-  // TODO restore
-  @ignore
   def ICOWithdrawalContract(ctx: Context): Boolean = {
     import ctx._
 
@@ -192,16 +189,16 @@ sealed abstract class ICOContract extends SigmaContract {
 
     val tokenId: Coll[Byte] = SELF.R4[Coll[Byte]].get
 
-    val withdrawals: Coll[(Coll[Byte], Long)] = withdrawIndexes.flatMap({ (idx: Int) =>
+    val withdrawals: Coll[(Coll[Byte], Long)] = withdrawIndexes.map({ (idx: Int) =>
       if (idx >= 0 && idx < OUTPUTS.length) {
         val b = OUTPUTS(idx)
         if (b.tokens.nonEmpty && b.tokens(0)._1 == tokenId) {
-          Coll((blake2b256(b.propositionBytes), b.tokens(0)._2))
+          (blake2b256(b.propositionBytes), b.tokens(0)._2)
         } else {
-          Coll((blake2b256(b.propositionBytes), 0L))
+          (blake2b256(b.propositionBytes), 0L)
         }
       } else {
-        Coll.empty[(Coll[Byte], Long)]
+        (Coll[Byte](), 0L)
       }
     })
 
@@ -216,7 +213,7 @@ sealed abstract class ICOContract extends SigmaContract {
     val initialTree = SELF.R5[AvlTree].get
 
     // TODO: proper option handling
-    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(Coll.empty[Byte])) })
+    val removedValues = initialTree.getMany(toRemove, lookupProof).map({ (o: Option[Coll[Byte]]) => byteArrayToLong(o.getOrElse(Coll[Byte]())) })
     val valuesCorrect = removedValues == withdrawValues
 
     val modifiedTree = initialTree.remove(toRemove, removeProof)
