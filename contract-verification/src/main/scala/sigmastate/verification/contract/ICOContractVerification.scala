@@ -2,35 +2,11 @@ package sigmastate.verification.contract
 
 import stainless.annotation._
 import stainless.lang._
-import Helpers._
 import sigmastate.verification.SigmaDsl.api._
 import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.SigmaDsl.api.sigma.{AvlTree, Box, Context, SigmaContract, SigmaDslBuilder, SigmaProp}
 
 import scala.language.implicitConversions
-
-@library
-object Helpers {
-
-  // TODO extract
-  @extern @pure
-  implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
-
-  @extern @pure
-  implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = ???
-
-  @extern @pure
-  implicit def ByteType: RType[Byte] = ???
-
-  @extern @pure
-  implicit def IntType: RType[Int] = ???
-
-  @extern @pure
-  implicit def LongType: RType[Long] = ???
-
-  @extern @pure
-  implicit def AvlTreeRType: RType[AvlTree] = ???
-}
 
 sealed abstract class ICOContract extends SigmaContract {
 
@@ -80,49 +56,6 @@ sealed abstract class ICOContract extends SigmaContract {
 
     selfIndexIsZero && outputsCorrect && properTreeModification
   }
-
-  def proveICOFundingContractForHeightAbove2000(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
-    import ctx._
-    require(
-      HEIGHT > 0 &&
-        INPUTS.length > 1 &&
-        OUTPUTS.length == 2 &&
-        INPUTS(0).id == SELF.id &&
-        getVar[Coll[Byte]](1).isDefined &&
-        INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
-        SELF.R5[AvlTree].isDefined &&
-        OUTPUTS(0).R5[AvlTree].isDefined &&
-        OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
-          val pk = b.R4[Coll[Byte]].getOrElse(Coll[Byte]())
-          val value = longToByteArray(b.value)
-          (pk, value)
-        }), getVar[Coll[Byte]](1).get) &&
-        HEIGHT >= 2000 &&
-        blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash &&
-        OUTPUTS(1).value <= 1 &&
-        OUTPUTS(1).propositionBytes == feeBytes
-    )
-
-    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
-  }.holds
-
-  def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
-    import ctx._
-    require(HEIGHT > 0 &&
-      OUTPUTS.nonEmpty &&
-      INPUTS.length > 1 &&
-      getVar[Coll[Byte]](1).isDefined &&
-      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
-      SELF.R5[AvlTree].isDefined &&
-      OUTPUTS(0).R5[AvlTree].isDefined &&
-
-      // reason to fail
-      INPUTS(0).id != SELF.id
-    )
-
-    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
-  } ensuring (_ == false)
-
 
   def ICOIssuanceContract(ctx: Context, nextStageScriptHash: Coll[Byte], projectPubKey: SigmaProp): Boolean = {
     import ctx._
@@ -260,4 +193,48 @@ case object ICOContractVerification extends ICOContract {
 
   @extern
   override def canOpen(ctx: Context): Boolean = ???
+
+  def proveICOFundingContractForHeightAbove2000(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
+    import ctx._
+    require(
+      HEIGHT > 0 &&
+        INPUTS.length > 1 &&
+        OUTPUTS.length == 2 &&
+        INPUTS(0).id == SELF.id &&
+        getVar[Coll[Byte]](1).isDefined &&
+        INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
+        SELF.R5[AvlTree].isDefined &&
+        OUTPUTS(0).R5[AvlTree].isDefined &&
+        OUTPUTS(0).R5[AvlTree] == SELF.R5[AvlTree].get.insert(INPUTS.slice(1, INPUTS.length).map({ (b: Box) =>
+          val pk = b.R4[Coll[Byte]].getOrElse(Coll[Byte]())
+          val value = longToByteArray(b.value)
+          (pk, value)
+        }), getVar[Coll[Byte]](1).get) &&
+        HEIGHT >= 2000 &&
+        blake2b256(OUTPUTS(0).propositionBytes) == nextStageScriptHash &&
+        OUTPUTS(1).value <= 1 &&
+        OUTPUTS(1).propositionBytes == feeBytes
+    )
+
+    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
+    }.holds
+
+  def failICOFundingSelfIndexNotZero(ctx: Context, nextStageScriptHash: Coll[Byte], feeBytes: Coll[Byte]): Boolean = {
+    import ctx._
+    require(HEIGHT > 0 &&
+      OUTPUTS.nonEmpty &&
+      INPUTS.length > 1 &&
+      getVar[Coll[Byte]](1).isDefined &&
+      INPUTS.slice(1, INPUTS.length).forall({ (b: Box) => b.R4[Coll[Byte]].isDefined }) &&
+      SELF.R5[AvlTree].isDefined &&
+      OUTPUTS(0).R5[AvlTree].isDefined &&
+
+      // reason to fail
+      INPUTS(0).id != SELF.id
+    )
+
+    ICOFundingContract(ctx, nextStageScriptHash, feeBytes)
+  } ensuring (_ == false)
+
+
 }
