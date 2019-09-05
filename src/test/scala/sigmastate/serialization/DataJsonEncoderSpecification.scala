@@ -100,6 +100,19 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
           |    "_2": [10, 20, 30]
           |  }
           |}""".stripMargin)
+    toUnifiedString(
+      DataJsonEncoder.encode(SigmaDsl.Colls.pairColl(
+        SigmaDsl.Colls.fromItems(1, 2, 3),
+        SigmaDsl.Colls.fromItems(10, 20, 30)
+      ).asWrappedType, SCollectionType(STuple(SInt, SInt))).toString()) shouldBe
+      toUnifiedString(
+        """
+          |{ "type": "Coll[(Int, Int)]",
+          |  "value": {
+          |    "_1": [1, 2, 3],
+          |    "_2": [10, 20, 30]
+          |  }
+          |}""".stripMargin)
     toUnifiedString(DataJsonEncoder.encode((SigmaDsl.Colls.fromItems((1, SigmaDsl.Colls.replicate(3, 1.toByte)), (2, SigmaDsl.Colls.replicate(2, 2.toByte)), (3, SigmaDsl.Colls.replicate(1, 3.toByte)), (4, SigmaDsl.Colls.replicate(0, 4.toByte))), 100.toLong).asWrappedType,
       STuple(SCollectionType(STuple(SInt, SCollectionType(SByte))), SLong)).toString()) shouldBe
       toUnifiedString(
