@@ -114,10 +114,10 @@ object DataJsonEncoder {
       DataSerializer.serialize(v, tpe, w)
       encodeBytes(w.toBytes)
     case SBox =>
-      val ergoBox = boxToErgoBox(v.asInstanceOf[Box])
+      val ergoBox = v.asInstanceOf[Box]
       var obj = mutable.MutableList.empty[(String, Json)]
       obj += ("value" -> encodeData(ergoBox.value.asInstanceOf[SType#WrappedType], SLong))
-      obj += ("tree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
+      obj += ("ergoTree" -> encodeBytes(ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(ergoBox.ergoTree)))
       obj += "tokens" -> encodeData(ergoBox.additionalTokens.map { case (id, amount) =>
         (Colls.fromArray(id), amount)
       }.asInstanceOf[SType#WrappedType], SCollectionType(STuple(SCollectionType(SByte), SLong)))
@@ -185,7 +185,7 @@ object DataJsonEncoder {
         DataSerializer.deserialize(SSigmaProp, r)
       case SBox =>
         val value = decodeData(json.hcursor.downField(s"value").focus.get, SLong)
-        val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(decodeBytes(json.hcursor.downField(s"tree").focus.get))
+        val tree = ErgoTreeSerializer.DefaultSerializer.deserializeErgoTree(decodeBytes(json.hcursor.downField(s"ergoTree").focus.get))
         val tokens = decodeData(json.hcursor.downField(s"tokens").focus.get, SCollectionType(STuple(SCollectionType(SByte), SLong))).asInstanceOf[Coll[(Coll[Byte], Long)]].map {
           v =>
             val tup = v.asInstanceOf[(Coll[Byte], Long)]
