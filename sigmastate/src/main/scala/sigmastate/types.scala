@@ -521,9 +521,10 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
-  protected def property(name: String, tpeRes: SType, id: Byte) =
+  protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
-        .withIRInfo(MethodCallIrBuilder)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(PropertyCall, "")
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -750,7 +751,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
     SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
         .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree."),
     SMethod(this, IsProven, SFunc(this, SBoolean), 2)
-        .withInfo(null, // available only at frontend of ErgoScript
+        .withInfo(SigmaPropIsProven, // available only at frontend of ErgoScript
           "Verify that sigma proposition is proven.")
   )
 }
@@ -1564,6 +1565,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9)
   val minerPubKeyMethod = property("minerPubKey", SByteArray, 10)
   val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
+    .withInfo(GetVar, "")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
@@ -1683,12 +1685,14 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
 
   val tT = STypeVar("T")
   val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
-      .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
-      .withInfo(GroupGenerator, "")
+    .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
+    .withInfo(GroupGenerator, "")
   val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
-      .withIRInfo({
+    .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
-      })
+    })
+    .withInfo(Xor, "")
+
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,
     xorMethod
