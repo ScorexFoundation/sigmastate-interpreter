@@ -1691,7 +1691,6 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })
-    .withInfo(Xor, "")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,
