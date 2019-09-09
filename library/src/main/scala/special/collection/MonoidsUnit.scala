@@ -12,12 +12,7 @@ package special.collection {
     };
     @WithMethodCallRecognizers trait MonoidBuilder extends Def[MonoidBuilder] {
       def intPlusMonoid: Ref[Monoid[Int]];
-      def intMaxMonoid: Ref[Monoid[Int]];
-      def intMinMonoid: Ref[Monoid[Int]];
       def longPlusMonoid: Ref[Monoid[Long]];
-      def longMaxMonoid: Ref[Monoid[Long]];
-      def longMinMonoid: Ref[Monoid[Long]];
-      def pairMonoid[A, B](m1: Ref[Monoid[A]], m2: Ref[Monoid[B]]): Ref[Monoid[scala.Tuple2[A, B]]]
     };
     trait MonoidCompanion;
     trait MonoidBuilderCompanion
