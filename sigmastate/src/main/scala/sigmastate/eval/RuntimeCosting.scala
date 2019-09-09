@@ -784,7 +784,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   private val _costedBuilder: LazyRep[CostedBuilder] = MutableLazy(RCCostedBuilder())
   @inline def costedBuilder: Ref[CostedBuilder] = _costedBuilder.value
 
-  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(variable[MonoidBuilder])
+  private val _monoidBuilder: LazyRep[MonoidBuilder] = MutableLazy(costedBuilder.monoidBuilder)
   @inline def monoidBuilder: Ref[MonoidBuilder] = _monoidBuilder.value
 
   private val _intPlusMonoid: LazyRep[Monoid[Int]] = MutableLazy(monoidBuilder.intPlusMonoid)

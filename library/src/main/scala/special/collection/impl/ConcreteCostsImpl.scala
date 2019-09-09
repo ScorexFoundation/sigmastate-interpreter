@@ -31,6 +31,7 @@ import CostedOption._
 import CostedPair._
 import CostedPrim._
 import MonoidBuilder._
+import MonoidBuilderInst._
 import Size._
 import SizeColl._
 import SizeFunc._
@@ -391,13 +392,6 @@ object CCostedBuilder extends EntityObject("CCostedBuilder") {
     lazy val resultType = element[CCostedBuilder]
     override def transform(t: Transformer) = CCostedBuilderCtor()
     private val thisClass = classOf[CostedBuilder]
-
-    override def monoidBuilder: Ref[MonoidBuilder] = {
-      asRep[MonoidBuilder](mkMethodCall(self,
-        thisClass.getMethod("monoidBuilder"),
-        WrappedArray.empty,
-        true, false, element[MonoidBuilder]))
-    }
 
     override def costedValue[T](x: Ref[T], optCost: Ref[WOption[Int]]): Ref[Costed[T]] = {
       implicit val eT = x.elem

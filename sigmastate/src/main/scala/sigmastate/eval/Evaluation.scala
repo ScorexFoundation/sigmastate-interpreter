@@ -182,6 +182,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     case _: OpCost => OpCostCode
     case _: PerKbCostOf => PerKbCostOfCode
     case _: Cast[_] => CastCode
+    case _: IntPlusMonoid => IntPlusMonoidCode
     case _: ThunkDef[_] => ThunkDefCode
     case _: ThunkForce[_] => ThunkForceCode
     case MBM.intPlusMonoid(_) => IntPlusMonoidCode  // TODO no HF proof
@@ -649,6 +650,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
 
           case _: SigmaDslBuilder | _: CollBuilder | _: CostedBuilder |
                _: WSpecialPredefCompanion |
+               _: IntPlusMonoid | _: LongPlusMonoid |
                MBM.intPlusMonoid(_) | MBM.longPlusMonoid(_) => // TODO no HF proof
             out(dataEnv.getOrElse(sym, !!!(s"Cannot resolve companion instance for $sym -> ${sym.node}")))
 

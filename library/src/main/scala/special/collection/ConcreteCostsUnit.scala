@@ -22,6 +22,7 @@ package special.collection {
     import CostedPair._;
     import CostedPrim._;
     import MonoidBuilder._;
+    import MonoidBuilderInst._;
     import Size._;
     import SizeColl._;
     import SizeFunc._;
@@ -76,7 +77,7 @@ package special.collection {
       @NeverInline def foldCosted[B](zero: Ref[Costed[B]], op: Ref[scala.Function1[Costed[scala.Tuple2[B, Item]], Costed[B]]]): Ref[Costed[B]] = delayInvoke
     };
     abstract class CCostedBuilder extends CostedBuilder {
-      @NeverInline def monoidBuilder: Ref[MonoidBuilder] = delayInvoke;
+      def monoidBuilder: Ref[MonoidBuilder] = RMonoidBuilderInst();
       @NeverInline def costedValue[T](x: Ref[T], optCost: Ref[WOption[Int]]): Ref[Costed[T]] = delayInvoke;
       @NeverInline def defaultValue[T](valueType: Ref[WRType[T]]): Ref[T] = delayInvoke;
       def mkSizePrim[T](dataSize: Ref[Long], tT: Ref[WRType[T]]): Ref[SizePrim[T]] = RCSizePrim(dataSize, tT);

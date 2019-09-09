@@ -13,6 +13,7 @@ trait Library extends Scalan
   with ConcreteSizesModule
   with ConcreteCostsModule
   with MonoidsModule
+  with MonoidInstancesModule
   with CostedOptionsModule {
   import WOption._
   import WRType._
