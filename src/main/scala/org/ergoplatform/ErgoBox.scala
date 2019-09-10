@@ -2,20 +2,20 @@ package org.ergoplatform
 
 import com.google.common.primitives.Shorts
 import org.ergoplatform.ErgoBox.{NonMandatoryRegisterId, TokenId}
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.util.encode.Base16
-import scorex.crypto.hash.{Digest32, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.util._
-import sigmastate.Values._
-import sigmastate.SType.AnyOps
-import sigmastate._
-import sigmastate.serialization.SigmaSerializer
 import sigmastate.SCollection.SByteArray
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter, Helpers}
+import sigmastate.SType.AnyOps
+import sigmastate.Values._
+import sigmastate._
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
+import sigmastate.serialization.SigmaSerializer
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ExtractCreationInfo
 import special.collection._
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
 
 import scala.runtime.ScalaRunTime
 
@@ -46,12 +46,13 @@ import scala.runtime.ScalaRunTime
   * @param creationHeight      - height when a transaction containing the box was created.
   *                            This height is declared by user and should not exceed height of the block,
   *                            containing the transaction with this box.
+  * @hotspot don't beautify the code of this class
   */
 class ErgoBox(
          override val value: Long,
          override val ergoTree: ErgoTree,
          override val additionalTokens: Coll[(TokenId, Long)] = Colls.emptyColl[(TokenId, Long)],
-         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+         override val additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
          val transactionId: ModifierId,
          val index: Short,
          override val creationHeight: Int
@@ -83,8 +84,8 @@ class ErgoBox(
   def toCandidate: ErgoBoxCandidate =
     new ErgoBoxCandidate(value, ergoTree, creationHeight, additionalTokens, additionalRegisters)
 
-  override def toString: Idn = s"ErgoBox(${Base16.encode(id)},$value,$ergoTree," +
-    s"tokens: (${additionalTokens.map(t => Base16.encode(t._1) + ":" + t._2)}), $transactionId, " +
+  override def toString: String = s"ErgoBox(${ErgoAlgos.encode(id)},$value,$ergoTree," +
+    s"tokens: (${additionalTokens.map(t => ErgoAlgos.encode(t._1) + ":" + t._2)}), $transactionId, " +
     s"$index, $additionalRegisters, $creationHeight)"
 }
 
@@ -99,7 +100,7 @@ object ErgoBox {
     val size: Short = 32
   }
 
-  val MaxBoxSize: Int = ErgoConstants.MaxBoxSize.value
+  val MaxBoxSize: Int = SigmaConstants.MaxBoxSize.value
 
   val STokenType = STuple(SByteArray, SLong)
   val STokensRegType = SCollection(STokenType)
@@ -133,30 +134,43 @@ object ErgoBox {
   val TokensRegId: MandatoryRegisterId = R2
   val ReferenceRegId: MandatoryRegisterId = R3
 
-  val MaxTokens: Int = ErgoConstants.MaxTokens.value
+  val MaxTokens: Int = SigmaConstants.MaxTokens.value
 
-  val maxRegisters: Int = ErgoConstants.MaxRegisters.value
-  val mandatoryRegisters: Vector[MandatoryRegisterId] = Vector(R0, R1, R2, R3)
-  val nonMandatoryRegisters: Vector[NonMandatoryRegisterId] = Vector(R4, R5, R6, R7, R8, R9)
+  val maxRegisters: Int = SigmaConstants.MaxRegisters.value
+
+  /** @hotspot don't beautify the code in this companion */
+  private val _mandatoryRegisters: Array[MandatoryRegisterId] = Array(R0, R1, R2, R3)
+  val mandatoryRegisters: Seq[MandatoryRegisterId] = _mandatoryRegisters
+
+  private val _nonMandatoryRegisters: Array[NonMandatoryRegisterId] = Array(R4, R5, R6, R7, R8, R9)
+  val nonMandatoryRegisters: Seq[NonMandatoryRegisterId] = _nonMandatoryRegisters
+
   val startingNonMandatoryIndex: Byte = nonMandatoryRegisters.head.number
     .ensuring(_ == mandatoryRegisters.last.number + 1)
 
-  val allRegisters: Vector[RegisterId] = (mandatoryRegisters ++ nonMandatoryRegisters).ensuring(_.size == maxRegisters)
+  val allRegisters: Seq[RegisterId] =
+    Helpers.concatArrays[RegisterId](
+      Helpers.castArray(_mandatoryRegisters): Array[RegisterId],
+      Helpers.castArray(_nonMandatoryRegisters): Array[RegisterId]).ensuring(_.length == maxRegisters)
+
   val mandatoryRegistersCount: Byte = mandatoryRegisters.size.toByte
   val nonMandatoryRegistersCount: Byte = nonMandatoryRegisters.size.toByte
 
   val registerByName: Map[String, RegisterId] = allRegisters.map(r => s"R${r.number}" -> r).toMap
-  val registerByIndex: Map[Byte, RegisterId] = allRegisters.map(r => r.number -> r).toMap
 
-  def findRegisterByIndex(i: Byte): Option[RegisterId] = registerByIndex.get(i)
+  /** @hotspot called from ErgoBox serializer */
+  @inline final def registerByIndex(index: Int): RegisterId = allRegisters(index)
+
+  def findRegisterByIndex(i: Int): Option[RegisterId] =
+    if (0 <= i && i < maxRegisters) Some(registerByIndex(i)) else None
 
   val allZerosModifierId: ModifierId = Array.fill[Byte](32)(0.toByte).toModifierId
 
   def apply(value: Long,
             ergoTree: ErgoTree,
             creationHeight: Int,
-            additionalTokens: Seq[(TokenId, Long)] = Seq(),
-            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map(),
+            additionalTokens: Seq[(TokenId, Long)] = Nil,
+            additionalRegisters: Map[NonMandatoryRegisterId, _ <: EvaluatedValue[_ <: SType]] = Map.empty,
             transactionId: ModifierId = allZerosModifierId,
             boxIndex: Short = 0): ErgoBox =
     new ErgoBox(value, ergoTree,
@@ -183,5 +197,4 @@ object ErgoBox {
       ergoBoxCandidate.toBox(transactionId, index.toShort)
     }
   }
-
 }

@@ -43,4 +43,6 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
     }
   }
 
+  def parse(bytes: Array[Byte]): EcPointType = parse(SigmaSerializer.startReader(bytes))
+
 }

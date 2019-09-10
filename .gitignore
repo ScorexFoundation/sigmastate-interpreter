@@ -7,6 +7,7 @@
 *.blg
 *.fls
 *.fdb_latexmk
+*.gz
 
 *.log
 docs/spec/out/
@@ -35,3 +36,6 @@ project/plugins/project/
 
 # ergo's checkout location for integration testing
 ergo-tests/
+
+# spam test's checkout location
+spam-tests/

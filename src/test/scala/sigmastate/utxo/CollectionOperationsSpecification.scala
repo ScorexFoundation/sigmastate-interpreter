@@ -4,7 +4,7 @@ import org.ergoplatform
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import sigmastate.SCollection._
@@ -19,10 +19,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
                       outputs: IndexedSeq[ErgoBox]): ErgoLikeContext =
     {
       val (selfBox, toSpend) = if (boxesToSpend.isEmpty) (fakeSelf, IndexedSeq(fakeSelf)) else (boxesToSpend(0), boxesToSpend)
-      ergoplatform.ErgoLikeContext(
+      ErgoLikeContextTesting(
         currentHeight = 50,
         lastBlockUtxoRoot = AvlTreeData.dummy,
-        minerPubkey = ErgoLikeContext.dummyPubkey,
+        minerPubkey = ErgoLikeContextTesting.dummyPubkey,
         boxesToSpend = toSpend,
         spendingTransaction = createTransaction(outputs),
         self = selfBox)
@@ -97,10 +97,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
@@ -129,10 +129,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
@@ -159,10 +159,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val spendingTransaction = createTransaction(newBoxes)
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction,
       self = fakeSelf)
@@ -199,10 +199,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
@@ -242,10 +242,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(20, TrueProp, 0, Seq(), Map(reg1 -> LongConstant(5)))
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)
@@ -273,10 +273,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
     val s = ErgoBox(21, pubkey, 0)
 
-    val ctx = ErgoLikeContext(
+    val ctx = ErgoLikeContextTesting(
       currentHeight = 50,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(s),
       spendingTransaction,
       self = s)

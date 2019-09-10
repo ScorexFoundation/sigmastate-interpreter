@@ -7,7 +7,7 @@ import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.Values.{ByteArrayConstant, ErgoTree, IntConstant, NotReadyValueInt, Tuple, UnparsedErgoTree, ValueCompanion}
 import sigmastate.eval.Colls
-import sigmastate.helpers.{ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.Terms._
@@ -38,8 +38,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
   val blockHeight = 110
 
   def createContext(h: Int, tx: ErgoLikeTransaction, vs: SigmaValidationSettings) =
-    ErgoLikeContext(h,
-      AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
+    ErgoLikeContextTesting(h,
+      AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
       tx, fakeSelf, vs = vs)
 
   def proveTx(name: String, tx: ErgoLikeTransaction, vs: SigmaValidationSettings): ProverResult = {
@@ -317,7 +317,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     checkRule(CheckCostFuncOperation, v2vs, {
       val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
-      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF)) { }
+      CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF))
     })
   }
 
@@ -333,7 +333,7 @@ class SoftForkabilitySpecification extends SigmaTestingData {
       implicit val anyType = AnyElement
       val v1 = variable[Int]
       val costF = fun[Any, Int] {_ => opCost(v1, Seq(1), 2) }
-      CheckCostFunc(tIR)(asRep[Any => Int](costF)) { }
+      CheckCostFunc(tIR)(asRep[Any => Int](costF))
     })
   }
 }

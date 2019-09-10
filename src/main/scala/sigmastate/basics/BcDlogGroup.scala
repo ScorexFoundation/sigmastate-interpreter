@@ -8,7 +8,7 @@ import org.bouncycastle.math.ec.custom.djb.Curve25519Point
 import org.bouncycastle.math.ec.custom.sec.{SecP256K1Point, SecP384R1Point, SecP521R1Point}
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.util.BigIntegers
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 import scala.util.Try
 
@@ -47,7 +47,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
 
     exponentiations += this.base // add the base - base^1
     val two = new BigInteger("2")
-    (1 until 4).foreach { i =>
+    cfor(1)(_ < 4, _ + 1) { i =>
       exponentiations += exponentiate(exponentiations(i - 1), two)
     }
 
@@ -60,7 +60,7 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     private def prepareExponentiations(size: BigInteger): Unit = { //find log of the number - this is the index of the size-exponent in the exponentiation array
       val index = size.bitLength - 1
       /* calculates the necessary exponentiations and put them in the exponentiations vector */
-      (exponentiations.size to index).foreach { i =>
+      cfor(exponentiations.size)(_ <= index, _ + 1) { i =>
         exponentiations += exponentiate(exponentiations(i - 1), two)
       }
     }
@@ -358,9 +358,9 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
    */
   private def computeLoop(exponentiations: Array[BigInteger], w: Int, h: Int, preComp: Seq[Seq[ElemType]], result: ElemType, bitIndex: Int) = {
     var res = result
-    (0 until h).foreach { k =>
+    cfor(0)(_ < h, _ + 1) { k =>
       var e = 0
-      (k * w until (k * w + w)).foreach { i =>
+      cfor(k * w)(_ < (k * w + w), _ + 1) { i =>
         if (i < exponentiations.length) { //if the bit is set, change the e value
           if (exponentiations(i).testBit(bitIndex)) {
             val twoPow = Math.pow(2, i - k * w).toInt
@@ -381,9 +381,9 @@ abstract class BcDlogGroup[ElemType <: ECPoint](val x9params: X9ECParameters) ex
     //create the pre-computation table of size h*(2^(w))
     val preComp: Seq[mutable.Seq[ElemType]] = Seq.fill(h)(mutable.Seq.fill(twoPowW)(identity))
 
-    (0 until h).foreach { k =>
-      (0 until twoPowW).foreach { e =>
-        (0 until w).foreach { i =>
+    cfor(0)(_ < h, _ + 1) { k =>
+      cfor(0)(_ < twoPowW, _ + 1) { e =>
+        cfor(0)(_ < w, _ + 1) { i =>
           val baseIndex = k * w + i
           if (baseIndex < groupElements.length) {
             val base = groupElements(baseIndex)

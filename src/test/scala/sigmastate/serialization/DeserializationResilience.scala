@@ -2,24 +2,33 @@ package sigmastate.serialization
 
 import java.nio.ByteBuffer
 
-import org.ergoplatform.{Outputs, ErgoBoxCandidate}
 import org.ergoplatform.validation.ValidationException
+import org.ergoplatform.{ErgoBoxCandidate, ErgoLikeContext, Outputs}
 import org.scalacheck.Gen
-import scorex.util.serialization.{VLQByteBufferReader, Reader}
-import sigmastate.Values.{SigmaBoolean, Tuple, SValue, IntConstant}
+import scalan.util.BenchmarkUtil
+import scorex.util.serialization.{Reader, VLQByteBufferReader}
+import sigmastate.Values.{BlockValue, ErgoTree, GetVarInt, IntConstant, SValue, SigmaBoolean, SigmaPropValue, Tuple, ValDef, ValUse}
 import sigmastate._
-import sigmastate.interpreter.CryptoConstants
-import sigmastate.lang.exceptions.{InvalidTypePrefix, SerializerException, InputSizeLimitExceeded, DeserializeCallDepthExceeded}
+import sigmastate.eval.Extensions._
+import sigmastate.eval._
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
+import sigmastate.interpreter.{ContextExtension, CostedProverResult, CryptoConstants}
+import sigmastate.lang.Terms._
+import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitExceeded, InvalidTypePrefix, SerializerException}
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
-import sigmastate.eval._
-import sigmastate.eval.Extensions._
-import sigmastate.helpers.SigmaTestingCommons
 
 import scala.collection.mutable
 
 class DeserializationResilience extends SerializationSpecification with SigmaTestingCommons {
+
+  implicit lazy val IR: TestingIRContext = new TestingIRContext {
+    //    substFromCostTable = false
+    saveGraphsInFile = false
+    //    override val okPrintEvaluatedEntries = true
+  }
 
   private def reader(bytes: Array[Byte], maxTreeDepth: Int): SigmaByteReader = {
     val buf = ByteBuffer.wrap(bytes)
@@ -233,4 +242,40 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
     an[InputSizeLimitExceeded] should be thrownBy
       ErgoBoxCandidate.serializer.parse(SigmaSerializer.startReader(bytes))
   }
+
+  private val recursiveScript: SigmaPropValue = BlockValue(
+    Vector(
+      ValDef(1, Plus(GetVarInt(4).get, ValUse(2, SInt))),
+      ValDef(2, Plus(GetVarInt(5).get, ValUse(1, SInt)))),
+    GE(Minus(ValUse(1, SInt), ValUse(2, SInt)), 0)).asBoolValue.toSigmaProp
+
+  property("recursion caught during deserialization") {
+    assertExceptionThrown({
+      checkSerializationRoundTrip(recursiveScript)
+    },
+      {
+        case e: NoSuchElementException => e.getMessage.contains("key not found: 2")
+        case _ => false
+      })
+  }
+
+  property("recursion caught during verify") {
+    assertExceptionThrown({
+      val verifier = new ErgoLikeTestInterpreter
+      val pr = CostedProverResult(Array[Byte](), ContextExtension(Map()), 0L)
+      val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
+      val (res, calcTime) = BenchmarkUtil.measureTime {
+        verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
+          ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
+      }
+      res.fold(t => throw t, identity)
+    }, {
+      case e: NoSuchElementException =>
+        // this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify
+        e.getMessage.contains("key not found: 2")
+      case _ => false
+    })
+  }
+
+
 }

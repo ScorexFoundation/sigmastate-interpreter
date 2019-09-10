@@ -9,7 +9,7 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -79,10 +79,10 @@ class DHTupleExampleSpecification extends SigmaTestingCommons {
 
     val tx = createTransaction(IndexedSeq(outBox))
 
-    val context = ErgoLikeContext(
+    val context = ErgoLikeContextTesting(
       currentHeight = 70,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(inBox),
       spendingTransaction = tx,
       self = inBox

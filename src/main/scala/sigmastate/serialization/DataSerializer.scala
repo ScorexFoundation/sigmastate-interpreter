@@ -13,7 +13,7 @@ import sigmastate.eval.{Evaluation, _}
 import sigmastate.lang.exceptions.SerializerException
 import special.collection._
 import special.sigma._
-
+import spire.syntax.all.cfor
 import scala.collection.mutable
 
 /** This works in tandem with ConstantSerializer, if you change one make sure to check the other.*/
@@ -49,15 +49,19 @@ object DataSerializer {
     case SAvlTree =>
       AvlTreeData.serializer.serialize(avlTreeToAvlTreeData(v.asInstanceOf[AvlTree]), w)
     case tColl: SCollectionType[a] =>
-      val arr = v.asInstanceOf[tColl.WrappedType]
-      w.putUShort(arr.length)
+      val coll = v.asInstanceOf[tColl.WrappedType]
+      w.putUShort(coll.length)
       tColl.elemType match {
         case SBoolean =>
-          w.putBits(arr.asInstanceOf[Coll[Boolean]].toArray)
+          w.putBits(coll.asInstanceOf[Coll[Boolean]].toArray)
         case SByte =>
-          w.putBytes(arr.asInstanceOf[Coll[Byte]].toArray)
+          w.putBytes(coll.asInstanceOf[Coll[Byte]].toArray)
         case _ =>
-          arr.toArray.foreach(x => serialize(x, tColl.elemType, w))
+          val arr = coll.toArray
+          cfor(0)(_ < arr.length, _ + 1) { i =>
+            val x = arr(i)
+            serialize(x, tColl.elemType, w)
+          }
       }
 
     case t: STuple =>
@@ -118,9 +122,8 @@ object DataSerializer {
         val coll = Colls.fromArray(arr)(RType.AnyType)
         Evaluation.toDslTuple(coll, tuple)
       case t =>
-        CheckSerializableTypeCode(t.typeCode) {
-          throw new SerializerException(s"Not defined DataSerializer for type $t")
-        }
+        CheckSerializableTypeCode(t.typeCode)
+        throw new SerializerException(s"Not defined DataSerializer for type $t")
     }).asInstanceOf[T#WrappedType]
     r.level = r.level - 1
     res

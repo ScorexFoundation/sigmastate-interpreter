@@ -6,7 +6,7 @@ import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.Terms._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import special.collection.Coll
 
 
@@ -31,7 +31,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     )
     compiledScript shouldBe prop
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
     val pr = prover.prove(compiledScript, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -63,7 +63,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     )
     compiledScript shouldBe prop
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
     val pr = prover.prove(compiledScript, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -93,7 +93,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val prop = EQ(Xor(GetVarByteArray(k1).get, GetVarByteArray(k2).get), ByteArrayConstant(r)).toSigmaProp
     compiledScript shouldBe prop
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -124,7 +124,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
     val prop = EQ(CalcBlake2b256(GetVarByteArray(1).get), ByteArrayConstant(Blake2b256(preimage.toArray))).toSigmaProp
     compiledScript shouldBe prop
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)
@@ -152,7 +152,7 @@ class ContextEnrichingSpecification extends SigmaTestingCommons {
       ByteArrayConstant(Blake2b256(preimage2.append(preimage1).toArray))).toSigmaProp
     compiledScript shouldBe prop
 
-    val ctx = ErgoLikeContext.dummy(fakeSelf)
+    val ctx = ErgoLikeContextTesting.dummy(fakeSelf)
     val pr = prover.prove(prop, ctx, fakeMessage).get
 
     val ctxv = ctx.withExtension(pr.extension)

@@ -439,7 +439,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
       {
         val rhs = buildValue(ctx, mainG, curEnv, s, curId, constantsProcessing)
         curId += 1
-        val vd = ValDef(curId, Seq(), rhs)
+        val vd = ValDef(curId, Nil, rhs)
         curEnv = curEnv + (s -> (curId, vd.tpe))  // assign valId to s, so it can be use in ValUse
         valdefs += vd
       }
@@ -454,7 +454,7 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
                             constantsProcessing: Option[ConstantStore] = None): Value[T] = {
     val Def(Lambda(lam,_,_,_)) = f
     val mainG = new PGraph(lam.y)
-    val block = processAstGraph(asRep[Context](lam.x), mainG, Map(), mainG, 0, constantsProcessing)
+    val block = processAstGraph(asRep[Context](lam.x), mainG, Map.empty, mainG, 0, constantsProcessing)
     block.asValue[T]
   }
 }

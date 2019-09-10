@@ -3,19 +3,19 @@ package sigmastate.utxo.blockchain
 import org.ergoplatform.ErgoBox.TokenId
 import org.ergoplatform._
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.{Remove, BatchAVLProver, Insert}
-import scorex.crypto.hash.{Digest32, Blake2b256}
-import sigmastate.{GE, AvlTreeData, AvlTreeFlags, Values}
-import sigmastate.Values.{LongConstant, ErgoTree}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Remove}
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import sigmastate.{AvlTreeData, AvlTreeFlags, GE, Values}
+import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval._
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoTransactionValidator}
+import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
 
 import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
-import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{ValidationState, FullBlock}
+import sigmastate.utxo.blockchain.BlockchainSimulationTestingCommons.{FullBlock, ValidationState}
 
 import scala.annotation.tailrec
 
@@ -51,7 +51,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
         new ErgoBoxCandidate(10, prop, height, Colls.emptyColl[(TokenId, Long)], Map())
       val unsignedInput = new UnsignedInput(box.id)
       val tx = UnsignedErgoLikeTransaction(IndexedSeq(unsignedInput), IndexedSeq(newBoxCandidate))
-      val context = ErgoLikeContext(height + 1,
+      val context = ErgoLikeContextTesting(height + 1,
         state.state.lastBlockUtxoRoot,
         minerPubkey,
         IndexedSeq(box),
@@ -150,7 +150,7 @@ object BlockchainSimulationTestingCommons extends SigmaTestingCommons {
         val boxes = (1 to 50).map(_ => ErgoBox(10, Values.TrueLeaf.toSigmaProp, i, Seq(), Map(), txId))
         createTransaction(boxes)
       },
-      ErgoLikeContext.dummyPubkey
+      ErgoLikeContextTesting.dummyPubkey
     )
 
     def initialState(block: FullBlock = initBlock)(implicit IR: IRContext): ValidationState = {

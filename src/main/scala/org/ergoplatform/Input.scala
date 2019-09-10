@@ -3,18 +3,27 @@ package org.ergoplatform
 import java.util
 
 import org.ergoplatform.ErgoBox.BoxId
+import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.authds.ADKey
-import scorex.util.encode.Base16
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.serialization.SigmaSerializer
-import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
+import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
 
 /**
   * Inputs, that are used to enrich script context, but won't be spent by the transaction
   *
   * @param boxId - id of a box to add into context (should be in UTXO)
   */
-case class DataInput(boxId: BoxId)
+case class DataInput(boxId: BoxId) {
+  override def toString: String = s"DataInput(${ErgoAlgos.encode(boxId)})"
+
+  override def equals(obj: Any): Boolean = obj match {
+    case x: DataInput => util.Arrays.equals(boxId, x.boxId)
+    case _ => false
+  }
+
+  override def hashCode(): Int = Helpers.deepHashCode(boxId)
+}
 
 /**
   * Inputs of formed, but unsigned transaction
@@ -34,6 +43,8 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
     case _ => false
   }
 
+  override def hashCode(): Int = Helpers.deepHashCode(boxId)
+
   /**
     * Input, that should be signed by prover and verified by verifier.
     * Contains all the input data except of signature itself.
@@ -49,7 +60,7 @@ class UnsignedInput(val boxId: BoxId, val extension: ContextExtension) {
   */
 case class Input(override val boxId: BoxId, spendingProof: ProverResult)
   extends UnsignedInput(boxId, spendingProof.extension) {
-  override def toString: String = s"Input(${Base16.encode(boxId)},$spendingProof)"
+  override def toString: String = s"Input(${ErgoAlgos.encode(boxId)},$spendingProof)"
 }
 
 object Input {

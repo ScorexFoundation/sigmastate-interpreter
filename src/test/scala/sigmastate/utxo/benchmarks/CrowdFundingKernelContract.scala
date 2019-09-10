@@ -54,9 +54,9 @@ class CrowdFundingKernelContract(
   }
 
   def prove(ctx: ErgoLikeContext, message: Array[Byte]): Array[Byte] = {
-    val c1 = ctx.currentHeight >= timeout //&& isProven(backerPubKey, fakeMessage)
+    val c1 = ctx.preHeader.height >= timeout //&& isProven(backerPubKey, fakeMessage)
     val c2 = Array(
-      ctx.currentHeight < timeout,
+      ctx.preHeader.height < timeout,
       ctx.spendingTransaction.outputs.exists(out => {
         out.value >= minToRaise &&
           util.Arrays.equals(out.propositionBytes, projectPubKey.toSigmaProp.treeWithSegregation.bytes)

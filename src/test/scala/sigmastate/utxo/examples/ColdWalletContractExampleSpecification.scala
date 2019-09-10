@@ -2,7 +2,7 @@ package sigmastate.utxo.examples
 
 import org.ergoplatform.ErgoBox.{R4, R5}
 import org.ergoplatform._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.AvlTreeData
 import sigmastate.Values.{IntConstant, LongConstant}
 import sigmastate.interpreter.Interpreter.ScriptNameProp
@@ -93,10 +93,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
 
     val withdrawTxAliceAndBob = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(withdrawOutputAliceAndBob))
 
-    val withdrawContextAliceandBob = ErgoLikeContext(
+    val withdrawContextAliceandBob = ErgoLikeContextTesting(
       currentHeight = firstWithdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxAliceAndBob,
       self = depositOutput
@@ -123,10 +123,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid, but we're not checking it in this test
     val firstWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(firstChangeOutput, firstWithdrawOutput))
 
-    val firstWithdrawContext = ErgoLikeContext(
+    val firstWithdrawContext = ErgoLikeContextTesting(
       currentHeight = firstWithdrawHeight, // 51
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = firstWithdrawTx,
       self = depositOutput
@@ -152,10 +152,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     // normally this transaction would be invalid, but we're not checking it in this test
     val withdrawTxInvalid = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(changeOutputInvalid, withdrawOutputInvalid))
 
-    val withdrawContextInvalid = ErgoLikeContext(
+    val withdrawContextInvalid = ErgoLikeContextTesting(
       currentHeight = firstWithdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(depositOutput),
       spendingTransaction = withdrawTxInvalid,
       self = depositOutput
@@ -186,10 +186,10 @@ class ColdWalletContractExampleSpecification extends SigmaTestingCommons {
     //normally this transaction would be invalid, but we're not checking it in this test
     val secondWithdrawTx = ErgoLikeTransaction(IndexedSeq(), IndexedSeq(secondChangeOutput, secondWithdrawOutput))
 
-    val secondWithdrawContext = ErgoLikeContext(
+    val secondWithdrawContext = ErgoLikeContextTesting(
       currentHeight = secondWithdrawHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(firstChangeOutput),
       spendingTransaction = secondWithdrawTx,
       self = firstChangeOutput

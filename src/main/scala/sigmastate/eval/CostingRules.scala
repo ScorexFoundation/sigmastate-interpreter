@@ -1,7 +1,7 @@
 package sigmastate.eval
 
-import org.ergoplatform.ErgoConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPropositionBytes}
-import org.ergoplatform.{ErgoLikeContext, ErgoConstants}
+import org.ergoplatform.SigmaConstants.{MaxBoxSize, MaxBoxSizeWithoutRefs, MaxPropositionBytes}
+import org.ergoplatform.{ErgoLikeContext, SigmaConstants}
 import scalan.{SigmaLibrary, MutableLazy}
 import sigmastate._
 import sigmastate.interpreter.CryptoConstants
@@ -166,7 +166,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
   val HeadersInfo = new KnownCollInfo(ErgoLikeContext.MaxHeaders,
       costedBuilder.mkSizePrim(Sized.SizeHeader.dataSize, element[Header]))
 
-  val TokensInfo = new KnownCollInfo(ErgoConstants.MaxTokens.value,
+  val TokensInfo = new KnownCollInfo(SigmaConstants.MaxTokens.value,
       mkSizePair(HashInfo.size, SizeLong))
 
 
@@ -455,7 +455,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       val info = obj.value.creationInfo
       val l = RCCostedPrim(info._1, IntZero, SizeInt)
       val r = RCCostedColl(info._2, HashInfo.costZeros, HashInfo.sizesColl, IntZero)
-      val cost = opCost(Pair(l, r), Seq(obj.cost), getRegisterCost)
+      val cost = opCost(Pair(l, r), Array(obj.cost), getRegisterCost)
       RCCostedPair(l, r, cost)
     }
 
@@ -469,7 +469,7 @@ trait CostingRules extends SigmaLibrary { IR: RuntimeCosting =>
       implicit val elem = tT.eA
       val valueOpt = obj.value.getReg(i.value)(elem)
       val sReg = asSizeOption(sBox.getReg(downcast[Byte](i.value))(elem))
-      RCCostedOption(valueOpt, SomeIntZero, sReg.sizeOpt, opCost(valueOpt, Seq(obj.cost), getRegisterCost))
+      RCCostedOption(valueOpt, SomeIntZero, sReg.sizeOpt, opCost(valueOpt, Array(obj.cost), getRegisterCost))
     }
   }
 

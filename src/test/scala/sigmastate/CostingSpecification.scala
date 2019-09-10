@@ -1,9 +1,9 @@
 package sigmastate
 
-import org.ergoplatform.ErgoConstants.ScriptCostLimit
+import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
-import org.ergoplatform.{ErgoBox, ErgoLikeContext}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction}
 import scorex.crypto.authds.avltree.batch.Lookup
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Blake2b256
@@ -60,16 +60,14 @@ class CostingSpecification extends SigmaTestingData {
           ErgoBox.R6 -> AvlTreeConstant(avlTree)))
   lazy val outBoxA = ErgoBox(10, pkA, 0)
   lazy val outBoxB = ErgoBox(20, pkB, 0)
-  lazy val tx = createTransaction(IndexedSeq(outBoxA, outBoxB))
+  lazy val tx = createTransaction(IndexedSeq(dataBox), IndexedSeq(outBoxA, outBoxB))
   lazy val context =
     new ErgoLikeContext(
-      currentHeight = preHeader.height,
       lastBlockUtxoRoot = header2.stateRoot.asInstanceOf[CAvlTree].treeData,
-      minerPubkey = preHeader.minerPk.getEncoded.toArray,
       headers = headers, preHeader = preHeader,
       dataBoxes = IndexedSeq(dataBox),
       boxesToSpend = IndexedSeq(selfBox),
-      spendingTransaction = tx, self = selfBox, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
+      spendingTransaction = tx, selfIndex = 0, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
 
   def cost(script: String)(expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)
@@ -357,8 +355,6 @@ class CostingSpecification extends SigmaTestingData {
 
   property("ErgoTree with TrueLeaf costs") {
     val tree = ErgoTree(16, IndexedSeq(TrueLeaf), BoolToSigmaProp(ConstantPlaceholder(0, SBoolean)))
-    tree.toString shouldBe
-      "ErgoTree(16,Vector(TrueLeaf$(127)),Right(BoolToSigmaProp(ConstantPlaceholder(0,SBoolean))),0)"
 
     val pr = interpreter.prove(tree, context, fakeMessage).get
     val expressionCost =
@@ -377,4 +373,10 @@ class CostingSpecification extends SigmaTestingData {
     cost shouldBe expectedCost
   }
 
+  property("laziness of AND, OR costs") {
+    cost("{ val cond = getVar[Boolean](2).get; !(!cond && (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost * 3 + multiply + comparisonCost)
+    cost("{ val cond = getVar[Boolean](2).get; (cond || (1 / 0 == 1)) }")(
+      ContextVarAccess + constCost * 2 + logicCost + multiply + comparisonCost)
+  }
 }

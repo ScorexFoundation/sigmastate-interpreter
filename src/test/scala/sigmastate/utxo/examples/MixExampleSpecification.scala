@@ -9,7 +9,7 @@ import sigmastate.AvlTreeData
 import sigmastate.Values.GroupElementConstant
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.{DiffieHellmanTupleProverInput, ProveDHTuple}
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeTestInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter._
 import sigmastate.lang.Terms._
@@ -156,10 +156,10 @@ class MixExampleSpecification extends SigmaTestingCommons {
     // normally this transaction would be invalid, but we're not checking it in this test
     val fullMixTx = createTransaction(IndexedSeq(fullMixOutput0, fullMixOutput1))
 
-    val fullMixContext = ErgoLikeContext(
+    val fullMixContext = ErgoLikeContextTesting(
       currentHeight = fullMixCreationHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(halfMixOutput),
       spendingTransaction = fullMixTx,
       self = halfMixOutput
@@ -211,10 +211,10 @@ class MixExampleSpecification extends SigmaTestingCommons {
       (fullMixOutput1, fullMixOutput0)
     }
 
-    val aliceSpendContext = ErgoLikeContext(
+    val aliceSpendContext = ErgoLikeContextTesting(
       currentHeight = spendHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(aliceAnonBox),
       spendingTransaction = spendingTx,
       self = aliceAnonBox
@@ -233,10 +233,10 @@ class MixExampleSpecification extends SigmaTestingCommons {
     //// Bob spending his output
     //////////////////////////////////////////////
 
-    val bobSpendContext = ErgoLikeContext(
+    val bobSpendContext = ErgoLikeContextTesting(
       currentHeight = spendHeight,
       lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContext.dummyPubkey,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(bobAnonBox),
       spendingTransaction = spendingTx,
       self = bobAnonBox

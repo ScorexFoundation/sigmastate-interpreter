@@ -58,9 +58,8 @@ trait Interpreter extends ScorexLogging {
             val (ctx1, script) = deserializeMeasured(context, scriptBytes)
             updateContext(ctx1)
 
-            CheckDeserializedScriptType(d, script) {
-              Some(script)
-            }
+            CheckDeserializedScriptType(d, script)
+            Some(script)
           case _ => None
         }
       else
@@ -140,7 +139,7 @@ trait Interpreter extends ScorexLogging {
       val costF = costingRes.costF
       IR.onCostingResult(env, exp, costingRes)
 
-      CheckCostFunc(IR)(asRep[Any => Int](costF)) { }
+      CheckCostFunc(IR)(asRep[Any => Int](costF))
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost)
@@ -150,7 +149,7 @@ trait Interpreter extends ScorexLogging {
 
       // check calc
       val calcF = costingRes.calcF
-      CheckCalcFunc(IR)(calcF) { }
+      CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(IR, isCost = false)
       val res = calcResult(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
@@ -241,7 +240,7 @@ trait Interpreter extends ScorexLogging {
       checkingResult -> cost
     })
     if (outputComputedResults) {
-      res.foreach { case (ok, cost) =>
+      res.foreach { case (_, cost) =>
         val scaledCost = cost * 1 // this is the scale factor of CostModel with respect to the concrete hardware
         val timeMicro = t * 1000  // time in microseconds
         val error = if (scaledCost > timeMicro) {

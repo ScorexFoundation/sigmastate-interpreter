@@ -1,6 +1,6 @@
 package sigmastate
 
-import sigmastate.basics.DLogProtocol.{ProveDlog, DLogProverInput}
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
@@ -9,7 +9,7 @@ import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._
 import scorex.util.encode.Base58
-import sigmastate.helpers.{ErgoLikeTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
+import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
 
@@ -23,8 +23,8 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   implicit val soundness = CryptoConstants.soundnessBits
   
   def testingContext(h: Int) =
-    ErgoLikeContext(h,
-      AvlTreeData.dummy, ErgoLikeContext.dummyPubkey, IndexedSeq(fakeSelf),
+    ErgoLikeContextTesting(h,
+      AvlTreeData.dummy, ErgoLikeContextTesting.dummyPubkey, IndexedSeq(fakeSelf),
       ErgoLikeTransaction(IndexedSeq.empty, IndexedSeq.empty),
       fakeSelf)
 

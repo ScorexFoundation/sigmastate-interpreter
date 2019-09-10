@@ -175,6 +175,7 @@ object SType {
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
+      case opt: SOption[a] => reflect.classTag[Option[a]]
       case _: STuple => reflect.classTag[Array[Any]]
       case tColl: SCollection[a] =>
         val elemType = tColl.elemType
@@ -254,7 +255,9 @@ trait STypeCompanion {
     * It delegate to getMethodById to lookup method.
     * @see getMethodById
     */
-  def methodById(methodId: Byte): SMethod = ValidationRules.CheckAndGetMethod(this, methodId) { m => m }
+  def methodById(methodId: Byte): SMethod = {
+    ValidationRules.CheckAndGetMethod(this, methodId)
+  }
 
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
@@ -274,7 +277,7 @@ trait SProduct extends SType {
 
   /** This method should be overriden in derived classes to add new methods in addition to inherited.
     * Typical override: `super.getMethods() ++ Seq(m1, m2, m3)` */
-  protected def getMethods(): Seq[SMethod] = Seq()
+  protected def getMethods(): Seq[SMethod] = Nil
 
   /** Returns all the methods of this type. */
   lazy val methods: Seq[SMethod] = {
@@ -401,9 +404,8 @@ object SMethod {
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
-    val typeCompanion = ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId)) {
-      SType.types(typeId)
-    }
+    ValidationRules.CheckTypeWithMethods(typeId, SType.types.contains(typeId))
+    val typeCompanion = SType.types(typeId)
     val method = typeCompanion.methodById(methodId)
     method
   }
@@ -645,7 +647,7 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val RelationOpType = SFunc(Vector(SBigInt, SBigInt), SBoolean)
 
   /** The maximum size of BigInteger value in byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxBigIntSizeInBytes.value
+  val MaxSizeInBytes: Long = SigmaConstants.MaxBigIntSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -747,7 +749,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
 
   /** The maximum size of SigmaProp value in serialized byte array representation. */
-  val MaxSizeInBytes: Long = ErgoConstants.MaxSigmaPropSizeInBytes.value
+  val MaxSizeInBytes: Long = SigmaConstants.MaxSigmaPropSizeInBytes.value
 
   override def dataSize(v: SType#WrappedType): Long = MaxSizeInBytes
 
@@ -1229,8 +1231,8 @@ case class STuple(items: IndexedSeq[SType]) extends SCollection[SAny.type] {
   override def mkConstant(v: Coll[Any]): Value[this.type] =
     Constant[STuple](v, this).asValue[this.type]
 
-  val typeParams = Seq()
-  val tparamSubst = Map()
+  val typeParams = Nil
+  val tparamSubst = Map.empty
 
   override def toTermString = s"(${items.map(_.toTermString).mkString(",")})"
   override def toString = s"(${items.mkString(",")})"
@@ -1264,7 +1266,7 @@ object STuple extends STypeCompanion {
   def methods: Seq[SMethod] = sys.error(s"Shouldn't be called.")
 
   def apply(items: SType*): STuple = STuple(items.toIndexedSeq)
-  val MaxTupleLength: Int = ErgoConstants.MaxTupleLength.value
+  val MaxTupleLength: Int = SigmaConstants.MaxTupleLength.value
   private val componentNames = Array.tabulate(MaxTupleLength){ i => s"_${i + 1}" }
   def componentNameByIndex(i: Int): String =
     try componentNames(i)
@@ -1292,7 +1294,7 @@ case class SFunc(tDom: IndexedSeq[SType],  tRange: SType, tpeParams: Seq[STypePa
   override def dataSize(v: SType#WrappedType) = 8L
   import SFunc._
   val typeParams: Seq[STypeParam] = tpeParams
-  val tparamSubst: Map[STypeVar, SType] = Map() // defined in MethodCall.typeSubst
+  val tparamSubst: Map[STypeVar, SType] = Map.empty // defined in MethodCall.typeSubst
 
   def getGenericType: SFunc = {
     val typeParams: Seq[STypeParam] = tDom.zipWithIndex
@@ -1307,7 +1309,7 @@ object SFunc {
   val tD = STypeVar("D")
   val tR = STypeVar("R")
   final val FuncTypeCode: TypeCode = OpCodes.FirstFuncType
-  def apply(tDom: SType, tRange: SType): SFunc = SFunc(IndexedSeq(tDom), tRange)
+  def apply(tDom: SType, tRange: SType): SFunc = SFunc(Array(tDom), tRange) // @hotspot
   val identity = { x: Any => x }
 }
 

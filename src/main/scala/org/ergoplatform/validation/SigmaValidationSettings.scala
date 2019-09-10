@@ -37,6 +37,7 @@ package org.ergoplatform.validation
   * when isSoftFork returns true), for example when a new opCode is added in the
   * newer version of the protocol, and this fact can be recognized by the old
   * code.
+  *
   * @see SoftForkWhenCodeAdded
   */
 abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule, RuleStatus))] {
@@ -58,7 +59,13 @@ abstract class SigmaValidationSettings extends Iterable[(Short, (ValidationRule,
 sealed class MapSigmaValidationSettings(private val map: Map[Short, (ValidationRule, RuleStatus)]) extends SigmaValidationSettings {
   override def iterator: Iterator[(Short, (ValidationRule, RuleStatus))] = map.iterator
   override def get(id: Short): Option[(ValidationRule, RuleStatus)] = map.get(id)
-  override def getStatus(id: Short): Option[RuleStatus] = map.get(id).map(_._2)
+
+  /** @hotspot don't beautify this code */
+  override def getStatus(id: Short): Option[RuleStatus] = {
+    val statusOpt = map.get(id)
+    val res = if (statusOpt.isDefined) Some(statusOpt.get._2) else None
+    res
+  }
   override def updated(id: Short, newStatus: RuleStatus): MapSigmaValidationSettings = {
     val (rule,_) = map(id)
     new MapSigmaValidationSettings(map.updated(id, (rule, newStatus)))

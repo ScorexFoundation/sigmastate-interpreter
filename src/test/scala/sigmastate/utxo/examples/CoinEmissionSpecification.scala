@@ -3,7 +3,7 @@ package sigmastate.utxo.examples
 import org.ergoplatform._
 import scorex.util.ScorexLogging
 import sigmastate.Values.IntConstant
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons}
+import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, SigmaTestingCommons}
 import sigmastate.interpreter.ContextExtension
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.lang.Terms._
@@ -145,7 +145,7 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
         )
       }
 
-      val context = ErgoLikeContext(height,
+      val context = ErgoLikeContextTesting(height,
         state.state.lastBlockUtxoRoot,
         minerPubkey,
         IndexedSeq(emissionBox),
@@ -156,14 +156,16 @@ class CoinEmissionSpecification extends SigmaTestingCommons with ScorexLogging {
       ut.toSigned(IndexedSeq(proverResult))
     }
 
-    val st = System.currentTimeMillis()
+    var st = System.currentTimeMillis()
 
     def chainGen(state: ValidationState,
                  emissionBox: ErgoBox,
                  height: Int,
                  hLimit: Int): Unit = if (height < hLimit) {
-      if (height % 1000 == 0) {
-        println(s"block $height in ${System.currentTimeMillis() - st} ms, ${emissionBox.value} coins remain")
+      if (height % 100 == 0) {
+        val t = System.currentTimeMillis()
+        println(s"block $height in ${t - st} ms, ${emissionBox.value} coins remain")
+        st = t
         IR.resetContext()
       }
       val tx = genCoinbaseLikeTransaction(state, emissionBox, height)
