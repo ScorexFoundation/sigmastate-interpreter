@@ -525,6 +525,11 @@ trait SMonoType extends SType with STypeCompanion {
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall, "")
+
+  protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
+    SMethod(this, name, SFunc(this, tpeRes), id)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(valueCompanion, "")
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -1557,13 +1562,13 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   val dataInputsMethod = property("dataInputs", SBoxArray, 1)
   val headersMethod    = property("headers", SHeaderArray, 2)
   val preHeaderMethod  = property("preHeader", SPreHeader, 3)
-  val inputsMethod     = property("INPUTS", SBoxArray, 4)
-  val outputsMethod    = property("OUTPUTS", SBoxArray, 5)
-  val heightMethod     = property("HEIGHT", SInt, 6)
-  val selfMethod       = property("SELF", SBox, 7)
+  val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs)
+  val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs)
+  val heightMethod     = property("HEIGHT", SInt, 6, Height)
+  val selfMethod       = property("SELF", SBox, 7, Self)
   val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8)
-  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9)
-  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10)
+  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
+  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
   val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
     .withInfo(GetVar, "")
 
