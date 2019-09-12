@@ -32,7 +32,7 @@ object DataJsonEncoder {
   }
 
   private def encodeBytes: Encoder[Array[Byte]] = (bytes: Array[Byte]) => {
-    java.util.Base64.getEncoder.encodeToString(bytes).asJson
+    scorex.util.encode.Base16.encode(bytes).asJson
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
@@ -134,7 +134,7 @@ object DataJsonEncoder {
   private def decodeBytes(json: Json): Array[Byte] = {
     val jsonStr = json.as[String]
     jsonStr match {
-      case Right(jsonStr) => java.util.Base64.getDecoder.decode(jsonStr)
+      case Right(jsonStr) => scorex.util.encode.Base16.decode(jsonStr).get
       case Left(error) => throw new SerializerException(error.getMessage)
     }
   }

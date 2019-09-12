@@ -12,6 +12,7 @@ import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval.{Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
+import sigmastate.lang.exceptions.SerializerException
 import special.sigma.{AvlTree, Box}
 
 class DataJsonEncoderSpecification extends SerializationSpecification {
@@ -124,5 +125,19 @@ class DataJsonEncoderSpecification extends SerializationSpecification {
           |  }
           |}
           |""".stripMargin)
+  }
+
+  def testEncodeError[T <: SType](tpe: T) = {
+    implicit val wWrapped = wrappedTypeGen(tpe)
+    implicit val tag = tpe.classTag[T#WrappedType]
+    implicit val tAny = RType.AnyType
+    forAll { x: T#WrappedType =>
+      an[SerializerException] should be thrownBy
+        DataJsonEncoder.encode(TupleColl(x, x, x).asWrappedType, STuple(tpe, tpe, tpe))
+    }
+  }
+
+  property("Tuples with > 2 items are not supported") {
+    forAll { t: SPredefType => testEncodeError(t) }
   }
 }
