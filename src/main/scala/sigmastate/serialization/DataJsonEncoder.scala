@@ -6,6 +6,7 @@ import io.circe._
 import io.circe.syntax._
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.NonMandatoryRegisterId
+import org.ergoplatform.settings.ErgoAlgos
 import scalan.RType
 import scalan.RType.PairType
 import scorex.crypto.hash.Digest32
@@ -32,7 +33,7 @@ object DataJsonEncoder {
   }
 
   private def encodeBytes: Encoder[Array[Byte]] = (bytes: Array[Byte]) => {
-    scorex.util.encode.Base16.encode(bytes).asJson
+    ErgoAlgos.encode(bytes).asJson
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
@@ -134,7 +135,7 @@ object DataJsonEncoder {
   private def decodeBytes(json: Json): Array[Byte] = {
     val jsonStr = json.as[String]
     jsonStr match {
-      case Right(jsonStr) => scorex.util.encode.Base16.decode(jsonStr).get
+      case Right(jsonStr) => ErgoAlgos.decode(jsonStr).get
       case Left(error) => throw new SerializerException(error.getMessage)
     }
   }
