@@ -1022,7 +1022,7 @@ Apply the function to the arguments.  See~\hyperref[sec:appendix:primops:Apply]{
 \subsubsection{\lst{PropertyCall} operation (OpCode 219)}
 \label{sec:serialization:operation:PropertyCall}
 
-Convert true to 1 and false to 0 
+ 
 
 \noindent
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
@@ -1031,7 +1031,7 @@ Convert true to 1 and false to 0
     \hline
          $ typeCode $ & \lst{Byte} & 1 & type of the method (see Table~\ref{table:predeftypes}) \\
     \hline
-           $ methodCode $ & \lst{Byte} & 1 & a code of the proprty \\
+           $ methodCode $ & \lst{Byte} & 1 & a code of the property \\
     \hline
            $ obj $ & \lst{Expr} & [1, *] & receiver object of this property call \\
     \hline
@@ -1264,6 +1264,28 @@ Negates numeric value \lst{x} by returning \lst{-x}. See~\hyperref[sec:appendix:
          $ input $ & \lst{Expr} & [1, *] & value of numeric type \\
     \hline
       
+\end{tabularx}\)
+       
+
+\subsubsection{\lst{BinXor} operation (OpCode 244)}
+\label{sec:serialization:operation:BinXor}
+
+Logical XOR of two operands See~\hyperref[sec:appendix:primops:BinXor]{\lst{^}}
+
+\noindent
+\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
+    \hline
+    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+        \multicolumn{4}{l}{\lst{match}~$ (left, right) $} \\
+         
+    \multicolumn{4}{l}{~~\lst{otherwise} } \\
+    \hline
+            ~~~~ $ left $ & \lst{Expr} & [1, *] & left operand \\
+    \hline
+          ~~~~ $ right $ & \lst{Expr} & [1, *] & right operand \\
+    \hline
+          \multicolumn{4}{l}{\lst{end match}} \\
 \end{tabularx}\)
        
 
