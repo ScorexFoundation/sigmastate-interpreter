@@ -57,6 +57,7 @@ trait AstGraphs extends Transforming { self: Scalan =>
       val sch = schedule.toArray
       val len = sch.length
       val resSet = DSet.ofSize[Int](len)
+      val resIds = DBuffer.ofSize[Int](len)
       cfor(0)(_ < len, _ + 1) { i =>
         val sym = sch(i)
         val deps = sym.node.deps
@@ -66,11 +67,11 @@ trait AstGraphs extends Transforming { self: Scalan =>
           if (!resSet(sId)) {
             if (!(isLocalDefId(sId) || isBoundVar(s))) {
               resSet += sId
+              resIds += sId
             }
           }
         }
       }
-      val resIds = resSet.toArray()
       val res = new Array[Sym](resIds.length)
       cfor(0)(_ < resIds.length, _ + 1) { i =>
         res(i) = getSym(resIds(i))
