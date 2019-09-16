@@ -64,7 +64,7 @@ version in ThisBuild := {
         git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
       }
     } else {
-      git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.get.take(8) + "-SNAPSHOT"
+      git.gitCurrentBranch.value + "-" + git.gitHeadCommit.value.getOrElse("").take(8) + "-SNAPSHOT"
     }
   }
 }
@@ -204,8 +204,13 @@ lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
 
 lazy val sigma = (project in file("."))
     .aggregate(sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
-    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency, fv)
     .settings(commonSettings: _*)
+
+lazy val fv = project
+  .in(file("fv"))
+  .enablePlugins(StainlessPlugin)
+  .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "ergolikectx-json"

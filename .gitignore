@@ -38,3 +38,5 @@ ergo-tests/
 
 # spam test's checkout location
 spam-tests/
+
+.stainless-cache/
