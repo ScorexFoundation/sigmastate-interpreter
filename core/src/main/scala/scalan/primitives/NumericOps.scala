@@ -1,7 +1,5 @@
 package scalan.primitives
 
-import java.math.BigInteger
-
 import scalan.{Base, Scalan, ExactNumeric}
 
 trait NumericOps extends Base { self: Scalan =>
@@ -19,10 +17,6 @@ trait NumericOps extends Base { self: Scalan =>
     def toLong = NumericToLong(n).apply(x)
   }
 
-  implicit class FractionalOpsCls[T](x: Ref[T])(implicit f: Fractional[T]) {
-    def /(y: Ref[T]): Ref[T] = FractionalDivide(f)(x.elem).apply(x, y)
-  }
-
   implicit class IntegralOpsCls[T](x: Ref[T])(implicit i: Integral[T]) {
     def div(y: Ref[T]): Ref[T] = IntegralDivide(i)(x.elem).apply(x, y)
     def mod(y: Ref[T]): Ref[T] = IntegralMod(i)(x.elem).apply(x, y)
@@ -32,7 +26,6 @@ trait NumericOps extends Base { self: Scalan =>
   }
 
   def numeric[T:Numeric]: Numeric[T] = implicitly[Numeric[T]]
-  def fractional[T:Fractional]: Fractional[T] = implicitly[Fractional[T]]
   def integral[T:Integral]: Integral[T] = implicitly[Integral[T]]
 
   case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+", n.plus)
@@ -56,8 +49,6 @@ trait NumericOps extends Base { self: Scalan =>
   case class NumericToLong[T](n: Numeric[T]) extends UnOp[T,Long]("ToLong", n.toLong)
 
   case class Abs[T: Elem](n: Numeric[T]) extends UnOp[T, T]("Abs", n.abs)
-
-  case class FractionalDivide[T](f: Fractional[T])(implicit elem: Elem[T]) extends DivOp[T]("/", f.div, f)
 
   case class IntegralDivide[T](i: Integral[T])(implicit elem: Elem[T]) extends DivOp[T]("/", i.quot, i)
 

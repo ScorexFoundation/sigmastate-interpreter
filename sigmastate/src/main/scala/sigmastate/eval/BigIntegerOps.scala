@@ -43,7 +43,6 @@ object NumericOps {
   implicit object BigIntegerIsIntegral extends BigIntegerIsIntegral with OrderingOps.BigIntegerOrdering
 
   trait BigIntIsIntegral extends Integral[BigInt] {
-//    private val BI = implicitly[Integral[BigInt]]
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
     def rem(x: BigInt, y: BigInt): BigInt = x.remainder(y)
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)

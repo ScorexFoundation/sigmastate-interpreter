@@ -158,18 +158,6 @@ trait DefRewriting { scalan: Scalan =>
         case _ => propagateBinOp(op, x, y)
       }
 
-      case FractionalDivide(n: Fractional[a]) => (x, y) match {
-        // 0 / _ => 0
-        case (x@Def(Const(zero)), _) if isZero(zero.asInstanceOf[a], n) => x
-        // x / 1 => x
-        case (x, Def(Const(one))) if isOne(one.asInstanceOf[a], n) => x
-        // 0 / _ => 0 (for ints)
-        case (x@Def(Const(zero)), _) if isZero(zero.asInstanceOf[a], n) => x
-        // x / 1 => x (for ints)
-        case (x, Def(Const(one))) if isOne(one.asInstanceOf[a], n) => x
-        case _ => propagateBinOp(op, x, y)
-      }
-
       case _ => propagateBinOp(op, x, y)
     }
   }
