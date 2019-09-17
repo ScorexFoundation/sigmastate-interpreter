@@ -6,7 +6,7 @@ import sigmastate.lang.SigmaParser
 import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.{LastConstantCode, OpCode}
-import sigma.util.Extensions.ByteOps
+import scalan.util.Extensions.ByteOps
 import sigmastate.serialization.ValueSerializer.getSerializer
 
 import scala.collection.mutable

@@ -4,7 +4,7 @@ import java.math.BigInteger
 
 import scala.math.{LowPriorityOrderingImplicits,Integral, Ordering}
 import special.sigma._
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 import sigmastate.eval.Extensions._
 
 object OrderingOps extends LowPriorityOrderingImplicits {

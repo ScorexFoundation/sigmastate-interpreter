@@ -11,7 +11,7 @@ import scalan.{RType, Internal, NeverInline, Reified}
 import scorex.crypto.hash.{Sha256, Blake2b256}
 import special.SpecialPredef
 import special.collection._
-import sigma.util.Extensions.BigIntegerOps
+import scalan.util.Extensions.BigIntegerOps
 
 class TestSigmaDslBuilder extends SigmaDslBuilder {
   // manual fix

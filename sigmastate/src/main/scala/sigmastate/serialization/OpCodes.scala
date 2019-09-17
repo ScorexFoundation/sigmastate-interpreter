@@ -1,6 +1,6 @@
 package sigmastate.serialization
 
-import sigma.util.Extensions.ByteOps
+import scalan.util.Extensions.ByteOps
 import sigmastate.serialization.OpCodes.OpCode
 import supertagged.TaggedType
 

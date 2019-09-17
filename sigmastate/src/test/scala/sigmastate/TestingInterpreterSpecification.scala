@@ -4,7 +4,7 @@ import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
 import scorex.crypto.hash.Blake2b256
 import sigmastate.Values._
 import sigmastate.interpreter._
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 import Interpreter._
 import sigmastate.lang.Terms._
 import org.ergoplatform._

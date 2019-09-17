@@ -10,7 +10,7 @@ import sigmastate.lang.Terms.OperationId
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization.transformers._
 import sigmastate.serialization.trees.{QuadrupleSerializer, Relation2Serializer}
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 import sigmastate.utils.SigmaByteWriter.DataInfo
 import sigmastate.utils._
 import sigmastate.utxo.ComplexityTable._

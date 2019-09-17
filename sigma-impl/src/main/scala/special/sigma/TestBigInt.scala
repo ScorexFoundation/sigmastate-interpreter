@@ -2,7 +2,7 @@ package special.sigma
 
 import special.collection.{Coll}
 import java.math.BigInteger
-import sigma.util.Extensions.BigIntegerOps
+import scalan.util.Extensions.BigIntegerOps
 
 abstract class TestBigInt(private[sigma] val value: BigInteger) extends BigInt {
   val dsl: TestSigmaDslBuilder = new TestSigmaDslBuilder

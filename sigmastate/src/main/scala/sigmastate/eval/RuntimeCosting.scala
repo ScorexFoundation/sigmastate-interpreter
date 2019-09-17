@@ -32,7 +32,7 @@ import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
-import sigmastate.eval.ExactNumeric._
+import scalan.ExactNumeric._
 import spire.syntax.all.cfor
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

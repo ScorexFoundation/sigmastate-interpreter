@@ -1,7 +1,7 @@
 package sigma.types
 
 import com.google.common.primitives.Ints
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 import special.collection.{Coll, Builder}
 
 case class CBoolean(value: scala.Boolean) extends Boolean {

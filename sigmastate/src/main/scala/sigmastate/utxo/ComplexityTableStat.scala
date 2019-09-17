@@ -2,7 +2,7 @@ package sigmastate.utxo
 
 import sigmastate.serialization.ValueSerializer.getSerializer
 import sigmastate.serialization.OpCodes.OpCode
-import sigma.util.Extensions.ByteOps
+import scalan.util.Extensions.ByteOps
 import sigmastate.SMethod
 import sigmastate.serialization.OpCodes
 

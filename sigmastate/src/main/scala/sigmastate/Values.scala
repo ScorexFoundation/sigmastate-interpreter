@@ -27,7 +27,7 @@ import sigmastate.utxo._
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
-import sigma.util.Extensions.ByteOps
+import scalan.util.Extensions.ByteOps
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions

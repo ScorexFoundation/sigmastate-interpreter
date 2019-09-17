@@ -2,7 +2,7 @@ package org.ergoplatform.validation
 
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions.{IntOps,LongOps}
+import scalan.util.Extensions.{IntOps,LongOps}
 
 /** The rules are serialized ordered by ruleId.
   * This serializer preserves roundtrip identity `deserialize(serialize(_)) = identity`

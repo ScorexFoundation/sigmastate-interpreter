@@ -3,7 +3,7 @@ package sigmastate.utils
 import sigmastate._
 import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized}
-import sigma.util.Extensions.ByteOps
+import scalan.util.Extensions.ByteOps
 import scalan.util.CollectionUtil
 import scalan.util.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}

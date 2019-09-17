@@ -5,23 +5,20 @@ import java.math.BigInteger
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.dsl.{SigmaContractSyntax, TestContractSpec}
 import org.ergoplatform._
-import org.scalacheck.Gen.containerOfN
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
+import scalan.util.Extensions._
 import sigma.util.Extensions._
-import sigmastate.Values.{BooleanConstant, EvaluatedValue, IntConstant}
+import sigmastate.Values.IntConstant
 import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, SigmaTestingCommons, ErgoLikeTestInterpreter}
-import sigmastate.interpreter.ContextExtension
-import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 

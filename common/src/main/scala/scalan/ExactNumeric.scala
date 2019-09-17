@@ -1,6 +1,6 @@
-package sigmastate.eval
+package scalan
 
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 
 import scala.math.Numeric.{IntIsIntegral, ByteIsIntegral, ShortIsIntegral, LongIsIntegral}
 

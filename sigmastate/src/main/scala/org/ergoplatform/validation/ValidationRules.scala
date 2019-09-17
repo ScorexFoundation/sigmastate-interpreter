@@ -6,7 +6,7 @@ import java.util
 import org.ergoplatform.SigmaConstants.MaxLoopLevelInCostFunction
 import scorex.util.ByteArrayBuilder
 import scorex.util.serialization.{VLQByteBufferReader, VLQByteBufferWriter}
-import sigma.util.Extensions.toUByte
+import scalan.util.Extensions.toUByte
 import sigmastate.Values.{ErgoTree, IntValue, SValue, Value}
 import sigmastate._
 import sigmastate.eval.IRContext

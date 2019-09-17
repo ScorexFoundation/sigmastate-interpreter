@@ -8,7 +8,7 @@ import sigmastate.lang.DeserializationSigmaBuilder
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.lang.exceptions.{SerializerException, InputSizeLimitExceeded}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 import sigmastate.Values.ErgoTree.EmptyConstants
 import sigmastate.utxo.ComplexityTable
 import spire.syntax.all.cfor

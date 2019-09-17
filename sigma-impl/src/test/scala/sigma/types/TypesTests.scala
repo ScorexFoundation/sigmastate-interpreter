@@ -5,7 +5,7 @@ import org.scalatest.{PropSpec, Matchers}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Arbitrary._
 import special.collections.CollGens
-import sigma.util.Extensions._
+import scalan.util.Extensions._
 
 class TypesTests extends PropSpec with PropertyChecks with Matchers with CollGens { testSuite =>
 
