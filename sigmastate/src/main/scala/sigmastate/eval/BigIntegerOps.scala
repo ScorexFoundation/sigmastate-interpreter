@@ -2,12 +2,13 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scalan.ExactNumeric
+import scalan.{ExactNumeric, ExactIntegral, ExactOrderingImpl}
 
 import scala.math.{LowPriorityOrderingImplicits, Integral, Ordering}
 import special.sigma._
 import scalan.util.Extensions._
 import sigmastate.eval.Extensions._
+import sigmastate.eval.NumericOps.BigIntIsExactNumeric.n
 
 object OrderingOps extends LowPriorityOrderingImplicits {
   def apply[T](implicit ord: Ordering[T]) = ord
@@ -63,5 +64,14 @@ object NumericOps {
     override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
     override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
   }
+
+  implicit object BigIntIsExactIntegral extends ExactIntegral[BigInt] {
+    val n = BigIntIsIntegral
+    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
+    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
+    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+  }
+
+  implicit object BigIntIsExactOrdering extends ExactOrderingImpl[BigInt](BigIntIsIntegral)
 }
 
