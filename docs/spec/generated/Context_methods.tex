@@ -9,13 +9,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -30,13 +33,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Header]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -51,13 +57,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{PreHeader} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -72,13 +81,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Inputs]{\lst{Inputs}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -93,13 +105,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Box]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Outputs]{\lst{Outputs}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -114,13 +129,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Height]{\lst{Height}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -135,13 +153,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Box} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Self]{\lst{Self}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -156,13 +177,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Int} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -177,13 +201,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{AvlTree} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:LastBlockUtxoRootHash]{\lst{LastBlockUtxoRootHash}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -198,13 +225,16 @@
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
+         
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:MinerPubkey]{\lst{MinerPubkey}} \\
+  \hline
+       
 \end{tabularx}
 
 
@@ -214,17 +244,19 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Get context variable with given \lst{varId} and type. \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: Context} & \text{// } \\
-\lst{arg1} & \lst{: Byte} & \text{// } \\
+         \lst{varId} & \lst{: Byte} & \text{// \lst{Byte} identifier of context variable} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Option[T]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:GetVar]{\lst{GetVar}} \\
+  \hline
+       
 \end{tabularx}

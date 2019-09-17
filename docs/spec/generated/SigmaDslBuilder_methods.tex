@@ -28,18 +28,20 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Byte-wise XOR of two collections of bytes \\
   
   \hline
   \bf{Parameters} &
       \(\begin{array}{l l l}
-         \lst{arg0} & \lst{: SigmaDslBuilder} & \text{// } \\
-\lst{arg1} & \lst{: Coll[Byte]} & \text{// } \\
-\lst{arg2} & \lst{: Coll[Byte]} & \text{// } \\
+         \lst{left} & \lst{: Coll[Byte]} & \text{// left operand} \\
+\lst{right} & \lst{: Coll[Byte]} & \text{// right operand} \\
       \end{array}\) \\
        
   \hline
   \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Xor]{\lst{Xor}} \\
+  \hline
+       
 \end{tabularx}

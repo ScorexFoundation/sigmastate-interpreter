@@ -1580,7 +1580,8 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
   val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
   val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
-    .withInfo(GetVar, "")
+    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
+      ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     dataInputsMethod, headersMethod, preHeaderMethod, inputsMethod, outputsMethod, heightMethod, selfMethod,
@@ -1706,7 +1707,8 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })
-    .withInfo(Xor, "")
+    .withInfo(Xor, "Byte-wise XOR of two collections of bytes",
+      ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     groupGeneratorMethod,
