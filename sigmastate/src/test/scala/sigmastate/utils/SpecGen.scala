@@ -9,7 +9,7 @@ import scalan.util.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.Terms.MethodCall
+import sigmastate.lang.Terms.{MethodCall, PropertyCall}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
@@ -57,7 +57,7 @@ trait SpecGen {
   }
 
   protected val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
-  val noFuncs: Set[ValueCompanion] = Set(Constant, MethodCall)
+  val noFuncs: Set[ValueCompanion] = Set(Constant, MethodCall, PropertyCall)
   val predefFuncs: Seq[PredefinedFunc] = predefFuncRegistry.funcs.values
       .filterNot { f => f.docInfo.opDesc.exists(noFuncs.contains) }.toSeq
   val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
@@ -260,7 +260,10 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of all operations with all methods by optional opCode
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
-      o => Some(o._1), m => m.docInfo.map(_.opDesc.map(_.opCode))
+      o => Some(o._1), m => m.docInfo.map(info => if (info.isFrontendOnly) {
+        System.err.println(s"WARNING: Operation is frontend only: $info")
+        None
+      } else info.opDesc.map(_.opCode))
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left

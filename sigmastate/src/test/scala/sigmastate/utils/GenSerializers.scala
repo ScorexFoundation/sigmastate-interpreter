@@ -7,6 +7,12 @@ import sigma.util.Extensions.ByteOps
 import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 
 /** Generate contents of ErgoTree serializer format specification.
+  * To generate serialization formats, it is necessary that all branches of serializers
+  * are executed at least once. Those executions are then traced and the structure
+  * of the serialized formats is recorded in `ValueSerializer.serializerInfo` map,
+  * which lives in memory and is not stored anywhere.
+  * NOTE: you need to set `ValueSerializer.collectSerInfo = true`,
+  *       don't forget to to set it back to `false` before release.
   */
 object GenSerializers extends SpecGen {
 

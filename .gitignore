@@ -1,4 +1,3 @@
-*.pdf
 *.toc
 *.aux
 *.log
@@ -7,6 +6,7 @@
 *.blg
 *.fls
 *.fdb_latexmk
+*.gz
 
 *.log
 docs/spec/out/
