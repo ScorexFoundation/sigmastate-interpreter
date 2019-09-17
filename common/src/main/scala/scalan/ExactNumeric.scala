@@ -2,7 +2,7 @@ package scalan
 
 import scalan.util.Extensions._
 
-import scala.math.Numeric.{IntIsIntegral, ByteIsIntegral, ShortIsIntegral, LongIsIntegral}
+import scala.math.Numeric.{ByteIsIntegral, LongIsIntegral, ShortIsIntegral, IntIsIntegral}
 
 /** Numeric operations with overflow checks.
   * Raise exception when overflow is detected.
@@ -24,32 +24,31 @@ trait ExactNumeric[T] extends Numeric[T] {
 /** ExactNumeric instances for all types. */
 object ExactNumeric {
 
-  object ByteIsExactNumeric extends ExactNumeric[Byte] {
+  implicit object ByteIsExactNumeric extends ExactNumeric[Byte] {
     val n = ByteIsIntegral
     override def plus(x: Byte, y: Byte): Byte = x.addExact(y)
     override def minus(x: Byte, y: Byte): Byte = x.subtractExact(y)
     override def times(x: Byte, y: Byte): Byte = x.multiplyExact(y)
   }
 
-  object ShortIsExactNumeric extends ExactNumeric[Short] {
+  implicit object ShortIsExactNumeric extends ExactNumeric[Short] {
     val n = ShortIsIntegral
     override def plus(x: Short, y: Short): Short = x.addExact(y)
     override def minus(x: Short, y: Short): Short = x.subtractExact(y)
     override def times(x: Short, y: Short): Short = x.multiplyExact(y)
   }
 
-  object IntIsExactNumeric extends ExactNumeric[Int] {
+  implicit object IntIsExactNumeric extends ExactNumeric[Int] {
     val n = IntIsIntegral
     override def plus(x: Int, y: Int): Int = Math.addExact(x, y)
     override def minus(x: Int, y: Int): Int = Math.subtractExact(x, y)
     override def times(x: Int, y: Int): Int = Math.multiplyExact(x, y)
   }
   
-  object LongIsExactNumeric extends ExactNumeric[Long] {
+  implicit object LongIsExactNumeric extends ExactNumeric[Long] {
     val n = LongIsIntegral
     override def plus(x: Long, y: Long): Long = Math.addExact(x, y)
     override def minus(x: Long, y: Long): Long = Math.subtractExact(x, y)
     override def times(x: Long, y: Long): Long = Math.multiplyExact(x, y)
   }
-
 }

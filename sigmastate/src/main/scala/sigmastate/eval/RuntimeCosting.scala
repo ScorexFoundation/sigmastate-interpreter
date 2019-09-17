@@ -1,10 +1,8 @@
 package sigmastate.eval
 
-import java.lang.reflect.Constructor
-
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{Lazy, MutableLazy, Nullable, RType}
+import scalan.{Nullable, MutableLazy, Lazy, ExactNumeric, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -34,6 +32,7 @@ import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
 import scalan.ExactNumeric._
 import spire.syntax.all.cfor
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -913,36 +912,36 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   }).asInstanceOf[Liftable[_,WT]]
 
   import NumericOps._
-  private lazy val elemToNumericMap = Map[Elem[_], Numeric[_]](
+  private lazy val elemToExactNumericMap = Map[Elem[_], ExactNumeric[_]](
     (ByteElement, ByteIsExactNumeric),
     (ShortElement, ShortIsExactNumeric),
     (IntElement, IntIsExactNumeric),
     (LongElement, LongIsExactNumeric),
-    (bigIntElement, numeric[SBigInt])
+    (bigIntElement, BigIntIsExactNumeric)
   )
   private lazy val elemToIntegralMap = Map[Elem[_], Integral[_]](
-    (ByteElement, integral[Byte]),
-    (ShortElement, integral[Short]),
-    (IntElement, integral[Int]),
-    (LongElement, integral[Long]),
+    (ByteElement,   integral[Byte]),
+    (ShortElement,  integral[Short]),
+    (IntElement,    integral[Int]),
+    (LongElement,   integral[Long]),
     (bigIntElement, integral[SBigInt])
   )
   private lazy val elemToOrderingMap = Map[Elem[_], Ordering[_]](
-    (ByteElement, implicitly[Ordering[Byte]]),
-    (ShortElement, implicitly[Ordering[Short]]),
-    (IntElement, implicitly[Ordering[Int]]),
-    (LongElement, implicitly[Ordering[Long]]),
-    (bigIntElement, implicitly[Ordering[SBigInt]])
+    (ByteElement,   ByteIsExactNumeric),
+    (ShortElement,  ShortIsExactNumeric),
+    (IntElement,    IntIsExactNumeric),
+    (LongElement,   LongIsExactNumeric),
+    (bigIntElement, BigIntIsExactNumeric)
   )
 
-  def elemToNumeric [T](e: Elem[T]): Numeric[T]  = elemToNumericMap(e).asInstanceOf[Numeric[T]]
+  def elemToExactNumeric [T](e: Elem[T]): ExactNumeric[T]  = elemToExactNumericMap(e).asInstanceOf[ExactNumeric[T]]
   def elemToIntegral[T](e: Elem[T]): Integral[T] = elemToIntegralMap(e).asInstanceOf[Integral[T]]
   def elemToOrdering[T](e: Elem[T]): Ordering[T] = elemToOrderingMap(e).asInstanceOf[Ordering[T]]
 
   def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
-    case OpCodes.PlusCode => NumericPlus(elemToNumeric(eT))(eT)
-    case OpCodes.MinusCode => NumericMinus(elemToNumeric(eT))(eT)
-    case OpCodes.MultiplyCode => NumericTimes(elemToNumeric(eT))(eT)
+    case OpCodes.PlusCode => NumericPlus(elemToExactNumeric(eT))(eT)
+    case OpCodes.MinusCode => NumericMinus(elemToExactNumeric(eT))(eT)
+    case OpCodes.MultiplyCode => NumericTimes(elemToExactNumeric(eT))(eT)
     case OpCodes.DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
     case OpCodes.ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
     case OpCodes.MinCode => OrderingMin(elemToOrdering(eT))(eT)
@@ -1690,7 +1689,7 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
       case neg: Negation[SNumericType]@unchecked =>
         val tpe = neg.input.tpe
         val et = stypeToElem(tpe)
-        val op = NumericNegate(elemToNumeric(et))(et)
+        val op = NumericNegate(elemToExactNumeric(et))(et)
         val inputC = evalNode(ctx, env, neg.input)
         inputC match { case x: RCosted[a] =>
             val v = ApplyUnOp(op, x.value)

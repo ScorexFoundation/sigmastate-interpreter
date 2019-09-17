@@ -2,7 +2,9 @@ package sigmastate.eval
 
 import java.math.BigInteger
 
-import scala.math.{LowPriorityOrderingImplicits,Integral, Ordering}
+import scalan.ExactNumeric
+
+import scala.math.{LowPriorityOrderingImplicits, Integral, Ordering}
 import special.sigma._
 import scalan.util.Extensions._
 import sigmastate.eval.Extensions._
@@ -55,5 +57,11 @@ object NumericOps {
   }
   implicit object BigIntIsIntegral extends BigIntIsIntegral with OrderingOps.BigIntOrdering
 
+  implicit object BigIntIsExactNumeric extends ExactNumeric[BigInt] {
+    val n = BigIntIsIntegral
+    override def plus(x: BigInt, y: BigInt): BigInt = n.plus(x, y)
+    override def minus(x: BigInt, y: BigInt): BigInt = n.minus(x, y)
+    override def times(x: BigInt, y: BigInt): BigInt = n.times(x, y)
+  }
 }
 

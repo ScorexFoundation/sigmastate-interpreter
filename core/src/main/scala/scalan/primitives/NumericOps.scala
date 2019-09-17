@@ -2,13 +2,15 @@ package scalan.primitives
 
 import java.math.BigInteger
 
-import scalan.{Base, Scalan}
+import scalan.{Base, Scalan, ExactNumeric}
 
 trait NumericOps extends Base { self: Scalan =>
-  implicit class NumericOpsCls[T](x: Ref[T])(implicit val n: Numeric[T]) {
+  implicit class ExactNumericOpsCls[T](x: Ref[T])(implicit val n: ExactNumeric[T]) {
     def +(y: Ref[T]) = NumericPlus(n)(x.elem).apply(x, y)
     def -(y: Ref[T]) = NumericMinus(n)(x.elem).apply(x, y)
     def *(y: Ref[T]) = NumericTimes(n)(x.elem).apply(x, y)
+  }
+  implicit class NumericOpsCls[T](x: Ref[T])(implicit val n: Numeric[T]) {
     def unary_- = NumericNegate(n)(x.elem).apply(x)
     def abs = Abs(n)(x.elem).apply(x)
     def toFloat = NumericToFloat(n).apply(x)
@@ -33,11 +35,11 @@ trait NumericOps extends Base { self: Scalan =>
   def fractional[T:Fractional]: Fractional[T] = implicitly[Fractional[T]]
   def integral[T:Integral]: Integral[T] = implicitly[Integral[T]]
 
-  case class NumericPlus[T: Elem](n: Numeric[T]) extends EndoBinOp[T]("+", n.plus)
+  case class NumericPlus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("+", n.plus)
 
-  case class NumericMinus[T: Elem](n: Numeric[T]) extends EndoBinOp[T]("-", n.minus)
+  case class NumericMinus[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("-", n.minus)
 
-  case class NumericTimes[T: Elem](n: Numeric[T]) extends EndoBinOp[T]("*", n.times)
+  case class NumericTimes[T: Elem](n: ExactNumeric[T]) extends EndoBinOp[T]("*", n.times)
 
   class DivOp[T: Elem](opName: String, applySeq: (T, T) => T, n: Numeric[T]) extends EndoBinOp[T](opName, applySeq) {
     override def shouldPropagate(lhs: T, rhs: T) = rhs != n.zero
@@ -61,9 +63,6 @@ trait NumericOps extends Base { self: Scalan =>
 
   case class IntegralMod[T](i: Integral[T])(implicit elem: Elem[T]) extends DivOp[T]("%", i.rem, i)
 
-
-
   @inline final def isZero[T](x: T, n: Numeric[T]) = x == n.zero
   @inline final def isOne[T](x: T, n: Numeric[T]) = x == n.fromInt(1)
-  
 }

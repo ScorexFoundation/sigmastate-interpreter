@@ -9,8 +9,8 @@ class CollsStagingTests extends WrappersTests {
   class Ctx extends TestContext with TestLibrary {
     import Coll._
     import CollBuilder._
-    lazy val t2 = fun { (c: Ref[Coll[Double]]) =>
-      c.map(fun { x => x + 1.0 })
+    lazy val t2 = fun { (c: Ref[Coll[Long]]) =>
+      c.map(fun { x => x + 1L })
     }
     lazy val t3 = fun { (x: Ref[Int]) =>
       val b = colBuilder

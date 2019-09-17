@@ -3,6 +3,7 @@ package scalan
 import special.collection._
 import special.wrappers.{WrappersSpecModule, WrappersModule}
 import scalan.util.{MemoizedFunc}
+import scalan.ExactNumeric._
 
 trait Library extends Scalan
   with WrappersModule
