@@ -129,7 +129,7 @@ trait DefRewriting { scalan: Scalan =>
       case BinaryXorOp =>
         rewriteBoolConsts(x, y, x => !x.asInstanceOf[Ref[Boolean]], x => x.asInstanceOf[Ref[Boolean]], _ => false, _ => true)
 
-      case NumericPlus(n: Numeric[a]) => (x, y) match {
+      case NumericPlus(n: ExactNumeric[a]) => (x, y) match {
         // x + 0 => x
         case (x, Def(Const(zero))) if isZero(zero.asInstanceOf[a], n) => x
         // 0 + x => x
@@ -137,7 +137,7 @@ trait DefRewriting { scalan: Scalan =>
         case _ => propagateBinOp(op, x, y)
       }
 
-      case NumericMinus(n: Numeric[a]) => (x, y) match {
+      case NumericMinus(n: ExactNumeric[a]) => (x, y) match {
         // x - 0 => x
         case (x, Def(Const(zero))) if isZero(zero.asInstanceOf[a], n) => x
         // 0 - x => -x
@@ -146,7 +146,7 @@ trait DefRewriting { scalan: Scalan =>
         case _ => propagateBinOp(op, x, y)
       }
 
-      case NumericTimes(n: Numeric[a]) => (x, y) match {
+      case NumericTimes(n: ExactNumeric[a]) => (x, y) match {
         // _ * 0 => 0
         case (_, y@Def(Const(zero))) if isZero(zero.asInstanceOf[a], n) => y
         // 0 * _ => 0

@@ -1,7 +1,5 @@
 package scalan
 
-import scalan.util.Extensions._
-
 import scala.math.Numeric.{ByteIsIntegral, LongIsIntegral, ShortIsIntegral, IntIsIntegral}
 
 /** Ordering operations to be used with other Exact traits.

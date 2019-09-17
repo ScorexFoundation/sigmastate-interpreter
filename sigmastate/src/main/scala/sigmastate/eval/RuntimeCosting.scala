@@ -2,7 +2,7 @@ package sigmastate.eval
 
 import scala.language.implicitConversions
 import scala.language.existentials
-import scalan.{Nullable, MutableLazy, Lazy, ExactNumeric, RType}
+import scalan.{ExactIntegral, ExactOrdering, Nullable, MutableLazy, Lazy, ExactNumeric, RType}
 import scalan.util.CollectionUtil.TraversableOps
 import org.ergoplatform._
 import sigmastate._
@@ -30,7 +30,9 @@ import special.sigma.{GroupElementRType, AvlTreeRType, BigIntegerRType, BoxRType
 import special.sigma.Extensions._
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.ReflectionUtil
+import scalan.ExactIntegral._
 import scalan.ExactNumeric._
+import scalan.ExactOrdering.{ShortIsExactOrdering, ByteIsExactOrdering, IntIsExactOrdering, LongIsExactOrdering}
 import spire.syntax.all.cfor
 
 import scala.collection.mutable
@@ -173,9 +175,9 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
   def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
     case _: ProveDlog => _costOfProveDlogEval.eval
     case _: ProveDHTuple => _costOfProveDHTuple.eval
-    case CAND(children) => children.map(costOfSigmaTree(_)).sum
-    case COR(children)  => children.map(costOfSigmaTree(_)).sum
-    case CTHRESHOLD(_, children)  => children.map(costOfSigmaTree(_)).sum
+    case CAND(children) => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
+    case COR(children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
+    case CTHRESHOLD(_, children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(intPlusMonoidValue)
     case _ => CostTable.MinimalCost
   }
 
@@ -919,43 +921,43 @@ trait RuntimeCosting extends CostingRules { IR: IRContext =>
     (LongElement, LongIsExactNumeric),
     (bigIntElement, BigIntIsExactNumeric)
   )
-  private lazy val elemToIntegralMap = Map[Elem[_], Integral[_]](
-    (ByteElement,   integral[Byte]),
-    (ShortElement,  integral[Short]),
-    (IntElement,    integral[Int]),
-    (LongElement,   integral[Long]),
-    (bigIntElement, integral[SBigInt])
+  private lazy val elemToExactIntegralMap = Map[Elem[_], ExactIntegral[_]](
+    (ByteElement,   ByteIsExactIntegral),
+    (ShortElement,  ShortIsExactIntegral),
+    (IntElement,    IntIsExactIntegral),
+    (LongElement,   LongIsExactIntegral),
+    (bigIntElement, BigIntIsExactIntegral)
   )
-  private lazy val elemToOrderingMap = Map[Elem[_], Ordering[_]](
-    (ByteElement,   ByteIsExactNumeric),
-    (ShortElement,  ShortIsExactNumeric),
-    (IntElement,    IntIsExactNumeric),
-    (LongElement,   LongIsExactNumeric),
-    (bigIntElement, BigIntIsExactNumeric)
+  private lazy val elemToExactOrderingMap = Map[Elem[_], ExactOrdering[_]](
+    (ByteElement,   ByteIsExactOrdering),
+    (ShortElement,  ShortIsExactOrdering),
+    (IntElement,    IntIsExactOrdering),
+    (LongElement,   LongIsExactOrdering),
+    (bigIntElement, BigIntIsExactOrdering)
   )
 
   def elemToExactNumeric [T](e: Elem[T]): ExactNumeric[T]  = elemToExactNumericMap(e).asInstanceOf[ExactNumeric[T]]
-  def elemToIntegral[T](e: Elem[T]): Integral[T] = elemToIntegralMap(e).asInstanceOf[Integral[T]]
-  def elemToOrdering[T](e: Elem[T]): Ordering[T] = elemToOrderingMap(e).asInstanceOf[Ordering[T]]
+  def elemToExactIntegral[T](e: Elem[T]): ExactIntegral[T] = elemToExactIntegralMap(e).asInstanceOf[ExactIntegral[T]]
+  def elemToExactOrdering[T](e: Elem[T]): ExactOrdering[T] = elemToExactOrderingMap(e).asInstanceOf[ExactOrdering[T]]
 
   def opcodeToEndoBinOp[T](opCode: Byte, eT: Elem[T]): EndoBinOp[T] = opCode match {
     case OpCodes.PlusCode => NumericPlus(elemToExactNumeric(eT))(eT)
     case OpCodes.MinusCode => NumericMinus(elemToExactNumeric(eT))(eT)
     case OpCodes.MultiplyCode => NumericTimes(elemToExactNumeric(eT))(eT)
-    case OpCodes.DivisionCode => IntegralDivide(elemToIntegral(eT))(eT)
-    case OpCodes.ModuloCode => IntegralMod(elemToIntegral(eT))(eT)
-    case OpCodes.MinCode => OrderingMin(elemToOrdering(eT))(eT)
-    case OpCodes.MaxCode => OrderingMax(elemToOrdering(eT))(eT)
+    case OpCodes.DivisionCode => IntegralDivide(elemToExactIntegral(eT))(eT)
+    case OpCodes.ModuloCode => IntegralMod(elemToExactIntegral(eT))(eT)
+    case OpCodes.MinCode => OrderingMin(elemToExactOrdering(eT))(eT)
+    case OpCodes.MaxCode => OrderingMax(elemToExactOrdering(eT))(eT)
     case _ => error(s"Cannot find EndoBinOp for opcode $opCode")
   }
 
   def opcodeToBinOp[A](opCode: Byte, eA: Elem[A]): BinOp[A,_] = opCode match {
     case OpCodes.EqCode  => Equals[A]()(eA)
     case OpCodes.NeqCode => NotEquals[A]()(eA)
-    case OpCodes.GtCode  => OrderingGT[A](elemToOrdering(eA))
-    case OpCodes.LtCode  => OrderingLT[A](elemToOrdering(eA))
-    case OpCodes.GeCode  => OrderingGTEQ[A](elemToOrdering(eA))
-    case OpCodes.LeCode  => OrderingLTEQ[A](elemToOrdering(eA))
+    case OpCodes.GtCode  => OrderingGT[A](elemToExactOrdering(eA))
+    case OpCodes.LtCode  => OrderingLT[A](elemToExactOrdering(eA))
+    case OpCodes.GeCode  => OrderingGTEQ[A](elemToExactOrdering(eA))
+    case OpCodes.LeCode  => OrderingLTEQ[A](elemToExactOrdering(eA))
     case _ => error(s"Cannot find BinOp for opcode $opCode")
   }
 
