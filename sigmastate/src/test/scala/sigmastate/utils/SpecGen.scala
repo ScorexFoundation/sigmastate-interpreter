@@ -59,7 +59,7 @@ trait SpecGen {
   protected val predefFuncRegistry = new PredefinedFuncRegistry(StdSigmaBuilder)
   val noFuncs: Set[ValueCompanion] = Set(Constant, MethodCall)
   val predefFuncs: Seq[PredefinedFunc] = predefFuncRegistry.funcs.values
-      .filterNot { f => noFuncs.contains(f.docInfo.opDesc) }.toSeq
+      .filterNot { f => f.docInfo.opDesc.exists(noFuncs.contains) }.toSeq
   val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
 
   def collectOpsTable() = {
@@ -68,16 +68,16 @@ trait SpecGen {
     val funcs = predefFuncs ++ specialFuncs
 
     val methodsByOpCode = methods
-        .groupBy(_.docInfo.flatMap(i => Option(i.opDesc).map(_.opCode)))
+        .groupBy(_.docInfo.flatMap(i => i.opDesc.map(_.opCode)))
     //      .map { case p @ (k, xs) => p.ensuring({ k.isEmpty || xs.length == 1}, p) }
 
     val funcsByOpCode = funcs
-        .groupBy(_.docInfo.opDesc.opCode)
+        .groupBy(_.docInfo.opDesc.map(_.opCode))
         .ensuring(g => g.forall{ case (k, xs) => xs.length <= 1})
 
     val table = ops.map { case (opCode, opDesc) =>
       val methodOpt = methodsByOpCode.get(Some(opCode)).map(_.head)
-      val funcOpt = funcsByOpCode.get(opCode).map(_.head)
+      val funcOpt = funcsByOpCode.get(Some(opCode)).map(_.head)
       (opCode, opDesc, methodOpt, funcOpt)
     }
     val rowsWithInfo =
@@ -142,7 +142,7 @@ trait SpecGen {
     val argInfos = m.docInfo.fold(
       Range(0, types.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
 
-    val serializedAs = m.docInfo.flatMap(i => Option(i.opDesc)).opt { d =>
+    val serializedAs = m.docInfo.flatMap(_.opDesc).opt { d =>
       val opName = d.typeName
       val opCode = d.opCode.toUByte
       s"""
@@ -168,10 +168,8 @@ trait SpecGen {
     val types = argTypes.map(_.toTermString)
     val argInfos = f.docInfo.args
     val opDesc = f.docInfo.opDesc
-    val opCode = opDesc.opCode.toUByte
-
     val serializedAs = {
-      val nodeName = opDesc.typeName
+      val nodeName = f.docInfo.opTypeName
       s"""
         |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$nodeName]{\\lst{$nodeName}} \\\\
         |  \\hline
@@ -179,8 +177,8 @@ trait SpecGen {
     }
     subsectionTempl(
       opName = toTexName(f.name),
-      opCode = opCode.toString,
-      label  = s"sec:appendix:primops:${f.docInfo.opDesc.typeName}",
+      opCode = opDesc.map(_.opCode.toUByte.toString).getOrElse("NA"),
+      label  = s"sec:appendix:primops:${f.docInfo.opTypeName}",
       desc = f.docInfo.description + f.docInfo.isFrontendOnly.opt(" (FRONTEND ONLY)"),
       types = types,
       argInfos = argInfos,
@@ -262,7 +260,7 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of all operations with all methods by optional opCode
     val primOps = CollectionUtil.outerJoinSeqs(ops, methods)(
-      o => Some(o._1), m => m.docInfo.map(_.opDesc.opCode)
+      o => Some(o._1), m => m.docInfo.map(_.opDesc.map(_.opCode))
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left
@@ -279,7 +277,7 @@ object GenPrimOpsApp extends SpecGen {
 
     // join collection of operations with all predef functions by opCode
     val danglingOps = CollectionUtil.outerJoinSeqs(primOps, predefFuncs)(
-      o => Some(o._1), f => Some(f.docInfo.opDesc.opCode)
+      o => Some(o._1), f => Some(f.docInfo.opDesc.map(_.opCode))
     )(
       (k, o) => Some(o), // left without right
       (k,i) => None,     // right without left

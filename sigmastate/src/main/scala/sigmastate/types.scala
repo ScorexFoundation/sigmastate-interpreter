@@ -339,8 +339,14 @@ case class ArgInfo(name: String, description: String)
 /** Meta information which can be attached to SMethod.
   * @param description  human readable description of the method
   * @param args         one item for each argument */
-case class OperationInfo(opDesc: ValueCompanion, description: String, args: Seq[ArgInfo]) {
-  def isFrontendOnly: Boolean = opDesc == null
+case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
+  def isFrontendOnly: Boolean = opDesc.isEmpty
+  def opTypeName: String = opDesc.map(_.typeName).getOrElse("(FRONTEND ONLY")
+}
+
+object OperationInfo {
+  def apply(opDesc: ValueCompanion, description: String, args: Seq[ArgInfo]): OperationInfo =
+    OperationInfo(Some(opDesc), description, args)
 }
 
 /** Meta information connecting SMethod with ErgoTree.
@@ -378,11 +384,14 @@ case class SMethod(
       case _ => this
     }
   }
-  def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*) = {
+  def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(opDesc, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
+  def withInfo(desc: String, args: ArgInfo*): SMethod = {
+    this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
+  }
   def withIRInfo(
-      irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]) = {
+      irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]): SMethod = {
     this.copy(irInfo = MethodIRInfo(Some(irBuilder)))
   }
   def argInfo(argName: String): ArgInfo =
@@ -756,7 +765,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
     SMethod(this, PropBytes, SFunc(this, SByteArray), 1)
         .withInfo(SigmaPropBytes, "Serialized bytes of this sigma proposition taken as ErgoTree."),
     SMethod(this, IsProven, SFunc(this, SBoolean), 2)
-        .withInfo(SigmaPropIsProven, // available only at frontend of ErgoScript
+        .withInfo(// available only at frontend of ErgoScript
           "Verify that sigma proposition is proven.")
   )
 }

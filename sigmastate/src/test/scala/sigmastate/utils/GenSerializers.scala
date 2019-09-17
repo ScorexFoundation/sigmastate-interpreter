@@ -134,7 +134,7 @@ object GenSerializers extends SpecGen {
         .filterNot { case (d,_,_) => d == PropertyCall || d == MethodCall }
         .opt { case (d, m, f) =>
           m.fold(f.opt { f =>
-            val refName = f.docInfo.opDesc.typeName
+            val refName = f.docInfo.opTypeName
             val opName = f.name.replace("%", "\\%")
             s"See~\\hyperref[sec:appendix:primops:$refName]{\\lst{${opName}}}"
           })({ m =>
