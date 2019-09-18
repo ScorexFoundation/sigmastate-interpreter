@@ -342,7 +342,7 @@ case class ArgInfo(name: String, description: String)
   * @param args         one item for each argument */
 case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
   def isFrontendOnly: Boolean = opDesc.isEmpty
-  def opTypeName: String = opDesc.map(_.typeName).getOrElse("(FRONTEND ONLY")
+  def opTypeName: String = opDesc.map(_.typeName).getOrElse("(FRONTEND ONLY)")
 }
 
 object OperationInfo {
