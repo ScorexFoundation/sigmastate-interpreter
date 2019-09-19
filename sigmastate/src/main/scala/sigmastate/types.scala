@@ -489,39 +489,44 @@ trait SNumericType extends SProduct {
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 106: Byte
-  val ToByte = "toByte"
-  val ToShort = "toShort"
-  val ToInt = "toInt"
-  val ToLong = "toLong"
-  val ToBigInt = "toBigInt"
-
   val tNum = STypeVar("TNum")
-  val methods = Vector(
-    SMethod(this, ToByte,   SFunc(tNum, SByte),   1)
-        .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow."),  // see Downcast
-    SMethod(this, ToShort,  SFunc(tNum, SShort),  2)
-        .withInfo(PropertyCall, "Converts this numeric value to \\lst{Short}, throwing exception if overflow."),  // see Downcast
-    SMethod(this, ToInt,    SFunc(tNum, SInt),    3)
-        .withInfo(PropertyCall, "Converts this numeric value to \\lst{Int}, throwing exception if overflow."),  // see Downcast
-    SMethod(this, ToLong,   SFunc(tNum, SLong),   4)
-        .withInfo(PropertyCall, "Converts this numeric value to \\lst{Long}, throwing exception if overflow."),  // see Downcast
-    SMethod(this, ToBigInt, SFunc(tNum, SBigInt), 5)
-        .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}"),  // see Downcast
-    SMethod(this, "toBytes", SFunc(tNum, SByteArray),  6)
-        .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall,
-          """ Returns a big-endian representation of this numeric value in a collection of bytes.
-           | For example, the \lst{Int} value \lst{0x12131415} would yield the
-           | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
-          """.stripMargin),
-    SMethod(this, "toBits",  SFunc(tNum, SBooleanArray), 7)
-        .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall,
-          """ Returns a big-endian representation of this numeric in a collection of Booleans.
-           |  Each boolean corresponds to one bit.
+
+  val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
+    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Byte}, throwing exception if overflow.")
+  val ToShortMethod: SMethod = SMethod(this, "toShort", SFunc(tNum, SShort), 2)
+    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Short}, throwing exception if overflow.")
+  val ToIntMethod: SMethod = SMethod(this, "toInt", SFunc(tNum, SInt), 3)
+    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Int}, throwing exception if overflow.")
+  val ToLongMethod: SMethod = SMethod(this, "toLong", SFunc(tNum, SLong), 4)
+    .withInfo(PropertyCall, "Converts this numeric value to \\lst{Long}, throwing exception if overflow.")
+  val ToBigIntMethod: SMethod = SMethod(this, "toBigInt", SFunc(tNum, SBigInt), 5)
+    .withInfo(PropertyCall, "Converts this numeric value to \\lst{BigInt}")
+  val ToBytesMethod: SMethod = SMethod(this, "toBytes", SFunc(tNum, SByteArray), 6)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric value in a collection of bytes.
+        | For example, the \lst{Int} value \lst{0x12131415} would yield the
+        | collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
           """.stripMargin)
+  val ToBitsMethod: SMethod = SMethod(this, "toBits", SFunc(tNum, SBooleanArray), 7)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(PropertyCall,
+      """ Returns a big-endian representation of this numeric in a collection of Booleans.
+        |  Each boolean corresponds to one bit.
+          """.stripMargin)
+
+  override val methods: Seq[SMethod] = Vector(
+    ToByteMethod,  // see Downcast
+    ToShortMethod,  // see Downcast
+    ToIntMethod,  // see Downcast
+    ToLongMethod,  // see Downcast
+    ToBigIntMethod,  // see Downcast
+    ToBytesMethod,
+    ToBitsMethod
   )
-  val castMethods: Array[String] = Array(ToByte, ToShort, ToInt, ToLong, ToBigInt)
+  val castMethods: Array[String] =
+    Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
+      .map(_.name)
 }
 
 trait SLogical extends SType {
@@ -720,27 +725,35 @@ case object SGroupElement extends SProduct with SPrimType with SEmbeddable with 
   override val typeCode: TypeCode = 7: Byte
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
+
+  val GetEncodedMethod: SMethod = SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(PropertyCall, "Get an encoding of the point value.")
+  val ExponentiateMethod: SMethod = SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3)
+    .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
+      builder.mkExponentiate(obj.asGroupElement, arg.asBigInt)
+    })
+    .withInfo(Exponentiate,
+      "Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
+      ArgInfo("k", "The power"))
+  val MultiplyMethod: SMethod = SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4)
+    .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
+      builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement)
+    })
+    .withInfo(MultiplyGroup, "Group operation.", ArgInfo("other", "other element of the group"))
+  val NegateMethod: SMethod = SMethod(this, "negate", SFunc(this, this), 5)
+    .withIRInfo(MethodCallIrBuilder)
+    .withInfo(PropertyCall, "Inverse element of the group.")
+
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
     SMethod(this, "isIdentity", SFunc(this, SBoolean),   1)
         .withInfo(PropertyCall, "Checks if this value is identity element of the eliptic curve group."),
     */
-    SMethod(this, "getEncoded", SFunc(IndexedSeq(this), SByteArray), 2)
-        .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall, "Get an encoding of the point value."),
-    SMethod(this, "exp", SFunc(IndexedSeq(this, SBigInt), this), 3)
-        .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
-          builder.mkExponentiate(obj.asGroupElement, arg.asBigInt) })
-        .withInfo(Exponentiate,
-          "Exponentiate this \\lst{GroupElement} to the given number. Returns this to the power of k",
-          ArgInfo("k", "The power")),
-    SMethod(this, "multiply", SFunc(IndexedSeq(this, SGroupElement), this), 4)
-        .withIRInfo({ case (builder, obj, _, Seq(arg), _) =>
-          builder.mkMultiplyGroup(obj.asGroupElement, arg.asGroupElement) })
-        .withInfo(MultiplyGroup, "Group operation.", ArgInfo("other", "other element of the group")),
-    SMethod(this, "negate", SFunc(this, this), 5)
-        .withIRInfo(MethodCallIrBuilder)
-        .withInfo(PropertyCall, "Inverse element of the group.")
+    GetEncodedMethod,
+    ExponentiateMethod,
+    MultiplyMethod,
+    NegateMethod
   )
   override def mkConstant(v: GroupElement): Value[SGroupElement.type] = GroupElementConstant(v)
   override def dataSize(v: SType#WrappedType): Long = CryptoConstants.EncodedGroupElementLength.toLong
