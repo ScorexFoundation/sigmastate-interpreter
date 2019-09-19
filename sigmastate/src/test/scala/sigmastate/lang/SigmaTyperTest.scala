@@ -3,18 +3,20 @@ package sigmastate.lang
 import org.ergoplatform.ErgoAddressEncoder.TestnetNetworkPrefix
 import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
-import org.scalatest.{PropSpec, Matchers}
+import org.scalatest.{Matchers, PropSpec}
 import sigmastate.SCollection._
 import sigmastate.Values._
 import sigmastate._
-import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.basics.DLogProtocol.{DLogProverInput, ProveDlog}
+import sigmastate.eval.Colls
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.Terms.Select
 import sigmastate.lang.exceptions.TyperException
+import sigmastate.serialization.ErgoTreeSerializer
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{ExtractCreationInfo, Append}
+import sigmastate.utxo.{Append, ExtractCreationInfo}
 
 class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with LangTests with ObjectGenerators {
 
@@ -656,5 +658,29 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
 
   property("SGroupElement.exp") {
     typecheck(env, "g1.exp(1.toBigInt)") shouldBe SGroupElement
+  }
+
+  // TODO: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/599
+  ignore("substConst") {
+    def script(pk: ProveDlog): SigmaPropValue =
+      AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
+
+    val pk1 = DLogProverInput.random().publicImage
+    val pk2 = DLogProverInput.random().publicImage
+    val script1 = script(pk1)
+    val script2 = script(pk2)
+    val inputBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script1.treeWithSegregation)
+    val positions = IntArrayConstant(Array[Int](2))
+    val newVals = ConcreteCollection(Vector[SigmaPropValue](SigmaPropConstant(pk2)), SSigmaProp)
+
+    val expectedBytes = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script2.treeWithSegregation)
+
+    val customEnv: ScriptEnv = Map(
+      "scriptBytes" -> Colls.fromArray(inputBytes),
+      "positions" -> positions,
+      "newVals" -> newVals,
+      "expectedBytes" -> Colls.fromArray(expectedBytes),
+    )
+    typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }
 }
