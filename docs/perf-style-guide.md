@@ -11,7 +11,8 @@ And it turns out that for many constructions there exists much faster alternativ
 which, at the same time, have comparable abstraction level and code clarity.
 
 This document is a collection of such alternatives. The recommendations can be used
-in addition to the classical Style Guide [1], these recipes are recommendations only, 
+in addition to the classical [Scala Style Guide](https://docs.scala-lang.org/style/)
+ [1], these recipes are recommendations only, 
 there are always exceptions.
 
 This guide can be used by code writers and reviewers to reason about code quality from
