@@ -6,6 +6,7 @@ import org.ergoplatform.ErgoScriptPredef.{FalseProp, TrueProp}
 import org.ergoplatform.validation._
 import org.ergoplatform._
 import org.scalacheck.Arbitrary.{arbAnyVal, arbBool, arbByte, arbInt, arbLong, arbOption, arbShort, arbString, arbUnit, arbitrary}
+import org.scalacheck.Gen.frequency
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.{ADDigest, ADKey}
 import scorex.crypto.hash.Digest32
@@ -271,6 +272,8 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
     case SAvlTree => arbAvlTree
     case SAny => arbAnyVal
     case SUnit => arbUnit
+    case opt: SOption[a] =>
+      Arbitrary(frequency((5, None), (5, for (x <- wrappedTypeGen(opt.elemType)) yield Some(x))))
   }).asInstanceOf[Arbitrary[T#WrappedType]].arbitrary
 
   def tupleGen(min: Int, max: Int): Gen[Tuple] = for {

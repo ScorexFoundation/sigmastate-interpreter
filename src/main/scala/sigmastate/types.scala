@@ -175,6 +175,7 @@ object SType {
       case SUnit => reflect.classTag[Unit]
       case SBox => reflect.classTag[ErgoBox]
       case SAny => reflect.classTag[Any]
+      case opt: SOption[a] => reflect.classTag[Option[a]]
       case _: STuple => reflect.classTag[Array[Any]]
       case tColl: SCollection[a] =>
         val elemType = tColl.elemType

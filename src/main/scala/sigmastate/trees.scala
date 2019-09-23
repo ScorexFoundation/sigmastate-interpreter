@@ -610,10 +610,14 @@ trait OpGroup[C <: ValueCompanion] {
 object ModQArithOp extends OpGroup[ModQArithOpCompanion] {
   import OpCodes._
   object PlusModQ extends ModQArithOpCompanion(PlusModQCode,  "PlusModQ") {
-    override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
+    // TODO soft-fork:
+    // override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
+    override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }
   object MinusModQ extends ModQArithOpCompanion(MinusModQCode, "MinusModQ") {
-    override def argInfos: Seq[ArgInfo] = PlusModQInfo.argInfos
+    // TODO soft-fork:
+    // override def argInfos: Seq[ArgInfo] = MinusModQInfo.argInfos
+    override def argInfos: Seq[ArgInfo] = Seq(ArgInfo("this", ""), ArgInfo("other", ""))
   }
 
   val operations: Map[Byte, ModQArithOpCompanion] = Seq(PlusModQ, MinusModQ).map(o => (o.opCode, o)).toMap
