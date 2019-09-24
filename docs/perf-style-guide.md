@@ -3,32 +3,31 @@
 ### Motivation
 
 Scala is high-level language with powerful constructs and idioms to
-create abstractions which allow to achieve code correctness and clarity.
+build abstractions which provide a higher guarantee of code correctness and clarity.
 
-However, many abstractions come with performance penalty to be payed at runtime.
-Meanwhile, a given task can often be solved in many different ways. 
-And it turns out that for many constructions there exists much faster alternative
-which, at the same time, have comparable abstraction level and code clarity.
+However, many abstractions come with performance penalties that must be faced during runtime.
+That said, a given task often has several unique alternative solutions, each with it's own tradeoffs. 
+Some of these may in fact be more efficient while still providing a comparable level of abstraction and code clarity.
 
-This document is a collection of such alternatives. The recommendations can be used
+This document is a collection of such alternatives, specifically providing recommendations which can be used
 in addition to the classical [Scala Style Guide](https://docs.scala-lang.org/style/)
  [1], these recipes are recommendations only, 
 there are always exceptions.
 
-This guide can be used by code writers and reviewers to reason about code quality from
-performance point of view.
-This is particularly important in those 20% of code which is known to be a hotspot or
+This guide can be used by both code writers and reviewers to reason about code quality from
+a performance point of view.
+This is particularly important in those 20% of cases where a part of the codebase is known to be a hotspot or
 hotspot candidate.
 
-I’d like to point out that performance measurements referred in this guide are only to 
-highlight what’s possible to expect, and not to produce exact numbers. 
-Some optimizations can be easily measured, while others are not. Some measurements 
-might be distorted in real world code by other optimizations that are not taken into 
+Please note that the performance measurements referred to in this guide are only 
+examples of what to expect. These are not specifically exact numbers. 
+Some optimizations can be easily measured, while others les so. Some measurements 
+might be distorted in real world code by other optimizations which are not taken into 
 account in the micro-benchmarks. 
 
 ### Empty Seq
 
-It is quite often to see `Seq()` where empty collection is required.
+One sees the use of `Seq()` quite often wherever an empty collection is required.
 However, this means the following method from `GenericCompanion` is called
 
 ```scala
@@ -49,7 +48,7 @@ Simple `Nil` is 3-20x faster depending on the context
 
 ### Empty Map
 
-It is quite often to see `Map()` where empty Map is required.
+`Map()` is often used wherever an empty Map is required.
 However, this means the following method from `GenMapFactory` is called
 
 ```scala
@@ -66,7 +65,7 @@ Calling `Map.empty` is 50-70% faster depending on the context
 Looping pattern `for (x <- xs) { ... }` is used quite often due to it's convenience.
 It looks like `x is bound to each element and block of code is executed`.
 However it is desugared to `xs.foreach { x => ... }` which, besides
-execution of the block of code involves the following overhead points:
+execution of the block of code involves the following list of overheads:
 1) `foreach` method call
 2) allocation of lambda object
 3) boxing of lambda argument for every xs item (if xs values are not yet boxed)
@@ -74,8 +73,8 @@ execution of the block of code involves the following overhead points:
 
 ##### What to use instead
 
-The following code is recommended replacement if xs provides O(1) indexing operation,
-especially if `xs` is `Array` wrapped into `Seq`.
+The following code is recommended as a replacement if xs provides an O(1) indexing operator,
+especially if `xs` is an `Array` wrapped into `Seq`.
 
 ```scala
 import spire.syntax.all.cfor
@@ -88,8 +87,8 @@ cfor(0)(_ < xs.length, _ + 1) { i =>
 Here `cfor` is a macros from [spire](https://github.com/non/spire) library.
 This is compiled to efficient Java `for` loop and avoids overhead points 1) - 4).
 Depending on xs.length it is 20-50x faster (see `BasicBenchmark.scala`).
-And since `foreach` already implies a side effect operation `cfor` doesn't make 
-the code less readable.
+And since `foreach` already implies a side effect operation, `cfor` doesn't make 
+the code any less readable.
 
 ### Creating Sequences with Seq(...)
 
@@ -97,13 +96,13 @@ It is tempting to use `Seq.apply` method where a Seq of items is required like
 `Seq(1, 2, 3)` because it is easy and concise. You can pass it as method argument 
 or as method result.
 However, the following happens under the hood:
-1) new Array with 1, 2, 3 items is created, and each item is boxed into its own Integer object
-2) WrappedArray#ofInt wrapper created to pass it as vararg argument of `Seq.apply`
-3) the above mentioned method from `GenericCompanion` is called.
-4) new ListBuffer created and all items are copied from array to the buffer
+1) new Array with the items `1, 2, 3` is created, and each item is boxed into its own Integer object
+2) WrappedArray#ofInt wrapper is created and passed as vararg argument of `Seq.apply`
+3) the above mentioned method from `GenericCompanion` is called
+4) new ListBuffer is created and all items are copied from array to the buffer
 
-All this would be executed by JVM interpreter thousands of time before compilation
-threshold is reached and HotSpot optimizer hopefully optimizes it away.
+All of this would be executed by JVM interpreter thousands of time before compilation
+threshold is reached and the HotSpot optimizer hopefully optimizes it away.
 
 ##### What to use instead
 
@@ -113,55 +112,54 @@ Even if `tail` method on the created sequence is used, it is still 3x faster.
 (see  performance of "Seq vs Array" in `BasicBenchmarks.scala`).
 
 What happens here is that 1) native unboxed Java array is created and then
-2) wrapped via implicit conversion `wrapIntArray` into `WrappedArray#ofInt` 
-object which is inherited from `Seq` trait so it can be used directly. 
+2) wrapped via implicit conversion `wrapIntArray` into a `WrappedArray#ofInt` 
+object which is inherited from the `Seq` trait so it can be used directly. 
 
 Why this is faster:
-1) Avoid additional allocations (vs only two new objects are allocated in Array case). 
-Note that not only each Int is boxed to java.lang.Integer (or other primitive type), 
-but also `scala.collection.immutable.::` instances are created for each item.
-2) Avoid boxing which is proportional to the size of Seq
-3) The access to array items is cache local both when the array is created and 
+1) Avoids additional allocations (vs only two new objects are allocated in the Array case). 
+Note that not only is each Int boxed into java.lang.Integer (or other primitive type), 
+but also `scala.collection.immutable.::` instances are created for each item as well.
+2) Avoids boxing (which is proportional to the size of Seq)
+3) The accessing of array items is cached locally both when the array is created and 
 when it is later used
 4) Less allocations means less garbage to collect later. This is especially 
-important when the application is multi-threaded, because in this case garbage 
+important when the application is multi-threaded, because in this case the garbage 
 collector will compete with application threads for CPU resources, thus further
-slowing down computations.
+slowing down the application.
 
-This seems like universal acceleration recipe. It doesn't make your code less readable.
-The arrays created in this way are only accessible via `Seq` interface, 
+This seems like a universal standard that is applicable everywhere as it doesn't make your code any less readable.
+Do note that the arrays created in this way are only accessible via `Seq` interface, 
 which is immutable. Thus, better performance is achieved without sacrificing other
 desirable code qualities like readability, safety, conciseness.
 
 ### Abstract class vs trait
 
 Traits are more flexible than classes because they can be mixed in various ways. 
-That is often convenient when the code is prototyped and when the code shape is 
-still changing. Also they are easier to type. 
+This makes them convenient when the code is prototyped and when the code shape is 
+still changing. They are also easier to type. 
 
-However traits come with inherent performance penalty. Invocation of trait's method
-results in `invokeinterface` opcode of JVM instead of `invokevirtual` opcode for 
-class method invocation. First, HotSpot JIT needs to do more work to optimize 
-execution of `invokeinterface`, which is not always possible. Second, if it fails 
+However traits come with inherent performance penalties. Invocation of a trait's method
+results in the `invokeinterface` JVM opcode instead of the `invokevirtual` opcode for 
+class method invocation. What this means is that first the HotSpot JIT needs to do more work to optimize 
+execution of `invokeinterface`, which is not always possible. Secondly, if it fails 
 to optimize, then every call will have an additional method search before an actual 
 invocation takes place.
 
 ##### What to use instead
 
-When prototyping use `abstract class` instead of `trait` declaration by default.
-This way you avoid over generalization of you type hierarchy, and you will have 
-better understanding of where you really need traits and why.
+When prototyping use `abstract class` instead of a `trait` declaration by default.
+This way you avoid over generalization of your type hierarchy, ain addition to having a
+better understanding of where you really need to use traits and why.
 
-Try changing `trait` declarations with `abstract class` declarations. In many cases
-this is as simple as that, and you get performance gains almost for free.
-This however not always possible with published APIs as it may break compatibility.
+It's as simple as changing `trait` declarations to `abstract class` and you get performance gains for for next to free.
+Be aware that this however is not always possible with published APIs as it may break compatibility.
 
 
 ### Concluding remarks
 
-Program performance is the result of everyday work, rather than one time job.
+Program performance upkeep & optimization is the result of constant vigilance and work, rather than just a one time job.
 There is no *one size fits all* solution as there are many trade-offs along the way.
-You may find it useful to examine the References section for more detailed information.
+You may find it useful to take a look at the References section below for more detailed information on relevant topics.
 
 ### References
 1. [Scala Style Guide](https://docs.scala-lang.org/style/)
