@@ -390,6 +390,8 @@ trait AvlTree {
 
   /** Checks if an entry with key `key` exists in this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
     * Return `true` if a leaf with the key `key` exists
     * Return `false` if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
@@ -399,6 +401,8 @@ trait AvlTree {
 
   /** Perform a lookup of key `key` in this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
     * Return Some(bytes) of leaf with key `key` if it exists
     * Return None if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
@@ -407,6 +411,8 @@ trait AvlTree {
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
   /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
     * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
     * @param keys    keys of elements of this authenticated dictionary.
     * @param proof
