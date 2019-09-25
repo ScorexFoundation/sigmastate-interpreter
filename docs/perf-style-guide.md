@@ -44,7 +44,7 @@ def apply[A](elems: A*): CC[A] = {
 ##### What to use instead
 
 Simple `Nil` is 3-20x faster depending on the context 
-(see  performance of "Seq" in `BasicBenchmarks.scala`)
+(see  performance of "Seq" in [BasicBenchmarks.scala](https://github.com/scalan/special/blob/master/library/src/test/scala/special/collections/BasicBenchmarks.scala))
 
 ### Empty Map
 
@@ -57,7 +57,7 @@ def apply[A, B](elems: (A, B)*): CC[A, B] = (newBuilder[A, B] ++= elems).result(
 ##### What to use instead
 
 Calling `Map.empty` is 50-70% faster depending on the context 
-(see  performance of "Map" in `BasicBenchmarks.scala`)
+(see  performance of "Map" in [BasicBenchmarks.scala](https://github.com/scalan/special/blob/master/library/src/test/scala/special/collections/BasicBenchmarks.scala))
 
 
 ### Looping using `for`
@@ -109,7 +109,7 @@ threshold is reached and the HotSpot optimizer hopefully optimizes it away.
 Simple drop-in replacement `Array(1, 2, 3)` would do the job.
 The benchmark shows that this code is 4-10x faster than using `Seq(...)`.
 Even if `tail` method on the created sequence is used, it is still 3x faster.
-(see  performance of "Seq vs Array" in `BasicBenchmarks.scala`).
+(see  performance of "Seq vs Array" in [BasicBenchmarks.scala](https://github.com/scalan/special/blob/master/library/src/test/scala/special/collections/BasicBenchmarks.scala)).
 
 What happens here is that 1) native unboxed Java array is created and then
 2) wrapped via implicit conversion `wrapIntArray` into a `WrappedArray#ofInt` 
@@ -120,7 +120,7 @@ Why this is faster:
 Note that not only is each Int boxed into java.lang.Integer (or other primitive type), 
 but also `scala.collection.immutable.::` instances are created for each item as well.
 2) Avoids boxing (which is proportional to the size of Seq)
-3) The accessing of array items is cached locally both when the array is created and 
+3) The accessing of array items is cache friendly both when the array is created and 
 when it is later used
 4) Less allocations means less garbage to collect later. This is especially 
 important when the application is multi-threaded, because in this case the garbage 
