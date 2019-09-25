@@ -13,7 +13,7 @@ import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
@@ -818,6 +818,7 @@ object Values {
   def GetVarBox(varId: Byte): GetVar[SBox.type] = GetVar(varId, SBox)
   def GetVarSigmaProp(varId: Byte): GetVar[SSigmaProp.type] = GetVar(varId, SSigmaProp)
   def GetVarByteArray(varId: Byte): GetVar[SCollection[SByte.type]] = GetVar(varId, SByteArray)
+  def GetVarIntArray(varId: Byte): GetVar[SCollection[SInt.type]] = GetVar(varId, SIntArray)
 
   /** This is alternative representation of ErgoTree expression when it cannot be parsed
     * due to `error`. This is used by the nodes running old versions of code to recognize

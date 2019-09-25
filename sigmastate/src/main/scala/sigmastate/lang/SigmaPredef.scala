@@ -315,7 +315,10 @@ object SigmaPredef {
         Vector("scriptBytes" -> SByteArray, "positions" -> SIntArray, "newValues" -> SCollection(tT)),
         SByteArray, None
       ),
-      PredefFuncInfo( undefined),
+      PredefFuncInfo(
+        { case (_, Seq(scriptBytes, positions, newValues)) =>
+          mkSubstConst(scriptBytes.asByteArray, positions.asIntArray, newValues.asInstanceOf[Value[SCollection[SType]]])
+        }),
       OperationInfo(SubstConstants,
         """Transforms serialized bytes of ErgoTree with segregated constants by replacing constants
          | at given positions with new values. This operation allow to use serialized scripts as

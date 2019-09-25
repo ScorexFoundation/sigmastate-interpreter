@@ -4,10 +4,10 @@ import java.math.BigInteger
 
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.ErgoBox.RegisterId
-import sigmastate.SCollection.SByteArray
-import sigmastate.Values.{StringConstant, FuncValue, FalseLeaf, Constant, SValue, TrueLeaf, BlockValue, ConstantNode, SomeValue, ConstantPlaceholder, BoolValue, Value, SigmaPropValue, Tuple, GroupElementValue, TaggedVariableNode, SigmaBoolean, BlockItem, ValUse, TaggedVariable, ConcreteCollection, NoneValue, _}
+import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.Values.{BlockItem, BlockValue, BoolValue, ConcreteCollection, Constant, ConstantNode, ConstantPlaceholder, FalseLeaf, FuncValue, GroupElementValue, NoneValue, SValue, SigmaBoolean, SigmaPropValue, SomeValue, StringConstant, TaggedVariable, TaggedVariableNode, TrueLeaf, Tuple, ValUse, Value, _}
 import sigmastate._
-import sigmastate.lang.Constraints.{TypeConstraint2, sameType2, onlyNumeric2}
+import sigmastate.lang.Constraints.{TypeConstraint2, onlyNumeric2, sameType2}
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.ConstraintFailed
 import sigmastate.serialization.OpCodes
@@ -19,7 +19,7 @@ import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.serialization.OpCodes.OpCode
-import special.sigma.{AvlTree, SigmaProp, GroupElement}
+import special.sigma.{AvlTree, GroupElement, SigmaProp}
 import spire.syntax.all.cfor
 
 import scala.util.DynamicVariable
@@ -212,6 +212,9 @@ trait SigmaBuilder {
   def mkBitShiftRight[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
   def mkBitShiftLeft[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
   def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T]
+
+  def mkSubstConst[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray],
+                               newValues: Value[SCollection[T]]): Value[SByteArray]
 
   def mkUnitConstant: Value[SUnit.type]
 
@@ -638,6 +641,10 @@ class StdSigmaBuilder extends SigmaBuilder {
 
   override def mkBitShiftRightZeroed[T <: SNumericType](bits: Value[T], shift: Value[T]): Value[T] =
     BitOp(bits, shift, OpCodes.BitShiftRightZeroedCode).withSrcCtx(currentSrcCtx.value)
+
+  def mkSubstConst[T <: SType](scriptBytes: Value[SByteArray], positions: Value[SIntArray],
+                               newValues: Value[SCollection[T]]): Value[SByteArray] =
+    SubstConstants(scriptBytes, positions, newValues)
 
   override def mkUnitConstant: Value[SUnit.type] = UnitConstant().withSrcCtx(currentSrcCtx.value)
 }

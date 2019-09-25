@@ -213,9 +213,12 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
             case _ => typedArgs
           }
           val actualTypes = adaptedTypedArgs.map(_.tpe)
-          if (actualTypes != argTypes)
-            error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes", app.sourceContext)
-          mkApply(new_f, adaptedTypedArgs.toIndexedSeq)
+          unifyTypeLists(argTypes, actualTypes) match {
+            case Some(_) =>
+              mkApply(new_f, adaptedTypedArgs.toIndexedSeq)
+            case None =>
+              error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes", app.sourceContext)
+          }
         case _: SCollectionType[_] =>
           // If it's a collection then the application has type of that collection's element.
           args match {

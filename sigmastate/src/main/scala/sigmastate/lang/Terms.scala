@@ -2,7 +2,7 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
-import sigmastate.SCollection.SByteArray
+import sigmastate.SCollection.{SByteArray, SIntArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
@@ -227,6 +227,7 @@ object Terms {
     def asGroupElement: Value[SGroupElement.type] = v.asInstanceOf[Value[SGroupElement.type]]
     def asSigmaProp: Value[SSigmaProp.type] = v.asInstanceOf[Value[SSigmaProp.type]]
     def asByteArray: Value[SByteArray] = v.asInstanceOf[Value[SByteArray]]
+    def asIntArray: Value[SIntArray] = v.asInstanceOf[Value[SIntArray]]
     def asCollection[T <: SType]: Value[SCollection[T]] = v.asInstanceOf[Value[SCollection[T]]]
     def asOption[T <: SType]: Value[SOption[T]] = v.asInstanceOf[Value[SOption[T]]]
     def asTuple: Value[STuple] = v.asInstanceOf[Value[STuple]]

@@ -660,8 +660,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
     typecheck(env, "g1.exp(1.toBigInt)") shouldBe SGroupElement
   }
 
-  // TODO: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/599
-  ignore("substConst") {
+  property("substConst") {
     def script(pk: ProveDlog): SigmaPropValue =
       AND(EQ(IntConstant(1), IntConstant(1)), SigmaPropConstant(pk).isProven).toSigmaProp
 

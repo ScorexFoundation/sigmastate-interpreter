@@ -7,11 +7,11 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.Interpreter.ScriptEnv
-import sigmastate.lang.Terms.{Lambda, MethodCall, ZKProofBlock, Apply, Ident}
+import sigmastate.lang.Terms.{Apply, Ident, Lambda, MethodCall, ZKProofBlock}
 import sigmastate.lang.exceptions.{CosterException, InvalidArguments, TyperException}
 import sigmastate.serialization.ValueSerializer
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{GetVar, ExtractAmount, ByIndex, SelectField}
+import sigmastate.utxo.{ByIndex, ExtractAmount, GetVar, SelectField}
 import sigmastate.eval._
 
 class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGenerators {
@@ -539,5 +539,14 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
 
   property("xorOf") {
     comp("xorOf(Coll[Boolean](true, false))") shouldBe XorOf(Seq(TrueLeaf, FalseLeaf))
+  }
+
+  property("substConst") {
+    comp("substConstants(getVar[Coll[Byte]](1).get, getVar[Coll[Int]](2).get, getVar[Coll[SigmaProp]](3).get)") shouldBe
+      SubstConstants(
+        GetVarByteArray(1).get,
+        GetVarIntArray(2).get,
+        GetVar(3.toByte, SCollection(SSigmaProp)).get
+      )
   }
 }

@@ -358,6 +358,8 @@ trait TreeBuilding extends RuntimeCosting { IR: IRContext =>
         mkByteArrayToLong(recurse(colSym))
       case SDBM.decodePoint(_, colSym) =>
         mkDecodePoint(recurse(colSym))
+      case SDBM.substConstants(_, In(scriptBytes), In(positions), In(newValues), _) =>
+        mkSubstConst(scriptBytes.asByteArray, positions.asIntArray, newValues.asCollection[SType])
 
       case Def(IfThenElseLazy(condSym, thenPSym, elsePSym)) =>
         val Seq(cond, thenP, elseP) = Seq(condSym, thenPSym, elsePSym).map(recurse)
