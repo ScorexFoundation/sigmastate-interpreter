@@ -421,6 +421,8 @@ trait AvlTree {
 
   /** Perform insertions of key-value entries into this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
@@ -430,6 +432,8 @@ trait AvlTree {
 
   /** Perform updates of key-value entries into this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to update in this authenticated dictionary.
@@ -441,6 +445,8 @@ trait AvlTree {
     * Throws exception if proof is incorrect
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
     * @param operations   collection of keys to remove from this authenticated dictionary.
     * @param proof
     */

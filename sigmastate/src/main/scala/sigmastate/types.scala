@@ -1546,6 +1546,15 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
+         |  /** Perform insertions of key-value entries into this tree using proof `proof`.
+         |    * Throws exception if proof is incorrect
+         |    *
+         |    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
+         |    * Return Some(newTree) if successful
+         |    * Return None if operations were not performed.
+         |    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
+         |    * @param proof
+         |    */
          |
         """.stripMargin)
 
@@ -1554,6 +1563,15 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
+         |  /** Perform updates of key-value entries into this tree using proof `proof`.
+         |    * Throws exception if proof is incorrect
+         |    *
+         |    * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
+         |    * Return Some(newTree) if successful
+         |    * Return None if operations were not performed.
+         |    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
+         |    * @param proof
+         |    */
          |
         """.stripMargin)
 
@@ -1562,6 +1580,15 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
         """
+         |  /** Perform removal of entries into this tree using proof `proof`.
+         |    * Throws exception if proof is incorrect
+         |    * Return Some(newTree) if successful
+         |    * Return None if operations were not performed.
+         |    *
+         |    * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
+         |    * @param operations   collection of keys to remove from this authenticated dictionary.
+         |    * @param proof
+         |    */
          |
         """.stripMargin)
 
