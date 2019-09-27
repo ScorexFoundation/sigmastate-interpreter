@@ -154,6 +154,39 @@ better understanding of where you really need to use traits and why.
 It's as simple as changing `trait` declarations to `abstract class` and you get performance gains for for next to free.
 Be aware that this however is not always possible with published APIs as it may break compatibility.
 
+### Name Based Extractors
+
+An extractor is an object with an `unapply` method taking an arbitrary argument 
+and returning an Option of some other type:
+
+```
+def unapply(any: A): Option[B]
+```
+
+Here is a simple example:
+
+```
+object PositiveInt {
+  def unapply(n: Int): Option[Int] =
+    if (n > 0) Some(n) else None
+}
+```
+
+With extractors, pattern matching can be concise and expressive. 
+However, unapply returning an Option might have a negative impact on runtime performance, 
+because on every matching call an instance of Some needs to be created for each 
+successful extraction.
+
+##### What to use instead
+
+Scala 2.11 introduces *name based extractors* which no longer require `unapply` to return 
+an `Option`. Combined with [value classes](https://docs.scala-lang.org/overviews/core/value-classes.html) 
+these two features allow to implement *allocation free* extractors which are 1.5-2x faster then
+original Option based extractors (see [BasicBenchmarks.scala](https://github.com/scalan/special/blob/master/library/src/test/scala/special/collections/BasicBenchmarks.scala)).
+
+Suitable implementation can be found in [spire](https://github.com/typelevel/spire) library, 
+in an [spire.util.Opt](https://github.com/typelevel/spire/blob/master/util/src/main/scala/spire/util/Opt.scala) 
+class which is based on the above two Scala features.
 
 ### Concluding remarks
 
@@ -173,3 +206,4 @@ You may find it useful to take a look at the References section below for more d
 9. [JITWatch](https://github.com/AdoptOpenJDK/jitwatch)
 10. [Parallel Collections: Measuring Performance](https://docs.scala-lang.org/overviews/parallel-collections/performance.html)
 11. [JVM JIT optimization techniques](https://advancedweb.hu/2016/05/27/jvm_jit_optimization_techniques/)
+12. [Name Based Extractors in Scala 2.11](https://hseeberger.wordpress.com/2013/10/04/name-based-extractors-in-scala-2-11/)
