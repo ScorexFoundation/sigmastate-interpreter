@@ -174,7 +174,7 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         """{
           |  val notTimePassed = HEIGHT <= timeout
           |  val outBytes = OUTPUTS.map({(box: Box) => box.bytesWithoutRef})
-          |  val outSumBytes = outBytes.fold(Coll[Byte](), {(arr1: Coll[Byte], arr2: Coll[Byte]) => arr1 ++ arr2})
+          |  val outSumBytes = outBytes.flatMap({(bytes: Coll[Byte]) => bytes})
           |  val timePassed = HEIGHT > timeout
           |  notTimePassed && blake2b256(outSumBytes) == properHash || timePassed && sender
            }""".stripMargin).asSigmaProp

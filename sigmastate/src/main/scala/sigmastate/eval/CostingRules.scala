@@ -583,7 +583,17 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
 
   object OptionCoster extends CostingHandler[WOption[Any]]((obj, m, costedArgs, args) => new OptionCoster[Any](obj, m, costedArgs, args))
 
-  /** Costing rules for SCollection methods (see object SCollection) */
+  object IsValidFlatMapLambda {
+    def unapply(d: Def[_]): Boolean = d match {
+      // pattern: x => x.property
+      case Lambda(l,_,_,Def(MethodCall(x, _, Nil, _))) if x == l.x => true
+      // pattern: x => x
+      case IdentityLambda() => true
+      case _ => false
+    }
+  }
+
+  /** Costing rules for SCollection methods (see object SCollection). */
   class CollCoster[T](obj: RCosted[Coll[T]], method: SMethod, costedArgs: Seq[RCosted[_]], args: Seq[Sym]) extends Coster[Coll[T]](obj, method, costedArgs, args) {
     import Coll._
     implicit val eT = obj.elem.eVal.eItem
@@ -642,8 +652,8 @@ trait CostingRules extends SigmaLibrary { IR: IRContext =>
     def flatMap[B](fC: RCosted[T => Coll[B]]): RCostedColl[B] = {
       val fV = fC.value
       fV match {
-        // Pattern: xs.flatMap(x => x.property)
-        case Def(Lambda(l,_,_,Def(mc @ MethodCall(x, m, Nil, _)))) if x == l.x =>
+        // Pattern: xs.flatMap(x => x.property) || xss.flatMap(xs => xs)
+        case Def(IsValidFlatMapLambda()) =>
           val cfC = asCostedFunc[T, Coll[B]](fC)
           val calcF = cfC.sliceCalc
           val sizeF = cfC.sliceSize
