@@ -330,14 +330,6 @@ object ValidationRules {
     }
   }
 
-  object CheckAppendInFoldLoop extends ValidationRule(1016,
-    "Check that Append operation is not appear in loop body") with SoftForkWhenReplaced {
-    def apply(level: Int): Unit = {
-      validate(level == 0,
-      new CosterException(s"Append is not allowed in Fold loop", None), Seq(level), {})
-    }
-  }
-
   val ruleSpecs: Seq[ValidationRule] = Seq(
     CheckDeserializedScriptType,
     CheckDeserializedScriptIsSigmaProp,
