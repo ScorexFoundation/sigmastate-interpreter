@@ -95,17 +95,20 @@ class ErgoTreeBuildingTest extends BaseCtxTests
     val env = envCF ++ Seq("projectPubKey" -> projectPK, "backerPubKey" -> backerPK)
     build(env, "CrowdFunding", crowdFundingScript,
       BlockValue(Vector(
-        ValDef(1,List(),SigmaPropConstant(projectPK))),
+        ValDef(1,List(), SigmaPropConstant(projectPK)),
+        ValDef(2,List(), Exists(Outputs, FuncValue(Vector((2,SBox)),
+          BinAnd(
+            GE(ExtractAmount(ValUse(2,SBox)),LongConstant(1000)),
+            EQ(ExtractScriptBytes(ValUse(2,SBox)), SigmaPropBytes(ValUse(1,SSigmaProp)))))
+        ))
+      ),
         SigmaOr(Seq(
           SigmaAnd(Seq(BoolToSigmaProp(GE(Height,IntConstant(100))),SigmaPropConstant(backerPK))),
           SigmaAnd(Seq(
             BoolToSigmaProp(AND(Vector(
               LT(Height,IntConstant(100)),
-              Exists(Outputs, FuncValue(Vector((2,SBox)),
-                BinAnd(
-                  GE(ExtractAmount(ValUse(2,SBox)),LongConstant(1000)),
-                  EQ(ExtractScriptBytes(ValUse(2,SBox)), SigmaPropBytes(ValUse(1,SSigmaProp)))))
-              )))),
+              ValUse(2, SBoolean)
+            ))),
             ValUse(1,SSigmaProp)
           ))))))
   }

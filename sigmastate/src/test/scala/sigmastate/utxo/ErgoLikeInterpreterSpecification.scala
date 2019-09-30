@@ -225,17 +225,17 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
         |  pubkey && outValues.fold(0L, { (x: Long, y: Long) => x + y }) > 20
          }""".stripMargin).asSigmaProp
 
-    val propExp = SigmaAnd(
-      Seq(
-        SigmaPropConstant(pubkey),
-        BoolToSigmaProp(
-          GT(
-            Fold.sum[SLong.type](MapCollection(Outputs,
-              FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))), 1),
-            LongConstant(20))
+    val propExp = BlockValue(
+      Vector(
+        ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
+        ValDef(2, Fold.sum[SLong.type](ValUse(1, SCollection.SLongArray), 2))
+      ),
+      SigmaAnd(
+        Seq(
+          SigmaPropConstant(pubkey),
+          BoolToSigmaProp(GT(ValUse(2, SLong), LongConstant(20)))
         )
-      )
-    )
+      ))
     prop shouldBe propExp
 
     val newBox1 = ErgoBox(11, pubkey, 0)
