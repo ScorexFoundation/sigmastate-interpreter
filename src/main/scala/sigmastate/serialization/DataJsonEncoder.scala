@@ -32,8 +32,17 @@ object DataJsonEncoder {
     )
   }
 
+
+
   private def encodeBytes: Encoder[Array[Byte]] = (bytes: Array[Byte]) => {
     ErgoAlgos.encode(bytes).asJson
+  }def encode(v: AnyValue): Json = {
+    val encodedType = Evaluation.rtypeToSType(v.tVal)
+    val encodedData = encodeData[SType](v.value.asInstanceOf[SType#WrappedType], encodedType)
+    Json.obj(
+      "type" -> Json.fromString(encodedType.toTermString),
+      "value" -> encodedData,
+    )
   }
 
   private def encodeData[T <: SType](v: T#WrappedType, tpe: T): Json = tpe match {
