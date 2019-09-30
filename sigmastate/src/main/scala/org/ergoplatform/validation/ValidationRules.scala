@@ -265,7 +265,7 @@ object ValidationRules {
    * because at the time of parsing we may assume that `ChangedRule.newValue`
    * has correct length, so we just parse it until end of bytes (of cause
    * checking consistency). */
-  object CheckCostFuncOperation extends ValidationRule(1013,
+  object CheckCostFuncOpCode extends ValidationRule(1013,
     "Check the opcode is allowed in cost function") with SoftForkWhenCodeAdded {
     final def apply[Ctx <: IRContext, T](ctx: Ctx)(opCode: OpCodeExtra): Unit = {
       checkRule()
@@ -323,7 +323,7 @@ object ValidationRules {
     "Check that Append operation is not appear in loop body") with SoftForkWhenReplaced {
     def apply(level: Int): Unit = {
       checkRule()
-      if (level == 0)
+      if (level > 0)
         throwValidationException(
           new CosterException(s"Append is not allowed in Fold loop", None),
           Array(level))
@@ -344,7 +344,7 @@ object ValidationRules {
     CheckTypeWithMethods,
     CheckAndGetMethod,
     CheckHeaderSizeBit,
-    CheckCostFuncOperation,
+    CheckCostFuncOpCode,
     CheckPositionLimit,
     CheckLoopLevelInCostFunction,
     CheckAppendInFoldLoop

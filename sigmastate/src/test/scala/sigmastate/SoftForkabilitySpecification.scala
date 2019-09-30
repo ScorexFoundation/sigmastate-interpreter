@@ -1,7 +1,7 @@
 package sigmastate
 
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftForkable, CheckCostFuncOperation, CheckTupleType, CheckCostFunc, CheckDeserializedScriptIsSigmaProp, _}
+import org.ergoplatform.validation.ValidationRules.{CheckValidOpCode, trySoftForkable, CheckCostFuncOpCode, CheckTupleType, CheckCostFunc, CheckDeserializedScriptIsSigmaProp, _}
 import org.ergoplatform.validation._
 import sigmastate.SPrimType.MaxPrimTypeCode
 import sigmastate.Values.ErgoTree.EmptyConstants
@@ -315,9 +315,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
 
   property("CheckCostFuncOperation rule") {
     val exp = Height
-    val v2vs = vs.updated(CheckCostFuncOperation.id,
-      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
-    checkRule(CheckCostFuncOperation, v2vs, {
+    val v2vs = vs.updated(CheckCostFuncOpCode.id,
+      ChangedRule(CheckCostFuncOpCode.encodeVLQUShort(Seq(OpCodes.toExtra(Height.opCode)))))
+    checkRule(CheckCostFuncOpCode, v2vs, {
       val costingRes = IR.doCostingEx(emptyEnv, exp, okRemoveIsProven = false)
       // use calcF as costing function to have forbidden (not allowed) op (Height) in the costing function
       CheckCostFunc(IR)(IR.asRep[Any => Int](costingRes.calcF))
@@ -330,9 +330,9 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     }
     val tIR = new TestingIRContextEmptyCodes
     import tIR._
-    val v2vs = vs.updated(CheckCostFuncOperation.id,
-      ChangedRule(CheckCostFuncOperation.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
-    checkRule(CheckCostFuncOperation, v2vs, {
+    val v2vs = vs.updated(CheckCostFuncOpCode.id,
+      ChangedRule(CheckCostFuncOpCode.encodeVLQUShort(Seq(OpCodes.OpCostCode))))
+    checkRule(CheckCostFuncOpCode, v2vs, {
       implicit val anyType = AnyElement
       val v1 = variable[Int]
       val costF = fun[Any, Int] {_ => opCost(v1, Seq(1), 2) }

@@ -5,11 +5,9 @@ import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform._
-import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOperation, CheckAppendInFoldLoop}
+import org.ergoplatform.validation.ValidationRules.{CheckLoopLevelInCostFunction, CheckCostFuncOpCode, CheckAppendInFoldLoop}
 import sigmastate._
 import sigmastate.Values.{Value, GroupElementConstant, SigmaBoolean, Constant}
-import sigmastate.lang.Terms.OperationId
-import sigmastate.utxo.CostTableStat
 
 import scala.reflect.ClassTag
 import scala.util.Try
@@ -320,22 +318,29 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     }
   }
 
-  /** Recursively traverse the hierarchy of loop operations. */
-  private def traverseScope(loopOpt: Option[Def[_]], scope: AstGraph, level: Int): Unit = {
-    def isFold = loopOpt match { case Some(CollM.foldLeft(_,_,_)) => true  case _ => false }
+  /** Recursively traverse the hierarchy of loop operations.
+    * Due to graph IR, some lambdas may serve as a body of many loop operations, which may
+    * be on different nesting levels. Such lambdas may be traversed many times in order to
+    * check level rules.
+    * @param loopStack stack of parent loop operations
+    * @param scope    graph of the scope to traverse
+    * @param level    current nesting level of the loop body, where 0 is a top level calcF scope
+    */
+  private def traverseScope(loopStack: List[Def[_]], scope: AstGraph, level: Int): Unit = {
+    def isInsideFold: Boolean = loopStack.exists { case CollM.foldLeft(_,_,_) => true  case _ => false }
     scope.schedule.foreach { sym =>
       sym.node match {
         case op @ LoopOperation(bodyLam) =>
-          CheckCostFuncOperation(this)(getOpCodeEx(op))
+          CheckCostFuncOpCode(this)(getOpCodeEx(op))
           val nextLevel = level + 1
           CheckLoopLevelInCostFunction(nextLevel)
-          traverseScope(Some(op), bodyLam, nextLevel)
+          traverseScope(op :: loopStack, bodyLam, nextLevel)
         case op @ CollM.flatMap(_, Def(lam: Lambda[_,_])) =>
-          traverseScope(Some(op), lam, level) // special case because the body is limited (so don't increase level)
-        case CollM.append(_,_) if isFold =>
+          traverseScope(op :: loopStack, lam, level) // special case because the body is limited (so don't increase level)
+        case CollM.append(_,_) if isInsideFold =>
           CheckAppendInFoldLoop(level)
         case op =>
-          CheckCostFuncOperation(this)(getOpCodeEx(op))
+          CheckCostFuncOpCode(this)(getOpCodeEx(op))
       }
     }
   }
@@ -345,7 +350,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
   def verifyCostFunc(costF: Ref[Any => Int]): Try[Unit] = {
     val Def(Lambda(lam,_,_,_)) = costF
     Try {
-      traverseScope(None, lam, level = 0)
+      traverseScope(Nil, lam, level = 0)
       if (debugModeSanityChecks) {
         val backDeps = mutable.HashMap.empty[Sym, ArrayBuffer[Sym]]
         lam.flatSchedule.foreach { sym =>
