@@ -341,14 +341,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map { (box: Box) => box.value }
         |.getOrElse(3, 0L)== 0""".stripMargin
-    val expectedPropTree = EQ(
-      ByIndex(
-        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-        IntConstant(3),
-        Some(LongConstant(0))
-      ),
-      LongConstant(0)
-    )
+    val expectedPropTree = BlockValue(
+      Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+      EQ(
+        ByIndex(
+          ValUse(1, SLongArray),
+          IntConstant(3),
+          Some(LongConstant(0))
+        ),
+        LongConstant(0)
+      )).asBoolValue
 
     assertProof(code, expectedPropTree, outputBoxValues)
   }
@@ -371,27 +373,29 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
       """OUTPUTS
         |.map({ (box: Box) => box.value })
         |.fold(true, { (acc: Boolean, val: Long) => acc && (val < 0) }) == false""".stripMargin
-    val expectedPropTree = LogicalNot(
-      Fold(
-        MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-        TrueLeaf,
-        FuncValue(Vector((1, STuple(SBoolean, SLong))),
-          BinAnd(
-            SelectField(ValUse(1, STuple(SBoolean, SLong)), 1).asBoolValue,
-            LT(SelectField(ValUse(1, STuple(SBoolean, SLong)), 2), LongConstant(0)))))
-    )
+    val expectedPropTree = BlockValue(
+      Vector(
+        ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox))))),
+        ValDef(2, Fold(
+          ValUse(1, SLongArray),
+          TrueLeaf,
+          FuncValue(Vector((2, STuple(SBoolean, SLong))),
+            BinAnd(
+              SelectField(ValUse(2, STuple(SBoolean, SLong)), 1).asBoolValue,
+              LT(SelectField(ValUse(2, STuple(SBoolean, SLong)), 2), LongConstant(0))))))),
+      LogicalNot( ValUse(2, SBoolean) )).asBoolValue
     assertProof(code, expectedPropTree, outputBoxValues)
   }
 
   property("map") {
     assertProof("OUTPUTS.map({ (out: Box) => out.value })(0) == 1L",
-      EQ(
-        ByIndex(
-          MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-          IntConstant(0)
-        ),
-        LongConstant(1)
-      ),
+      BlockValue(
+        Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+        EQ(
+          ByIndex( ValUse(1, SLongArray), IntConstant(0) ),
+          LongConstant(1)
+        )
+      ).asBoolValue,
       IndexedSeq(1L, 1L))
   }
 
@@ -476,13 +480,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("indexOf") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).indexOf(1L, 0) == 0",
-      EQ(
-        MethodCall(MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-          IndexOfMethod.withConcreteTypes(Map(tIV -> SLong)),
-          Vector(LongConstant(1), IntConstant(0)),
-          Map()),
-        IntConstant(0)
-      ),
+      BlockValue(
+        Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+        EQ(
+          MethodCall(ValUse(1, SLongArray),
+            IndexOfMethod.withConcreteTypes(Map(tIV -> SLong)),
+            Vector(LongConstant(1), IntConstant(0)),
+            Map()),
+          IntConstant(0)
+        )
+      ).asBoolValue,
       IndexedSeq(1L, 1L))
   }
 
@@ -514,46 +521,54 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("patch") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).patch(0, Coll(3L), 1)(0) == 3L",
-      EQ(
-        ByIndex(
-          MethodCall(
-            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(IntConstant(0), ConcreteCollection.fromItems(LongConstant(3)), IntConstant(1)),
-            Map()).asCollection[SType],
-          IntConstant(0)
-        ),
-        LongConstant(3)),
+      BlockValue(
+        Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+        EQ(
+          ByIndex(
+            MethodCall(
+              ValUse(1, SLongArray),
+              PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
+              Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
+              Map()).asCollection[SType],
+            IntConstant(0)
+          ),
+          LongConstant(3))
+      ).asBoolValue,
       IndexedSeq(1L, 2L))
   }
 
   property("updated") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).updated(0, 3L)(0) == 3L",
-      EQ(
-        ByIndex(
-          MethodCall(
-            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdatedMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(IntConstant(0), LongConstant(3)),
-            Map()).asCollection[SType],
-          IntConstant(0)
-        ),
-        LongConstant(3)),
+      BlockValue(Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+        EQ(
+          ByIndex(
+            MethodCall(
+              ValUse(1, SLongArray),
+              UpdatedMethod.withConcreteTypes(Map(tIV -> SLong)),
+              Vector(IntConstant(0), LongConstant(3)),
+              Map()).asCollection[SType],
+            IntConstant(0)
+          ),
+          LongConstant(3))
+      ).asBoolValue,
       IndexedSeq(1L, 2L))
   }
 
   property("updateMany") {
     assertProof("OUTPUTS.map({ (b: Box) => b.value }).updateMany(Coll(0), Coll(3L))(0) == 3L",
-      EQ(
-        ByIndex(
-          MethodCall(
-            MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
-            UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(ConcreteCollection.fromItems(IntConstant(0)), ConcreteCollection.fromItems(LongConstant(3))),
-            Map()).asCollection[SType],
-          IntConstant(0)
-        ),
-        LongConstant(3)),
+      BlockValue(
+        Vector(ValDef(1, MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))))),
+        EQ(
+          ByIndex(
+            MethodCall(
+              ValUse(1, SLongArray),
+              UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
+              Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
+              Map()).asCollection[SType],
+            IntConstant(0)
+          ),
+          LongConstant(3))
+      ).asBoolValue,
       IndexedSeq(1L, 2L))
   }
 }
