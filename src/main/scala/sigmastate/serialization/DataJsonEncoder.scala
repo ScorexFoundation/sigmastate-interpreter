@@ -262,4 +262,11 @@ object DataJsonEncoder {
     val (data, _) = decodeWithTpe(json)
     data
   }
+
+  def decodeAnyValue(json: Json): (AnyValue) = {
+    val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
+    val value = json.hcursor.downField("value").focus.get
+    val data = decodeData(value, tpe)
+    TestValue(data,Evaluation.stypeToRType(tpe).asInstanceOf[RType[Any]])
+  }
 }

@@ -46,6 +46,10 @@ trait JsonCodecs {
 
   implicit val anyValueEncoder: Encoder[AnyValue] = { anyval => DataJsonEncoder.encode(anyval) }
 
+  implicit val anyValueDecoder: Decoder[AnyValue] = { implicit cursor =>
+    fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))
+  }
+
   implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = { bigInt =>
     JsonNumber.fromDecimalStringUnsafe(bigInt.asInstanceOf[WrapperOf[BigInteger]].wrappedValue.toString).asJson
   }
