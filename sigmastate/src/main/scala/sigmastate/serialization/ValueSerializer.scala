@@ -136,16 +136,6 @@ object ValueSerializer extends SigmaSerializerCompanion[Value[SType]] {
     SigmaTransformerSerializer(SigmaOr, mkSigmaOr),
     BoolToSigmaPropSerializer(mkBoolToSigmaProp),
 
-    // TODO https://github.com/ScorexFoundation/sigmastate-interpreter/issues/327
-    // TODO hard-fork: this ModQ serializers should be removed only as part of hard-fork
-    // because their removal may break deserialization of transaction, when for example
-    // ModQ operation happen to be in one of the outputs (i.e. script is not executed
-    // during validation, however deserializer is still used)
-
-    //    ModQSerializer,
-    //    ModQArithOpSerializer(ModQArithOp.PlusModQ, mkPlusModQ),
-    //    ModQArithOpSerializer(ModQArithOp.MinusModQ, mkMinusModQ),
-
     SubstConstantsSerializer,
     CreateProveDlogSerializer(mkCreateProveDlog),
     CreateProveDHTupleSerializer(mkCreateProveDHTuple),
