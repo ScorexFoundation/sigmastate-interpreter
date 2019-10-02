@@ -16,10 +16,10 @@ import sigmastate.eval.Extensions._
 import sigmastate.eval.{CGroupElement, CPreHeader, WrapperOf, _}
 import sigmastate.interpreter.{ContextExtension, ProverResult}
 import sigmastate.lang.exceptions.SigmaException
-import sigmastate.serialization.{ErgoTreeSerializer, ValueSerializer}
+import sigmastate.serialization.{DataJsonEncoder, ErgoTreeSerializer, ValueSerializer}
 import sigmastate.{AvlTreeData, AvlTreeFlags, SType}
 import special.collection.Coll
-import special.sigma.{Header, PreHeader}
+import special.sigma.{AnyValue, Header, PreHeader}
 
 import scala.util.Try
 
@@ -42,6 +42,12 @@ trait JsonCodecs {
       str <- cursor.as[String]
       bytes <- fromTry(ErgoAlgos.decode(str))
     } yield transform(bytes)
+  }
+
+  implicit val anyValueEncoder: Encoder[AnyValue] = { anyval => DataJsonEncoder.encodeAnyValue(anyval) }
+
+  implicit val anyValueDecoder: Decoder[AnyValue] = { implicit cursor =>
+    fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))
   }
 
   implicit val sigmaBigIntEncoder: Encoder[special.sigma.BigInt] = { bigInt =>
