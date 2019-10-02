@@ -44,7 +44,7 @@ trait JsonCodecs {
     } yield transform(bytes)
   }
 
-  implicit val anyValueEncoder: Encoder[AnyValue] = { anyval => DataJsonEncoder.encode(anyval) }
+  implicit val anyValueEncoder: Encoder[AnyValue] = { anyval => DataJsonEncoder.encodeAnyValue(anyval) }
 
   implicit val anyValueDecoder: Decoder[AnyValue] = { implicit cursor =>
     fromTry(Try.apply(DataJsonEncoder.decodeAnyValue(cursor.value)))

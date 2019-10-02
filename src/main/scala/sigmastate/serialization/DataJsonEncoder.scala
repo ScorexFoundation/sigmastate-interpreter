@@ -36,7 +36,7 @@ object DataJsonEncoder {
     ErgoAlgos.encode(bytes).asJson
   }
 
-  def encode(v: AnyValue): Json = {
+  def encodeAnyValue(v: AnyValue): Json = {
     val encodedType = Evaluation.rtypeToSType(v.tVal)
     val encodedData = encodeData[SType](v.value.asInstanceOf[SType#WrappedType], encodedType)
     Json.obj(
@@ -267,6 +267,6 @@ object DataJsonEncoder {
     val tpe = SigmaParser.parseType(json.hcursor.downField("type").focus.get.asString.get)
     val value = json.hcursor.downField("value").focus.get
     val data = decodeData(value, tpe)
-    TestValue(data,Evaluation.stypeToRType(tpe).asInstanceOf[RType[Any]])
+    TestValue(data, Evaluation.stypeToRType(tpe).asInstanceOf[RType[Any]])
   }
 }
