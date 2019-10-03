@@ -250,7 +250,7 @@ lazy val rootSettings = Seq(
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
-  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
+  mappings in (Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
