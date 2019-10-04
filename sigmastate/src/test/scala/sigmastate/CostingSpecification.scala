@@ -1,5 +1,6 @@
 package sigmastate
 
+import scalan.util.Extensions.LongOps
 import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform.validation.ValidationRules
@@ -241,7 +242,7 @@ class CostingSpecification extends SigmaTestingData {
 
   val AccessRootHash = selectField
   def perKbCostOf(dataSize: Long, opCost: Int) = {
-    ((dataSize / 1024L).toInt + 1) * opCost
+    ((dataSize / 1024L).toIntExact + 1) * opCost
   }
 
   property("AvlTree operations cost") {

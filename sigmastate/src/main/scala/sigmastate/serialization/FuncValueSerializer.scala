@@ -30,7 +30,7 @@ case class FuncValueSerializer(cons: (IndexedSeq[(Int, SType)], Value[SType]) =>
     val argsSize = r.getUInt().toIntExact
     val argsBuilder = mutable.ArrayBuilder.make[(Int, SType)]()
     for (_ <- 0 until argsSize) {
-      val id = r.getUInt().toInt
+      val id = r.getUInt().toIntExact   // HF change: was r.getUInt().toInt
       val tpe = r.getType()
       r.valDefTypeStore(id) = tpe
       argsBuilder += ((id, tpe))

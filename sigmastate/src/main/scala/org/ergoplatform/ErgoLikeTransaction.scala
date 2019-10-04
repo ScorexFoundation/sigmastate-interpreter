@@ -1,5 +1,6 @@
 package org.ergoplatform
 
+import scalan.util.Extensions.LongOps
 import org.ergoplatform.ErgoBox.TokenId
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -157,7 +158,7 @@ object ErgoLikeTransactionSerializer extends SigmaSerializer[ErgoLikeTransaction
       dataInputsBuilder += DataInput(ADKey @@ r.getBytes(ErgoBox.BoxId.size))
     }
     // parse distinct ids of tokens in transaction outputs
-    val tokensCount = r.getUInt().toInt
+    val tokensCount = r.getUInt().toIntExact             // HF change: was r.getUInt().toInt
     val tokensBuilder = mutable.ArrayBuilder.make[TokenId]()
     for (_ <- 0 until tokensCount) {
       tokensBuilder += Digest32 @@ r.getBytes(TokenId.size)

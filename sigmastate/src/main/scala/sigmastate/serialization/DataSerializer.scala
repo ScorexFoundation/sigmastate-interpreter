@@ -3,6 +3,7 @@ package sigmastate.serialization
 import java.math.BigInteger
 import java.nio.charset.StandardCharsets
 
+import scalan.util.Extensions.LongOps
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.validation.ValidationRules.CheckSerializableTypeCode
 import scalan.RType
@@ -92,7 +93,7 @@ object DataSerializer {
       case SInt => r.getInt()
       case SLong => r.getLong()
       case SString =>
-        val size = r.getUInt().toInt
+        val size = r.getUInt().toIntExact  // HF change: was r.getUInt().toInt
         val bytes = r.getBytes(size)
         new String(bytes, StandardCharsets.UTF_8)
       case SBigInt =>
