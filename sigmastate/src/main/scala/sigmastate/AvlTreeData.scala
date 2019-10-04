@@ -2,7 +2,7 @@ package sigmastate
 
 import java.util
 import java.util.{Arrays, Objects}
-
+import scalan.util.Extensions.LongOps
 import scorex.crypto.authds.ADDigest
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.SigmaSerializer
@@ -93,8 +93,8 @@ object AvlTreeData {
     override def parse(r: SigmaByteReader): AvlTreeData = {
       val digest = r.getBytes(DigestSize)
       val tf = AvlTreeFlags(r.getByte())
-      val keyLength = r.getUInt().toInt
-      val valueLengthOpt = r.getOption(r.getUInt().toInt)
+      val keyLength = r.getUInt().toIntExact  // HF change: was r.getUInt().toInt
+      val valueLengthOpt = r.getOption(r.getUInt().toIntExact)  // HF change: was r.getUInt().toInt
       AvlTreeData(ADDigest @@ digest, tf, keyLength, valueLengthOpt)
     }
   }

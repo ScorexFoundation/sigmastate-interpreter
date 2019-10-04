@@ -2,6 +2,7 @@ package org.ergoplatform
 
 import java.util
 
+import scalan.util.Extensions.LongOps
 import org.ergoplatform.ErgoBox._
 import org.ergoplatform.settings.ErgoAlgos
 import scorex.crypto.hash.Digest32
@@ -130,14 +131,14 @@ object ErgoBoxCandidate {
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
       val value = r.getULong()                  // READ
       val tree = DefaultSerializer.deserializeErgoTree(r, SigmaSerializer.MaxPropositionSize)  // READ
-      val creationHeight = r.getUInt().toInt    // READ
+      val creationHeight = r.getUInt().toIntExact // READ   // HF change: was r.getUInt().toInt
       val nTokens = r.getUByte()                // READ
       val tokenIds = new Array[Digest32](nTokens)
       val tokenAmounts = new Array[Long](nTokens)
       val tokenIdSize = TokenId.size
       cfor(0)(_ < nTokens, _ + 1) { i =>
         val tokenId = if (digestsInTx.isDefined) {
-          val digestIndex = r.getUInt().toInt   // READ
+          val digestIndex = r.getUInt().toIntExact // READ  // HF change: was r.getUInt().toInt
           val digests = digestsInTx.get
           if (!digests.isDefinedAt(digestIndex)) sys.error(s"failed to find token id with index $digestIndex")
           digests(digestIndex)

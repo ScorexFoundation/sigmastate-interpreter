@@ -27,3 +27,5 @@ Thus this is better to be fixed as part of upcoming hard-fork.
 6. Append operation cost also increased (see `("Append", "(Coll[IV],Coll[IV]) => Coll[IV]", appendCost)`)
 
 7. Removed RW Rule: replicate(n,x).zip(ys).map(f)  ==>  ys.map(y => f(x, y))
+
+8. Changes marked as // HF change:

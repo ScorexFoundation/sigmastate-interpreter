@@ -1,5 +1,6 @@
 package sigmastate.serialization.transformers
 
+import scalan.util.Extensions.LongOps
 import sigmastate.{SigmaTransformer, SigmaTransformerCompanion}
 import sigmastate.Values.{ValueCompanion, SigmaPropValue}
 import sigmastate.serialization.ValueSerializer
@@ -15,7 +16,7 @@ case class SigmaTransformerSerializer[I <: SigmaPropValue, O <: SigmaPropValue]
     w.putValues(obj.items, opDesc.argInfos(0))
 
   override def parse(r: SigmaByteReader): SigmaPropValue = {
-    val itemsSize = r.getUInt().toInt
+    val itemsSize = r.getUInt().toIntExact    // HF change: was r.getUInt().toInt
     val b = mutable.ArrayBuilder.make[SigmaPropValue]()
     for (_ <- 0 until itemsSize) {
       b += r.getValue().asInstanceOf[SigmaPropValue]
