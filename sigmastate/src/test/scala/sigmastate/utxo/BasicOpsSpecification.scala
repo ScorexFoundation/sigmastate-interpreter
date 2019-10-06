@@ -15,6 +15,7 @@ import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.serialization.ValueSerializer
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -633,6 +634,17 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   property("lazy AND") {
     test("lazy AND", env, ext,
       "(false && ((1/0) == 1)) == false",
+      null,
+      true
+    )
+  }
+
+  property("executeFromVar") {
+    val script = GT(Height, IntConstant(1)).toSigmaProp
+    val scriptBytes = ValueSerializer.serialize(script)
+    val customExt = Seq(21.toByte -> ByteArrayConstant(scriptBytes))
+    test("executeFromVar", env, customExt,
+      "executeFromVar[SigmaProp](21)",
       null,
       true
     )
