@@ -238,7 +238,12 @@ lazy val sigmastate = (project in file("sigmastate"))
     scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser)) 
 
 lazy val sigma = (project in file("."))
-    .settings(commonSettings, rootSettings)
+  .aggregate(
+    sigmastate, common, core, libraryapi, libraryimpl, library,
+    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
+  .settings(libraryDefSettings, rootSettings)
+  .settings(publish / aggregate := false)
+  .settings(publishLocal / aggregate := false)
 
 lazy val aggregateCompile = ScopeFilter(
   inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
