@@ -306,7 +306,7 @@ lazy val rootSettings = Seq(
 lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmaapi)
+  .dependsOn(sigmaapi, sigmastate)
   .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
