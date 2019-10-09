@@ -33,10 +33,19 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
-  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]) = {
+  /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
+    * It also measures tree complexity adding to the total estimated cost of script execution.
+    * The new returned context contains increased `initCost` and should be used for further processing.
+    *
+    * The method SHOULD be called only inside trySoftForkable scope, to make deserialization soft-forkable.
+    *
+    * NOTE: While ErgoTree is always of type SigmaProp, ValueSerializer can serialize expression of any type.
+    * So it cannot be replaced with ErgoTreeSerializer here.
+    */
+  def deserializeMeasured(context: CTX, scriptBytes: Array[Byte]): (CTX, Value[SType]) = {
     val r = SigmaSerializer.startReader(scriptBytes)
     r.complexity = 0
-    val script = ValueSerializer.deserialize(r)
+    val script = ValueSerializer.deserialize(r)  // Why ValueSerializer? read NOTE above
     val scriptComplexity = r.complexity
 
     val currCost = JMath.addExact(context.initCost, scriptComplexity)
