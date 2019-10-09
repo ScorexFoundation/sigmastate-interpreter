@@ -141,8 +141,19 @@ object Pay2SHAddress {
   val scriptId = 1: Byte
   val addressTypePrefix: Byte = 2: Byte
 
+  /** Create Pay-to-script-hash address with the given underlying script (ErgoTree).
+    * @param  script   ErgoTree representation of guarding script
+    * @param  encoder  address encoder which is used to encode address bytes as String */
   def apply(script: ErgoTree)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
-    val sb = ErgoTreeSerializer.DefaultSerializer.serializeErgoTree(script)
+    val prop = script.toProposition(replaceConstants = script.isConstantSegregation)
+    apply(prop)
+  }
+
+  /** Create Pay-to-script-hash address with the given underlying proposition (SigmaPropValue).
+    * @param  prop   Value representation of guarding script (aka proposition)
+    * @param  encoder  address encoder which is used to encode address bytes as String */
+  def apply(prop: SigmaPropValue)(implicit encoder: ErgoAddressEncoder): Pay2SHAddress = {
+    val sb = ValueSerializer.serialize(prop)
     val sbh = ErgoAddressEncoder.hash192(sb)
     new Pay2SHAddress(sbh)
   }
