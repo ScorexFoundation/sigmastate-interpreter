@@ -261,7 +261,17 @@ lazy val rootSettings = Seq(
 lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmaapi, sigmastate)
+  .dependsOn(sigmastate)
+  .settings(commonSettings: _*)
+
+lazy val sigmaDslCompilerMacros = project
+  .in(file("sigma-dsl-compiler-macros"))
+  .dependsOn(sigmastate)
+  .settings(commonSettings: _*)
+
+lazy val sigmaDslCompilerMacrosPlayground = project
+  .in(file("sigma-dsl-compiler-macros-playground"))
+  .dependsOn(contractVerification, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
