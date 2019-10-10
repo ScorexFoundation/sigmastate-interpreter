@@ -578,6 +578,7 @@ trait Context {
 @scalan.Liftable
 @library
 trait SigmaContract {
+  @extern
   def builder: SigmaDslBuilder = ???
 
   @NeverInline
@@ -622,6 +623,7 @@ trait SigmaContract {
       newValues: Coll[T])
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
 
+  @ignore
   def canOpen(ctx: Context): Boolean = ???
 
   def asFunction: Context => Boolean = (ctx: Context) => this.canOpen(ctx)

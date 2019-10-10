@@ -1,8 +1,8 @@
 package sigmastate.verification.contract
 
-import sigmastate.SigmaDslCompiler
-import sigmastate.verification.SigmaDsl.api.sigma.{Box, Context, SigmaContract, SigmaDslBuilder, SigmaProp}
-import stainless.annotation.extern
+import sigmastate.verification.SigmaDsl.api.sigma.{Box, Context, SigmaContract, SigmaProp}
+import sigmastate.verification.SigmaDsl.impl.sigma.PK
+import stainless.annotation.ignore
 import stainless.lang._
 
 sealed abstract class CrowdFundingContract extends SigmaContract {
@@ -69,13 +69,4 @@ case object CrowdFundingContractVerification extends CrowdFundingContract {
 
     crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx)
   } ensuring (_ == false)
-}
-
-object CrowdFundingContractTree extends CrowdFundingContract {
-
-  def tree: SigmaProp = {
-    val pkBacker = SigmaDslCompiler.PK("9h7DHKSDgE4uvP8313GVGdsEg3AvdAWSSTG7XZsLwBfeth4aePG")
-    val pkProject = SigmaDslCompiler.PK("9gBSqNT9LH9WjvWbyqEvFirMbYp4nfGHnoWdceKGu45AKiya3Fq")
-    SigmaDslCompiler.compile(crowdFundingContract(5000, 20000, pkBacker, pkProject))
-  }
 }
