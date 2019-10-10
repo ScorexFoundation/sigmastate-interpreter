@@ -69,6 +69,19 @@ trait Library extends Scalan
   val intPlusMonoidValue = new special.collection.MonoidBuilderInst().intPlusMonoid
   val longPlusMonoidValue = new special.collection.MonoidBuilderInst().longPlusMonoid
 
+  object IsNumericToInt {
+    def unapply(d: Def[_]): Nullable[Ref[A] forSome {type A}] = d match {
+      case ApplyUnOp(_: NumericToInt[_], x) => Nullable(x.asInstanceOf[Ref[A] forSome {type A}])
+      case _ => Nullable.None
+    }
+  }
+  object IsNumericToLong {
+    def unapply(d: Def[_]): Nullable[Ref[A] forSome {type A}] = d match {
+      case ApplyUnOp(_: NumericToLong[_], x) => Nullable(x.asInstanceOf[Ref[A] forSome {type A}])
+      case _ => Nullable.None
+    }
+  }
+
   override def rewriteDef[T](d: Def[T]) = d match {
     case CM.length(ys) => ys.node match {
       // Rule: xs.map(f).length  ==> xs.length
@@ -86,6 +99,8 @@ trait Library extends Scalan
       case _ => super.rewriteDef(d)
     }
 
+    case IsNumericToLong(Def(IsNumericToInt(x))) if x.elem == LongElement => x
+
     // Rule: replicate(l, x).zip(replicate(l, y)) ==> replicate(l, (x,y))
     case CM.zip(CBM.replicate(b1, l1, v1), CBM.replicate(b2, l2, v2)) if b1 == b2 && l1 == l2 =>
       b1.replicate(l1, Pair(v1, v2))
@@ -97,9 +112,18 @@ trait Library extends Scalan
         case CBM.replicate(b, l, v: Ref[a]) =>
           val f = asRep[a => Any](_f)
           b.replicate(l, Apply(f, v, false))
+
+        // Rule: xs.map(f).map(g) ==> xs.map(x => g(f(x)))
+        case CM.map(_xs, f: RFunc[a, b]) =>
+          implicit val ea = f.elem.eDom
+          val xs = asRep[Coll[a]](_xs)
+          val g  = asRep[b => Any](_f)
+          xs.map[Any](fun { x: Ref[a] => g(f(x)) })
+
         case _ => super.rewriteDef(d)
       }
     }
+
 
     case CM.sum(xs, m) => m.node match {
       case _: IntPlusMonoid => xs.node match {
