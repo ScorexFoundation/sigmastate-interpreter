@@ -298,11 +298,6 @@ lazy val rootSettings = Seq(
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
-//lazy val fv = project
-//  .in(file("fv"))
-//  .enablePlugins(StainlessPlugin)
-//  .settings(commonSettings: _*)
-
 lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
