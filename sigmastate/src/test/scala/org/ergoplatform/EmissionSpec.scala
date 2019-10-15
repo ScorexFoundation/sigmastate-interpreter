@@ -12,14 +12,9 @@ class EmissionSpec extends SigmaTestingCommons {
   private val emission = new EmissionRules(settings)
 
   def collectedFoundationReward(height: Int): Long = {
-    require(height > 0)
-    var s = 0L
-    var i = 0
-    while (i <= height) {
-      s = s + emission.foundationRewardAtHeight(i)
-      i = i + 1
-    }
-    s
+    (1 to height).map { h =>
+      emission.foundationRewardAtHeight(h)
+    }.sum
   }
 
   property("emission rules vectors") {
