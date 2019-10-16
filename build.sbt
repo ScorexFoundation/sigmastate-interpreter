@@ -301,7 +301,7 @@ lazy val rootSettings = Seq(
 lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmastate)
+  .dependsOn(sigmaapi)
   .settings(commonSettings: _*)
 
 lazy val sigmaDslCompilerMacros = project
