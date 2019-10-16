@@ -1,23 +1,18 @@
 package wrappers.scala
 
 import scalan._
-import impl._
 import special.wrappers.WrappersModule
 import special.wrappers.OptionWrapSpec
 import scala.collection.mutable.WrappedArray
-import scala.reflect.runtime.universe._
-import scala.reflect._
 
 package impl {
 // Abs -----------------------------------
 trait WOptionsDefs extends scalan.Scalan with WOptions {
   self: WrappersModule =>
-import WOption._
 
 object WOption extends EntityObject("WOption") {
   // entityConst: single const for each entity
   import Liftables._
-  import scala.reflect.{ClassTag, classTag}
 
   case class WOptionConst[SA, A](
         constValue: Option[SA],

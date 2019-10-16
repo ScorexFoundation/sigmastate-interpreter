@@ -1,8 +1,7 @@
 package sigma.types
 
-import com.google.common.primitives.Ints
 import scalan.util.Extensions._
-import special.collection.{Coll, Builder}
+import special.collection.Coll
 
 case class CBoolean(value: scala.Boolean) extends Boolean {
   override def toByte: Byte = CByte(if (value) 1 else 0)

@@ -8,6 +8,7 @@ import scala.reflect.ClassTag
 class CollectionUtilTests extends BaseTests {
   import scalan.util.CollectionUtil._
   import java.lang.{Byte => JByte, Integer}
+
   test("concatArrays") {
     val xs = Array[Byte](1,2,3)
     val ys = Array[Byte](4,5,6)
@@ -221,4 +222,5 @@ class CollectionUtilTests extends BaseTests {
     unboxedArray(Seq[Any](Option.empty[Boolean])).isInstanceOf[Array[Any]] shouldBe true
     unboxedArray(Seq[Seq[Any]](Seq())).isInstanceOf[Array[Seq[Any]]] shouldBe true
   }
+
 }

@@ -1,13 +1,11 @@
 package scalan.staged
 
-import scala.collection.{mutable, _}
-import scalan.{DFunc, Nullable, Scalan}
+import scala.collection._
+import scalan.Scalan
 import scalan.compilation.GraphVizConfig
-import scalan.util.GraphUtil
 import spire.syntax.all.cfor
 import debox.{Set => DSet, Buffer => DBuffer, Map => DMap}
 
-import scala.annotation.tailrec
 
 trait AstGraphs extends Transforming { self: Scalan =>
 

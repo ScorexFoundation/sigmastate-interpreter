@@ -1,13 +1,10 @@
 package wrappers.scalan
 
 import scalan._
-import impl._
 import scalan.RType
 import special.wrappers.WrappersModule
 import special.wrappers.RTypeWrapSpec
 import scala.collection.mutable.WrappedArray
-import scala.reflect.runtime.universe._
-import scala.reflect._
 
 package impl {
 // Abs -----------------------------------
@@ -18,7 +15,6 @@ import WRType._
 object WRType extends EntityObject("WRType") {
   // entityConst: single const for each entity
   import Liftables._
-  import scala.reflect.{ClassTag, classTag}
 
   case class WRTypeConst[SA, A](
         constValue: RType[SA],

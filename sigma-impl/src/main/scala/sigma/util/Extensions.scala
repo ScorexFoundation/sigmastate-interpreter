@@ -1,8 +1,5 @@
 package sigma.util
 
-import java.math.BigInteger
-import java.nio.ByteBuffer
-
 import special.collection.{Coll, Builder}
 import com.google.common.primitives.{Ints, Shorts, Longs}
 

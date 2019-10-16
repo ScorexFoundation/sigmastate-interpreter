@@ -1,8 +1,6 @@
 package special.sigma
 
 import scalan._
-import scala.reflect.runtime.universe._
-import scala.reflect._
 import scala.collection.mutable.WrappedArray
 
 package impl {

@@ -1,6 +1,6 @@
 package special.sigma
 
-import special.collection.{Coll}
+import special.collection.Coll
 import java.math.BigInteger
 import scalan.util.Extensions.BigIntegerOps
 
