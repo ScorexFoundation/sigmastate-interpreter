@@ -306,12 +306,12 @@ lazy val contractVerification = project
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
-  .dependsOn(sigmastate)
+  .dependsOn(contractVerification, sigmastate)
   .settings(commonSettings: _*)
 
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
-  .dependsOn(contractVerification, sigmaDslCompilerMacros)
+  .dependsOn(contractVerification, sigmastate, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {

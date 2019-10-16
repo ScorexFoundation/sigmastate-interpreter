@@ -20,12 +20,6 @@ trait ContractSpec {
 
   val IR: IRContext
 
-  trait PropositionSpec {
-    def name: String
-    def dslSpec: Proposition
-    def scriptSpec: ErgoScript
-    def ergoTree: ErgoTree
-  }
   object PropositionSpec {
     def apply(name: String, dslSpec: Proposition, scriptSpec: ErgoScript) = mkPropositionSpec(name, dslSpec, scriptSpec)
   }
@@ -113,3 +107,11 @@ trait ContractSpec {
   def error(msg: String) = sys.error(msg)
 
 }
+
+trait PropositionSpec {
+  def name: String
+  def dslSpec: Proposition
+  def scriptSpec: ErgoScript
+  def ergoTree: ErgoTree
+}
+

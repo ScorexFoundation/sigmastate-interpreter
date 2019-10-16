@@ -9,13 +9,13 @@ object SigmaDslCompilerImp {
     throw new RuntimeException(string)
 
   def compile(c: whitebox.Context)
-             (contract: c.Expr[Any => Boolean]): c.Tree = {
+             (contract: c.Expr[sigmastate.verification.SigmaDsl.api.sigma.Context => Boolean]): c.Tree = {
     import c.universe._
 
-    contract.tree match {
-      case Function(params, tree) =>
-      case v => error(s"expected the root to be a function, got ${v}")
-    }
+//    contract.tree match {
+//      case Function(params, tree) =>
+//      case v => error(s"expected the root to be a function, got ${v}")
+//    }
 
     // return a "no op"
     EmptyTree
