@@ -1,23 +1,37 @@
 package sigmastate.compiler.macros.impl
 
+import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
+import org.ergoplatform.dsl.PropositionSpec
+import sigmastate.TrivialProp
+import sigmastate.Values.{ErgoTree, TrueLeaf}
+import sigmastate.eval.CSigmaProp
+import special.sigma.Context
+
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
+import scala.reflect.runtime.universe._
 
-object SigmaDslCompilerImp {
 
-  private def error(string: String): Unit =
-    throw new RuntimeException(string)
+class SigmaDslCompilerImp(val c: whitebox.Context) extends Liftables {
 
-  def compile(c: whitebox.Context)
-             (contract: c.Expr[sigmastate.verification.SigmaDsl.api.sigma.Context => Boolean]): c.Tree = {
-    import c.universe._
+  import c.universe._
 
-//    contract.tree match {
-//      case Function(params, tree) =>
-//      case v => error(s"expected the root to be a function, got ${v}")
-//    }
+  def compile(contract: Expr[sigmastate.verification.SigmaDsl.api.sigma.Context => Boolean]): Tree = {
 
-    // return a "no op"
-    EmptyTree
+    //    contract.tree match {
+    //      case Function(params, tree) =>
+    //      case v => abort(s"expected the root to be a function, got ${v}")
+    //    }
+
+    val prop: Context => Boolean = { _ => true }
+    val sigmaProp = CSigmaProp(TrivialProp(true))
+    q"($prop, $sigmaProp)"
   }
 }
+
+case class PlainPropositionSpec(name: String,
+                                dslSpec: Context => Boolean,
+                                ergoTree: ErgoTree,
+                                scriptSpec: ErgoScript)
+  //extends PropositionSpec
+
