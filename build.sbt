@@ -141,6 +141,10 @@ credentials ++= (for {
   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
+pgpPublicRing := file("ci/pubring.asc")
+pgpSecretRing := file("ci/secring.asc")
+pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toArray)
+
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
 //    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-0d03a785-SNAPSHOT.jar"
