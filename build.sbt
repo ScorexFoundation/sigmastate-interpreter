@@ -16,10 +16,6 @@ lazy val commonSettings = Seq(
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
   description := "Interpreter of a Sigma-State language",
   pomExtra :=
-    <scm>
-      <url>git@github.com:ScorexProject/scrypto.git</url>
-      <connection>git@github.com:ScorexFoundation/sigmastate-interpreter.git</connection>
-    </scm>
       <developers>
         <developer>
           <id>kushti</id>
@@ -152,91 +148,102 @@ def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
 )
 
 lazy val common = Project("common", file("common"))
-    .settings(commonSettings ++ testSettings,
-      libraryDependencies ++= Seq(
-        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-        debox, commonsIo
-      ))
+  .settings(commonSettings ++ testSettings,
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+      debox, commonsIo
+    ))
+  .settings(publish / skip := true)
 
 lazy val libraryapi = Project("library-api", file("library-api"))
-    .dependsOn(common % allConfigDependency)
-    .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
-      libraryDependencies ++= Seq(
-      ))
+  .dependsOn(common % allConfigDependency)
+  .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
+    libraryDependencies ++= Seq(
+    ))
+  .settings(publish / skip := true)
 
 lazy val libraryimpl = Project("library-impl", file("library-impl"))
-    .dependsOn(libraryapi % allConfigDependency)
-    .settings(libraryDefSettings,
-      libraryDependencies ++= Seq( debox ))
+  .dependsOn(libraryapi % allConfigDependency)
+  .settings(libraryDefSettings,
+    libraryDependencies ++= Seq( debox ))
+  .settings(publish / skip := true)
 
 lazy val core = Project("core", file("core"))
-    .dependsOn(common % allConfigDependency, libraryapi % allConfigDependency)
-    .settings(commonSettings,
-      libraryDependencies ++= Seq( configs, debox ))
+  .dependsOn(common % allConfigDependency, libraryapi % allConfigDependency)
+  .settings(commonSettings,
+    libraryDependencies ++= Seq( configs, debox ))
+  .settings(publish / skip := true)
 
 lazy val library = Project("library", file("library"))
-    .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryapi, libraryimpl)
-    .settings(//commonSettings,
-      libraryDefSettings ++ testSettings,
-      libraryDependencies ++= Seq( debox ))
+  .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryapi, libraryimpl)
+  .settings(//commonSettings,
+    libraryDefSettings ++ testSettings,
+    libraryDependencies ++= Seq( debox ))
+  .settings(publish / skip := true)
 
 lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
-    .settings(commonSettings,
-      libraryDependencies ++= Seq(
-        plugin, libraryconf
-      ))
+  .settings(commonSettings,
+    libraryDependencies ++= Seq(
+      plugin, libraryconf
+    ))
+  .settings(publish / skip := true)
 
 lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-    .dependsOn(sigmaconf, libraryapi, libraryimpl)
-    .settings(commonSettings,
-      libraryDependencies ++= Seq(meta, plugin),
-      assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
-      assemblyMergeStrategy in assembly := {
-        case PathList("scalan", xs @ _*) => MergeStrategy.first
-        case other => (assemblyMergeStrategy in assembly).value(other)
-      },
-      artifact in(Compile, assembly) := {
-        val art = (artifact in(Compile, assembly)).value
-        art.withClassifier(Some("assembly"))
-      },
-      addArtifact(artifact in(Compile, assembly), assembly)
-    )
+  .dependsOn(sigmaconf, libraryapi, libraryimpl)
+  .settings(commonSettings,
+    libraryDependencies ++= Seq(meta, plugin),
+    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+    assemblyMergeStrategy in assembly := {
+      case PathList("scalan", xs @ _*) => MergeStrategy.first
+      case other => (assemblyMergeStrategy in assembly).value(other)
+    },
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    },
+    addArtifact(artifact in(Compile, assembly), assembly)
+  )
+  .settings(publish / skip := true)
 
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
-    .dependsOn(common, libraryapi)
-    .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
-      libraryDependencies ++= Seq(
-        macroCompat, scrypto, bouncycastleBcprov
-      ))
+  .dependsOn(common, libraryapi)
+  .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
+    libraryDependencies ++= Seq(
+      macroCompat, scrypto, bouncycastleBcprov
+    ))
+  .settings(publish / skip := true)
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
-    .dependsOn(
-      sigmaapi % allConfigDependency,
-      libraryapi % allConfigDependency,
-      libraryimpl % allConfigDependency,
-      library % allConfigDependency)
-    .settings(libraryDefSettings,
-      libraryDependencies ++= Seq( scrypto, bouncycastleBcprov ))
+  .dependsOn(
+    sigmaapi % allConfigDependency,
+    libraryapi % allConfigDependency,
+    libraryimpl % allConfigDependency,
+    library % allConfigDependency)
+  .settings(libraryDefSettings,
+    libraryDependencies ++= Seq( scrypto, bouncycastleBcprov ))
+  .settings(publish / skip := true)
 
 lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
-    .dependsOn(
-      sigmaimpl % allConfigDependency,
-      common % allConfigDependency,
-      core % allConfigDependency,
-      libraryapi % allConfigDependency,
-      libraryimpl % allConfigDependency,
-      library % allConfigDependency)
-    .settings(libraryDefSettings,
-      libraryDependencies ++= Seq(
-        scrypto,
-        bouncycastleBcprov
-      ))
+  .dependsOn(
+    sigmaimpl % allConfigDependency,
+    common % allConfigDependency,
+    core % allConfigDependency,
+    libraryapi % allConfigDependency,
+    libraryimpl % allConfigDependency,
+    library % allConfigDependency)
+  .settings(libraryDefSettings,
+    libraryDependencies ++= Seq(
+      scrypto,
+      bouncycastleBcprov
+    ))
+  .settings(publish / skip := true)
 
 lazy val sigmastate = (project in file("sigmastate"))
   .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
   .settings(libraryDefSettings)
   .settings(libraryDependencies ++= Seq(
-    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser)) 
+    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser))
+  .settings(publish / skip := true)
 
 lazy val sigma = (project in file("."))
   .aggregate(

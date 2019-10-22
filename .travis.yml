@@ -16,14 +16,26 @@ language: scala
 jdk:
   - oraclejdk8
 
-script:
-  - sbt -jvm-opts .travis.jvmopts test
-# enable scoverage after SpamSpecification timeout issue is resolved
-#  - sbt -jvm-opts .travis.jvmopts coverage test
+stages:
+  - test
+#  - coverage
+  - release
+    if: tag =~ ^v
+  - snapshot
+    if: NOT tag IS present
 
-after_success:
-#  - sbt coverageReport coveralls
-  - sbt -jvm-opts .travis.jvmopts publish
+jobs:
+  include:
+    - stage: test
+      script: sbt -jvm-opts .travis.jvmopts test
+      # enable scoverage after SpamSpecification timeout issue is resolved
+      # script: sbt -jvm-opts .travis.jvmopts coverage test
+#    - stage: coverage
+#      script: sbt coverageReport coveralls
+    - stage: release
+      script: sbt publishSigned sonatypeBundleRelease
+    - stage: snapshot
+      script: sbt -jvm-opts .travis.jvmopts publish
 
 env:
   global:
