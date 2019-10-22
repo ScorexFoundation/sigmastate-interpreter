@@ -37,3 +37,4 @@ env:
 before_install:
 - openssl aes-256-cbc -K $encrypted_98cf3af00429_key -iv $encrypted_98cf3af00429_iv
   -in ci/secring.asc.enc -out ci/secring.asc -d
+before_script: gpg --import ci/secring.asc
