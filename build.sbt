@@ -14,6 +14,7 @@ lazy val commonSettings = Seq(
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
+  description := "Interpreter of a Sigma-State language",
   pomExtra :=
     <scm>
       <url>git@github.com:ScorexProject/scrypto.git</url>
@@ -30,14 +31,14 @@ lazy val commonSettings = Seq(
           <name>Alexander Slesarenko</name>
           <url>https://github.com/aslesarenko/</url>
         </developer>
+        <developer>
+          <id>greenhat</id>
+          <name>Denys Zadorozhnyi</name>
+          <url>https://github.com/greenhat/</url>
+        </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value) { Some("snapshots" at nexus + "content/repositories/snapshots") }
-    else { Some("releases" at nexus + "service/local/staging/deploy/maven2") }
-  }
-
+  publishTo := sonatypePublishToBundle.value,
 )
 
 enablePlugins(GitVersioning)
