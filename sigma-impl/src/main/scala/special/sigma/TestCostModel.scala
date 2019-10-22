@@ -17,6 +17,5 @@ class TestCostModel extends CostModel {
   def SelectField: Int      = CostTable.DefaultCosts("SelectField")
   def CollectionConst: Int  = CostTable.DefaultCosts("Const: () => Array[IV]")
   def AccessKiloByteOfData: Int  = CostTable.DefaultCosts("AccessKiloByteOfData")
-  def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long = SigmaPredef.dataSize(x)
   override def PubKeySize: Long = 32
 }

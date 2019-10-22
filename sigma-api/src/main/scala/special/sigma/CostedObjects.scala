@@ -4,17 +4,20 @@ import special.collection._
 import scalan._
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SizeAnyValue extends Size[AnyValue] {
   def tVal: RType[Any]
   def valueSize: Size[Any]
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SizeSigmaProp extends Size[SigmaProp] {
   def propBytes: Size[Coll[Byte]]
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SizeBox extends Size[Box] {
   def propositionBytes: Size[Coll[Byte]]
   def bytes: Size[Coll[Byte]]
@@ -25,6 +28,7 @@ trait SizeBox extends Size[Box] {
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SizeContext extends Size[Context] {
   def outputs: Size[Coll[Box]]
   def inputs: Size[Coll[Box]]

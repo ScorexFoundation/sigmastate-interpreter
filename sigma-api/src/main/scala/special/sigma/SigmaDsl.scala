@@ -23,7 +23,6 @@ trait CostModel {
   def SelectField: Int // costOf("SelectField")
   def CollectionConst: Int // costOf("Const: () => Array[IV]")
   def AccessKiloByteOfData: Int // costOf("AccessKiloByteOfData")
-  @Reified("T") def dataSize[T](x: T)(implicit cT: ClassTag[T]): Long
   /** Size of public key in bytes */
   def PubKeySize: Long
 }
@@ -34,6 +33,7 @@ trait CostModel {
   * So it is globally and implicitly used in all methods.
   * */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait BigInt {
   @Internal
   private[sigma] def value: BigInteger
@@ -118,7 +118,7 @@ trait BigInt {
     * @return { @code this + that}
     */
   def add(that: BigInt): BigInt
-  def +(that: BigInt): BigInt = add(that)
+  @Internal def +(that: BigInt): BigInt = add(that)
 
   /** Returns a BigInt whose value is {@code (this - that)}.
     *
@@ -126,7 +126,7 @@ trait BigInt {
     * @return { @code this - that}
     */
   def subtract(that: BigInt): BigInt
-  def -(that: BigInt): BigInt = subtract(that)
+  @Internal def -(that: BigInt): BigInt = subtract(that)
 
   /** Returns a BigInt whose value is {@code (this * that)}.
     *
@@ -136,7 +136,7 @@ trait BigInt {
     * @return { @code this * that}
     */
   def multiply(that: BigInt): BigInt
-  def *(that: BigInt): BigInt = multiply(that)
+  @Internal def *(that: BigInt): BigInt = multiply(that)
 
   /** Returns a BigInt whose value is {@code (this / that)}.
     *
@@ -145,7 +145,7 @@ trait BigInt {
     * @throws ArithmeticException if { @code that} is zero.
     */
   def divide(that: BigInt): BigInt
-  def /(that: BigInt): BigInt = divide(that)
+  @Internal def /(that: BigInt): BigInt = divide(that)
 
   /**
     * Returns a BigInt whose value is {@code (this mod m}).  This method
@@ -158,7 +158,7 @@ trait BigInt {
     * @see #remainder
     */
   def mod(m: BigInt): BigInt
-  def %(m: BigInt): BigInt = mod(m)
+  @Internal def %(m: BigInt): BigInt = mod(m)
 
   /**
     * Returns a BigInt whose value is {@code (this % that)}.
@@ -197,6 +197,7 @@ trait BigInt {
 /** Base class for points on elliptic curves.
   */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait GroupElement {
   @Internal
   private[sigma] def value: ECPoint
@@ -226,6 +227,7 @@ trait GroupElement {
 
 /** Proposition which can be proven and verified by sigma protocol. */
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SigmaProp {
   def isValid: Boolean
   /** Serialized bytes of this sigma proposition taken as ErgoTree and then serialized. */
@@ -251,12 +253,14 @@ trait SigmaProp {
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait AnyValue {
   def value: Any
   def tVal: RType[Any]
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
@@ -386,6 +390,8 @@ trait AvlTree {
 
   /** Checks if an entry with key `key` exists in this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
     * Return `true` if a leaf with the key `key` exists
     * Return `false` if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
@@ -395,6 +401,8 @@ trait AvlTree {
 
   /** Perform a lookup of key `key` in this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
     * Return Some(bytes) of leaf with key `key` if it exists
     * Return None if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
@@ -403,6 +411,8 @@ trait AvlTree {
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
   /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
     * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
     * @param keys    keys of elements of this authenticated dictionary.
     * @param proof
@@ -411,6 +421,8 @@ trait AvlTree {
 
   /** Perform insertions of key-value entries into this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
@@ -420,6 +432,8 @@ trait AvlTree {
 
   /** Perform updates of key-value entries into this tree using proof `proof`.
     * Throws exception if proof is incorrect
+    *
+    * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
     * @param operations   collection of key-value pairs to update in this authenticated dictionary.
@@ -431,6 +445,8 @@ trait AvlTree {
     * Throws exception if proof is incorrect
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
+    *
+    * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
     * @param operations   collection of keys to remove from this authenticated dictionary.
     * @param proof
     */
@@ -519,6 +535,7 @@ trait Header {
 
 /** Represents data available in Sigma language using `CONTEXT` global variable*/
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait Context {
   def builder: SigmaDslBuilder
 
@@ -603,13 +620,10 @@ trait SigmaContract {
       positions: Coll[Int],
       newValues: Coll[T])
       (implicit cT: RType[T]): Coll[Byte] = this.builder.substConstants(scriptBytes, positions, newValues)
-
-  @clause def canOpen(ctx: Context): Boolean
-
-  def asFunction: Context => Boolean = (ctx: Context) => this.canOpen(ctx)
 }
 
 @scalan.Liftable
+@WithMethodCallRecognizers
 trait SigmaDslBuilder {
   def Colls: CollBuilder
   def Monoids: MonoidBuilder
@@ -654,10 +668,10 @@ trait SigmaDslBuilder {
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/
-  def BigInt(n: BigInteger): BigInt
+  @Internal def BigInt(n: BigInteger): BigInt
 
   /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
-  def toBigInteger(n: BigInt): BigInteger
+  @Internal def toBigInteger(n: BigInt): BigInteger
 
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree

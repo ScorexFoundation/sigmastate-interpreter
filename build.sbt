@@ -76,27 +76,24 @@ val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.6"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.4"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
+val debox              = "org.spire-math" %% "debox" % "0.8.0"
+val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
+val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
+val commonsIo          = "commons-io" % "commons-io" % "2.5"
+val configs            = "com.github.kxbmap" %% "configs" % "0.4.4"
 
-val specialVersion = "master-5136809e-SNAPSHOT"
-val specialCommon  = "io.github.scalan" %% "common" % specialVersion
-val specialCore    = "io.github.scalan" %% "core" % specialVersion
-val specialLibrary = "io.github.scalan" %% "library" % specialVersion
-
+val specialVersion = "core-opt-d7f46fca-SNAPSHOT"
 val meta        = "io.github.scalan" %% "meta" % specialVersion
 val plugin      = "io.github.scalan" %% "plugin" % specialVersion
-val libraryapi  = "io.github.scalan" %% "library-api" % specialVersion
-val libraryimpl = "io.github.scalan" %% "library-impl" % specialVersion
 val libraryconf = "io.github.scalan" %% "library-conf" % specialVersion
 
 val testingDependencies = Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
   "org.scalactic" %% "scalactic" % "3.0.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
+  "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
   "junit" % "junit" % "4.12" % "test",
   "com.novocode" % "junit-interface" % "0.11" % "test",
-  specialCommon, (specialCommon % Test).classifier("tests"),
-  specialCore, (specialCore % Test).classifier("tests"),
-  specialLibrary, (specialLibrary % Test).classifier("tests"),
 )
 
 lazy val testSettings = Seq(
@@ -113,21 +110,17 @@ libraryDependencies ++= Seq(
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
   "com.typesafe.akka" %% "akka-actor" % "2.4.+",
-  "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0",
-  "com.lihaoyi" %% "fastparse" % "1.0.0",
-  "org.spire-math" %% "debox" % "0.8.0"
+  kiama, fastparse, debox
 ) ++ testingDependencies
 
 val circeVersion = "0.10.0"
+val circeCore = "io.circe" %% "circe-core" % circeVersion 
+val circeGeneric = "io.circe" %% "circe-generic" % circeVersion 
+val circeParser = "io.circe" %% "circe-parser" % circeVersion 
 
-libraryDependencies ++= Seq(
-  "io.circe" %% "circe-core",
-  "io.circe" %% "circe-generic",
-  "io.circe" %% "circe-parser"
-).map(_ % circeVersion)
+libraryDependencies ++= Seq( circeCore, circeGeneric, circeParser )
 
 scalacOptions ++= Seq("-feature", "-deprecation")
-
 
 // set bytecode version to 8 to fix NoSuchMethodError for various ByteBuffer methods
 // see https://github.com/eclipse/jetty.project/issues/3244
@@ -153,9 +146,38 @@ credentials ++= (for {
 
 def libraryDefSettings = commonSettings ++ testSettings ++ Seq(
   scalacOptions ++= Seq(
-//        s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-better-costing-2a66ed5c-SNAPSHOT.jar"
+//    s"-Xplugin:${file(".").absolutePath }/scalanizer/target/scala-2.12/scalanizer-assembly-core-opt-0d03a785-SNAPSHOT.jar"
   )
 )
+
+lazy val common = Project("common", file("common"))
+    .settings(commonSettings ++ testSettings,
+      libraryDependencies ++= Seq(
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        debox, commonsIo
+      ))
+
+lazy val libraryapi = Project("library-api", file("library-api"))
+    .dependsOn(common % allConfigDependency)
+    .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
+      libraryDependencies ++= Seq(
+      ))
+
+lazy val libraryimpl = Project("library-impl", file("library-impl"))
+    .dependsOn(libraryapi % allConfigDependency)
+    .settings(libraryDefSettings,
+      libraryDependencies ++= Seq( debox ))
+
+lazy val core = Project("core", file("core"))
+    .dependsOn(common % allConfigDependency, libraryapi % allConfigDependency)
+    .settings(commonSettings,
+      libraryDependencies ++= Seq( configs, debox ))
+
+lazy val library = Project("library", file("library"))
+    .dependsOn(common % allConfigDependency, core % allConfigDependency, libraryapi, libraryimpl)
+    .settings(//commonSettings,
+      libraryDefSettings ++ testSettings,
+      libraryDependencies ++= Seq( debox ))
 
 lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
     .settings(commonSettings,
@@ -164,11 +186,14 @@ lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
       ))
 
 lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-    .dependsOn(sigmaconf)
+    .dependsOn(sigmaconf, libraryapi, libraryimpl)
     .settings(commonSettings,
-      libraryDependencies ++= Seq(meta, plugin, libraryapi, libraryimpl),
-//      publishArtifact in(Compile, packageBin) := false,
+      libraryDependencies ++= Seq(meta, plugin),
       assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+      assemblyMergeStrategy in assembly := {
+        case PathList("scalan", xs @ _*) => MergeStrategy.first
+        case other => (assemblyMergeStrategy in assembly).value(other)
+      },
       artifact in(Compile, assembly) := {
         val art = (artifact in(Compile, assembly)).value
         art.withClassifier(Some("assembly"))
@@ -177,38 +202,64 @@ lazy val scalanizer = Project("scalanizer", file("scalanizer"))
     )
 
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
+    .dependsOn(common, libraryapi)
     .settings(libraryDefSettings :+ addCompilerPlugin(paradise),
       libraryDependencies ++= Seq(
-        specialCommon, libraryapi, macroCompat, scrypto, bouncycastleBcprov
+        macroCompat, scrypto, bouncycastleBcprov
       ))
 
 lazy val sigmaimpl = Project("sigma-impl", file("sigma-impl"))
-    .dependsOn(sigmaapi % allConfigDependency)
+    .dependsOn(
+      sigmaapi % allConfigDependency,
+      libraryapi % allConfigDependency,
+      libraryimpl % allConfigDependency,
+      library % allConfigDependency)
     .settings(libraryDefSettings,
-      libraryDependencies ++= Seq(
-        libraryapi, libraryimpl, scrypto, bouncycastleBcprov
-      ))
+      libraryDependencies ++= Seq( scrypto, bouncycastleBcprov ))
 
 lazy val sigmalibrary = Project("sigma-library", file("sigma-library"))
-    .dependsOn(sigmaimpl % allConfigDependency)
+    .dependsOn(
+      sigmaimpl % allConfigDependency,
+      common % allConfigDependency,
+      core % allConfigDependency,
+      libraryapi % allConfigDependency,
+      libraryimpl % allConfigDependency,
+      library % allConfigDependency)
     .settings(libraryDefSettings,
       libraryDependencies ++= Seq(
-        specialCommon, (specialCommon % Test).classifier("tests"),
-        specialCore, (specialCore % Test).classifier("tests"),
-        libraryapi, (libraryapi % Test).classifier("tests"),
-        libraryimpl, (libraryimpl % Test).classifier("tests"),
-        specialLibrary, (specialLibrary % Test).classifier("tests"),
         scrypto,
         bouncycastleBcprov
       ))
 
+lazy val sigmastate = (project in file("sigmastate"))
+  .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
+  .settings(libraryDefSettings)
+  .settings(libraryDependencies ++= Seq(
+    scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser)) 
+
 lazy val sigma = (project in file("."))
-    .aggregate(sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
-    .dependsOn(sigmaimpl % allConfigDependency, sigmalibrary % allConfigDependency)
-    .settings(commonSettings: _*)
+  .aggregate(
+    sigmastate, common, core, libraryapi, libraryimpl, library,
+    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
+  .settings(libraryDefSettings, rootSettings)
+  .settings(publish / aggregate := false)
+  .settings(publishLocal / aggregate := false)
+
+lazy val aggregateCompile = ScopeFilter(
+  inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
+    sigmalibrary, sigmastate),
+  inConfigurations(Compile))
+
+lazy val rootSettings = Seq(
+  sources in Compile := sources.all(aggregateCompile).value.flatten,
+  libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
+  mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
+  mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
+  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
+)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "ergolikectx-json"
+  val ergoBranch = "sigma-core-opt"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
