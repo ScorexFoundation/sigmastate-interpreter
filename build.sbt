@@ -134,7 +134,10 @@ publishArtifact in Test := true
 
 pomIncludeRepository := { _ => false }
 
-credentials += Credentials(Path.userHome / ".sbt" / ".sigma-sonatype-credentials")
+val credentialFile = Path.userHome / ".sbt" / ".sigma-sonatype-credentials"
+credentials ++= (for {
+  file <- if (credentialFile.exists) Some(credentialFile) else None
+} yield Credentials(file)).toSeq
 
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
