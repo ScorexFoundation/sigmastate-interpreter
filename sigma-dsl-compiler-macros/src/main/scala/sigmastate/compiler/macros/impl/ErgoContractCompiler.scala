@@ -1,9 +1,7 @@
 package sigmastate.compiler.macros.impl
 
-import org.ergoplatform.dsl.ContractSyntax.{ErgoScript, Proposition}
-import org.ergoplatform.dsl.PropositionSpec
 import sigmastate.TrivialProp
-import sigmastate.Values.{ErgoTree, SigmaPropConstant, SigmaPropValue, TrueLeaf}
+import sigmastate.Values.{SigmaPropConstant, SigmaPropValue}
 import sigmastate.eval.CSigmaProp
 import special.sigma.{Context, SigmaProp}
 import sigmastate.verification.SigmaDsl.api.sigma.{Context => VerifiedContext, SigmaProp => VerifiedSigmaProp}
@@ -12,32 +10,22 @@ import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 import scala.reflect.runtime.universe._
 
-object ErgoContractCompilerWrapper {
+object ErgoContractCompiler {
 
-  def compile(verifiedContract: VerifiedContext => VerifiedSigmaProp): (Context => SigmaProp, SigmaPropValue) = macro ErgoContractCompiler.compile
-}
+  def compile(verifiedContract: VerifiedContext => VerifiedSigmaProp): (Context => SigmaProp, SigmaPropValue) = macro compileImpl
 
-class ErgoContractCompiler(val c: whitebox.Context) extends Liftables {
-
-  import c.universe._
-
-  def compile(verifiedContract: Expr[VerifiedContext => VerifiedSigmaProp]): Expr[(Context => SigmaProp, SigmaPropValue)] =
+  def compileImpl(c: whitebox.Context)(verifiedContract: c.Expr[VerifiedContext => VerifiedSigmaProp]): c.Expr[(Context => SigmaProp, SigmaPropValue)] =
   {
+    import c.universe._
 
-    //    contract.tree match {
-    //      case Function(params, tree) =>
-    //      case v => abort(s"expected the root to be a function, got ${v}")
-    //    }
+    //    verifiedContract.tree match {
+//      case Function(params, tree) =>
+//      case v => c.abort(c.enclosingPosition, s"expected the root to be a function, got ${verifiedContract.toString}")
+//    }
 
-    val prop: Context => SigmaProp = { _ => CSigmaProp(TrivialProp(true)) }
-    val sigmaProp = SigmaPropConstant(TrivialProp(true))
-    q"($prop, $sigmaProp)"
+    val prop = reify({c: Context => CSigmaProp(TrivialProp(true))})
+    val sigmaProp = reify(SigmaPropConstant(TrivialProp(true)))
+    reify(Tuple2(prop.splice, sigmaProp.splice))
   }
 }
-
-case class PlainPropositionSpec(name: String,
-                                dslSpec: Context => Boolean,
-                                ergoTree: ErgoTree,
-                                scriptSpec: ErgoScript)
-  //extends PropositionSpec
 
