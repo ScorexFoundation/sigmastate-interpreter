@@ -12,9 +12,9 @@ case class ErgoContract(scalaFunc: Context => SigmaProp, ergoTree: ErgoTree)
 object ErgoContract {
 
   def apply(verifiedContract: VerifiedContext => VerifiedSigmaProp): ErgoContract = {
-    val (scalaFunc, sigmaProp) = ErgoContractCompiler.compile(verifiedContract)
-   val ergoTree = ErgoTree.fromProposition(sigmaProp)
-    ErgoContract(scalaFunc, ergoTree)
+   val res = ErgoContractCompiler.compile(verifiedContract)
+   val ergoTree = ErgoTree.fromProposition(res.prop)
+    ErgoContract(res.scalaFunc, ergoTree)
   }
 
 }
