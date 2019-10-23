@@ -1,7 +1,6 @@
 package sigmastate.verification.contract
 
 import sigmastate.verification.SigmaDsl.api.sigma.{Box, Context, SigmaContract, SigmaProp}
-import sigmastate.verification.SigmaDsl.impl.sigma.PK
 import stainless.annotation.ignore
 import stainless.lang._
 
