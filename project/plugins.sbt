@@ -12,7 +12,7 @@ addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
 resolvers ++= Seq(
   Resolver.bintrayRepo("epfl-lara", "princess"),
   Resolver.bintrayIvyRepo("epfl-lara", "sbt-plugins"),
-  "uuverifiers" at "http://logicrunch.research.it.uu.se/maven",
+  ("uuverifiers" at "http://logicrunch.research.it.uu.se/maven").withAllowInsecureProtocol(true),
 )
 
 addSbtPlugin("ch.epfl.lara" % "sbt-stainless" % "0.5.1")
