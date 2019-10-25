@@ -17,35 +17,35 @@ package special.sigma {
     import SizeContext._;
     import WOption._;
     import WRType._;
-    @Liftable trait SizeAnyValue extends Size[AnyValue] {
-      def tVal: Rep[WRType[Any]];
-      def valueSize: Rep[Size[Any]]
+    @Liftable @WithMethodCallRecognizers trait SizeAnyValue extends Size[AnyValue] {
+      def tVal: Ref[WRType[Any]];
+      def valueSize: Ref[Size[Any]]
     };
-    @Liftable trait SizeSigmaProp extends Size[SigmaProp] {
-      def propBytes: Rep[Size[Coll[Byte]]]
+    @Liftable @WithMethodCallRecognizers trait SizeSigmaProp extends Size[SigmaProp] {
+      def propBytes: Ref[Size[Coll[Byte]]]
     };
-    @Liftable trait SizeBox extends Size[Box] {
-      def propositionBytes: Rep[Size[Coll[Byte]]];
-      def bytes: Rep[Size[Coll[Byte]]];
-      def bytesWithoutRef: Rep[Size[Coll[Byte]]];
-      def registers: Rep[Size[Coll[WOption[AnyValue]]]];
-      def getReg[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]];
-      def tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]
+    @Liftable @WithMethodCallRecognizers trait SizeBox extends Size[Box] {
+      def propositionBytes: Ref[Size[Coll[Byte]]];
+      def bytes: Ref[Size[Coll[Byte]]];
+      def bytesWithoutRef: Ref[Size[Coll[Byte]]];
+      def registers: Ref[Size[Coll[WOption[AnyValue]]]];
+      def getReg[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]];
+      def tokens: Ref[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]
     };
-    @Liftable trait SizeContext extends Size[Context] {
-      def outputs: Rep[Size[Coll[Box]]];
-      def inputs: Rep[Size[Coll[Box]]];
-      def dataInputs: Rep[Size[Coll[Box]]];
-      def selfBox: Rep[Size[Box]];
-      def lastBlockUtxoRootHash: Rep[Size[AvlTree]];
-      def headers: Rep[Size[Coll[Header]]];
-      def preHeader: Rep[Size[PreHeader]];
-      def getVar[T](id: Rep[Byte])(implicit tT: Elem[T]): Rep[Size[WOption[T]]]
+    @Liftable @WithMethodCallRecognizers trait SizeContext extends Size[Context] {
+      def outputs: Ref[Size[Coll[Box]]];
+      def inputs: Ref[Size[Coll[Box]]];
+      def dataInputs: Ref[Size[Coll[Box]]];
+      def selfBox: Ref[Size[Box]];
+      def lastBlockUtxoRootHash: Ref[Size[AvlTree]];
+      def headers: Ref[Size[Coll[Header]]];
+      def preHeader: Ref[Size[PreHeader]];
+      def getVar[T](id: Ref[Byte])(implicit tT: Elem[T]): Ref[Size[WOption[T]]]
     };
     @Liftable trait SizeBuilder extends Def[SizeBuilder] {
-      def mkSizeAnyValue(tVal: Rep[WRType[Any]], valueSize: Rep[Size[Any]]): Rep[SizeAnyValue];
-      def mkSizeBox(propositionBytes: Rep[Size[Coll[Byte]]], bytes: Rep[Size[Coll[Byte]]], bytesWithoutRef: Rep[Size[Coll[Byte]]], registers: Rep[Size[Coll[WOption[AnyValue]]]], tokens: Rep[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]): Rep[SizeBox];
-      def mkSizeContext(outputs: Rep[Size[Coll[Box]]], inputs: Rep[Size[Coll[Box]]], dataInputs: Rep[Size[Coll[Box]]], selfBox: Rep[Size[Box]], lastBlockUtxoRootHash: Rep[Size[AvlTree]], headers: Rep[Size[Coll[Header]]], preHeader: Rep[Size[PreHeader]], vars: Rep[Coll[Size[AnyValue]]]): Rep[SizeContext]
+      def mkSizeAnyValue(tVal: Ref[WRType[Any]], valueSize: Ref[Size[Any]]): Ref[SizeAnyValue];
+      def mkSizeBox(propositionBytes: Ref[Size[Coll[Byte]]], bytes: Ref[Size[Coll[Byte]]], bytesWithoutRef: Ref[Size[Coll[Byte]]], registers: Ref[Size[Coll[WOption[AnyValue]]]], tokens: Ref[Size[Coll[scala.Tuple2[Coll[Byte], Long]]]]): Ref[SizeBox];
+      def mkSizeContext(outputs: Ref[Size[Coll[Box]]], inputs: Ref[Size[Coll[Box]]], dataInputs: Ref[Size[Coll[Box]]], selfBox: Ref[Size[Box]], lastBlockUtxoRootHash: Ref[Size[AvlTree]], headers: Ref[Size[Coll[Header]]], preHeader: Ref[Size[PreHeader]], vars: Ref[Coll[Size[AnyValue]]]): Ref[SizeContext]
     };
     trait SizeAnyValueCompanion;
     trait SizeSigmaPropCompanion;

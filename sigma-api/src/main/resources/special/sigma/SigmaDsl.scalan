@@ -18,196 +18,193 @@ package special.sigma {
     import SigmaContract._;
     import SigmaDslBuilder._;
     import SigmaProp._;
-    import WBigInteger._;
     import WOption._;
     import WRType._;
     @Liftable trait CostModel extends Def[CostModel] {
-      def AccessBox: Rep[Int];
-      def AccessAvlTree: Rep[Int];
-      def GetVar: Rep[Int];
-      def DeserializeVar: Rep[Int];
-      def GetRegister: Rep[Int];
-      def DeserializeRegister: Rep[Int];
-      def SelectField: Rep[Int];
-      def CollectionConst: Rep[Int];
-      def AccessKiloByteOfData: Rep[Int];
-      @Reified(value = "T") def dataSize[T](x: Rep[T])(implicit cT: Elem[T]): Rep[Long];
-      def PubKeySize: Rep[Long]
+      def AccessBox: Ref[Int];
+      def AccessAvlTree: Ref[Int];
+      def GetVar: Ref[Int];
+      def DeserializeVar: Ref[Int];
+      def GetRegister: Ref[Int];
+      def DeserializeRegister: Ref[Int];
+      def SelectField: Ref[Int];
+      def CollectionConst: Ref[Int];
+      def AccessKiloByteOfData: Ref[Int];
+      def PubKeySize: Ref[Long]
     };
-    @Liftable trait BigInt extends Def[BigInt] {
-      def toByte: Rep[Byte];
-      def toShort: Rep[Short];
-      def toInt: Rep[Int];
-      def toLong: Rep[Long];
-      def toBytes: Rep[Coll[Byte]];
-      def toBits: Rep[Coll[Boolean]];
-      def toAbs: Rep[BigInt];
-      def compareTo(that: Rep[BigInt]): Rep[Int];
-      def modQ: Rep[BigInt];
-      def plusModQ(other: Rep[BigInt]): Rep[BigInt];
-      def minusModQ(other: Rep[BigInt]): Rep[BigInt];
-      def multModQ(other: Rep[BigInt]): Rep[BigInt];
-      def inverseModQ: Rep[BigInt];
-      def signum: Rep[Int];
-      def add(that: Rep[BigInt]): Rep[BigInt];
-      def subtract(that: Rep[BigInt]): Rep[BigInt];
-      def multiply(that: Rep[BigInt]): Rep[BigInt];
-      def divide(that: Rep[BigInt]): Rep[BigInt];
-      def mod(m: Rep[BigInt]): Rep[BigInt];
-      def remainder(that: Rep[BigInt]): Rep[BigInt];
-      def min(that: Rep[BigInt]): Rep[BigInt];
-      def max(that: Rep[BigInt]): Rep[BigInt];
-      def negate: Rep[BigInt]
+    @Liftable @WithMethodCallRecognizers trait BigInt extends Def[BigInt] {
+      def toByte: Ref[Byte];
+      def toShort: Ref[Short];
+      def toInt: Ref[Int];
+      def toLong: Ref[Long];
+      def toBytes: Ref[Coll[Byte]];
+      def toBits: Ref[Coll[Boolean]];
+      def toAbs: Ref[BigInt];
+      def compareTo(that: Ref[BigInt]): Ref[Int];
+      def modQ: Ref[BigInt];
+      def plusModQ(other: Ref[BigInt]): Ref[BigInt];
+      def minusModQ(other: Ref[BigInt]): Ref[BigInt];
+      def multModQ(other: Ref[BigInt]): Ref[BigInt];
+      def inverseModQ: Ref[BigInt];
+      def signum: Ref[Int];
+      def add(that: Ref[BigInt]): Ref[BigInt];
+      def subtract(that: Ref[BigInt]): Ref[BigInt];
+      def multiply(that: Ref[BigInt]): Ref[BigInt];
+      def divide(that: Ref[BigInt]): Ref[BigInt];
+      def mod(m: Ref[BigInt]): Ref[BigInt];
+      def remainder(that: Ref[BigInt]): Ref[BigInt];
+      def min(that: Ref[BigInt]): Ref[BigInt];
+      def max(that: Ref[BigInt]): Ref[BigInt];
+      def negate: Ref[BigInt]
     };
-    @Liftable trait GroupElement extends Def[GroupElement] {
-      def isInfinity: Rep[Boolean];
-      def exp(k: Rep[BigInt]): Rep[GroupElement];
-      def multiply(that: Rep[GroupElement]): Rep[GroupElement];
-      def negate: Rep[GroupElement];
-      def getEncoded: Rep[Coll[Byte]]
+    @Liftable @WithMethodCallRecognizers trait GroupElement extends Def[GroupElement] {
+      def isInfinity: Ref[Boolean];
+      def exp(k: Ref[BigInt]): Ref[GroupElement];
+      def multiply(that: Ref[GroupElement]): Ref[GroupElement];
+      def negate: Ref[GroupElement];
+      def getEncoded: Ref[Coll[Byte]]
     };
-    @Liftable trait SigmaProp extends Def[SigmaProp] {
-      def isValid: Rep[Boolean];
-      def propBytes: Rep[Coll[Byte]];
-      @OverloadId(value = "and_sigma") def &&(other: Rep[SigmaProp]): Rep[SigmaProp];
-      @OverloadId(value = "and_bool") def &&(other: Rep[Boolean]): Rep[SigmaProp];
-      @OverloadId(value = "or_sigma") def ||(other: Rep[SigmaProp]): Rep[SigmaProp];
-      @OverloadId(value = "or_bool") def ||(other: Rep[Boolean]): Rep[SigmaProp]
+    @Liftable @WithMethodCallRecognizers trait SigmaProp extends Def[SigmaProp] {
+      def isValid: Ref[Boolean];
+      def propBytes: Ref[Coll[Byte]];
+      @OverloadId(value = "and_sigma") def &&(other: Ref[SigmaProp]): Ref[SigmaProp];
+      @OverloadId(value = "and_bool") def &&(other: Ref[Boolean]): Ref[SigmaProp];
+      @OverloadId(value = "or_sigma") def ||(other: Ref[SigmaProp]): Ref[SigmaProp];
+      @OverloadId(value = "or_bool") def ||(other: Ref[Boolean]): Ref[SigmaProp]
     };
-    @Liftable trait AnyValue extends Def[AnyValue] {
-      def value: Rep[Any];
-      def tVal: Rep[WRType[Any]]
+    @Liftable @WithMethodCallRecognizers trait AnyValue extends Def[AnyValue] {
+      def value: Ref[Any];
+      def tVal: Ref[WRType[Any]]
     };
-    @Liftable trait Box extends Def[Box] {
-      def id: Rep[Coll[Byte]];
-      def value: Rep[Long];
-      def propositionBytes: Rep[Coll[Byte]];
-      def bytes: Rep[Coll[Byte]];
-      def bytesWithoutRef: Rep[Coll[Byte]];
-      def registers: Rep[Coll[AnyValue]];
-      def getReg[T](i: Rep[Int])(implicit cT: Elem[T]): Rep[WOption[T]];
-      def R0[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(0.asInstanceOf[Int]));
-      def R1[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(1.asInstanceOf[Int]));
-      def R2[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(2.asInstanceOf[Int]));
-      def R3[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(3.asInstanceOf[Int]));
-      def R4[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(4.asInstanceOf[Int]));
-      def R5[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(5.asInstanceOf[Int]));
-      def R6[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(6.asInstanceOf[Int]));
-      def R7[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(7.asInstanceOf[Int]));
-      def R8[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(8.asInstanceOf[Int]));
-      def R9[T](implicit cT: Elem[T]): Rep[WOption[T]] = this.getReg[T](toRep(9.asInstanceOf[Int]));
-      def tokens: Rep[Coll[scala.Tuple2[Coll[Byte], Long]]];
-      def creationInfo: Rep[scala.Tuple2[Int, Coll[Byte]]];
-      def executeFromRegister[T](regId: Rep[Byte])(implicit cT: Elem[T]): Rep[T]
+    @Liftable @WithMethodCallRecognizers trait Box extends Def[Box] {
+      def id: Ref[Coll[Byte]];
+      def value: Ref[Long];
+      def propositionBytes: Ref[Coll[Byte]];
+      def bytes: Ref[Coll[Byte]];
+      def bytesWithoutRef: Ref[Coll[Byte]];
+      def registers: Ref[Coll[AnyValue]];
+      def getReg[T](i: Ref[Int])(implicit cT: Elem[T]): Ref[WOption[T]];
+      def R0[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(0.asInstanceOf[Int]));
+      def R1[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(1.asInstanceOf[Int]));
+      def R2[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(2.asInstanceOf[Int]));
+      def R3[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(3.asInstanceOf[Int]));
+      def R4[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(4.asInstanceOf[Int]));
+      def R5[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(5.asInstanceOf[Int]));
+      def R6[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(6.asInstanceOf[Int]));
+      def R7[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(7.asInstanceOf[Int]));
+      def R8[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(8.asInstanceOf[Int]));
+      def R9[T](implicit cT: Elem[T]): Ref[WOption[T]] = this.getReg[T](toRep(9.asInstanceOf[Int]));
+      def tokens: Ref[Coll[scala.Tuple2[Coll[Byte], Long]]];
+      def creationInfo: Ref[scala.Tuple2[Int, Coll[Byte]]];
+      def executeFromRegister[T](regId: Ref[Byte])(implicit cT: Elem[T]): Ref[T]
     };
     @Liftable trait AvlTree extends Def[AvlTree] {
-      def digest: Rep[Coll[Byte]];
-      def enabledOperations: Rep[Byte];
-      def keyLength: Rep[Int];
-      def valueLengthOpt: Rep[WOption[Int]];
-      def isInsertAllowed: Rep[Boolean];
-      def isUpdateAllowed: Rep[Boolean];
-      def isRemoveAllowed: Rep[Boolean];
-      def updateDigest(newDigest: Rep[Coll[Byte]]): Rep[AvlTree];
-      def updateOperations(newOperations: Rep[Byte]): Rep[AvlTree];
-      def contains(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[Boolean];
-      def get(key: Rep[Coll[Byte]], proof: Rep[Coll[Byte]]): Rep[WOption[Coll[Byte]]];
-      def getMany(keys: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[Coll[WOption[Coll[Byte]]]];
-      def insert(operations: Rep[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
-      def update(operations: Rep[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]];
-      def remove(operations: Rep[Coll[Coll[Byte]]], proof: Rep[Coll[Byte]]): Rep[WOption[AvlTree]]
+      def digest: Ref[Coll[Byte]];
+      def enabledOperations: Ref[Byte];
+      def keyLength: Ref[Int];
+      def valueLengthOpt: Ref[WOption[Int]];
+      def isInsertAllowed: Ref[Boolean];
+      def isUpdateAllowed: Ref[Boolean];
+      def isRemoveAllowed: Ref[Boolean];
+      def updateDigest(newDigest: Ref[Coll[Byte]]): Ref[AvlTree];
+      def updateOperations(newOperations: Ref[Byte]): Ref[AvlTree];
+      def contains(key: Ref[Coll[Byte]], proof: Ref[Coll[Byte]]): Ref[Boolean];
+      def get(key: Ref[Coll[Byte]], proof: Ref[Coll[Byte]]): Ref[WOption[Coll[Byte]]];
+      def getMany(keys: Ref[Coll[Coll[Byte]]], proof: Ref[Coll[Byte]]): Ref[Coll[WOption[Coll[Byte]]]];
+      def insert(operations: Ref[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]];
+      def update(operations: Ref[Coll[scala.Tuple2[Coll[Byte], Coll[Byte]]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]];
+      def remove(operations: Ref[Coll[Coll[Byte]]], proof: Ref[Coll[Byte]]): Ref[WOption[AvlTree]]
     };
     @Liftable trait PreHeader extends Def[PreHeader] {
-      def version: Rep[Byte];
-      def parentId: Rep[Coll[Byte]];
-      def timestamp: Rep[Long];
-      def nBits: Rep[Long];
-      def height: Rep[Int];
-      def minerPk: Rep[GroupElement];
-      def votes: Rep[Coll[Byte]]
+      def version: Ref[Byte];
+      def parentId: Ref[Coll[Byte]];
+      def timestamp: Ref[Long];
+      def nBits: Ref[Long];
+      def height: Ref[Int];
+      def minerPk: Ref[GroupElement];
+      def votes: Ref[Coll[Byte]]
     };
     @Liftable trait Header extends Def[Header] {
-      def id: Rep[Coll[Byte]];
-      def version: Rep[Byte];
-      def parentId: Rep[Coll[Byte]];
-      def ADProofsRoot: Rep[Coll[Byte]];
-      def stateRoot: Rep[AvlTree];
-      def transactionsRoot: Rep[Coll[Byte]];
-      def timestamp: Rep[Long];
-      def nBits: Rep[Long];
-      def height: Rep[Int];
-      def extensionRoot: Rep[Coll[Byte]];
-      def minerPk: Rep[GroupElement];
-      def powOnetimePk: Rep[GroupElement];
-      def powNonce: Rep[Coll[Byte]];
-      def powDistance: Rep[BigInt];
-      def votes: Rep[Coll[Byte]]
+      def id: Ref[Coll[Byte]];
+      def version: Ref[Byte];
+      def parentId: Ref[Coll[Byte]];
+      def ADProofsRoot: Ref[Coll[Byte]];
+      def stateRoot: Ref[AvlTree];
+      def transactionsRoot: Ref[Coll[Byte]];
+      def timestamp: Ref[Long];
+      def nBits: Ref[Long];
+      def height: Ref[Int];
+      def extensionRoot: Ref[Coll[Byte]];
+      def minerPk: Ref[GroupElement];
+      def powOnetimePk: Ref[GroupElement];
+      def powNonce: Ref[Coll[Byte]];
+      def powDistance: Ref[BigInt];
+      def votes: Ref[Coll[Byte]]
     };
-    @Liftable trait Context extends Def[Context] {
-      def builder: Rep[SigmaDslBuilder];
-      def OUTPUTS: Rep[Coll[Box]];
-      def INPUTS: Rep[Coll[Box]];
-      def dataInputs: Rep[Coll[Box]];
-      def HEIGHT: Rep[Int];
-      def SELF: Rep[Box];
-      def selfBoxIndex: Rep[Int];
-      def LastBlockUtxoRootHash: Rep[AvlTree];
-      def headers: Rep[Coll[Header]];
-      def preHeader: Rep[PreHeader];
-      def minerPubKey: Rep[Coll[Byte]];
-      def getVar[T](id: Rep[Byte])(implicit cT: Elem[T]): Rep[WOption[T]];
-      def vars: Rep[Coll[AnyValue]]
+    @Liftable @WithMethodCallRecognizers trait Context extends Def[Context] {
+      def builder: Ref[SigmaDslBuilder];
+      def OUTPUTS: Ref[Coll[Box]];
+      def INPUTS: Ref[Coll[Box]];
+      def dataInputs: Ref[Coll[Box]];
+      def HEIGHT: Ref[Int];
+      def SELF: Ref[Box];
+      def selfBoxIndex: Ref[Int];
+      def LastBlockUtxoRootHash: Ref[AvlTree];
+      def headers: Ref[Coll[Header]];
+      def preHeader: Ref[PreHeader];
+      def minerPubKey: Ref[Coll[Byte]];
+      def getVar[T](id: Ref[Byte])(implicit cT: Elem[T]): Ref[WOption[T]];
+      def vars: Ref[Coll[AnyValue]]
     };
     @Liftable trait SigmaContract extends Def[SigmaContract] {
-      def builder: Rep[SigmaDslBuilder];
-      @NeverInline @Reified(value = "T") def Collection[T](items: Rep[T]*)(implicit cT: Elem[T]): Rep[Coll[T]] = delayInvoke;
-      def verifyZK(cond: Rep[Thunk[SigmaProp]]): Rep[Boolean] = this.builder.verifyZK(cond);
-      def atLeast(bound: Rep[Int], props: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = this.builder.atLeast(bound, props);
-      def allOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = this.builder.allOf(conditions);
-      def allZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = this.builder.allZK(conditions);
-      def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = this.builder.anyOf(conditions);
-      def anyZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp] = this.builder.anyZK(conditions);
-      def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean] = this.builder.xorOf(conditions);
-      def PubKey(base64String: Rep[String]): Rep[SigmaProp] = this.builder.PubKey(base64String);
-      def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp] = this.builder.sigmaProp(b);
-      def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = this.builder.blake2b256(bytes);
-      def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]] = this.builder.sha256(bytes);
-      def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt] = this.builder.byteArrayToBigInt(bytes);
-      def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]] = this.builder.longToByteArray(l);
-      def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long] = this.builder.byteArrayToLong(bytes);
-      def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDlog(g);
-      def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
-      def groupGenerator: Rep[GroupElement] = this.builder.groupGenerator;
-      @clause def canOpen(ctx: Rep[Context]): Rep[Boolean];
-      def asFunction: Rep[scala.Function1[Context, Boolean]] = fun(((ctx: Rep[Context]) => this.canOpen(ctx)))
+      def builder: Ref[SigmaDslBuilder];
+      @NeverInline @Reified(value = "T") def Collection[T](items: Ref[T]*)(implicit cT: Elem[T]): Ref[Coll[T]] = delayInvoke;
+      def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean] = this.builder.verifyZK(cond);
+      def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.atLeast(bound, props);
+      def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.allOf(conditions);
+      def allZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.allZK(conditions);
+      def anyOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.anyOf(conditions);
+      def anyZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp] = this.builder.anyZK(conditions);
+      def xorOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean] = this.builder.xorOf(conditions);
+      def PubKey(base64String: Ref[String]): Ref[SigmaProp] = this.builder.PubKey(base64String);
+      def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp] = this.builder.sigmaProp(b);
+      def blake2b256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.blake2b256(bytes);
+      def sha256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]] = this.builder.sha256(bytes);
+      def byteArrayToBigInt(bytes: Ref[Coll[Byte]]): Ref[BigInt] = this.builder.byteArrayToBigInt(bytes);
+      def longToByteArray(l: Ref[Long]): Ref[Coll[Byte]] = this.builder.longToByteArray(l);
+      def byteArrayToLong(bytes: Ref[Coll[Byte]]): Ref[Long] = this.builder.byteArrayToLong(bytes);
+      def proveDlog(g: Ref[GroupElement]): Ref[SigmaProp] = this.builder.proveDlog(g);
+      def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp] = this.builder.proveDHTuple(g, h, u, v);
+      def groupGenerator: Ref[GroupElement] = this.builder.groupGenerator;
+      def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement] = this.builder.decodePoint(encoded);
+      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]])(implicit cT: Elem[T]): Ref[Coll[Byte]] = this.builder.substConstants[T](scriptBytes, positions, newValues)
     };
-    @Liftable trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
-      def Colls: Rep[CollBuilder];
-      def Monoids: Rep[MonoidBuilder];
-      def Costing: Rep[CostedBuilder];
-      def CostModel: Rep[CostModel];
-      def verifyZK(cond: Rep[Thunk[SigmaProp]]): Rep[Boolean];
-      def atLeast(bound: Rep[Int], props: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
-      def allOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
-      def allZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
-      def anyOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
-      def anyZK(conditions: Rep[Coll[SigmaProp]]): Rep[SigmaProp];
-      def xorOf(conditions: Rep[Coll[Boolean]]): Rep[Boolean];
-      def PubKey(base64String: Rep[String]): Rep[SigmaProp];
-      def sigmaProp(b: Rep[Boolean]): Rep[SigmaProp];
-      def blake2b256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
-      def sha256(bytes: Rep[Coll[Byte]]): Rep[Coll[Byte]];
-      def byteArrayToBigInt(bytes: Rep[Coll[Byte]]): Rep[BigInt];
-      def longToByteArray(l: Rep[Long]): Rep[Coll[Byte]];
-      def byteArrayToLong(bytes: Rep[Coll[Byte]]): Rep[Long];
-      def proveDlog(g: Rep[GroupElement]): Rep[SigmaProp];
-      def proveDHTuple(g: Rep[GroupElement], h: Rep[GroupElement], u: Rep[GroupElement], v: Rep[GroupElement]): Rep[SigmaProp];
-      def groupGenerator: Rep[GroupElement];
-      @Reified(value = "T") def substConstants[T](scriptBytes: Rep[Coll[Byte]], positions: Rep[Coll[Int]], newValues: Rep[Coll[T]])(implicit cT: Elem[T]): Rep[Coll[Byte]];
-      def decodePoint(encoded: Rep[Coll[Byte]]): Rep[GroupElement];
-      def BigInt(n: Rep[WBigInteger]): Rep[BigInt];
-      def toBigInteger(n: Rep[BigInt]): Rep[WBigInteger];
-      def avlTree(operationFlags: Rep[Byte], digest: Rep[Coll[Byte]], keyLength: Rep[Int], valueLengthOpt: Rep[WOption[Int]]): Rep[AvlTree]
+    @Liftable @WithMethodCallRecognizers trait SigmaDslBuilder extends Def[SigmaDslBuilder] {
+      def Colls: Ref[CollBuilder];
+      def Monoids: Ref[MonoidBuilder];
+      def Costing: Ref[CostedBuilder];
+      def CostModel: Ref[CostModel];
+      def verifyZK(cond: Ref[Thunk[SigmaProp]]): Ref[Boolean];
+      def atLeast(bound: Ref[Int], props: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
+      def allOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
+      def allZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
+      def anyOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
+      def anyZK(conditions: Ref[Coll[SigmaProp]]): Ref[SigmaProp];
+      def xorOf(conditions: Ref[Coll[Boolean]]): Ref[Boolean];
+      def PubKey(base64String: Ref[String]): Ref[SigmaProp];
+      def sigmaProp(b: Ref[Boolean]): Ref[SigmaProp];
+      def blake2b256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]];
+      def sha256(bytes: Ref[Coll[Byte]]): Ref[Coll[Byte]];
+      def byteArrayToBigInt(bytes: Ref[Coll[Byte]]): Ref[BigInt];
+      def longToByteArray(l: Ref[Long]): Ref[Coll[Byte]];
+      def byteArrayToLong(bytes: Ref[Coll[Byte]]): Ref[Long];
+      def proveDlog(g: Ref[GroupElement]): Ref[SigmaProp];
+      def proveDHTuple(g: Ref[GroupElement], h: Ref[GroupElement], u: Ref[GroupElement], v: Ref[GroupElement]): Ref[SigmaProp];
+      def groupGenerator: Ref[GroupElement];
+      @Reified(value = "T") def substConstants[T](scriptBytes: Ref[Coll[Byte]], positions: Ref[Coll[Int]], newValues: Ref[Coll[T]])(implicit cT: Elem[T]): Ref[Coll[Byte]];
+      def decodePoint(encoded: Ref[Coll[Byte]]): Ref[GroupElement];
+      def avlTree(operationFlags: Ref[Byte], digest: Ref[Coll[Byte]], keyLength: Ref[Int], valueLengthOpt: Ref[WOption[Int]]): Ref[AvlTree];
+      def xor(l: Ref[Coll[Byte]], r: Ref[Coll[Byte]]): Ref[Coll[Byte]]
     };
     trait CostModelCompanion;
     trait BigIntCompanion;
