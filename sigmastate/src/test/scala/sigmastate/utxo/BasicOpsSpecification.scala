@@ -448,7 +448,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
   ignore("ByteArrayToBigInt: big int should always be positive") {
     test("BATBI1", env, ext,
       "{ byteArrayToBigInt(Coll[Byte](-1.toByte)) > 0 }",
-      GT(ByteArrayToBigInt(ConcreteCollection(ByteConstant(-1))), BigIntConstant(0)).toSigmaProp,
+      GT(ByteArrayToBigInt(ConcreteCollection.fromItems(ByteConstant(-1))), BigIntConstant(0)).toSigmaProp,
       onlyPositive = true
     )
   }
@@ -461,7 +461,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     assertExceptionThrown(
       test("BATBI1", env, ext,
         s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) > 0 }",
-        GT(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+        GT(ByteArrayToBigInt(ConcreteCollection.fromSeq(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
         onlyPositive = true
       ),
       e => rootCause(e).isInstanceOf[ArithmeticException]
@@ -476,14 +476,14 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         assertExceptionThrown(
           test("BATBI1", env, ext,
             s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
-            NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+            NEQ(ByteArrayToBigInt(ConcreteCollection.fromSeq(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
             onlyPositive = true
           ),
           e => rootCause(e).isInstanceOf[ArithmeticException])
       else
         test("BATBI1", env, ext,
           s"{ byteArrayToBigInt(Coll[Byte]($itemsStr)) != 0 }",
-          NEQ(ByteArrayToBigInt(ConcreteCollection(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
+          NEQ(ByteArrayToBigInt(ConcreteCollection.fromSeq(bytes.map(ByteConstant(_)))), BigIntConstant(0)).toSigmaProp,
           onlyPositive = true
         )
     }

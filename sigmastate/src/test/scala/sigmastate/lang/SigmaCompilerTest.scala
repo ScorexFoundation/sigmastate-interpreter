@@ -52,34 +52,34 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
 
   property("array indexed access") {
     comp(env, "Coll(1)(0)") shouldBe
-      ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0)
+      ByIndex(ConcreteCollection.fromSeq(Array(IntConstant(1)))(SInt), 0)
     comp(env, "Coll(Coll(1))(0)(0)") shouldBe
-        ByIndex(ByIndex(ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)), 0), 0)
+        ByIndex(ByIndex(ConcreteCollection.fromSeq(Array(ConcreteCollection.fromItems(IntConstant(1))))(SCollection(SInt)), 0), 0)
     comp(env, "arr1(0)") shouldBe ByIndex(ByteArrayConstant(Array[Byte](1, 2)), 0)
   }
 
   property("array indexed access with default value") {
     comp(env, "Coll(1).getOrElse(0, 1)") shouldBe
-      ByIndex(ConcreteCollection(IndexedSeq(IntConstant(1)))(SInt), 0, Some(IntConstant(1)))
+      ByIndex(ConcreteCollection.fromSeq(Array(IntConstant(1)))(SInt), 0, Some(IntConstant(1)))
     comp(env, "Coll(Coll(1)).getOrElse(0, Coll(2))(0)") shouldBe
       ByIndex(
         ByIndex(
-          ConcreteCollection(IndexedSeq(ConcreteCollection(IndexedSeq(IntConstant(1)))))(SCollection(SInt)),
+          ConcreteCollection.fromSeq(Array(ConcreteCollection.fromSeq(Array(IntConstant(1)))))(SCollection(SInt)),
           0,
-          Some(ConcreteCollection(Vector(IntConstant(2))))),
+          Some(ConcreteCollection.fromSeq(Array(IntConstant(2))))),
         0)
     comp(env, "arr1.getOrElse(999, 0.toByte)") shouldBe
       ByIndex(ByteArrayConstant(Array[Byte](1, 2)), IntConstant(999), Some(ByteConstant(0)))
   }
 
   property("predefined functions") {
-    comp(env, "anyOf(Coll(c1, c2))") shouldBe OR(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    comp(env, "anyOf(Coll(c1, c2))") shouldBe OR(ConcreteCollection.fromSeq(Array(TrueLeaf, FalseLeaf)))
     comp(env, "blake2b256(getVar[Coll[Byte]](10).get)") shouldBe CalcBlake2b256(GetVarByteArray(10).get)
     comp(env, "sha256(getVar[Coll[Byte]](10).get)") shouldBe CalcSha256(GetVarByteArray(10).get)
     comp(env, "10.toByte") shouldBe ByteConstant(10)
     comp(env, "Coll(1)(0).toByte") shouldBe
       Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
-    comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection(Vector(TrueLeaf, FalseLeaf)))
+    comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection.fromSeq(Array(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
   }
@@ -175,7 +175,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("decodePoint") {
-    comp(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe DecodePoint(ConcreteCollection(ByteConstant(1)))
+    comp(env, "decodePoint(Coll[Byte](1.toByte))") shouldBe DecodePoint(ConcreteCollection.fromItems(ByteConstant(1)))
   }
 
   property("logicalNot") {
@@ -225,7 +225,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("Collection.BitShiftLeft") {
     comp("Coll(1,2) << 2") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.BitShiftLeftMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(2)), Map())
   }
@@ -234,7 +234,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("Collection.BitShiftRight") {
     testMissingCosting("Coll(1,2) >> 2",
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.BitShiftRightMethod,
         Vector(IntConstant(2)),
         Map(SCollection.tIV -> SInt))
@@ -245,7 +245,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("Collection.BitShiftRightZeroed") {
     comp("Coll(true, false) >>> 2") shouldBe
       mkMethodCall(
-        ConcreteCollection(TrueLeaf, FalseLeaf),
+        ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
         SCollection.BitShiftRightZeroedMethod,
         Vector(IntConstant(2))
       )
@@ -254,7 +254,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("Collection.indices") {
     comp("Coll(true, false).indices") shouldBe
       mkMethodCall(
-        ConcreteCollection(TrueLeaf, FalseLeaf),
+        ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
         SCollection.IndicesMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
@@ -350,16 +350,16 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("SCollection.patch") {
     comp("Coll(1, 2).patch(1, Coll(3), 1)") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.PatchMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(IntConstant(1), ConcreteCollection(IntConstant(3)), IntConstant(1)),
+        Vector(IntConstant(1), ConcreteCollection.fromItems(IntConstant(3)), IntConstant(1)),
         Map())
   }
 
   property("SCollection.updated") {
     comp("Coll(1, 2).updated(1, 1)") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.UpdatedMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(1)),
         Map())
@@ -368,9 +368,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("SCollection.updateMany") {
     comp("Coll(1, 2).updateMany(Coll(1), Coll(3))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.UpdateManyMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)), ConcreteCollection(IntConstant(3))),
+        Vector(ConcreteCollection.fromItems(IntConstant(1)), ConcreteCollection.fromItems(IntConstant(3))),
         Map())
   }
 
@@ -378,9 +378,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.unionSets") {
     comp("Coll(1, 2).unionSets(Coll(1))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.UnionSetsMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1))),
+        Vector(ConcreteCollection.fromItems(IntConstant(1))),
         Map())
   }
 
@@ -388,9 +388,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.diff") {
     comp("Coll(1, 2).diff(Coll(1))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.DiffMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1))),
+        Vector(ConcreteCollection.fromItems(IntConstant(1))),
         Map())
   }
 
@@ -398,9 +398,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.intersect") {
     comp("Coll(1, 2).intersect(Coll(1))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.IntersectMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1))),
+        Vector(ConcreteCollection.fromItems(IntConstant(1))),
         Map())
   }
 
@@ -421,7 +421,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   property("SCollection.indexOf") {
     comp("Coll(1, 2).indexOf(1, 0)") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.IndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0)),
         Map())
@@ -431,7 +431,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.lastIndexOf") {
     comp("Coll(1, 2).lastIndexOf(1, 0)") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.LastIndexOfMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
         Vector(IntConstant(1), IntConstant(0)),
         Map())
@@ -455,7 +455,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("Collection.distinct") {
     comp("Coll(true, false).distinct") shouldBe
       mkMethodCall(
-        ConcreteCollection(TrueLeaf, FalseLeaf),
+        ConcreteCollection.fromItems(TrueLeaf, FalseLeaf),
         SCollection.DistinctMethod.withConcreteTypes(Map(SCollection.tIV -> SBoolean)),
         Vector()
       )
@@ -465,9 +465,9 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.startsWith") {
     comp("Coll(1, 2).startsWith(Coll(1), 1)") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.StartsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1)), IntConstant(1)),
+        Vector(ConcreteCollection.fromItems(IntConstant(1)), IntConstant(1)),
         Map())
   }
 
@@ -475,18 +475,18 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   ignore("SCollection.endsWith") {
     comp("Coll(1, 2).endsWith(Coll(1))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.EndsWithMethod.withConcreteTypes(Map(SCollection.tIV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1))),
+        Vector(ConcreteCollection.fromItems(IntConstant(1))),
         Map())
   }
 
   property("SCollection.zip") {
     comp("Coll(1, 2).zip(Coll(1, 1))") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.ZipMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tOV -> SInt)),
-        Vector(ConcreteCollection(IntConstant(1), IntConstant(1)))
+        Vector(ConcreteCollection.fromItems(IntConstant(1), IntConstant(1)))
       )
   }
 
@@ -495,7 +495,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
     comp(
       "Coll(1, 2).mapReduce({ (i: Int) => (i > 0, i.toLong) }, { (tl: (Long, Long)) => tl._1 + tl._2 })") shouldBe
       mkMethodCall(
-        ConcreteCollection(IntConstant(1), IntConstant(2)),
+        ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         SCollection.MapReduceMethod.withConcreteTypes(Map(SCollection.tIV -> SInt, SCollection.tK -> SBoolean, SCollection.tV -> SLong)),
         Vector(
           Lambda(List(),

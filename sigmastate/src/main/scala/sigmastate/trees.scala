@@ -206,7 +206,7 @@ object OR extends LogicalTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = Operations.ORInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): OR =
-    OR(ConcreteCollection(children.toIndexedSeq))
+    OR(ConcreteCollection.fromSeq(children))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
 }
@@ -224,7 +224,7 @@ object XorOf extends LogicalTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = Operations.XorOfInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): XorOf =
-    XorOf(ConcreteCollection(children.toIndexedSeq))
+    XorOf(ConcreteCollection.fromSeq(children))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): XorOf = apply(head +: tail)
 }
@@ -248,7 +248,7 @@ object AND extends LogicalTransformerCompanion {
   override def argInfos: Seq[ArgInfo] = Operations.ANDInfo.argInfos
 
   def apply(children: Seq[Value[SBoolean.type]]): AND =
-    AND(ConcreteCollection(children.toIndexedSeq))
+    AND(ConcreteCollection.fromSeq(children))
 
   def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
 }
@@ -272,7 +272,7 @@ object AtLeast extends ValueCompanion {
   val MaxChildrenCount: Int = SigmaConstants.MaxChildrenCountForAtLeastOp.value
 
   def apply(bound: Value[SInt.type], children: Seq[SigmaPropValue]): AtLeast =
-    AtLeast(bound, ConcreteCollection(children.toIndexedSeq))
+    AtLeast(bound, ConcreteCollection.fromSeq(children))
 
   def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast = apply(bound, head +: tail)
 

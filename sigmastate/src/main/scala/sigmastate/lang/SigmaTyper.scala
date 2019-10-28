@@ -510,7 +510,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       error(s"Don't know how to assignType($v)", v.sourceContext)
   }).withEnsuredSrcCtx(bound.sourceContext)
 
-  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: IndexedSeq[Value[SType]]) = {
+  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: Seq[Value[SType]]) = {
     val types = newItems.map(_.tpe).distinct
     val tItem = if (cc.items.isEmpty) {
       if (cc.elementType == NoType)

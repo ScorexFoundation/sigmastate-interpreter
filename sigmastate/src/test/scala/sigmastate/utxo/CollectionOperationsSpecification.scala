@@ -488,7 +488,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("indices") {
     assertProof("OUTPUTS.indices == Coll(0, 1)",
-      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection.fromItems(IntConstant(0), IntConstant(1))),
       IndexedSeq(1L, 1L))
   }
 
@@ -519,7 +519,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
+            Vector(IntConstant(0), ConcreteCollection.fromItems(LongConstant(3)), IntConstant(1)),
             Map()).asCollection[SType],
           IntConstant(0)
         ),
@@ -549,7 +549,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
+            Vector(ConcreteCollection.fromItems(IntConstant(0)), ConcreteCollection.fromItems(LongConstant(3))),
             Map()).asCollection[SType],
           IntConstant(0)
         ),

@@ -88,7 +88,7 @@ class FsmExampleSpecification extends SigmaTestingCommons {
         OptionGet(ExtractRegisterAs[SAvlTree.type](Self, fsmDescRegister)),
         SAvlTree.getMethod,
         IndexedSeq(Append(
-          ConcreteCollection[SByte.type](
+          ConcreteCollection.fromItems[SByte.type](
             OptionGet(ExtractRegisterAs[SByte.type](Self, currentStateRegister)),
             OptionGetOrElse(ExtractRegisterAs[SByte.type](ByIndex(Outputs, IntConstant.Zero),
                                           currentStateRegister),ByteConstant(-1))),

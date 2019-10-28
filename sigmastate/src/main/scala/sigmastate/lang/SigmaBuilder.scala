@@ -151,7 +151,7 @@ trait SigmaBuilder {
   def mkSigmaAnd(items: Seq[SigmaPropValue]): SigmaPropValue
   def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue
 
-  def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
+  def mkConcreteCollection[T <: SType](items: Seq[Value[T]],
                                        elementType: T): Value[SCollection[T]]
 
   def mkTaggedVariable[T <: SType](varId: Byte, tpe: T): TaggedVariable[T]
@@ -504,7 +504,7 @@ class StdSigmaBuilder extends SigmaBuilder {
   override def mkSigmaOr(items: Seq[SigmaPropValue]): SigmaPropValue =
     SigmaOr(items).withSrcCtx(currentSrcCtx.value)
 
-  override def mkConcreteCollection[T <: SType](items: IndexedSeq[Value[T]],
+  override def mkConcreteCollection[T <: SType](items: Seq[Value[T]],
                                                 elementType: T): Value[SCollection[T]] =
     ConcreteCollection(items, elementType).withSrcCtx(currentSrcCtx.value)
 

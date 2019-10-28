@@ -667,7 +667,7 @@ object Values {
     override val opCode = NoneValueCode
   }
 
-  case class ConcreteCollection[V <: SType](items: IndexedSeq[Value[V]], elementType: V)
+  case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
     override def companion =
@@ -684,11 +684,11 @@ object Values {
   }
   object ConcreteCollection extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
-    def apply[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
-      ConcreteCollection(items.toIndexedSeq, tV)
+    def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
+      ConcreteCollection(items, tV)
 
-    def apply[V <: SType](items: => Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
-      ConcreteCollection(items.toIndexedSeq, tV)
+    def fromItems[V <: SType](items: Value[V]*)(implicit tV: V): ConcreteCollection[V] =
+      ConcreteCollection(items, tV)
   }
   object ConcreteCollectionBooleanConstant extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionBooleanConstantCode
