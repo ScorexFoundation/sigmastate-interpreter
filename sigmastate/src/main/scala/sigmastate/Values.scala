@@ -684,6 +684,7 @@ object Values {
   }
   object ConcreteCollection extends ValueCompanion {
     override def opCode: OpCode = ConcreteCollectionCode
+
     def fromSeq[V <: SType](items: Seq[Value[V]])(implicit tV: V): ConcreteCollection[V] =
       ConcreteCollection(items, tV)
 

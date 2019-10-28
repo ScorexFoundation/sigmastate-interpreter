@@ -78,7 +78,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
     comp(env, "sha256(getVar[Coll[Byte]](10).get)") shouldBe CalcSha256(GetVarByteArray(10).get)
     comp(env, "10.toByte") shouldBe ByteConstant(10)
     comp(env, "Coll(1)(0).toByte") shouldBe
-      Downcast(ByIndex(ConcreteCollection(Vector(IntConstant(1)),SInt),IntConstant(0),None), SByte)
+      Downcast(ByIndex(ConcreteCollection(Array(IntConstant(1)),SInt),IntConstant(0),None), SByte)
     comp(env, "allOf(Coll(c1, c2))") shouldBe AND(ConcreteCollection.fromSeq(Array(TrueLeaf, FalseLeaf)))
     comp(env, "getVar[Byte](10).get") shouldBe GetVarByte(10).get
     comp(env, "getVar[Coll[Byte]](10).get") shouldBe GetVarByteArray(10).get
@@ -266,7 +266,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
       mkMethodCall(Outputs,
         SCollection.FlatMapMethod.withConcreteTypes(Map(SCollection.tIV -> SBox, SCollection.tOV -> SBoolean)),
         Vector(FuncValue(1,SBox,
-          ConcreteCollection(Vector(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map())
+          ConcreteCollection(Array(GE(ExtractAmount(ValUse(1, SBox)), LongConstant(1))), SBoolean))), Map())
   }
 
   // TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/486

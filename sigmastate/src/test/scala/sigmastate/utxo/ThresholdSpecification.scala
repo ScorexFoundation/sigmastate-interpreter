@@ -58,7 +58,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
 
 
     val prop2 = AtLeast(IntConstant(3),
-      ConcreteCollection(Vector[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
+      ConcreteCollection(Array[SigmaPropValue](pubkeyA, pubkeyB, pubkeyC), SSigmaProp))
     compiledProp2 shouldBe prop2
 
     val proof = proverABC.prove(compiledProp2, ctx, fakeMessage).get

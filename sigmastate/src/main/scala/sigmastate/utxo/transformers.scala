@@ -119,7 +119,7 @@ object Fold extends ValueCompanion {
     val tColl = SCollection(tT)
     Fold[SCollection[T], T](input,
       ConcreteCollection(Array[Value[T]](), tT).asValue[T],
-      FuncValue(Vector((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
+      FuncValue(Array((1, tColl), (2, tColl)), Append(ValUse(1, tColl), ValUse(2, tColl)))
     )
   }
 }
