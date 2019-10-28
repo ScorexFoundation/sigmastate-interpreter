@@ -550,6 +550,8 @@ object Values {
   object SigmaBoolean {
     val PropBytes = "propBytes"
     val IsValid = "isValid"
+
+    /** @hotspot don't beautify this code */
     object serializer extends SigmaSerializer[SigmaBoolean, SigmaBoolean] {
       val dhtSerializer = ProveDHTupleSerializer(ProveDHTuple.apply)
       val dlogSerializer = ProveDlogSerializer(ProveDlog.apply)
@@ -561,22 +563,32 @@ object Values {
           case dht: ProveDHTuple => dhtSerializer.serialize(dht, w)
           case _: TrivialProp => // besides opCode no additional bytes
           case and: CAND =>
-            w.putUShort(and.sigmaBooleans.length)
-            for (c <- and.sigmaBooleans)
+            val nChildren = and.sigmaBooleans.length
+            w.putUShort(nChildren)
+            cfor(0)(_ < nChildren, _ + 1) { i =>
+              val c = and.sigmaBooleans(i)
               serializer.serialize(c, w)
+            }
+
           case or: COR =>
-            w.putUShort(or.sigmaBooleans.length)
-            for (c <- or.sigmaBooleans)
+            val nChildren = or.sigmaBooleans.length
+            w.putUShort(nChildren)
+            cfor(0)(_ < nChildren, _ + 1) { i =>
+              val c = or.sigmaBooleans(i)
               serializer.serialize(c, w)
+            }
+
           case th: CTHRESHOLD =>
             w.putUShort(th.k)
-            w.putUShort(th.sigmaBooleans.length)
-            for (c <- th.sigmaBooleans)
+            val nChildren = th.sigmaBooleans.length
+            w.putUShort(nChildren)
+            cfor(0)(_ < nChildren, _ + 1) { i =>
+              val c = th.sigmaBooleans(i)
               serializer.serialize(c, w)
+            }
         }
       }
 
-      /** @hotspot don't beautify this code */
       override def parse(r: SigmaByteReader): SigmaBoolean = {
         val depth = r.level
         r.level = depth + 1
@@ -1001,7 +1013,7 @@ object Values {
       new ErgoTree(header, constants, Right(root))
     }
 
-    val EmptyConstants: IndexedSeq[Constant[SType]] = IndexedSeq.empty[Constant[SType]]
+    val EmptyConstants: IndexedSeq[Constant[SType]] = Array[Constant[SType]]()
 
     def withoutSegregation(root: SigmaPropValue): ErgoTree =
       ErgoTree(ErgoTree.DefaultHeader, EmptyConstants, root)

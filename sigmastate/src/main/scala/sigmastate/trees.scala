@@ -276,16 +276,19 @@ object AtLeast extends ValueCompanion {
 
   def apply(bound: Value[SInt.type], head: SigmaPropValue, tail: SigmaPropValue*): AtLeast = apply(bound, head +: tail)
 
+  /** @hotspot don't beautify this code */
   def reduce(bound: Int, children: Seq[SigmaBoolean]): SigmaBoolean = {
     import sigmastate.TrivialProp._
     if (bound <= 0) return TrueProp
-    if (bound > children.length) return FalseProp
+    val nChildren = children.length
+    if (bound > nChildren) return FalseProp
 
     var curBound = bound
-    var childrenLeft = children.length
+    var childrenLeft = nChildren
     // invariant due to the two if statements above: 0<curBound<=childrenLeft
 
-    val sigmas = mutable.Buffer[SigmaBoolean]()
+    val sigmas = mutable.ArrayBuilder.make[SigmaBoolean]
+    sigmas.sizeHint(nChildren)
 
     // we should make sure that number of children doesn't exceed 255, because CTHRESHOLD cannot handle
     // more than 255 children, because of the way polynomial arithmetic is implemented (single-byte inputs only
@@ -293,15 +296,20 @@ object AtLeast extends ValueCompanion {
     //
     // (this will ensure bound is between 2 and 254, because otherwise one of the conditions above will apply and it will
     // be converted to one of true, false, and, or)
-    require(children.length <= MaxChildrenCount)
+    require(nChildren <= MaxChildrenCount)
     // My preferred method: if (children.length>=255) return FalseLeaf
 
-    for (iChild <- children.indices) {
-      if (curBound == 1)
-        return COR.normalized(sigmas ++ children.slice(iChild, children.length))
+    var iChild = 0
+    while (iChild < nChildren) {
+      if (curBound == 1) {
+        sigmas ++= children.slice(iChild, nChildren)
+        return COR.normalized(sigmas.result())
+      }
       // If at any point bound == number of children, convert to AND.
-      if (curBound == childrenLeft)
-        return CAND.normalized(sigmas ++ children.slice(iChild, children.length))
+      if (curBound == childrenLeft) {
+        sigmas ++= children.slice(iChild, nChildren)
+        return CAND.normalized(sigmas.result())
+      }
       // at this point 1<curBound<childrenLeft
       children(iChild) match {
         case TrueProp => // If child is true, remove child and reduce bound.
@@ -312,10 +320,13 @@ object AtLeast extends ValueCompanion {
         case sigma => sigmas += sigma
       }
       // at this point 1<=curBound<=childrenLeft
+      iChild += 1
     }
-    if (curBound == 1) return COR.normalized(sigmas)
-    if (curBound == childrenLeft) return CAND.normalized(sigmas)
-    CTHRESHOLD(curBound, sigmas)
+
+    val ch = sigmas.result()
+    if (curBound == 1) return COR.normalized(ch)
+    if (curBound == childrenLeft) return CAND.normalized(ch)
+    CTHRESHOLD(curBound, ch)
   }
 }
 
