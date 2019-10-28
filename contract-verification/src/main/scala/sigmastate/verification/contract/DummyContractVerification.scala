@@ -10,9 +10,9 @@ sealed abstract class DummyContract extends SigmaContract {
   def contract(ctx: Context): SigmaProp = {
     import ctx._
     // todo implicit boolops?
-    SigmaPropProof(TrivialProp(HEIGHT > 1))
+//    SigmaPropProof(TrivialProp(HEIGHT > 1))
+    sigmaProp(HEIGHT > 1)
   }
-
 }
 
 case object DummyContractVerification extends DummyContract {

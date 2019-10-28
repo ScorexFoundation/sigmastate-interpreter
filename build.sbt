@@ -301,14 +301,20 @@ lazy val rootSettings = Seq(
 lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmaapi)
+  .dependsOn(sigmaapi, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
+  .settings(scalacOptions += Seq("-Xlog-free-terms"))
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
-  .dependsOn(contractVerification, sigmastate)
+  .dependsOn(sigmastate)
   .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scalameta" %% "scalameta" % "4.2.3"
+  ))
+  .settings(scalacOptions += Seq("-Xlog-free-terms"))
 
+// TODO: remove
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
   .dependsOn(contractVerification, sigmastate, sigmaDslCompilerMacros)

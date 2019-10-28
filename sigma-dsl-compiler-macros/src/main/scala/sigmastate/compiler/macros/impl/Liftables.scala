@@ -1,8 +1,8 @@
 package sigmastate.compiler.macros.impl
 
-import sigmastate.Values
-import sigmastate.Values.SigmaBoolean
-import sigmastate.eval.CSigmaProp
+//import sigmastate.Values
+//import sigmastate.Values.SigmaBoolean
+//import sigmastate.eval.CSigmaProp
 
 import scala.reflect.macros.whitebox
 
