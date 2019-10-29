@@ -604,7 +604,7 @@ trait SigmaContract {
 
 @scalan.Liftable
 @library
-trait SigmaDslBuilder {
+sealed trait SigmaDslBuilder {
 //  def Colls: CollBuilder
   def Monoids: MonoidBuilder
 //  def Costing: CostedBuilder
@@ -661,3 +661,64 @@ trait SigmaDslBuilder {
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 
+case class SigmaDslBuilderProof() extends SigmaDslBuilder {
+  override def Monoids: MonoidBuilder = ???
+
+  override def CostModel: CostModel = ???
+
+  override def verifyZK(cond: => SigmaProp): Boolean = ???
+
+  override def atLeast(bound: Int, props: Coll[SigmaProp]): SigmaProp = ???
+
+  override def allOf(conditions: Coll[Boolean]): Boolean = ???
+
+  override def allZK(conditions: Coll[SigmaProp]): SigmaProp = ???
+
+  override def anyOf(conditions: Coll[Boolean]): Boolean = ???
+
+  override def anyZK(conditions: Coll[SigmaProp]): SigmaProp = ???
+
+  override def xorOf(conditions: Coll[Boolean]): Boolean = ???
+
+  override def sigmaProp(b: Boolean): SigmaProp = ({
+    SigmaPropProof(TrivialProp(b))
+  }) ensuring (_.isValid == b)
+
+  override def PubKey(base64String: String): SigmaProp = ???
+
+  override def blake2b256(bytes: Coll[Byte]): Coll[Byte] = ???
+
+  override def sha256(bytes: Coll[Byte]): Coll[Byte] = ???
+
+  override def byteArrayToBigInt(bytes: Coll[Byte]): BigInt = ???
+
+  override def longToByteArray(l: Long): Coll[Byte] = ???
+
+  override def byteArrayToLong(bytes: Coll[Byte]): Long = ???
+
+  override def proveDlog(g: GroupElement): SigmaProp = ???
+
+  override def proveDHTuple(g: GroupElement, h: GroupElement, u: GroupElement, v: GroupElement): SigmaProp = ???
+
+  /**
+    * The generator g of the group is an element of the group such that, when written multiplicatively, every element
+    * of the group is a power of g.
+    *
+    * @return the generator of this Dlog group
+    */
+  override def groupGenerator: GroupElement = ???
+  override def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte] = ???
+  override def decodePoint(encoded: Coll[Byte]): GroupElement = ???
+
+  /** Create DSL big integer from existing `java.math.BigInteger`*/
+  @ignore
+  override def BigInt(n: BigInteger): BigInt = ???
+
+  /** Extract `java.math.BigInteger` from DSL's `BigInt` type*/
+  @ignore
+  override def toBigInteger(n: BigInt): BigInteger = ???
+
+  /** Construct a new authenticated dictionary with given parameters and tree root digest. */
+  override def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree = ???
+  override def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte] = ???
+}

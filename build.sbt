@@ -303,7 +303,7 @@ lazy val contractVerification = project
   .enablePlugins(StainlessPlugin)
   .dependsOn(sigmaapi, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
-  .settings(scalacOptions += Seq("-Xlog-free-terms"))
+  .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
@@ -312,7 +312,7 @@ lazy val sigmaDslCompilerMacros = project
   .settings(libraryDependencies ++= Seq(
     "org.scalameta" %% "scalameta" % "4.2.3"
   ))
-  .settings(scalacOptions += Seq("-Xlog-free-terms"))
+  .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 
 // TODO: remove
 lazy val sigmaDslCompilerMacrosPlayground = project
