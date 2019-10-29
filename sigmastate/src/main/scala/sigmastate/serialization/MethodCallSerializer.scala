@@ -4,7 +4,7 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.lang.Terms.MethodCall
-import sigmastate.utils.SigmaByteWriter.DataInfo
+import sigmastate.utils.SigmaByteWriter.{DataInfo, valuesItemInfo}
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import sigmastate.utxo.ComplexityTable
 import spire.syntax.all.cfor
@@ -16,13 +16,14 @@ case class MethodCallSerializer(cons: (Value[SType], SMethod, IndexedSeq[Value[S
   val methodCodeInfo: DataInfo[Byte] = ArgInfo("methodCode", "a code of the method")
   val objInfo: DataInfo[SValue] = ArgInfo("obj", "receiver object of this method call")
   val argsInfo: DataInfo[Seq[SValue]] = ArgInfo("args", "arguments of the method call")
+  val argsItemInfo = valuesItemInfo(argsInfo)
 
   override def serialize(mc: MethodCall, w: SigmaByteWriter): Unit = {
     w.put(mc.method.objType.typeId, typeCodeInfo)
     w.put(mc.method.methodId, methodCodeInfo)
     w.putValue(mc.obj, objInfo)
     assert(mc.args.nonEmpty)
-    w.putValues(mc.args, argsInfo)
+    w.putValues(mc.args, argsInfo, argsItemInfo)
   }
 
   override def getComplexity: Int = 0  // because we add it explicitly in parse below
