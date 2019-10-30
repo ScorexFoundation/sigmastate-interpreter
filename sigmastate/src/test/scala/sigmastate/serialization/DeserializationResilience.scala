@@ -88,7 +88,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
 
     // guard should not be tripped up by a huge collection
     val goodBytes = SigmaSerializer.startWriter()
-      .putValue(AND(List.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
+      .putValue(AND(Array.tabulate(SigmaSerializer.MaxTreeDepth + 1)(_ => booleanExprGen.sample.get)))
       .toBytes
     ValueSerializer.deserialize(goodBytes, 0)
     // test other API endpoints

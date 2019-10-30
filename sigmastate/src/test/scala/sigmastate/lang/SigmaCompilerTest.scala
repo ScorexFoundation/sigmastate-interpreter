@@ -538,7 +538,7 @@ class SigmaCompilerTest extends SigmaTestingCommons with LangTests with ObjectGe
   }
 
   property("xorOf") {
-    comp("xorOf(Coll[Boolean](true, false))") shouldBe XorOf(Seq(TrueLeaf, FalseLeaf))
+    comp("xorOf(Coll[Boolean](true, false))") shouldBe XorOf(Array(TrueLeaf, FalseLeaf))
   }
 
   property("substConst") {

@@ -408,10 +408,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin
 
     val expectedPropTree = ForAll(
-      ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
-      FuncValue(Vector((1, SInt)),
+      ConcreteCollection(Array(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+      FuncValue(Array((1, SInt)),
         BlockValue(
-          Vector(ValDef(3, If(EQ(ValUse(1, SInt), IntConstant(0)), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))))),
+          Array(ValDef(3, If(EQ(ValUse(1, SInt), IntConstant(0)), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))))),
           BinAnd(GE(ValUse(3, SInt), IntConstant(0)), LE(ValUse(3, SInt), IntConstant(5)))
         )
       )
@@ -434,14 +434,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin
 
     val expectedPropTree = ForAll(
-      ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+      ConcreteCollection(Array(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
       FuncValue(
-        Vector((1, SInt)),
+        Array((1, SInt)),
         BlockValue(
-          Vector(
+          Array(
             ValDef(3,
               ByIndex(
-                ConcreteCollection(Vector(IntConstant(1), IntConstant(1), IntConstant(0), IntConstant(0), IntConstant(0), IntConstant(1)), SInt),
+                ConcreteCollection(Array(IntConstant(1), IntConstant(1), IntConstant(0), IntConstant(0), IntConstant(0), IntConstant(1)), SInt),
                 If(
                   LE(ValUse(1, SInt), IntConstant(0)),
                   IntConstant(5),

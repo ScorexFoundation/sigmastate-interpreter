@@ -13,7 +13,7 @@ import scorex.crypto.authds.{ADDigest, SerializedAdProof}
 import scorex.crypto.authds.avltree.batch.BatchAVLVerifier
 import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
@@ -669,6 +669,9 @@ object Values {
 
   case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
+// TODO uncomment and make sure Ergo works with it, i.e. complex data types are never used for `items`
+//    assert(items.isInstanceOf[mutable.WrappedArray[_]] || items.isInstanceOf[mutable.IndexedSeq[_]],
+//      s"Invalid types of items ${items.getClass}")
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
     override def companion =
       if (isBooleanConstants) ConcreteCollectionBooleanConstant

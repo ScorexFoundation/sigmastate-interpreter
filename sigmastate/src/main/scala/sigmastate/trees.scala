@@ -2,12 +2,13 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
+import scalan.OverloadHack.Overloaded1
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
-import sigmastate.basics.{SigmaProtocol, SigmaProtocolCommonInput, SigmaProtocolPrivateInput}
+import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
@@ -208,7 +209,7 @@ object OR extends LogicalTransformerCompanion {
   def apply(children: Seq[Value[SBoolean.type]]): OR =
     OR(ConcreteCollection.fromSeq(children))
 
-  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): OR = apply(head +: tail)
+  def apply(items: Value[SBoolean.type]*)(implicit o: Overloaded1): OR = apply(items)
 }
 
 /** Similar to allOf, but performing logical XOR operation instead of `&&`
@@ -250,7 +251,8 @@ object AND extends LogicalTransformerCompanion {
   def apply(children: Seq[Value[SBoolean.type]]): AND =
     AND(ConcreteCollection.fromSeq(children))
 
-  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
+//  def apply(head: Value[SBoolean.type], tail: Value[SBoolean.type]*): AND = apply(head +: tail)
+  def apply(items: Value[SBoolean.type]*)(implicit o1: Overloaded1): AND = apply(items)
 }
 
 /**

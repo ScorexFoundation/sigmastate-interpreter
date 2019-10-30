@@ -168,7 +168,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
     // for each test case, make into atleast and reduce it to crypto with different thresholds
     for (t <- testCaseSeq) {
       for (bound <- 0 to testCaseSeq.length + 1) {
-        val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector))
+        val pReduced = prover.reduceToCrypto(ctx, AtLeast(bound, t.vector.toArray))
         pReduced.fold(t => throw t, _ => true) shouldBe true
         if (t.dlogOnlyVector.v.isEmpty) { // Case 0: no ProveDlogs in the test vector -- just booleans
           if (t.numTrue >= bound) {
@@ -355,7 +355,7 @@ class ThresholdSpecification extends SigmaTestingCommons {
       for (bound <- 1 to i) {
         // don't go beyond i -- "threshold reduce to crypto" tests that atLeast then becomes false
         // don't test bound 0 -- "threshold reduce to crypto" tests that atLeast then becomes true
-        val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i))
+        val pureAtLeastProp = AtLeast(bound, propComponents.slice(0, i).toArray)
         val OrPlusAtLeastOnRightProp = SigmaOr(secret6.publicImage, pureAtLeastProp)
         val OrPlusAtLeastOnLeftProp = SigmaOr(pureAtLeastProp, secret6.publicImage)
         val AndPlusAtLeastOnLeftProp = SigmaAnd(pureAtLeastProp, secret6.publicImage)

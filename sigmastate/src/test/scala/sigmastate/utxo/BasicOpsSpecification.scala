@@ -543,7 +543,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
     val byteArrayVar1Value = ByteArrayConstant(Array[Byte](1.toByte, 2.toByte))
     test("EQArrayCollection", env + ("byteArrayVar1" -> byteArrayVar1Value), ext,
       "byteArrayVar1 == Coll[Byte](1.toByte, 2.toByte)",
-      EQ(byteArrayVar1Value, ConcreteCollection(Vector(ByteConstant(1), ByteConstant(2)), SByte)).toSigmaProp,
+      EQ(byteArrayVar1Value, ConcreteCollection(Array(ByteConstant(1), ByteConstant(2)), SByte)).toSigmaProp,
       true
     )
   }
@@ -553,8 +553,8 @@ class BasicOpsSpecification extends SigmaTestingCommons {
       "{ def inc(i: Int) = i + 1; inc(2) == 3 }",
       EQ(
         Apply(
-          FuncValue(Vector((1, SInt)), Plus(ValUse(1, SInt), IntConstant(1))),
-          Vector(IntConstant(2))
+          FuncValue(Array((1, SInt)), Plus(ValUse(1, SInt), IntConstant(1))),
+          Array(IntConstant(2))
         ),
         IntConstant(3)).toSigmaProp
     )
@@ -568,10 +568,10 @@ class BasicOpsSpecification extends SigmaTestingCommons {
         |  blake2b256(out.propositionBytes) != Coll[Byte](1.toByte)
         |})
       """.stripMargin,
-      ForAll(Outputs, FuncValue(Vector((1,SBox)),
+      ForAll(Outputs, FuncValue(Array((1,SBox)),
         BinAnd(
           GE(ExtractRegisterAs(ValUse(1,SBox), ErgoBox.R5, SOption(SInt)).get, Plus(Height, IntConstant(10))),
-          NEQ(CalcBlake2b256(ExtractScriptBytes(ValUse(1,SBox))), ConcreteCollection(Vector(ByteConstant(1.toByte)), SByte))
+          NEQ(CalcBlake2b256(ExtractScriptBytes(ValUse(1,SBox))), ConcreteCollection(Array(ByteConstant(1.toByte)), SByte))
         ))).toSigmaProp,
       true
     )
