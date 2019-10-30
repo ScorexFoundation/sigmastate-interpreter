@@ -299,7 +299,7 @@ lazy val rootSettings = Seq(
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "sigma-core-opt"
+  val ergoBranch = "master"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
