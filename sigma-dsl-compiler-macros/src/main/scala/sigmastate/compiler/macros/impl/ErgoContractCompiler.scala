@@ -1,7 +1,7 @@
 package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.Height
-import sigmastate.{SInt, SSigmaProp, SType, TrivialProp, Values}
+import sigmastate.{BoolToSigmaProp, GT, SInt, SSigmaProp, SType, TrivialProp, Values}
 import sigmastate.Values.{BlockValue, IntConstant, SValue, SigmaBoolean, SigmaPropConstant, SigmaPropValue, Value}
 import sigmastate.eval.CSigmaProp
 import sigmastate.lang.TransformingSigmaBuilder
@@ -22,10 +22,10 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
-  private val builder = TransformingSigmaBuilder
+//  private val builder = TransformingSigmaBuilder
 
-  private def buildValue(s: Stat, defId: Int): SValue = {
-    import builder._
+  private def buildValue(s: Stat, defId: Int): Expr[SValue] = {
+//    import builder._
     import sigmastate.lang.Terms._
     def recurse[T <: SType](s: Stat) = buildValue(s, defId)
 
@@ -34,24 +34,25 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         val expr = stats
           .tail // skip import ctx._
           .head
-        buildValue(expr, defId)
+        recurse(expr)
       case Term.Apply(Term.Name("SigmaPropProof"), args) =>
-        mkBoolToSigmaProp(buildValue(args.head, defId).asBoolValue)
+        reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
       case Term.Apply(Term.Name("sigmaProp"), args) =>
-        mkBoolToSigmaProp(buildValue(args.head, defId).asBoolValue)
+        reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
       case Term.Apply(Term.Name("TrivialProp"), args) =>
-        recurse(args.head).asBoolValue
+        recurse(args.head)
       case Term.ApplyInfix(lhs, Term.Name(">"), targs, args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
-        mkGT(l, r)
-      case Term.Name("HEIGHT") => Height
-      case Lit.Int(v) => mkConstant[SInt.type](v, SInt)
+        reify(GT(l.splice, r.splice))
+      case Term.Name("HEIGHT") => reify(Height)
+        // TODO: wtf wrong with v
+      case Lit.Int(v) => reify(IntConstant(reify(1).splice))
       case _ => error(s"unexpected: $s")
     }
   }
 
-  private def compileErgoTree(select: Select): SigmaPropValue = {
+  private def compileErgoTree(select: Select): Expr[SigmaPropValue] = {
     import scala.meta._
 
     val path = select.symbol.pos.source.file.file.toPath
@@ -66,19 +67,18 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         body
     }
 //    println(body)
-    val v = buildValue(body.head, 0)
-    v.asInstanceOf[Value[SSigmaProp.type]]
+    reify(buildValue(body.head, 0).splice.asInstanceOf[Value[SSigmaProp.type]])
   }
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[CompilationResult] = {
 
 //    println(showRaw(verifiedContract.tree.tpe))
-//    println(showRaw(verifiedContract.tree))
+    println(s"compile: ${showRaw(verifiedContract.tree)}")
 
     val selects = verifiedContract.tree.collect { case sel: Select => sel}
     if (selects.length != 1) c.abort(c.enclosingPosition, s"expected contract in form of a method")
-    val sigmaProp = reify{ compileErgoTree(selects.head) }
-//    val sigmaProp = reify(SigmaPropConstant(TrivialProp(true)))
+//    val sigmaProp = compileErgoTree(selects.head)
+    val sigmaProp = reify(SigmaPropConstant(TrivialProp(true)))
 
     val contract = reify({c: Context => CSigmaProp(TrivialProp(true))})
     reify(CompilationResult(contract.splice, sigmaProp.splice))

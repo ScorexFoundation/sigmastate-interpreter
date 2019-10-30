@@ -7,25 +7,25 @@ import scala.language.postfixOps
 
 sealed abstract class DummyContract extends SigmaContract {
 
-  def contract(ctx: Context): SigmaProp = {
+  def contract(ctx: Context, limit: Int): SigmaProp = {
     import ctx._
     // todo implicit boolops?
 //    SigmaPropProof(TrivialProp(HEIGHT > 1))
-    sigmaProp(HEIGHT > 1)
+    sigmaProp(HEIGHT < limit)
   }
 }
 
 case object DummyContractVerification extends DummyContract {
 
-  def proveTrue(ctx: Context): Boolean = {
+  def proveTrue(ctx: Context, limit: Int): Boolean = {
     import ctx._
-    require(HEIGHT > 1)
-    contract(ctx).isValid
+    require(HEIGHT < limit)
+    contract(ctx, limit).isValid
   } holds
 
-  def proveFalse(ctx: Context): Boolean = {
+  def proveFalse(ctx: Context, limit: Int): Boolean = {
     import ctx._
-    require(HEIGHT <= 1)
-    contract(ctx).isValid
-  } ensuring(_ == false)
+    require(HEIGHT > limit)
+    !contract(ctx, limit).isValid
+  } holds
 }
