@@ -9,8 +9,8 @@ sealed abstract class DummyContract extends SigmaContract {
 
   def contract(ctx: Context, limit: Int): SigmaProp = {
     import ctx._
+    require(HEIGHT > 0 && limit > 0)
     // todo implicit boolops?
-//    SigmaPropProof(TrivialProp(HEIGHT > 1))
     sigmaProp(HEIGHT < limit)
   }
 }
@@ -19,13 +19,14 @@ case object DummyContractVerification extends DummyContract {
 
   def proveTrue(ctx: Context, limit: Int): Boolean = {
     import ctx._
-    require(HEIGHT < limit)
+    require(HEIGHT < limit && HEIGHT > 0 && limit > 0)
     contract(ctx, limit).isValid
   } holds
 
   def proveFalse(ctx: Context, limit: Int): Boolean = {
     import ctx._
-    require(HEIGHT > limit)
+    require(HEIGHT > limit && HEIGHT > 0 && limit > 0)
     !contract(ctx, limit).isValid
   } holds
+
 }

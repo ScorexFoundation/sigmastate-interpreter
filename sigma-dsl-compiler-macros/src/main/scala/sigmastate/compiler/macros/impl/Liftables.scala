@@ -12,7 +12,7 @@ trait Liftables {
 
   import c.universe.{Block => _, Constant => _, Function => _, Ident => _, If => _, _}
 
-  private val pack = q"sigmastate"
+//  private val pack = q"sigmastate"
 
 //  implicit val cSigmaPropLiftable: Liftable[CSigmaProp] = Liftable[CSigmaProp] { s =>
 //    q"sigmastate.eval.CSigmaProp(${s.sigmaTree})"
