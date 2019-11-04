@@ -7,12 +7,15 @@ import stainless.annotation.ignore
 @ignore
 object DummyContractCompilation {
 
+  def main(args: Array[String]): Unit = {
+    val c = dummyContractInstance(10)
+    println(c)
+  }
+
   def dummyContractInstance(limit: Int): ErgoContract =
     ErgoContractCompiler.compile { ctx: VerifiedContext =>
       DummyContractVerification.contract(ctx, limit)
     }
-
-  val c: ErgoContract = dummyContractInstance(10)
 }
 
 
