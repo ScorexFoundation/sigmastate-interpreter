@@ -1,6 +1,8 @@
 package sigmastate.verification.contract
 
+import sigmastate.compiler.macros.impl.{ErgoContract, ErgoContractCompiler}
 import sigmastate.verification.SigmaDsl.api.sigma._
+import stainless.annotation.ignore
 import stainless.lang._
 
 import scala.language.postfixOps
@@ -29,4 +31,9 @@ case object DummyContractVerification extends DummyContract {
     !contract(ctx, limit).isValid
   } holds
 
+  @ignore
+  def contractInstance(limit: Int): ErgoContract =
+    ErgoContractCompiler.compile { ctx: Context =>
+      DummyContractVerification.contract(ctx, limit)
+    }
 }

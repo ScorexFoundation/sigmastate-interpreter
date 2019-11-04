@@ -302,6 +302,7 @@ lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
   .dependsOn(sigmaapi, sigmaDslCompilerMacros)
+  .dependsOn(sigmastate % allConfigDependency)
   .settings(commonSettings: _*)
   .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 

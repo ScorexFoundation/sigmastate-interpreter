@@ -46,35 +46,34 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     }
   }
 
-
-  private def compileErgoTree(select: Select): Expr[SValue] = {
+  private def extractContractTree(select: Select): Tree = {
     import scala.meta._
 
     val path = select.symbol.pos.source.file.file.toPath
     val source = new String(java.nio.file.Files.readAllBytes(path), "UTF-8")
     val input = Input.VirtualFile(path.toString, source)
     val tree = input.parse[Source].get
-//    println(tree)
+    //    println(tree)
 
     val body = tree.collect {
-      case defdef @ Defn.Def(mods, name, tparams, paramss, decltpe, body) if name.toString == select.name.toString =>
+      case defdef@Defn.Def(mods, name, tparams, paramss, decltpe, body) if name.toString == select.name.toString =>
         val defdefSource = defdef.toString
         val defSource =
-          s"""import special.sigma._
-            |
-            | object SigmaContractHolder extends SigmaContract {
-            | $defdefSource
-            | }
-            |""".stripMargin
+          s"""import org.ergoplatform.dsl._
+             | import special.sigma._
+             |
+             | object SigmaContractHolder extends SigmaContractSyntax {
+             | $defdefSource
+             | }
+             |""".stripMargin
         val scalaTree = c.parse(defSource)
         println(scalaTree)
         val scalaTreeTyped = c.typecheck(scalaTree)
         println(scalaTreeTyped)
         scalaTreeTyped
     }
-    val cdd = body.head.collect { case DefDef(_, TermName("contract"), _, _, _, rhs) => rhs
-    }
-    reify(buildFromScalaAst(cdd.head, 0).splice)
+    val cdd = body.head.collect { case DefDef(_, TermName("contract"), _, _, _, rhs) => rhs }
+    cdd.head
   }
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {
@@ -83,9 +82,10 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     val selects = verifiedContract.tree.collect { case sel: Select => sel}
     if (selects.length != 1) c.abort(c.enclosingPosition, s"expected contract in form of a method")
     // TODO ergo tree: capture parameter values and return scala code that will "embed" captured values into the tree
-    val sigmaProp = compileErgoTree(selects.head)
-    val contract = reify({c: Context => CSigmaProp(TrivialProp(true))})
-    reify(ErgoContract(contract.splice, sigmaProp.splice))
+    val contractTree = extractContractTree(selects.head)
+    val sigmaProp = reify(buildFromScalaAst(contractTree, 0).splice)
+//    val contract = reify({c: Context => CSigmaProp(TrivialProp(true))})
+    reify(ErgoContract(c.Expr[Context => SigmaProp](contractTree).splice, sigmaProp.splice))
   }
 
 }
