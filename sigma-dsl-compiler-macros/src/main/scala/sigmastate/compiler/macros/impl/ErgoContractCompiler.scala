@@ -35,11 +35,24 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(LT(l.splice, r.splice))
+      case Apply(Select(lhs, TermName("$less$eq")), args) =>
+        val l = recurse(lhs)
+        val r = recurse(args.head)
+        reify(LE(l.splice, r.splice))
+      case Apply(Select(lhs, TermName("$greater$eq")), args) =>
+        val l = recurse(lhs)
+        val r = recurse(args.head)
+        reify(GE(l.splice, r.splice))
+      case Apply(Select(lhs, TermName("$amp$amp")), args) =>
+        val l = recurse(lhs)
+        val r = recurse(args.head)
+        reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
       case Ident(TermName(n)) => env.get(n) match {
         case Some(v) => ???
         case None =>
+          // TODO: lift any type
           val expr = c.Expr[Int](Ident(TermName(paramMap(n))))
           reify(IntConstant(expr.splice))
       }

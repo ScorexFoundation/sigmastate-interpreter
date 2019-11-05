@@ -15,6 +15,12 @@ sealed abstract class DummyContract extends SigmaContract {
     // todo implicit boolops?
     sigmaProp(HEIGHT < limit)
   }
+
+  def contract2(ctx: Context, start: Int, end: Int): SigmaProp = {
+    import ctx._
+    require(HEIGHT >= 0 && start >= 0 && end >= 0)
+    sigmaProp(HEIGHT >= start && HEIGHT <= end)
+  }
 }
 
 case object DummyContractVerification extends DummyContract {
@@ -38,5 +44,10 @@ case object DummyContractCompilation extends DummyContract {
   def contractInstance(lmt: Int): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
       DummyContractVerification.contract(context, lmt)
+    }
+
+  def contract2Instance(s: Int, e: Int): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      DummyContractVerification.contract2(context, s, e)
     }
 }
