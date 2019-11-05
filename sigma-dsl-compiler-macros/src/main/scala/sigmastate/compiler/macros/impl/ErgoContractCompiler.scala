@@ -24,8 +24,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
-  private def buildFromScalaAst(s: Tree, defId: Int): Expr[SValue] = {
-    def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId)
+  private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any] = Map()): Expr[SValue] = {
+    def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env)
 
     s match {
       case Block(stats, expr) =>
@@ -39,11 +39,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         reify(LT(l.splice, r.splice))
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
-      case Ident(TermName("limit")) =>
-        // TODO: don't hardcode parameter name
-        val limTree = Ident(TermName("limit"))
-        val limExpr = c.Expr[Int](limTree)
-        reify(IntConstant(limExpr.splice))
+      case Ident(TermName(n)) => env.get(n) match {
+        case Some(v) => ???
+        case None =>
+          val expr = c.Expr[Int](Ident(TermName(n)))
+          reify(IntConstant(expr.splice))
+      }
       case _ => error(s"unexpected: $s")
     }
   }
