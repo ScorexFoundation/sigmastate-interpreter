@@ -93,8 +93,9 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {
     println(s"compile: ${showRaw(verifiedContract.tree)}")
+    val contractFuncName = verifiedContract.tree.collect { case sel: Select => sel }.head.name.toString
     val contractTree = buildScalaFunc(verifiedContract.tree)
-    val defDefRhs = contractTree.collect { case DefDef(_, TermName("contract"), _, _, _, rhs) => rhs }
+    val defDefRhs = contractTree.collect { case DefDef(_, TermName(`contractFuncName`), _, _, _, rhs) => rhs }
     val sigmaProp = reify(buildFromScalaAst(defDefRhs.head, 0).splice)
     reify(ErgoContract(c.Expr[Context => SigmaProp](contractTree).splice, sigmaProp.splice))
   }
