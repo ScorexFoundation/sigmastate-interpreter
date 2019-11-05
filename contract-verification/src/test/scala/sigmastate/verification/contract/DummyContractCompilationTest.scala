@@ -13,22 +13,20 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
   property("dummy contract ergo tree") {
-    val c = DummyContractCompilation.contractInstance(10)
-    assert(c.prop == BoolToSigmaProp(LT(Height, IntConstant(10))))
+    forAll(unsignedIntGen) { l =>
+      val c = DummyContractCompilation.contractInstance(l)
+      val expectedProp = BoolToSigmaProp(LT(Height, IntConstant(l)))
+      assert(c.prop == expectedProp)
+    }
   }
 
-  property("dummy contract scalaFunc success") {
-    val c = DummyContractCompilation.contractInstance(10000000)
-    val ctx = ergoLikeContextGen.sample.get.toSigmaContext(IR, false, Map())
-    val v = c.scalaFunc(ctx)
-    // "should be" matcher brakes the scalac compiler (probably due to stainless)
-    assert(v.isValid)
-  }
-
-  property("dummy contract scalaFunc fail") {
-    val c = DummyContractCompilation.contractInstance(0)
-    val ctx = ergoLikeContextGen.sample.get.toSigmaContext(IR, false, Map())
-    val v = c.scalaFunc(ctx)
-    assert(!v.isValid)
+  property("dummy contract scalaFunc") {
+    val contractTrue = DummyContractCompilation.contractInstance(10000000)
+    val contractFalse = DummyContractCompilation.contractInstance(0)
+    forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
+      // "should be" matcher brakes the scalac compiler (probably due to stainless)
+      assert(contractTrue.scalaFunc(ctx).isValid)
+      assert(!contractFalse.scalaFunc(ctx).isValid)
+    }
   }
 }
