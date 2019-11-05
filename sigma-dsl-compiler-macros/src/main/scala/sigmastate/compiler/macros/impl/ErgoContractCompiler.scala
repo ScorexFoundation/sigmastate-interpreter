@@ -1,10 +1,8 @@
 package sigmastate.compiler.macros.impl
 
-import com.sun.source.util.Trees
 import org.ergoplatform.Height
 import sigmastate.Values.{ErgoTree, IntConstant, SValue}
 import sigmastate._
-import sigmastate.eval.CSigmaProp
 import sigmastate.lang.Terms.ValueOps
 import special.sigma.{Context, SigmaProp}
 
@@ -24,8 +22,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
-  private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any] = Map()): Expr[SValue] = {
-    def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env)
+  private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
+    def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env, paramMap)
 
     s match {
       case Block(stats, expr) =>
@@ -42,7 +40,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case Ident(TermName(n)) => env.get(n) match {
         case Some(v) => ???
         case None =>
-          val expr = c.Expr[Int](Ident(TermName(n)))
+          val expr = c.Expr[Int](Ident(TermName(paramMap(n))))
           reify(IntConstant(expr.splice))
       }
       case _ => error(s"unexpected: $s")
@@ -96,8 +94,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     println(s"compile: ${showRaw(verifiedContract.tree)}")
     val contractFuncName = verifiedContract.tree.collect { case sel: Select => sel }.head.name.toString
     val contractTree = buildScalaFunc(verifiedContract.tree)
-    val defDefRhs = contractTree.collect { case DefDef(_, TermName(`contractFuncName`), _, _, _, rhs) => rhs }
-    val sigmaProp = reify(buildFromScalaAst(defDefRhs.head, 0).splice)
+    val defDef = contractTree.collect { case dd @ DefDef(_, TermName(`contractFuncName`), _, _, _, _) => dd }.head
+    val compilingContractApp = verifiedContract.tree.collect { case app: Apply => app }.head
+    val appArgs = compilingContractApp.args.collect { case Ident(name) => name.toString }
+    val defDefArgNames = defDef.vparamss.head.collect { case ValDef(_, name, _, _) => name.toString }
+    val paramMap = defDefArgNames.zip(appArgs).toMap
+    val sigmaProp = reify(buildFromScalaAst(defDef.rhs, 0, Map(), paramMap).splice)
     reify(ErgoContract(c.Expr[Context => SigmaProp](contractTree).splice, sigmaProp.splice))
   }
 

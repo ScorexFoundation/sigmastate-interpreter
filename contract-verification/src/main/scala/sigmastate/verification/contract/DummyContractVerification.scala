@@ -35,8 +35,8 @@ case object DummyContractVerification extends DummyContract {
 @ignore
 case object DummyContractCompilation extends DummyContract {
 
-  def contractInstance(limit: Int): ErgoContract =
-    ErgoContractCompiler.compile { ctx: Context =>
-      DummyContractVerification.contract(ctx, limit)
+  def contractInstance(lmt: Int): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      DummyContractVerification.contract(context, lmt)
     }
 }
