@@ -1,5 +1,6 @@
 package sigmastate.compiler.macros.impl
 
+import com.sun.source.util.Trees
 import org.ergoplatform.Height
 import sigmastate.Values.{ErgoTree, IntConstant, SValue}
 import sigmastate._
@@ -47,47 +48,52 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     }
   }
 
-  private def extractContractTree(select: Select): Tree = {
+  private def findContractDefDef(select: Select): String = {
     import scala.meta._
     val path = select.symbol.pos.source.file.file.toPath
     val source = new String(java.nio.file.Files.readAllBytes(path), "UTF-8")
     val input = Input.VirtualFile(path.toString, source)
     val tree = input.parse[Source].get
-    val closure = tree.collect {
+    val results = tree.collect {
+      // TODO: check the full signature and not just the name
       case defdef@Defn.Def(mods, name, tparams, paramss, decltpe, body) if name.toString == select.name.toString =>
-        val defdefSource = defdef.toString
-        val defSource =
-          s"""
-             |
-             |{ ctx: special.sigma.Context =>
-             |import special.sigma._
-             |import org.ergoplatform.dsl._
-             |
-             |object SigmaContractHolder extends SigmaContractSyntax {
-             |  lazy val spec = ???
-             |  lazy val contractEnv = ???
-             |
-             |  $defdefSource
-             |}
-             |
-             |SigmaContractHolder.contract(ctx, limit)
-             |}
-             |""".stripMargin
-        // TODO: don't hardcode parameters into the call
-        val scalaTree = c.parse(defSource)
-        println(scalaTree)
-        val scalaTreeTyped = c.typecheck(scalaTree)
-        println(scalaTreeTyped)
-        scalaTreeTyped
+        defdef.toString
     }
-    closure.head
+    results.head
+  }
+
+  private def buildScalaFunc(compilingClosure: Tree): Tree = {
+    val select = compilingClosure.collect{ case sel: Select => sel }.head
+    val defdefSource = findContractDefDef(select)
+    val ctxParamName = compilingClosure.collect { case ValDef(mods, termName, _, _) => termName }
+      .headOption
+      .getOrElse(error("context parameter is expected"))
+      .toString
+    val compilingContractApp = compilingClosure.collect { case app: Apply => app }.head
+    val argsStr = compilingContractApp.args.collect { case Ident(name) => name.toString}
+      .mkString(",")
+    val scalaFuncSource =
+      s"""
+         |{ $ctxParamName: special.sigma.Context =>
+         |import special.sigma._
+         |import org.ergoplatform.dsl._
+         |
+         |object SigmaContractHolder extends SigmaContractSyntax {
+         |  lazy val spec = ???
+         |  lazy val contractEnv = ???
+         |
+         |  $defdefSource
+         |}
+         |
+         |SigmaContractHolder.${select.name.toString}($argsStr)
+         |}
+         |""".stripMargin
+    c.typecheck(c.parse(scalaFuncSource))
   }
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {
     println(s"compile: ${showRaw(verifiedContract.tree)}")
-    val selects = verifiedContract.tree.collect { case sel: Select => sel}
-    if (selects.length != 1) c.abort(c.enclosingPosition, s"expected contract in form of a method")
-    val contractTree = extractContractTree(selects.head)
+    val contractTree = buildScalaFunc(verifiedContract.tree)
     val defDefRhs = contractTree.collect { case DefDef(_, TermName("contract"), _, _, _, rhs) => rhs }
     val sigmaProp = reify(buildFromScalaAst(defDefRhs.head, 0).splice)
     reify(ErgoContract(c.Expr[Context => SigmaProp](contractTree).splice, sigmaProp.splice))
