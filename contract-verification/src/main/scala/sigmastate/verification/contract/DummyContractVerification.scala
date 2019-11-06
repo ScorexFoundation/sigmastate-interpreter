@@ -1,11 +1,13 @@
 package sigmastate.verification.contract
 
 import sigmastate.compiler.macros.impl.{ErgoContract, ErgoContractCompiler}
+import sigmastate.verification.SigmaDsl.api.collection._
 import sigmastate.verification.SigmaDsl.api.sigma._
+import special.collection.CollOverArray
 import stainless.annotation.ignore
 import stainless.lang._
 
-import scala.language.postfixOps
+import scala.language.{implicitConversions, postfixOps}
 
 sealed abstract class DummyContract extends SigmaContract {
 
@@ -16,10 +18,16 @@ sealed abstract class DummyContract extends SigmaContract {
     sigmaProp(HEIGHT < limit)
   }
 
-  def contract2(ctx: Context, start: Int, end: Int): SigmaProp = {
+  def contract2(ctx: Context, start: Int, end: Long): SigmaProp = {
     import ctx._
     require(HEIGHT >= 0 && start >= 0 && end >= 0)
     sigmaProp(HEIGHT >= start && HEIGHT <= end)
+  }
+
+  def contract3(ctx: Context, arr: Coll[Byte]): SigmaProp = {
+    import ctx._
+    require(HEIGHT >= 0)
+    sigmaProp(arr.length > 0)
   }
 }
 
@@ -38,6 +46,20 @@ case object DummyContractVerification extends DummyContract {
   } holds
 }
 
+// TODO: extract
+@ignore
+object VerifiedConvertors {
+
+  implicit def verifiedCollToColl[A](coll: Coll[A]): special.collection.Coll[A] = {
+    import scalan.RType._
+//    new CollOverArray[A](Array[A]())
+    // TODO fix empty coll(generic) case
+    // TODO implement for non-empty case
+    new CollOverArray[Byte](Array[Byte]()).asInstanceOf[special.collection.Coll[A]]
+  }
+
+}
+
 @ignore
 case object DummyContractCompilation extends DummyContract {
 
@@ -46,8 +68,13 @@ case object DummyContractCompilation extends DummyContract {
       DummyContractVerification.contract(context, lmt)
     }
 
-  def contract2Instance(s: Int, e: Int): ErgoContract =
+  def contract2Instance(s: Int, e: Long): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
       DummyContractVerification.contract2(context, s, e)
+    }
+
+  def contract3Instance(arr: Coll[Byte]): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      DummyContractVerification.contract3(context, arr)
     }
 }

@@ -1,9 +1,11 @@
 package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.Height
-import sigmastate.Values.{ErgoTree, IntConstant, SValue}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongConstant, SValue}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.utxo.SizeOf
+import special.collection.Coll
 import special.sigma.{Context, SigmaProp}
 
 import scala.language.experimental.macros
@@ -23,7 +25,31 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
+    import c.universe.definitions._
+
     def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env, paramMap)
+
+    def liftParam(n: String, tpe: Type): Expr[SValue] = tpe match {
+      case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
+      case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
+      case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
+      // TODO: byte array
+      case TypeRef(pre, sym, List(targ)) if sym.fullName == "special.collection.Coll" && targ == ByteTpe =>
+        // TODO convert n from verified Coll
+        reify(ByteArrayConstant(
+          c.Expr[Coll[Byte]](
+            Apply(
+              q"sigmastate.verification.contract.VerifiedConvertors.verifiedCollToColl",
+              List(Ident(TermName(paramMap(n))))
+            )
+          ).splice
+        ))
+//        error(s"ident type: ${sym.fullName}")
+      case SingleType(_, sym) if sym.isTerm =>
+        liftParam(n, tpe.widen)
+      // TODO: PK
+      case _ => error(s"unexpected ident type: $tpe")
+    }
 
     s match {
       case Block(stats, expr) =>
@@ -35,6 +61,10 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(LT(l.splice, r.splice))
+      case Apply(Select(lhs, TermName("$greater")), args) =>
+        val l = recurse(lhs)
+        val r = recurse(args.head)
+        reify(GT(l.splice, r.splice))
       case Apply(Select(lhs, TermName("$less$eq")), args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
@@ -49,13 +79,15 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
-      case Ident(TermName(n)) => env.get(n) match {
+      case Select(obj, TermName("length")) =>
+        val o = recurse(obj)
+        reify(SizeOf(o.splice.asCollection[SType]))
+      case i @ Ident(TermName(n)) => env.get(n) match {
         case Some(v) => ???
-        case None =>
-          // TODO: lift any type
-          val expr = c.Expr[Int](Ident(TermName(paramMap(n))))
-          reify(IntConstant(expr.splice))
+        case None => liftParam(n, i.tpe)
       }
+      case l@Literal(ct@Constant(i)) if ct.tpe == IntTpe =>
+        reify(IntConstant(c.Expr[Int](l).splice))
       case _ => error(s"unexpected: $s")
     }
   }
@@ -88,7 +120,9 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       s"""
          |{ $ctxParamName: special.sigma.Context =>
          |import special.sigma._
+         |import special.collection._
          |import org.ergoplatform.dsl._
+         |import sigmastate.verification.contract.VerifiedConvertors._
          |
          |object SigmaContractHolder extends SigmaContractSyntax {
          |  lazy val spec = ???

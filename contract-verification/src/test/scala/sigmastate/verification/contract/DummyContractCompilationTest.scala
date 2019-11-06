@@ -1,10 +1,13 @@
 package sigmastate.verification.contract
 
 import org.ergoplatform.Height
-import sigmastate.{BinAnd, BoolToSigmaProp, GE, LE, LT}
-import sigmastate.Values.IntConstant
+import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
+import sigmastate.utxo.SizeOf
+import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
+import special.collection.{Coll, CollOverArray}
 import stainless.annotation.ignore
 
 @ignore
@@ -37,7 +40,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
       val s = l
       val e = l + 9
       val c = DummyContractCompilation.contract2Instance(s, e)
-      val expectedProp = BoolToSigmaProp(BinAnd(GE(Height, IntConstant(s)), LE(Height, IntConstant(e))))
+      val expectedProp = BoolToSigmaProp(BinAnd(GE(Height, IntConstant(s)), LE(Height, LongConstant(e))))
       assert(c.prop == expectedProp)
     }
   }
@@ -49,6 +52,16 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
       // "should be" matcher brakes the scalac compiler (probably due to stainless)
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)
+    }
+  }
+
+  property("dummy contract3 ergo tree") {
+    forAll(byteCollGen(1, 100)) { ba =>
+      // TODO use ba
+      val c = DummyContractCompilation.contract3Instance(VerifiedColl.empty[Byte])
+      val emptyColl = new CollOverArray[Byte](Array[Byte]())
+      val expectedProp = BoolToSigmaProp(GT(SizeOf(ByteArrayConstant(emptyColl)), IntConstant(0)))
+      assert(c.prop == expectedProp)
     }
   }
 }
