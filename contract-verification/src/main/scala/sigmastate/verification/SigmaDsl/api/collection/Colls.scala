@@ -4,6 +4,7 @@ import scalan.{Internal, NeverInline}
 import sigmastate.verification.SigmaDsl.api.{Monoid, RType}
 import stainless.annotation.{extern, library}
 import stainless.lang._
+import stainless.collection._
 
 import scala.collection.immutable
 
@@ -494,7 +495,7 @@ sealed trait Coll[A] {
 //}
 
 @library
-case class CollProof[A]() extends Coll[A] {
+case class CollProof[A](val toList: List[A]) extends Coll[A] {
   @Internal
   override def tItem: RType[A] = ???
 
@@ -683,11 +684,11 @@ case class CollProof[A]() extends Coll[A] {
 object Coll {
 
   @extern
-  def empty[A]: Coll[A] = CollProof[A]() //??? //new CollOverList(List())
+  def empty[A]: Coll[A] = ??? // CollProof[A](Array.empty[A]) //??? //new CollOverList(List())
 
   @extern
-  def apply[A](a: A): Coll[A] = ??? // new CollOverList(List(a))
+  def apply[A](array: Array[A]): Coll[A] = CollProof[A](List[A](array: _*))
 
   @extern
-  def apply[A](): Coll[A] = ??? // new CollOverList(List(a))
+  def apply[A](): Coll[A] = ???
 }

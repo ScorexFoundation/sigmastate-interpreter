@@ -33,21 +33,14 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
       case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
       case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
-      // TODO: byte array
-      case TypeRef(pre, sym, List(targ)) if sym.fullName == "special.collection.Coll" && targ == ByteTpe =>
-        // TODO convert n from verified Coll
+      case TypeRef(_, sym, List(targ)) if sym.fullName == "special.collection.Coll" && targ == ByteTpe =>
         reify(ByteArrayConstant(
           c.Expr[Coll[Byte]](
-            Apply(
-              q"sigmastate.verification.contract.VerifiedConvertors.verifiedCollToColl",
-              List(Ident(TermName(paramMap(n))))
-            )
+            q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedCollToColl(${Ident(TermName(paramMap(n)))})",
           ).splice
         ))
-//        error(s"ident type: ${sym.fullName}")
       case SingleType(_, sym) if sym.isTerm =>
         liftParam(n, tpe.widen)
-      // TODO: PK
       case _ => error(s"unexpected ident type: $tpe")
     }
 
@@ -98,31 +91,36 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     val source = new String(java.nio.file.Files.readAllBytes(path), "UTF-8")
     val input = Input.VirtualFile(path.toString, source)
     val tree = input.parse[Source].get
-    val results = tree.collect {
+    tree.collect {
       // TODO: check the full signature and not just the name
-      case defdef@Defn.Def(mods, name, tparams, paramss, decltpe, body) if name.toString == select.name.toString =>
-        defdef.toString
-    }
-    results.head
+      case dd@Defn.Def(mods, name, tparams, paramss, decltpe, body) if name.toString == select.name.toString =>
+        dd.toString
+    }.headOption
+      .getOrElse(error("cannot find DefDef for the contract method"))
   }
 
   private def buildScalaFunc(compilingClosure: Tree): Tree = {
-    val select = compilingClosure.collect{ case sel: Select => sel }.head
+    val select = compilingClosure.collect{ case sel: Select => sel }
+      .headOption
+      .getOrElse(error("method call for the contract is expected"))
     val defdefSource = findContractDefDef(select)
     val ctxParamName = compilingClosure.collect { case ValDef(mods, termName, _, _) => termName }
       .headOption
       .getOrElse(error("context parameter is expected"))
       .toString
-    val compilingContractApp = compilingClosure.collect { case app: Apply => app }.head
+    val compilingContractApp = compilingClosure.collect { case app: Apply => app }
+      .headOption
+      .getOrElse(error("cannot find Apply for the contract method"))
     val argsStr = compilingContractApp.args.collect { case Ident(name) => name.toString}
       .mkString(",")
+    if (argsStr.isEmpty) error("no arguments for the contract call")
     val scalaFuncSource =
       s"""
          |{ $ctxParamName: special.sigma.Context =>
          |import special.sigma._
          |import special.collection._
          |import org.ergoplatform.dsl._
-         |import sigmastate.verification.contract.VerifiedConvertors._
+         |import sigmastate.verification.SigmaDsl.api.VerifiedConverters._
          |
          |object SigmaContractHolder extends SigmaContractSyntax {
          |  lazy val spec = ???
@@ -139,10 +137,17 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {
     println(s"compile: ${showRaw(verifiedContract.tree)}")
-    val contractFuncName = verifiedContract.tree.collect { case sel: Select => sel }.head.name.toString
+    val contractMethodName = verifiedContract.tree.collect { case sel: Select => sel }
+      .headOption
+      .getOrElse(error("method call for the contract is expected"))
+      .name.toString
     val contractTree = buildScalaFunc(verifiedContract.tree)
-    val defDef = contractTree.collect { case dd @ DefDef(_, TermName(`contractFuncName`), _, _, _, _) => dd }.head
-    val compilingContractApp = verifiedContract.tree.collect { case app: Apply => app }.head
+    val defDef = contractTree.collect { case dd @ DefDef(_, TermName(`contractMethodName`), _, _, _, _) => dd }
+      .headOption
+      .getOrElse(error("cannot find DefDef for the contract method"))
+    val compilingContractApp = verifiedContract.tree.collect { case app: Apply => app }
+      .headOption
+      .getOrElse(error("cannot find Apply for the contract method"))
     val appArgs = compilingContractApp.args.collect { case Ident(name) => name.toString }
     val defDefArgNames = defDef.vparamss.head.collect { case ValDef(_, name, _, _) => name.toString }
     val paramMap = defDefArgNames.zip(appArgs).toMap

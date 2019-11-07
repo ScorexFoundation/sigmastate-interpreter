@@ -57,10 +57,8 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
 
   property("dummy contract3 ergo tree") {
     forAll(byteCollGen(1, 100)) { ba =>
-      // TODO use ba
-      val c = DummyContractCompilation.contract3Instance(VerifiedColl.empty[Byte])
-      val emptyColl = new CollOverArray[Byte](Array[Byte]())
-      val expectedProp = BoolToSigmaProp(GT(SizeOf(ByteArrayConstant(emptyColl)), IntConstant(0)))
+      val c = DummyContractCompilation.contract3Instance(VerifiedColl(ba.toArray))
+      val expectedProp = BoolToSigmaProp(GT(SizeOf(ByteArrayConstant(ba)), IntConstant(0)))
       assert(c.prop == expectedProp)
     }
   }

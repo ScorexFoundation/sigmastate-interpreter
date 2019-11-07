@@ -3,7 +3,6 @@ package sigmastate.verification.contract
 import sigmastate.compiler.macros.impl.{ErgoContract, ErgoContractCompiler}
 import sigmastate.verification.SigmaDsl.api.collection._
 import sigmastate.verification.SigmaDsl.api.sigma._
-import special.collection.CollOverArray
 import stainless.annotation.ignore
 import stainless.lang._
 
@@ -44,20 +43,6 @@ case object DummyContractVerification extends DummyContract {
     require(HEIGHT > limit && HEIGHT >= 0 && limit >= 0)
     !contract(ctx, limit).isValid
   } holds
-}
-
-// TODO: extract
-@ignore
-object VerifiedConvertors {
-
-  implicit def verifiedCollToColl[A](coll: Coll[A]): special.collection.Coll[A] = {
-    import scalan.RType._
-//    new CollOverArray[A](Array[A]())
-    // TODO fix empty coll(generic) case
-    // TODO implement for non-empty case
-    new CollOverArray[Byte](Array[Byte]()).asInstanceOf[special.collection.Coll[A]]
-  }
-
 }
 
 @ignore
