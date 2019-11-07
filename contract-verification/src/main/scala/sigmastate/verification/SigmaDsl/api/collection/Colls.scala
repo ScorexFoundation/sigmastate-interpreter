@@ -684,7 +684,7 @@ case class CollProof[A](val toList: List[A]) extends Coll[A] {
 object Coll {
 
   @extern
-  def empty[A]: Coll[A] = ??? // CollProof[A](Array.empty[A]) //??? //new CollOverList(List())
+  def empty[A]: Coll[A] =  CollProof[A](List[A]())
 
   @extern
   def apply[A](array: Array[A]): Coll[A] = CollProof[A](List[A](array: _*))
