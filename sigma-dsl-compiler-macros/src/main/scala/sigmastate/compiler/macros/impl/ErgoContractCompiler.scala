@@ -1,7 +1,7 @@
 package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.Height
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongConstant, SValue}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongArrayConstant, LongConstant, SValue}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo.SizeOf
@@ -24,6 +24,11 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
+  @inline
+  private def convertColl[A](paramName: String): c.Expr[Coll[A]] = c.Expr[Coll[A]](
+    q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedCollToColl(${Ident(TermName(paramName))})",
+  )
+
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
     import c.universe.definitions._
 
@@ -33,12 +38,10 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
       case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
       case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
-      case TypeRef(_, sym, List(targ)) if sym.fullName == "special.collection.Coll" && targ == ByteTpe =>
-        reify(ByteArrayConstant(
-          c.Expr[Coll[Byte]](
-            q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedCollToColl(${Ident(TermName(paramMap(n)))})",
-          ).splice
-        ))
+      case TypeRef(_, sym, List(targ)) if sym.fullName == "special.collection.Coll" => targ match {
+        case ByteTpe => reify(ByteArrayConstant(convertColl[Byte](paramMap(n)).splice))
+        case LongTpe => reify(LongArrayConstant(convertColl[Long](paramMap(n)).splice))
+      }
       case SingleType(_, sym) if sym.isTerm =>
         liftParam(n, tpe.widen)
       case _ => error(s"unexpected ident type: $tpe")

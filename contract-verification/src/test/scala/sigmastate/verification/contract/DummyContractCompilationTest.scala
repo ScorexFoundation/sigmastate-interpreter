@@ -2,7 +2,7 @@ package sigmastate.verification.contract
 
 import org.ergoplatform.Height
 import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT}
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongConstant}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.SizeOf
@@ -57,16 +57,23 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
 
   property("dummy contract3 ergo tree") {
     forAll(byteCollGen(0, 100)) { ba =>
-      val c = DummyContractCompilation.contract3Instance(VerifiedColl(ba.toArray))
-      val expectedProp = BoolToSigmaProp(GT(SizeOf(ByteArrayConstant(ba)), IntConstant(0)))
+      val la = ba.map(_.toLong)
+      val c = DummyContractCompilation.contract3Instance(VerifiedColl(ba.toArray), VerifiedColl(la.toArray))
+      val expectedProp = BoolToSigmaProp(
+        BinAnd(
+          GT(SizeOf(ByteArrayConstant(ba)), IntConstant(0)),
+          GT(SizeOf(LongArrayConstant(la)), IntConstant(0))
+        )
+      )
       assert(c.prop == expectedProp)
     }
   }
 
   property("dummy contract3 scalaFunc") {
     val ba = byteCollGen(1, 100).sample.get
-    val contractTrue = DummyContractCompilation.contract3Instance(VerifiedColl(ba.toArray))
-    val contractFalse = DummyContractCompilation.contract3Instance(VerifiedColl.empty[Byte])
+    val la = ba.map(_.toLong)
+    val contractTrue = DummyContractCompilation.contract3Instance(VerifiedColl(ba.toArray), VerifiedColl(la.toArray))
+    val contractFalse = DummyContractCompilation.contract3Instance(VerifiedColl.empty[Byte], VerifiedColl.empty[Long])
     forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)
