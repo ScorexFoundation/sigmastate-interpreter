@@ -42,8 +42,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         case ByteTpe => reify(ByteArrayConstant(convertColl[Byte](paramMap(n)).splice))
         case LongTpe => reify(LongArrayConstant(convertColl[Long](paramMap(n)).splice))
       }
-      case SingleType(_, sym) if sym.isTerm =>
-        liftParam(n, tpe.widen)
+      case SingleType(_, sym) if sym.isTerm => liftParam(n, tpe.widen)
       case _ => error(s"unexpected ident type: $tpe")
     }
 
