@@ -9,6 +9,7 @@ import sigmastate.verification.SigmaDsl.api.{MonoidBuilder, RType}
 import stainless.annotation.{extern, ignore, library}
 import stainless.lang._
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 @scalan.Liftable
@@ -572,6 +573,8 @@ trait SigmaContract {
   def xorOf(conditions: Coll[Boolean]): Boolean = this.builder.xorOf(conditions)
 
   def PubKey(base64String: String): SigmaProp = this.builder.PubKey(base64String)
+
+  implicit def booleanToSigmaProp(source: Boolean): SigmaProp = this.builder.sigmaProp(source)
 
   def sigmaProp(b: Boolean): SigmaProp = this.builder.sigmaProp(b)
 

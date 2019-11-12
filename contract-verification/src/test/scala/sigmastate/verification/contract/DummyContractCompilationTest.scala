@@ -1,7 +1,7 @@
 package sigmastate.verification.contract
 
 import org.ergoplatform.Height
-import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT}
+import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SigmaAnd}
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
@@ -85,7 +85,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
     forAll(proveDlogGen) { proveDlog =>
       val verifiedProveDlog = SigmaPropProof(ProveDlogProof(proveDlog.value))
       val c = DummyContractCompilation.contract4Instance(verifiedProveDlog)
-      val expectedProp = SigmaPropConstant(proveDlog)
+      val expectedProp = SigmaAnd(BoolToSigmaProp(GE(Height, IntConstant(0))), SigmaPropConstant(proveDlog))
       assert(c.prop == expectedProp)
     }
   }

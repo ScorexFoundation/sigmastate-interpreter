@@ -75,10 +75,15 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(GE(l.splice, r.splice))
-      case Apply(Select(lhs, TermName("$amp$amp")), args) =>
+      case Apply(Select(lhs, TermName("$amp$amp")), Seq(arg)) =>
         val l = recurse(lhs)
-        val r = recurse(args.head)
-        reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
+        val r = recurse(arg)
+        (lhs.tpe, arg.tpe) match {
+          case (BooleanTpe, BooleanTpe) => reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
+          case (TypeRef(_, sym1, _), TypeRef(_, sym2, _)) if sym2.fullName == "special.sigma.SigmaProp" =>
+            reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
+          case v @ _ => error(s"unexpected && args: $v")
+        }
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
       case Select(obj, TermName("length")) =>
@@ -90,6 +95,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       }
       case l@Literal(ct@Constant(i)) if ct.tpe == IntTpe =>
         reify(IntConstant(c.Expr[Int](l).splice))
+      case Apply(Select(_, TermName("BooleanOps")), Seq(arg)) if arg.tpe == BooleanTpe =>
+        reify(BoolToSigmaProp(recurse(arg).splice.asBoolValue))
       case _ => error(s"unexpected: $s")
     }
   }
@@ -132,6 +139,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
          |import sigmastate.verification.SigmaDsl.api.VerifiedConverters._
          |
          |object SigmaContractHolder extends SigmaContractSyntax {
+         |  import syntax._
          |  lazy val spec = ???
          |  lazy val contractEnv = ???
          |
@@ -141,7 +149,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
          |SigmaContractHolder.${select.name.toString}($argsStr)
          |}
          |""".stripMargin
-    c.typecheck(c.parse(scalaFuncSource))
+    val tree = c.parse(scalaFuncSource)
+    c.typecheck(tree)
   }
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {

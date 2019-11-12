@@ -32,7 +32,7 @@ sealed abstract class DummyContract extends SigmaContract {
   def contract4(ctx: Context, pk: SigmaProp): SigmaProp = {
     import ctx._
     require(HEIGHT >= 0)
-    pk
+    HEIGHT >= 0 && pk
   }
 }
 
@@ -48,6 +48,12 @@ case object DummyContractVerification extends DummyContract {
     import ctx._
     require(HEIGHT > limit && HEIGHT >= 0 && limit >= 0)
     !contract(ctx, limit).isValid
+  } holds
+
+  def proveContract4(ctx: Context, pk: SigmaProp): Boolean = {
+    import ctx._
+    require(HEIGHT >= 0 && pk.isValid)
+    contract4(ctx, pk).isValid
   } holds
 }
 

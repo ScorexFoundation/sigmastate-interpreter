@@ -53,7 +53,10 @@ case class SigmaPropProof(sigmaTree: SigmaBoolean) extends SigmaProp {
 
   override def propBytes: Coll[Byte] = ???
 
-  override def &&(other: SigmaProp): SigmaProp = ???
+  override def &&(other: SigmaProp): SigmaProp = (isValid, other.isValid) match {
+    case (true, true) => SigmaPropProof(TrivialProp(true))
+    case _ => SigmaPropProof(TrivialProp(false))
+  }
 
   override def &&(other: Boolean): SigmaProp = ???
 
