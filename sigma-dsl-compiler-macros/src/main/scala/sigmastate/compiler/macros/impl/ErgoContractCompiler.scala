@@ -1,7 +1,7 @@
 package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.Height
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongArrayConstant, LongConstant, SValue}
+import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongArrayConstant, LongConstant, SValue, SigmaPropConstant}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo.SizeOf
@@ -29,6 +29,11 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedCollToColl(${Ident(TermName(paramName))})",
   )
 
+  @inline
+  private def convertSigmaProp(paramName: String): c.Expr[SigmaProp] = c.Expr[SigmaProp](
+    q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedSigmaPropToSigmaProp(${Ident(TermName(paramName))})",
+  )
+
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
     import c.universe.definitions._
 
@@ -42,6 +47,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         case ByteTpe => reify(ByteArrayConstant(convertColl[Byte](paramMap(n)).splice))
         case LongTpe => reify(LongArrayConstant(convertColl[Long](paramMap(n)).splice))
       }
+      case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" =>
+        reify(SigmaPropConstant(convertSigmaProp(paramMap(n)).splice))
       case SingleType(_, sym) if sym.isTerm => liftParam(n, tpe.widen)
       case _ => error(s"unexpected ident type: $tpe")
     }

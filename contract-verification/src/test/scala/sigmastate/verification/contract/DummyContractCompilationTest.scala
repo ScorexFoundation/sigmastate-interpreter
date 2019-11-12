@@ -2,11 +2,12 @@ package sigmastate.verification.contract
 
 import org.ergoplatform.Height
 import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT}
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.SizeOf
 import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
+import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
 import special.collection.{Coll, CollOverArray}
 import stainless.annotation.ignore
 
@@ -79,4 +80,14 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
       assert(!contractFalse.scalaFunc(ctx).isValid)
     }
   }
+
+  property("dummy contract4 ergo tree") {
+    forAll(proveDlogGen) { proveDlog =>
+      val verifiedProveDlog = SigmaPropProof(ProveDlogProof(proveDlog.value))
+      val c = DummyContractCompilation.contract4Instance(verifiedProveDlog)
+      val expectedProp = SigmaPropConstant(proveDlog)
+      assert(c.prop == expectedProp)
+    }
+  }
+
 }

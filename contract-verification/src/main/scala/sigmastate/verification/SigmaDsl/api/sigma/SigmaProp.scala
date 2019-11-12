@@ -1,8 +1,9 @@
 package sigmastate.verification.SigmaDsl.api.sigma
 
 import scalan.OverloadId
+import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.verification.SigmaDsl.api.collection.Coll
-import stainless.annotation.library
+import stainless.annotation.{extern, library}
 
 // TODO: extract
 
@@ -59,4 +60,9 @@ case class SigmaPropProof(sigmaTree: SigmaBoolean) extends SigmaProp {
   override def ||(other: SigmaProp): SigmaProp = ???
 
   override def ||(other: Boolean): SigmaProp = ???
+}
+
+@library
+case class ProveDlogProof(@extern value: EcPointType) extends SigmaBoolean {
+
 }

@@ -1,6 +1,9 @@
 package sigmastate.verification.SigmaDsl.api
 
+import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.eval.CSigmaProp
 import sigmastate.verification.SigmaDsl.api.collection.{Coll, CollProof}
+import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaProp, SigmaPropProof}
 import special.collection.CollOverArray
 import stainless.annotation.ignore
 
@@ -25,4 +28,7 @@ object VerifiedConverters {
     }
   }
 
+  implicit def verifiedSigmaPropToSigmaProp(prop: SigmaProp): special.sigma.SigmaProp = prop match {
+    case SigmaPropProof(ProveDlogProof(value)) => new CSigmaProp(ProveDlog(value))
+  }
 }
