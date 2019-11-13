@@ -90,4 +90,14 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
     }
   }
 
+  property("dummy contract5 ergo tree") {
+    forAll(proveDlogGen, proveDlogGen) { case (proveDlog1, proveDlog2) =>
+      val verifiedProveDlog1 = SigmaPropProof(ProveDlogProof(proveDlog1.value))
+      val verifiedProveDlog2 = SigmaPropProof(ProveDlogProof(proveDlog2.value))
+      val c = DummyContractCompilation.contract5Instance(verifiedProveDlog1, verifiedProveDlog2)
+      val expectedProp = SigmaAnd(SigmaPropConstant(proveDlog1) , SigmaPropConstant(proveDlog2))
+      assert(c.prop == expectedProp)
+    }
+  }
+
 }

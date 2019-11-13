@@ -34,6 +34,12 @@ sealed abstract class DummyContract extends SigmaContract {
     require(HEIGHT >= 0)
     HEIGHT >= 0 && pk
   }
+
+  def contract5(ctx: Context, pk1: SigmaProp, pk2: SigmaProp): SigmaProp = {
+    import ctx._
+    require(HEIGHT >= 0)
+    pk1 && pk2
+  }
 }
 
 case object DummyContractVerification extends DummyContract {
@@ -54,6 +60,12 @@ case object DummyContractVerification extends DummyContract {
     import ctx._
     require(HEIGHT >= 0 && pk.isValid)
     contract4(ctx, pk).isValid
+  } holds
+
+  def proveContract5(ctx: Context, pk1: SigmaProp, pk2: SigmaProp): Boolean = {
+    import ctx._
+    require(HEIGHT >= 0 && pk1.isValid && pk2.isValid)
+    contract5(ctx, pk1, pk2).isValid
   } holds
 }
 
@@ -78,5 +90,10 @@ case object DummyContractCompilation extends DummyContract {
   def contract4Instance(pk: SigmaProp): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
       DummyContractVerification.contract4(context, pk)
+    }
+
+  def contract5Instance(pk1: SigmaProp, pk2: SigmaProp): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      DummyContractVerification.contract5(context, pk1, pk2)
     }
 }

@@ -39,7 +39,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
     def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env, paramMap)
 
-    def liftParam(n: String, tpe: Type): Expr[SValue] = tpe match {
+    def liftParam(n: String, tpe: Type): Expr[SValue] = tpe.widen match {
       case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
       case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
       case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
@@ -49,7 +49,6 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       }
       case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" =>
         reify(SigmaPropConstant(convertSigmaProp(paramMap(n)).splice))
-      case SingleType(_, sym) if sym.isTerm => liftParam(n, tpe.widen)
       case _ => error(s"unexpected ident type: $tpe")
     }
 
@@ -78,7 +77,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case Apply(Select(lhs, TermName("$amp$amp")), Seq(arg)) =>
         val l = recurse(lhs)
         val r = recurse(arg)
-        (lhs.tpe, arg.tpe) match {
+        (lhs.tpe.widen, arg.tpe.widen) match {
           case (BooleanTpe, BooleanTpe) => reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
           case (TypeRef(_, sym1, _), TypeRef(_, sym2, _)) if sym2.fullName == "special.sigma.SigmaProp" =>
             reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
