@@ -7,16 +7,16 @@ import stainless.lang._
 sealed abstract class CrowdFundingContract extends SigmaContract {
 
   def crowdFundingContract(deadline: Int, minToRaise: Long, pkBacker: SigmaProp,
-                           pkProject: SigmaProp)(ctx: Context): Boolean = {
+                           pkProject: SigmaProp)(ctx: Context): SigmaProp = {
     import ctx._
 
-    val fundraisingFailure = HEIGHT >= deadline && pkBacker.isValid
+    val fundraisingFailure = HEIGHT >= deadline && pkBacker
     val enoughRaised = { (outBox: Box) =>
       outBox.value >= minToRaise &&
         outBox.propositionBytes == pkProject.propBytes
     }
     val fundraisingSuccess = HEIGHT < deadline &&
-      pkProject.isValid &&
+      pkProject &&
       OUTPUTS.exists(enoughRaised)
 
     fundraisingFailure || fundraisingSuccess
@@ -31,7 +31,7 @@ case object CrowdFundingContractVerification extends CrowdFundingContract {
     require(deadline <= HEIGHT &&
       pkBacker.isValid)
 
-    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx)
+    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx).isValid
   } holds
 
   def proveBackerDeniedBeforeDeadLine(ctx: Context, deadline: Int, minToRaise: Long, pkBacker: SigmaProp,
@@ -41,7 +41,7 @@ case object CrowdFundingContractVerification extends CrowdFundingContract {
       pkBacker.isValid &&
       !pkProject.isValid)
 
-    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx)
+    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx).isValid
   } ensuring (_ == false)
 
   def proveProjectGetsIfEnoughRaisedBeforeDeadline(ctx: Context, deadline: Int, minToRaise: Long, pkBacker: SigmaProp,
@@ -53,7 +53,7 @@ case object CrowdFundingContractVerification extends CrowdFundingContract {
         b.value >= minToRaise && b.propositionBytes == pkProject.propBytes
       })
 
-    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx)
+    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx).isValid
   } holds
 
   def proveProjectDeniedIfEnoughRaisedButAfterDeadline(ctx: Context, deadline: Int, minToRaise: Long, pkBacker: SigmaProp,
@@ -66,6 +66,6 @@ case object CrowdFundingContractVerification extends CrowdFundingContract {
         b.value >= minToRaise && b.propositionBytes == pkProject.propBytes
       })
 
-    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx)
+    crowdFundingContract(deadline, minToRaise, pkBacker, pkProject)(ctx).isValid
   } ensuring (_ == false)
 }

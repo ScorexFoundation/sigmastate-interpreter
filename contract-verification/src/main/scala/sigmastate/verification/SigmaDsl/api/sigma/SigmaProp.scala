@@ -58,11 +58,20 @@ case class SigmaPropProof(sigmaTree: SigmaBoolean) extends SigmaProp {
     case _ => SigmaPropProof(TrivialProp(false))
   }
 
-  override def &&(other: Boolean): SigmaProp = ???
+  override def &&(other: Boolean): SigmaProp = (isValid, other) match {
+    case (true, true) => SigmaPropProof(TrivialProp(true))
+    case _ => SigmaPropProof(TrivialProp(false))
+  }
 
-  override def ||(other: SigmaProp): SigmaProp = ???
+  override def ||(other: SigmaProp): SigmaProp = (isValid, other.isValid) match {
+    case (false, o) => SigmaPropProof(TrivialProp(o))
+    case (true, _) => SigmaPropProof(TrivialProp(true))
+  }
 
-  override def ||(other: Boolean): SigmaProp = ???
+  override def ||(other: Boolean): SigmaProp = (isValid, other) match {
+    case (false, o) => SigmaPropProof(TrivialProp(o))
+    case (true, _) => SigmaPropProof(TrivialProp(true))
+  }
 }
 
 @library
