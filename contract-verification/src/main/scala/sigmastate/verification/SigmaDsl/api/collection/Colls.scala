@@ -2,11 +2,12 @@ package sigmastate.verification.SigmaDsl.api.collection
 
 import scalan.{Internal, NeverInline}
 import sigmastate.verification.SigmaDsl.api.{Monoid, RType}
-import stainless.annotation.{extern, library}
+import stainless.annotation.{extern, library, pure}
 import stainless.lang._
 import stainless.collection._
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
+import scala.reflect.ClassTag
 
 /** Indexed (zero-based) collection of elements of type `A`
   * @define Coll `Coll`
@@ -495,11 +496,18 @@ sealed trait Coll[A] {
 //}
 
 @library
-case class CollProof[A](val toList: List[A]) extends Coll[A] {
-  @Internal
-  override def tItem: RType[A] = ???
+case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A] {
 
-  override def toArray: Array[A] = ???
+  @extern @pure
+  override def toArray: Array[A] = {
+    val ll = mutable.MutableList[A]()
+    val xsSize = toList.length.toInt
+    for (i <- 0 until xsSize) {
+      ll += toList(i)
+    }
+    implicit val cTA: ClassTag[A] = tItem.classTag
+    ll.toArray
+  }
 
   //  def builder: CollBuilder = new CollOverArrayBuilder
 
@@ -684,11 +692,21 @@ case class CollProof[A](val toList: List[A]) extends Coll[A] {
 object Coll {
 
   @extern
-  def empty[A]: Coll[A] =  CollProof[A](List[A]())
+  def empty[A](implicit cT: RType[A]): Coll[A] =  CollProof[A](List[A](), cT)
 
   @extern
-  def apply[A](array: Array[A]): Coll[A] = CollProof[A](List[A](array: _*))
+  def apply[A](array: Array[A])(implicit cT: RType[A]): Coll[A] = fromItems(array: _*)
 
   @extern
   def apply[A](): Coll[A] = ???
+
+  def fromItems[A](items: A*)(implicit cT: RType[A]): Coll[A] = cT match {
+//    case pt: PairType[a, b] =>
+//      val tA = pt.tFst
+//      val tB = pt.tSnd
+//      fromBoxedPairs(items)(tA, tB)
+    case _ =>
+      new CollProof[A](List[A](items.toArray(cT.classTag): _*), cT)
+  }
+
 }

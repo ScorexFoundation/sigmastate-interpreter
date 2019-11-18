@@ -1,14 +1,14 @@
 package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.Height
-import sigmastate.Values.{ByteArrayConstant, ByteConstant, ErgoTree, IntConstant, LongArrayConstant, LongConstant, SValue, SigmaPropConstant}
+import sigmastate.Values.{ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo.SizeOf
-import special.collection.Coll
+import sigmastate.utxo.{ByIndex, SizeOf}
 import special.sigma.{Context, SigmaProp}
 
 import scala.language.experimental.macros
+import scala.reflect.macros.TypecheckException
 import scala.reflect.macros.whitebox.{Context => MacrosContext}
 
 case class ErgoContract(scalaFunc: Context => SigmaProp, prop: SValue) {
@@ -25,13 +25,14 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
   @inline
-  private def convertColl[A](paramName: String): c.Expr[Coll[A]] = c.Expr[Coll[A]](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedCollToColl(${Ident(TermName(paramName))})",
+  private def convertColl(paramName: String): c.Expr[EvaluatedValue[SCollection[SType]]] =
+    c.Expr[EvaluatedValue[SCollection[SType]]](
+    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.verifiedCollToTree(${Ident(TermName(paramName))})"
   )
 
   @inline
   private def convertSigmaProp(paramName: String): c.Expr[SigmaProp] = c.Expr[SigmaProp](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedConverters.verifiedSigmaPropToSigmaProp(${Ident(TermName(paramName))})",
+    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.verifiedSigmaPropToSigmaProp(${Ident(TermName(paramName))})",
   )
 
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
@@ -43,10 +44,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
       case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
       case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
-      case TypeRef(_, sym, List(targ)) if sym.fullName == "special.collection.Coll" => targ match {
-        case ByteTpe => reify(ByteArrayConstant(convertColl[Byte](paramMap(n)).splice))
-        case LongTpe => reify(LongArrayConstant(convertColl[Long](paramMap(n)).splice))
-      }
+      case TypeRef(_, sym, List(_)) if sym.fullName == "special.collection.Coll" =>
+        convertColl(paramMap(n))
       case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" =>
         reify(SigmaPropConstant(convertSigmaProp(paramMap(n)).splice))
       case _ => error(s"unexpected ident type: $tpe")
@@ -57,6 +56,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         // in stats "import ... " and "require"
         recurse(expr)
       case Apply(Select(_,TermName("sigmaProp")), args) =>
+        reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
+      case Apply(Select(_, TermName("booleanToSigmaProp")), args) =>
         reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
       case Apply(Select(lhs, TermName("$less")), args) =>
         val l = recurse(lhs)
@@ -96,6 +97,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         reify(IntConstant(c.Expr[Int](l).splice))
       case Apply(Select(_, TermName("BooleanOps")), Seq(arg)) if arg.tpe == BooleanTpe =>
         reify(BoolToSigmaProp(recurse(arg).splice.asBoolValue))
+      case Apply(Select(obj, TermName("apply")), args) =>
+        reify(ByIndex(recurse(obj).splice.asCollection ,recurse(args.head).splice.asIntValue))
       case _ => error(s"unexpected: $s")
     }
   }
@@ -135,12 +138,14 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
          |import special.sigma._
          |import special.collection._
          |import org.ergoplatform.dsl._
-         |import sigmastate.verification.SigmaDsl.api.VerifiedConverters._
+         |import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
          |
          |object SigmaContractHolder extends SigmaContractSyntax {
          |  import syntax._
          |  lazy val spec = ???
          |  lazy val contractEnv = ???
+         |
+         |  //implicit def booleanToSigmaProp(source: Boolean): SigmaProp = this.builder.sigmaProp(source)
          |
          |  $defdefSource
          |}
@@ -149,7 +154,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
          |}
          |""".stripMargin
     val tree = c.parse(scalaFuncSource)
-    c.typecheck(tree)
+    try {
+      c.typecheck(tree)
+    } catch {
+      case e: TypecheckException =>
+        error(s"Failed to typecheck with error: $e\n for source:\n $scalaFuncSource \n for tree: ${showRaw(tree)}")
+    }
   }
 
   def compile[A, B](verifiedContract: c.Expr[A => B]): c.Expr[ErgoContract] = {

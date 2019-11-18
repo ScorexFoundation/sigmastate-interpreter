@@ -22,20 +22,44 @@ trait RType[A] {
 
 @library
 object RType {
+
+  /** Descriptor used to represent primitive types. */
+  @ignore
+  case class PrimitiveType[A](classTag: ClassTag[A]) extends RType[A] {
+    override def name: String = classTag.toString()
+
+    /** We assume all primitive types have inhabitants of the same size. */
+    override def isConstantSize: Boolean = true
+
+  }
+
+  @ignore
+  case class CollType[A](tA: RType[A]) extends RType[Coll[A]] {
+    val classTag: ClassTag[Coll[A]] = {
+      implicit val ctA: ClassTag[A] = tA.classTag
+      scala.reflect.classTag[Coll[A]]
+    }
+
+    override def name: String = s"Coll[${tA.name}]"
+
+    override def isConstantSize: Boolean = false
+
+  }
+
   @extern @pure
-  implicit def collRType[A](implicit cT: RType[A]): RType[Coll[A]] = ???
+  implicit def collRType[A](implicit tA: RType[A]): RType[Coll[A]] = CollType(tA)
 
   @extern @pure
   implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = ???
 
   @extern @pure
-  implicit def ByteType: RType[Byte] = ???
+  implicit def ByteType: RType[Byte] = PrimitiveType[Byte](ClassTag.Byte)
 
   @extern @pure
-  implicit def IntType: RType[Int] = ???
+  implicit def IntType: RType[Int] = PrimitiveType[Int](ClassTag.Int)
 
   @extern @pure
-  implicit def LongType: RType[Long] = ???
+  implicit def LongType: RType[Long] = PrimitiveType[Long](ClassTag.Long)
 
   @extern @pure
   implicit def AvlTreeRType: RType[AvlTree] = ???

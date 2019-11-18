@@ -40,6 +40,12 @@ sealed abstract class DummyContract extends SigmaContract {
     require(HEIGHT >= 0)
     pk1 && pk2
   }
+
+  def contract6(ctx: Context, arr: Coll[Coll[Byte]]): SigmaProp = {
+    import ctx._
+    require(HEIGHT >= 0)
+    sigmaProp(arr(0).length > 0)
+  }
 }
 
 case object DummyContractVerification extends DummyContract {
@@ -96,4 +102,10 @@ case object DummyContractCompilation extends DummyContract {
     ErgoContractCompiler.compile { context: Context =>
       DummyContractVerification.contract5(context, pk1, pk2)
     }
+
+  def contract6Instance(arr: Coll[Coll[Byte]]): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      DummyContractVerification.contract6(context, arr)
+    }
 }
+
