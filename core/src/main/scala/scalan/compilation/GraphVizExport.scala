@@ -3,10 +3,7 @@ package scalan.compilation
 import java.awt.Desktop
 import java.io.{PrintWriter, File}
 
-import configs.Configs
-import configs.syntax._
-import com.typesafe.config.{ConfigUtil, Config}
-import configs.Result.{Success, Failure}
+import com.typesafe.config.{ConfigUtil}
 import scalan.{Plugins, Scalan, Base}
 import scalan.util.{ProcessUtil, FileUtil, StringUtil, ScalaNameUtil}
 import scala.collection.immutable.StringOps
@@ -18,11 +15,13 @@ trait GraphVizExport extends Base { self: Scalan =>
 
   case class GraphFile(file: File, fileType: String) {
     def open() = {
-      Plugins.configWithPlugins.get[String](ConfigUtil.joinPath("graphviz", "viewer", fileType)) match {
-        case Failure(_) =>
-          Desktop.getDesktop.open(file)
-        case Success(command) =>
-          ProcessUtil.launch(Seq(command, file.getAbsolutePath))
+      val path = ConfigUtil.joinPath("graphviz", "viewer", fileType)
+      if (Plugins.configWithPlugins.hasPath(path)) {
+        val command = Plugins.configWithPlugins.getString(path)
+        ProcessUtil.launch(Seq(command, file.getAbsolutePath))
+      }
+      else {
+        Desktop.getDesktop.open(file)
       }
     }
   }
@@ -458,7 +457,6 @@ case object Portrait extends Orientation
 case object Landscape extends Orientation
 
 object Orientation {
-  implicit val orientationC: Configs[Orientation] = Configs[Orientation]
 }
 
 sealed trait ControlFlowStyle
@@ -539,6 +537,4 @@ object GraphVizConfig {
   ) //config.extract[GraphVizConfig]
 
   val none: GraphVizConfig = default.copy(emitGraphs = false)
-
-  def from(config: Config): GraphVizConfig = config.withFallback(this.config).extract[GraphVizConfig].value
 }
