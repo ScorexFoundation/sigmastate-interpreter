@@ -318,7 +318,7 @@ lazy val sigmaDslCompilerMacros = project
 // TODO: remove
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
-  .dependsOn(contractVerification, sigmastate, sigmaDslCompilerMacros)
+  .dependsOn(contractVerification % allConfigDependency)
   .settings(commonSettings: _*)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {

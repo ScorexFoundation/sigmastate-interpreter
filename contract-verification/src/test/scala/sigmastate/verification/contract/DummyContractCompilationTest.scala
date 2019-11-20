@@ -9,7 +9,7 @@ import sigmastate.utxo.{ByIndex, SizeOf}
 import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
 import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
 import sigmastate._
-import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters
+import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
 import stainless.annotation.ignore
 
 @ignore
@@ -107,7 +107,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
       val vcaa: Array[VerifiedColl[Byte]] = ba.toArray.map(_ => vca)
       val v: VerifiedColl[VerifiedColl[Byte]] = VerifiedColl(vcaa)
       val c = DummyContractCompilation.contract6Instance(v)
-      val collTree = VerifiedTypeConverters.verifiedCollToTree(v)
+      val collTree = VCollToErgoTree.to(v)
       val expectedProp = BoolToSigmaProp(
           GT(
             SizeOf(ByIndex(collTree, IntConstant(0)).asInstanceOf[Value[SCollection[SType]]]),

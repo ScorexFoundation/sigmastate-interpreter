@@ -43,14 +43,22 @@ object RType {
     override def name: String = s"Coll[${tA.name}]"
 
     override def isConstantSize: Boolean = false
+  }
 
+  @ignore
+  case class PairType[A, B](tFst: RType[A], tSnd: RType[B]) extends RType[(A, B)] {
+    val classTag: ClassTag[(A, B)] = scala.reflect.classTag[(A, B)]
+
+    override def name: String = s"(${tFst.name}, ${tSnd.name})"
+
+    override def isConstantSize: Boolean = tFst.isConstantSize && tSnd.isConstantSize
   }
 
   @extern @pure
   implicit def collRType[A](implicit tA: RType[A]): RType[Coll[A]] = CollType(tA)
 
   @extern @pure
-  implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = ???
+  implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = PairType(tA, tB)
 
   @extern @pure
   implicit def ByteType: RType[Byte] = PrimitiveType[Byte](ClassTag.Byte)

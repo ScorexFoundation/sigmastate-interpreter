@@ -4,7 +4,7 @@ import org.ergoplatform.Height
 import sigmastate.Values.{ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo.{ByIndex, SizeOf}
+import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
 import special.sigma.{Context, SigmaProp}
 
 import scala.language.experimental.macros
@@ -27,12 +27,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
   @inline
   private def convertColl(paramName: String): c.Expr[EvaluatedValue[SCollection[SType]]] =
     c.Expr[EvaluatedValue[SCollection[SType]]](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.verifiedCollToTree(${Ident(TermName(paramName))})"
+    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.VCollToErgoTree.to(${Ident(TermName(paramName))})"
   )
 
   @inline
   private def convertSigmaProp(paramName: String): c.Expr[SigmaProp] = c.Expr[SigmaProp](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.verifiedSigmaPropToSigmaProp(${Ident(TermName(paramName))})",
+    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.VSigmaPropToSigmaProp.to(${Ident(TermName(paramName))})",
   )
 
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
@@ -99,6 +99,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         reify(BoolToSigmaProp(recurse(arg).splice.asBoolValue))
       case Apply(Select(obj, TermName("apply")), args) =>
         reify(ByIndex(recurse(obj).splice.asCollection ,recurse(args.head).splice.asIntValue))
+      case Select(obj, TermName("_1")) =>
+        reify(SelectField(recurse(obj).splice.asTuple, 1))
       case _ => error(s"unexpected: $s")
     }
   }

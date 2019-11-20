@@ -15,4 +15,4 @@ resolvers ++= Seq(
   ("uuverifiers" at "http://logicrunch.research.it.uu.se/maven").withAllowInsecureProtocol(true),
 )
 
-addSbtPlugin("ch.epfl.lara" % "sbt-stainless" % "0.5.1")
+addSbtPlugin("ch.epfl.lara" % "sbt-stainless" % "0.6.1")

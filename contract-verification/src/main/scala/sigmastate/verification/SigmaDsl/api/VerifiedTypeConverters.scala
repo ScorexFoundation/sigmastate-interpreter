@@ -11,35 +11,67 @@ import special.collection.CollOverArrayBuilder
 import stainless.annotation.ignore
 
 import scala.language.{higherKinds, implicitConversions}
-import scala.reflect.ClassTag
 
 @ignore
 object VerifiedTypeConverters {
 
-  implicit def verifiedCollToColl[A, B](coll: Coll[A])(implicit convert: A => B): special.collection.Coll[B] = {
-    val arr = coll.toArray.map(convert)
-    val ctB: ClassTag[B] = (coll.tItem match {
-      case RType.CollType(tA) => scala.reflect.classTag[special.collection.Coll[B]]
-      case RType.PrimitiveType(classTag) => classTag
-    }).asInstanceOf[ClassTag[B]]
-    val rtB: scalan.RType[B] = scalan.RType.fromClassTag(ctB)
-    (new CollOverArrayBuilder).fromArray(arr.toArray[B](rtB.classTag))(rtB)
-  }
+  implicit def VRTypeToRType[A, B]: Iso[RType[A], scalan.RType[B]] =
+    new Iso[RType[A], scalan.RType[B]] {
+      override def to(as: RType[A]): scalan.RType[B] = (as match {
+        case RType.PrimitiveType(classTag) => scalan.RType.fromClassTag(classTag)
+        case RType.CollType(tA) => special.collection.CollType(VRTypeToRType.to(tA))
+        case RType.PairType(tFst, tSnd) => scalan.RType.PairType(VRTypeToRType.to(tFst), VRTypeToRType.to(tSnd))
+      }).asInstanceOf[scalan.RType[B]]
 
-  implicit def verifiedSigmaPropToSigmaProp(prop: SigmaProp): special.sigma.SigmaProp = prop match {
-    case SigmaPropProof(ProveDlogProof(value)) => new CSigmaProp(ProveDlog(value))
-  }
+      override def from(b: scalan.RType[B]): RType[A] = ???
+    }
 
-  implicit def verifiedRTypeToRType[A](tA: RType[A]): scalan.RType[A] = scalan.RType.fromClassTag(tA.classTag)
+  implicit def vRTypeToRType[A, B](as: RType[A]): scalan.RType[B] = VRTypeToRType.to(as)
 
-  def verifiedCollToTree[A](coll: Coll[A]): EvaluatedValue[SCollection[SType]] = coll.tItem match {
-    case RType.CollType(tA) =>
-      val c = coll.asInstanceOf[Coll[Coll[Any]]].toArray.map { x => verifiedCollToTree(x) }
-      ConcreteCollection(c, SCollectionType(rtypeToSType(tA)))
-    case tA @ RType.PrimitiveType(_) =>
-      val st = Evaluation.rtypeToSType(tA)
-      val innerColl = (new CollOverArrayBuilder).fromArray(coll.toArray)(tA)
-        .asInstanceOf[special.collection.Coll[st.type#WrappedType]]
-      CollectionConstant[st.type](innerColl, st).asInstanceOf[Constant[SCollection[SType]]]
-  }
+  implicit def VCollToColl[A, B](implicit itemIso: Iso[A, B]): Iso[Coll[A], special.collection.Coll[B]] =
+    new Iso[Coll[A], special.collection.Coll[B]] {
+      override def to(a: Coll[A]): special.collection.Coll[B] = {
+        val rtB: scalan.RType[B] = a.tItem
+        val arrB = a.toArray.map(itemIso.to).toArray[B](rtB.classTag)
+        (new CollOverArrayBuilder).fromArray(arrB)(rtB)
+      }
+      // TODO: implement and use in tests
+      override def from(b: special.collection.Coll[B]): Coll[A] = ???
+    }
+
+  implicit def Tuple2ToTuple2[A1, A2, B1, B2](implicit itemIso1: Iso[A1, A2], itemIso2: Iso[B1, B2]): Iso[(A1, B1), (A2, B2)] =
+    new Iso[(A1, B1), (A2, B2)] {
+      override def to(a: (A1, B1)): (A2, B2) = (itemIso1.to(a._1), itemIso2.to(a._2))
+      override def from(b: (A2, B2)): (A1, B1) = (itemIso1.from(b._1), itemIso2.from(b._2))
+    }
+
+  implicit val VSigmaPropToSigmaProp: Iso[SigmaProp, special.sigma.SigmaProp] =
+    new Iso[SigmaProp, special.sigma.SigmaProp] {
+      override def to(a: SigmaProp): special.sigma.SigmaProp = a match {
+        case SigmaPropProof(ProveDlogProof(v)) => new CSigmaProp(ProveDlog(v))
+      }
+
+      override def from(b: special.sigma.SigmaProp): SigmaProp = b match {
+        case CSigmaProp(ProveDlog(v)) => SigmaPropProof(ProveDlogProof(v))
+      }
+    }
+
+  def VCollToErgoTree[A]: Iso[Coll[A], EvaluatedValue[SCollection[SType]]] =
+    new Iso[Coll[A], EvaluatedValue[SCollection[SType]]] {
+
+      override def to(a: Coll[A]): EvaluatedValue[SCollection[SType]] = {
+        a.tItem match {
+          case RType.CollType(tA) =>
+            val c = a.asInstanceOf[Coll[Coll[Any]]].toArray.map { x => VCollToErgoTree.to(x) }
+            ConcreteCollection(c, SCollectionType(rtypeToSType(tA)))
+          case tA@RType.PrimitiveType(_) =>
+            val st = Evaluation.rtypeToSType(tA)
+            val innerColl = (new CollOverArrayBuilder).fromArray(a.toArray)(tA)
+              .asInstanceOf[special.collection.Coll[st.type#WrappedType]]
+            CollectionConstant[st.type](innerColl, st).asInstanceOf[Constant[SCollection[SType]]]
+        }
+      }
+
+      override def from(b: EvaluatedValue[SCollection[SType]]): Coll[A] = ???
+    }
 }
