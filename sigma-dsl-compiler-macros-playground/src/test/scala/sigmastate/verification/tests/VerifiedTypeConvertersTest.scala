@@ -19,12 +19,10 @@ import special.collection.{Coll, _}
 
 class VerifiedTypeConvertersTest extends SigmaTestingCommons with ObjectGenerators {
 
-  def collOfCollGen[A: RType](g: Gen[Coll[A]], length: Int): Gen[Coll[Coll[A]]] = {
-    Gen.listOfN(length, g).map(_.toArray.toColl)
-  }
+  def collOfGen[A: RType](g: Gen[A], length: Int): Gen[Coll[A]] = Gen.listOfN(length, g).map(_.toColl)
 
   property("Coll[Coll[Byte]]") {
-    forAll(collOfCollGen(byteCollGen(0, 10), 10)) { cc =>
+    forAll(collOfGen(byteCollGen(0, 10), 10)) { cc =>
       Iso.roundTrip(cc) shouldEqual cc
       val tree = VCollToErgoTree.to(cc)
       val expectedTree = ConcreteCollection(cc.toArray.map(ByteArrayConstant(_)) ,SByteArray)
@@ -33,7 +31,7 @@ class VerifiedTypeConvertersTest extends SigmaTestingCommons with ObjectGenerato
   }
 
   property("Coll[Coll[Long]]") {
-    forAll(collOfCollGen(byteCollGen(0, 10).map(bs => bs.map(_.toLong)), 10)) { cc =>
+    forAll(collOfGen(byteCollGen(0, 10).map(bs => bs.map(_.toLong)), 10)) { cc =>
       Iso.roundTrip(cc) shouldEqual cc
       val tree = VCollToErgoTree.to(cc)
       val expectedTree = ConcreteCollection(cc.toArray.map(Values.LongArrayConstant(_)), SLongArray)
@@ -42,21 +40,14 @@ class VerifiedTypeConvertersTest extends SigmaTestingCommons with ObjectGenerato
   }
 
   property("Coll[Coll[Coll[Byte]]]") {
-    forAll(collOfCollGen(collOfCollGen(byteCollGen(0, 10), 10), 10)) { ccc =>
+    forAll(collOfGen(collOfGen(byteCollGen(0, 10), 10), 10)) { ccc =>
       Iso.roundTrip(ccc) shouldEqual ccc
     }
   }
 
   property("Coll[(Coll[Byte], Long)]") {
-    forAll(byteCollGen(0, 10)) { ba =>
-      val vca: VColl[Byte] = VColl(ba.toArray)
-      val vcaa: Array[(VColl[Byte], Long)] = ba.toArray.map(_ => (vca, arbLong.arbitrary.sample.get))
-      val v: VColl[(VColl[Byte], Long)] = VColl(vcaa)
-      val c: Coll[(Coll[Byte], Long)] = v
-      //      assert(util.Arrays.deepEquals(c.toArray.map(_.toArray), v.toArray.map(_.toArray)))
-//      val tree = verifiedCollToTree(v)
-//      val expectedTree = ConcreteCollection(vcaa.map(ByteArrayConstant(_)), SByteArray)
-//      assert(tree == expectedTree)
+    forAll(collOfGen(byteCollGen(0, 10).map((_, arbLong.arbitrary.sample.get)), 10)) { tc =>
+      Iso.roundTrip(tc) shouldEqual tc
     }
   }
 
