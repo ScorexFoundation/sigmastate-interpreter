@@ -10,10 +10,12 @@ import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
 import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
 import sigmastate._
 import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
+import sigmastate.verification.test.MiscGenerators
+import special.collection.{Coll, CollOverArray}
 import stainless.annotation.ignore
 
 @ignore
-class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenerators {
+class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerators {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
@@ -102,12 +104,9 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
   }
 
   property("dummy contract6 ergo tree") {
-    forAll(byteCollGen(0, 10)) { ba =>
-      val vca: VerifiedColl[Byte] = VerifiedColl(ba.toArray)
-      val vcaa: Array[VerifiedColl[Byte]] = ba.toArray.map(_ => vca)
-      val v: VerifiedColl[VerifiedColl[Byte]] = VerifiedColl(vcaa)
-      val c = DummyContractCompilation.contract6Instance(v)
-      val collTree = VCollToErgoTree.to(v)
+    forAll(collOfGen(byteCollGen(0, 10), 10)) { cc =>
+      val c = DummyContractCompilation.contract6Instance(cc)
+      val collTree = VCollToErgoTree.to(cc)
       val expectedProp = BoolToSigmaProp(
           GT(
             SizeOf(ByIndex(collTree, IntConstant(0)).asInstanceOf[Value[SCollection[SType]]]),
@@ -119,12 +118,12 @@ class DummyContractCompilationTest extends SigmaTestingCommons with ObjectGenera
   }
 
   property("dummy contract6 scalaFunc") {
-    val ba = byteCollGen(1, 100).sample.get
-    val vca: VerifiedColl[Byte] = VerifiedColl(ba.toArray)
-    val vcaa: Array[VerifiedColl[Byte]] = ba.toArray.map(_ => vca)
-    val v: VerifiedColl[VerifiedColl[Byte]] = VerifiedColl(vcaa)
-    val contractTrue = DummyContractCompilation.contract6Instance(v)
-    val contractFalse = DummyContractCompilation.contract6Instance(VerifiedColl(VerifiedColl.empty[Byte] +: vcaa))
+    val cc = collOfGen(byteCollGen(0, 10), 10).sample.get
+    val contractTrue = DummyContractCompilation.contract6Instance(cc)
+    val firstItemEmpty = cc.append(
+      new CollOverArray[Coll[Byte]](Array[Coll[Byte]](new CollOverArray[Byte](Array.empty[Byte])))
+    ).reverse
+    val contractFalse = DummyContractCompilation.contract6Instance(firstItemEmpty)
     forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)

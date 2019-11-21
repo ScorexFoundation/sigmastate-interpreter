@@ -1,7 +1,5 @@
 package sigmastate.verification.SigmaDsl.api
 
-import scalan.RType
-import scalan.RType.{PairType, PrimitiveType}
 import sigmastate.Values.{CollectionConstant, ConcreteCollection, Constant, EvaluatedValue}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.eval.Evaluation.rtypeToSType

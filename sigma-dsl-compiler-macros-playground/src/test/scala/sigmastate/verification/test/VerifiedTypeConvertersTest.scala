@@ -1,25 +1,19 @@
-package sigmastate.verification.tests
-
-import java.util
+package sigmastate.verification.test
 
 import org.scalacheck.Arbitrary.arbLong
 import org.scalacheck.Gen
 import scalan.RType
 import sigmastate.SCollection._
 import sigmastate.Values
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, LongArrayConstant}
+import sigmastate.Values.{ByteArrayConstant, ConcreteCollection}
 import sigmastate.eval.CSigmaProp
-import sigmastate.eval.Extensions._
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.verification.SigmaDsl.api.Iso
 import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
-import sigmastate.verification.SigmaDsl.api.collection.{Coll => VColl}
 import special.collection.{Coll, _}
 
-class VerifiedTypeConvertersTest extends SigmaTestingCommons with ObjectGenerators {
-
-  def collOfGen[A: RType](g: Gen[A], length: Int): Gen[Coll[A]] = Gen.listOfN(length, g).map(_.toColl)
+class VerifiedTypeConvertersTest extends SigmaTestingCommons with MiscGenerators {
 
   property("Coll[Coll[Byte]]") {
     forAll(collOfGen(byteCollGen(0, 10), 10)) { cc =>
