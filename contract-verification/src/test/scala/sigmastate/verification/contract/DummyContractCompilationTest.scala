@@ -5,14 +5,16 @@ import sigmastate.SCollection._
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.serialization.generators.ObjectGenerators
-import sigmastate.utxo.{ByIndex, SizeOf}
+import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
 import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
 import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
 import sigmastate._
+import sigmastate.verification.SigmaDsl.api.Iso
 import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
 import sigmastate.verification.test.MiscGenerators
 import special.collection.{Coll, CollOverArray}
 import stainless.annotation.ignore
+import org.scalacheck.Arbitrary.arbLong
 
 @ignore
 class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerators {
@@ -118,7 +120,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
   }
 
   property("dummy contract6 scalaFunc") {
-    val cc = collOfGen(byteCollGen(0, 10), 10).sample.get
+    val cc = collOfGen(byteCollGen(1, 10), 10).sample.get
     val contractTrue = DummyContractCompilation.contract6Instance(cc)
     val firstItemEmpty = cc.append(
       new CollOverArray[Coll[Byte]](Array[Coll[Byte]](new CollOverArray[Byte](Array.empty[Byte])))
@@ -130,4 +132,21 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
     }
   }
 
+  property("dummy contract7 ergo tree") {
+    forAll(collOfGen(byteCollGen(0, 10).map((_, arbLong.arbitrary.sample.get)), 10)) { tc =>
+    val c = DummyContractCompilation.contract7Instance(tc)
+      val collTree = VCollToErgoTree.to(tc)
+      val expectedProp = BoolToSigmaProp(
+        GT(
+          SizeOf(
+            SelectField(
+              ByIndex(collTree, IntConstant(0)).asInstanceOf[Value[STuple]],
+              1
+            ).asInstanceOf[Value[SCollection[SType]]]),
+          IntConstant(0)
+        ),
+      )
+      assert(c.prop == expectedProp)
+    }
+  }
 }

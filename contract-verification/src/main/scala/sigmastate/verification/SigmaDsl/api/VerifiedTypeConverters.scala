@@ -6,7 +6,7 @@ import sigmastate.eval.Evaluation.rtypeToSType
 import sigmastate.eval.{CSigmaProp, Evaluation}
 import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaProp, SigmaPropProof}
-import sigmastate.{SCollection, SCollectionType, SType, verification}
+import sigmastate.{SCollection, SCollectionType, STuple, SType, Values, verification}
 import special.collection.{CollOverArrayBuilder, CollType}
 import stainless.annotation.ignore
 
@@ -80,6 +80,20 @@ object VerifiedTypeConverters {
             val innerColl = (new CollOverArrayBuilder).fromArray(a.toArray)(tA)
               .asInstanceOf[special.collection.Coll[st.type#WrappedType]]
             CollectionConstant[st.type](innerColl, st).asInstanceOf[Constant[SCollection[SType]]]
+          // TODO handle all cases
+          // TODO rewrite to be recursive? missing Iso[(A, B), EvaluatedValue[STuple]]?
+          case pt: RType.PairType[a, b] => pt.tFst match {
+            case RType.CollType(fCTa) =>
+              val rcTA = Evaluation.rtypeToSType(fCTa)
+              val sT = Evaluation.rtypeToSType(pt.tSnd)
+              val c = a.asInstanceOf[Coll[(Any, Any)]].toArray.map {
+                case (t1, t2) => Values.Tuple(
+                  VCollToErgoTree.to(t1.asInstanceOf[Coll[Any]]),
+                  Constant[sT.type](t2.asInstanceOf[sT.type#WrappedType], sT)
+                )
+              }
+              ConcreteCollection(c, STuple(SCollectionType(rcTA), sT))
+          }
         }
       }
 
