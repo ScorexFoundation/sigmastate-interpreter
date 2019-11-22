@@ -30,7 +30,7 @@ class Scalan
   with Functions
   with IfThenElse
   with Transforming
-  with GraphVizExport
+//  with GraphVizExport
   with Thunks
   with Entities
   with Modules

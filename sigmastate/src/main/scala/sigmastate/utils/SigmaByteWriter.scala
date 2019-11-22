@@ -1,6 +1,6 @@
 package sigmastate.utils
 
-import scorex.util.serialization.{VLQByteStringWriter, VLQByteBufferWriter, Writer}
+import scorex.util.serialization.{VLQByteBufferWriter, Writer}
 import scorex.util.serialization.Writer.Aux
 import sigmastate.{ArgInfo, SType}
 import sigmastate.Values.{Value, SValue}
@@ -100,7 +100,6 @@ class SigmaByteWriter(val w: Writer,
 
   // TODO refactor: move to Writer
   @inline def toBytes: Array[Byte] = w match {
-    case wr: VLQByteStringWriter => wr.result().asByteBuffer.array()
     case wr: VLQByteBufferWriter => wr.toBytes
   }
 
