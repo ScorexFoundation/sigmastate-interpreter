@@ -7,7 +7,7 @@ import sigmastate.eval.{CSigmaProp, Evaluation}
 import sigmastate.lang.{DefaultSigmaBuilder, SigmaBuilder, StdSigmaBuilder}
 import sigmastate.verification.SigmaDsl.api.collection.Coll
 import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaProp, SigmaPropProof}
-import sigmastate.{SCollection, SCollectionType, STuple, SType, Values, verification}
+import sigmastate.{NoType, SCollection, SCollectionType, SEmbeddable, SFunc, SLogical, SMonoType, SPredefType, SPrimType, SProduct, STuple, SType, STypeApply, STypeVar, Values, verification}
 import special.collection.{CollOverArrayBuilder, CollType}
 import stainless.annotation.ignore
 
@@ -70,38 +70,14 @@ object VerifiedTypeConverters {
 
   val builder: SigmaBuilder = DefaultSigmaBuilder
 
-  // TODO: convert to Iso?
   def constValToErgoTree[A: RType](v: A): EvaluatedValue[SType] = implicitly[RType[A]] match {
     case RType.CollType(_) => VCollToErgoTree.to(v.asInstanceOf[Coll[_]])
     case pt: RType.PairType[a, b] => tuple2ToErgoTree(v.asInstanceOf[(a, b)], pt.tFst, pt.tSnd)
     case RType.PrimitiveType(_) => builder.liftAny(v).get.asInstanceOf[EvaluatedValue[SType]]
   }
 
-//  def ConstValToErgoTree[A: RType]: Iso[A, EvaluatedValue[SType]] =
-//    new Iso[A, EvaluatedValue[SType]] {
-//      override def to(a: A): EvaluatedValue[SType] = implicitly[RType[A]] match {
-//        case RType.CollType(_) => VCollToErgoTree.to(v.asInstanceOf[Coll[_]])
-//        case pt: RType.PairType[a, b] => tuple2ToErgoTree(v.asInstanceOf[(a, b)], pt.tFst, pt.tSnd)
-//        case RType.PrimitiveType(_) => builder.liftAny(v).get.asInstanceOf[EvaluatedValue[SType]]
-//      }
-//
-//      override def from(b: EvaluatedValue[SType]): A = ???
-//    }
-
   def tuple2ToErgoTree[A, B](t: (A, B), tA: RType[A], tB: RType[B]): EvaluatedValue[STuple] =
     Values.Tuple(constValToErgoTree(t._1)(tA), constValToErgoTree(t._2)(tB))
-
-
-//  def Tuple2ToErgoTree[A, B](implicit itemIso: Iso[(A, B), (EvaluatedValue[SType], EvaluatedValue[SType])]): Iso[(A, B), EvaluatedValue[STuple]] =
-//    new Iso[(A, B), EvaluatedValue[STuple]] {
-//      override def to(a: (A, B)): EvaluatedValue[STuple] = {
-//        val t = itemIso.to(a)
-//        Values.Tuple(t._1, t._2)
-//      }
-//
-//
-//      override def from(b: EvaluatedValue[STuple]): (A, B) = ???
-//    }
 
   def VCollToErgoTree[A]: Iso[Coll[A], EvaluatedValue[SCollection[SType]]] =
     new Iso[Coll[A], EvaluatedValue[SCollection[SType]]] {
