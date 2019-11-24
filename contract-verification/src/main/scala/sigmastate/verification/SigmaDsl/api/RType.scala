@@ -61,6 +61,9 @@ object RType {
   implicit def pairRType[A, B](implicit tA: RType[A], tB: RType[B]): RType[(A, B)] = PairType(tA, tB)
 
   @extern @pure
+  implicit def BooleanType: RType[Boolean] = PrimitiveType[Boolean](ClassTag.Boolean)
+
+  @extern @pure
   implicit def ByteType: RType[Byte] = PrimitiveType[Byte](ClassTag.Byte)
 
   @extern @pure

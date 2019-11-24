@@ -692,7 +692,7 @@ case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A
 object Coll {
 
   @extern
-  def empty[A](implicit cT: RType[A]): Coll[A] =  CollProof[A](List[A](), cT)
+  def empty[A](implicit cT: RType[A]): Coll[A] = CollProof[A](List[A](), cT)
 
   @extern
   def apply[A](array: Array[A])(implicit cT: RType[A]): Coll[A] = fromItems(array: _*)
@@ -700,6 +700,7 @@ object Coll {
   @extern
   def apply[A](): Coll[A] = ???
 
+  @extern
   def fromItems[A](items: A*)(implicit cT: RType[A]): Coll[A] = cT match {
 //    case pt: PairType[a, b] =>
 //      val tA = pt.tFst
