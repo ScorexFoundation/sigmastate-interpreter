@@ -1,17 +1,17 @@
 package sigmastate.verification.test
 
 import org.ergoplatform.Height
-import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd, verified}
+import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd}
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
 import sigmastate.verification.contract.DummyContractCompilation
 import sigmastate.verified.VerifiedTypeConverters._
 import org.scalacheck.Arbitrary.arbLong
-import sigmastate.verified.{ProveDlogProof, SigmaPropProof}
+import sigmastate.eval.CSigmaProp
 import special.collection.{Coll, CollOverArray}
+import special.sigma.SigmaProp
 
-// TODO remove any VType mention?
 class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerators {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -73,8 +73,10 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
   property("dummy contract3 scalaFunc") {
     val ba = byteCollGen(1, 100).sample.get
     val la = ba.map(_.toLong)
+    val emptyByteColl = byteCollGen(0).sample.get
+    val emptyLongColl = emptyByteColl.map(_.toLong)
     val contractTrue = DummyContractCompilation.contract3Instance(ba, la)
-    val contractFalse = DummyContractCompilation.contract3Instance(verified.Coll.empty[Byte], verified.Coll.empty[Long])
+    val contractFalse = DummyContractCompilation.contract3Instance(emptyByteColl, emptyLongColl)
     forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)
@@ -83,8 +85,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
 
   property("dummy contract4 ergo tree") {
     forAll(proveDlogGen) { proveDlog =>
-      val verifiedProveDlog = SigmaPropProof(ProveDlogProof(proveDlog.value))
-      val c = DummyContractCompilation.contract4Instance(verifiedProveDlog)
+      val c = DummyContractCompilation.contract4Instance(CSigmaProp(proveDlog).asInstanceOf[SigmaProp])
       val expectedProp = SigmaAnd(BoolToSigmaProp(GE(Height, IntConstant(0))), SigmaPropConstant(proveDlog))
       assert(c.prop == expectedProp)
     }
@@ -92,9 +93,9 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
 
   property("dummy contract5 ergo tree") {
     forAll(proveDlogGen, proveDlogGen) { case (proveDlog1, proveDlog2) =>
-      val verifiedProveDlog1 = SigmaPropProof(ProveDlogProof(proveDlog1.value))
-      val verifiedProveDlog2 = SigmaPropProof(ProveDlogProof(proveDlog2.value))
-      val c = DummyContractCompilation.contract5Instance(verifiedProveDlog1, verifiedProveDlog2)
+      val c = DummyContractCompilation.contract5Instance(
+        CSigmaProp(proveDlog1).asInstanceOf[SigmaProp],
+        CSigmaProp(proveDlog2).asInstanceOf[SigmaProp])
       val expectedProp = SigmaAnd(SigmaPropConstant(proveDlog1), SigmaPropConstant(proveDlog2))
       assert(c.prop == expectedProp)
     }
