@@ -6,8 +6,8 @@ import sigmastate.Values
 import sigmastate.Values.{ByteArrayConstant, ConcreteCollection}
 import sigmastate.eval.CSigmaProp
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.verification.SigmaDsl.api.Iso
-import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
+import sigmastate.verified.VerifiedTypeConverters._
+import sigmastate.verified.Iso
 import special.collection._
 import stainless.annotation.ignore
 

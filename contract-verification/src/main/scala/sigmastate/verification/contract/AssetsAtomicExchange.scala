@@ -2,9 +2,7 @@ package sigmastate.verification.contract
 
 import stainless.annotation._
 import stainless.lang._
-import sigmastate.verification.SigmaDsl.api._
-import sigmastate.verification.SigmaDsl.api.collection.Coll
-import sigmastate.verification.SigmaDsl.api.sigma.{Context, SigmaContract, SigmaProp}
+import sigmastate.verified._
 
 import scala.language.{implicitConversions, postfixOps}
 

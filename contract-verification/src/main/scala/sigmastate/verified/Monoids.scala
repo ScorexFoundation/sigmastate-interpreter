@@ -1,4 +1,4 @@
-package sigmastate.verification.SigmaDsl.api
+package sigmastate.verified
 
 import stainless.annotation.library
 

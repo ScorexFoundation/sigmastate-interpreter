@@ -1,8 +1,7 @@
-package sigmastate.verification.SigmaDsl.api.sigma
+package sigmastate.verified
 
 import scalan.OverloadId
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.verification.SigmaDsl.api.collection.Coll
 import stainless.annotation.{extern, library}
 
 // TODO: extract

@@ -1,14 +1,12 @@
-package sigmastate.verification.SigmaDsl.api
+package sigmastate.verified
 
 import sigmastate.Values.{CollectionConstant, ConcreteCollection, Constant, EvaluatedValue}
 import sigmastate.basics.DLogProtocol.ProveDlog
+import sigmastate.eval.CSigmaProp
 import sigmastate.eval.Evaluation.rtypeToSType
-import sigmastate.eval.{CSigmaProp, Evaluation}
-import sigmastate.lang.{DefaultSigmaBuilder, SigmaBuilder, StdSigmaBuilder}
-import sigmastate.verification.SigmaDsl.api.collection.Coll
-import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaProp, SigmaPropProof}
-import sigmastate.{NoType, SCollection, SCollectionType, SEmbeddable, SFunc, SLogical, SMonoType, SPredefType, SPrimType, SProduct, STuple, SType, STypeApply, STypeVar, Values, verification}
-import special.collection.{CollOverArrayBuilder, CollType}
+import sigmastate.lang.{DefaultSigmaBuilder, SigmaBuilder}
+import sigmastate._
+import special.collection.CollOverArrayBuilder
 import stainless.annotation.ignore
 
 import scala.language.{higherKinds, implicitConversions}

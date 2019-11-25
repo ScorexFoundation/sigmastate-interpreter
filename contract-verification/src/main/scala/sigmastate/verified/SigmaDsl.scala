@@ -1,11 +1,9 @@
-package sigmastate.verification.SigmaDsl.api.sigma
+package sigmastate.verified
 
 import java.math.BigInteger
 
 import org.bouncycastle.math.ec.ECPoint
-import scalan.{Internal, NeverInline, OverloadId, Reified}
-import sigmastate.verification.SigmaDsl.api.collection.Coll
-import sigmastate.verification.SigmaDsl.api.{MonoidBuilder, RType}
+import scalan.{Internal, NeverInline, Reified}
 import stainless.annotation.{extern, ignore, library}
 import stainless.lang._
 
@@ -42,7 +40,7 @@ trait CostModel {
 @library
 trait BigInt {
   @Internal @ignore
-  private[sigma] def value: BigInteger
+  private[verified] def value: BigInteger
   /** Convert this BigInt value to Byte.
     * @throws ArithmeticException if overflow happens.
     */
@@ -206,7 +204,7 @@ trait BigInt {
 @library
 trait GroupElement {
   @Internal @ignore
-  private[sigma] def value: ECPoint
+  private[verified] def value: ECPoint
 
   def isInfinity: Boolean
 

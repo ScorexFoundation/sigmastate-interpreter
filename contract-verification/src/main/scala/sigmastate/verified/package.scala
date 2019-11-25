@@ -2,11 +2,7 @@ package sigmastate
 
 import stainless.annotation.ignore
 
-package object verification {
-
-  import sigmastate.verification.SigmaDsl.api._
-  import sigmastate.verification.SigmaDsl.api.Iso._
-  import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
+package object verified {
 
   @ignore
   implicit def implicitTo[A, B](a: A)(implicit iso: Iso[A, B]): B = iso.to(a)

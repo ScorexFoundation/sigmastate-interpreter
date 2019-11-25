@@ -1,17 +1,17 @@
 package sigmastate.verification.test
 
 import org.ergoplatform.Height
-import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd}
+import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd, verified}
 import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
 import sigmastate.verification.contract.DummyContractCompilation
-import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
+import sigmastate.verified.VerifiedTypeConverters._
 import org.scalacheck.Arbitrary.arbLong
-import sigmastate.verification.SigmaDsl.api.collection.{Coll => VColl}
-import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
+import sigmastate.verified.{ProveDlogProof, SigmaPropProof}
 import special.collection.{Coll, CollOverArray}
 
+// TODO remove any VType mention?
 class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerators {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -74,7 +74,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
     val ba = byteCollGen(1, 100).sample.get
     val la = ba.map(_.toLong)
     val contractTrue = DummyContractCompilation.contract3Instance(ba, la)
-    val contractFalse = DummyContractCompilation.contract3Instance(VColl.empty[Byte], VColl.empty[Long])
+    val contractFalse = DummyContractCompilation.contract3Instance(verified.Coll.empty[Byte], verified.Coll.empty[Long])
     forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)

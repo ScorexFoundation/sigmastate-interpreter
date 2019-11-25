@@ -1,7 +1,5 @@
-package sigmastate.verification.SigmaDsl.api
+package sigmastate.verified
 
-import sigmastate.verification.SigmaDsl.api.collection.Coll
-import sigmastate.verification.SigmaDsl.api.sigma.AvlTree
 import stainless.annotation.{extern, ignore, library, pure}
 
 import scala.reflect.ClassTag

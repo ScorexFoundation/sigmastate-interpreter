@@ -1,7 +1,6 @@
-package sigmastate.verification.SigmaDsl.api.collection
+package sigmastate.verified
 
 import scalan.{Internal, NeverInline}
-import sigmastate.verification.SigmaDsl.api.{Monoid, RType}
 import stainless.annotation.{extern, library, pure}
 import stainless.lang._
 import stainless.collection._
@@ -367,7 +366,7 @@ sealed trait Coll[A] {
   def reverse: Coll[A]
 
   @Internal
-  private[collection] def isReplArray(len: Int, value: A): Boolean
+  private[verified] def isReplArray(len: Int, value: A): Boolean
 
   @Internal @extern
   private def trim[T](arr: Array[T]) = arr.take(arr.length min 100)

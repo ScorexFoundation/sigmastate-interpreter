@@ -27,12 +27,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
   @inline
   private def convertColl(paramName: String): c.Expr[EvaluatedValue[SCollection[SType]]] =
     c.Expr[EvaluatedValue[SCollection[SType]]](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.VCollToErgoTree.to(${Ident(TermName(paramName))})"
+    q"sigmastate.verified.VerifiedTypeConverters.VCollToErgoTree.to(${Ident(TermName(paramName))})"
   )
 
   @inline
   private def convertSigmaProp(paramName: String): c.Expr[SigmaProp] = c.Expr[SigmaProp](
-    q"sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters.VSigmaPropToSigmaProp.to(${Ident(TermName(paramName))})",
+    q"sigmastate.verified.VerifiedTypeConverters.VSigmaPropToSigmaProp.to(${Ident(TermName(paramName))})",
   )
 
   private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
@@ -140,7 +140,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
          |import special.sigma._
          |import special.collection._
          |import org.ergoplatform.dsl._
-         |import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
+         |import sigmastate.verified.VerifiedTypeConverters._
          |
          |object SigmaContractHolder extends SigmaContractSyntax {
          |  import syntax._

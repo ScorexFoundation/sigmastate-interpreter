@@ -1,8 +1,7 @@
 package sigmastate.verification.contract
 
 import sigmastate.compiler.macros.impl.{ErgoContract, ErgoContractCompiler}
-import sigmastate.verification.SigmaDsl.api.collection._
-import sigmastate.verification.SigmaDsl.api.sigma._
+import sigmastate.verified._
 import stainless.annotation.ignore
 import stainless.lang._
 
