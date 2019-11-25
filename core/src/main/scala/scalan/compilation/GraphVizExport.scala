@@ -3,8 +3,7 @@ package scalan.compilation
 import java.awt.Desktop
 import java.io.{PrintWriter, File}
 
-import com.typesafe.config.{ConfigUtil}
-import scalan.{Plugins, Scalan, Base}
+import scalan.{Scalan, Base}
 import scalan.util.{ProcessUtil, FileUtil, StringUtil, ScalaNameUtil}
 import scala.collection.immutable.StringOps
 
@@ -15,14 +14,7 @@ trait GraphVizExport extends Base { self: Scalan =>
 
   case class GraphFile(file: File, fileType: String) {
     def open() = {
-      val path = ConfigUtil.joinPath("graphviz", "viewer", fileType)
-      if (Plugins.configWithPlugins.hasPath(path)) {
-        val command = Plugins.configWithPlugins.getString(path)
-        ProcessUtil.launch(Seq(command, file.getAbsolutePath))
-      }
-      else {
-        Desktop.getDesktop.open(file)
-      }
+      Desktop.getDesktop.open(file)
     }
   }
 
@@ -520,7 +512,6 @@ case class GraphVizConfig(emitGraphs: Boolean,
 }
 
 object GraphVizConfig {
-  lazy val config = Plugins.configWithPlugins.getConfig("graphviz")
   // not made implicit because it would be too easy to use
   // it accidentally instead of passing up
   // For some reason, return type has to be given explicitly
@@ -534,7 +525,7 @@ object GraphVizConfig {
     typeAliasEdges = false,
     emitMetadata = false,
     showLambdaReturnSym = false
-  ) //config.extract[GraphVizConfig]
+  )
 
   val none: GraphVizConfig = default.copy(emitGraphs = false)
 }
