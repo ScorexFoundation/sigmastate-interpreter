@@ -1,8 +1,7 @@
 package sigmastate.verification.contract
 
-import stainless.annotation._
-import stainless.lang._
 import sigmastate.verified._
+import stainless.lang._
 
 import scala.language.{implicitConversions, postfixOps}
 
@@ -14,21 +13,23 @@ sealed abstract class AssetsAtomicExchange extends SigmaContract {
             tokenAmount: Long,
             pkA: SigmaProp): SigmaProp = {
     import ctx._
-    (HEIGHT > deadline && pkA) || (
-      (OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
-        OUTPUTS(0).R4[Coll[Byte]].isDefined) && {
-        // TODO: fix apply() to fail in verifier if index out of bounds
-        val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
+    (HEIGHT > deadline && pkA) || {
+      (OUTPUTS.nonEmpty &&
+        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
+        OUTPUTS(0).R4[Coll[Byte]].isDefined
+        ) && {
+        val tokenDataColl = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get
+        val tokenDataCorrect = tokenDataColl.nonEmpty &&
+          tokenDataColl(0)._1 == tokenId &&
+          tokenDataColl(0)._2 >= tokenAmount
+
         val knownId = OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
-        // TODO fix Coll.fromItems crashing Inox typer
-        //      allOf(Coll.fromItems[Boolean](
-        tokenData._1 == tokenId &&
-          tokenData._2 >= tokenAmount &&
+        // TODO fix Coll.fromItems crashing Inox typer and rewrite with allOf(Coll.fromItems[Boolean](
+        tokenDataCorrect &&
           OUTPUTS(0).propositionBytes == pkA.propBytes &&
           knownId
-        //      ))
       }
-      )
+    }
   }
 
   //  def seller(ctx: Context, deadline: Int, pkB: SigmaProp): SigmaProp = {
@@ -64,9 +65,10 @@ case object AssetsAtomicExchangeVerification extends AssetsAtomicExchange {
     import ctx._
     require(HEIGHT <= deadline &&
       pkA.isValid &&
-      // TODO: move to the contract
-      (OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
-        OUTPUTS(0).R4[Coll[Byte]].isDefined
+      (OUTPUTS.nonEmpty &&
+        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
+        OUTPUTS(0).R4[Coll[Byte]].isDefined &&
+        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get.nonEmpty
         ) &&
       !(OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId &&
         OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._2 >= tokenAmount &&

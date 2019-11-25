@@ -1,7 +1,7 @@
 package sigmastate.verified
 
 import scalan.{Internal, NeverInline}
-import stainless.annotation.{extern, library, pure}
+import stainless.annotation.{extern, induct, library, opaque, pure}
 import stainless.lang._
 import stainless.collection._
 import stainless.proof._
@@ -15,7 +15,6 @@ import scala.reflect.ClassTag
   * @define colls collections
   * @tparam A the collection element type
   */
-@library
 sealed trait Coll[A] {
 //  def builder: CollBuilder
   def toArray: Array[A]
@@ -44,10 +43,10 @@ sealed trait Coll[A] {
     *  @return         the element at the given index
     *  @throws         ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
     */
-  def apply(i: Int): A // = {
-//    require(i >= 0 && i < size)
-//    toArray(i)
-//  }
+  def apply(i: Int): A = {
+    require(i >= 0 && i < size)
+    toArray(i)
+  }
 
   /** Tests whether this $coll contains given index.
     *
@@ -167,10 +166,10 @@ sealed trait Coll[A] {
     *  @since 2.0
     */
   @NeverInline
-  def find(p: A => Boolean): Option[A] = {
-    val i = segmentLength(!p(_), 0)
-    if (i < length) Some(this(i)) else None()
-  }
+  def find(p: A => Boolean): Option[A] //= {
+//    val i = segmentLength(!p(_), 0)
+//    if (i < length) Some(this(i)) else None()
+//  }
 
   /** Finds index of the first element satisfying some predicate after or at some start index.
     *
@@ -515,10 +514,10 @@ case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A
 
   override def length: Int = toArray.length
 
-  override def apply(i: Int): A = {
-    require(0 <= i && i < length)
-    toArray(i)
-  }
+//  override def apply(i: Int): A = {
+//    require(0 <= i && i < length)
+//    toArray(i)
+//  }
 
   override def isEmpty: Boolean = length == 0
 
@@ -691,9 +690,16 @@ case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A
     }
   }*/
 
+  /** Finds the first element of the $coll satisfying a predicate, if any.
+    *
+    * @param p the predicate used to test elements.
+    * @return an option value containing the first element in the $coll
+    *         that satisfies `p`, or `None` if none exists.
+    * @since 2.0
+    */
+  override def find(p: A => Boolean): Option[A] = ???
 }
 
-@library
 object Coll {
 
   @extern

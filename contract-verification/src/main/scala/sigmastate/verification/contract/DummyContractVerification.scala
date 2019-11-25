@@ -42,13 +42,13 @@ sealed abstract class DummyContract extends SigmaContract {
 
   def contract6(ctx: Context, arr: Coll[Coll[Byte]]): SigmaProp = {
     import ctx._
-    require(HEIGHT >= 0)
+    require(HEIGHT >= 0 && arr.nonEmpty)
     sigmaProp(arr(0).length > 0)
   }
 
   def contract7(ctx: Context, pkAmounts: Coll[(Coll[Byte], Long)]): SigmaProp = {
     import ctx._
-    require(HEIGHT >= 0)
+    require(HEIGHT >= 0 && pkAmounts.nonEmpty)
     sigmaProp(pkAmounts(0)._1.length > 0)
   }
 }
