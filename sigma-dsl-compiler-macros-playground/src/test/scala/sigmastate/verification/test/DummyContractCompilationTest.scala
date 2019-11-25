@@ -1,22 +1,17 @@
-package sigmastate.verification.contract
+package sigmastate.verification.test
 
 import org.ergoplatform.Height
-import sigmastate.SCollection._
-import sigmastate.Values.{ByteArrayConstant, ConcreteCollection, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
+import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
 import sigmastate.helpers.SigmaTestingCommons
-import sigmastate.serialization.generators.ObjectGenerators
 import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
-import sigmastate.verification.SigmaDsl.api.collection.{Coll => VerifiedColl}
-import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
-import sigmastate._
-import sigmastate.verification.SigmaDsl.api.Iso
+import sigmastate.verification.contract.DummyContractCompilation
 import sigmastate.verification.SigmaDsl.api.VerifiedTypeConverters._
-import sigmastate.verification.test.MiscGenerators
-import special.collection.{Coll, CollOverArray}
-import stainless.annotation.ignore
 import org.scalacheck.Arbitrary.arbLong
+import sigmastate.verification.SigmaDsl.api.collection.{Coll => VColl}
+import sigmastate.verification.SigmaDsl.api.sigma.{ProveDlogProof, SigmaPropProof}
+import special.collection.{Coll, CollOverArray}
 
-@ignore
 class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerators {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
@@ -79,7 +74,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
     val ba = byteCollGen(1, 100).sample.get
     val la = ba.map(_.toLong)
     val contractTrue = DummyContractCompilation.contract3Instance(ba, la)
-    val contractFalse = DummyContractCompilation.contract3Instance(VerifiedColl.empty[Byte], VerifiedColl.empty[Long])
+    val contractFalse = DummyContractCompilation.contract3Instance(VColl.empty[Byte], VColl.empty[Long])
     forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, isCost = false, Map()))) { ctx =>
       assert(contractTrue.scalaFunc(ctx).isValid)
       assert(!contractFalse.scalaFunc(ctx).isValid)
@@ -100,7 +95,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
       val verifiedProveDlog1 = SigmaPropProof(ProveDlogProof(proveDlog1.value))
       val verifiedProveDlog2 = SigmaPropProof(ProveDlogProof(proveDlog2.value))
       val c = DummyContractCompilation.contract5Instance(verifiedProveDlog1, verifiedProveDlog2)
-      val expectedProp = SigmaAnd(SigmaPropConstant(proveDlog1) , SigmaPropConstant(proveDlog2))
+      val expectedProp = SigmaAnd(SigmaPropConstant(proveDlog1), SigmaPropConstant(proveDlog2))
       assert(c.prop == expectedProp)
     }
   }
@@ -110,10 +105,10 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
       val c = DummyContractCompilation.contract6Instance(cc)
       val collTree = VCollToErgoTree.to(cc)
       val expectedProp = BoolToSigmaProp(
-          GT(
-            SizeOf(ByIndex(collTree, IntConstant(0)).asInstanceOf[Value[SCollection[SType]]]),
-            IntConstant(0)
-          ),
+        GT(
+          SizeOf(ByIndex(collTree, IntConstant(0)).asInstanceOf[Value[SCollection[SType]]]),
+          IntConstant(0)
+        ),
       )
       assert(c.prop == expectedProp)
     }
@@ -134,7 +129,7 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
 
   property("dummy contract7 ergo tree") {
     forAll(collOfGen(byteCollGen(0, 10).map((_, arbLong.arbitrary.sample.get)), 10)) { tc =>
-    val c = DummyContractCompilation.contract7Instance(tc)
+      val c = DummyContractCompilation.contract7Instance(tc)
       val collTree = VCollToErgoTree.to(tc)
       val expectedProp = BoolToSigmaProp(
         GT(
@@ -149,4 +144,5 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
       assert(c.prop == expectedProp)
     }
   }
+
 }

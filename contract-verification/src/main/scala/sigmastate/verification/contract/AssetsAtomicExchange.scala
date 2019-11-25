@@ -16,26 +16,30 @@ sealed abstract class AssetsAtomicExchange extends SigmaContract {
             tokenAmount: Long,
             pkA: SigmaProp): SigmaProp = {
     import ctx._
-    (HEIGHT > deadline && pkA) || {
-      val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
-      val knownId = OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
-      // TODO fix Coll.fromItems crashing Inox typer
-//      allOf(Coll.fromItems[Boolean](
-      tokenData._1 == tokenId &&
-        tokenData._2 >= tokenAmount &&
-        OUTPUTS(0).propositionBytes == pkA.propBytes &&
-        knownId
-      //      ))
-    }
+    (HEIGHT > deadline && pkA) || (
+      (OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
+        OUTPUTS(0).R4[Coll[Byte]].isDefined) && {
+        // TODO: fix apply() to fail in verifier if index out of bounds
+        val tokenData = OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)
+        val knownId = OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
+        // TODO fix Coll.fromItems crashing Inox typer
+        //      allOf(Coll.fromItems[Boolean](
+        tokenData._1 == tokenId &&
+          tokenData._2 >= tokenAmount &&
+          OUTPUTS(0).propositionBytes == pkA.propBytes &&
+          knownId
+        //      ))
+      }
+      )
   }
 
   //  def seller(ctx: Context, deadline: Int, pkB: SigmaProp): SigmaProp = {
   //    import ctx._
   //    (HEIGHT > deadline && pkB) || {
-//      val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
-//      allOf(Coll[Boolean](
-//        OUTPUTS(1).value >= 100L,
-//        knownBoxId,
+  //      val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
+  //      allOf(Coll[Boolean](
+  //        OUTPUTS(1).value >= 100L,
+  //        knownBoxId,
 //        OUTPUTS(1).propositionBytes == pkB.propBytes
 //      ))
 //    }

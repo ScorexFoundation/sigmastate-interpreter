@@ -5,6 +5,7 @@ import sigmastate.verification.SigmaDsl.api.{Monoid, RType}
 import stainless.annotation.{extern, library, pure}
 import stainless.lang._
 import stainless.collection._
+import stainless.proof._
 
 import scala.collection.{immutable, mutable}
 import scala.reflect.ClassTag
@@ -44,7 +45,10 @@ sealed trait Coll[A] {
     *  @return         the element at the given index
     *  @throws         ArrayIndexOutOfBoundsException if `i < 0` or `length <= i`
     */
-  def apply(i: Int): A
+  def apply(i: Int): A // = {
+//    require(i >= 0 && i < size)
+//    toArray(i)
+//  }
 
   /** Tests whether this $coll contains given index.
     *
@@ -495,7 +499,6 @@ sealed trait Coll[A] {
 //  def flattenColl[A:RType](coll: Coll[Coll[A]]): Coll[A]
 //}
 
-@library
 case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A] {
 
   @extern @pure
@@ -511,9 +514,12 @@ case class CollProof[A](val toList: List[A], val tItem: RType[A]) extends Coll[A
 
   //  def builder: CollBuilder = new CollOverArrayBuilder
 
-  override def length: Int = ??? //toArray.length
+  override def length: Int = toArray.length
 
-  override def apply(i: Int): A = ???
+  override def apply(i: Int): A = {
+    require(0 <= i && i < length)
+    toArray(i)
+  }
 
   override def isEmpty: Boolean = length == 0
 

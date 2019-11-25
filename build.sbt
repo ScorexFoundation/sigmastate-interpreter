@@ -315,7 +315,6 @@ lazy val sigmaDslCompilerMacros = project
   ))
   .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 
-// TODO: remove
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
   .dependsOn(contractVerification % allConfigDependency)
