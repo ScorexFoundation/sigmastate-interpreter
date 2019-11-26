@@ -131,9 +131,9 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     val compilingContractApp = compilingClosure.collect { case app: Apply => app }
       .headOption
       .getOrElse(error("cannot find Apply for the contract method"))
-    val argsStr = compilingContractApp.args.collect { case Ident(name) => name.toString}
+    val argsStr = compilingContractApp.args.flatMap(_.collect { case Ident(name) => name.toString })
       .mkString(",")
-    if (argsStr.isEmpty) error("no arguments for the contract call")
+    if (argsStr.isEmpty) error("no arguments provided for the contract call")
     val scalaFuncSource =
       s"""
          |{ $ctxParamName: special.sigma.Context =>
