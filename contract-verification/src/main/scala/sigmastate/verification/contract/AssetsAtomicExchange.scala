@@ -47,6 +47,26 @@ sealed abstract class AssetsAtomicExchange extends SigmaContract {
 
 case object AssetsAtomicExchangeVerification extends AssetsAtomicExchange {
 
+  private def conditionOutBoxPresentWithSomeTokens(ctx: Context): Boolean = {
+    import ctx._
+    OUTPUTS.nonEmpty &&
+      OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
+      OUTPUTS(0).R4[Coll[Byte]].isDefined &&
+      OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get.nonEmpty
+  }
+
+  private def conditionCorrectSpendableTokenAmountAgainstBuyerBox(ctx: Context,
+                                                         tokenId: Coll[Byte],
+                                                         tokenAmount: Long,
+                                                         pkA: SigmaProp): Boolean = {
+    import ctx._
+    conditionOutBoxPresentWithSomeTokens(ctx) &&
+    OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId &&
+      OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._2 >= tokenAmount &&
+      OUTPUTS(0).propositionBytes == pkA.propBytes &&
+      OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
+  }
+
   def proveBuyerCanWithdrawAfterDeadline(ctx: Context,
                                          deadline: Int,
                                          tokenId: Coll[Byte],
@@ -57,6 +77,7 @@ case object AssetsAtomicExchangeVerification extends AssetsAtomicExchange {
     buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
   } holds
 
+
   def proveBuyerCannotWithdrawBeforeDeadline(ctx: Context,
                                              deadline: Int,
                                              tokenId: Coll[Byte],
@@ -65,17 +86,18 @@ case object AssetsAtomicExchangeVerification extends AssetsAtomicExchange {
     import ctx._
     require(HEIGHT <= deadline &&
       pkA.isValid &&
-      (OUTPUTS.nonEmpty &&
-        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].isDefined &&
-        OUTPUTS(0).R4[Coll[Byte]].isDefined &&
-        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get.nonEmpty
-        ) &&
-      !(OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._1 == tokenId &&
-        OUTPUTS(0).R2[Coll[(Coll[Byte], Long)]].get(0)._2 >= tokenAmount &&
-        OUTPUTS(0).propositionBytes == pkA.propBytes &&
-        OUTPUTS(0).R4[Coll[Byte]].get == SELF.id)
+      !conditionCorrectSpendableTokenAmountAgainstBuyerBox(ctx, tokenId, tokenAmount, pkA)
     )
     buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
   } ensuring (_ == false)
 
+  def proveSpendableTokensAgainstThisOrderAnyTime(ctx: Context,
+                         deadline: Int,
+                         tokenId: Coll[Byte],
+                         tokenAmount: Long,
+                         pkA: SigmaProp): Boolean = {
+    import ctx._
+    require(conditionCorrectSpendableTokenAmountAgainstBuyerBox(ctx, tokenId, tokenAmount, pkA))
+    buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
+  } holds
 }
