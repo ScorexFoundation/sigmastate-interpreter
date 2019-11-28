@@ -2,7 +2,10 @@ package sigmastate.utils
 
 import java.util
 
+import io.circe.Decoder
+
 import scala.reflect.ClassTag
+import scala.util.{Success, Failure, Try}
 
 object Helpers {
   def xor(ba1: Array[Byte], ba2: Array[Byte]): Array[Byte] = ba1.zip(ba2).map(t => (t._1 ^ t._2).toByte)
@@ -90,6 +93,22 @@ object Helpers {
       case (Some(a1), Some(a2)) => deepHashCode(a1) == deepHashCode(a2)
       case _ => false
     }
+  implicit class TryOps[+A](val source: Try[A]) extends AnyVal {
+    def fold[B](onError: Throwable => B, onSuccess: A => B) = source match {
+      case Success(value) => onSuccess(value)
+      case Failure(t) => onError(t)
+    }
+    def toEither: Either[Throwable, A] = source match {
+      case Success(value) => Right(value)
+      case Failure(t) => Left(t)
+    }
+  }
+  implicit class DecoderResultOps[+A](val source: Decoder.Result[A]) extends AnyVal {
+    def toTry: Try[A] = source match {
+      case Right(value) => Success(value)
+      case Left(t) => Failure(t)
+    }
+  }
 
 }
 

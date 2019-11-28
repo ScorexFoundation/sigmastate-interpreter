@@ -31,7 +31,7 @@ class RevenueSharingExamplesSpecification extends SigmaTestingCommons { suite =>
       "feeProp" -> feeProp,
       "requireAliceSignature" -> alice.pubKey,
       "requireBobSignature" -> bob.pubKey,
-      "requireCarolSignature" -> carol.pubKey,
+      "requireCarolSignature" -> carol.pubKey
     )
     lazy val prop = proposition("revenueContract", { CONTEXT: Context =>
       import CONTEXT._

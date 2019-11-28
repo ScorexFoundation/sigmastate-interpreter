@@ -112,7 +112,7 @@ object SigmaPredef {
           "right" -> SCollection(STuple(tK, tR)),
           "l" -> SFunc(IndexedSeq(tK, tL), tO),
           "r" -> SFunc(IndexedSeq(tK, tR), tO),
-          "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO),
+          "inner" -> SFunc(IndexedSeq(tK, tL, tR), tO)
         ),
         SCollection(STuple(tK, tO)), None),
       PredefFuncInfo(undefined),
@@ -398,7 +398,7 @@ object SigmaPredef {
       AvlTreeFunc,
       SubstConstantsFunc,
       ExecuteFromVarFunc,
-      ExecuteFromSelfRegFunc,
+      ExecuteFromSelfRegFunc
     ).map(f => f.name -> f).toMap
 
     def comparisonOp(symbolName: String, opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo]) = {
@@ -483,7 +483,7 @@ object SigmaPredef {
       logicalOp("&&", BinAnd, "Logical AND of two operands",
         Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
       logicalOp("^", BinXor, "Logical XOR of two operands",
-        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand"))),
+        Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
     ).map(f => f.name -> f).toMap
 
     val unaryFuncs: Map[String, PredefinedFunc] = Seq(
@@ -507,7 +507,7 @@ object SigmaPredef {
         OperationInfo(BitInversion,
           "Invert every bit of the numeric value.",
           Seq(ArgInfo("input", "value of numeric type")))
-      ),
+      )
     ).map(f => f.name -> f).toMap
 
     val funcs: Map[String, PredefinedFunc] = globalFuncs ++ infixFuncs ++ unaryFuncs
@@ -569,7 +569,7 @@ object SigmaPredef {
         OperationInfo(ConstantPlaceholder,
           "Create special ErgoTree node which can be replaced by constant with given id.",
           Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
-      ),
+      )
     ).map(f => f.name -> f).toMap
 
     private val funcNameToIrBuilderMap: Map[String, PredefinedFunc] =

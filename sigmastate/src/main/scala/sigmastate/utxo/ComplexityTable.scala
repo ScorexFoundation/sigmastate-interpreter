@@ -95,7 +95,7 @@ object ComplexityTable {
     LogicalNot.opCode              -> 56,  // count = 1420
     Global.opCode                  -> 7,  // count = 3
     ValUse.opCode                  -> 3,  // count = 18771
-    Context.opCode                 -> 1,  // count = 72
+    Context.opCode                 -> 1   // count = 72
   ).toMap
 
   val MethodCallComplexity: Map[(Byte, Byte), Int] = Seq(
@@ -156,6 +156,6 @@ object ComplexityTable {
     (12.toByte, 14.toByte) -> 238,  // count = 1725, SCollection.indices
     (101.toByte, 9.toByte) -> 182,  // count = 2, Context.LastBlockUtxoRootHash
     (106.toByte, 1.toByte) -> 169,  // count = 3, SigmaDslBuilder.groupGenerator
-    (101.toByte, 6.toByte) -> 146,  // count = 1, Context.HEIGHT
+    (101.toByte, 6.toByte) -> 146   // count = 1, Context.HEIGHT
   ).toMap
 }

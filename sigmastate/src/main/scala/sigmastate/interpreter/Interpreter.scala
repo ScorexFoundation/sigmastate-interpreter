@@ -19,6 +19,7 @@ import sigmastate.utxo.DeserializeContext
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
+import sigmastate.utils.Helpers._
 
 import scala.util.Try
 

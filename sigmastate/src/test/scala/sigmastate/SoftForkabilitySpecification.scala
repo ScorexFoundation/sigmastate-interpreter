@@ -16,6 +16,7 @@ import sigmastate.serialization.OpCodes.{OpCodeExtra, LastConstantCode, OpCode}
 import sigmastate.serialization._
 import sigmastate.utxo.{DeserializeContext, SelectField}
 import special.sigma.SigmaTestingData
+import sigmastate.utils.Helpers._
 
 class SoftForkabilitySpecification extends SigmaTestingData {
 

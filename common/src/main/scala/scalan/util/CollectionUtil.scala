@@ -168,7 +168,11 @@ object CollectionUtil {
   implicit class HashMapOps[K,V](val source: java.util.HashMap[K,V]) extends AnyVal {
     def toImmutableMap: Map[K,V] = {
       var res = Map[K,V]()
-      source.forEach((t: K, u: V) => res = res + (t -> u))
+      val entries = source.entrySet().iterator()
+      while (entries.hasNext) {
+        val e = entries.next()
+        res = res + (e.getKey -> e.getValue)
+      }
       res
     }
   }

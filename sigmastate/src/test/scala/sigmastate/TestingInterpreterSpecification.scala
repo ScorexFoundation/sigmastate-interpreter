@@ -12,6 +12,7 @@ import scorex.util.encode.Base58
 import sigmastate.helpers.{ErgoLikeContextTesting, ErgoLikeTestInterpreter, ErgoLikeTestProvingInterpreter, SigmaTestingCommons}
 import sigmastate.serialization.ValueSerializer
 import TrivialProp._
+import sigmastate.utils.Helpers._
 
 import scala.util.Random
 

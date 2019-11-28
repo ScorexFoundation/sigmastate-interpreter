@@ -19,6 +19,7 @@ import sigmastate.helpers._
 import sigmastate.interpreter.{ContextExtension, Interpreter}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
 import sigmastate.lang.Terms.ValueOps
+import sigmastate.utils.Helpers._
 
 class ErgoAddressSpecification extends PropSpec
   with ObjectGenerators

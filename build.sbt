@@ -6,11 +6,18 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
+scalaVersion := "2.11.12"
+
+javacOptions ++=
+    "-source" :: "1.7" ::
+    "-target" :: "1.7" ::
+    Nil
+
 lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.11.12",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -121,8 +128,8 @@ scalacOptions ++= Seq("-feature", "-deprecation")
 // see https://github.com/eclipse/jetty.project/issues/3244
 // these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
 // see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
-javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
-scalacOptions in(Compile, compile) ++= Seq("-release", "8")
+//javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
+//scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
@@ -192,29 +199,29 @@ lazy val library = Project("library", file("library"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
-lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
-  .settings(commonSettings,
-    libraryDependencies ++= Seq(
-      plugin, libraryconf
-    ))
-  .settings(publish / skip := true)
+//lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
+//  .settings(commonSettings,
+//    libraryDependencies ++= Seq(
+//      plugin, libraryconf
+//    ))
+//  .settings(publish / skip := true)
 
-lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-  .dependsOn(sigmaconf, libraryapi, libraryimpl)
-  .settings(commonSettings,
-    libraryDependencies ++= Seq(meta, plugin),
-    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
-    assemblyMergeStrategy in assembly := {
-      case PathList("scalan", xs @ _*) => MergeStrategy.first
-      case other => (assemblyMergeStrategy in assembly).value(other)
-    },
-    artifact in(Compile, assembly) := {
-      val art = (artifact in(Compile, assembly)).value
-      art.withClassifier(Some("assembly"))
-    },
-    addArtifact(artifact in(Compile, assembly), assembly)
-  )
-  .settings(publish / skip := true)
+//lazy val scalanizer = Project("scalanizer", file("scalanizer"))
+//  .dependsOn(sigmaconf, libraryapi, libraryimpl)
+//  .settings(commonSettings,
+//    libraryDependencies ++= Seq(meta, plugin),
+//    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+//    assemblyMergeStrategy in assembly := {
+//      case PathList("scalan", xs @ _*) => MergeStrategy.first
+//      case other => (assemblyMergeStrategy in assembly).value(other)
+//    },
+//    artifact in(Compile, assembly) := {
+//      val art = (artifact in(Compile, assembly)).value
+//      art.withClassifier(Some("assembly"))
+//    },
+//    addArtifact(artifact in(Compile, assembly), assembly)
+//  )
+//  .settings(publish / skip := true)
 
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
   .dependsOn(common, libraryapi)
@@ -259,7 +266,7 @@ lazy val sigmastate = (project in file("sigmastate"))
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
-    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
+    sigmaapi, sigmaimpl, sigmalibrary/*, sigmaconf, scalanizer*/)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)

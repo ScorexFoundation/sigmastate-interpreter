@@ -39,7 +39,7 @@ trait TypeGenerators {
       shortTypeGen,
       intTypeGen,
       longTypeGen,
-      bigIntTypeGen,
+      bigIntTypeGen
     ))
   } yield STuple(values.toIndexedSeq)
 

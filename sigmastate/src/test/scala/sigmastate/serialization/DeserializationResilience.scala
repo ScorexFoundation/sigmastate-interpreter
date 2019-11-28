@@ -19,6 +19,7 @@ import sigmastate.lang.exceptions.{DeserializeCallDepthExceeded, InputSizeLimitE
 import sigmastate.serialization.OpCodes._
 import sigmastate.utils.SigmaByteReader
 import sigmastate.utxo.SizeOf
+import sigmastate.utils.Helpers._
 
 import scala.collection.mutable
 

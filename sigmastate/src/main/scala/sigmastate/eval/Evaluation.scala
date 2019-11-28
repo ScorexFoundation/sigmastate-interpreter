@@ -119,7 +119,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     SizeOfCode,
     SliceCode,
     TupleCode,
-    UpcastCode,
+    UpcastCode
   ).map(toExtra) ++ HashSet[OpCodeExtra](
     OpCostCode,
     PerKbCostOfCode,
@@ -164,7 +164,7 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
     CBMFromItemsCode,
     CostOfCode,
     UOSizeOfCode,
-    SPCMSomeCode,
+    SPCMSomeCode
   )
 
   /** Returns a set of opCodeEx values (extended op codes) which are allowed in cost function.

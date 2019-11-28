@@ -9,7 +9,7 @@ import sigmastate.{AvlTreeData, AvlTreeFlags, GE, Values}
 import sigmastate.Values.{ErgoTree, LongConstant}
 import sigmastate.eval._
 import sigmastate.helpers.{BlockchainState, ErgoLikeContextTesting, ErgoLikeTestProvingInterpreter, ErgoTransactionValidator, SigmaTestingCommons}
-
+import sigmastate.utils.Helpers._
 import scala.collection.mutable
 import scala.util.{Random, Try}
 import scorex.util._

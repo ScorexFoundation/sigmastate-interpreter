@@ -408,7 +408,7 @@ case class CPreHeader(
                        nBits: Long,
                        height: Int,
                        minerPk: GroupElement,
-                       votes: Coll[Byte],
+                       votes: Coll[Byte]
                      ) extends PreHeader {}
 
 case class CHeader(
@@ -426,7 +426,7 @@ case class CHeader(
                     powOnetimePk: GroupElement,
                     powNonce: Coll[Byte],
                     powDistance: BigInt,
-                    votes: Coll[Byte],
+                    votes: Coll[Byte]
                   ) extends Header {
 }
 

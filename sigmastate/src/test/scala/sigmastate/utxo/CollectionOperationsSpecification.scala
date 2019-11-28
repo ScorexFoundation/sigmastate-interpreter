@@ -10,6 +10,7 @@ import org.ergoplatform._
 import sigmastate.SCollection._
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.serialization.OpCodes._
+import sigmastate.utils.Helpers._
 
 class CollectionOperationsSpecification extends SigmaTestingCommons {
   implicit lazy val IR: TestingIRContext = new TestingIRContext

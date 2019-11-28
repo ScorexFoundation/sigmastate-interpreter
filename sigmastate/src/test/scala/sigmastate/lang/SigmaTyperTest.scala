@@ -678,7 +678,7 @@ class SigmaTyperTest extends PropSpec with PropertyChecks with Matchers with Lan
       "scriptBytes" -> Colls.fromArray(inputBytes),
       "positions" -> positions,
       "newVals" -> newVals,
-      "expectedBytes" -> Colls.fromArray(expectedBytes),
+      "expectedBytes" -> Colls.fromArray(expectedBytes)
     )
     typecheck(customEnv, "substConstants(scriptBytes, positions, newVals)") shouldBe SByteArray
   }

@@ -16,7 +16,7 @@ import sigmastate.basics.{DiffieHellmanTupleInteractiveProver, DiffieHellmanTupl
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.serialization.SigmaSerializer
 import sigmastate.utils.{Helpers, SigmaByteReader, SigmaByteWriter}
-
+import Helpers._
 import scala.util.Try
 
 /**
