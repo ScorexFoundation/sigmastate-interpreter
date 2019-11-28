@@ -142,11 +142,11 @@ case object AssetsAtomicExchangeSellerVerification extends AssetsAtomicExchange 
 @ignore
 object AssetsAtomicExchangeCompilation extends AssetsAtomicExchange {
 
-//  def buyerContractInstance(deadline: Int,
-//                            tokenId: Coll[Byte],
-//                            tokenAmount: Long,
-//                            pkA: SigmaProp): ErgoContract =
-//    ErgoContractCompiler.compile { context: Context =>
-//      buyer(context: Context, deadline: Int, tokenId: Coll[Byte], tokenAmount: Long, pkA: SigmaProp)
-//    }
+  def buyerContractInstance(deadline: Int,
+                            tokenId: Coll[Byte],
+                            tokenAmount: Long,
+                            pkA: SigmaProp): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      buyer(context: Context, deadline: Int, tokenId: Coll[Byte], tokenAmount: Long, pkA: SigmaProp)
+    }
 }

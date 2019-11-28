@@ -1,13 +1,15 @@
 package sigmastate.compiler.macros.impl
 
-import org.ergoplatform.Height
+import org.ergoplatform.ErgoBox.R4
+import org.ergoplatform.{Height, Outputs}
 import sigmastate.Values.{ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
+import sigmastate.utxo.{ByIndex, ExtractRegisterAs, OptionIsDefined, SelectField, SizeOf}
 import special.sigma.{Context, SigmaProp}
 
 import scala.language.experimental.macros
+import scala.reflect.api.Trees
 import scala.reflect.macros.TypecheckException
 import scala.reflect.macros.whitebox.{Context => MacrosContext}
 
@@ -75,24 +77,10 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(GE(l.splice, r.splice))
-      case Apply(Select(lhs, TermName("$amp$amp")), Seq(arg)) =>
-        val l = recurse(lhs)
-        val r = recurse(arg)
-        (lhs.tpe.widen, arg.tpe.widen) match {
-          case (BooleanTpe, BooleanTpe) => reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
-          case (TypeRef(_, sym1, _), TypeRef(_, sym2, _)) if sym2.fullName == "special.sigma.SigmaProp" =>
-            reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
-          case v @ _ => error(s"unexpected && args: $v")
-        }
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
-      case Select(obj, TermName("length")) =>
-        val o = recurse(obj)
-        reify(SizeOf(o.splice.asCollection[SType]))
-      case i @ Ident(TermName(n)) => env.get(n) match {
-        case Some(v) => ???
-        case None => liftParam(n, i.tpe)
-      }
+      case Select(_, TermName("OUTPUTS")) =>
+        reify(Outputs)
       case l@Literal(ct@Constant(i)) if ct.tpe == IntTpe =>
         reify(IntConstant(c.Expr[Int](l).splice))
       case Apply(Select(_, TermName("BooleanOps")), Seq(arg)) if arg.tpe == BooleanTpe =>
@@ -101,6 +89,52 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         reify(ByIndex(recurse(obj).splice.asCollection ,recurse(args.head).splice.asIntValue))
       case Select(obj, TermName("_1")) =>
         reify(SelectField(recurse(obj).splice.asTuple, 1))
+      case Select(obj, m) =>
+        val o = recurse(obj)
+        obj.tpe.widen match {
+          case TypeRef(_, sym, _) if sym.fullName == "special.collection.Coll" => m match {
+            case TermName("length") => reify(SizeOf(o.splice.asCollection[SType]))
+            case TermName("nonEmpty") => reify(GT(SizeOf(o.splice.asCollection[SType]), IntConstant(0)))
+          }
+          case TypeRef(_, sym, _) if sym.fullName == "scala.Option" => m match {
+            case TermName("isDefined") => reify(OptionIsDefined(o.splice.asOption))
+          }
+          case v@_ => error(s"unexpected $obj(tpe: $v) select $m")
+        }
+      case Apply(TypeApply(sel@Select(obj, m), Seq(tArg)), _) =>
+        // TODO: ensure it's an application of an implicit args
+        val o = recurse(obj)
+        obj.tpe.widen match {
+          case TypeRef(_, sym, _) if sym.fullName == "special.sigma.Box" => m match {
+              // TODO handle all registers
+              // TODO recognize types
+            case TermName("R4") => reify(ExtractRegisterAs(o.splice.asBox, R4, SOption(SCollection(SByte))))
+          }
+        }
+      case Apply(Select(lhs, m), Seq(arg)) =>
+        val l = recurse(lhs)
+        val r = recurse(arg)
+        // TODO: extractors
+        lhs.tpe.widen match {
+          case BooleanTpe => m match {
+            case TermName("$amp$amp") =>
+              reify(BinAnd(l.splice.asBoolValue, r.splice.asBoolValue))
+            case TermName("$bar$bar") =>
+              reify(BinOr(l.splice.asBoolValue, r.splice.asBoolValue))
+          }
+          case TypeRef(_, sym1, _) if sym1.fullName == "special.sigma.SigmaProp"
+            || sym1.fullName.endsWith("BooleanOps") => m match {
+            case TermName("$amp$amp") =>
+              reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
+            case TermName("$bar$bar") =>
+              reify(SigmaOr(l.splice.asSigmaProp, r.splice.asSigmaProp))
+          }
+          case _ => error(s"object $lhs(tpe: ${lhs.tpe.widen}) has unexpected $m with arg: $arg")
+        }
+      case i@Ident(TermName(n)) => env.get(n) match {
+        case Some(v) => ???
+        case None => liftParam(n, i.tpe)
+      }
       case _ => error(s"unexpected: $s")
     }
   }
