@@ -1,13 +1,14 @@
 package sigmastate.compiler.macros.impl
 
-import org.ergoplatform.ErgoBox.R4
-import org.ergoplatform.{Height, Outputs}
-import sigmastate.Values.{ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant}
+import org.ergoplatform.ErgoBox.{R2, R4}
+import org.ergoplatform.{ErgoBox, Height, Outputs, Self}
+import sigmastate.Values.{BlockItem, BlockValue, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, ValUse}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo.{ByIndex, ExtractRegisterAs, OptionIsDefined, SelectField, SizeOf}
+import sigmastate.utxo.{ByIndex, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionGet, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
 import special.sigma.{Context, SigmaProp}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.language.experimental.macros
 import scala.reflect.api.Trees
 import scala.reflect.macros.TypecheckException
@@ -37,10 +38,11 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     q"sigmastate.verified.VerifiedTypeConverters.VSigmaPropToSigmaProp.to(${Ident(TermName(paramName))})",
   )
 
-  private def buildFromScalaAst(s: Tree, defId: Int, env: Map[String, Any], paramMap: Map[String, String]): Expr[SValue] = {
+  private def buildFromScalaAst(s: Tree, defId: Int, paramMap: Map[String, String], valDefNameIds: Map[String, (Int, SType)]): Expr[SValue] = {
     import c.universe.definitions._
 
-    def recurse[T <: SType](s: Tree) = buildFromScalaAst(s, defId, env, paramMap)
+    def recurse[T <: SType](s: Tree) =
+      buildFromScalaAst(s, defId, paramMap, valDefNameIds)
 
     def liftParam(n: String, tpe: Type): Expr[SValue] = tpe.widen match {
       case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
@@ -53,42 +55,145 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
       case _ => error(s"unexpected ident type: $tpe")
     }
 
+    def tpeToSType(tpe: Type): SType = tpe.widen match {
+      case BooleanTpe => SBoolean
+      case ByteTpe => SByte
+      case LongTpe => SLong
+      case TypeRef(_, sym, List(arg)) if sym.fullName == "special.collection.Coll" =>
+        SCollectionType(tpeToSType(arg))
+      case TypeRef(_, sym, targs) if sym.fullName == "scala.Tuple2" =>
+        STuple(targs.map(tpeToSType).toIndexedSeq)
+      case v@_ => error(s"cannot convert tpe $v to SType")
+    }
+
+    def sTypeExpr(tpe: SType): c.Expr[SType] = tpe match {
+      case SBoolean => reify(SBoolean)
+      case SCollectionType(eT) => reify(SCollectionType(sTypeExpr(eT).splice))
+        // TODO handle all cases
+      case STuple(Seq(SCollectionType(SByte), SLong)) => reify(STuple(SCollectionType(SByte), SLong))
+//      case STuple(items) => reify(STuple(items.map(sTypeExpr(_).splice)))
+      case v@_ => error(s"cannot convert SType $v to tree")
+    }
+
     s match {
+      case Block(stats, expr) if !stats.exists(_.isInstanceOf[ValDef]) =>
+        reify(BlockValue(IndexedSeq(),recurse(expr).splice))
+
+//      case Block(stats, expr) =>
+//        // TODO rewrite without nested BlockValue's (use ValUse in subsequent ValDef references)
+//        stats.filter(_.isInstanceOf[ValDef]).map(_.asInstanceOf[ValDef]) match {
+//          case h :: t =>
+//            reify(
+//              BlockValue(
+//                IndexedSeq(
+//                  Values.ValDef(
+//                    c.Expr[Int](Literal(Constant(defId + 1))).splice,
+//                    buildFromScalaAst(h.rhs,
+//                      defId + 1,
+//                      env, paramMap, valDefNameIds, valDefs).splice
+//                  )
+//                ),
+//                buildFromScalaAst(
+//                  Block(t, expr),
+//                  defId + 1,
+//                  env,
+//                  paramMap,
+//                  valDefNameIds + (h.name.toString -> (
+//                    defId + 1,
+//                    tpeToSType(h.rhs.tpe)
+//                  )),
+//                  valDefs
+//                ).splice
+//              )
+//            )
+//        }
+
       case Block(stats, expr) =>
-        // in stats "import ... " and "require"
-        recurse(expr)
+
+        val (vd, lastId, lastVdIds) = stats
+          .filter(_.isInstanceOf[ValDef])
+          .foldLeft((List.empty[Expr[Values.ValDef]], defId, valDefNameIds)){
+            case ((valDefsExpr, lastUsedId, vdIds), ValDef(_, TermName(n), tpt, rhs)) =>
+              val curId = lastUsedId + 1
+              (valDefsExpr :+ reify(
+                Values.ValDef(
+                  c.Expr[Int](Literal(Constant(curId))).splice,
+                  buildFromScalaAst(rhs,
+                    curId,
+                    paramMap,
+                    vdIds + (n -> (curId, tpeToSType(rhs.tpe)))
+                  ).splice
+                )
+              ),
+                curId,
+                vdIds + (n -> (curId, tpeToSType(rhs.tpe)))
+              )
+          }
+
+        val valDefsExpr = c.Expr[List[Values.ValDef]](
+          vd.foldRight(Ident(NilModule): Tree) { (el, acc) =>
+            Apply(Select(acc, TermName("$colon$colon")), List(el.tree))
+          }
+        )
+
+        reify(
+          BlockValue(
+            valDefsExpr.splice.toIndexedSeq,
+            buildFromScalaAst(expr, lastId, paramMap, lastVdIds).splice
+          )
+        )
+
       case Apply(Select(_,TermName("sigmaProp")), args) =>
         reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
+
       case Apply(Select(_, TermName("booleanToSigmaProp")), args) =>
         reify(BoolToSigmaProp(recurse(args.head).splice.asBoolValue))
+
       case Apply(Select(lhs, TermName("$less")), args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(LT(l.splice, r.splice))
+
       case Apply(Select(lhs, TermName("$greater")), args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(GT(l.splice, r.splice))
+
       case Apply(Select(lhs, TermName("$less$eq")), args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(LE(l.splice, r.splice))
+
       case Apply(Select(lhs, TermName("$greater$eq")), args) =>
         val l = recurse(lhs)
         val r = recurse(args.head)
         reify(GE(l.splice, r.splice))
+
       case Select(_, TermName("HEIGHT")) =>
         reify(Height)
+
       case Select(_, TermName("OUTPUTS")) =>
         reify(Outputs)
+
+      case Select(_, TermName("SELF")) =>
+        reify(Self)
+
       case l@Literal(ct@Constant(i)) if ct.tpe == IntTpe =>
         reify(IntConstant(c.Expr[Int](l).splice))
+
       case Apply(Select(_, TermName("BooleanOps")), Seq(arg)) if arg.tpe == BooleanTpe =>
         reify(BoolToSigmaProp(recurse(arg).splice.asBoolValue))
+
       case Apply(Select(obj, TermName("apply")), args) =>
-        reify(ByIndex(recurse(obj).splice.asCollection ,recurse(args.head).splice.asIntValue))
+        val o = recurse(obj)
+        reify(ByIndex(o.splice.asCollection ,recurse(args.head).splice.asIntValue))
+
       case Select(obj, TermName("_1")) =>
         reify(SelectField(recurse(obj).splice.asTuple, 1))
+
+      case Select(obj, TermName("_2")) =>
+        reify(SelectField(recurse(obj).splice.asTuple, 2))
+
       case Select(obj, m) =>
         val o = recurse(obj)
         obj.tpe.widen match {
@@ -96,13 +201,28 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
             case TermName("length") => reify(SizeOf(o.splice.asCollection[SType]))
             case TermName("nonEmpty") => reify(GT(SizeOf(o.splice.asCollection[SType]), IntConstant(0)))
           }
+          case TypeRef(_, sym, _) if sym.fullName == "special.sigma.Box" => m match {
+            case TermName("tokens") =>
+              // TODO check how it's done in sigma
+              reify(OptionGet(ExtractRegisterAs(o.splice.asBox, R2, SOption(ErgoBox.STokensRegType))))
+            case TermName("propositionBytes") =>
+              reify(ExtractScriptBytes(o.splice.asBox))
+            case TermName("id") =>
+              reify(ExtractId(o.splice.asBox))
+          }
+          case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" => m match {
+            case TermName("propBytes") =>
+              reify(SigmaPropBytes(o.splice.asSigmaProp))
+          }
           case TypeRef(_, sym, _) if sym.fullName == "scala.Option" => m match {
             case TermName("isDefined") => reify(OptionIsDefined(o.splice.asOption))
+            case TermName("get") => reify(OptionGet(o.splice.asOption))
           }
           case v@_ => error(s"unexpected $obj(tpe: $v) select $m")
         }
+
       case Apply(TypeApply(sel@Select(obj, m), Seq(tArg)), _) =>
-        // TODO: ensure it's an application of an implicit args
+        // TODO: ensure it's an application of implicit args
         val o = recurse(obj)
         obj.tpe.widen match {
           case TypeRef(_, sym, _) if sym.fullName == "special.sigma.Box" => m match {
@@ -111,6 +231,12 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
             case TermName("R4") => reify(ExtractRegisterAs(o.splice.asBox, R4, SOption(SCollection(SByte))))
           }
         }
+
+      case Apply(Select(lhs, TermName("$eq$eq")), Seq(arg)) =>
+        val l = recurse(lhs)
+        val r = recurse(arg)
+        reify(EQ(l.splice, r.splice))
+
       case Apply(Select(lhs, m), Seq(arg)) =>
         val l = recurse(lhs)
         val r = recurse(arg)
@@ -129,12 +255,20 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
             case TermName("$bar$bar") =>
               reify(SigmaOr(l.splice.asSigmaProp, r.splice.asSigmaProp))
           }
+
           case _ => error(s"object $lhs(tpe: ${lhs.tpe.widen}) has unexpected $m with arg: $arg")
         }
-      case i@Ident(TermName(n)) => env.get(n) match {
-        case Some(v) => ???
-        case None => liftParam(n, i.tpe)
-      }
+
+      case i@Ident(TermName(n)) =>
+        valDefNameIds.get(n) match {
+          case Some(v) =>
+            reify(ValUse(
+              c.Expr[Int](Literal(Constant(v._1))).splice,
+              sTypeExpr(v._2).splice
+            ))
+          case None => liftParam(n, i.tpe)
+        }
+
       case _ => error(s"unexpected: $s")
     }
   }
@@ -211,10 +345,11 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     val compilingContractApp = verifiedContract.tree.collect { case app: Apply => app }
       .headOption
       .getOrElse(error("cannot find Apply for the contract method"))
-    val appArgs = compilingContractApp.args.collect { case Ident(name) => name.toString }
+    val appArgs = compilingContractApp.args.flatMap(_.collect { case Ident(name) => name.toString })
+
     val defDefArgNames = defDef.vparamss.head.collect { case ValDef(_, name, _, _) => name.toString }
     val paramMap = defDefArgNames.zip(appArgs).toMap
-    val sigmaProp = reify(buildFromScalaAst(defDef.rhs, 0, Map(), paramMap).splice)
+    val sigmaProp = reify(buildFromScalaAst(defDef.rhs, 0, paramMap, Map()).splice)
     reify(ErgoContract(c.Expr[Context => SigmaProp](contractTree).splice, sigmaProp.splice))
   }
 

@@ -14,6 +14,8 @@ import scala.language.{higherKinds, implicitConversions}
 @ignore
 object VerifiedTypeConverters {
 
+  val builder: SigmaBuilder = DefaultSigmaBuilder
+
   implicit def VRTypeToRType[A, B]: Iso[RType[A], scalan.RType[B]] =
     new Iso[RType[A], scalan.RType[B]] {
       override def to(a: RType[A]): scalan.RType[B] = (a match {
@@ -65,8 +67,6 @@ object VerifiedTypeConverters {
         case CSigmaProp(ProveDlog(v)) => SigmaPropProof(ProveDlogProof(v))
       }
     }
-
-  val builder: SigmaBuilder = DefaultSigmaBuilder
 
   def constValToErgoTree[A: RType](v: A): EvaluatedValue[SType] = implicitly[RType[A]] match {
     case RType.CollType(_) => VCollToErgoTree.to(v.asInstanceOf[Coll[_]])

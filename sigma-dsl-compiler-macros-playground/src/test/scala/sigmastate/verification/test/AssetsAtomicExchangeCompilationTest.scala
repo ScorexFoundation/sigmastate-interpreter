@@ -16,13 +16,14 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
-//  property("buyer contract ergo tree") {
-//    forAll(unsignedIntGen, byteCollGen(0, 40), arbLong.arbitrary, proveDlogGen) {
-//      case (deadline, tokenId, tokenAmount, pk) =>
-//        val c = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline, tokenId, tokenAmount, CSigmaProp(pk))
-//        val expectedProp = BoolToSigmaProp(LT(Height, Height))
-//        assert(c.prop == expectedProp)
-//    }
-//  }
+  property("buyer contract ergo tree") {
+    forAll(unsignedIntGen, byteCollGen(0, 40), arbLong.arbitrary, proveDlogGen) {
+      case (deadline, tokenId, tokenAmount, proveDlogPk) =>
+        val pk: SigmaProp = CSigmaProp(proveDlogPk)
+        val c = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline, tokenId, tokenAmount, pk)
+        val expectedProp = BoolToSigmaProp(LT(Height, Height))
+        assert(c.prop == expectedProp)
+    }
+  }
 
 }
