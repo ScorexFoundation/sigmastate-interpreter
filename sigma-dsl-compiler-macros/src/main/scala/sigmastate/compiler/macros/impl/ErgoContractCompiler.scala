@@ -24,6 +24,7 @@ object ErgoContractCompiler {
 
 class ErgoContractCompilerImpl(val c: MacrosContext) {
   import c.universe._
+  import c.universe.definitions._
 
   private def error(str: String): Nothing = c.abort(c.enclosingPosition, str)
 
@@ -38,42 +39,49 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     q"sigmastate.verified.VerifiedTypeConverters.VSigmaPropToSigmaProp.to(${Ident(TermName(paramName))})",
   )
 
+  def tpeToSType(tpe: Type): SType = tpe.widen match {
+    case BooleanTpe => SBoolean
+    case ByteTpe => SByte
+    case LongTpe => SLong
+    case TypeRef(_, sym, List(arg)) if sym.fullName == "special.collection.Coll" =>
+      SCollectionType(tpeToSType(arg))
+    case TypeRef(_, sym, targs) if sym.fullName == "scala.Tuple2" =>
+      STuple(targs.map(tpeToSType).toIndexedSeq)
+    case v@_ => error(s"cannot convert tpe $v to SType")
+  }
+
+  def sTypeExpr(tpe: SType): c.Expr[SType] = tpe match {
+    case SBoolean => reify(SBoolean)
+    case SByte => reify(SByte)
+    case SInt => reify(SInt)
+    case SLong => reify(SLong)
+    case SCollectionType(eT) => reify(SCollectionType(sTypeExpr(eT).splice))
+    case STuple(items) =>
+      val itemExprs = items.map(sTypeExpr)
+      val seqItemExprs = c.Expr[List[SType]](
+        itemExprs.foldRight(Ident(NilModule): Tree) { (el, acc) =>
+          Apply(Select(acc, TermName("$colon$colon")), List(el.tree))
+        }
+      )
+      reify(STuple(seqItemExprs.splice.toIndexedSeq))
+    case v@_ => error(s"cannot convert SType $v to tree")
+  }
+
+  def liftParam(n: String, tpe: Type, paramMap: Map[String, String]): Expr[SValue] = tpe.widen match {
+    case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
+    case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
+    case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
+    case TypeRef(_, sym, List(_)) if sym.fullName == "special.collection.Coll" =>
+      convertColl(paramMap(n))
+    case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" =>
+      reify(SigmaPropConstant(convertSigmaProp(paramMap(n)).splice))
+    case _ => error(s"unexpected ident type: $tpe")
+  }
+
   private def buildFromScalaAst(s: Tree, defId: Int, paramMap: Map[String, String], valDefNameIds: Map[String, (Int, SType)]): Expr[SValue] = {
-    import c.universe.definitions._
 
     def recurse[T <: SType](s: Tree) =
       buildFromScalaAst(s, defId, paramMap, valDefNameIds)
-
-    def liftParam(n: String, tpe: Type): Expr[SValue] = tpe.widen match {
-      case ByteTpe => reify(ByteConstant(c.Expr[Byte](Ident(TermName(paramMap(n)))).splice))
-      case IntTpe => reify(IntConstant(c.Expr[Int](Ident(TermName(paramMap(n)))).splice))
-      case LongTpe => reify(LongConstant(c.Expr[Long](Ident(TermName(paramMap(n)))).splice))
-      case TypeRef(_, sym, List(_)) if sym.fullName == "special.collection.Coll" =>
-        convertColl(paramMap(n))
-      case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" =>
-        reify(SigmaPropConstant(convertSigmaProp(paramMap(n)).splice))
-      case _ => error(s"unexpected ident type: $tpe")
-    }
-
-    def tpeToSType(tpe: Type): SType = tpe.widen match {
-      case BooleanTpe => SBoolean
-      case ByteTpe => SByte
-      case LongTpe => SLong
-      case TypeRef(_, sym, List(arg)) if sym.fullName == "special.collection.Coll" =>
-        SCollectionType(tpeToSType(arg))
-      case TypeRef(_, sym, targs) if sym.fullName == "scala.Tuple2" =>
-        STuple(targs.map(tpeToSType).toIndexedSeq)
-      case v@_ => error(s"cannot convert tpe $v to SType")
-    }
-
-    def sTypeExpr(tpe: SType): c.Expr[SType] = tpe match {
-      case SBoolean => reify(SBoolean)
-      case SCollectionType(eT) => reify(SCollectionType(sTypeExpr(eT).splice))
-        // TODO handle all cases
-      case STuple(Seq(SCollectionType(SByte), SLong)) => reify(STuple(SCollectionType(SByte), SLong))
-//      case STuple(items) => reify(STuple(items.map(sTypeExpr(_).splice)))
-      case v@_ => error(s"cannot convert SType $v to tree")
-    }
 
     s match {
       case Block(stats, expr) if !stats.exists(_.isInstanceOf[ValDef]) =>
@@ -266,7 +274,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
               c.Expr[Int](Literal(Constant(v._1))).splice,
               sTypeExpr(v._2).splice
             ))
-          case None => liftParam(n, i.tpe)
+          case None => liftParam(n, i.tpe, paramMap)
         }
 
       case _ => error(s"unexpected: $s")
