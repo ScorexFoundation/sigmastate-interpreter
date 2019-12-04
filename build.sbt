@@ -6,18 +6,18 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.8"
 
-javacOptions ++=
-    "-source" :: "1.7" ::
-    "-target" :: "1.7" ::
-    Nil
+//javacOptions ++=
+//    "-source" :: "1.7" ::
+//    "-target" :: "1.7" ::
+//    Nil
 
 lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.11.12",
+  scalaVersion := "2.12.8",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -41,7 +41,7 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value,
+  publishTo := sonatypePublishToBundle.value
 )
 
 enablePlugins(GitVersioning)
@@ -96,7 +96,7 @@ val testingDependencies = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
   "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
   "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test",
+  "com.novocode" % "junit-interface" % "0.11" % "test"
 )
 
 lazy val testSettings = Seq(
@@ -281,7 +281,7 @@ lazy val rootSettings = Seq(
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
-  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
+  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
