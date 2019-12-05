@@ -79,7 +79,7 @@ version in ThisBuild := {
 git.gitUncommittedChanges in ThisBuild := true
 
 val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.7-RC1"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.7-RC2"
 val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.6-RC6"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
@@ -202,30 +202,40 @@ lazy val library = Project("library", file("library"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
-// TODO enable in 2.12 build only
-//lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
-//  .settings(commonSettings,
-//    libraryDependencies ++= Seq(
-//      plugin, libraryconf
-//    ))
-//  .settings(publish / skip := true)
+lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
+  .settings(commonSettings,
+    libraryDependencies ++= (
+      if(scalaBinaryVersion.value == "2.11")
+        Seq.empty
+      else
+        Seq(plugin, libraryconf)
+      ),
+      skip in compile := scalaBinaryVersion.value == "2.11"
+  )
+  .settings(publish / skip := true)
 
-//lazy val scalanizer = Project("scalanizer", file("scalanizer"))
-//  .dependsOn(sigmaconf, libraryapi, libraryimpl)
-//  .settings(commonSettings,
-//    libraryDependencies ++= Seq(meta, plugin),
-//    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
-//    assemblyMergeStrategy in assembly := {
-//      case PathList("scalan", xs @ _*) => MergeStrategy.first
-//      case other => (assemblyMergeStrategy in assembly).value(other)
-//    },
-//    artifact in(Compile, assembly) := {
-//      val art = (artifact in(Compile, assembly)).value
-//      art.withClassifier(Some("assembly"))
-//    },
-//    addArtifact(artifact in(Compile, assembly), assembly)
-//  )
-//  .settings(publish / skip := true)
+lazy val scalanizer = Project("scalanizer", file("scalanizer"))
+  .dependsOn(sigmaconf, libraryapi, libraryimpl)
+  .settings(commonSettings,
+    libraryDependencies ++= (
+      if(scalaBinaryVersion.value == "2.11")
+        Seq.empty
+      else
+        Seq(meta, plugin)
+      ),
+    skip in compile := scalaBinaryVersion.value == "2.11",
+    assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
+    assemblyMergeStrategy in assembly := {
+      case PathList("scalan", xs @ _*) => MergeStrategy.first
+      case other => (assemblyMergeStrategy in assembly).value(other)
+    },
+    artifact in(Compile, assembly) := {
+      val art = (artifact in(Compile, assembly)).value
+      art.withClassifier(Some("assembly"))
+    },
+    addArtifact(artifact in(Compile, assembly), assembly)
+  )
+  .settings(publish / skip := true)
 
 lazy val sigmaapi = Project("sigma-api", file("sigma-api"))
   .dependsOn(common, libraryapi)
@@ -270,7 +280,7 @@ lazy val sigmastate = (project in file("sigmastate"))
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
-    sigmaapi, sigmaimpl, sigmalibrary/*, sigmaconf, scalanizer*/)
+    sigmaapi, sigmaimpl, sigmalibrary, sigmaconf, scalanizer)
   .settings(libraryDefSettings, rootSettings)
   .settings(publish / aggregate := false)
   .settings(publishLocal / aggregate := false)
