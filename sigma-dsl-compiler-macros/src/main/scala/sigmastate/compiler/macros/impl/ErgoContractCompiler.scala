@@ -58,11 +58,11 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
     case SCollectionType(eT) => reify(SCollectionType(sTypeExpr(eT).splice))
     case STuple(items) =>
       val itemExprs = items.map(sTypeExpr)
-      reify(STuple(listExpr(itemExprs).splice.toIndexedSeq))
+      reify(STuple(sequenceExpr(itemExprs).splice.toIndexedSeq))
     case v@_ => error(s"cannot convert SType $v to tree")
   }
 
-  private def listExpr[A](xs: Seq[c.Expr[A]]): c.Expr[List[A]] =
+  private def sequenceExpr[A](xs: Seq[c.Expr[A]]): c.Expr[List[A]] =
     c.Expr[List[A]](
       xs.foldRight(Ident(NilModule): Tree) { (el, acc) =>
         Apply(Select(acc, TermName("$colon$colon")), List(el.tree))
@@ -140,7 +140,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
           }
         reify(
           BlockValue(
-            listExpr(lastVdExprs).splice.toIndexedSeq,
+            sequenceExpr(lastVdExprs).splice.toIndexedSeq,
             buildFromScalaAst(expr, lastId, paramMap, lastVdIds).splice
           )
         )
