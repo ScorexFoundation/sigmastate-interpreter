@@ -6,7 +6,10 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-scalaVersion := "2.11.12"
+lazy val scala212 = "2.12.10"
+lazy val scala211 = "2.11.12"
+crossScalaVersions := Seq(scala212, scala211)
+scalaVersion := scala212
 
 javacOptions ++=
     "-source" :: "1.7" ::
@@ -199,6 +202,7 @@ lazy val library = Project("library", file("library"))
     libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
+// TODO enable in 2.12 build only
 //lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
 //  .settings(commonSettings,
 //    libraryDependencies ++= Seq(
