@@ -14,6 +14,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.interpreter.{ProverResult, ContextExtension, CryptoConstants}
 import sigmastate.serialization.SerializationSpecification
+import sigmastate.utils.Helpers._
 import special.collection.Coll
 import special.sigma.{PreHeader, Header}
 
@@ -130,7 +131,7 @@ class JsonSerializationSpec extends SigmaTestingCommons with SerializationSpecif
       R4 -> ByteConstant(1),
       R6 -> IntConstant(10),
       R5 -> SigmaPropConstant(minerPk),
-      R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get),
+      R8 -> ByteArrayConstant(Base16.decode("123456123456123456123456123456123456123456123456123456123456123456").get)
     )
     // registers should be ordered by their number in Json
     regs.asJson.spaces2 shouldEqual

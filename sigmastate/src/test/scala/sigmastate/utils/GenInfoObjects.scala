@@ -3,6 +3,7 @@ package sigmastate.utils
 import sigmastate.SMethod
 import scalan.util.PrintExtensions._
 import scala.util.Try
+import Helpers._
 
 /** Generate as a console output all InfoObject objects.
   * Those provide stable identifiers to access metadata information.

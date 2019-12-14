@@ -65,14 +65,14 @@ class CollectionUtilTests extends BaseTests {
     val xs = Seq(1, 2, 3)
 
     {
-      val (ints, strings, plus1s) = xs.mapUnzip(x => (x, x.toString, x + 1))
+      val (ints, strings, plus1s) = xs.mapUnzip((x: Int) => (x, x.toString, x + 1))
       ints shouldBe Seq(1, 2, 3)
       strings shouldBe Seq("1", "2", "3")
       plus1s shouldBe Seq(2, 3, 4)
     }
     
     {
-      val (ints, strings) = xs.mapUnzip(x => (x, x.toString))
+      val (ints, strings) = xs.mapUnzip((x: Int) => (x, x.toString))
       ints shouldBe Seq(1, 2, 3)
       strings shouldBe Seq("1", "2", "3")
     }

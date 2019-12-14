@@ -6,11 +6,20 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
+lazy val scala212 = "2.12.10"
+lazy val scala211 = "2.11.12"
+crossScalaVersions := Seq(scala212, scala211)
+scalaVersion := scala212
+
+javacOptions ++=
+    "-source" :: "1.7" ::
+    "-target" :: "1.7" ::
+    Nil
+
 lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  scalaVersion := "2.12.8",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
@@ -34,7 +43,7 @@ lazy val commonSettings = Seq(
         </developer>
       </developers>,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value,
+  publishTo := sonatypePublishToBundle.value
 )
 
 enablePlugins(GitVersioning)
@@ -68,16 +77,15 @@ version in ThisBuild := {
 
 git.gitUncommittedChanges in ThisBuild := true
 
-val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.60"
-val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.6"
-val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.4"
+val bouncycastleBcprov = "org.bouncycastle" % "bcprov-jdk15on" % "1.64"
+val scrypto            = "org.scorexfoundation" %% "scrypto" % "2.1.7"
+val scorexUtil         = "org.scorexfoundation" %% "scorex-util" % "0.1.6"
 val macroCompat        = "org.typelevel" %% "macro-compat" % "1.1.1"
 val paradise           = "org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full
 val debox              = "org.spire-math" %% "debox" % "0.8.0"
 val kiama              = "org.bitbucket.inkytonik.kiama" %% "kiama" % "2.1.0"
 val fastparse          = "com.lihaoyi" %% "fastparse" % "1.0.0"
 val commonsIo          = "commons-io" % "commons-io" % "2.5"
-val configs            = "com.github.kxbmap" %% "configs" % "0.4.4"
 
 val specialVersion = "0.6.1"
 val meta        = "io.github.scalan" %% "meta" % specialVersion
@@ -90,7 +98,7 @@ val testingDependencies = Seq(
   "org.scalacheck" %% "scalacheck" % "1.14.+" % "test",
   "com.storm-enroute" %% "scalameter" % "0.8.2" % Test,
   "junit" % "junit" % "4.12" % "test",
-  "com.novocode" % "junit-interface" % "0.11" % "test",
+  "com.novocode" % "junit-interface" % "0.11" % "test"
 )
 
 lazy val testSettings = Seq(
@@ -106,7 +114,6 @@ libraryDependencies ++= Seq(
   scrypto,
   scorexUtil,
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  "com.typesafe.akka" %% "akka-actor" % "2.4.+",
   kiama, fastparse, debox
 ) ++ testingDependencies
 
@@ -123,8 +130,8 @@ scalacOptions ++= Seq("-feature", "-deprecation")
 // see https://github.com/eclipse/jetty.project/issues/3244
 // these options applied only in "compile" task since scalac crashes on scaladoc compilation with "-release 8"
 // see https://github.com/scala/community-builds/issues/796#issuecomment-423395500
-javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
-scalacOptions in(Compile, compile) ++= Seq("-release", "8")
+//javacOptions in(Compile, compile) ++= Seq("-target", "8", "-source", "8" )
+//scalacOptions in(Compile, compile) ++= Seq("-release", "8")
 
 //uncomment lines below if the Scala compiler hangs to see where it happens
 //scalacOptions in Compile ++= Seq("-Xprompt", "-Ydebug", "-verbose" )
@@ -184,7 +191,7 @@ lazy val libraryimpl = Project("library-impl", file("library-impl"))
 lazy val core = Project("core", file("core"))
   .dependsOn(common % allConfigDependency, libraryapi % allConfigDependency)
   .settings(commonSettings,
-    libraryDependencies ++= Seq( configs, debox ))
+    libraryDependencies ++= Seq( debox ))
   .settings(publish / skip := true)
 
 lazy val library = Project("library", file("library"))
@@ -196,15 +203,26 @@ lazy val library = Project("library", file("library"))
 
 lazy val sigmaconf = Project("sigma-conf", file("sigma-conf"))
   .settings(commonSettings,
-    libraryDependencies ++= Seq(
-      plugin, libraryconf
-    ))
+    libraryDependencies ++= (
+      if(scalaBinaryVersion.value == "2.11")
+        Seq.empty
+      else
+        Seq(plugin, libraryconf)
+      ),
+      skip in compile := scalaBinaryVersion.value == "2.11"
+  )
   .settings(publish / skip := true)
 
 lazy val scalanizer = Project("scalanizer", file("scalanizer"))
   .dependsOn(sigmaconf, libraryapi, libraryimpl)
   .settings(commonSettings,
-    libraryDependencies ++= Seq(meta, plugin),
+    libraryDependencies ++= (
+      if(scalaBinaryVersion.value == "2.11")
+        Seq.empty
+      else
+        Seq(meta, plugin)
+      ),
+    skip in compile := scalaBinaryVersion.value == "2.11",
     assemblyOption in assembly ~= { _.copy(includeScala = false, includeDependency = true) },
     assemblyMergeStrategy in assembly := {
       case PathList("scalan", xs @ _*) => MergeStrategy.first
@@ -276,7 +294,7 @@ lazy val rootSettings = Seq(
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
-  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten,
+  mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {

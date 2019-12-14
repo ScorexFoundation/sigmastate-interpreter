@@ -20,7 +20,7 @@ class OrSerializerSpecification extends TableSerializationSpecification {
       Array[Byte](OrCode, ConcreteCollectionCode, 2, SBoolean.typeCode, // collection type
         SBoolean.typeCode, 1,
         EqCode, SInt.typeCode, encodeZigZagInt(1).toByte,
-        SInt.typeCode, encodeZigZagInt(1).toByte)),
+        SInt.typeCode, encodeZigZagInt(1).toByte))
   )
 
   tableRoundTripTest("Or: Serializer round trip on predefined values")

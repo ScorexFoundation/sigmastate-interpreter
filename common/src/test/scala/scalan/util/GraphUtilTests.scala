@@ -17,10 +17,12 @@ class GraphUtilTests extends BaseNestedTests {
       List()      // 6
     )
 
-    val neighbours: DFunc[Int, DBuffer[Int]] = { node: Int =>
-      val ns = DBuffer.empty[Int]
-      graph(node) foreach (ns.+=)
-      ns
+    val neighbours: DFunc[Int, DBuffer[Int]] = new DFunc[Int, DBuffer[Int]] {
+      def apply(node: Int) = {
+        val ns = DBuffer.empty[Int]
+        graph(node) foreach (ns.+=)
+        ns
+      }
     }
 
     it("depthFirstSetFrom") {
@@ -31,7 +33,9 @@ class GraphUtilTests extends BaseNestedTests {
       depthFirstSetFrom(DBuffer(0))(neighbours) shouldBe (DSet(0, 1, 2, 3, 4, 5, 6))
     }
     it("depthFirstOrderFrom") {
-      val succ: DFunc[Int, DBuffer[Int]] = {id: Int => DBuffer(graph(id):_*)}
+      val succ: DFunc[Int, DBuffer[Int]] = new DFunc[Int, DBuffer[Int]] {
+        def apply(id: Int) = DBuffer(graph(id):_*)
+      }
       depthFirstOrderFrom(DBuffer(6), succ) shouldBe (DBuffer(6))
       depthFirstOrderFrom(DBuffer(5), succ) shouldBe (DBuffer(6, 5))
       depthFirstOrderFrom(DBuffer(3), succ) shouldBe (DBuffer(6, 5, 3))

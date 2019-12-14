@@ -34,7 +34,7 @@ trait ExampleContracts extends ErgoScriptTestkit { self: BaseCtxTests =>
   val envDem = Map(
     "demurragePeriod" -> demurragePeriod,
     "demurrageCost" -> demurrageCost,
-    "regScriptId" -> regScriptId,
+    "regScriptId" -> regScriptId
   )
 
   val demurrageScript =

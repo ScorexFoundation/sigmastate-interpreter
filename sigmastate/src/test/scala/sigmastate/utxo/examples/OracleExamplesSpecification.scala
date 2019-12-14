@@ -19,7 +19,7 @@ import org.ergoplatform.dsl.{ContractSpec, SigmaContractSyntax, StdContracts, Te
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, emptyEnv}
 import sigmastate.utxo._
 import special.sigma.Context
-
+import sigmastate.utils.Helpers._
 
 class OracleExamplesSpecification extends SigmaTestingCommons { suite =>
   implicit lazy val IR: TestingIRContext = new TestingIRContext

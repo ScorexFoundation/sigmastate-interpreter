@@ -15,6 +15,7 @@ import sigmastate.lang.Terms._
 import special.sigma.InvalidType
 import SType.AnyOps
 import sigmastate.interpreter.CryptoConstants
+import sigmastate.utils.Helpers._
 
 class BasicOpsSpecification extends SigmaTestingCommons {
   implicit lazy val IR = new TestingIRContext {
@@ -555,7 +556,7 @@ class BasicOpsSpecification extends SigmaTestingCommons {
           FuncValue(Vector((1, SInt)), Plus(ValUse(1, SInt), IntConstant(1))),
           Vector(IntConstant(2))
         ),
-        IntConstant(3)).toSigmaProp,
+        IntConstant(3)).toSigmaProp
     )
   }
 

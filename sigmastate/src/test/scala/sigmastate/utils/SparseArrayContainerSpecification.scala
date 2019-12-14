@@ -30,7 +30,7 @@ class SparseArrayContainerSpecification extends PropSpec
       val mappedValues = codeValuePairs.toMap
       (Byte.MinValue to Byte.MaxValue).foreach { i =>
         if (mappedValues.get(i.toByte).isEmpty)
-          cont(i.toByte) shouldBe null.asInstanceOf[Long]
+          cont(i.toByte) shouldBe 0L
       }
     }
   }

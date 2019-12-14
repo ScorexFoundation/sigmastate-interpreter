@@ -18,6 +18,7 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
+import sigmastate.utils.Helpers._
 
 class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
   with SerializationSpecification {
