@@ -196,13 +196,6 @@ trait SigmaTestingCommons extends PropSpec
     val positionLimitBefore = r.positionLimit
     serializer.parse(r) shouldBe v
     r.positionLimit shouldBe positionLimitBefore
-
-    // using ergo's(scorex) reader/writer
-//    val w = new VLQByteStringWriter()
-//    serializer.serializeWithGenericWriter(v, w)
-//    val byteStr = w.result()
-//    byteStr.nonEmpty shouldBe true
-//    serializer.parseWithGenericReader(new VLQByteStringReader(byteStr)) shouldEqual v
   }
 
   protected def roundTripTestWithPos[T](v: T)(implicit serializer: SigmaSerializer[T, T]): Assertion = {
