@@ -302,7 +302,6 @@ lazy val contractVerification = project
   .in(file("contract-verification"))
   .enablePlugins(StainlessPlugin)
   .dependsOn(sigmaapi, sigmaDslCompilerMacros)
-  .dependsOn(sigmastate % allConfigDependency)
   .settings(commonSettings: _*)
   .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 
@@ -311,14 +310,15 @@ lazy val sigmaDslCompilerMacros = project
   .dependsOn(sigmastate)
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
-    "org.scalameta" %% "scalameta" % "4.2.3"
+    "org.scalameta" %% "scalameta" % "4.0.0"
   ))
   .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
 
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
-  .dependsOn(contractVerification % allConfigDependency)
-  .settings(commonSettings: _*)
+  .dependsOn(contractVerification)
+  .dependsOn(sigmastate % allConfigDependency)
+  .settings(libraryDefSettings)
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "sigma-core-opt"
