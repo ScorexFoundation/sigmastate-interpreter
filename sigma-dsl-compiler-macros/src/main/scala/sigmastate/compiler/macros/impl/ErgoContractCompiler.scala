@@ -87,7 +87,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
 
     s match {
       case Block(stats, expr) if !stats.exists(_.isInstanceOf[ValDef]) =>
-        reify(BlockValue(IndexedSeq(),recurse(expr).splice))
+        reify(recurse(expr).splice)
 
 //      case Block(stats, expr) =>
 //        // TODO rewrite without nested BlockValue's (use ValUse in subsequent ValDef references)
