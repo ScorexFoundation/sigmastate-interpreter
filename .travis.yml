@@ -14,7 +14,7 @@ scala:
 jdk:
 - oraclejdk8
 before_install:
-  - curl -fsSL https://github.com/Z3Prover/z3/releases/download/z3-4.8.7/z3-4.8.7-x64-ubuntu-16.04.zip -o z3-4.8.7-x64-ubuntu-16.04.zip; unzip -j z3-4.8.7-x64-ubuntu-16.04.zip -d z3_downloaded; export PATH=$PATH:$(pwd)/z3_downloaded; z3 --version; fi
+  - curl -fsSL https://github.com/Z3Prover/z3/releases/download/z3-4.8.7/z3-4.8.7-x64-ubuntu-16.04.zip -o z3-4.8.7-x64-ubuntu-16.04.zip; unzip -j z3-4.8.7-x64-ubuntu-16.04.zip -d z3_downloaded; export PATH=$PATH:$(pwd)/z3_downloaded; z3 --version;
 
 stages:
 - test
