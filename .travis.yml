@@ -28,7 +28,7 @@ jobs:
   - stage: test
     script: sbt -jvm-opts .travis.jvmopts +coverage +test && sbt +coverageReport coverageAggregate coveralls
   - stage: testFormalVerification
-    script: sbt -jvm-opts .travis.jvmopts +sigmaDslCompilerMacrosPlayground/test
+    script: sbt -jvm-opts .travis.jvmopts sigmaDslCompilerMacrosPlayground/test
   - stage: release
     # decrypt the private key (exported via https://docs.scala-lang.org/overviews/contributors/index.html#export-your-pgp-key-pair )
     script: openssl aes-256-cbc -K $encrypted_98cf3af00429_key -iv $encrypted_98cf3af00429_iv -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc && sbt -jvm-opts .travis.jvmopts +publishSigned sonatypeBundleRelease

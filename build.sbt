@@ -301,7 +301,10 @@ lazy val contractVerification = project
   .enablePlugins(StainlessPlugin)
   .dependsOn(sigmaapi, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
-  .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
+  .settings(
+    scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"),
+    crossScalaVersions := Nil, // Stainless does not support 2.11
+)
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
@@ -316,7 +319,9 @@ lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
   .dependsOn(contractVerification)
   .dependsOn(sigmastate % allConfigDependency)
-  .settings(libraryDefSettings)
+  .settings(libraryDefSettings,
+    crossScalaVersions := Nil, // Stainless does not support 2.11
+  )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
   val ergoBranch = "sigma-core-opt"
