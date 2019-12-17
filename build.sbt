@@ -6,10 +6,10 @@ organization := "org.scorexfoundation"
 
 name := "sigma-state"
 
-lazy val scala212 = "2.12.10"
+lazy val scala212 = "2.12.9"
 lazy val scala211 = "2.11.12"
 crossScalaVersions := Seq(scala212, scala211)
-scalaVersion := scala212
+scalaVersion in ThisBuild := scala212
 
 javacOptions ++=
     "-source" :: "1.7" ::
