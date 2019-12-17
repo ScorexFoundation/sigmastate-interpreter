@@ -9,12 +9,16 @@ cache:
   - "$HOME/.sbt"
 language: scala
 scala:
-  - 2.12.10
+  - 2.12.9
   - 2.11.12
 jdk:
 - oraclejdk8
+before_install:
+  - curl -fsSL https://github.com/Z3Prover/z3/releases/download/z3-4.8.7/z3-4.8.7-x64-ubuntu-16.04.zip -o z3-4.8.7-x64-ubuntu-16.04.zip; unzip -j z3-4.8.7-x64-ubuntu-16.04.zip -d z3_downloaded; export PATH=$PATH:$(pwd)/z3_downloaded; z3 --version; fi
+
 stages:
 - test
+- testFormalVerification
 - name: release
   if: tag =~ ^v
 - name: snapshot
@@ -23,6 +27,8 @@ jobs:
   include:
   - stage: test
     script: sbt -jvm-opts .travis.jvmopts +coverage +test && sbt +coverageReport coverageAggregate coveralls
+  - stage: testFormalVerification
+    script: sbt -jvm-opts .travis.jvmopts +sigmaDslCompilerMacrosPlayground/test
   - stage: release
     # decrypt the private key (exported via https://docs.scala-lang.org/overviews/contributors/index.html#export-your-pgp-key-pair )
     script: openssl aes-256-cbc -K $encrypted_98cf3af00429_key -iv $encrypted_98cf3af00429_iv -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc && sbt -jvm-opts .travis.jvmopts +publishSigned sonatypeBundleRelease
