@@ -1,8 +1,8 @@
 package sigmastate.verification.test
 
 import org.ergoplatform.Height
-import sigmastate.{BinAnd, BoolToSigmaProp, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd}
-import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, Value}
+import sigmastate.{BinAnd, BoolToSigmaProp, CAND, COR, GE, GT, LE, LT, SCollection, STuple, SType, SigmaAnd}
+import sigmastate.Values.{ByteArrayConstant, IntConstant, LongArrayConstant, LongConstant, SigmaBoolean, SigmaPropConstant, Value}
 import sigmastate.helpers.SigmaTestingCommons
 import sigmastate.utxo.{ByIndex, SelectField, SizeOf}
 import sigmastate.verification.contract.DummyContractCompilation
@@ -83,21 +83,26 @@ class DummyContractCompilationTest extends SigmaTestingCommons with MiscGenerato
     }
   }
 
-  property("dummy contract4 ergo tree") {
-    forAll(proveDlogGen) { proveDlog =>
-      val c = DummyContractCompilation.contract4Instance(CSigmaProp(proveDlog).asInstanceOf[SigmaProp])
-      val expectedProp = SigmaAnd(BoolToSigmaProp(GE(Height, IntConstant(0))), SigmaPropConstant(proveDlog))
-      assert(c.prop == expectedProp)
+  property("dummy contract4") {
+    forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, false)), proveDlogGen) {
+      case (ctx, proveDlog) =>
+        val pk = CSigmaProp(proveDlog).asInstanceOf[SigmaProp]
+        val c = DummyContractCompilation.contract4Instance(pk)
+        val expectedProp = SigmaAnd(BoolToSigmaProp(GE(Height, IntConstant(0))), SigmaPropConstant(proveDlog))
+        assert(c.prop == expectedProp)
+        assert(c.scalaFunc(ctx) == pk) // height in ctx always >=0
     }
   }
 
-  property("dummy contract5 ergo tree") {
-    forAll(proveDlogGen, proveDlogGen) { case (proveDlog1, proveDlog2) =>
-      val c = DummyContractCompilation.contract5Instance(
-        CSigmaProp(proveDlog1).asInstanceOf[SigmaProp],
-        CSigmaProp(proveDlog2).asInstanceOf[SigmaProp])
+  property("dummy contract5") {
+    forAll(ergoLikeContextGen.map(_.toSigmaContext(IR, false)), proveDlogGen, proveDlogGen) {
+      case (ctx, proveDlog1, proveDlog2) =>
+      val sigmaProp1 = CSigmaProp(proveDlog1).asInstanceOf[SigmaProp]
+        val sigmaProp2 = CSigmaProp(proveDlog2).asInstanceOf[SigmaProp]
+        val c = DummyContractCompilation.contract5Instance( sigmaProp1, sigmaProp2)
       val expectedProp = SigmaAnd(SigmaPropConstant(proveDlog1), SigmaPropConstant(proveDlog2))
       assert(c.prop == expectedProp)
+      assert(c.scalaFunc(ctx) == CSigmaProp(CAND(Seq(proveDlog1, proveDlog2))))
     }
   }
 
