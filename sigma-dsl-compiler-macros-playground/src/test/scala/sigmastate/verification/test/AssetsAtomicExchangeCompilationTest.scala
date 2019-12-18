@@ -25,7 +25,7 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
         val c = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline, tokenId, tokenAmount, pk)
         val expectedProp = SigmaOr(Seq(
           SigmaAnd(List(
-            BoolToSigmaProp(GT(Height,IntConstant(0))),
+            BoolToSigmaProp(GT(Height,IntConstant(deadline))),
             SigmaPropConstant(proveDlogPk))
           ),
           BinAnd(

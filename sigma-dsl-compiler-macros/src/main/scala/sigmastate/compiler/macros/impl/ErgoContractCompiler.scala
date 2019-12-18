@@ -2,7 +2,7 @@ package sigmastate.compiler.macros.impl
 
 import org.ergoplatform.ErgoBox.{R2, R4}
 import org.ergoplatform.{ErgoBox, Height, Outputs, Self}
-import sigmastate.Values.{BlockItem, BlockValue, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, ValUse}
+import sigmastate.Values.{BlockItem, BlockValue, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, SigmaPropValue, ValUse}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
 import sigmastate.utxo.{ByIndex, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionGet, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
@@ -252,10 +252,15 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
           }
           case TypeRef(_, sym1, _) if sym1.fullName == "special.sigma.SigmaProp"
             || sym1.fullName.endsWith("BooleanOps") => m match {
-            case TermName("$amp$amp") =>
-              reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
-            case TermName("$bar$bar") =>
-              reify(SigmaOr(l.splice.asSigmaProp, r.splice.asSigmaProp))
+            case TermName("$amp$amp") => arg.tpe.widen match {
+              case BooleanTpe => reify(SigmaAnd(l.splice.asSigmaProp, BoolToSigmaProp(r.splice.asBoolValue)))
+              case _ => reify(SigmaAnd(l.splice.asSigmaProp, r.splice.asSigmaProp))
+
+            }
+            case TermName("$bar$bar") => arg.tpe.widen match {
+              case BooleanTpe => reify(SigmaOr(l.splice.asSigmaProp, BoolToSigmaProp(r.splice.asBoolValue)))
+              case _ => reify(SigmaOr(l.splice.asSigmaProp, r.splice.asSigmaProp))
+            }
           }
 
           case _ => error(s"object $lhs(tpe: ${lhs.tpe.widen}) has unexpected $m with arg: $arg")
