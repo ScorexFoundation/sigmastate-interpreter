@@ -291,6 +291,7 @@ lazy val aggregateCompile = ScopeFilter(
 
 lazy val rootSettings = Seq(
   sources in Compile := sources.all(aggregateCompile).value.flatten,
+  sourceDirectories in Compile := sourceDirectories.all(aggregateCompile).value.flatten,
   libraryDependencies := libraryDependencies.all(aggregateCompile).value.flatten,
   mappings in (Compile, packageSrc) ++= (mappings in(Compile, packageSrc)).all(aggregateCompile).value.flatten,
   mappings in (Test, packageBin) ++= (mappings in(Test, packageBin)).all(aggregateCompile).value.flatten,
