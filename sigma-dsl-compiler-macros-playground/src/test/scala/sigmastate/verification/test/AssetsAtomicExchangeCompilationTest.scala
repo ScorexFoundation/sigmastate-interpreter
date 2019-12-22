@@ -1,9 +1,9 @@
 package sigmastate.verification.test
 
 import org.ergoplatform.ErgoBox.{R2, R4}
-import org.ergoplatform.{ErgoBox, ErgoLikeTransaction, Height, Outputs, Self}
+import org.ergoplatform.{ErgoBox, ErgoLikeContext, ErgoLikeTransaction, Height, Outputs, Self}
 import org.scalacheck.Arbitrary.arbLong
-import sigmastate.Values.{BlockValue, ByteArrayConstant, ConstantNode, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, TrueLeaf, ValDef, ValUse, Value}
+import sigmastate.Values.{BlockValue, ByteArrayConstant, ConstantNode, ErgoTree, IntConstant, LongArrayConstant, LongConstant, SigmaPropConstant, TrueLeaf, ValDef, ValUse, Value}
 import sigmastate.eval.CSigmaProp
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
 import sigmastate.utxo.{ByIndex, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
@@ -14,20 +14,23 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import special.collection.{Coll, CollOverArray}
 import special.sigma.SigmaProp
 import sigmastate.eval.Extensions._
+import sigmastate.interpreter.ProverResult
 
 class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscGenerators {
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
-  private def ctx(height: Int, tx: ErgoLikeTransaction): special.sigma.Context =
+  private def ctx(height: Int, tx: ErgoLikeTransaction): ErgoLikeContext =
     ErgoLikeContextTesting(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
       boxesToSpend = IndexedSeq(fakeSelf),
       spendingTransaction = tx,
-      self = fakeSelf).toSigmaContext(IR, false)
+      self = fakeSelf)
 
+  private implicit def toSigmaContext(ergoCtx: ErgoLikeContext): special.sigma.Context =
+    ergoCtx.toSigmaContext(IR, false)
 
   property("buyer contract ergo tree") {
     forAll(unsignedIntGen, byteCollGen(0, 40), arbLong.arbitrary, proveDlogGen) {
@@ -101,28 +104,22 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     }
   }
 
-  ignore("buyer contract ergo tree run") {
+  property("buyer contract ergo tree run") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
-
+    val tokenId = tokenIdGen.sample.get
+    val tokenAmount = 100L
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val pk: SigmaProp = CSigmaProp(pubkey)
-    val c = AssetsAtomicExchangeCompilation.buyerContractInstance(50, byteCollGen(20).sample.get, 1, pk)
+    val c = AssetsAtomicExchangeCompilation.buyerContractInstance(49, tokenId.toColl, tokenAmount, pk)
     val tree = c.ergoTree
 
-    val spendingTransaction = createTransaction(IndexedSeq(ErgoBox(1, tree, 0)))
+    val spendingTransaction = createTransaction(IndexedSeq(ErgoBox(1, pubkey, 0)))
+    val context = ctx(50, spendingTransaction)
 
-    val ctx = ErgoLikeContextTesting(
-      currentHeight = 50,
-      lastBlockUtxoRoot = AvlTreeData.dummy,
-      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
-      boxesToSpend = IndexedSeq(fakeSelf),
-      spendingTransaction,
-      self = fakeSelf)
-
-    val pr = prover.prove(tree, ctx, fakeMessage).get
-    verifier.verify(tree, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(tree, context, fakeMessage).get
+    verifier.verify(tree, context, pr, fakeMessage).get._1 shouldBe true
   }
 
   property("buyer contract scalaFunc") {

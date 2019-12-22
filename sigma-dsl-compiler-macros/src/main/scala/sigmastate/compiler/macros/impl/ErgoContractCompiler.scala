@@ -15,7 +15,7 @@ import scala.reflect.macros.TypecheckException
 import scala.reflect.macros.whitebox.{Context => MacrosContext}
 
 case class ErgoContract(scalaFunc: Context => SigmaProp, prop: SValue) {
-  def ergoTree: ErgoTree = ErgoTree.fromProposition(prop.asSigmaProp)
+  val ergoTree: ErgoTree = ErgoTree.fromProposition(prop.asSigmaProp)
 }
 
 object ErgoContractCompiler {
