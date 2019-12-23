@@ -5,7 +5,7 @@ import org.ergoplatform.{ErgoBox, Height, Outputs, Self}
 import sigmastate.Values.{BlockItem, BlockValue, ByteConstant, ErgoTree, EvaluatedValue, IntConstant, LongConstant, SValue, SigmaPropConstant, SigmaPropValue, ValUse}
 import sigmastate._
 import sigmastate.lang.Terms.ValueOps
-import sigmastate.utxo.{ByIndex, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionGet, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
+import sigmastate.utxo.{ByIndex, ExtractAmount, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionGet, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
 import special.sigma.{Context, SigmaProp}
 
 import scala.collection.mutable.ArrayBuffer
@@ -201,6 +201,7 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
         obj.tpe.widen match {
           case TypeRef(_, sym, _) if sym.fullName == "special.collection.Coll" => m match {
             case TermName("length") => reify(SizeOf(o.splice.asCollection[SType]))
+            case TermName("size") => reify(SizeOf(o.splice.asCollection[SType]))
             case TermName("nonEmpty") => reify(GT(SizeOf(o.splice.asCollection[SType]), IntConstant(0)))
           }
           case TypeRef(_, sym, _) if sym.fullName == "special.sigma.Box" => m match {
@@ -211,6 +212,8 @@ class ErgoContractCompilerImpl(val c: MacrosContext) {
               reify(ExtractScriptBytes(o.splice.asBox))
             case TermName("id") =>
               reify(ExtractId(o.splice.asBox))
+            case TermName("value") =>
+              reify(ExtractAmount(o.splice.asBox))
           }
           case TypeRef(_, sym, _) if sym.fullName == "special.sigma.SigmaProp" => m match {
             case TermName("propBytes") =>

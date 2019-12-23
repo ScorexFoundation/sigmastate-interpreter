@@ -34,7 +34,7 @@ sealed abstract class AssetsAtomicExchange extends SigmaContract {
   def seller(ctx: Context, deadline: Int, ergAmount: Long, pkB: SigmaProp): SigmaProp = {
     import ctx._
     (HEIGHT > deadline && pkB) || (
-      OUTPUTS.isDefinedAt(1) &&
+      OUTPUTS.size > 1 &&
         OUTPUTS(1).R4[Coll[Byte]].isDefined
       ) && {
       val knownBoxId = OUTPUTS(1).R4[Coll[Byte]].get == SELF.id
@@ -102,7 +102,7 @@ case object AssetsAtomicExchangeSellerVerification extends AssetsAtomicExchange 
                                                      ergAmount: Long,
                                                      pkB: SigmaProp): Boolean = {
     import ctx._
-    OUTPUTS.isDefinedAt(1) &&
+    OUTPUTS.size > 1 &&
       OUTPUTS(1).R4[Coll[Byte]].isDefined &&
       OUTPUTS(1).value >= ergAmount &&
       OUTPUTS(1).R4[Coll[Byte]].get == SELF.id &&
@@ -147,6 +147,14 @@ object AssetsAtomicExchangeCompilation extends AssetsAtomicExchange {
                             tokenAmount: Long,
                             pkA: SigmaProp): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
-      buyer(context: Context, deadline: Int, tokenId: Coll[Byte], tokenAmount: Long, pkA: SigmaProp)
+      buyer(context, deadline, tokenId, tokenAmount, pkA)
     }
+
+  def sellerContractInstance(deadline: Int,
+                             ergAmount: Long,
+                            pkB: SigmaProp): ErgoContract =
+    ErgoContractCompiler.compile { context: Context =>
+      seller(context, deadline, ergAmount, pkB)
+    }
+
 }

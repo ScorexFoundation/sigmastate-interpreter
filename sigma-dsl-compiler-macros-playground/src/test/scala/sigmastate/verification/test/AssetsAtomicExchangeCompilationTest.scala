@@ -7,7 +7,7 @@ import scorex.crypto.hash.Digest32
 import sigmastate.Values.{BlockValue, ByteArrayConstant, IntConstant, LongConstant, SigmaPropConstant, ValDef, ValUse, Value}
 import sigmastate.eval.CSigmaProp
 import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeContextTesting, ErgoLikeTestInterpreter, SigmaTestingCommons}
-import sigmastate.utxo.{ByIndex, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
+import sigmastate.utxo.{ByIndex, ExtractAmount, ExtractId, ExtractRegisterAs, ExtractScriptBytes, OptionIsDefined, SelectField, SigmaPropBytes, SizeOf}
 import sigmastate.verification.contract.AssetsAtomicExchangeCompilation
 import sigmastate.verified.VerifiedTypeConverters._
 import sigmastate.{utxo, _}
@@ -99,6 +99,58 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
                 ),
                 ValUse(3,SBoolean))).asInstanceOf[Value[SBoolean.type]]
           ).toSigmaProp
+        ))
+        assert(c.prop == expectedProp)
+    }
+  }
+
+  property("seller contract ergo tree") {
+    forAll(unsignedIntGen, arbLong.arbitrary, proveDlogGen) {
+      case (deadline, ergAmount, proveDlogPk) =>
+        val pk: SigmaProp = CSigmaProp(proveDlogPk)
+        val c = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, pk)
+        val expectedProp = SigmaOr(Seq(
+          SigmaAnd(Seq(
+            BoolToSigmaProp(GT(Height, IntConstant(deadline))),
+            SigmaPropConstant(proveDlogPk)
+          )),
+          BoolToSigmaProp(BinAnd(
+            BinAnd(
+              GT(SizeOf(Outputs), IntConstant(1)),
+              OptionIsDefined(
+                ExtractRegisterAs(
+                  ByIndex(Outputs, IntConstant(1), None),
+                  R4,
+                  SOption(SCollectionType(SByte)))
+              )),
+            BlockValue(
+              Vector(
+                ValDef(1, List(),
+                  EQ(
+                    ExtractRegisterAs(
+                      ByIndex(Outputs, IntConstant(1), None),
+                      R4,
+                      SOption(SCollectionType(SByte))
+                    ).get,
+                    ExtractId(Self)
+                  )
+                )
+              ),
+              BinAnd(
+                BinAnd(
+                  GE(
+                    ExtractAmount(ByIndex(Outputs, IntConstant(1), None)),
+                    LongConstant(ergAmount)
+                  ),
+                  ValUse(1, SBoolean)
+                ),
+                EQ(
+                  ExtractScriptBytes(ByIndex(Outputs, IntConstant(1), None)),
+                  SigmaPropBytes(SigmaPropConstant(proveDlogPk))
+                )
+              )
+            ).asInstanceOf[Value[SBoolean.type]]
+          ))
         ))
         assert(c.prop == expectedProp)
     }
