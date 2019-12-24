@@ -296,15 +296,17 @@ lazy val rootSettings = Seq(
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
-lazy val contractVerification = project
+lazy val verifiedContracts = project
   .in(file("contract-verification"))
+  .withId("verified-contracts")
   .enablePlugins(StainlessPlugin)
   .dependsOn(sigmaapi, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
   .settings(
     scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"),
     crossScalaVersions := Nil, // Stainless does not support 2.11
-)
+    publishArtifact in(Compile, packageDoc) := false,
+  )
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
@@ -317,7 +319,7 @@ lazy val sigmaDslCompilerMacros = project
 
 lazy val sigmaDslCompilerMacrosPlayground = project
   .in(file("sigma-dsl-compiler-macros-playground"))
-  .dependsOn(contractVerification)
+  .dependsOn(verifiedContracts)
   .dependsOn(sigmastate % allConfigDependency)
   .settings(libraryDefSettings,
     crossScalaVersions := Nil, // Stainless does not support 2.11
