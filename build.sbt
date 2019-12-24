@@ -284,7 +284,7 @@ lazy val sigma = (project in file("."))
 
 lazy val aggregateCompile = ScopeFilter(
   inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
-    sigmalibrary, sigmastate),
+    sigmalibrary, sigmastate, sigmaDslCompilerMacros),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
@@ -300,7 +300,7 @@ lazy val verifiedContracts = project
   .in(file("contract-verification"))
   .withId("verified-contracts")
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmaapi, sigmaDslCompilerMacros)
+  .dependsOn(sigmastate, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
   .settings(
     scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"),
