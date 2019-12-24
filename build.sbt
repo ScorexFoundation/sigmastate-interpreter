@@ -284,7 +284,7 @@ lazy val sigma = (project in file("."))
 
 lazy val aggregateCompile = ScopeFilter(
   inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
-    sigmalibrary, sigmastate, sigmaDslCompilerMacros),
+    sigmalibrary, sigmastate),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
@@ -310,6 +310,7 @@ lazy val verifiedContracts = project
 
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
+  .withId("sigma-dsl-compiler-macros")
   .dependsOn(sigmastate)
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
