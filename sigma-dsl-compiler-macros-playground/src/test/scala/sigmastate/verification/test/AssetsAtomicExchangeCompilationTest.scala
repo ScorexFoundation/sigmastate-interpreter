@@ -156,7 +156,7 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     }
   }
 
-  property("buyer contract, buyer withdraw after deadline") {
+  property("buyer contract, buyer claim after deadline") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val tokenId = tokenIdGen.sample.get
@@ -237,4 +237,35 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
 
     }
   }
+
+  property("seller contract, seller claim after deadline") {
+    val prover = new ContextEnrichingTestProvingInterpreter
+    val verifier = new ErgoLikeTestInterpreter
+    val ergAmount = 100L
+    val deadline = 49
+    val pubkey = prover.dlogSecrets.head.publicImage
+
+    val pk: SigmaProp = CSigmaProp(pubkey)
+    val c = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, pk)
+    val tree = c.ergoTree
+
+    val spendingTransaction = createTransaction(IndexedSeq(
+      ErgoBox(
+        value = 1,
+        ergoTree = TrivialProp.TrueProp,
+        creationHeight = 0),
+      // second box as a workaround for costing issue
+      // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/628
+      ErgoBox(
+        value = 1,
+        ergoTree = TrivialProp.TrueProp, // any address
+        creationHeight = 0),
+
+    ))
+    val context = ctx(deadline + 1, spendingTransaction)
+
+    val pr = prover.prove(tree, context, fakeMessage).get
+    verifier.verify(tree, context, pr, fakeMessage).get._1 shouldBe true
+  }
+
 }
