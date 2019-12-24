@@ -20,14 +20,14 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
 
   implicit lazy val IR: TestingIRContext = new TestingIRContext
 
-  private def ctx(height: Int, tx: ErgoLikeTransaction): ErgoLikeContext =
+  private def ctx(height: Int, tx: ErgoLikeTransaction, selfBox: ErgoBox = fakeSelf): ErgoLikeContext =
     ErgoLikeContextTesting(
       currentHeight = height,
       lastBlockUtxoRoot = AvlTreeData.dummy,
       minerPubkey = ErgoLikeContextTesting.dummyPubkey,
-      boxesToSpend = IndexedSeq(fakeSelf),
+      boxesToSpend = IndexedSeq(selfBox),
       spendingTransaction = tx,
-      self = fakeSelf)
+      self = selfBox)
 
   private implicit def toSigmaContext(ergoCtx: ErgoLikeContext): special.sigma.Context =
     ergoCtx.toSigmaContext(IR, false)
@@ -268,4 +268,61 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     verifier.verify(tree, context, pr, fakeMessage).get._1 shouldBe true
   }
 
+  property("seller contract, no buyer") {
+    val verifier = new ErgoLikeTestInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
+    val pubkey = prover.dlogSecrets.head.publicImage
+    val sellerPk: SigmaProp = CSigmaProp(pubkey)
+    val tx = createTransaction(IndexedSeq(ErgoBox(1, TrivialProp.TrueProp, 0)))
+
+    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), arbLong.arbitrary) {
+      case (deadline, ergAmount) =>
+
+        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, sellerPk)
+
+        // before deadline
+        val contextBeforeDeadline = ctx(deadline - 1, tx)
+        contract.scalaFunc(contextBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.FalseProp)
+        verifier.verify(contract.ergoTree, contextBeforeDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
+
+        // after deadline
+        val contextAfterDeadline = ctx(deadline + 1, tx)
+        contract.scalaFunc(contextAfterDeadline) shouldEqual sellerPk
+        verifier.verify(contract.ergoTree, contextAfterDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
+    }
+  }
+
+  property("seller contract, with buyer") {
+    val verifier = new ErgoLikeTestInterpreter
+    val prover = new ContextEnrichingTestProvingInterpreter
+    val sellerPk = prover.dlogSecrets.head.publicImage
+    val sellerPkProp: SigmaProp = CSigmaProp(sellerPk)
+
+    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), arbLong.arbitrary) {
+      case (deadline, ergAmount) =>
+
+        val tx = createTransaction(IndexedSeq(
+          ErgoBox(
+            value = 1,
+            ergoTree = TrivialProp.TrueProp,
+            creationHeight = 0),
+          ErgoBox(
+            value = ergAmount,
+            ergoTree = sellerPk,
+            creationHeight = 0,
+            additionalRegisters = Map(ErgoBox.R4 -> ByteArrayConstant(fakeSelf.id)))
+        ))
+        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, sellerPkProp)
+
+        // before deadline
+        val ctxBeforeDeadline = ctx(deadline - 1, tx)
+        contract.scalaFunc(ctxBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
+        verifier.verify(contract.ergoTree, ctxBeforeDeadline, ProverResult.empty, fakeMessage).get._1 shouldBe true
+
+        // after deadline
+        val ctxAfterDeadline = ctx(deadline + 1, tx)
+        contract.scalaFunc(ctxAfterDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
+        verifier.verify(contract.ergoTree, ctxAfterDeadline, ProverResult.empty, fakeMessage).get._1 shouldBe true
+    }
+  }
 }
