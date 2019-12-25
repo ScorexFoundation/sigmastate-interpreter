@@ -300,7 +300,7 @@ lazy val verifiedContracts = project
   .in(file("contract-verification"))
   .withId("verified-contracts")
   .enablePlugins(StainlessPlugin)
-  .dependsOn(sigmastate, sigmaDslCompilerMacros)
+  .dependsOn(sigma, sigmaDslCompilerMacros)
   .settings(commonSettings: _*)
   .settings(
     scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"),
@@ -311,7 +311,7 @@ lazy val verifiedContracts = project
 lazy val sigmaDslCompilerMacros = project
   .in(file("sigma-dsl-compiler-macros"))
   .withId("sigma-dsl-compiler-macros")
-  .dependsOn(sigmastate)
+  .dependsOn(sigma)
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.scalameta" %% "scalameta" % "4.0.0"
