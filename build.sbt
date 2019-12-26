@@ -8,8 +8,6 @@ name := "sigma-state"
 
 lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
-crossScalaVersions := Seq(scala212, scala211)
-scalaVersion := scala212
 
 javacOptions ++=
     "-source" :: "1.7" ::
@@ -20,6 +18,8 @@ lazy val allConfigDependency = "compile->compile;test->test"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
+  crossScalaVersions := Seq(scala212, scala211),
+  scalaVersion := scala212,
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/ScorexFoundation/sigmastate-interpreter")),
