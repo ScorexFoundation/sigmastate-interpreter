@@ -33,7 +33,7 @@ jobs:
     # decrypt the private key (exported via https://docs.scala-lang.org/overviews/contributors/index.html#export-your-pgp-key-pair )
     script: openssl aes-256-cbc -K $encrypted_98cf3af00429_key -iv $encrypted_98cf3af00429_iv -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc && sbt -jvm-opts .travis.jvmopts +publishSigned sonatypeBundleRelease
   - stage: snapshot
-    script: sbt -jvm-opts .travis.jvmopts +publish verified-contracts/publish
+    script: sbt -jvm-opts .travis.jvmopts +publish sigma-dsl-compiler-macros/publish verified-contracts/publish
 env:
   global:
   - secure: IGwd+lY2TfkAeX1SfzaYBwyhiiPaFrTxoF0e+4R1bkGxiGCce1hBYjn15z1HRfK+k3hgEZh/FBG7dv8LQfNWQ6AJY5PQ2zwckd4ArYMhTVpiY4eRzUMqO1/gjTCCbbTjfFKOMsR2pAw+TGeglqoX4eyziIaS8nR901dZcFvHuC1Fr5EdKFZ0x+WHnX8vaSQoDE4u1MoBnyo5cRVumXG+xvs1Q0nZXm/hd/Flfx5u3L7veKAkGtvbHmdsJoSSySTbc1MGYQtofQjbjd9AVvUhgfP32J63UCC2SqgWWKVvIjW+dUn414BV3lelnWR3FdzhC7AUJqYWVfSILh1aj3STnizRnjtCScmyoRz4ldUQ3jr4jBJOREUEus5YH2EqY1MGjX+8kUu9IjDYiQyNy1EdivcmMlXCOcAW2mi4rGDRxZOeFt1ZSHzxqSghZOFwvk/OFcdDzV4/3OnAcGz8LH5qjZU/edjmfkSls5CqxuAFqeD7RZWIu0ccjt6dzQZAf02lBX9kQuwIruC4x4E0iEjml7jmaEeOT4Hqk7wAo6EFMSEkj4EnS/Kln6Wr7JBut5qrMk0+PDgvxaKCaN8LeycCSQdoXfPO602WzfasNcOJexSmGMAE5NYfeXjq1h3F9AVHJ3TbNAOdlQTHbSOqt7WO10JphljYnFEu4aSzvaA3E60=

@@ -274,16 +274,6 @@ lazy val sigmastate = (project in file("sigmastate"))
     scorexUtil, kiama, fastparse, circeCore, circeGeneric, circeParser))
   .settings(publish / skip := true)
 
-lazy val sigmaDslCompilerMacros = project
-  .in(file("sigma-dsl-compiler-macros"))
-  .withId("sigma-dsl-compiler-macros")
-  .dependsOn(sigmastate)
-  .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= Seq(
-    "org.scalameta" %% "scalameta" % "4.0.0"
-  ))
-  .settings(scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"))
-
 lazy val sigma = (project in file("."))
   .aggregate(
     sigmastate, common, core, libraryapi, libraryimpl, library,
@@ -294,7 +284,7 @@ lazy val sigma = (project in file("."))
 
 lazy val aggregateCompile = ScopeFilter(
   inProjects(common, core, libraryapi, libraryimpl, library, sigmaapi, sigmaimpl,
-    sigmalibrary, sigmastate, sigmaDslCompilerMacros),
+    sigmalibrary, sigmastate),
   inConfigurations(Compile))
 
 lazy val rootSettings = Seq(
@@ -306,6 +296,24 @@ lazy val rootSettings = Seq(
   mappings in(Test, packageSrc) ++= (mappings in(Test, packageSrc)).all(aggregateCompile).value.flatten
 )
 
+lazy val sigmaDslCompilerMacros = project
+  .in(file("sigma-dsl-compiler-macros"))
+  .withId("sigma-dsl-compiler-macros")
+  .dependsOn(
+    // "internal" configuration prevents these dependencies to be published
+    sigmastate % "compile-internal, test-internal",
+    // for publishing (cannot put sigmastate, since it's not published separately)
+    sigma,
+  )
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scalameta" %% "scalameta" % "4.0.0"
+  ))
+  .settings(
+    scalacOptions ++= Seq("-Xlog-free-terms", "-Ymacro-debug-lite"),
+    crossScalaVersions := Nil, // not enough macro in 2.11
+  )
+
 lazy val verifiedContracts = project
   .in(file("contract-verification"))
   .withId("verified-contracts")
@@ -313,8 +321,9 @@ lazy val verifiedContracts = project
   .dependsOn(
     // "internal" configuration prevents these dependencies to be published
     sigmastate % "compile-internal, test-internal",
-    sigmaDslCompilerMacros % "compile-internal, test-internal",
-    sigma, // for publishing (cannot put sigmastate, since it's not published separately)
+    // for publishing (cannot put sigmastate, since it's not published separately)
+    sigma,
+    sigmaDslCompilerMacros,
   )
   .settings(commonSettings: _*)
   .settings(
