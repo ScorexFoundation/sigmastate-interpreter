@@ -883,7 +883,7 @@ object Values {
     *                     If isConstantSegregation == false this array should be empty and any placeholder in
     *                     the tree will lead to exception.
     *
-    *  @param root        On the right side it has valid expression of `SigmaProp` type. Or alternatively,
+    *  @param template        On the right side it has valid expression of `SigmaProp` type. Or alternatively,
     *                     on the left side, it has unparsed bytes along with the ValidationException,
     *                     which caused the deserializer to fail.
     *                     `Right(tree)` if isConstantSegregation == true contains ConstantPlaceholder
@@ -906,11 +906,11 @@ object Values {
     *
     */
   case class ErgoTree private[sigmastate](
-    header: Byte,
-    constants: IndexedSeq[Constant[SType]],
-    root: Either[UnparsedErgoTree, SigmaPropValue],
-    private val givenComplexity: Int,
-    private val propositionBytes: Array[Byte]
+                                           header: Byte,
+                                           constants: IndexedSeq[Constant[SType]],
+                                           template: Either[UnparsedErgoTree, SigmaPropValue],
+                                           private val givenComplexity: Int,
+                                           private val propositionBytes: Array[Byte]
   ) {
 
     def this(header: Byte,
@@ -928,7 +928,7 @@ object Values {
     lazy val proposition: SigmaPropValue = toProposition(isConstantSegregation)
 
     @inline final def version: Byte = ErgoTree.getVersion(header)
-    @inline final def isRightParsed: Boolean = root.isRight
+    @inline final def isRightParsed: Boolean = template.isRight
     @inline final def isConstantSegregation: Boolean = ErgoTree.isConstantSegregation(header)
     @inline final def hasSize: Boolean = ErgoTree.hasSize(header)
 
@@ -962,7 +962,7 @@ object Values {
       *   throws the error from UnparsedErgoTree.
       *   It does so on every usage of `proposition` because the lazy value remains uninitialized.
       */
-    def toProposition(replaceConstants: Boolean): SigmaPropValue = root match {
+    def toProposition(replaceConstants: Boolean): SigmaPropValue = template match {
       case Right(tree) =>
         val prop = if (replaceConstants)
           substConstants(tree, constants).asSigmaProp
@@ -976,12 +976,12 @@ object Values {
     /** Override equality to exclude `complexity`. */
     override def canEqual(that: Any): Boolean = that.isInstanceOf[ErgoTree]
 
-    override def hashCode(): Int = header * 31 + Objects.hash(constants, root)
+    override def hashCode(): Int = header * 31 + Objects.hash(constants, template)
 
     override def equals(obj: Any): Boolean = (this eq obj.asInstanceOf[AnyRef]) ||
       ((obj.asInstanceOf[AnyRef] != null) && (obj match {
         case other: ErgoTree =>
-          other.header == header && other.constants == constants && other.root == root
+          other.header == header && other.constants == constants && other.template == template
         case _ => false
       }))
   }

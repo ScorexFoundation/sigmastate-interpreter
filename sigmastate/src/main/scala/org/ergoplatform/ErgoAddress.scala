@@ -249,7 +249,7 @@ case class ErgoAddressEncoder(networkPrefix: NetworkPrefix) {
   }
 
   def fromProposition(proposition: ErgoTree): Try[ErgoAddress] = Try {
-    proposition.root match {
+    proposition.template match {
       case Right(SigmaPropConstant(ProveDlogProp(d))) => P2PKAddress(d)
       case Right(IsPay2SHAddress(scriptHash)) => new Pay2SHAddress(scriptHash.toArray)
       case Right(b: Value[SSigmaProp.type]@unchecked) if b.tpe == SSigmaProp => Pay2SAddress(proposition)

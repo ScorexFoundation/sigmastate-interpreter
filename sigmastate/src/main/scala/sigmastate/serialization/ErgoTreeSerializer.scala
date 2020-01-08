@@ -98,7 +98,7 @@ class ErgoTreeSerializer {
     val w = SigmaSerializer.startWriter()
     serializeHeader(ergoTree, w)
     assert(ergoTree.isRightParsed, s"Right parsed ErgoTree expected: $ergoTree")
-    ValueSerializer.serialize(ergoTree.root.right.get, w)
+    ValueSerializer.serialize(ergoTree.template.right.get, w)
     w.toBytes
   }
 
@@ -106,7 +106,7 @@ class ErgoTreeSerializer {
     * Doesn't apply any transformations and guarantee to preserve original
     * structure after deserialization. */
   def serializeErgoTree(ergoTree: ErgoTree): Array[Byte] = {
-    val res = ergoTree.root match {
+    val res = ergoTree.template match {
       case Left(UnparsedErgoTree(bytes, _)) => bytes.array
       case _ =>
         val bytes = serializeWithoutSize(ergoTree)

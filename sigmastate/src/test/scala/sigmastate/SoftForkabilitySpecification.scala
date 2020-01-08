@@ -177,8 +177,8 @@ class SoftForkabilitySpecification extends SigmaTestingData {
     proveAndVerifyTx("propV2", tx, v2vs)
 
     // also check that transaction prop was trivialized due to soft-fork
-    tx.outputs(0).ergoTree.root.left.get.bytes.array shouldBe treeBytes
-    tx.outputs(0).ergoTree.root.left.get.isInstanceOf[UnparsedErgoTree] shouldBe true
+    tx.outputs(0).ergoTree.template.left.get.bytes.array shouldBe treeBytes
+    tx.outputs(0).ergoTree.template.left.get.isInstanceOf[UnparsedErgoTree] shouldBe true
 
     // check deserialized tx is otherwise remains the same
     checkTxProp(txV2, tx)(_.inputs)
