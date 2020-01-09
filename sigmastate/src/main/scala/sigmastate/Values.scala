@@ -883,7 +883,7 @@ object Values {
     *                     If isConstantSegregation == false this array should be empty and any placeholder in
     *                     the tree will lead to exception.
     *
-    *  @param template        On the right side it has valid expression of `SigmaProp` type. Or alternatively,
+    *  @param template    On the right side it has valid expression of `SigmaProp` type. Or alternatively,
     *                     on the left side, it has unparsed bytes along with the ValidationException,
     *                     which caused the deserializer to fail.
     *                     `Right(tree)` if isConstantSegregation == true contains ConstantPlaceholder
