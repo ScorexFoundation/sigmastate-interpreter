@@ -905,12 +905,13 @@ object Values {
     *                          2) in the alternative constructor using ErgoTreeSerializer.serializeErgoTree
     *
     */
-  case class ErgoTree private[sigmastate](
-                                           header: Byte,
-                                           constants: IndexedSeq[Constant[SType]],
-                                           template: Either[UnparsedErgoTree, SigmaPropValue],
-                                           private val givenComplexity: Int,
-                                           private val propositionBytes: Array[Byte]
+  case class ErgoTree private[sigmastate]
+  (
+    header: Byte,
+    constants: IndexedSeq[Constant[SType]],
+    template: Either[UnparsedErgoTree, SigmaPropValue],
+    private val givenComplexity: Int,
+    private val propositionBytes: Array[Byte]
   ) {
 
     def this(header: Byte,
