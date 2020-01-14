@@ -669,7 +669,13 @@ object Values {
 
   case class ConcreteCollection[V <: SType](items: Seq[Value[V]], elementType: V)
     extends EvaluatedCollection[V, SCollection[V]] {
-// TODO uncomment and make sure Ergo works with it, i.e. complex data types are never used for `items`
+// TODO uncomment and make sure Ergo works with it, i.e. complex data types are never used for `items`.
+//      There is nothing wrong in using List, Vector and other fancy types as a concrete representation
+//      of `items`, but these types have sub-optimal performance (2-3x overhead comparing to WrappedArray)
+//      which is immediately visible in profile.
+//      NOTE, the assert below should be commented before production release.
+//      Is it there for debuging only, basically to catch call stacks where the fancy types may
+//      occasionally be used.
 //    assert(items.isInstanceOf[mutable.WrappedArray[_]] || items.isInstanceOf[mutable.IndexedSeq[_]],
 //      s"Invalid types of items ${items.getClass}")
     private val isBooleanConstants = elementType == SBoolean && items.forall(_.isInstanceOf[Constant[_]])
