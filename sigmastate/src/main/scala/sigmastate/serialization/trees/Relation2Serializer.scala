@@ -12,6 +12,10 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
 (override val opDesc: RelationCompanion,
  constructor: (Value[S1], Value[S2]) => Value[SBoolean.type]) extends ValueSerializer[R] {
   import SigmaByteWriter._
+  val opCodeInfo: DataInfo[Byte] = ArgInfo("opCode", s"always contains OpCode ${ConcreteCollectionBooleanConstantCode.toUByte}")
+  val bitsInfo: DataInfo[Bits] = maxBitsInfo("(l,r)", 2, "two higher bits in a byte")
+  val leftArgInfo: DataInfo[SValue] = opDesc.argInfos(0)
+  val rightArgInfo: DataInfo[SValue] = opDesc.argInfos(1)
 
   override def serialize(obj: R, w: SigmaByteWriter): Unit = {
     val typedRel = obj.asInstanceOf[Relation[S1, S2]]
@@ -19,15 +23,13 @@ case class Relation2Serializer[S1 <: SType, S2 <: SType, R <: Value[SBoolean.typ
       (typedRel.left, typedRel.right) match {
         case (Constant(left, lTpe), Constant(right, rTpe)) if lTpe == SBoolean && rTpe == SBoolean =>
           when(1, "(Constant(l, Boolean), Constant(r, Boolean))") {
-            w.put(ConcreteCollectionBooleanConstantCode, ArgInfo("opCode", s"always contains OpCode ${ConcreteCollectionBooleanConstantCode.toUByte}"))
-            w.putBits(
-              Array[Boolean](left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]),
-              maxBitsInfo("(l,r)", 2, "two higher bits in a byte"))
+            w.put(ConcreteCollectionBooleanConstantCode, opCodeInfo)
+            w.putBits(Array(left.asInstanceOf[Boolean], right.asInstanceOf[Boolean]), bitsInfo)
           }
         case _ =>
           otherwise {
-            w.putValue(typedRel.left, opDesc.argInfos(0))
-            w.putValue(typedRel.right, opDesc.argInfos(1))
+            w.putValue(typedRel.left, leftArgInfo)
+            w.putValue(typedRel.right, rightArgInfo)
           }
       }
     }

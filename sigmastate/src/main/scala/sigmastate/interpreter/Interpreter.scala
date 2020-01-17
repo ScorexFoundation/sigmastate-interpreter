@@ -152,8 +152,7 @@ trait Interpreter extends ScorexLogging {
       CheckCostFunc(IR)(asRep[Any => Int](costF))
 
       val costingCtx = context.toSigmaContext(IR, isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost)
-              .fold(t => throw t, identity)
+      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
@@ -224,7 +223,7 @@ trait Interpreter extends ScorexLogging {
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context2, env, propTree).fold(t => throw t, identity)
+      val (cProp, cost) = reduceToCrypto(context2, env, propTree).getOrThrow
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true

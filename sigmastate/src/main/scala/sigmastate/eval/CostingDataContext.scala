@@ -63,19 +63,19 @@ case class CSigmaProp(sigmaTree: SigmaBoolean) extends SigmaProp with WrapperOf[
 
   override def &&(other: SigmaProp): SigmaProp = other match {
     case other: CSigmaProp =>
-      CSigmaProp(CAND.normalized(Seq(sigmaTree, other.sigmaTree)))
+      CSigmaProp(CAND.normalized(Array(sigmaTree, other.sigmaTree)))
   }
 
   override def &&(other: Boolean): SigmaProp =
-    CSigmaProp(CAND.normalized(Seq(sigmaTree, TrivialProp(other))))
+    CSigmaProp(CAND.normalized(Array(sigmaTree, TrivialProp(other))))
 
   override def ||(other: SigmaProp): SigmaProp = other match {
     case other: CSigmaProp =>
-      CSigmaProp(COR.normalized(Seq(sigmaTree, other.sigmaTree)))
+      CSigmaProp(COR.normalized(Array(sigmaTree, other.sigmaTree)))
   }
 
   override def ||(other: Boolean): SigmaProp =
-    CSigmaProp(COR.normalized(Seq(sigmaTree, TrivialProp(other))))
+    CSigmaProp(COR.normalized(Array(sigmaTree, TrivialProp(other))))
 
   override def toString: String = s"SigmaProp(${wrappedValue.showToString})"
 }
@@ -372,8 +372,8 @@ object CostingBox {
 //    val eRange = asElem[Any](IR.rtypeToElem(tRange))
 //
 //    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
-////    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-////    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+////    IR.verifyCostFunc(costF).getOrThrow
+////    IR.verifyIsProven(calcF).getOrThrow
 //
 //    // check cost
 ////    val costingCtx = context.toSigmaContext(IR, isCost = true)
@@ -529,11 +529,17 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
   def Box(ebox: ErgoBox): Box = CostingBox(false, ebox)
   def toErgoBox(b: Box): ErgoBox = b.asInstanceOf[CostingBox].ebox
 
+  /** @hotspot don't beautify this code */
   private def toSigmaTrees(props: Array[SigmaProp]): Array[SigmaBoolean] = {
-    props.map {
-      case csp: CSigmaProp => csp.sigmaTree
-      case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
+    val len = props.length
+    val res = new Array[SigmaBoolean](len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      res(i) = props(i) match {
+        case csp: CSigmaProp => csp.sigmaTree
+        case m: MockSigma => TrivialProp(m.isValid) //needed for tests, e.g. "atLeast" test
+      }
     }
+    res
   }
 
   @inline private def toEcPointType(ge: GroupElement): EcPointType =

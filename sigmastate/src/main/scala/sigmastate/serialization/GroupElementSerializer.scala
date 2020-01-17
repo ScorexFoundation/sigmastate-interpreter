@@ -36,7 +36,7 @@ object GroupElementSerializer extends SigmaSerializer[EcPointType, EcPointType] 
 
   override def parse(r: SigmaByteReader): EcPointType = {
     val encoded = r.getBytes(encodingSize)
-    if (encoded.head != 0) {
+    if (encoded(0) != 0) {
       curve.curve.decodePoint(encoded).asInstanceOf[EcPointType]
     } else {
       curve.identity

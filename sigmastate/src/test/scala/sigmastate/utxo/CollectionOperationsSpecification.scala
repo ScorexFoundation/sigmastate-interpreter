@@ -34,16 +34,16 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long] = IndexedSeq()) = {
     val (prover, verifier, prop, ctx) = buildEnv(code, expectedComp, outputBoxValues, boxesToSpendValues)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   private def assertProof(code: String,
                           outputBoxValues: IndexedSeq[Long],
                           boxesToSpendValues: IndexedSeq[Long]) = {
     val (prover, verifier, prop, ctx) = buildEnv(code, None, outputBoxValues, boxesToSpendValues)
-    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).fold(t => throw t, x => x)
-    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).get._1 shouldBe true
+    val pr = prover.prove(emptyEnv + (ScriptNameProp -> "prove"), prop, ctx, fakeMessage).getOrThrow
+    verifier.verify(emptyEnv + (ScriptNameProp -> "verify"), prop, ctx, pr, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   private def assertProverFail(code: String,
@@ -408,10 +408,10 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin
 
     val expectedPropTree = ForAll(
-      ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
-      FuncValue(Vector((1, SInt)),
+      ConcreteCollection(Array(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+      FuncValue(Array((1, SInt)),
         BlockValue(
-          Vector(ValDef(3, If(EQ(ValUse(1, SInt), IntConstant(0)), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))))),
+          Array(ValDef(3, If(EQ(ValUse(1, SInt), IntConstant(0)), IntConstant(5), Minus(ValUse(1, SInt), IntConstant(1))))),
           BinAnd(GE(ValUse(3, SInt), IntConstant(0)), LE(ValUse(3, SInt), IntConstant(5)))
         )
       )
@@ -434,14 +434,14 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
          }""".stripMargin
 
     val expectedPropTree = ForAll(
-      ConcreteCollection(Vector(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
+      ConcreteCollection(Array(IntConstant(0), IntConstant(1), IntConstant(2), IntConstant(3), IntConstant(4), IntConstant(5)), SInt),
       FuncValue(
-        Vector((1, SInt)),
+        Array((1, SInt)),
         BlockValue(
-          Vector(
+          Array(
             ValDef(3,
               ByIndex(
-                ConcreteCollection(Vector(IntConstant(1), IntConstant(1), IntConstant(0), IntConstant(0), IntConstant(0), IntConstant(1)), SInt),
+                ConcreteCollection(Array(IntConstant(1), IntConstant(1), IntConstant(0), IntConstant(0), IntConstant(0), IntConstant(1)), SInt),
                 If(
                   LE(ValUse(1, SInt), IntConstant(0)),
                   IntConstant(5),
@@ -488,7 +488,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
 
   property("indices") {
     assertProof("OUTPUTS.indices == Coll(0, 1)",
-      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection(IntConstant(0), IntConstant(1))),
+      EQ(MethodCall(Outputs, IndicesMethod.withConcreteTypes(Map(tIV -> SBox)), Vector(), Map()), ConcreteCollection.fromItems(IntConstant(0), IntConstant(1))),
       IndexedSeq(1L, 1L))
   }
 
@@ -519,7 +519,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             PatchMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(IntConstant(0), ConcreteCollection(LongConstant(3)), IntConstant(1)),
+            Vector(IntConstant(0), ConcreteCollection.fromItems(LongConstant(3)), IntConstant(1)),
             Map()).asCollection[SType],
           IntConstant(0)
         ),
@@ -549,7 +549,7 @@ class CollectionOperationsSpecification extends SigmaTestingCommons {
           MethodCall(
             MapCollection(Outputs, FuncValue(Vector((1, SBox)), ExtractAmount(ValUse(1, SBox)))),
             UpdateManyMethod.withConcreteTypes(Map(tIV -> SLong)),
-            Vector(ConcreteCollection(IntConstant(0)), ConcreteCollection(LongConstant(3))),
+            Vector(ConcreteCollection.fromItems(IntConstant(0)), ConcreteCollection.fromItems(LongConstant(3))),
             Map()).asCollection[SType],
           IntConstant(0)
         ),

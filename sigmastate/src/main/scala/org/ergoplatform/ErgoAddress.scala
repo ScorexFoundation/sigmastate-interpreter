@@ -84,7 +84,7 @@ class P2PKAddress(val pubkey: ProveDlog,
   override val script: ErgoTree = {
     // NOTE: we don't segregate constants because the whole tree is single constant
     // and we want different addreses of this type to have different `script` values
-    ErgoTree(ErgoTree.DefaultHeader, IndexedSeq.empty, SigmaPropConstant(pubkey))
+    ErgoTree(ErgoTree.DefaultHeader, ErgoTree.EmptyConstants, SigmaPropConstant(pubkey))
   }
 
   override def equals(obj: Any): Boolean = obj match {
