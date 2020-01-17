@@ -32,7 +32,7 @@ trait BlockchainSimulationTestingCommons extends SigmaTestingCommons {
     case _ =>
       val block = generateBlock(state, miner, currentLevel, propOpt, extension)
       val updStateTry = state.applyBlock(block)
-      updStateTry.fold(t => throw t, identity)
+      updStateTry.getOrThrow
       checkState(updStateTry.get, miner, currentLevel + 1, limit, propOpt, extension)
   }
 

@@ -269,7 +269,7 @@ class DeserializationResilience extends SerializationSpecification with SigmaTes
         verifier.verify(emptyEnv + (ScriptNameProp -> "verify"),
           ErgoTree(ErgoTree.DefaultHeader, IndexedSeq(), recursiveScript), ctx, pr, fakeMessage)
       }
-      res.fold(t => throw t, identity)
+      res.getOrThrow
     }, {
       case e: NoSuchElementException =>
         // this is expected because of deserialization is forced when ErgoTree.complexity is accessed in verify

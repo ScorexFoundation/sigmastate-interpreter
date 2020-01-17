@@ -372,8 +372,8 @@ object CostingBox {
 //    val eRange = asElem[Any](IR.rtypeToElem(tRange))
 //
 //    IR.verifyCalcFunc[Any => Any](asRep[Context => (Any => Any)](calcF), IR.funcElement(eDom, eRange))
-////    IR.verifyCostFunc(costF).fold(t => throw t, x => x)
-////    IR.verifyIsProven(calcF).fold(t => throw t, x => x)
+////    IR.verifyCostFunc(costF).getOrThrow
+////    IR.verifyIsProven(calcF).getOrThrow
 //
 //    // check cost
 ////    val costingCtx = context.toSigmaContext(IR, isCost = true)
