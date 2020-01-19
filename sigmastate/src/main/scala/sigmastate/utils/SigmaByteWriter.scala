@@ -119,11 +119,10 @@ class SigmaByteWriter(val w: Writer,
     xs.foreach(putValue(_))
     this
   }
-  @inline def putValues[T <: SType](xs: Seq[Value[T]], info: DataInfo[Seq[SValue]]): this.type = {
-    putUInt(xs.length, ArgInfo("\\#items", "number of items in the collection"))
+  @inline def putValues[T <: SType](xs: Seq[Value[T]], info: DataInfo[Seq[SValue]], itemInfo: DataInfo[SValue]): this.type = {
+    putUInt(xs.length, valuesLengthInfo)
     foreach("\\#items", xs) { x =>
-      val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
-      putValue(x, DataInfo(ArgInfo(info.info.name+"_i", s"i-th item in the ${info.info.description}"), itemFmt))
+      putValue(x, itemInfo)
     }
     this
   }
@@ -245,6 +244,13 @@ object SigmaByteWriter {
 
   def bitsInfo(name: String, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), BitsFmt)
   def maxBitsInfo(name: String, maxBits: Int, desc: String = ""): DataInfo[Bits] = DataInfo(ArgInfo(name, desc), MaxBitsFmt(maxBits))
+
+  val valuesLengthInfo: DataInfo[Vlq[U[Int]]] = ArgInfo("\\#items", "number of items in the collection")
+
+  def valuesItemInfo(info: DataInfo[Seq[SValue]]): DataInfo[SValue] = {
+    val itemFmt = info.format.asInstanceOf[SeqFmt[SValue]].fmt
+    DataInfo(ArgInfo(info.info.name+"_i", s"i-th item in the ${info.info.description}"), itemFmt)
+  }
 
   implicit def argInfoToDataInfo[T](arg: ArgInfo)(implicit fmt: FormatDescriptor[T]): DataInfo[T] = DataInfo(arg, fmt)
 

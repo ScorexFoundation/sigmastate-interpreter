@@ -41,7 +41,7 @@ object ErgoScriptPredef {
     // first segregated constant is delta, so key is second constant
     val positions = IntArrayConstant(Array[Int](1))
     val minerPubkeySigmaProp = CreateProveDlog(DecodePoint(minerPkBytesVal))
-    val newVals = Values.ConcreteCollection(Vector[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
+    val newVals = Values.ConcreteCollection(Array[SigmaPropValue](minerPubkeySigmaProp), SSigmaProp)
     SubstConstants(genericMinerPropBytes, positions, newVals)
   }
 

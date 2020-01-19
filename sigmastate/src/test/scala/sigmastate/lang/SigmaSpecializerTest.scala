@@ -106,11 +106,11 @@ class SigmaSpecializerTest extends PropSpec
     spec("OUTPUTS.forall({ (out: Box) => out.value >= 10 })") shouldBe
       ForAll(Outputs, Lambda(Vector(("out", SBox)), SBoolean, GE(ExtractAmount(Ident("out", SBox).asBox), LongConstant(10))))
     spec("{ val arr = Coll(1,2); arr.fold(0, { (n1: Int, n2: Int) => n1 + n2 })}") shouldBe
-      Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+      Fold(ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         IntConstant(0),
         Lambda(Vector(("n1", SInt), ("n2", SInt)), SInt, Plus(Ident("n1", SInt).asNumValue, Ident("n2", SInt).asNumValue)))
     spec("{ val arr = Coll(1,2); arr.fold(true, {(n1: Boolean, n2: Int) => n1 && (n2 > 1)})}") shouldBe
-      Fold(ConcreteCollection(IntConstant(1), IntConstant(2)),
+      Fold(ConcreteCollection.fromItems(IntConstant(1), IntConstant(2)),
         TrueLeaf,
         Lambda(Vector(("n1", SBoolean), ("n2", SInt)), SBoolean,
           BinAnd(Ident("n1", SBoolean).asBoolValue, GT(Ident("n2", SInt), IntConstant(1))))
@@ -132,9 +132,9 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("AND flattening, CAND/COR untouched") {
-    val sigmaBooleans1 = AND(Seq(TrueLeaf, CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans1 = AND(Array(TrueLeaf, CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
-    val sigmaBooleans2 = AND(Seq(TrueLeaf, COR(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans2 = AND(Array(TrueLeaf, COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
     spec(Map(), sigmaBooleans2) shouldBe sigmaBooleans2
   }
 
@@ -159,9 +159,9 @@ class SigmaSpecializerTest extends PropSpec
   }
 
   property("OR flattening, CAND/COR untouched") {
-    val sigmaBooleans1 = OR(Seq(TrueLeaf, CAND(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans1 = OR(Array(TrueLeaf, CAND(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
     spec(Map(), sigmaBooleans1) shouldBe sigmaBooleans1
-    val sigmaBooleans2 = OR(Seq(TrueLeaf, COR(Seq(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
+    val sigmaBooleans2 = OR(Array(TrueLeaf, COR(Array(proveDlogGen.sample.get, proveDHTGen.sample.get)).toSigmaProp.isProven))
     spec(Map(), sigmaBooleans2) shouldBe sigmaBooleans2
   }
 

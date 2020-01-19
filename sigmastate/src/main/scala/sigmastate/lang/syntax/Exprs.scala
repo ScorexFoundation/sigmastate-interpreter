@@ -4,12 +4,13 @@ import fastparse.noApi._
 import scalan.Nullable
 import sigmastate._
 import sigmastate.Values._
-import sigmastate.lang.Terms.{Ident, Val, ValueOps}
+import sigmastate.lang.Terms.{ValueOps, Ident, Val}
 import sigmastate.lang._
 import sigmastate.lang.SigmaPredef._
 import sigmastate.lang.syntax.Basic._
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 //noinspection ForwardReference,TypeAnnotation
 trait Exprs extends Core with Types {
@@ -185,17 +186,17 @@ trait Exprs extends Core with Types {
     builder.currentSrcCtx.withValue(f.sourceContext) {
       val rhs = args.foldLeft(f)((acc, arg) => arg match {
         case Ident(name, _) => mkSelect(acc, name)
-        case UnitConstant() => mkApply(acc, IndexedSeq.empty)
-        case Tuple(xs) => mkApply(acc, xs)
+        case UnitConstant() => mkApply(acc, mutable.WrappedArray.empty)
+        case Tuple(xs) => mkApply(acc, xs.toArray[SValue])
         case STypeApply("", targs) => mkApplyTypes(acc, targs)
         case arg: SValue => acc match {
           case Ident(name, _) if name == ZKProofFunc.name => arg match {
             case Terms.Block(_, body) =>
-              mkApply(mkIdent(ZKProofFunc.name, ZKProofFunc.declaration.tpe), IndexedSeq(body))
+              mkApply(mkIdent(ZKProofFunc.name, ZKProofFunc.declaration.tpe), Array(body))
             case nonBlock =>
               error(s"expected block parameter for ZKProof, got $nonBlock", nonBlock.sourceContext)
           }
-          case _ => mkApply(acc, IndexedSeq(arg))
+          case _ => mkApply(acc, Array(arg))
         }
         case _ => error(s"Error after expression $f: invalid suffixes $args", f.sourceContext)
       })

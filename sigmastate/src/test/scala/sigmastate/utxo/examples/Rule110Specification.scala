@@ -355,7 +355,7 @@ class Rule110Specification extends SigmaTestingCommons {
     val t = TrueLeaf
     val f = FalseLeaf
 
-    val rule110 = OR(Seq(
+    val rule110 = OR(Array(
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, t), EQ(output, f)),
       AND(EQ(input0, t), EQ(input1, t), EQ(input2, f), EQ(output, t)),
       AND(EQ(input0, t), EQ(input1, f), EQ(input2, t), EQ(output, t)),
@@ -366,7 +366,7 @@ class Rule110Specification extends SigmaTestingCommons {
       AND(EQ(input0, f), EQ(input1, f), EQ(input2, f), EQ(output, f))
     ))
 
-    val prop = AND(Seq(
+    val prop = AND(Array(
       EQ(SizeOf(Inputs), IntConstant(3)),
       EQ(SizeOf(Outputs), IntConstant(4)),
 
@@ -400,7 +400,7 @@ class Rule110Specification extends SigmaTestingCommons {
       val row = RowReg -> LongConstant(0)
       val column = ColumnReg -> LongConstant(col)
       val value = if (col == 15) ValueReg -> TrueLeaf else ValueReg -> FalseLeaf
-      ErgoBox(0L, prop, 0, Seq(), Map(row, column, value), txId.toModifierId, col.toShort)
+      ErgoBox(0L, prop, 0, Nil, Map(row, column, value), txId.toModifierId, col.toShort)
     }
 
     val initBlock = FullBlock(
