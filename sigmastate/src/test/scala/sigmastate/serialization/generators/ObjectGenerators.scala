@@ -506,7 +506,7 @@ trait ObjectGenerators extends TypeGenerators with ValidationSpecification with 
   def logicalExprTreeNodeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Transformer[SCollection[SBoolean.type], SBoolean.type]] = for {
     left <- logicalExprTreeGen(nodeCons)
     right <- logicalExprTreeGen(nodeCons)
-    node <- Gen.oneOf(nodeCons.map(cons => cons(Seq(left, right))))
+    node <- Gen.oneOf(nodeCons.map(cons => cons(Array(left, right))))
   } yield node
 
   def logicalExprTreeGen(nodeCons: Seq[LogicalTransformerCons]): Gen[Value[SBoolean.type]] =

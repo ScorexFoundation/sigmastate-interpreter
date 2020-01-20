@@ -341,7 +341,7 @@ lazy val sigmaDslCompilerMacrosPlayground = project
   )
 
 def runErgoTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val ergoBranch = "sigma-core-opt"
+  val ergoBranch = "master"
   val sbtEnvVars = Seq("BUILD_ENV" -> "test", "SIGMASTATE_VERSION" -> sigmastateVersion)
   
   log.info(s"Testing current build in Ergo (branch $ergoBranch):")
@@ -395,7 +395,7 @@ commands += Command.command("ergoItTest") { state =>
 }
 
 def runSpamTestTask(task: String, sigmastateVersion: String, log: Logger): Unit = {
-  val spamBranch = "master"
+  val spamBranch = "revert-23-revert-22-serialize-opt"
   val envVars = Seq("SIGMASTATE_VERSION" -> sigmastateVersion,
     "SPECIAL_VERSION" -> specialVersion,
     // SSH_SPAM_REPO_KEY should be set (see Jenkins Credentials Binding Plugin)

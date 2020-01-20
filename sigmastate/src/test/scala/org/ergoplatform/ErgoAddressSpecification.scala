@@ -104,10 +104,10 @@ class ErgoAddressSpecification extends PropSpec
 
     val env: ScriptEnv = Map()
     val prover = new ErgoLikeTestProvingInterpreter()
-    val pr = prover.prove(env + (ScriptNameProp -> s"prove"), address.script, ctx, fakeMessage).fold(t => throw t, identity)
+    val pr = prover.prove(env + (ScriptNameProp -> s"prove"), address.script, ctx, fakeMessage).getOrThrow
 
     val verifier = new ErgoLikeTestInterpreter
-    verifier.verify(env + (ScriptNameProp -> s"verify_ext"), address.script, ctx, pr.proof, fakeMessage).get._1 shouldBe true
+    verifier.verify(env + (ScriptNameProp -> s"verify_ext"), address.script, ctx, pr.proof, fakeMessage).getOrThrow._1 shouldBe true
   }
 
   property("spending a box protected by P2SH contract") {

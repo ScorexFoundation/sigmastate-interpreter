@@ -146,7 +146,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                   .getOrElse(mkMethodCall(newObj, method, newArgs, subst))
               } else {
                 val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
-                mkApply(newSelect, newArgs)
+                mkApply(newSelect, newArgs.toArray[SValue])
               }
             case Some(method) =>
               error(s"Don't know how to handle method $method in obj $p", sel.sourceContext)
@@ -179,13 +179,13 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
                     .getOrElse(mkMethodCall(newObj, methodConcrType, newArgs, Map()))
                 case _ =>
                   val newSelect = mkSelect(newObj, n, Some(concrFunTpe)).withSrcCtx(sel.sourceContext)
-                  mkApply(newSelect, newArgs)
+                  mkApply(newSelect, newArgs.toArray[SValue])
               }
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual: $newArgTypes", sel.sourceContext)
           }
         case _ =>
-          mkApply(newSel, newArgs)
+          mkApply(newSel, newArgs.toArray[SValue])
       }
 
     case a @ Apply(ident: Ident, args) if SGlobal.hasMethod(ident.name) => // example: groupGenerator()
@@ -215,7 +215,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
           val actualTypes = adaptedTypedArgs.map(_.tpe)
           unifyTypeLists(argTypes, actualTypes) match {
             case Some(_) =>
-              mkApply(new_f, adaptedTypedArgs.toIndexedSeq)
+              mkApply(new_f, adaptedTypedArgs.toArray[SValue])
             case None =>
               error(s"Invalid argument type of application $app: expected $argTypes; actual after typing: $actualTypes", app.sourceContext)
           }
@@ -510,7 +510,7 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
       error(s"Don't know how to assignType($v)", v.sourceContext)
   }).withEnsuredSrcCtx(bound.sourceContext)
 
-  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: IndexedSeq[Value[SType]]) = {
+  def assignConcreteCollection(cc: ConcreteCollection[SType], newItems: Seq[Value[SType]]) = {
     val types = newItems.map(_.tpe).distinct
     val tItem = if (cc.items.isEmpty) {
       if (cc.elementType == NoType)
@@ -526,12 +526,12 @@ class SigmaTyper(val builder: SigmaBuilder, predefFuncRegistry: PredefinedFuncRe
   def adaptSigmaPropToBoolean(items: Seq[Value[SType]], expectedTypes: Seq[SType]): Seq[Value[SType]] = {
     val res = items.zip(expectedTypes).map {
       case (cc: ConcreteCollection[SType]@unchecked, SBooleanArray) =>
-        val items = adaptSigmaPropToBoolean(cc.items, Seq.fill(cc.items.length)(SBoolean))
-        assignConcreteCollection(cc, items.toIndexedSeq)
+        val items = adaptSigmaPropToBoolean(cc.items, Array.fill(cc.items.length)(SBoolean))
+        assignConcreteCollection(cc, items)
       case (it, SBoolean) if it.tpe == SSigmaProp => SigmaPropIsProven(it.asSigmaProp)
       case (it,_) => it
     }
-    res
+    res.toArray[SValue]
   }
 
   def bimap[T <: SType]

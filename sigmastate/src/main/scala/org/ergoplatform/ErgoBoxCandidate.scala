@@ -81,6 +81,8 @@ class ErgoBoxCandidate(val value: Long,
 
 object ErgoBoxCandidate {
   val UndefinedBoxRef: Coll[Byte] = Array.fill(34)(0: Byte).toColl
+
+  /** @hotspot don't beautify the code */
   object serializer extends SigmaSerializer[ErgoBoxCandidate, ErgoBoxCandidate] {
 
     def serializeBodyWithIndexedDigests(obj: ErgoBoxCandidate,
@@ -90,7 +92,14 @@ object ErgoBoxCandidate {
       w.putBytes(DefaultSerializer.serializeErgoTree(obj.ergoTree))
       w.putUInt(obj.creationHeight)
       w.putUByte(obj.additionalTokens.size)
-      obj.additionalTokens.foreach { case (id, amount) =>
+
+      val unzipped = Colls.unzip(obj.additionalTokens)
+      val ids = unzipped._1
+      val amounts = unzipped._2
+      val limit = ids.length
+      cfor(0)(_ < limit, _ + 1) { i =>
+        val id = ids(i)
+        val amount = amounts(i)
         if (tokensInTx.isDefined) {
           val tokenIndex = tokensInTx.get.indexWhere(v => util.Arrays.equals(v, id), 0)
           if (tokenIndex == -1) sys.error(s"failed to find token id ($id) in tx's digest index")
@@ -100,6 +109,7 @@ object ErgoBoxCandidate {
         }
         w.putULong(amount)
       }
+      
       val nRegs = obj.additionalRegisters.keys.size
       if (nRegs + ErgoBox.startingNonMandatoryIndex > 255)
         sys.error(s"The number of non-mandatory indexes $nRegs exceeds ${255 - ErgoBox.startingNonMandatoryIndex} limit.")
@@ -108,7 +118,7 @@ object ErgoBoxCandidate {
       // this convention allows to save 1 bite for each register
       val startReg = ErgoBox.startingNonMandatoryIndex
       val endReg = ErgoBox.startingNonMandatoryIndex + nRegs - 1
-      for (regId <- startReg to endReg) {
+      cfor(startReg: Int)(_ <= endReg, _ + 1) { regId =>
         val reg = ErgoBox.findRegisterByIndex(regId.toByte).get
         obj.get(reg) match {
           case Some(v) =>
@@ -124,7 +134,6 @@ object ErgoBoxCandidate {
       serializeBodyWithIndexedDigests(obj, None, w)
     }
 
-    /** @hotspot don't beautify the code */
     def parseBodyWithIndexedDigests(digestsInTx: Option[Coll[TokenId]], r: SigmaByteReader): ErgoBoxCandidate = {
       val previousPositionLimit = r.positionLimit
       r.positionLimit = r.position + ErgoBox.MaxBoxSize
