@@ -10,12 +10,11 @@ import scala.language.{implicitConversions, postfixOps}
 sealed abstract class AssetsAtomicExchange extends SigmaContract {
 
   def buyer(ctx: Context,
-            deadline: Int,
             tokenId: Coll[Byte],
             tokenAmount: Long,
             pkA: SigmaProp): SigmaProp = {
     import ctx._
-    (HEIGHT > deadline && pkA) || {
+    pkA || {
       (OUTPUTS.nonEmpty && OUTPUTS(0).R4[Coll[Byte]].isDefined) && {
         val tokens = OUTPUTS(0).tokens
         val tokenDataCorrect = tokens.nonEmpty &&
@@ -31,9 +30,9 @@ sealed abstract class AssetsAtomicExchange extends SigmaContract {
     }
   }
 
-  def seller(ctx: Context, deadline: Int, ergAmount: Long, pkB: SigmaProp): SigmaProp = {
+  def seller(ctx: Context, ergAmount: Long, pkB: SigmaProp): SigmaProp = {
     import ctx._
-    (HEIGHT > deadline && pkB) || (
+    pkB || (
       OUTPUTS.size > 1 &&
         OUTPUTS(1).R4[Coll[Byte]].isDefined
       ) && {
@@ -61,37 +60,22 @@ case object AssetsAtomicExchangeBuyerVerification extends AssetsAtomicExchange {
       OUTPUTS(0).R4[Coll[Byte]].get == SELF.id
   }
 
-  def proveBuyerCanClaimAfterDeadline(ctx: Context,
-                                      deadline: Int,
-                                      tokenId: Coll[Byte],
-                                         tokenAmount: Long,
-                                         pkA: SigmaProp): Boolean = {
-    import ctx._
-    require(HEIGHT > deadline && pkA.isValid)
-    buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
-  } holds
-
-  def proveBuyerCannotClaimBeforeDeadline(ctx: Context,
-                                             deadline: Int,
-                                             tokenId: Coll[Byte],
-                                             tokenAmount: Long,
-                                             pkA: SigmaProp): Boolean = {
-    import ctx._
-    require(HEIGHT <= deadline &&
-      pkA.isValid &&
-      !conditionCorrectClaimableTokenAmountAgainstBuyerBox(ctx, tokenId, tokenAmount, pkA)
-    )
-    buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
-  } ensuring (_ == false)
-
-  def proveSpendableTokensAgainstThisOrderAnyTime(ctx: Context,
-                         deadline: Int,
+  def proveBuyerCanClaim(ctx: Context,
                          tokenId: Coll[Byte],
                          tokenAmount: Long,
                          pkA: SigmaProp): Boolean = {
     import ctx._
+    require(pkA.isValid)
+    buyer(ctx, tokenId, tokenAmount, pkA).isValid
+  } holds
+
+  def proveSpendableTokensAgainstThisOrderAnyTime(ctx: Context,
+                                                  tokenId: Coll[Byte],
+                                                  tokenAmount: Long,
+                                                  pkA: SigmaProp): Boolean = {
+    import ctx._
     require(conditionCorrectClaimableTokenAmountAgainstBuyerBox(ctx, tokenId, tokenAmount, pkA))
-    buyer(ctx, deadline, tokenId, tokenAmount, pkA).isValid
+    buyer(ctx, tokenId, tokenAmount, pkA).isValid
   } holds
 }
 
@@ -109,52 +93,37 @@ case object AssetsAtomicExchangeSellerVerification extends AssetsAtomicExchange 
       OUTPUTS(1).propositionBytes == pkB.propBytes
   }
 
-  def proveSellerCanClaimAfterDeadline(ctx: Context,
-                                       deadline: Int,
-                                       ergAmount: Long,
-                                       pkB: SigmaProp): Boolean = {
+  def proveSellerCanClaim(ctx: Context,
+                          ergAmount: Long,
+                          pkB: SigmaProp): Boolean = {
     import ctx._
-    require(HEIGHT > deadline && pkB.isValid)
-    seller(ctx, deadline, ergAmount, pkB).isValid
+    require(pkB.isValid)
+    seller(ctx, ergAmount, pkB).isValid
   } holds
 
-  def proveSellerCannotClaimBeforeDeadline(ctx: Context,
-                                           deadline: Int,
-                                           ergAmount: Long,
-                                           pkB: SigmaProp): Boolean = {
-    import ctx._
-    require(HEIGHT <= deadline &&
-      pkB.isValid &&
-      !conditionClaimableWithCorrectErgAmount(ctx, ergAmount, pkB))
-    seller(ctx, deadline, ergAmount, pkB).isValid
-  } ensuring (_ == false)
-
-  def proveSpendableErgAgainstThisOrderAnyTime(ctx: Context,
-                                               deadline: Int,
-                                               ergAmount: Long,
-                                               pkB: SigmaProp): Boolean = {
+  def proveSpendableErgAgainstThisOrder(ctx: Context,
+                                        ergAmount: Long,
+                                        pkB: SigmaProp): Boolean = {
     import ctx._
     require(conditionClaimableWithCorrectErgAmount(ctx, ergAmount, pkB))
-    seller(ctx, deadline, ergAmount, pkB).isValid
+    seller(ctx,ergAmount, pkB).isValid
   } holds
 }
 
 @ignore
 object AssetsAtomicExchangeCompilation extends AssetsAtomicExchange {
 
-  def buyerContractInstance(deadline: Int,
-                            tokenId: Coll[Byte],
+  def buyerContractInstance(tokenId: Coll[Byte],
                             tokenAmount: Long,
                             pkA: SigmaProp): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
-      buyer(context, deadline, tokenId, tokenAmount, pkA)
+      buyer(context, tokenId, tokenAmount, pkA)
     }
 
-  def sellerContractInstance(deadline: Int,
-                             ergAmount: Long,
+  def sellerContractInstance(ergAmount: Long,
                             pkB: SigmaProp): ErgoContract =
     ErgoContractCompiler.compile { context: Context =>
-      seller(context, deadline, ergAmount, pkB)
+      seller(context, ergAmount, pkB)
     }
 
 }

@@ -33,15 +33,12 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     ergoCtx.toSigmaContext(IR, false)
 
   property("buyer contract ergo tree") {
-    forAll(unsignedIntGen, tokenIdGen.map(_.toColl), arbLong.arbitrary, proveDlogGen) {
-      case (deadline, tokenId, tokenAmount, proveDlogPk) =>
+    forAll(tokenIdGen.map(_.toColl), arbLong.arbitrary, proveDlogGen) {
+      case (tokenId, tokenAmount, proveDlogPk) =>
         val pk: SigmaProp = CSigmaProp(proveDlogPk)
-        val c = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline, tokenId, tokenAmount, pk)
+        val c = AssetsAtomicExchangeCompilation.buyerContractInstance(tokenId, tokenAmount, pk)
         val expectedProp = SigmaOr(Seq(
-          SigmaAnd(List(
-            BoolToSigmaProp(GT(Height,IntConstant(deadline))),
-            SigmaPropConstant(proveDlogPk))
-          ),
+          SigmaPropConstant(proveDlogPk),
           BinAnd(
             BinAnd(
               GT(
@@ -105,15 +102,12 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
   }
 
   property("seller contract ergo tree") {
-    forAll(unsignedIntGen, arbLong.arbitrary, proveDlogGen) {
-      case (deadline, ergAmount, proveDlogPk) =>
+    forAll(arbLong.arbitrary, proveDlogGen) {
+      case (ergAmount, proveDlogPk) =>
         val pk: SigmaProp = CSigmaProp(proveDlogPk)
-        val c = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, pk)
+        val c = AssetsAtomicExchangeCompilation.sellerContractInstance(ergAmount, pk)
         val expectedProp = SigmaOr(Seq(
-          SigmaAnd(Seq(
-            BoolToSigmaProp(GT(Height, IntConstant(deadline))),
-            SigmaPropConstant(proveDlogPk)
-          )),
+          SigmaPropConstant(proveDlogPk),
           BoolToSigmaProp(BinAnd(
             BinAnd(
               GT(SizeOf(Outputs), IntConstant(1)),
@@ -156,16 +150,15 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     }
   }
 
-  property("buyer contract, buyer claim after deadline") {
+  property("buyer contract, buyer claim") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val tokenId = tokenIdGen.sample.get
     val tokenAmount = 100L
-    val deadline = 49
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val pk: SigmaProp = CSigmaProp(pubkey)
-    val c = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline, tokenId.toColl, tokenAmount, pk)
+    val c = AssetsAtomicExchangeCompilation.buyerContractInstance(tokenId.toColl, tokenAmount, pk)
     val tree = c.ergoTree
 
     val spendingTransaction = createTransaction(IndexedSeq(ErgoBox(
@@ -175,7 +168,7 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
       Seq((tokenIdGen.sample.get, 0 ))) // non-empty tokens as a workaround for
       // https://github.com/ScorexFoundation/sigmastate-interpreter/issues/628
     ))
-    val context = ctx(deadline + 1, spendingTransaction)
+    val context = ctx(50, spendingTransaction)
 
     val pr = prover.prove(tree, context, fakeMessage).get
     verifier.verify(tree, context, pr, fakeMessage).get._1 shouldBe true
@@ -188,21 +181,15 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     val buyerPk: SigmaProp = CSigmaProp(pubkey)
     val txNoTokens = createTransaction(IndexedSeq(ErgoBox(1, TrivialProp.TrueProp, 0)))
 
-    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), tokenIdGen.map(_.toColl), arbLong.arbitrary) {
-      case (deadline, tokenId, tokenAmount) =>
+    forAll(tokenIdGen.map(_.toColl), arbLong.arbitrary) {
+      case (tokenId, tokenAmount) =>
 
-        val contract = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline = deadline,
-          tokenId = tokenId, tokenAmount = tokenAmount, pkA = buyerPk)
+        val contract = AssetsAtomicExchangeCompilation.buyerContractInstance(tokenId = tokenId,
+          tokenAmount = tokenAmount, pkA = buyerPk)
 
-        // before deadline
-        val contextBeforeDeadline = ctx(deadline - 1, txNoTokens)
-        contract.scalaFunc(contextBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.FalseProp)
+        val contextBeforeDeadline = ctx(50, txNoTokens)
+        contract.scalaFunc(contextBeforeDeadline) shouldEqual buyerPk
         verifier.verify(contract.ergoTree, contextBeforeDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
-
-        // after deadline
-        val contextAfterDeadline = ctx(deadline + 1, txNoTokens)
-        contract.scalaFunc(contextAfterDeadline) shouldEqual buyerPk
-        verifier.verify(contract.ergoTree, contextAfterDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
     }
   }
 
@@ -212,8 +199,8 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     val pubkey = prover.dlogSecrets.head.publicImage
     val buyerPk: SigmaProp = CSigmaProp(pubkey)
 
-    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), tokenIdGen.map(_.toColl), arbLong.arbitrary) {
-      case (deadline, tokenId, tokenAmount) =>
+    forAll(tokenIdGen.map(_.toColl), arbLong.arbitrary) {
+      case (tokenId, tokenAmount) =>
 
         val txWithTokens = createTransaction(IndexedSeq(ErgoBox(
           value = 1,
@@ -222,31 +209,23 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
           additionalTokens = Seq((Digest32 @@ tokenId.toArray, tokenAmount)),
           additionalRegisters = Map(ErgoBox.R4 -> ByteArrayConstant(fakeSelf.id)))))
 
-        val contract = AssetsAtomicExchangeCompilation.buyerContractInstance(deadline = deadline,
-          tokenId = tokenId, tokenAmount = tokenAmount, pkA = buyerPk)
+        val contract = AssetsAtomicExchangeCompilation.buyerContractInstance(tokenId = tokenId,
+          tokenAmount = tokenAmount, pkA = buyerPk)
 
-        // before deadline
-        val ctxBeforeDeadline = ctx(deadline - 1, txWithTokens)
+        val ctxBeforeDeadline = ctx(50, txWithTokens)
         contract.scalaFunc(ctxBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
         verifier.verify(contract.ergoTree, ctxBeforeDeadline, ProverResult.empty, fakeMessage).get._1 shouldEqual true
-
-        // after deadline
-        val ctxAfterDeadline = ctx(deadline + 1, txWithTokens)
-        contract.scalaFunc(ctxAfterDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
-        verifier.verify(contract.ergoTree, ctxAfterDeadline, ProverResult.empty, fakeMessage).get._1 shouldEqual true
-
     }
   }
 
-  property("seller contract, seller claim after deadline") {
+  property("seller contract, seller claim") {
     val prover = new ContextEnrichingTestProvingInterpreter
     val verifier = new ErgoLikeTestInterpreter
     val ergAmount = 100L
-    val deadline = 49
     val pubkey = prover.dlogSecrets.head.publicImage
 
     val pk: SigmaProp = CSigmaProp(pubkey)
-    val c = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, pk)
+    val c = AssetsAtomicExchangeCompilation.sellerContractInstance(ergAmount, pk)
     val tree = c.ergoTree
 
     val spendingTransaction = createTransaction(IndexedSeq(
@@ -262,7 +241,7 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
         creationHeight = 0),
 
     ))
-    val context = ctx(deadline + 1, spendingTransaction)
+    val context = ctx(50, spendingTransaction)
 
     val pr = prover.prove(tree, context, fakeMessage).get
     verifier.verify(tree, context, pr, fakeMessage).get._1 shouldBe true
@@ -275,20 +254,14 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     val sellerPk: SigmaProp = CSigmaProp(pubkey)
     val tx = createTransaction(IndexedSeq(ErgoBox(1, TrivialProp.TrueProp, 0)))
 
-    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), arbLong.arbitrary) {
-      case (deadline, ergAmount) =>
+    forAll(arbLong.arbitrary) {
+      case (ergAmount) =>
 
-        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, sellerPk)
+        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(ergAmount, sellerPk)
 
-        // before deadline
-        val contextBeforeDeadline = ctx(deadline - 1, tx)
-        contract.scalaFunc(contextBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.FalseProp)
+        val contextBeforeDeadline = ctx(50, tx)
+        contract.scalaFunc(contextBeforeDeadline) shouldEqual sellerPk
         verifier.verify(contract.ergoTree, contextBeforeDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
-
-        // after deadline
-        val contextAfterDeadline = ctx(deadline + 1, tx)
-        contract.scalaFunc(contextAfterDeadline) shouldEqual sellerPk
-        verifier.verify(contract.ergoTree, contextAfterDeadline, ProverResult.empty, fakeMessage).isSuccess shouldBe false
     }
   }
 
@@ -298,8 +271,8 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
     val sellerPk = prover.dlogSecrets.head.publicImage
     val sellerPkProp: SigmaProp = CSigmaProp(sellerPk)
 
-    forAll(unsignedIntGen.suchThat(_ < Int.MaxValue), arbLong.arbitrary) {
-      case (deadline, ergAmount) =>
+    forAll(arbLong.arbitrary) {
+      case (ergAmount) =>
 
         val tx = createTransaction(IndexedSeq(
           ErgoBox(
@@ -312,17 +285,11 @@ class AssetsAtomicExchangeCompilationTest extends SigmaTestingCommons with MiscG
             creationHeight = 0,
             additionalRegisters = Map(ErgoBox.R4 -> ByteArrayConstant(fakeSelf.id)))
         ))
-        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(deadline, ergAmount, sellerPkProp)
+        val contract = AssetsAtomicExchangeCompilation.sellerContractInstance(ergAmount, sellerPkProp)
 
-        // before deadline
-        val ctxBeforeDeadline = ctx(deadline - 1, tx)
+        val ctxBeforeDeadline = ctx(50, tx)
         contract.scalaFunc(ctxBeforeDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
         verifier.verify(contract.ergoTree, ctxBeforeDeadline, ProverResult.empty, fakeMessage).get._1 shouldBe true
-
-        // after deadline
-        val ctxAfterDeadline = ctx(deadline + 1, tx)
-        contract.scalaFunc(ctxAfterDeadline) shouldEqual CSigmaProp(TrivialProp.TrueProp)
-        verifier.verify(contract.ergoTree, ctxAfterDeadline, ProverResult.empty, fakeMessage).get._1 shouldBe true
     }
   }
 }
