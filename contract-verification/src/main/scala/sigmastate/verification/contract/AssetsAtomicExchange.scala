@@ -7,6 +7,37 @@ import stainless.lang._
 
 import scala.language.{implicitConversions, postfixOps}
 
+sealed abstract class AssetsAtomicExchange2 extends SigmaContract {
+  def buyer(ctx: Context,
+            tokenId: Coll[Byte],
+            tokenAmount: Long,
+            pkBuyer: SigmaProp,
+            pkDex: SigmaProp, edexId: Coll[Byte]): SigmaProp = {
+    import ctx._
+    pkBuyer || {
+      val outToBuyer = OUTPUTS(0)
+      val buyerGetsTokens = {
+        val tokens = outToBuyer.tokens
+        tokens.nonEmpty && tokens(0)._1 == tokenId && tokens(0)._2 >= tokenAmount
+      }
+
+      val isSingleSpending = outToBuyer.R4[Coll[Byte]].get == SELF.id
+      val correctBuyerAddress = outToBuyer.propositionBytes == pkBuyer.propBytes
+      val outToBuyerIsCorrect = buyerGetsTokens && isSingleSpending && correctBuyerAddress
+
+      val outToDex = OUTPUTS(2)
+      val correctDexAddress = outToDex.propositionBytes == pkDex.propBytes
+      val dexGetsToken = {
+        val tokens = outToDex.tokens
+        tokens.nonEmpty && tokens(0)._1 == edexId && tokens(0)._2 >= 4
+      }
+      val outToDexIsCorrect = correctDexAddress && dexGetsToken
+      // TODO fix Coll.fromItems crashing Inox typer and rewrite with allOf(Coll.fromItems[Boolean](
+      outToBuyerIsCorrect && outToDexIsCorrect
+    }
+  }
+
+}
 sealed abstract class AssetsAtomicExchange extends SigmaContract {
 
   def buyer(ctx: Context,
