@@ -21,7 +21,6 @@ import sigmastate.helpers.{ContextEnrichingTestProvingInterpreter, ErgoLikeConte
 import sigmastate.interpreter.CryptoConstants
 import sigmastate.interpreter.CryptoConstants.dlogGroup
 import sigmastate.lang.Terms._
-import sigmastate.lang.exceptions.InterpreterException
 import sigmastate.serialization.{SerializationSpecification, ValueSerializer}
 import sigmastate.utils.Helpers._
 
@@ -109,7 +108,8 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     //should not work for x
     prover.prove(dhProp, ctx, fakeMessage).isSuccess shouldBe false
     //should work for y
-    proverY.prove(dhProp, ctx, fakeMessage).isSuccess shouldBe true
+    val proofDht = proverY.prove(dhProp, ctx, fakeMessage).get
+    verifier.verify(dhProp, ctx, proofDht, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple - simulation") {
