@@ -73,7 +73,6 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     compiledProp1 shouldBe prop
     compiledProp2 shouldBe prop
 
-
     val ctx = ErgoLikeContextTesting(
       currentHeight = 1,
       lastBlockUtxoRoot = AvlTreeData.dummy,
@@ -87,10 +86,22 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
 
     fakeProver.prove(prop, ctx, fakeMessage).isSuccess shouldBe false
     prover.prove(wrongProp, ctx, fakeMessage).isSuccess shouldBe false
+  }
+
+  property("DH tuple - signing w. proper and improper secrets") {
+    val verifier = new ErgoLikeTestInterpreter
+    val ctx = ErgoLikeContextTesting(
+      currentHeight = 1,
+      lastBlockUtxoRoot = AvlTreeData.dummy,
+      minerPubkey = ErgoLikeContextTesting.dummyPubkey,
+      boxesToSpend = IndexedSeq(fakeSelf),
+      spendingTransaction = ErgoLikeTransactionTesting.dummy,
+      self = fakeSelf)
 
     //proveDHTuple(g, g^x, g^y, g^xy) should not work for x and only for y
     val group = CryptoConstants.dlogGroup
-    val g = ci.g
+    val g = group.generator
+
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
 
     val x = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
