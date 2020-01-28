@@ -91,25 +91,31 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     //proveDHTuple(g, g^x, g^y, g^xy) should not work for x and only for y
     val group = CryptoConstants.dlogGroup
     val g = ci.g
-    val x = prover.dlogSecrets.head.w
-    val gToX = prover.dlogSecrets.head.publicImage.value
-
     val qMinusOne = dlogGroup.order.subtract(BigInteger.ONE)
+
+    val x = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
+    val gToX = group.exponentiate(g, x)
+
     val y = BigIntegers.createRandomInRange(BigInteger.ZERO, qMinusOne, dlogGroup.secureRandom)
     val gToY = group.exponentiate(g, y)
     val gToXY = group.exponentiate(gToX, y)
     group.exponentiate(gToY, x) shouldBe gToXY
 
     val dht = ProveDHTuple(g, gToX, gToY, gToXY)
-    val dhSecret = DiffieHellmanTupleProverInput(y, dht)
-    val proverY = new ContextEnrichingTestProvingInterpreter().withDHSecrets(Seq(dhSecret)) //prover holding y
     val dhProp = SigmaPropConstant(dht)
 
+    val xSecret = DiffieHellmanTupleProverInput(x, dht)
+    val proverX = new ContextEnrichingTestProvingInterpreter().withDHSecrets(Seq(xSecret)) //prover holding y
+
+    val dhSecret = DiffieHellmanTupleProverInput(y, dht)
+    val proverY = new ContextEnrichingTestProvingInterpreter().withDHSecrets(Seq(dhSecret)) //prover holding y
+
     //should not work for x
-    prover.prove(dhProp, ctx, fakeMessage).isSuccess shouldBe false
+    proverX.prove(dhProp, ctx, fakeMessage).get shouldBe false
+
     //should work for y
-    val proofDht = proverY.prove(dhProp, ctx, fakeMessage).get
-    verifier.verify(dhProp, ctx, proofDht, fakeMessage).get._1 shouldBe true
+    val proofY = proverY.prove(dhProp, ctx, fakeMessage).get
+    verifier.verify(dhProp, ctx, proofY, fakeMessage).get._1 shouldBe true
   }
 
   property("DH tuple - simulation") {
