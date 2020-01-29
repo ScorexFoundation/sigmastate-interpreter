@@ -3,8 +3,11 @@ package org.ergoplatform
 import sigmastate.SCollection.SByteArray
 import sigmastate.Values._
 import sigmastate.eval.IRContext
-import sigmastate.interpreter.Interpreter
+import sigmastate.interpreter.{Interpreter, ErgoTreeEvaluator}
+import sigmastate.interpreter.Interpreter.{ScriptEnv, ReductionResult}
 import sigmastate.utxo._
+
+import scala.util.Try
 
 
 class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
@@ -28,4 +31,10 @@ class ErgoLikeInterpreter(implicit val IR: IRContext) extends Interpreter {
         }.orElse(d.default)
       case _ => super.substDeserialize(context, updateContext, node)
     }
+
+  def reduceToCrypto2(context: CTX, env: ScriptEnv, exp: SigmaPropValue): Try[ReductionResult] = Try {
+    val processor = new ErgoTreeEvaluator(env)
+    processor.eval(context, ErgoTree.withoutSegregation(exp))
+  }
+
 }

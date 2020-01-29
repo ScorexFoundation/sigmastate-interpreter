@@ -15,7 +15,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, EvalContext}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -137,6 +137,7 @@ object Values {
 
     init()
 
+    def eval(ctx: EvalContext, args: Seq[Any]): (Any, Int) = sys.error(s"Should be overriden in ${this.getClass}")
   }
   object ValueCompanion {
     private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty

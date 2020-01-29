@@ -1,7 +1,7 @@
 package sigmastate.utils
 
 import sigmastate.SType
-import sigmastate.Values.Value
+import sigmastate.Values.{Value, ValueCompanion}
 import sigmastate.serialization.ValueSerializer
 
 import scala.reflect.ClassTag
@@ -65,5 +65,9 @@ object SparseArrayContainer {
 
   def buildForSerializers(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
     new SparseArrayContainer(sers.map(s => (s.opCode, s)))
+  }
+
+  def buildForOperations(ops: Seq[ValueCompanion]): SparseArrayContainer[ValueCompanion] = {
+    new SparseArrayContainer(ops.map(op => (op.opCode, op)))
   }
 }
