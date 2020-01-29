@@ -42,21 +42,6 @@ class SigmaDslTest extends PropSpec
     override val okMeasureOperationTime: Boolean = true
   }
 
-  def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
-    val b1 = Try(f(x)); val b2 = Try(g(x))
-    (b1, b2) match {
-      case (Success(b1), Success(b2)) =>
-        assert(b1 == b2)
-      case (Failure(t1), Failure(t2)) =>
-        val c1 = rootCause(t1).getClass
-        val c2 = rootCause(t2).getClass
-        c1 shouldBe c2
-      case _ =>
-        assert(false)
-    }
-
-  }
-
   def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
     val r1 = f(x, y); val r2 = g(x, y)
     assert(r1.getClass == r2.getClass)
@@ -448,7 +433,7 @@ class SigmaDslTest extends PropSpec
   //    doApply((CFunc[Int, Int](ctx, code), 10))
   //  }
 
-  lazy val ctx = ergoCtx.toSigmaContext(IR, false)
+  lazy val ctx = ergoCtx.toSigmaContext(false)
 
   property("Box properties equivalence") {
     val box = ctx.dataInputs(0)

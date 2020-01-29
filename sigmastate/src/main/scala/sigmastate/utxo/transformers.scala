@@ -9,6 +9,9 @@ import sigmastate.serialization.OpCodes
 import sigmastate.utxo.CostTable.Cost
 import org.ergoplatform.ErgoBox.{R3, RegisterId}
 import sigmastate.Operations._
+import sigmastate.eval.Evaluation
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
 import special.sigma.InvalidType
 
@@ -291,6 +294,11 @@ object DeserializeRegister extends ValueCompanion {
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
   override val opType = SFunc(Vector(SContext, SByte), tpe)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val t = Evaluation.stypeToRType(tpe.elemType)
+    val v = E.evalContext.context.getVar(varId)(t)
+    v
+  }
 }
 object GetVar extends ValueCompanion {
   override def opCode: OpCode = OpCodes.GetVarCode
@@ -302,6 +310,12 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override val opType = SFunc(input.tpe, tpe)
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    input.eval(E, env) match {
+      case Some(x) => x
+      case _ => sys.error(s"None.get error while evaluating $this")
+    }
+  }
 }
 object OptionGet extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionGetCode

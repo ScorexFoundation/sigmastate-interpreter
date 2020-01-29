@@ -3,29 +3,49 @@ package sigmastate.interpreter
 import org.ergoplatform.{ErgoLikeContext, Context}
 import scalan.Nullable
 import sigmastate.SType
-import sigmastate.Values.{Constant, SValue, ErgoTree, SigmaBoolean, ValueCompanion}
+import sigmastate.Values._
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.{ReductionResult, ScriptEnv}
-import sigmastate.lang.Terms.MethodCall
+import sigmastate.lang.Terms._
 import sigmastate.lang.exceptions.CostLimitException
 import sigmastate.utils.SparseArrayContainer
+import sigmastate.utxo.GetVar
+import special.sigma.Context
 
 class EvalContext(
-  val context: ErgoLikeContext,
+  val context: Context,
   val constants: Seq[Constant[SType]],
   val costAccumulator: CostAccumulator)
 
 trait Evaluator {
-  def eval(ctx: EvalContext, env: DataEnv, exp: SValue): Any
+  def eval(env: DataEnv, exp: SValue): Any
 }
 
-class ErgoTreeEvaluator(env: ScriptEnv) extends Evaluator {
+class ErgoTreeEvaluator(val evalContext: EvalContext) extends Evaluator {
   import sigmastate.interpreter.ErgoTreeEvaluator._
+
+
+  def eval(env: DataEnv, exp: SValue): Any = {
+    exp match {
+      case Context => evalContext.context
+      case _ =>
+        exp.eval(this, env)
+    }
+  }
+
+}
+
+object ErgoTreeEvaluator {
+  /** Immutable data environment used to assign data values to graph nodes. */
+  type DataEnv = Map[Int, Any]
 
   def eval(context: ErgoLikeContext, ergoTree: ErgoTree): ReductionResult = {
     val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
-    val ctx = new EvalContext(context, ergoTree.constants, costAccumulator)
-    val res = eval(ctx, Map(), ergoTree.toProposition(false))
+    val sigmaContext = context.toSigmaContext(isCost = false)
+
+    val ctx = new EvalContext(sigmaContext, ergoTree.constants, costAccumulator)
+    val evaluator = new ErgoTreeEvaluator(ctx)
+    val res = evaluator.eval(Map(), ergoTree.toProposition(false))
     val cost = ctx.costAccumulator.totalCost
     val sb = res match {
       case sb: SigmaBoolean => sb
@@ -34,31 +54,15 @@ class ErgoTreeEvaluator(env: ScriptEnv) extends Evaluator {
     (sb, cost)
   }
 
-  def eval(ctx: EvalContext, env: DataEnv, exp: SValue): Any = {
-    object In { def unapply(s: SValue): Nullable[Any] = Nullable(eval(ctx, env, s)) }
-
-    exp match {
-      case Context => ctx.context
-      case _ =>
-        operations.get(exp.opCode) match {
-          case Some(op) =>
-            val children = exp.productIterator.map { ch => eval(ctx, env, ch.asInstanceOf[SValue]) }.toArray
-            op.eval(ctx, children)
-          case _ => error(s"Don't know how to eval: $exp")
-        }
-    }
-  }
-
   def error(msg: String) = sys.error(msg)
-}
-
-object ErgoTreeEvaluator {
-  /** Immutable data environment used to assign data values to graph nodes. */
-  type DataEnv = Map[Int, AnyRef]
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
   val operations: SparseArrayContainer[ValueCompanion] = SparseArrayContainer.buildForOperations(Array(
+    Apply,
+    GetVar,
+    ValUse,
+    FuncValue,
     MethodCall
   ))
 //  /** State monad for ValDef nodes computed in a data environment.

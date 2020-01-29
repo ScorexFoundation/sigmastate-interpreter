@@ -180,14 +180,14 @@ trait ErgoScriptTestkit extends ContractsTestkit with LangTests
       }
 
       if (ergoCtx.isDefined) {
-        val calcCtx = ergoCtx.get.toSigmaContext(IR, isCost = false)
+        val calcCtx = ergoCtx.get.toSigmaContext(isCost = false)
         val testContractRes = testContract.map(_(calcCtx))
         testContractRes.foreach { res =>
           checkExpected(res, expectedResult.calc, "Test Contract actual: %s, expected: %s")
         }
 
         // check cost
-        val costCtx = ergoCtx.get.toSigmaContext(IR, isCost = true)
+        val costCtx = ergoCtx.get.toSigmaContext(isCost = true)
         val estimatedCost = IR.checkCost(costCtx, tree, costF, CostTable.ScriptLimit)
 
         // check size

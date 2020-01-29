@@ -6,29 +6,29 @@ import org.ergoplatform.SigmaConstants.ScriptCostLimit
 import org.ergoplatform.ErgoLikeContext.Height
 import org.ergoplatform.ErgoScriptPredef.TrueProp
 import org.ergoplatform._
-import org.ergoplatform.validation.{SigmaValidationSettings, ValidationRules, ValidationSpecification}
+import org.ergoplatform.validation.{ValidationSpecification, ValidationRules, SigmaValidationSettings}
 import org.scalacheck.Arbitrary.arbByte
 import org.scalacheck.Gen
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Assertion, Matchers, PropSpec}
-import scalan.{RType, TestContexts, TestUtils}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import org.scalatest.prop.{PropertyChecks, GeneratorDrivenPropertyChecks}
+import org.scalatest.{PropSpec, Assertion, Matchers}
+import scalan.{TestUtils, TestContexts, RType}
+import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.types.IsPrimView
-import sigmastate.Values.{Constant, ErgoTree, EvaluatedValue, GroupElementConstant, SValue, Value}
-import sigmastate.interpreter.Interpreter.{ScriptEnv, ScriptNameProp}
-import sigmastate.interpreter.{ContextExtension, CryptoConstants, Interpreter}
-import sigmastate.lang.{SigmaCompiler, TransformingSigmaBuilder}
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer, ValueSerializer}
-import sigmastate.{AvlTreeData, SGroupElement, SType}
-import sigmastate.eval.{CompiletimeCosting, Evaluation, IRContext, _}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
+import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, ContextExtension, EvalContext}
+import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
+import sigmastate.serialization.{ValueSerializer, SigmaSerializer, GroupElementSerializer}
+import sigmastate.{SGroupElement, AvlTreeData, SType}
+import sigmastate.eval.{CompiletimeCosting, IRContext, Evaluation, _}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import special.collection.Coll
 import special.sigma
-import special.sigma.{Box, Header, PreHeader}
+import special.sigma.{Box, PreHeader, Header}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.util.Try
+import scala.util.{Try, Failure, Success}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -165,8 +165,38 @@ trait SigmaTestingCommons extends PropSpec
       val context =
         ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
-      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val calcCtx = context.toSigmaContext(isCost = false)
       val (res, _) = valueFun(calcCtx)
+      res.asInstanceOf[B]
+    }
+  }
+
+  def funcNew[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
+    import IR._
+    import IR.Context._;
+    val tA = RType[A]
+    val tB = RType[B]
+    val tpeA = Evaluation.rtypeToSType(tA)
+    val tpeB = Evaluation.rtypeToSType(tB)
+    val code =
+      s"""{
+         |  val func = $func
+         |  val res = func(getVar[${tA.name}](1).get)
+         |  res
+         |}
+      """.stripMargin
+    val env = Interpreter.emptyEnv
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
+    val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
+    (in: A) => {
+      implicit val cA = tA.classTag
+      val x = fromPrimView(in)
+      val context =
+        ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
+          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
+      val res = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
       res.asInstanceOf[B]
     }
   }
@@ -204,6 +234,20 @@ trait SigmaTestingCommons extends PropSpec
     val bytes = serializer.toBytes(v)
     serializer.parse(SigmaSerializer.startReader(bytes)) shouldBe v
     serializer.parse(SigmaSerializer.startReader(randomBytes ++ bytes, randomBytesCount)) shouldBe v
+  }
+
+  def checkEq[A,B](f: A => B)(g: A => B): A => Unit = { x: A =>
+    val b1 = Try(f(x)); val b2 = Try(g(x))
+    (b1, b2) match {
+      case (Success(b1), Success(b2)) =>
+        assert(b1 == b2)
+      case (Failure(t1), Failure(t2)) =>
+        val c1 = rootCause(t1).getClass
+        val c2 = rootCause(t2).getClass
+        c1 shouldBe c2
+      case (Failure(t1), _) => throw t1
+      case (_, Failure(t2)) => throw t2
+    }
   }
 
 }

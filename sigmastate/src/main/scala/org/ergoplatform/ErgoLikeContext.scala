@@ -118,17 +118,16 @@ class ErgoLikeContext(val lastBlockUtxoRoot: AvlTreeData,
       dataBoxes, boxesToSpend, newSpendingTransaction, selfIndex, extension, validationSettings, costLimit, initCost)
 
 
-  override def toSigmaContext(IR: Evaluation, isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
-    implicit val IRForBox: Evaluation = IR
+  override def toSigmaContext(isCost: Boolean, extensions: Map[Byte, AnyValue] = Map()): sigma.Context = {
     import Evaluation._
 
-    def contextVars(m: Map[Byte, AnyValue])(implicit IR: Evaluation): Coll[AnyValue] = {
+    def contextVars(m: Map[Byte, AnyValue]): Coll[AnyValue] = {
       val maxKey = if (m.keys.isEmpty) 0 else m.keys.max
       val res = new Array[AnyValue](maxKey + 1)
       for ((id, v) <- m) {
         res(id) = v
       }
-      IR.sigmaDslBuilderValue.Colls.fromArray(res)
+      SigmaDsl.Colls.fromArray(res)
     }
 
     val dataInputs = this.dataBoxes.toArray.map(_.toTestBox(isCost)).toColl

@@ -2,10 +2,12 @@ package sigmastate.lang
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter._
 import scalan.Nullable
-import sigmastate.SCollection.{SByteArray, SIntArray}
+import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.Values._
 import sigmastate.utils.Overloading.Overload1
 import sigmastate._
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
@@ -113,6 +115,12 @@ object Terms {
       case _ => NoType
     }
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      val f: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
+      val argsV = args.map(a => a.eval(E, env))
+      f(argsV)
+    }
   }
   object Apply extends ValueCompanion {
     override def opCode: OpCode = OpCodes.FuncApplyCode

@@ -15,7 +15,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import scalan.util.CollectionUtil._
 import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.interpreter.CryptoConstants.EcPointType
-import sigmastate.interpreter.{CryptoConstants, EvalContext}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, EvalContext}
 import sigmastate.serialization.{OpCodes, ConstantStore, _}
 import sigmastate.serialization.OpCodes._
 import sigmastate.TrivialProp.{FalseProp, TrueProp}
@@ -28,6 +28,7 @@ import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
 import scalan.util.Extensions.ByteOps
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import spire.syntax.all.cfor
 
 import scala.language.implicitConversions
@@ -93,6 +94,8 @@ object Values {
       } else {
         sys.error("_sourceContext can be set only once")
       }
+
+    def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}")
   }
 
   object Value {
@@ -137,7 +140,6 @@ object Values {
 
     init()
 
-    def eval(ctx: EvalContext, args: Seq[Any]): (Any, Int) = sys.error(s"Should be overriden in ${this.getClass}")
   }
   object ValueCompanion {
     private val _allOperations: mutable.HashMap[Byte, ValueCompanion] = mutable.HashMap.empty
@@ -789,6 +791,10 @@ object Values {
     override def companion = ValUse
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      env.getOrElse(valId, error(s"cannot resolve $this"))
+    }
   }
   object ValUse extends ValueCompanion {
     override def opCode: OpCode = ValUseCode
@@ -819,6 +825,13 @@ object Values {
     lazy val tpe: SFunc = SFunc(args.map(_._2), body.tpe)
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(Vector(), tpe)
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      (vArgs: Seq[Any]) => {
+        val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
+        body.eval(E, env1)
+      }
+    }
   }
   object FuncValue extends ValueCompanion {
     override def opCode: OpCode = FuncValueCode

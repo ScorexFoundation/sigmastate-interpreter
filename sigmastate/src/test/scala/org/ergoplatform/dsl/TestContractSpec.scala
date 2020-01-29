@@ -89,7 +89,7 @@ case class TestContractSpec(testSuite: SigmaTestingCommons)(implicit val IR: IRC
       ctx
     }
     def runDsl(extensions: Map[Byte, AnyValue] = Map()): SigmaProp = {
-      val ctx = toErgoContext.toSigmaContext(IR, false, extensions)
+      val ctx = toErgoContext.toSigmaContext(false, extensions)
       val res = utxoBox.propSpec.dslSpec(ctx)
       res
     }

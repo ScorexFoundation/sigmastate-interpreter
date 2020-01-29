@@ -100,7 +100,7 @@ trait Interpreter extends ScorexLogging {
   def checkCost(context: CTX, exp: Value[SType], costF: Ref[((Int, IR.Size[IR.Context])) => Int]): Int = {
     import IR.Size._
     import IR.Context._;
-    val costingCtx = context.toSigmaContext(IR, isCost = true)
+    val costingCtx = context.toSigmaContext(isCost = true)
     val maxCost = context.costLimit
     val costFun = IR.compile[(Int, SSize[SContext]), Int, (Int, Size[Context]), Int](IR.getDataEnv, costF, Some(maxCost))
     val (_, estimatedCost) = costFun((0, Sized.sizeOf(costingCtx)))
@@ -151,7 +151,7 @@ trait Interpreter extends ScorexLogging {
 
       CheckCostFunc(IR)(asRep[Any => Int](costF))
 
-      val costingCtx = context.toSigmaContext(IR, isCost = true)
+      val costingCtx = context.toSigmaContext(isCost = true)
       val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
 
       IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
@@ -159,7 +159,7 @@ trait Interpreter extends ScorexLogging {
       // check calc
       val calcF = costingRes.calcF
       CheckCalcFunc(IR)(calcF)
-      val calcCtx = context.toSigmaContext(IR, isCost = false)
+      val calcCtx = context.toSigmaContext(isCost = false)
       val res = calcResult(calcCtx, calcF)
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost
     }
