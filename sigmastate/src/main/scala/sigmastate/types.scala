@@ -1,5 +1,6 @@
 package sigmastate
 
+import java.lang.reflect.Method
 import java.math.BigInteger
 import java.util
 
@@ -262,6 +263,10 @@ trait STypeCompanion {
   def getMethodByName(name: String): SMethod = methods.find(_.name == name).get
 
   def coster: Option[CosterFactory] = None
+
+  /** Class which represents values of this type. When method call is executed, the corresponding method
+    * of this class is invoked via reflection [[java.lang.reflect.Method]].invoke(). */
+  def reprClass: Class[_]
 }
 
 trait MethodByNameUnapply extends STypeCompanion {
@@ -367,6 +372,16 @@ case class SMethod(
     methodId: Byte,
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo]) {
+
+  lazy val javaMethod: Option[Method] = {
+    val paramTypes = stype.tDom.drop(1).map(t => t match {
+      case _: STypeVar => classOf[AnyRef]
+      case _: SFunc => classOf[_ => _]
+      case _ => Evaluation.stypeToRType(t).classTag.runtimeClass
+    }).toArray
+    val m = objType.reprClass.getMethod(name, paramTypes:_*)
+    Some(m)
+  }
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
 
@@ -489,6 +504,10 @@ trait SNumericType extends SProduct {
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 106: Byte
+
+  /** Since this object is not used in SMethod instances. */
+  override def reprClass: Class[_] = sys.error(s"Shouldn't be called.")
+
   val tNum = STypeVar("TNum")
 
   val ToByteMethod: SMethod = SMethod(this, "toByte", SFunc(tNum, SByte), 1)
@@ -551,6 +570,8 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
   override type WrappedType = Boolean
   override val typeCode: TypeCode = 1: Byte
   override def typeId = typeCode
+  override val reprClass: Class[_] = classOf[Boolean]
+
   val ToByte = "toByte"
   protected override def getMethods() = super.getMethods()
   /* TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
@@ -567,6 +588,7 @@ case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProd
 case object SByte extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Byte
   override val typeCode: TypeCode = 2: Byte
+  override val reprClass: Class[_] = classOf[Byte]
   override def typeId = typeCode
   override def mkConstant(v: Byte): Value[SByte.type] = ByteConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 1
@@ -587,6 +609,7 @@ case object SByte extends SPrimType with SEmbeddable with SNumericType with SMon
 case object SShort extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Short
   override val typeCode: TypeCode = 3: Byte
+  override val reprClass: Class[_] = classOf[Short]
   override def typeId = typeCode
   override def mkConstant(v: Short): Value[SShort.type] = ShortConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 2
@@ -607,6 +630,7 @@ case object SShort extends SPrimType with SEmbeddable with SNumericType with SMo
 case object SInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Int
   override val typeCode: TypeCode = 4: Byte
+  override val reprClass: Class[_] = classOf[Int]
   override def typeId = typeCode
   override def mkConstant(v: Int): Value[SInt.type] = IntConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 4
@@ -629,6 +653,7 @@ case object SInt extends SPrimType with SEmbeddable with SNumericType with SMono
 case object SLong extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = Long
   override val typeCode: TypeCode = 5: Byte
+  override val reprClass: Class[_] = classOf[Long]
   override def typeId = typeCode
   override def mkConstant(v: Long): Value[SLong.type] = LongConstant(v)
   override def dataSize(v: SType#WrappedType): Long = 8
@@ -653,6 +678,8 @@ case object SLong extends SPrimType with SEmbeddable with SNumericType with SMon
 case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SMonoType {
   override type WrappedType = BigInt
   override val typeCode: TypeCode = 6: Byte
+  override val reprClass: Class[_] = classOf[BigInt]
+
   override def typeId = typeCode
   override def mkConstant(v: BigInt): Value[SBigInt.type] = BigIntConstant(v)
 
@@ -717,12 +744,15 @@ case object SString extends SProduct with SMonoType {
   override def mkConstant(v: String): Value[SString.type] = StringConstant(v)
   override def dataSize(v: SType#WrappedType): Long = v.asInstanceOf[String].length
   override def isConstantSize = false
+  override def reprClass: Class[_] = classOf[String]
 }
 
 /** NOTE: this descriptor both type and type companion */
 case object SGroupElement extends SProduct with SPrimType with SEmbeddable with SMonoType {
   override type WrappedType = GroupElement
   override val typeCode: TypeCode = 7: Byte
+  override val reprClass: Class[_] = classOf[GroupElement]
+
   override def typeId = typeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.GroupElementCoster))
 
@@ -764,6 +794,7 @@ case object SSigmaProp extends SProduct with SPrimType with SEmbeddable with SLo
   import SType._
   override type WrappedType = SigmaProp
   override val typeCode: TypeCode = 8: Byte
+  override val reprClass: Class[_] = classOf[SigmaProp]
   override def typeId = typeCode
   override def mkConstant(v: SigmaProp): Value[SSigmaProp.type] = SigmaPropConstant(v)
 
@@ -829,9 +860,10 @@ object SOption extends STypeCompanion {
   val OptionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionTypeConstrId).toByte
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
-  override def typeId = OptionTypeCode
 
+  override def typeId = OptionTypeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
+  override val reprClass: Class[_] = classOf[Option[_]]
 
   type SBooleanOption      = SOption[SBoolean.type]
   type SByteOption         = SOption[SByte.type]
@@ -874,7 +906,7 @@ object SOption extends STypeCompanion {
       .withInfo(OptionGet,
       """Returns the option's value. The option must be nonempty. Throws exception if the option is empty.""")
 
-  val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
+  lazy val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
          |return the result of evaluating \lst{default}.
@@ -954,6 +986,7 @@ object SCollectionType {
 }
 
 object SCollection extends STypeCompanion with MethodByNameUnapply {
+  override val reprClass: Class[_] = classOf[Coll[_]]
   override def typeId = SCollectionType.CollectionTypeCode
   override def coster: Option[CosterFactory] = Some(Coster(_.CollCoster))
 
@@ -1270,6 +1303,8 @@ object STuple extends STypeCompanion {
 
   def typeId = TupleTypeCode
 
+  override val reprClass: Class[_] = classOf[Product2[_,_]]
+
   lazy val colMethods = {
     val subst = Map(SCollection.tIV -> SAny)
     // TODO: implement other
@@ -1357,6 +1392,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   import ErgoBox._
   override type WrappedType = Box
   override val typeCode: TypeCode = 99: Byte
+  override val reprClass: Class[_] = classOf[Box]
   override def typeId = typeCode
   override def mkConstant(v: Box): Value[SBox.type] = BoxConstant(v)
   override def dataSize(v: SType#WrappedType): Long = {
@@ -1429,6 +1465,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
 case object SAvlTree extends SProduct with SPredefType with SMonoType {
   override type WrappedType = AvlTree
   override val typeCode: TypeCode = 100: Byte
+  override val reprClass: Class[_] = classOf[AvlTree]
   override def typeId = typeCode
   override def mkConstant(v: AvlTree): Value[SAvlTree.type] = AvlTreeConstant(v)
   override def dataSize(v: SType#WrappedType): Long = AvlTreeData.TreeDataSize
@@ -1621,10 +1658,13 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
 }
 
 case object SContext extends SProduct with SPredefType with SMonoType {
-  override type WrappedType = ErgoLikeContext
+  override type WrappedType = Context
   override val typeCode: TypeCode = 101: Byte
+
+  override def reprClass: Class[_] = classOf[Context]
+
   override def typeId = typeCode
-  override def mkConstant(v: ErgoLikeContext): Value[SContext.type] =
+  override def mkConstant(v: Context): Value[SContext.type] =
     sys.error(s"Cannot create constant of type Context")
 
   /** Approximate data size of the given context without ContextExtension. */
@@ -1658,6 +1698,7 @@ case object SContext extends SProduct with SPredefType with SMonoType {
 case object SHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = Header
   override val typeCode: TypeCode = 104: Byte
+  override val reprClass: Class[_] = classOf[Header]
   override def typeId = typeCode
   override def mkConstant(v: Header): Value[SHeader.type] = HeaderConstant(v)
 
@@ -1708,6 +1749,8 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
 case object SPreHeader extends SProduct with SPredefType with SMonoType {
   override type WrappedType = PreHeader
   override val typeCode: TypeCode = 105: Byte
+  override val reprClass: Class[_] = classOf[PreHeader]
+
   override def typeId = typeCode
   override def mkConstant(v: PreHeader): Value[SPreHeader.type] = PreHeaderConstant(v)
 
@@ -1754,6 +1797,7 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
 case object SGlobal extends SProduct with SPredefType with SMonoType {
   override type WrappedType = SigmaDslBuilder
   override val typeCode: TypeCode = 106: Byte
+  override val reprClass: Class[_] = classOf[SigmaDslBuilder]
   override def typeId = typeCode
   override def mkConstant(v: SigmaDslBuilder): Value[SGlobal.type] = {
     sys.error(s"Constants of SGlobal type cannot be created.")
@@ -1765,10 +1809,10 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   override def isConstantSize = true  // only fixed amount of global information is allowed
 
   val tT = STypeVar("T")
-  val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
+  lazy val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
     .withInfo(GroupGenerator, "")
-  val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
+  lazy val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
     })

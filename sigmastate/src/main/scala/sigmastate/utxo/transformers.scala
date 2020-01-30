@@ -6,12 +6,14 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import org.ergoplatform.ErgoBox.{RegisterId}
+import org.ergoplatform.ErgoBox.RegisterId
+import scalan.RType
 import sigmastate.Operations._
 import sigmastate.eval.Evaluation
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
-import sigmastate.lang.exceptions.{InterpreterException}
+import sigmastate.lang.exceptions.InterpreterException
+import special.collection.Coll
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -23,9 +25,14 @@ case class MapCollection[IV <: SType, OV <: SType](
                                                     mapper: Value[SFunc])
   extends Transformer[SCollection[IV], SCollection[OV]] {
   override def companion = MapCollection
-  implicit def tOV = mapper.asValue[OV].tpe
   override val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
   override val opType = SCollection.MapMethod.stype.asFunc
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    val mapperV = mapper.evalTo[Any => Any](E, env)
+    val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
+    inputV.map(mapperV)(tResItem)
+  }
 }
 object MapCollection extends ValueCompanion {
   override def opCode: OpCode = OpCodes.MapCollectionCode

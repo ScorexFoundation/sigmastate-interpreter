@@ -117,9 +117,20 @@ object Terms {
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
 
     override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      val f: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
-      val argsV = args.map(a => a.eval(E, env))
-      f(argsV)
+      if (args.isEmpty) {
+        val fV: () => Any = func.eval(E, env).asInstanceOf[() => Any]
+        fV()
+      }
+      else if (args.length == 1) {
+        val fV: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
+        val argV = args(0).eval(E, env)
+        fV(argV)
+      }
+      else {
+        val f: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
+        val argsV = args.map(a => a.eval(E, env))
+        f(argsV)
+      }
     }
   }
   object Apply extends ValueCompanion {
@@ -177,6 +188,13 @@ object Terms {
     override val tpe: SType = method.stype match {
       case f: SFunc => f.tRange.withSubstTypes(typeSubst)
       case t => t.withSubstTypes(typeSubst)
+    }
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      val objV = obj.eval(E, env)
+      val argsV = args.toArray.map(a => a.eval(E, env).asInstanceOf[AnyRef])
+      val m = method.javaMethod.getOrElse(ErgoTreeEvaluator.error(s"Java method is not found in $this"))
+      m.invoke(objV, argsV:_*)
     }
   }
   object MethodCall extends ValueCompanion {

@@ -96,6 +96,10 @@ object Values {
       }
 
     def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
+    def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
+      val v = eval(E, env)
+      v.asInstanceOf[T]
+    }
   }
 
   object Value {
@@ -839,9 +843,22 @@ object Values {
     override def opType: SFunc = SFunc(Vector(), tpe)
 
     override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      (vArgs: Seq[Any]) => {
-        val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
-        body.eval(E, env1)
+      if (args.length == 0) {
+        () => {
+          body.eval(E, env)
+        }
+      }
+      else if (args.length == 1) {
+        (vArg: Any) => {
+          val env1 = env + (args(0)._1 -> vArg)
+          body.eval(E, env1)
+        }
+      }
+      else {
+        (vArgs: Seq[Any]) => {
+          val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
+          body.eval(E, env1)
+        }
       }
     }
   }
