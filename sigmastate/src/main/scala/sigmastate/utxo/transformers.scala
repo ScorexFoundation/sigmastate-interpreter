@@ -9,11 +9,12 @@ import sigmastate.serialization.OpCodes
 import org.ergoplatform.ErgoBox.RegisterId
 import scalan.RType
 import sigmastate.Operations._
-import sigmastate.eval.Evaluation
+import sigmastate.eval.{Evaluation, SigmaDsl}
 import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
+import special.sigma.Box
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -139,6 +140,18 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   override def companion = ByIndex
   override val tpe = input.tpe.elemType
   override val opType = SCollection.ApplyMethod.stype.asFunc
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[V#WrappedType]](E, env)
+    val indexV = index.evalTo[Int](E, env)
+    default match {
+      case Some(d) =>
+        val dV = d.evalTo[V#WrappedType](E, env)
+        inputV.getOrElse(indexV, dV)
+      case _ =>
+        inputV.apply(indexV)
+    }
+  }
+
 }
 object ByIndex extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ByIndexCode
@@ -205,6 +218,10 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override def companion = ExtractAmount
   override val opType = SFunc(SBox, SLong)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.value
+  }
 }
 object ExtractAmount extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractAmountCode
@@ -241,6 +258,10 @@ object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractId
   override val opType = SFunc(SBox, SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.id
+  }
 }
 object ExtractId extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractIdCode
@@ -253,6 +274,11 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
   extends Extract[SOption[V]] with NotReadyValue[SOption[V]] {
   override def companion = ExtractRegisterAs
   override def opType = SFunc(Vector(SBox, SByte), tpe)
+  lazy val tV = Evaluation.stypeToRType(tpe.elemType)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.getReg(registerId.number)(tV)
+  }
 }
 object ExtractRegisterAs extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ExtractRegisterAs

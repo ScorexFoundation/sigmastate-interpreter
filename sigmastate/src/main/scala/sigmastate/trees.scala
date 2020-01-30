@@ -2,7 +2,7 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
-import scalan.{ExactOrdering, ExactNumeric, ExactIntegral}
+import scalan.{ExactOrdering, ExactNumeric, ExactIntegral, RType}
 import scalan.OverloadHack.Overloaded1
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
@@ -21,6 +21,7 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
+import sigmastate.eval.SigmaDsl
 import special.collection.Coll
 import special.sigma.GroupElement
 
@@ -397,6 +398,10 @@ case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override def companion = LongToByteArray
   override val opType = SFunc(SLong, SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Long](E, env)
+    SigmaDsl.longToByteArray(inputV)
+  }
 }
 object LongToByteArray extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.LongToByteArrayCode
@@ -410,6 +415,10 @@ case class ByteArrayToLong(input: Value[SByteArray])
   extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
   override def companion = ByteArrayToLong
   override val opType = SFunc(SByteArray, SLong)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Byte]](E, env)
+    SigmaDsl.byteArrayToLong(inputV)
+  }
 }
 object ByteArrayToLong extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ByteArrayToLongCode
@@ -423,6 +432,10 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override def companion = ByteArrayToBigInt
   override val opType = SFunc(SByteArray, SBigInt)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Byte]](E, env)
+    SigmaDsl.byteArrayToBigInt(inputV)
+  }
 }
 object ByteArrayToBigInt extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ByteArrayToBigIntCode
@@ -438,7 +451,7 @@ case class DecodePoint(input: Value[SByteArray])
   override val opType = SFunc(SByteArray, SGroupElement)
   override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.eval(E, env).asInstanceOf[Coll[Byte]]
-    sigmastate.eval.SigmaDsl.decodePoint(inputV)
+    SigmaDsl.decodePoint(inputV)
   }
 }
 object DecodePoint extends SimpleTransformerCompanion {
@@ -458,6 +471,10 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
 case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcBlake2b256
   override val hashFn: CryptographicHash32 = Blake2b256
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Byte]](E, env)
+    SigmaDsl.blake2b256(inputV)
+  }
 }
 object CalcBlake2b256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcBlake2b256Code
@@ -470,6 +487,10 @@ object CalcBlake2b256 extends SimpleTransformerCompanion {
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcSha256
   override val hashFn: CryptographicHash32 = Sha256
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Byte]](E, env)
+    SigmaDsl.sha256(inputV)
+  }
 }
 object CalcSha256 extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.CalcSha256Code
@@ -496,6 +517,12 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
   import SubstConstants._
   override def companion = SubstConstants
   override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](E, env)
+    val positionsV = positions.evalTo[Coll[Int]](E, env)
+    val newValuesV = newValues.evalTo[Coll[T]](E, env)
+    SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)(newValuesV.tItem)
+  }
 }
 
 object SubstConstants extends ValueCompanion {
