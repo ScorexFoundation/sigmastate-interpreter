@@ -196,7 +196,7 @@ trait SigmaTestingCommons extends PropSpec
       val context =
         ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
-      val res = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
+      val (res, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
       res.asInstanceOf[B]
     }
   }

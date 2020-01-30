@@ -40,18 +40,23 @@ object ErgoTreeEvaluator {
   type DataEnv = Map[Int, Any]
 
   def eval(context: ErgoLikeContext, ergoTree: ErgoTree): ReductionResult = {
-    val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
-    val sigmaContext = context.toSigmaContext(isCost = false)
-
-    val ctx = new EvalContext(sigmaContext, ergoTree.constants, costAccumulator)
-    val evaluator = new ErgoTreeEvaluator(ctx)
-    val res = evaluator.eval(Map(), ergoTree.toProposition(false))
-    val cost = ctx.costAccumulator.totalCost
+    val (res, cost) = eval(context, ergoTree.toProposition(false))
     val sb = res match {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
     }
     (sb, cost)
+  }
+
+  def eval(context: ErgoLikeContext, exp: SValue): (Any, Int) = {
+    val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
+    val sigmaContext = context.toSigmaContext(isCost = false)
+
+    val ctx = new EvalContext(sigmaContext, Array.empty[Constant[SType]], costAccumulator)
+    val evaluator = new ErgoTreeEvaluator(ctx)
+    val res = evaluator.eval(Map(), exp)
+    val cost = ctx.costAccumulator.totalCost
+    (res, cost)
   }
 
   def error(msg: String) = sys.error(msg)
