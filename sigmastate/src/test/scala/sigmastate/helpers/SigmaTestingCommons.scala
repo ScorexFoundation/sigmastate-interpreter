@@ -167,8 +167,8 @@ trait SigmaTestingCommons extends PropSpec
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(isCost = false)
       val (res, _) = valueFun(calcCtx)
-      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
-      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+//      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
+//      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
       res.asInstanceOf[B]
     }
   }

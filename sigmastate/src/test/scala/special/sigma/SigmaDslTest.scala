@@ -90,6 +90,7 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
+//    val plus = checkEq(func[Byte,Byte]("{ (x: Byte) => x / 2 + x / 2 }"))(x => (x / 2 + x / 2).toByte)
 
     //TODO soft-fork: for new 4 operations below
     lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)

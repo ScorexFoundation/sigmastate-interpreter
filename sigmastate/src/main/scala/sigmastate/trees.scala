@@ -2,6 +2,7 @@ package sigmastate
 
 import org.ergoplatform.SigmaConstants
 import org.ergoplatform.validation.SigmaValidationSettings
+import scalan.{ExactOrdering, ExactNumeric, ExactIntegral}
 import scalan.OverloadHack.Overloaded1
 import scorex.crypto.hash.{Sha256, Blake2b256, CryptographicHash32}
 import sigmastate.Operations._
@@ -14,6 +15,12 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
+import debox.{Map => DMap}
+import scalan.ExactIntegral._
+import scalan.ExactNumeric._
+import scalan.ExactOrdering._
+import sigmastate.ArithOp.OperationImpl
+import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -522,7 +529,7 @@ trait TwoArgumentOperationCompanion extends ValueCompanion {
 
 case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opCode: OpCode)
   extends TwoArgumentsOperation[T, T, T] with NotReadyValue[T] {
-  override def companion: ValueCompanion = ArithOp.operations(opCode)
+  override def companion: ArithOpCompanion = ArithOp.operations(opCode)
   override def tpe: T = left.tpe
   override def opName: String = ArithOp.opcodeToArithOpName(opCode)
 
@@ -536,23 +543,61 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
     case OpCodes.MinCode      => s"Min($left, $right)"
     case OpCodes.MaxCode      => s"Max($left, $right)"
   }
+
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val x = left.eval(E, env)
+    val y = right.eval(E, env)
+    companion.eval(tpe.typeCode, x, y)
+  }
 }
 /** NOTE: by-name argument is required for correct initialization order. */
-class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
+abstract class ArithOpCompanion(val opCode: OpCode, val name: String, _argInfos: => Seq[ArgInfo]) extends TwoArgumentOperationCompanion {
   override def argInfos: Seq[ArgInfo] = _argInfos
+  @inline final def eval(typeCode: SType.TypeCode, x: Any, y: Any): Any = eval(ArithOp.numerics(typeCode), x, y)
+  def eval(impl: OperationImpl, x: Any, y: Any): Any
 }
+
 object ArithOp {
   import OpCodes._
-  object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos)
-  object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos)
-  object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos)
-  object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos)
-  object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos)
-  object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos)
-  object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos)
+  object Plus     extends ArithOpCompanion(PlusCode,     "+", PlusInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.plus(x, y)
+  }
+  object Minus    extends ArithOpCompanion(MinusCode,    "-", MinusInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.minus(x, y)
+  }
+  object Multiply extends ArithOpCompanion(MultiplyCode, "*", MultiplyInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.n.times(x, y)
+  }
+  object Division extends ArithOpCompanion(DivisionCode, "/", DivisionInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.quot(x, y)
+  }
+  object Modulo   extends ArithOpCompanion(ModuloCode,   "%", ModuloInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.i.rem(x, y)
+  }
+  object Min      extends ArithOpCompanion(MinCode,      "min", MinInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.min(x, y)
+  }
+  object Max      extends ArithOpCompanion(MaxCode,      "max", MaxInfo.argInfos) {
+    def eval(impl: OperationImpl, x: Any, y: Any): Any = impl.o.max(x, y)
+  }
 
-  val operations: Map[Byte, ArithOpCompanion] =
-    Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)).toMap
+  private[sigmastate] val operations: DMap[Byte, ArithOpCompanion] =
+    DMap.fromIterable(Seq(Plus, Minus, Multiply, Division, Modulo, Min, Max).map(o => (o.opCode, o)))
+
+  class OperationImpl(_n: ExactNumeric[_], _i: ExactIntegral[_], _o: ExactOrdering[_]) {
+    val n = _n.asInstanceOf[ExactNumeric[Any]]
+    val i = _i.asInstanceOf[ExactIntegral[Any]]
+    val o = _o.asInstanceOf[ExactOrdering[Any]]
+  }
+
+  private[sigmastate] val numerics: DMap[SType.TypeCode, OperationImpl] =
+    DMap.fromIterable(Seq(
+      SByte   -> new OperationImpl(ByteIsExactNumeric,   ByteIsExactIntegral,   ByteIsExactOrdering),
+      SShort  -> new OperationImpl(ShortIsExactNumeric,  ShortIsExactIntegral,  ShortIsExactOrdering),
+      SInt    -> new OperationImpl(IntIsExactNumeric,    IntIsExactIntegral,    IntIsExactOrdering),
+      SLong   -> new OperationImpl(LongIsExactNumeric,   LongIsExactIntegral,   LongIsExactOrdering),
+      SBigInt -> new OperationImpl(BigIntIsExactNumeric, BigIntIsExactIntegral, BigIntIsExactOrdering)
+    ).map { case (t, n) => (t.typeCode, n) })
 
   def opcodeToArithOpName(opCode: Byte): String = operations.get(opCode) match {
     case Some(c)  => c.name

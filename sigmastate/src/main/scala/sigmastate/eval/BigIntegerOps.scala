@@ -26,25 +26,9 @@ object OrderingOps extends LowPriorityOrderingImplicits {
 
 object NumericOps {
 
-  trait BigIntegerIsIntegral extends Integral[BigInteger] {
-//    private val BI = implicitly[Integral[BigInt]]
-    def quot(x: BigInteger, y: BigInteger): BigInteger = x.divide(y)
-    def rem(x: BigInteger, y: BigInteger): BigInteger = x.remainder(y)
-    def plus(x: BigInteger, y: BigInteger): BigInteger = x.add(y)
-    def minus(x: BigInteger, y: BigInteger): BigInteger = x.subtract(y)
-    def times(x: BigInteger, y: BigInteger): BigInteger = x.multiply(y)
-    def negate(x: BigInteger): BigInteger = x.negate()
-    def fromInt(x: Int): BigInteger = BigInteger.valueOf(x)
-    def toInt(x: BigInteger): Int = x.intValueExact()
-    def toLong(x: BigInteger): Long = x.longValueExact()
-    def toFloat(x: BigInteger): Float = x.floatValue()
-    def toDouble(x: BigInteger): Double = x.doubleValue()
-  }
-  implicit object BigIntegerIsIntegral extends BigIntegerIsIntegral with OrderingOps.BigIntegerOrdering
-
   trait BigIntIsIntegral extends Integral[BigInt] {
     def quot(x: BigInt, y: BigInt): BigInt = x.divide(y)
-    def rem(x: BigInt, y: BigInt): BigInt = x.remainder(y)
+    def rem(x: BigInt, y: BigInt): BigInt = x.mod(y)
     def plus(x: BigInt, y: BigInt): BigInt = x.add(y)
     def minus(x: BigInt, y: BigInt): BigInt = x.subtract(y)
     def times(x: BigInt, y: BigInt): BigInt = x.multiply(y)
