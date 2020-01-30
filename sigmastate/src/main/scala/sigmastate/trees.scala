@@ -9,6 +9,8 @@ import sigmastate.SCollection.{SIntArray, SByteArray}
 import sigmastate.SOption.SIntOption
 import sigmastate.Values._
 import sigmastate.basics.{SigmaProtocol, SigmaProtocolPrivateInput, SigmaProtocolCommonInput}
+import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes._
 import sigmastate.serialization._
 import sigmastate.utxo.{Transformer, SimpleTransformerCompanion}
@@ -341,6 +343,11 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Upcast node for non-numeric type ${input.tpe}")
   override def companion = Upcast
   override val opType = SFunc(Vector(tT), tR)
+
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.eval(E, env).asInstanceOf[AnyVal]
+    tpe.upcast(inputV)
+  }
 }
 trait NumericCastCompanion extends ValueCompanion {
   def argInfos: Seq[ArgInfo]
@@ -361,6 +368,10 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override def companion = Downcast
   override val opType = SFunc(Vector(tT), tR)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.eval(E, env).asInstanceOf[AnyVal]
+    tpe.downcast(inputV)
+  }
 }
 
 object Downcast extends NumericCastCompanion {

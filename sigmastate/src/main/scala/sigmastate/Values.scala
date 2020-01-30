@@ -95,7 +95,7 @@ object Values {
         sys.error("_sourceContext can be set only once")
       }
 
-    def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}")
+    def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
   }
 
   object Value {
