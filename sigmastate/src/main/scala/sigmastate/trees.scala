@@ -21,6 +21,8 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
+import special.collection.Coll
+import special.sigma.GroupElement
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -434,6 +436,10 @@ case class DecodePoint(input: Value[SByteArray])
   extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
   override def companion = DecodePoint
   override val opType = SFunc(SByteArray, SGroupElement)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.eval(E, env).asInstanceOf[Coll[Byte]]
+    sigmastate.eval.SigmaDsl.decodePoint(inputV)
+  }
 }
 object DecodePoint extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.DecodePointCode
@@ -715,6 +721,12 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SBigInt.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = Exponentiate
+
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val leftV = left.evalTo[GroupElement](E, env)
+    val rightV = right.evalTo[special.sigma.BigInt](E, env)
+    leftV.exp(rightV)
+  }
 }
 object Exponentiate extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = ExponentiateCode
