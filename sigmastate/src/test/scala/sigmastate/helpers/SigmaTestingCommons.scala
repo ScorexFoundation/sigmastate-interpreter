@@ -167,38 +167,8 @@ trait SigmaTestingCommons extends PropSpec
           .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
       val calcCtx = context.toSigmaContext(isCost = false)
       val (res, _) = valueFun(calcCtx)
-//      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
-//      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-      res.asInstanceOf[B]
-    }
-  }
-
-  def funcNew[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
-    import IR._
-    import IR.Context._;
-    val tA = RType[A]
-    val tB = RType[B]
-    val tpeA = Evaluation.rtypeToSType(tA)
-    val tpeB = Evaluation.rtypeToSType(tB)
-    val code =
-      s"""{
-         |  val func = $func
-         |  val res = func(getVar[${tA.name}](1).get)
-         |  res
-         |}
-      """.stripMargin
-    val env = Interpreter.emptyEnv
-    val interProp = compiler.typecheck(env, code)
-    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
-    val tree = IR.buildTree(calcF)
-    checkSerializationRoundTrip(tree)
-    (in: A) => {
-      implicit val cA = tA.classTag
-      val x = fromPrimView(in)
-      val context =
-        ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
-      val (res, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
+      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
+      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
       res.asInstanceOf[B]
     }
   }

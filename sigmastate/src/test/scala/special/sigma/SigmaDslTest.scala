@@ -22,7 +22,8 @@ import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 
-import scala.util.{Success, Try, Failure}
+import scala.math.{max, min}
+import scala.util.{Success, Failure, Try}
 
 
 /** This suite tests every method of every SigmaDsl type to be equivalent to
@@ -90,7 +91,9 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Byte,Int]("{ (x: Byte) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Byte,Long]("{ (x: Byte) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Byte,BigInt]("{ (x: Byte) => x.toBigInt }"))(x => x.toBigInt)
-//    val plus = checkEq(func[Byte,Byte]("{ (x: Byte) => x / 2 + x / 2 }"))(x => (x / 2 + x / 2).toByte)
+    val arithOps = checkEq(func[Byte,Int](
+       "{ (x: Byte) => x / 2 + (x / 2 - x / 4) * 2 - (max(x / 4, 0) - min(x / 4, 0)) }")
+      ) { (x: Byte) => x / 2 + (x / 2 - x / 4) * 2 - (max(x / 4, 0) - min(x / 4, 0)) }
 
     //TODO soft-fork: for new 4 operations below
     lazy val toBytes = checkEq(func[Byte,Coll[Byte]]("{ (x: Byte) => x.toBytes }"))(x => x.toBytes)
@@ -99,7 +102,7 @@ class SigmaDslTest extends PropSpec
     lazy val compareTo = checkEq(func[(Byte, Byte), Int]("{ (x: (Byte, Byte)) => x._1.compareTo(x._2) }"))({ (x: (Byte, Byte)) => x._1.compareTo(x._2) })
 
     forAll { x: Byte =>
-      Seq(toByte, toShort, toInt, toLong, toBigInt).foreach(_(x))
+      Seq(toByte, toShort, toInt, toLong, toBigInt, arithOps).foreach(_(x))
     }
     println(ComplexityTableStat.complexityTableString)
   }
@@ -110,6 +113,8 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Int,Int]("{ (x: Int) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Int,Long]("{ (x: Int) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Int,BigInt]("{ (x: Int) => x.toBigInt }"))(x => x.toBigInt)
+    val plus = checkEq(func[Int,Int]("{ (x: Int) => x / 2 + x / 2 }"))(x => (x / 2 + x / 2))
+
     lazy val toBytes = checkEq(func[Int,Coll[Byte]]("{ (x: Int) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Int,Coll[Boolean]]("{ (x: Int) => x.toBits }"))(x => x.toBits)
     lazy val toAbs = checkEq(func[Int,Int]("{ (x: Int) => x.toAbs }"))(x => x.toAbs)
@@ -118,7 +123,7 @@ class SigmaDslTest extends PropSpec
     forAll { x: Byte => toByte(x.toInt) }
     forAll { x: Short => toShort(x.toInt) }
     forAll { x: Int =>
-      Seq(toInt, toLong, toBigInt).foreach(_(x))
+      Seq(toInt, toLong, toBigInt, plus).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
     forAll { x: (Int, Int) =>
@@ -132,6 +137,8 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Short,Int]("{ (x: Short) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Short,Long]("{ (x: Short) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Short,BigInt]("{ (x: Short) => x.toBigInt }"))(x => x.toBigInt)
+    val plus = checkEq(func[Short,Short]("{ (x: Short) => x / 2 + x / 2 }"))(x => (x / 2 + x / 2).toShort)
+
     lazy val toBytes = checkEq(func[Short,Coll[Byte]]("{ (x: Short) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Short,Coll[Boolean]]("{ (x: Short) => x.toBits }"))(x => x.toBits)
     // TODO: Implement Short.toAbs
@@ -140,7 +147,7 @@ class SigmaDslTest extends PropSpec
 
     forAll { x: Byte => toByte(x.toShort) }
     forAll { x: Short =>
-      Seq(toShort, toInt, toLong, toBigInt).foreach(_(x))
+      Seq(toShort, toInt, toLong, toBigInt, plus).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
     forAll { x: (Short, Short) =>
@@ -154,6 +161,8 @@ class SigmaDslTest extends PropSpec
     val toInt = checkEq(func[Long,Int]("{ (x: Long) => x.toInt }"))(x => x.toInt)
     val toLong = checkEq(func[Long,Long]("{ (x: Long) => x.toLong }"))(x => x.toLong)
     val toBigInt = checkEq(func[Long,BigInt]("{ (x: Long) => x.toBigInt }"))(x => BigInt(x).bigInteger)
+    val plus = checkEq(func[Long,Long]("{ (x: Long) => x / 2 + x / 2 }"))(x => x / 2 + x / 2)
+
     /*
     lazy val toBytes = checkEq(func[Long,Coll[Byte]]("{ (x: Long) => x.toBytes }"))(x => x.toBytes)
     lazy val toBits = checkEq(func[Long,Coll[Boolean]]("{ (x: Long) => x.toBits }"))(x => x.toBits)
@@ -166,7 +175,7 @@ class SigmaDslTest extends PropSpec
     forAll { x: Int => toInt(x.toLong) }
 
     forAll { x: Long =>
-      Seq(toLong, toBigInt).foreach(_(x))
+      Seq(toLong, toBigInt, plus).foreach(_(x))
       //TODO soft-fork: toBytes, toBits, toAbs
     }
     forAll { x: (Long, Long) =>

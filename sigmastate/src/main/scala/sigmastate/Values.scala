@@ -168,6 +168,8 @@ object Values {
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
 
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = value
+
     override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
       case c: Constant[_] => tpe == c.tpe && Objects.deepEquals(value, c.value)
       case _ => false
@@ -810,8 +812,18 @@ object Values {
   case class BlockValue(items: IndexedSeq[BlockItem], result: SValue) extends NotReadyValue[SType] {
     override def companion = BlockValue
     def tpe: SType = result.tpe
+
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      var curEnv = env
+      items.foreach { case vd: ValDef =>
+        val v = vd.rhs.eval(E, curEnv)
+        curEnv += (vd.id -> v)
+      }
+      result.eval(E, curEnv)
+    }
   }
   object BlockValue extends ValueCompanion {
     override def opCode: OpCode = BlockValueCode
