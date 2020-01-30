@@ -6,14 +6,12 @@ import sigmastate.lang.Terms._
 import sigmastate._
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.OpCodes
-import sigmastate.utxo.CostTable.Cost
-import org.ergoplatform.ErgoBox.{R3, RegisterId}
+import org.ergoplatform.ErgoBox.{RegisterId}
 import sigmastate.Operations._
 import sigmastate.eval.Evaluation
 import sigmastate.interpreter.ErgoTreeEvaluator
-import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.lang.exceptions.{OptionUnwrapNone, InterpreterException}
-import special.sigma.InvalidType
+import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
+import sigmastate.lang.exceptions.{InterpreterException}
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -145,6 +143,17 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
   override def companion = SelectField
   override val tpe = input.tpe.items(fieldIndex - 1)
   override val opType = SFunc(input.tpe, tpe)
+
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.eval(E, env)
+    inputV match {
+      case p: Tuple2[_,_] =>
+        if (fieldIndex == 1) p._1
+        else if (fieldIndex == 2) p._2
+        else error(s"Unknown fieldIndex $fieldIndex to select from $p: evaluating tree $this")
+      case xs: Seq[_] => xs(fieldIndex - 1)
+    }
+  }
 }
 object SelectField extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SelectFieldCode

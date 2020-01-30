@@ -748,6 +748,9 @@ object GE extends RelationCompanion {
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = EQ
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    left.eval(E, env) == right.eval(E, env)
+  }
 }
 object EQ extends RelationCompanion {
   override def opCode: OpCode = EqCode
