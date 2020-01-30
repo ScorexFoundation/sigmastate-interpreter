@@ -8,12 +8,13 @@ import sigmastate.Values._
 import sigmastate._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.{ContextExtension, InterpreterContext}
+import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
+import sigmastate.interpreter.{ContextExtension, InterpreterContext, ErgoTreeEvaluator}
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import special.collection.Coll
 import special.sigma
-import special.sigma.{AnyValue, Header, PreHeader}
+import special.sigma.{AnyValue, PreHeader, Header}
 import spire.syntax.all.cfor
 
 /**
@@ -247,4 +248,5 @@ case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
   override def opType: SFunc = SFunc(SUnit, SGlobal)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = CostingSigmaDslBuilder
 }
