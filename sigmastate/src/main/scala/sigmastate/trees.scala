@@ -835,6 +835,7 @@ sealed trait Relation[LIV <: SType, RIV <: SType] extends Triple[LIV, RIV, SBool
 trait SimpleRelation[T <: SType] extends Relation[T, T] {
   val tT = STypeVar("T")
   override val opType = SFunc(Vector(tT, tT), SBoolean)
+  lazy val opImpl = ArithOp.numerics(left.tpe.typeCode)
 }
 
 trait RelationCompanion extends ValueCompanion {
@@ -846,6 +847,11 @@ trait RelationCompanion extends ValueCompanion {
   */
 case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LT
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.eval(E, env)
+    val rV = right.eval(E, env)
+    opImpl.o.lt(lV, rV)
+  }
 }
 object LT extends RelationCompanion {
   override def opCode: OpCode = LtCode
@@ -856,6 +862,11 @@ object LT extends RelationCompanion {
   */
 case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LE
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.eval(E, env)
+    val rV = right.eval(E, env)
+    opImpl.o.lteq(lV, rV)
+  }
 }
 object LE extends RelationCompanion {
   override def opCode: OpCode = LeCode
@@ -866,9 +877,6 @@ object LE extends RelationCompanion {
   */
 case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GT
-
-  lazy val opImpl = ArithOp.numerics(left.tpe.typeCode)
-
   override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.eval(E, env)
     val rV = right.eval(E, env)
@@ -884,6 +892,11 @@ object GT extends RelationCompanion {
   */
 case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GE
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.eval(E, env)
+    val rV = right.eval(E, env)
+    opImpl.o.gteq(lV, rV)
+  }
 }
 object GE extends RelationCompanion {
   override def opCode: OpCode = GeCode

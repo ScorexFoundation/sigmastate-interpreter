@@ -704,11 +704,16 @@ object Values {
       else ConcreteCollection
 
     val tpe = SCollection[V](elementType)
+    implicit lazy val tElement: RType[V#WrappedType] = Evaluation.stypeToRType(elementType)
 
     lazy val value = {
       val xs = items.cast[EvaluatedValue[V]].map(_.value)
-      val tElement = Evaluation.stypeToRType(elementType)
-      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))(tElement)
+      Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
+    }
+
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      val is = items.map(_.evalTo[V#WrappedType](E, env)).toArray(tElement.classTag)
+      Colls.fromArray(is)
     }
   }
   object ConcreteCollection extends ValueCompanion {
