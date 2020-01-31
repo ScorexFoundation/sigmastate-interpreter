@@ -203,6 +203,8 @@ case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
   def opType = SFunc(SContext, SInt)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.HEIGHT
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.boxesToSpend */
@@ -211,6 +213,8 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.InputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.INPUTS
 }
 
 /** When interpreted evaluates to a collection of BoxConstant built from Context.spendingTransaction.outputs */
@@ -236,6 +240,8 @@ case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.SELF
 }
 
 case object Context extends NotReadyValue[SContext.type] with ValueCompanion {

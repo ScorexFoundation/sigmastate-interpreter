@@ -68,6 +68,11 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   override def companion = Filter
   override def tpe: SCollection[IV] = input.tpe
   override val opType = SCollection.FilterMethod.stype
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    val conditionV = condition.evalTo[Any => Boolean](E, env)
+    inputV.filter(conditionV)
+  }
 }
 object Filter extends ValueCompanion {
   override def opCode: OpCode = OpCodes.FilterCode
@@ -244,6 +249,10 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytes
   override val opType = SFunc(SBox, SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.bytes
+  }
 }
 object ExtractBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesCode
@@ -253,6 +262,10 @@ object ExtractBytes extends SimpleTransformerCompanion {
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
   override val opType = SFunc(SBox, SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.bytesWithoutRef
+  }
 }
 object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractBytesWithNoRefCode
@@ -300,6 +313,10 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
   override def companion = ExtractCreationInfo
   override def tpe: STuple = ResultType
   override def opType = OpType
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.creationInfo
+  }
 }
 object ExtractCreationInfo extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractCreationInfoCode
