@@ -33,30 +33,30 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
     forAll() { i: Int =>
       val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
-        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage).isProven
+        val dk1 = SigmaPropConstant(DLogProverInput.random().publicImage)
 
         val ctx = testingContext(h)
-        prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
+        prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h - 1)), dk1)).get._1 should(
           matchPattern { case _: SigmaBoolean => })
-        prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h)), dk1)).get._1 should (
+        prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h)), dk1)).get._1 should (
           matchPattern { case _: SigmaBoolean => })
 
         {
-          val res = prover.reduceToCrypto(ctx, AND(GE(Height, IntConstant(h + 1)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, SigmaAnd(GE(Height, IntConstant(h + 1)), dk1)).get._1
           res should matchPattern { case FalseProp => }
         }
 
         {
-          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h - 1)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h - 1)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
 
         {
-          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h)), dk1)).get._1
           res should matchPattern { case TrueProp => }
         }
         {
-          val res = prover.reduceToCrypto(ctx, OR(GE(Height, IntConstant(h + 1)), dk1)).get._1
+          val res = prover.reduceToCrypto(ctx, SigmaOr(GE(Height, IntConstant(h + 1)), dk1)).get._1
           res should matchPattern { case _: SigmaBoolean => }
         }
       }
@@ -68,32 +68,32 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
       val h = i.toAbs
       whenever(h > 0 && h < Int.MaxValue - 1) {
 
-        val dk1 = DLogProverInput.random().publicImage.isProven
-        val dk2 = DLogProverInput.random().publicImage.isProven
+        val dk1 = DLogProverInput.random().publicImage
+        val dk2 = DLogProverInput.random().publicImage
 
         val ctx = testingContext(h)
 
-        assert(prover.reduceToCrypto(ctx, OR(
-                  AND(LE(Height, IntConstant(h + 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h + 1)), dk1)
+        assert(prover.reduceToCrypto(ctx, SigmaOr(
+                  SigmaAnd(LE(Height, IntConstant(h + 1)), SigmaAnd(dk1, dk2)),
+                  SigmaAnd(GT(Height, IntConstant(h + 1)), dk1)
                 )).get._1.isInstanceOf[CAND])
 
 
-        assert(prover.reduceToCrypto(ctx, OR(
-                  AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-                  AND(GT(Height, IntConstant(h - 1)), dk1)
+        assert(prover.reduceToCrypto(ctx, SigmaOr(
+                  SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
+                  SigmaAnd(GT(Height, IntConstant(h - 1)), dk1)
                 )).get._1.isInstanceOf[ProveDlog])
 
-        prover.reduceToCrypto(ctx, OR(
-          AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-          AND(GT(Height, IntConstant(h + 1)), dk1)
+        prover.reduceToCrypto(ctx, SigmaOr(
+          SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
+          SigmaAnd(GT(Height, IntConstant(h + 1)), dk1)
         )).get._1 shouldBe FalseProp
 
         prover.reduceToCrypto(ctx,
-          OR(
-            OR(
-              AND(LE(Height, IntConstant(h - 1)), AND(dk1, dk2)),
-              AND(GT(Height, IntConstant(h + 1)), dk1)
+          SigmaOr(
+            SigmaOr(
+              SigmaAnd(LE(Height, IntConstant(h - 1)), SigmaAnd(dk1, dk2)),
+              SigmaAnd(GT(Height, IntConstant(h + 1)), dk1)
             ),
             AND(GT(Height, IntConstant(h - 1)), LE(Height, IntConstant(h + 1)))
           )
@@ -253,16 +253,16 @@ class TestingInterpreterSpecification extends SigmaTestingCommons {
   }
 
   property("Evaluation example #1") {
-    val dk1 = prover.dlogSecrets(0).publicImage.isProven
-    val dk2 = prover.dlogSecrets(1).publicImage.isProven
+    val dk1 = prover.dlogSecrets(0).publicImage
+    val dk2 = prover.dlogSecrets(1).publicImage
 
     val env1 = testingContext(99)
     val env2 = testingContext(101)
 
-    val prop = OR(
-      AND(LE(Height, IntConstant(100)), AND(dk1, dk2)),
-      AND(GT(Height, IntConstant(100)), dk1)
-    ).toSigmaProp
+    val prop = SigmaOr(
+      SigmaAnd(LE(Height, IntConstant(100)), SigmaAnd(dk1, dk2)),
+      SigmaAnd(GT(Height, IntConstant(100)), dk1)
+    )
 
     val challenge = Array.fill(32)(Random.nextInt(100).toByte)
 
