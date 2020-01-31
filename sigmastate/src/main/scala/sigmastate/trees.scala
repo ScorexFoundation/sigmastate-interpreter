@@ -568,7 +568,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](E, env)
     val positionsV = positions.evalTo[Coll[Int]](E, env)
     val newValuesV = newValues.evalTo[Coll[T]](E, env)
-    SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)(newValuesV.tItem)
+    SigmaDsl.substConstants(scriptBytesV, positionsV, newValuesV)
   }
 }
 
@@ -822,6 +822,11 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = MultiplyGroup
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val leftV = left.evalTo[GroupElement](E, env)
+    val rightV = right.evalTo[GroupElement](E, env)
+    leftV.multiply(rightV)
+  }
 }
 object MultiplyGroup extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = MultiplyGroupCode

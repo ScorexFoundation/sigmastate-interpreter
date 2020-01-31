@@ -196,6 +196,8 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
   def opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.minerPubKey
 }
 
 /** When interpreted evaluates to a IntConstant built from Context.currentHeight */
@@ -232,6 +234,8 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
   def opType = SFunc(SContext, tpe)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.LastBlockUtxoRootHash
 }
 
 

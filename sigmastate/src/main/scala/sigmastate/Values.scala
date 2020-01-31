@@ -516,6 +516,8 @@ object Values {
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+      SigmaDsl.groupGenerator
   }
 
 
