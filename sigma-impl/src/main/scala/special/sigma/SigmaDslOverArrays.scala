@@ -79,8 +79,7 @@ class TestSigmaDslBuilder extends SigmaDslBuilder {
   @NeverInline
   override def substConstants[T](scriptBytes: Coll[Byte],
       positions: Coll[Int],
-      newValues: Coll[T])
-      (implicit cT: RType[T]): Coll[Byte] = ???
+      newValues: Coll[T]): Coll[Byte] = ???
 
   @NeverInline
   override def decodePoint(encoded: Coll[Byte]): GroupElement =

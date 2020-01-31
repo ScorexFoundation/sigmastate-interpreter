@@ -7,25 +7,26 @@ import org.bouncycastle.math.ec.ECPoint
 import org.ergoplatform.{ErgoBox, SigmaConstants}
 import org.ergoplatform.validation.ValidationRules
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof}
+import scorex.crypto.authds.{ADDigest, ADKey, SerializedAdProof, ADValue}
 import sigmastate.SCollection.SByteArray
 import sigmastate.{TrivialProp, _}
-import sigmastate.Values.{Constant, ConstantNode, ErgoTree, EvaluatedValue, SValue, SigmaBoolean, Value}
+import sigmastate.Values.{Constant, EvaluatedValue, SValue, ConstantNode, Value, ErgoTree, SigmaBoolean}
 import sigmastate.interpreter.CryptoConstants.EcPointType
 import sigmastate.interpreter.{CryptoConstants, Interpreter}
-import special.collection.{CCostedBuilder, CSizeOption, Coll, CollType, CostedBuilder, Size, SizeColl, SizeOption}
+import special.collection.{Size, CSizeOption, SizeColl, CCostedBuilder, CollType, SizeOption, CostedBuilder, Coll}
 import special.sigma.{Box, _}
 import sigmastate.eval.Extensions._
 import spire.syntax.all.cfor
 
-import scala.util.{Failure, Success}
-import scalan.RType
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scala.util.{Success, Failure}
+import scalan.{Nullable, RType}
+import scorex.crypto.hash.{Digest32, Sha256, Blake2b256}
 import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms.OperationId
+import sigmastate.lang.TransformingSigmaBuilder
 import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
-import sigmastate.serialization.{GroupElementSerializer, SigmaSerializer}
+import sigmastate.serialization.{SigmaSerializer, GroupElementSerializer}
 import special.Types.TupleType
 
 import scala.reflect.ClassTag
@@ -593,9 +594,11 @@ class CostingSigmaDslBuilder extends TestSigmaDslBuilder { dsl =>
 
   override def substConstants[T](scriptBytes: Coll[Byte],
                                  positions: Coll[Int],
-                                 newValues: Coll[T])
-                                (implicit cT: RType[T]): Coll[Byte] = {
-    val typedNewVals = newValues.toArray.map(_.asInstanceOf[Value[SType]])
+                                 newValues: Coll[T]): Coll[Byte] = {
+    val typedNewVals = newValues.toArray.map(v => TransformingSigmaBuilder.liftAny(v) match {
+      case Nullable(v) => v
+      case _ => sys.error(s"Cannot evaluate substConstants($scriptBytes, $positions, $newValues): cannot lift value $v")
+    })
     val res = SubstConstants.eval(scriptBytes.toArray, positions.toArray, typedNewVals)
     Colls.fromArray(res)
   }

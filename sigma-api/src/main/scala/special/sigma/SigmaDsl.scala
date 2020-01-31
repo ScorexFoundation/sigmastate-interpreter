@@ -664,7 +664,7 @@ trait SigmaDslBuilder {
   def groupGenerator: GroupElement
 
   @Reified("T")
-  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T])(implicit cT: RType[T]): Coll[Byte]
+  def substConstants[T](scriptBytes: Coll[Byte], positions: Coll[Int], newValues: Coll[T]): Coll[Byte]
   def decodePoint(encoded: Coll[Byte]): GroupElement
 
   /** Create DSL big integer from existing `java.math.BigInteger`*/

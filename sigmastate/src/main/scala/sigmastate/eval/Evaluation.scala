@@ -661,12 +661,8 @@ trait Evaluation extends RuntimeCosting { IR: IRContext =>
             In(input: special.collection.Coll[Byte]@unchecked),
             In(positions: special.collection.Coll[Int]@unchecked),
             In(newVals: special.collection.Coll[Any]@unchecked), _) =>
-            val typedNewVals = newVals.toArray.map(v => builder.liftAny(v) match {
-              case Nullable(v) => v
-              case _ => sys.error(s"Cannot evaluate substConstants($input, $positions, $newVals): cannot lift value $v")
-            })
-            val byteArray = SubstConstants.eval(input.toArray, positions.toArray, typedNewVals)(sigmaDslBuilderValue.validationSettings)
-            out(sigmaDslBuilderValue.Colls.fromArray(byteArray))
+            val res = sigmaDslBuilderValue.substConstants(input, positions, newVals)
+            out(res)
 
           case CBM.replicate(In(b: special.collection.CollBuilder), In(n: Int), xSym @ In(x)) =>
             out(b.replicate(n, x)(asType[Any](xSym.elem.sourceType)))
