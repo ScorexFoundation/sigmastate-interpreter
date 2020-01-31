@@ -96,7 +96,7 @@ object Values {
       }
 
     def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
-    def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
+    @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
       val v = eval(E, env)
       v.asInstanceOf[T]
     }
@@ -640,6 +640,7 @@ object Values {
     def tpe = SBox
   }
 
+  // TODO refactor: only Constant make sense to inherit from EvaluatedValue
   case class Tuple(items: IndexedSeq[Value[SType]]) extends EvaluatedValue[STuple] with EvaluatedCollection[SAny.type, STuple] {
     override def companion = Tuple
     override def elementType = SAny
@@ -647,6 +648,16 @@ object Values {
     lazy val value = {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
+    }
+    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      if (items.length < 2) error(s"Invalid tuple $this")
+      if (items.length == 2) {
+        val x = items(0).eval(E, env)
+        val y = items(1).eval(E, env)
+        (x, y) // special representation for pairs (to pass directly to Coll primitives)
+      }
+      else
+        items.map(_.eval(E, env)) // general case
     }
   }
 

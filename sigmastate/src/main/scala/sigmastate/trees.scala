@@ -21,7 +21,7 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
-import sigmastate.eval.SigmaDsl
+import sigmastate.eval.{SigmaDsl, Colls}
 import special.collection.Coll
 import special.sigma.GroupElement
 
@@ -746,6 +746,11 @@ case class Xor(override val left: Value[SByteArray],
   extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
     with NotReadyValueByteArray {
   override def companion = Xor
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.evalTo[Coll[Byte]](E, env)
+    val rV = right.evalTo[Coll[Byte]](E, env)
+    Colls.xor(lV, rV)
+  }
 }
 object Xor extends TwoArgumentOperationCompanion {
   override def opCode: OpCode = XorCode
@@ -814,10 +819,18 @@ object LE extends RelationCompanion {
   override def argInfos: Seq[ArgInfo] = LEInfo.argInfos
 }
 /**
-  * Greater operation for SInt
+  * Greater operation for [[SNumericType]] values
   */
 case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GT
+
+  lazy val opImpl = ArithOp.numerics(left.tpe.typeCode)
+
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.eval(E, env)
+    val rV = right.eval(E, env)
+    opImpl.o.gt(lV, rV)
+  }
 }
 object GT extends RelationCompanion {
   override def opCode: OpCode = GtCode
@@ -891,6 +904,11 @@ object BinAnd extends RelationCompanion {
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinXor
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val leftV = left.evalTo[Boolean](E, env)
+    val rightV = right.evalTo[Boolean](E, env)
+    leftV ^ rightV
+  }
 }
 object BinXor extends RelationCompanion {
   override def opCode: OpCode = BinXorCode
