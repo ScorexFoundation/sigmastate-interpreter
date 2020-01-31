@@ -63,34 +63,6 @@ object ErgoTreeEvaluator {
 
   def msgCostLimitError(cost: Long, limit: Long) = s"Estimated execution cost $cost exceeds the limit $limit"
 
-  val operations: SparseArrayContainer[ValueCompanion] = SparseArrayContainer.buildForOperations(Array(
-    Apply,
-    GetVar,
-    ValUse,
-    FuncValue,
-    MethodCall
-  ))
-//  /** State monad for ValDef nodes computed in a data environment.
-//    * `DataEnv` is used as the state of the state monad.
-//    * And ValDefs are represented by Int identifiers
-//    */
-//  case class EnvRep[A](run: DataEnv => (DataEnv, Int)) {
-//    def flatMap[B](f: Int => EnvRep[B]): EnvRep[B] = EnvRep { env =>
-//      val (env1, x) = run(env)
-//      val res = f(x).run(env1)
-//      res
-//    }
-//    def map[B](f: Int => Int): EnvRep[B] = EnvRep { env =>
-//      val (env1, x) = run(env)
-//      val y = f(x)
-//      (env1, y)
-//    }
-//  }
-//  object EnvRep {
-//    def add[T](entry: (Int, AnyRef)): EnvRep[T] =
-//      EnvRep { env => val (sym, value) = entry; (env + (sym -> value), sym) }
-//  }
-
 }
 
 /** Incapsulate simple monotonic (add only) counter with reset. */

@@ -66,8 +66,4 @@ object SparseArrayContainer {
   def buildForSerializers(sers: Seq[ValueSerializer[_ <: Value[SType]]]): SparseArrayContainer[ValueSerializer[_ <: Value[SType]]] = {
     new SparseArrayContainer(sers.map(s => (s.opCode, s)))
   }
-
-  def buildForOperations(ops: Seq[ValueCompanion]): SparseArrayContainer[ValueCompanion] = {
-    new SparseArrayContainer(ops.map(op => (op.opCode, op)))
-  }
 }

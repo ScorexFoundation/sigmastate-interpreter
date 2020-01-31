@@ -389,7 +389,7 @@ case class SMethod(
     }
   }
   
-  lazy val extraDesriptors: Seq[RType[_]] = {
+  lazy val extraDescriptors: Seq[RType[_]] = {
     irInfo.invokeDescsBuilder match {
       case Some(builder) =>
         builder(stype).map(Evaluation.stypeToRType)

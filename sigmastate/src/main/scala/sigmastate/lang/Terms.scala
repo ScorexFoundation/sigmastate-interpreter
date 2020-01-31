@@ -129,7 +129,7 @@ object Terms {
         fV(argV)
       }
       else {
-        val f: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
+        val f = func.eval(E, env).asInstanceOf[Seq[Any] => Any]
         val argsV = args.map(a => a.eval(E, env))
         f(argsV)
       }
@@ -202,7 +202,7 @@ object Terms {
         val argV = arg.eval(E, env)
         argsBuf += argV
       }
-      val extra = method.extraDesriptors
+      val extra = method.extraDescriptors
       if (extra.nonEmpty) argsBuf ++= extra
       method.invoke(objV, argsBuf.result())
     }
