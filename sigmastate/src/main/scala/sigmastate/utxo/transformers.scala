@@ -231,6 +231,10 @@ object ExtractAmount extends SimpleTransformerCompanion {
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractScriptBytes
   override val opType = SFunc(SBox, SByteArray)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Box](E, env)
+    inputV.propositionBytes
+  }
 }
 object ExtractScriptBytes extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExtractScriptBytesCode

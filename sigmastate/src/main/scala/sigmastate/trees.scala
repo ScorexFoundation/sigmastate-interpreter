@@ -230,6 +230,10 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = XorOf
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Boolean]](E, env)
+    SigmaDsl.xorOf(inputV)
+  }
 }
 
 object XorOf extends LogicalTransformerCompanion {
@@ -642,6 +646,11 @@ object ArithOp {
 case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = Negation
   override def tpe: T = input.tpe
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[AnyVal](E, env)
+    val n = ArithOp.numerics(input.tpe.typeCode).n
+    n.negate(inputV)
+  }
 }
 object Negation extends OneArgumentOperationCompanion {
   override def opCode: OpCode = OpCodes.NegationCode
@@ -948,6 +957,10 @@ object If extends QuadrupleCompanion {
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
   override def companion = LogicalNot
   override val opType = SFunc(Vector(SBoolean), SBoolean)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Boolean](E, env)
+    !inputV
+  }
 }
 object LogicalNot extends ValueCompanion {
   override def opCode: OpCode = OpCodes.LogicalNotCode

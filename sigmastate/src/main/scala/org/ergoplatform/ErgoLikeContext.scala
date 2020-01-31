@@ -219,6 +219,8 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.OutputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context.OUTPUTS
 }
 
 /** When interpreted evaluates to a AvlTreeConstant built from Context.lastBlockUtxoRoot */
