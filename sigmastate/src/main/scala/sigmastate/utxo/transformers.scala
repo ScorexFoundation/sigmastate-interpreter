@@ -92,6 +92,11 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   extends BooleanTransformer[IV] {
   override def companion = Exists
   override val opType = SCollection.ExistsMethod.stype
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    val conditionV = condition.evalTo[Any => Boolean](E, env)
+    inputV.exists(conditionV)
+  }
 }
 object Exists extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ExistsCode
@@ -103,6 +108,11 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   extends BooleanTransformer[IV] {
   override def companion = ForAll
   override val opType = SCollection.ForallMethod.stype
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    val conditionV = condition.evalTo[Any => Boolean](E, env)
+    inputV.forall(conditionV)
+  }
 }
 object ForAll extends BooleanTransformerCompanion {
   override def opCode: OpCode = OpCodes.ForAllCode
@@ -211,6 +221,10 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override def companion = SizeOf
   override val opType = SFunc(SCollection(SCollection.tIV), SInt)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    inputV.length
+  }
 }
 object SizeOf extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.SizeOfCode
