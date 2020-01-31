@@ -925,6 +925,9 @@ object EQ extends RelationCompanion {
 case class NEQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = NEQ
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    left.eval(E, env) != right.eval(E, env)
+  }
 }
 object NEQ extends RelationCompanion {
   override def opCode: OpCode = NeqCode

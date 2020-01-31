@@ -22,17 +22,9 @@ trait Evaluator {
 }
 
 class ErgoTreeEvaluator(val evalContext: EvalContext) extends Evaluator {
-  import sigmastate.interpreter.ErgoTreeEvaluator._
-
-
   def eval(env: DataEnv, exp: SValue): Any = {
-    exp match {
-      case Context => evalContext.context
-      case _ =>
-        exp.eval(this, env)
-    }
+    exp.eval(this, env)
   }
-
 }
 
 object ErgoTreeEvaluator {

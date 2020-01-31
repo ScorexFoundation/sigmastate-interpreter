@@ -162,8 +162,11 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = calcResult(calcCtx, calcF)
-//      val (resNew: special.sigma.SigmaProp, estimatedCost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp)
-//      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp) match {
+        case (p: special.sigma.SigmaProp, c) => (p, c)
+        case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+      }
+      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
       SigmaDsl.toSigmaBoolean(res) -> estimatedCost.toLong
     }
   }

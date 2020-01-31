@@ -249,6 +249,8 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    E.evalContext.context
 }
 
 case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
