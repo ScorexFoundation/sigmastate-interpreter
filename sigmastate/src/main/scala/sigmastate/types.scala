@@ -9,7 +9,7 @@ import org.ergoplatform.validation._
 import scalan.RType
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.CryptoConstants
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
 import sigmastate.SBigInt.MaxSizeInBytes
@@ -25,7 +25,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.MethodCallIrBuilder
+import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -358,9 +358,10 @@ object OperationInfo {
 /** Meta information connecting SMethod with ErgoTree.
   * @param  irBuilder  optional recognizer and ErgoTree node builder.    */
 case class MethodIRInfo(
-    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]]
+    irBuilder: Option[PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]],
+    javaMethod: Option[Method],
+    invokeDescsBuilder: Option[InvokeDescBuilder]
 )
-
 
 /** Method info including name, arg type and result type.
   * Here stype.tDom - arg type and stype.tRange - result type.
@@ -373,14 +374,32 @@ case class SMethod(
     irInfo: MethodIRInfo,
     docInfo: Option[OperationInfo]) {
 
-  lazy val javaMethod: Option[Method] = {
-    val paramTypes = stype.tDom.drop(1).map(t => t match {
-      case _: STypeVar => classOf[AnyRef]
-      case _: SFunc => classOf[_ => _]
-      case _ => Evaluation.stypeToRType(t).classTag.runtimeClass
-    }).toArray
-    val m = objType.reprClass.getMethod(name, paramTypes:_*)
-    Some(m)
+  /** Finds and keeps the [[Method]] instance which corresponds to this method descriptor.
+    * The lazy value is forced only if irInfo.javaMethod == None
+    */
+  lazy val javaMethod: Method = {
+    irInfo.javaMethod.getOrElse {
+      val paramTypes = stype.tDom.drop(1).map(t => t match {
+        case _: STypeVar => classOf[AnyRef]
+        case _: SFunc => classOf[_ => _]
+        case _ => Evaluation.stypeToRType(t).classTag.runtimeClass
+      }).toArray
+      val m = objType.reprClass.getMethod(name, paramTypes:_*)
+      m
+    }
+  }
+  
+  lazy val extraDesriptors: Seq[RType[_]] = {
+    irInfo.invokeDescsBuilder match {
+      case Some(builder) =>
+        builder(stype).map(Evaluation.stypeToRType)
+      case None => Array.empty[RType[_]]
+    }
+  }
+
+  /** Invoke this method on the given object with the arguments. */
+  def invoke(obj: Any, args: Array[Any]) = {
+    javaMethod.invoke(obj, args.asInstanceOf[Array[AnyRef]]:_*)
   }
 
   def withSType(newSType: SFunc): SMethod = copy(stype = newSType)
@@ -407,8 +426,10 @@ case class SMethod(
     this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
   }
   def withIRInfo(
-      irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue]): SMethod = {
-    this.copy(irInfo = MethodIRInfo(Some(irBuilder)))
+      irBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue],
+      javaMethod: Method = null,
+      invokeHandler: InvokeDescBuilder = null): SMethod = {
+    this.copy(irInfo = MethodIRInfo(Some(irBuilder), Option(javaMethod), Option(invokeHandler)))
   }
   def argInfo(argName: String): ArgInfo =
     docInfo.get.args.find(_.name == argName).get
@@ -417,13 +438,19 @@ case class SMethod(
 
 object SMethod {
   type RCosted[A] = RuntimeCosting#RCosted[A]
+
+  /** Some runtime methods (like Coll.map, Coll.flatMap) require additional RType descriptors.
+    * The builder can extract those descriptors from the given type of the method signature.
+    */
+  type InvokeDescBuilder = SFunc => Seq[SType]
+
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
     case (builder, obj, method, args, tparamSubst) =>
       builder.mkMethodCall(obj, method, args.toIndexedSeq, tparamSubst)
   }
 
   def apply(objType: STypeCompanion, name: String, stype: SFunc, methodId: Byte): SMethod = {
-    SMethod(objType, name, stype, methodId, MethodIRInfo(None), None)
+    SMethod(objType, name, stype, methodId, MethodIRInfo(None, None, None), None)
   }
 
   def fromIds(typeId: Byte, methodId: Byte): SMethod = {
@@ -1095,7 +1122,10 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val FlatMapMethod = SMethod(this, "flatMap",
     SFunc(IndexedSeq(ThisType, SFunc(tIV, tOVColl)), tOVColl, Seq(paramIV, paramOV)), 15)
-      .withIRInfo(MethodCallIrBuilder)
+      .withIRInfo(
+        MethodCallIrBuilder,
+        classOf[Coll[_]].getMethod("flatMap", classOf[Function1[_,_]], classOf[RType[_]]),
+        { mtype => Array(mtype.tRange.asCollection[SType].elemType) })
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
          | and using the elements of the resulting collections.

@@ -11,7 +11,9 @@ import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.serialization.OpCodes
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.lang.TransformingSigmaBuilder._
+import spire.syntax.all._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 object Terms {
@@ -190,11 +192,19 @@ object Terms {
       case t => t.withSubstTypes(typeSubst)
     }
 
+    /** @hotspot don't beautify this code */
     override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       val objV = obj.eval(E, env)
-      val argsV = args.toArray.map(a => a.eval(E, env).asInstanceOf[AnyRef])
-      val m = method.javaMethod.getOrElse(ErgoTreeEvaluator.error(s"Java method is not found in $this"))
-      m.invoke(objV, argsV:_*)
+      val argsBuf = mutable.ArrayBuilder.make[Any]()
+      val len = args.length
+      cfor(0)(_ < len, _ + 1) { i =>
+        val arg = args(i)
+        val argV = arg.eval(E, env)
+        argsBuf += argV
+      }
+      val extra = method.extraDesriptors
+      if (extra.nonEmpty) argsBuf ++= extra
+      method.invoke(objV, argsBuf.result())
     }
   }
   object MethodCall extends ValueCompanion {

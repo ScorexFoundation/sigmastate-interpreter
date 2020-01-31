@@ -9,6 +9,7 @@ class SelectFieldSerializerSpecification extends TableSerializationSpecification
 
   property("SelectField: Serializer round trip ") {
     forAll(tupleGen(2, 10)) { tuple: Tuple =>
+      // TODO refactor: avoid usage of extension method `length`
       val index = Gen.chooseNum(1, tuple.length - 1).sample.get
       roundTripTest(SelectField(tuple, index.toByte))
     }

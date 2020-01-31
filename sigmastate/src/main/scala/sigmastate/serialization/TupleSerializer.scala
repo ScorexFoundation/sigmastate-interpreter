@@ -13,6 +13,7 @@ case class TupleSerializer(cons: Seq[Value[SType]] => Value[SType])
   val itemInfo: DataInfo[SValue] = ArgInfo("item_i", "tuple's item in i-th position")
 
   override def serialize(obj: Tuple, w: SigmaByteWriter): Unit = {
+    // TODO refactor: avoid usage of extension method `length`
     val length = obj.length
     w.putUByte(length, numItemsInfo)
     foreach(numItemsInfo.info.name, obj.items) { i =>
