@@ -43,6 +43,8 @@ class SigmaDslTest extends PropSpec
     override val okMeasureOperationTime: Boolean = true
   }
 
+  implicit val ctxForFunc = ergoCtx
+
   def checkEq2[A,B,R](f: (A, B) => R)(g: (A, B) => R): (A,B) => Unit = { (x: A, y: B) =>
     val r1 = f(x, y); val r2 = g(x, y)
     assert(r1.getClass == r2.getClass)

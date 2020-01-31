@@ -136,7 +136,8 @@ trait SigmaTestingCommons extends PropSpec
     }
   }
 
-  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)(implicit IR: IRContext): A => B = {
+  def func[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)
+                              (implicit IR: IRContext, context: ErgoLikeContext): A => B = {
     import IR._
     import IR.Context._;
     val tA = RType[A]
@@ -162,12 +163,12 @@ trait SigmaTestingCommons extends PropSpec
     (in: A) => {
       implicit val cA = tA.classTag
       val x = fromPrimView(in)
-      val context =
-        ErgoLikeContextTesting.dummy(createBox(0, TrueProp))
-          .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA)).withBindings(bindings: _*)
-      val calcCtx = context.toSigmaContext(isCost = false)
+      val ctx = context
+        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+        .withBindings(bindings: _*)
+      val calcCtx = ctx.toSigmaContext(isCost = false)
       val (res, _) = valueFun(calcCtx)
-      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], tree)
+      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
       assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
       res.asInstanceOf[B]
     }
