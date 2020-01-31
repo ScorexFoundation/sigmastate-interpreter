@@ -14,7 +14,7 @@ import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.ErgoTreeEvaluator.{DataEnv, error}
 import sigmastate.lang.exceptions.InterpreterException
 import special.collection.Coll
-import special.sigma.Box
+import special.sigma.{Box, SigmaProp}
 
 
 trait Transformer[IV <: SType, OV <: SType] extends NotReadyValue[OV] {
@@ -44,6 +44,11 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def companion = Append
   override val tpe = input.tpe
   override val opType = SCollection.AppendMethod.stype
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
+    val col2V = col2.evalTo[Coll[IV#WrappedType]](E, env)
+    inputV.append(col2V)
+  }
 }
 object Append extends ValueCompanion {
   override def opCode: OpCode = OpCodes.AppendCode
@@ -56,6 +61,12 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
   override def opType = {
     val tpeColl = SCollection(input.tpe.typeParams.head.ident)
     SFunc(Vector(tpeColl, SInt, SInt), tpeColl)
+  }
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Any]](E, env)
+    val fromV = from.evalTo[Int](E, env)
+    val untilV = until.evalTo[Int](E, env)
+    inputV.slice(fromV, untilV)
   }
 }
 object Slice extends ValueCompanion {
@@ -126,6 +137,12 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   override def companion = Fold
   implicit override def tpe: OV = zero.tpe
   val opType: SFunc = SCollection.FoldMethod.stype
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
+    val zeroV = zero.evalTo[OV#WrappedType](E, env)
+    val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](E, env)
+    inputV.foldLeft(zeroV, foldOpV)
+  }
 }
 
 object Fold extends ValueCompanion {
@@ -210,6 +227,10 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override def companion = SigmaPropBytes
   override def tpe = SByteArray
   override val opType = SFunc(input.tpe, tpe)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[SigmaProp](E, env)
+    inputV.propBytes
+  }
 }
 object SigmaPropBytes extends ValueCompanion {
   override def opCode: OpCode = OpCodes.SigmaPropBytesCode
@@ -404,6 +425,11 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   override def companion = OptionGetOrElse
   override val opType = SFunc(IndexedSeq(input.tpe, tpe), tpe)
   override def tpe: V = input.tpe.elemType
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Option[V#WrappedType]](E, env)
+    val dV = default.evalTo[V#WrappedType](E, env)  // TODO soft-fork: execute lazily
+    inputV.getOrElse(dV)
+  }
 }
 object OptionGetOrElse extends ValueCompanion {
   override def opCode: OpCode = OpCodes.OptionGetOrElseCode
@@ -414,6 +440,10 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   override def companion = OptionIsDefined
   override val opType = SFunc(input.tpe, SBoolean)
   override def tpe= SBoolean
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Option[V#WrappedType]](E, env)
+    inputV.isDefined
+  }
 }
 object OptionIsDefined extends SimpleTransformerCompanion {
   override def opCode: OpCode = OpCodes.OptionIsDefinedCode
