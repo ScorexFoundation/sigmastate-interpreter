@@ -21,10 +21,10 @@ import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
-import sigmastate.eval.{SigmaDsl, Colls}
+import sigmastate.eval.{Colls, SigmaDsl}
 import special.collection.Coll
-import special.sigma.GroupElement
-
+import special.sigma.{GroupElement, SigmaProp}
+import spire.syntax.all._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -124,6 +124,10 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def companion = BoolToSigmaProp
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val v = value.evalTo[Boolean](E, env)
+    SigmaDsl.sigmaProp(v)
+  }
 }
 object BoolToSigmaProp extends ValueCompanion {
   override def opCode: OpCode = OpCodes.BoolToSigmaPropCode
@@ -135,6 +139,10 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def companion = CreateProveDlog
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val v = value.evalTo[GroupElement](E, env)
+    SigmaDsl.proveDlog(v)
+  }
 }
 object CreateProveDlog extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDlogCode
@@ -164,6 +172,13 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def companion = CreateProveDHTuple
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val g = gv.evalTo[GroupElement](E, env)
+    val h = hv.evalTo[GroupElement](E, env)
+    val u = uv.evalTo[GroupElement](E, env)
+    val v = vv.evalTo[GroupElement](E, env)
+    SigmaDsl.proveDHTuple(g, h, u, v)
+  }
 }
 object CreateProveDHTuple extends ValueCompanion {
   override def opCode: OpCode = OpCodes.ProveDHTupleCode
@@ -182,6 +197,14 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   override def companion = SigmaAnd
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val len = items.length
+    val is = new Array[SigmaProp](len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      is(i) = items(i).evalTo[SigmaProp](E, env)
+    }
+    SigmaDsl.allZK(Colls.fromArray(is))
+  }
 }
 object SigmaAnd extends SigmaTransformerCompanion {
   override def opCode: OpCode = OpCodes.SigmaAndCode
@@ -196,6 +219,14 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
   override def companion = SigmaOr
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val len = items.length
+    val is = new Array[SigmaProp](len)
+    cfor(0)(_ < len, _ + 1) { i =>
+      is(i) = items(i).evalTo[SigmaProp](E, env)
+    }
+    SigmaDsl.anyZK(Colls.fromArray(is))
+  }
 }
 
 object SigmaOr extends SigmaTransformerCompanion {
@@ -212,6 +243,10 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = OR
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Boolean]](E, env)
+    SigmaDsl.anyOf(inputV)
+  }
 }
 
 object OR extends LogicalTransformerCompanion {
@@ -254,6 +289,10 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     with NotReadyValueBoolean {
   override def companion = AND
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Boolean]](E, env)
+    SigmaDsl.allOf(inputV)
+  }
 }
 
 trait LogicalTransformerCompanion extends ValueCompanion {
@@ -282,7 +321,11 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
   override def companion = AtLeast
   override def tpe: SSigmaProp.type = SSigmaProp
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
-
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val b = bound.evalTo[Int](E, env)
+    val props = input.evalTo[Coll[SigmaProp]](E, env)
+    SigmaDsl.atLeast(b, props)
+  }
 }
 
 object AtLeast extends ValueCompanion {
@@ -882,6 +925,10 @@ object NEQ extends RelationCompanion {
 case class BinOr(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinOr
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val l = left.evalTo[Boolean](E, env)
+    l || right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's ||
+  }
 }
 object BinOr extends RelationCompanion {
   override def opCode: OpCode = BinOrCode
@@ -895,6 +942,10 @@ object BinOr extends RelationCompanion {
 case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinAnd
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val l = left.evalTo[Boolean](E, env)
+    l && right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's &&
+  }
 }
 object BinAnd extends RelationCompanion {
   override def opCode: OpCode = BinAndCode
@@ -965,6 +1016,11 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch
+  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val c = condition.evalTo[Boolean](E, env)
+    if (c) trueBranch.evalTo[T#WrappedType](E, env)
+    else   falseBranch.evalTo[T#WrappedType](E, env)
+  }
 }
 object If extends QuadrupleCompanion {
   override def opCode: OpCode = OpCodes.IfCode
