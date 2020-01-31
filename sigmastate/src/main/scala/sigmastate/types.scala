@@ -25,7 +25,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder}
+import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder, javaMethodOf}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -443,6 +443,12 @@ object SMethod {
     * The builder can extract those descriptors from the given type of the method signature.
     */
   type InvokeDescBuilder = SFunc => Seq[SType]
+
+  def javaMethodOf[T, A1](methodName: String)(implicit cT: ClassTag[T], cA1: ClassTag[A1]) =
+    cT.runtimeClass.getMethod(methodName, cA1.runtimeClass)
+
+  def javaMethodOf[T, A1, A2](methodName: String)(implicit cT: ClassTag[T], cA1: ClassTag[A1], cA2: ClassTag[A2]) =
+    cT.runtimeClass.getMethod(methodName, cA1.runtimeClass, cA2.runtimeClass)
 
   val MethodCallIrBuilder: PartialFunction[(SigmaBuilder, SValue, SMethod, Seq[SValue], STypeSubst), SValue] = {
     case (builder, obj, method, args, tparamSubst) =>
@@ -1124,7 +1130,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
     SFunc(IndexedSeq(ThisType, SFunc(tIV, tOVColl)), tOVColl, Seq(paramIV, paramOV)), 15)
       .withIRInfo(
         MethodCallIrBuilder,
-        classOf[Coll[_]].getMethod("flatMap", classOf[Function1[_,_]], classOf[RType[_]]),
+        javaMethodOf[Coll[_], Function1[_,_], RType[_]]("flatMap"),
         { mtype => Array(mtype.tRange.asCollection[SType].elemType) })
       .withInfo(MethodCall,
         """ Builds a new collection by applying a function to all elements of this collection
@@ -1143,7 +1149,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(IndexedSeq(ThisType, SInt, tIV), ThisType, Seq(paramIV)), 20)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
+      .withInfo(MethodCall, "")
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)), 21)
@@ -1166,11 +1173,13 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val IndexOfMethod = SMethod(this, "indexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 26)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
+      .withInfo(MethodCall, "")
 
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(MethodCall, "")
 
   lazy val FindMethod = SMethod(this, "find",
     SFunc(IndexedSeq(ThisType, tPredicate), SOption(tIV), Seq(paramIV)), 28)
