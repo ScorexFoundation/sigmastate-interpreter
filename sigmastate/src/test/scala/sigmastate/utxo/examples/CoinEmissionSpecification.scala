@@ -126,8 +126,8 @@ block 1600 in 1622 ms, 30000000000 coins remain, defs: 61661
         |    val heightIncreased = HEIGHT > SELF.R4[Int].get
         |    val heightCorrect = out.R4[Int].get == HEIGHT
         |    val lastCoins = SELF.value <= oneEpochReduction
-        |    allOf(Coll(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed)) || (heightIncreased && lastCoins)
-        |}""".stripMargin).asBoolValue.toSigmaProp
+        |    sigmaProp(allOf(Coll(heightCorrect, heightIncreased, sameScriptRule, correctCoinsConsumed)) || (heightIncreased && lastCoins))
+        |}""".stripMargin).asSigmaProp
 
     prop1 shouldEqual prop
 

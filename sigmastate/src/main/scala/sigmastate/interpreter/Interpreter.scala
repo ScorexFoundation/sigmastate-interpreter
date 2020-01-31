@@ -5,6 +5,7 @@ import java.lang.{Math => JMath}
 
 import org.bitbucket.inkytonik.kiama.rewriting.Rewriter.{strategy, rule, everywherebu}
 import org.bitbucket.inkytonik.kiama.rewriting.Strategy
+import org.ergoplatform.ErgoLikeContext
 import sigmastate.basics.DLogProtocol.{FirstDLogProverMessage, DLogInteractiveProver}
 import scorex.util.ScorexLogging
 import sigmastate.SCollection.SByteArray
@@ -77,9 +78,9 @@ trait Interpreter extends ScorexLogging {
     case _ => None
   }
 
-  def toValidScriptType(exp: SValue): BoolValue = exp match {
-    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v
-    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp.isProven
+  def toValidScriptType(exp: SValue): SigmaPropValue = exp match {
+    case v: Value[SBoolean.type]@unchecked if v.tpe == SBoolean => v.toSigmaProp
+    case p: SValue if p.tpe == SSigmaProp => p.asSigmaProp
     case x => throw new Error(s"Context-dependent pre-processing should produce tree of type Boolean or SigmaProp but was $x")
   }
 
@@ -87,7 +88,7 @@ trait Interpreter extends ScorexLogging {
 
   /** Substitute Deserialize* nodes with deserialized subtrees
     * We can estimate cost of the tree evaluation only after this step.*/
-  def applyDeserializeContext(context: CTX, exp: Value[SType]): (BoolValue, CTX) = {
+  def applyDeserializeContext(context: CTX, exp: Value[SType]): (SigmaPropValue, CTX) = {
     val currContext = new MutableCell(context)
     val substRule = strategy[Value[_ <: SType]] { case x =>
       substDeserialize(currContext.value, { ctx: CTX => currContext.value = ctx }, x)
@@ -161,7 +162,9 @@ trait Interpreter extends ScorexLogging {
       CheckCalcFunc(IR)(calcF)
       val calcCtx = context.toSigmaContext(isCost = false)
       val res = calcResult(calcCtx, calcF)
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost
+//      val (resNew: special.sigma.SigmaProp, estimatedCost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp)
+//      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+      SigmaDsl.toSigmaBoolean(res) -> estimatedCost.toLong
     }
   }
 
@@ -217,7 +220,7 @@ trait Interpreter extends ScorexLogging {
       val prop = propositionFromErgoTree(tree, context1)
 
       implicit val vs = context1.validationSettings
-      val (propTree, context2) = trySoftForkable[(BoolValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
+      val (propTree, context2) = trySoftForkable[(SigmaPropValue, CTX)](whenSoftFork = (TrueLeaf, context1)) {
         applyDeserializeContext(context1, prop)
       }
 
