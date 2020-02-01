@@ -124,7 +124,7 @@ case class BoolToSigmaProp(value: BoolValue) extends SigmaPropValue {
   override def companion = BoolToSigmaProp
   def tpe = SSigmaProp
   val opType = SFunc(SBoolean, SSigmaProp)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val v = value.evalTo[Boolean](E, env)
     SigmaDsl.sigmaProp(v)
   }
@@ -139,7 +139,7 @@ case class CreateProveDlog(value: Value[SGroupElement.type]) extends SigmaPropVa
   override def companion = CreateProveDlog
   override def tpe = SSigmaProp
   override def opType = SFunc(SGroupElement, SSigmaProp)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val v = value.evalTo[GroupElement](E, env)
     SigmaDsl.proveDlog(v)
   }
@@ -172,7 +172,7 @@ case class CreateProveDHTuple(gv: Value[SGroupElement.type],
   override def companion = CreateProveDHTuple
   override def tpe = SSigmaProp
   override def opType = SFunc(IndexedSeq(SGroupElement, SGroupElement, SGroupElement, SGroupElement), SSigmaProp)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val g = gv.evalTo[GroupElement](E, env)
     val h = hv.evalTo[GroupElement](E, env)
     val u = uv.evalTo[GroupElement](E, env)
@@ -197,7 +197,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
   override def companion = SigmaAnd
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val len = items.length
     val is = new Array[SigmaProp](len)
     cfor(0)(_ < len, _ + 1) { i =>
@@ -219,7 +219,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
   override def companion = SigmaOr
   def tpe = SSigmaProp
   val opType = SFunc(SCollection.SSigmaPropArray, SSigmaProp)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val len = items.length
     val is = new Array[SigmaProp](len)
     cfor(0)(_ < len, _ + 1) { i =>
@@ -243,7 +243,7 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = OR
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
     SigmaDsl.anyOf(inputV)
   }
@@ -265,7 +265,7 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   extends Transformer[SCollection[SBoolean.type], SBoolean.type] with NotReadyValueBoolean {
   override def companion = XorOf
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
     SigmaDsl.xorOf(inputV)
   }
@@ -289,7 +289,7 @@ case class AND(input: Value[SCollection[SBoolean.type]])
     with NotReadyValueBoolean {
   override def companion = AND
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
     SigmaDsl.allOf(inputV)
   }
@@ -321,7 +321,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
   override def companion = AtLeast
   override def tpe: SSigmaProp.type = SSigmaProp
   override def opType: SFunc = SFunc(IndexedSeq(SInt, SCollection.SBooleanArray), SBoolean)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val b = bound.evalTo[Int](E, env)
     val props = input.evalTo[Coll[SigmaProp]](E, env)
     SigmaDsl.atLeast(b, props)
@@ -401,8 +401,8 @@ case class Upcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: R)
   override def companion = Upcast
   override val opType = SFunc(Vector(tT), tR)
 
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val inputV = input.eval(E, env).asInstanceOf[AnyVal]
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[AnyVal](E, env)
     tpe.upcast(inputV)
   }
 }
@@ -425,8 +425,8 @@ case class Downcast[T <: SNumericType, R <: SNumericType](input: Value[T], tpe: 
   require(input.tpe.isInstanceOf[SNumericType], s"Cannot create Downcast node for non-numeric type ${input.tpe}")
   override def companion = Downcast
   override val opType = SFunc(Vector(tT), tR)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val inputV = input.eval(E, env).asInstanceOf[AnyVal]
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[AnyVal](E, env)
     tpe.downcast(inputV)
   }
 }
@@ -445,7 +445,7 @@ case class LongToByteArray(input: Value[SLong.type])
   extends Transformer[SLong.type, SByteArray] with NotReadyValueByteArray {
   override def companion = LongToByteArray
   override val opType = SFunc(SLong, SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Long](E, env)
     SigmaDsl.longToByteArray(inputV)
   }
@@ -462,7 +462,7 @@ case class ByteArrayToLong(input: Value[SByteArray])
   extends Transformer[SByteArray, SLong.type] with NotReadyValueLong {
   override def companion = ByteArrayToLong
   override val opType = SFunc(SByteArray, SLong)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
     SigmaDsl.byteArrayToLong(inputV)
   }
@@ -479,7 +479,7 @@ case class ByteArrayToBigInt(input: Value[SByteArray])
   extends Transformer[SByteArray, SBigInt.type] with NotReadyValueBigInt {
   override def companion = ByteArrayToBigInt
   override val opType = SFunc(SByteArray, SBigInt)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
     SigmaDsl.byteArrayToBigInt(inputV)
   }
@@ -496,8 +496,8 @@ case class DecodePoint(input: Value[SByteArray])
   extends Transformer[SByteArray, SGroupElement.type] with NotReadyValueGroupElement {
   override def companion = DecodePoint
   override val opType = SFunc(SByteArray, SGroupElement)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val inputV = input.eval(E, env).asInstanceOf[Coll[Byte]]
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Coll[Byte]](E, env)
     SigmaDsl.decodePoint(inputV)
   }
 }
@@ -518,7 +518,7 @@ trait CalcHash extends Transformer[SByteArray, SByteArray] with NotReadyValueByt
 case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcBlake2b256
   override val hashFn: CryptographicHash32 = Blake2b256
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
     SigmaDsl.blake2b256(inputV)
   }
@@ -534,7 +534,7 @@ object CalcBlake2b256 extends SimpleTransformerCompanion {
 case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override def companion = CalcSha256
   override val hashFn: CryptographicHash32 = Sha256
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
     SigmaDsl.sha256(inputV)
   }
@@ -564,7 +564,7 @@ case class SubstConstants[T <: SType](scriptBytes: Value[SByteArray], positions:
   import SubstConstants._
   override def companion = SubstConstants
   override val opType = SFunc(Vector(SByteArray, SIntArray, SCollection(tT)), SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val scriptBytesV = scriptBytes.evalTo[Coll[Byte]](E, env)
     val positionsV = positions.evalTo[Coll[Int]](E, env)
     val newValuesV = newValues.evalTo[Coll[T]](E, env)
@@ -624,9 +624,9 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
     case OpCodes.MaxCode      => s"Max($left, $right)"
   }
 
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val x = left.eval(E, env)
-    val y = right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val x = left.evalTo[Any](E, env)
+    val y = right.evalTo[Any](E, env)
     companion.eval(tpe.typeCode, x, y)
   }
 }
@@ -689,7 +689,7 @@ object ArithOp {
 case class Negation[T <: SNumericType](input: Value[T]) extends OneArgumentOperation[T, T] {
   override def companion = Negation
   override def tpe: T = input.tpe
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[AnyVal](E, env)
     val n = ArithOp.numerics(input.tpe.typeCode).n
     n.negate(inputV)
@@ -789,7 +789,7 @@ case class Xor(override val left: Value[SByteArray],
   extends TwoArgumentsOperation[SByteArray, SByteArray, SByteArray]
     with NotReadyValueByteArray {
   override def companion = Xor
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Coll[Byte]](E, env)
     val rV = right.evalTo[Coll[Byte]](E, env)
     Colls.xor(lV, rV)
@@ -806,7 +806,7 @@ case class Exponentiate(override val left: Value[SGroupElement.type],
     with NotReadyValueGroupElement {
   override def companion = Exponentiate
 
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[GroupElement](E, env)
     val rightV = right.evalTo[special.sigma.BigInt](E, env)
     leftV.exp(rightV)
@@ -822,7 +822,7 @@ case class MultiplyGroup(override val left: Value[SGroupElement.type],
   extends TwoArgumentsOperation[SGroupElement.type, SGroupElement.type, SGroupElement.type]
     with NotReadyValueGroupElement {
   override def companion = MultiplyGroup
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[GroupElement](E, env)
     val rightV = right.evalTo[GroupElement](E, env)
     leftV.multiply(rightV)
@@ -852,9 +852,9 @@ trait RelationCompanion extends ValueCompanion {
   */
 case class LT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LT
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val lV = left.eval(E, env)
-    val rV = right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.evalTo[Any](E, env)
+    val rV = right.evalTo[Any](E, env)
     opImpl.o.lt(lV, rV)
   }
 }
@@ -867,9 +867,9 @@ object LT extends RelationCompanion {
   */
 case class LE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = LE
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val lV = left.eval(E, env)
-    val rV = right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.evalTo[Any](E, env)
+    val rV = right.evalTo[Any](E, env)
     opImpl.o.lteq(lV, rV)
   }
 }
@@ -882,9 +882,9 @@ object LE extends RelationCompanion {
   */
 case class GT[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GT
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val lV = left.eval(E, env)
-    val rV = right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.evalTo[Any](E, env)
+    val rV = right.evalTo[Any](E, env)
     opImpl.o.gt(lV, rV)
   }
 }
@@ -897,9 +897,9 @@ object GT extends RelationCompanion {
   */
 case class GE[T <: SType](override val left: Value[T], override val right: Value[T]) extends SimpleRelation[T] {
   override def companion = GE
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val lV = left.eval(E, env)
-    val rV = right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val lV = left.evalTo[Any](E, env)
+    val rV = right.evalTo[Any](E, env)
     opImpl.o.gteq(lV, rV)
   }
 }
@@ -915,8 +915,8 @@ object GE extends RelationCompanion {
 case class EQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = EQ
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    left.eval(E, env) == right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    left.evalTo[Any](E, env) == right.evalTo[Any](E, env)
   }
 }
 object EQ extends RelationCompanion {
@@ -930,8 +930,8 @@ object EQ extends RelationCompanion {
 case class NEQ[S <: SType](override val left: Value[S], override val right: Value[S])
   extends SimpleRelation[S] {
   override def companion = NEQ
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    left.eval(E, env) != right.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    left.evalTo[Any](E, env) != right.evalTo[Any](E, env)
   }
 }
 object NEQ extends RelationCompanion {
@@ -946,7 +946,7 @@ object NEQ extends RelationCompanion {
 case class BinOr(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinOr
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val l = left.evalTo[Boolean](E, env)
     l || right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's ||
   }
@@ -963,7 +963,7 @@ object BinOr extends RelationCompanion {
 case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinAnd
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val l = left.evalTo[Boolean](E, env)
     l && right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's &&
   }
@@ -976,7 +976,7 @@ object BinAnd extends RelationCompanion {
 case class BinXor(override val left: BoolValue, override val right: BoolValue)
   extends Relation[SBoolean.type, SBoolean.type] {
   override def companion = BinXor
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val leftV = left.evalTo[Boolean](E, env)
     val rightV = right.evalTo[Boolean](E, env)
     leftV ^ rightV
@@ -1037,7 +1037,7 @@ case class If[T <: SType](condition: Value[SBoolean.type], trueBranch: Value[T],
   override lazy val first = condition
   override lazy val second = trueBranch
   override lazy val third = falseBranch
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val c = condition.evalTo[Boolean](E, env)
     if (c) trueBranch.evalTo[T#WrappedType](E, env)
     else   falseBranch.evalTo[T#WrappedType](E, env)
@@ -1052,7 +1052,7 @@ object If extends QuadrupleCompanion {
 case class LogicalNot(input: Value[SBoolean.type]) extends NotReadyValueBoolean {
   override def companion = LogicalNot
   override val opType = SFunc(Vector(SBoolean), SBoolean)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Boolean](E, env)
     !inputV
   }

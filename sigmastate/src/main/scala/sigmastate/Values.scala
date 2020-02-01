@@ -49,8 +49,10 @@ object Values {
   type SValue = Value[SType]
   type Idn = String
 
-  trait Value[+S <: SType] extends SigmaNode {
+  abstract class Value[+S <: SType] extends SigmaNode {
+    /** The companion node descriptor with opCode, cost and other metadata. */
     def companion: ValueCompanion
+
     /** Unique id of the node class used in serialization of ErgoTree. */
     def opCode: OpCode = companion.opCode
 
@@ -95,7 +97,8 @@ object Values {
         sys.error("_sourceContext can be set only once")
       }
 
-    def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
+    protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
+
     @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
       val v = eval(E, env)
       v.asInstanceOf[T]
@@ -172,7 +175,7 @@ object Values {
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = value
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = value
 
     override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
       case c: Constant[_] => tpe == c.tpe && Objects.deepEquals(value, c.value)
@@ -516,7 +519,7 @@ object Values {
     override def tpe = SGroupElement
     override val value = SigmaDsl.GroupElement(CryptoConstants.dlogGroup.generator)
     override def companion = this
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
       SigmaDsl.groupGenerator
   }
 
@@ -651,15 +654,15 @@ object Values {
       val xs = items.cast[EvaluatedValue[SAny.type]].map(_.value)
       Colls.fromArray(xs.toArray(SAny.classTag.asInstanceOf[ClassTag[SAny.WrappedType]]))(RType.AnyType)
     }
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (items.length < 2) error(s"Invalid tuple $this")
       if (items.length == 2) {
-        val x = items(0).eval(E, env)
-        val y = items(1).eval(E, env)
+        val x = items(0).evalTo[Any](E, env)
+        val y = items(1).evalTo[Any](E, env)
         (x, y) // special representation for pairs (to pass directly to Coll primitives)
       }
       else
-        items.map(_.eval(E, env)) // general case
+        items.map(_.evalTo[Any](E, env)) // general case
     }
   }
 
@@ -713,7 +716,7 @@ object Values {
       Colls.fromArray(xs.toArray(elementType.classTag.asInstanceOf[ClassTag[V#WrappedType]]))
     }
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       val is = items.map(_.evalTo[V#WrappedType](E, env)).toArray(tElement.classTag)
       Colls.fromArray(is)
     }
@@ -816,7 +819,7 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       env.getOrElse(valId, error(s"cannot resolve $this"))
     }
   }
@@ -838,13 +841,13 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     def opType: SFunc = Value.notSupportedError(this, "opType")
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       var curEnv = env
       items.foreach { case vd: ValDef =>
-        val v = vd.rhs.eval(E, curEnv)
+        val v = vd.rhs.evalTo[Any](E, curEnv)
         curEnv += (vd.id -> v)
       }
-      result.eval(E, curEnv)
+      result.evalTo[Any](E, curEnv)
     }
   }
   object BlockValue extends ValueCompanion {
@@ -860,22 +863,22 @@ object Values {
     /** This is not used as operation, but rather to form a program structure */
     override def opType: SFunc = SFunc(Vector(), tpe)
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (args.length == 0) {
         () => {
-          body.eval(E, env)
+          body.evalTo[Any](E, env)
         }
       }
       else if (args.length == 1) {
         (vArg: Any) => {
           val env1 = env + (args(0)._1 -> vArg)
-          body.eval(E, env1)
+          body.evalTo[Any](E, env1)
         }
       }
       else {
         (vArgs: Seq[Any]) => {
           val env1 = env ++ args.zip(vArgs).map { case ((id, _), v) => id -> v }
-          body.eval(E, env1)
+          body.evalTo[Any](E, env1)
         }
       }
     }

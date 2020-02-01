@@ -118,19 +118,19 @@ object Terms {
     }
     override def opType: SFunc = SFunc(Vector(func.tpe +: args.map(_.tpe):_*), tpe)
 
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       if (args.isEmpty) {
-        val fV: () => Any = func.eval(E, env).asInstanceOf[() => Any]
+        val fV = func.evalTo[() => Any](E, env)
         fV()
       }
       else if (args.length == 1) {
-        val fV: Any => Any = func.eval(E, env).asInstanceOf[Any => Any]
-        val argV = args(0).eval(E, env)
+        val fV = func.evalTo[Any => Any](E, env)
+        val argV = args(0).evalTo[Any](E, env)
         fV(argV)
       }
       else {
-        val f = func.eval(E, env).asInstanceOf[Seq[Any] => Any]
-        val argsV = args.map(a => a.eval(E, env))
+        val f = func.evalTo[Seq[Any] => Any](E, env)
+        val argsV = args.map(a => a.evalTo[Any](E, env))
         f(argsV)
       }
     }
@@ -193,13 +193,13 @@ object Terms {
     }
 
     /** @hotspot don't beautify this code */
-    override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      val objV = obj.eval(E, env)
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      val objV = obj.evalTo[Any](E, env)
       val argsBuf = mutable.ArrayBuilder.make[Any]()
       val len = args.length
       cfor(0)(_ < len, _ + 1) { i =>
         val arg = args(i)
-        val argV = arg.eval(E, env)
+        val argV = arg.evalTo[Any](E, env)
         argsBuf += argV
       }
       val extra = method.extraDescriptors

@@ -28,7 +28,7 @@ case class MapCollection[IV <: SType, OV <: SType](
   override def companion = MapCollection
   override val tpe = SCollection[OV](mapper.tpe.tRange.asInstanceOf[OV])
   override val opType = SCollection.MapMethod.stype.asFunc
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val mapperV = mapper.evalTo[Any => Any](E, env)
     val tResItem = Evaluation.stypeToRType(mapper.tpe.tRange).asInstanceOf[RType[Any]]
@@ -44,7 +44,7 @@ case class Append[IV <: SType](input: Value[SCollection[IV]], col2: Value[SColle
   override def companion = Append
   override val tpe = input.tpe
   override val opType = SCollection.AppendMethod.stype
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
     val col2V = col2.evalTo[Coll[IV#WrappedType]](E, env)
     inputV.append(col2V)
@@ -62,7 +62,7 @@ case class Slice[IV <: SType](input: Value[SCollection[IV]], from: Value[SInt.ty
     val tpeColl = SCollection(input.tpe.typeParams.head.ident)
     SFunc(Vector(tpeColl, SInt, SInt), tpeColl)
   }
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val fromV = from.evalTo[Int](E, env)
     val untilV = until.evalTo[Int](E, env)
@@ -79,7 +79,7 @@ case class Filter[IV <: SType](input: Value[SCollection[IV]],
   override def companion = Filter
   override def tpe: SCollection[IV] = input.tpe
   override val opType = SCollection.FilterMethod.stype
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
     inputV.filter(conditionV)
@@ -103,7 +103,7 @@ case class Exists[IV <: SType](override val input: Value[SCollection[IV]],
   extends BooleanTransformer[IV] {
   override def companion = Exists
   override val opType = SCollection.ExistsMethod.stype
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
     inputV.exists(conditionV)
@@ -119,7 +119,7 @@ case class ForAll[IV <: SType](override val input: Value[SCollection[IV]],
   extends BooleanTransformer[IV] {
   override def companion = ForAll
   override val opType = SCollection.ForallMethod.stype
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     val conditionV = condition.evalTo[Any => Boolean](E, env)
     inputV.forall(conditionV)
@@ -137,7 +137,7 @@ case class Fold[IV <: SType, OV <: SType](input: Value[SCollection[IV]],
   override def companion = Fold
   implicit override def tpe: OV = zero.tpe
   val opType: SFunc = SCollection.FoldMethod.stype
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[IV#WrappedType]](E, env)
     val zeroV = zero.evalTo[OV#WrappedType](E, env)
     val foldOpV = foldOp.evalTo[((OV#WrappedType, IV#WrappedType)) => OV#WrappedType](E, env)
@@ -172,7 +172,7 @@ case class ByIndex[V <: SType](input: Value[SCollection[V]],
   override def companion = ByIndex
   override val tpe = input.tpe.elemType
   override val opType = SCollection.ApplyMethod.stype.asFunc
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[V#WrappedType]](E, env)
     val indexV = index.evalTo[Int](E, env)
     default match {
@@ -196,8 +196,8 @@ case class SelectField(input: Value[STuple], fieldIndex: Byte)
   override val tpe = input.tpe.items(fieldIndex - 1)
   override val opType = SFunc(input.tpe, tpe)
 
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    val inputV = input.eval(E, env)
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    val inputV = input.evalTo[Any](E, env)
     inputV match {
       case p: Tuple2[_,_] =>
         if (fieldIndex == 1) p._1
@@ -227,7 +227,7 @@ case class SigmaPropBytes(input: Value[SSigmaProp.type])
   override def companion = SigmaPropBytes
   override def tpe = SByteArray
   override val opType = SFunc(input.tpe, tpe)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[SigmaProp](E, env)
     inputV.propBytes
   }
@@ -242,7 +242,7 @@ case class SizeOf[V <: SType](input: Value[SCollection[V]])
   extends Transformer[SCollection[V], SInt.type] with NotReadyValueInt {
   override def companion = SizeOf
   override val opType = SFunc(SCollection(SCollection.tIV), SInt)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Any]](E, env)
     inputV.length
   }
@@ -258,7 +258,7 @@ sealed trait Extract[V <: SType] extends Transformer[SBox.type, V] {
 case class ExtractAmount(input: Value[SBox.type]) extends Extract[SLong.type] with NotReadyValueLong {
   override def companion = ExtractAmount
   override val opType = SFunc(SBox, SLong)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.value
   }
@@ -271,7 +271,7 @@ object ExtractAmount extends SimpleTransformerCompanion {
 case class ExtractScriptBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractScriptBytes
   override val opType = SFunc(SBox, SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.propositionBytes
   }
@@ -284,7 +284,7 @@ object ExtractScriptBytes extends SimpleTransformerCompanion {
 case class ExtractBytes(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytes
   override val opType = SFunc(SBox, SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.bytes
   }
@@ -297,7 +297,7 @@ object ExtractBytes extends SimpleTransformerCompanion {
 case class ExtractBytesWithNoRef(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractBytesWithNoRef
   override val opType = SFunc(SBox, SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.bytesWithoutRef
   }
@@ -310,7 +310,7 @@ object ExtractBytesWithNoRef extends SimpleTransformerCompanion {
 case class ExtractId(input: Value[SBox.type]) extends Extract[SByteArray] with NotReadyValueByteArray {
   override def companion = ExtractId
   override val opType = SFunc(SBox, SByteArray)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.id
   }
@@ -327,7 +327,7 @@ case class ExtractRegisterAs[V <: SType]( input: Value[SBox.type],
   override def companion = ExtractRegisterAs
   override def opType = SFunc(Vector(SBox, SByte), tpe)
   lazy val tV = Evaluation.stypeToRType(tpe.elemType)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.getReg(registerId.number)(tV)
   }
@@ -348,7 +348,7 @@ case class ExtractCreationInfo(input: Value[SBox.type]) extends Extract[STuple] 
   override def companion = ExtractCreationInfo
   override def tpe: STuple = ResultType
   override def opType = OpType
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Box](E, env)
     inputV.creationInfo
   }
@@ -392,7 +392,7 @@ object DeserializeRegister extends ValueCompanion {
 case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends NotReadyValue[SOption[V]] {
   override def companion = GetVar
   override val opType = SFunc(Vector(SContext, SByte), tpe)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
     val v = E.evalContext.context.getVar(varId)(t)
     v
@@ -408,8 +408,8 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override val opType = SFunc(input.tpe, tpe)
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    input.eval(E, env) match {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    input.evalTo[Option[V#WrappedType]](E, env) match {
       case Some(x) => x
       case _ => sys.error(s"None.get error while evaluating $this")
     }
@@ -425,7 +425,7 @@ case class OptionGetOrElse[V <: SType](input: Value[SOption[V]], default: Value[
   override def companion = OptionGetOrElse
   override val opType = SFunc(IndexedSeq(input.tpe, tpe), tpe)
   override def tpe: V = input.tpe.elemType
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](E, env)
     val dV = default.evalTo[V#WrappedType](E, env)  // TODO soft-fork: execute lazily
     inputV.getOrElse(dV)
@@ -440,7 +440,7 @@ case class OptionIsDefined[V <: SType](input: Value[SOption[V]])
   override def companion = OptionIsDefined
   override val opType = SFunc(input.tpe, SBoolean)
   override def tpe= SBoolean
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Option[V#WrappedType]](E, env)
     inputV.isDefined
   }

@@ -146,28 +146,36 @@ trait Interpreter extends ScorexLogging {
     val maxCost = context.costLimit
     val initCost = context.initCost
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
-      val costingRes = doCostingEx(env, exp, true)
-      val costF = costingRes.costF
-      IR.onCostingResult(env, exp, costingRes)
+      val (res, cost) = {
+        val costingRes = doCostingEx(env, exp, true)
+        val costF = costingRes.costF
+        IR.onCostingResult(env, exp, costingRes)
 
-      CheckCostFunc(IR)(asRep[Any => Int](costF))
+        CheckCostFunc(IR)(asRep[Any => Int](costF))
 
-      val costingCtx = context.toSigmaContext(isCost = true)
-      val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
+        val costingCtx = context.toSigmaContext(isCost = true)
+        val estimatedCost = IR.checkCostWithContext(costingCtx, exp, costF, maxCost, initCost).getOrThrow
 
-      IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
+        IR.onEstimatedCost(env, exp, costingRes, costingCtx, estimatedCost)
 
-      // check calc
-      val calcF = costingRes.calcF
-      CheckCalcFunc(IR)(calcF)
-      val calcCtx = context.toSigmaContext(isCost = false)
-      val res = calcResult(calcCtx, calcF)
-      val (resNew, _) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp) match {
-        case (p: special.sigma.SigmaProp, c) => (p, c)
-        case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+        // check calc
+        val calcF = costingRes.calcF
+        CheckCalcFunc(IR)(calcF)
+        val calcCtx = context.toSigmaContext(isCost = false)
+        val res = calcResult(calcCtx, calcF)
+        (res, estimatedCost)
+      }
+      val (resNew, costNew) = {
+        val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp) match {
+          case (p: special.sigma.SigmaProp, c) => (p, c)
+          case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
+          case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
+        }
+        (res, cost)
       }
       assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-      SigmaDsl.toSigmaBoolean(res) -> estimatedCost.toLong
+      SigmaDsl.toSigmaBoolean(res) -> cost.toLong
+//      SigmaDsl.toSigmaBoolean(resNew) -> costNew.toLong
     }
   }
 

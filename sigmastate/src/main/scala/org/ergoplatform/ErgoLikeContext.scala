@@ -196,7 +196,7 @@ case object MinerPubkey extends NotReadyValueByteArray with ValueCompanion {
   override def opCode: OpCode = OpCodes.MinerPubkeyCode
   def opType = SFunc(SContext, SCollection.SByteArray)
   override def companion = this
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.minerPubKey
 }
 
@@ -205,7 +205,7 @@ case object Height extends NotReadyValueInt with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.HeightCode
   def opType = SFunc(SContext, SInt)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.HEIGHT
 }
 
@@ -215,7 +215,7 @@ case object Inputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.InputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.INPUTS
 }
 
@@ -225,7 +225,7 @@ case object Outputs extends LazyCollection[SBox.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.OutputsCode
   val tpe = SCollection(SBox)
   def opType = SFunc(SContext, tpe)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.OUTPUTS
 }
 
@@ -234,7 +234,7 @@ case object LastBlockUtxoRootHash extends NotReadyValueAvlTree with ValueCompani
   override def companion = this
   override def opCode: OpCode = OpCodes.LastBlockUtxoRootHashCode
   def opType = SFunc(SContext, tpe)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.LastBlockUtxoRootHash
 }
 
@@ -244,7 +244,7 @@ case object Self extends NotReadyValueBox with ValueCompanion {
   override def companion = this
   override def opCode: OpCode = OpCodes.SelfCode
   def opType = SFunc(SContext, SBox)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context.SELF
 }
 
@@ -253,7 +253,7 @@ case object Context extends NotReadyValue[SContext.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.ContextCode
   override def tpe: SContext.type = SContext
   override def opType: SFunc = SFunc(SUnit, SContext)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any =
     E.evalContext.context
 }
 
@@ -262,5 +262,5 @@ case object Global extends NotReadyValue[SGlobal.type] with ValueCompanion {
   override def opCode: OpCode = OpCodes.GlobalCode
   override def tpe: SGlobal.type = SGlobal
   override def opType: SFunc = SFunc(SUnit, SGlobal)
-  override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = CostingSigmaDslBuilder
+  protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = CostingSigmaDslBuilder
 }

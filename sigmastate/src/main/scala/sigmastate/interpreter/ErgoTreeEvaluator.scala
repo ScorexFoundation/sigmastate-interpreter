@@ -23,7 +23,7 @@ trait Evaluator {
 
 class ErgoTreeEvaluator(val evalContext: EvalContext) extends Evaluator {
   def eval(env: DataEnv, exp: SValue): Any = {
-    exp.eval(this, env)
+    exp.evalTo[Any](this, env)
   }
 }
 
