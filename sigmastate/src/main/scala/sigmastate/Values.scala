@@ -24,6 +24,7 @@ import sigmastate.basics.DLogProtocol.ProveDlog
 import sigmastate.basics.ProveDHTuple
 import sigmastate.lang.Terms._
 import sigmastate.utxo._
+import sigmastate.SType.SigmaBooleanRType
 import special.sigma.Extensions._
 import sigmastate.eval._
 import sigmastate.eval.Extensions._
@@ -38,8 +39,10 @@ import sigmastate.serialization.ErgoTreeSerializer.DefaultSerializer
 import sigmastate.serialization.transformers.ProveDHTupleSerializer
 import sigmastate.utils.{SigmaByteReader, SigmaByteWriter}
 import special.sigma.{AnyValue, AvlTree, PreHeader, Header, _}
-import sigmastate.lang.SourceContext
+import sigmastate.lang.{Terms, SourceContext}
 import special.collection.Coll
+import sigmastate.SType.AnyOps
+import sigmastate.Values.Value.costOf
 
 import scala.collection.mutable
 
@@ -130,6 +133,78 @@ object Values {
     }
     def notSupportedError(v: SValue, opName: String) =
       throw new IllegalArgumentException(s"Method $opName is not supported for node $v")
+
+    import sigmastate.utxo.CostTable
+
+    def costOf(opName: String, opType: SFunc): Int = {
+      val operId = OperationId(opName, opType)
+      val cost = CostTable.DefaultCosts(operId)
+      cost
+    }
+
+    def costOf(method: SMethod): Int = {
+      val methodTemplate = method.objType.methodById(method.methodId)
+      val opId = methodTemplate.opId
+      costOf(opId.name, opId.opType.copy(tpeParams = Nil))
+    }
+
+    def perKbCostOf(method: SMethod, dataSize: Int): Int = {
+      val methodTemplate = method.objType.methodById(method.methodId)
+      val opId = methodTemplate.opId
+      perKbCostOf(opId.name, opId.opType.copy(tpeParams = Nil), dataSize)
+    }
+
+    def perKbCostOf(opName: String, opType: SFunc, dataSize: Int): Int = {
+      val opNamePerKb = s"${opName}_per_kb"
+      val operId = OperationId(opNamePerKb, opType)
+      val cost = CostTable.DefaultCosts(operId)
+      val numKbs = dataSize / 1024 + 1
+      numKbs * cost
+    }
+
+    def perKbCostOf(node: SValue, dataSize: Int): Int = {
+      perKbCostOf(node.getClass.getSimpleName, node.opType, dataSize)
+    }
+
+    def perItemCostOf(node: SValue, arrLength: Int) = {
+      val opName = s"${node.getClass.getSimpleName}_per_item"
+      costOf(opName, node.opType) * arrLength
+    }
+
+    def constCost(tpe: SType): Int = tpe match {
+      case _: SFunc =>
+        costOf(s"Lambda", Constant[SType](SFunc.identity.asWrappedType, tpe).opType)
+      case _ =>
+        costOf(s"Const", Constant[SType](SType.DummyValue, tpe).opType)
+    }
+
+    private val _costOfProveDlogEval = costOf("ProveDlogEval", SFunc(SUnit, SSigmaProp))
+    private val _costOfProveDHTuple = costOf("ProveDHTuple", SFunc(SUnit, SSigmaProp))
+
+    def costOfSigmaTree(sigmaTree: SigmaBoolean): Int = sigmaTree match {
+      case _: ProveDlog => _costOfProveDlogEval
+      case _: ProveDHTuple => _costOfProveDHTuple
+      case CAND(children) => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
+      case COR(children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
+      case CTHRESHOLD(_, children)  => Colls.fromArray(children.toArray).map(costOfSigmaTree(_)).sum(SigmaDsl.Monoids.intPlusMonoid)
+      case _ => CostTable.MinimalCost
+    }
+
+    def costOf(v: SValue): Int = v match {
+      case l: Terms.Lambda =>
+        constCost(l.tpe)
+      case l: FuncValue =>
+        constCost(l.tpe)
+      case sigmastate.Upcast(_, SBigInt) =>
+        costOf("Upcast", Upcast.BigIntOpType)
+      case sigmastate.Downcast(v, _) if v.tpe == SBigInt =>
+        costOf("Downcast", Downcast.BigIntOpType)
+      case c @ Constant(p: SigmaProp, tpe) =>
+        costOfSigmaTree(p)
+      case _ =>
+        costOf(v.opName, v.opType)
+    }
+
   }
 
   trait ValueCompanion extends SigmaNodeCompanion {
@@ -177,7 +252,10 @@ object Values {
     override def opCode: OpCode = companion.opCode
     override def opName: String = s"Const"
 
-    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = value
+    protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+      E += costOf(this)
+      value
+    }
 
     override def equals(obj: scala.Any): Boolean = (obj != null) && (this.eq(obj.asInstanceOf[AnyRef]) || (obj match {
       case c: Constant[_] => tpe == c.tpe && Objects.deepEquals(value, c.value)

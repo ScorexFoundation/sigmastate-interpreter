@@ -15,7 +15,7 @@ class EvalContext(
 
 class ErgoTreeEvaluator(
   val evalContext: EvalContext,
-  val costAccumulator: CostAccumulator,
+  val coster: CostAccumulator,
   val profiler: Profiler)
 {
   val isMeasureOperationTime: Boolean = false
@@ -23,6 +23,8 @@ class ErgoTreeEvaluator(
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](this, env)
   }
+
+  def +=(cost: Int) = coster.add(cost)
 }
 
 object ErgoTreeEvaluator {

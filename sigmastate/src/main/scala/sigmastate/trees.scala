@@ -20,11 +20,13 @@ import scalan.ExactIntegral._
 import scalan.ExactNumeric._
 import scalan.ExactOrdering._
 import sigmastate.ArithOp.OperationImpl
+import sigmastate.Values.Value.costOf
 import sigmastate.eval.NumericOps.{BigIntIsExactOrdering, BigIntIsExactIntegral, BigIntIsExactNumeric}
 import sigmastate.eval.{Colls, SigmaDsl}
 import special.collection.Coll
-import special.sigma.{GroupElement, SigmaProp}
+import special.sigma.{SigmaProp, GroupElement}
 import spire.syntax.all._
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -414,6 +416,7 @@ object Upcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = UpcastInfo.argInfos
   val tT = STypeVar("T")
   val tR = STypeVar("R")
+  val BigIntOpType = SFunc(tT, SBigInt)
 }
 
 /**
@@ -436,6 +439,7 @@ object Downcast extends NumericCastCompanion {
   override def argInfos: Seq[ArgInfo] = DowncastInfo.argInfos
   val tT = STypeVar("T")
   val tR = STypeVar("R")
+  val BigIntOpType = SFunc(SBigInt, tR)
 }
 
 /**
@@ -627,6 +631,7 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val x = left.evalTo[Any](E, env)
     val y = right.evalTo[Any](E, env)
+    E += costOf(this)
     companion.eval(tpe.typeCode, x, y)
   }
 }
@@ -855,6 +860,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
+    E += costOf(this)
     opImpl.o.lt(lV, rV)
   }
 }
@@ -870,6 +876,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
+    E += costOf(this)
     opImpl.o.lteq(lV, rV)
   }
 }
@@ -885,6 +892,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
+    E += costOf(this)
     opImpl.o.gt(lV, rV)
   }
 }
@@ -900,6 +908,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
+    E += costOf(this)
     opImpl.o.gteq(lV, rV)
   }
 }

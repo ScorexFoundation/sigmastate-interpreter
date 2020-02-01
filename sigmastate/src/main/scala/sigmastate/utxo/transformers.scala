@@ -394,8 +394,8 @@ case class GetVar[V <: SType](varId: Byte, override val tpe: SOption[V]) extends
   override val opType = SFunc(Vector(SContext, SByte), tpe)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val t = Evaluation.stypeToRType(tpe.elemType)
-    val v = E.evalContext.context.getVar(varId)(t)
-    v
+    E += SigmaDsl.CostModel.GetVar
+    E.evalContext.context.getVar(varId)(t)
   }
 }
 object GetVar extends ValueCompanion {
@@ -409,6 +409,7 @@ case class OptionGet[V <: SType](input: Value[SOption[V]]) extends Transformer[S
   override def tpe: V = input.tpe.elemType
   override def toString: String = s"$input.get"
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
+    E += SigmaDsl.CostModel.SelectField
     input.evalTo[Option[V#WrappedType]](E, env) match {
       case Some(x) => x
       case _ => sys.error(s"None.get error while evaluating $this")

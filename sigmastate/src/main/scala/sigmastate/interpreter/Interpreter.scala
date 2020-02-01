@@ -16,7 +16,7 @@ import sigmastate.basics._
 import sigmastate.interpreter.Interpreter.{VerificationResult, ScriptEnv}
 import sigmastate.lang.exceptions.{InterpreterException, CostLimitException}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer}
-import sigmastate.utxo.DeserializeContext
+import sigmastate.utxo.{DeserializeContext, CostTable}
 import sigmastate.{SType, _}
 import org.ergoplatform.validation.ValidationRules._
 import scalan.util.BenchmarkUtil
@@ -171,9 +171,12 @@ trait Interpreter extends ScorexLogging {
           case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
           case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
         }
-        (res, cost)
+        val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
+        val totalCost = JMath.addExact(initCost, scaledCost)
+        (res, totalCost)
       }
       assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+      assert(costNew == cost, s"The new Evaluator cost differ from the old: $costNew != $cost")
       SigmaDsl.toSigmaBoolean(res) -> cost.toLong
 //      SigmaDsl.toSigmaBoolean(resNew) -> costNew.toLong
     }

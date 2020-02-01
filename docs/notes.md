@@ -1,3 +1,19 @@
+## Costing
+
+### EQ cost
+
+```
+P: ConstantSize type (Boolean, Byte, etc)
+def costOf(node: Value): Int
+
+EQ
+---
+C[P](x: P, y: P) = costOf(EQ)
+C[(A,B)](x: (A,B), y: (A,B)) = C(x._1, y._1) + C(x._2, y._2)  
+C[Coll[P]](x: Coll[P], y: Coll[P]) = 
+
+```
+
 ## Approximate sizes of different dependencies
 
 These dependencies can be removed with simple refactoring
