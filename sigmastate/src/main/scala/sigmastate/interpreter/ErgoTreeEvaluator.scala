@@ -1,27 +1,25 @@
 package sigmastate.interpreter
 
-import org.ergoplatform.{ErgoLikeContext, Context}
-import scalan.Nullable
+import org.ergoplatform.ErgoLikeContext
 import sigmastate.SType
 import sigmastate.Values._
+import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
-import sigmastate.interpreter.Interpreter.{ReductionResult, ScriptEnv}
-import sigmastate.lang.Terms._
+import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
-import sigmastate.utils.SparseArrayContainer
-import sigmastate.utxo.GetVar
 import special.sigma.Context
 
 class EvalContext(
   val context: Context,
-  val constants: Seq[Constant[SType]],
-  val costAccumulator: CostAccumulator)
+  val constants: Seq[Constant[SType]])
 
-trait Evaluator {
-  def eval(env: DataEnv, exp: SValue): Any
-}
+class ErgoTreeEvaluator(
+  val evalContext: EvalContext,
+  val costAccumulator: CostAccumulator,
+  val profiler: Profiler)
+{
+  val isMeasureOperationTime: Boolean = false
 
-class ErgoTreeEvaluator(val evalContext: EvalContext) extends Evaluator {
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](this, env)
   }
@@ -30,6 +28,8 @@ class ErgoTreeEvaluator(val evalContext: EvalContext) extends Evaluator {
 object ErgoTreeEvaluator {
   /** Immutable data environment used to assign data values to graph nodes. */
   type DataEnv = Map[Int, Any]
+
+  val DefaultProfiler = new Profiler
 
   def eval(context: ErgoLikeContext, ergoTree: ErgoTree): ReductionResult = {
     val (res, cost) = eval(context, ergoTree.toProposition(false))
@@ -44,10 +44,10 @@ object ErgoTreeEvaluator {
     val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
     val sigmaContext = context.toSigmaContext(isCost = false)
 
-    val ctx = new EvalContext(sigmaContext, Array.empty[Constant[SType]], costAccumulator)
-    val evaluator = new ErgoTreeEvaluator(ctx)
+    val ctx = new EvalContext(sigmaContext, Array.empty[Constant[SType]])
+    val evaluator = new ErgoTreeEvaluator(ctx, costAccumulator, DefaultProfiler)
     val res = evaluator.eval(Map(), exp)
-    val cost = ctx.costAccumulator.totalCost
+    val cost = costAccumulator.totalCost
     (res, cost)
   }
 

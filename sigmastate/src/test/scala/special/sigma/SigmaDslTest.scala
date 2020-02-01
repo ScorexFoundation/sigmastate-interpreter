@@ -18,11 +18,12 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
+import sigmastate.interpreter.ErgoTreeEvaluator
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
 
-import scala.math.{max, min}
+import scala.math.{min, max}
 import scala.util.{Success, Failure, Try}
 
 
@@ -854,6 +855,7 @@ class SigmaDslTest extends PropSpec
     eq({ (x: Option[Long]) => x.getOrElse(1L) })("{ (x: Option[Long]) => x.getOrElse(1L) }")
     eq({ (x: Option[Long]) => x.filter({ (v: Long) => v == 1} ) })("{ (x: Option[Long]) => x.filter({ (v: Long) => v == 1 }) }")
     eq({ (x: Option[Long]) => x.map( (v: Long) => v + 1 ) })("{ (x: Option[Long]) => x.map({ (v: Long) => v + 1 }) }")
+    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
   }
 
   // TODO implement Option.fold
@@ -1030,5 +1032,7 @@ class SigmaDslTest extends PropSpec
     checkEq(func[Boolean, Boolean](
       "{ (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)) }"))
        { (x: Boolean) => (!(!x && (1 / 0 == 1)) || (1 / 0 == 0)) && (!(!x && (1 / 0 == 1)) || (1 / 0 == 1)) }(true)
+
+    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
   }
 }
