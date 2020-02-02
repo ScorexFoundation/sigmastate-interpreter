@@ -24,7 +24,11 @@ class ErgoTreeEvaluator(
     exp.evalTo[Any](this, env)
   }
 
-  def +=(cost: Int) = coster.add(cost)
+  def addCostOf(node: SValue) =
+    coster.add(Value.costOf(node))
+
+  def addPerItemCostOf(node: SValue, arrLen: Int) =
+    coster.add(Value.perItemCostOf(node, arrLen))
 }
 
 object ErgoTreeEvaluator {

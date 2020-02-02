@@ -35,6 +35,8 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
+  val returnAOTCost: Option[Boolean] = None
+
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
     * It also measures tree complexity adding to the total estimated cost of script execution.
     * The new returned context contains increased `initCost` and should be used for further processing.
@@ -172,12 +174,26 @@ trait Interpreter extends ScorexLogging {
           case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")
         }
         val scaledCost = JMath.multiplyExact(cost, CostTable.costFactorIncrease) / CostTable.costFactorDecrease
-        val totalCost = JMath.addExact(initCost, scaledCost)
+        val totalCost = JMath.addExact(initCost.toInt, scaledCost)
         (res, totalCost)
       }
       assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
-      assert(costNew == cost, s"The new Evaluator cost differ from the old: $costNew != $cost")
-      SigmaDsl.toSigmaBoolean(res) -> cost.toLong
+
+      def costErr = s"The JIT cost differ from the AOT: $costNew != $cost"
+
+      val resCost = returnAOTCost match {
+        case Some(true) => // AOT costing requested
+          if (costNew != cost) println(s"WARNING: $costErr")
+          cost
+        case Some(false) => // JIT costing requested
+          if (costNew != cost) println(s"WARNING: $costErr")
+          costNew
+        case None => // nothing special was requested
+          assert(costNew == cost, costErr)
+          cost
+      }
+
+      SigmaDsl.toSigmaBoolean(res) -> resCost.toLong
 //      SigmaDsl.toSigmaBoolean(resNew) -> costNew.toLong
     }
   }

@@ -84,6 +84,7 @@ object CostTable {
   val comparisonPerKbCost = 10
 
   val logicCost = 10
+  val logicBaseCost = 0  // TODO soft-fork: increase it to 20
 
   val sigmaAndCost = 10
   val sigmaOrCost = 40
@@ -170,13 +171,15 @@ object CostTable {
     ("BinAnd", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinOr", "(Boolean, Boolean) => Boolean", logicCost),
     ("BinXor", "(Boolean, Boolean) => Boolean", logicCost),
-    ("AND", "(Coll[Boolean]) => Boolean", logicCost),
+    ("OR", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("OR_per_item", "(Coll[Boolean]) => Boolean", logicCost),
+    ("AND", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("AND_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("AtLeast", "(Int, Coll[Boolean]) => Boolean", logicCost),
     ("CalcBlake2b256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("CalcSha256_per_kb", "(Coll[Byte]) => Coll[Byte]", hashPerKb),
     ("Xor_per_kb", "(Coll[Byte],Coll[Byte]) => Coll[Byte]", hashPerKb / 2),
+    ("XorOf", "(Coll[Boolean]) => Boolean", logicBaseCost),
     ("XorOf_per_item", "(Coll[Boolean]) => Boolean", logicCost),
     ("LogicalNot", "(Boolean) => Boolean", logicCost),
 

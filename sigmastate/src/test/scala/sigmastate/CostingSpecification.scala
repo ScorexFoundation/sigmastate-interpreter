@@ -23,7 +23,11 @@ class CostingSpecification extends SigmaTestingData {
 //    override val okPrintEvaluatedEntries = true
     substFromCostTable = false
   }
+
   lazy val interpreter = new ContextEnrichingTestProvingInterpreter
+  lazy val interpreterJitCost = interpreter.withJitCost(Some(true))
+  lazy val interpreterAotCost = interpreter.withJitCost(Some(false))
+
   lazy val pkA = interpreter.dlogSecrets(0).publicImage
   lazy val pkB = interpreter.dlogSecrets(1).publicImage
 
@@ -37,6 +41,7 @@ class CostingSpecification extends SigmaTestingData {
   val lookupProof = avlProver.generateProof().toColl
   val avlTreeData = AvlTreeData(ADDigest @@ digest.toArray, AvlTreeFlags.AllOperationsAllowed, 32, None)
   val avlTree: AvlTree = CAvlTree(avlTreeData)
+  val contextVarBigInt = BigInt("12345678901").bigInteger
 
   lazy val env: ScriptEnv = Map(
     ScriptNameProp -> s"filename_verify",
@@ -51,7 +56,7 @@ class CostingSpecification extends SigmaTestingData {
   val extension: ContextExtension = ContextExtension(Map(
     1.toByte -> IntConstant(1),
     2.toByte -> BooleanConstant(true),
-    3.toByte -> BigIntConstant(BigInt("12345678901").bigInteger)
+    3.toByte -> BigIntConstant(contextVarBigInt)
   ))
   val tokenId = Blake2b256("tokenA")
   val selfBox = createBox(0, TrueProp, Seq(tokenId -> 10L),
@@ -70,10 +75,23 @@ class CostingSpecification extends SigmaTestingData {
       spendingTransaction = tx, selfIndex = 0, extension, ValidationRules.currentSettings, ScriptCostLimit.value, CostTable.interpreterInitCost)
 
   def cost(script: String)(expCost: Int): Unit = {
+    cost(None, script)(expCost)
+  }
+  def costJit(script: String)(expCost: Int): Unit = {
+    cost(Some(true), script)(expCost)
+  }
+  def costAot(script: String)(expCost: Int): Unit = {
+    cost(Some(false), script)(expCost)
+  }
+  def cost(returnJitCost: Option[Boolean], script: String)(expCost: Int): Unit = {
     val ergoTree = compiler.compile(env, script)
-    val res = interpreter.reduceToCrypto(context, env, ergoTree).get._2
+    val I = returnJitCost match {
+      case Some(_) => interpreter.withJitCost(returnJitCost)
+      case _ => interpreter
+    }
+    val res = I.reduceToCrypto(context, env, ergoTree).get._2
     if (printCosts)
-      println(script + s" --> cost $res")
+      println(script + s" --> ${returnJitCost.fold("")(jit => if (jit) "JIT" else "AOT")} cost $res")
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
   }
 
@@ -89,8 +107,11 @@ class CostingSpecification extends SigmaTestingData {
 
     cost("{ getVar[Int](1).get > 1 }")(ContextVarAccess + GTConstCost)
 
-    // accessing two context variables
-    cost("{ getVar[Int](1).get > 1 && getVar[Boolean](2).get }")(ContextVarAccess * 2 + GTConstCost + logicCost)
+    // accessing only one context variables (due to short-cutting &&)
+    costJit("{ getVar[Int](1).get > 1 && getVar[Boolean](2).get }")(ContextVarAccess + GTConstCost + logicCost)
+
+    // accessing two context variables (both args of && are executed)
+    cost("{ getVar[Int](1).get >= 1 && getVar[Boolean](2).get }")(ContextVarAccess * 2 + GTConstCost + logicCost)
 
     // the same var is used twice doesn't lead to double cost
     cost("{ getVar[Int](1).get + 1 > getVar[Int](1).get }")(ContextVarAccess + plusMinus + constCost + comparisonCost)
@@ -103,17 +124,29 @@ class CostingSpecification extends SigmaTestingData {
   property("logical op costs") {
     cost("{ val cond = getVar[Boolean](2).get; cond && cond }")(ContextVarAccess + logicCost)
     cost("{ val cond = getVar[Boolean](2).get; cond || cond }")(ContextVarAccess + logicCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true }")(ContextVarAccess + logicCost * 2 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost * 3 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
-    cost("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }") (ContextVarAccess + logicCost * 2 + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; cond || cond && true }")(ContextVarAccess + logicCost)
+    costAot("{ val cond = getVar[Boolean](2).get; cond || cond && true }")(ContextVarAccess + logicCost * 2 + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost + constCost)
+    costAot("{ val cond = getVar[Boolean](2).get; cond || cond && true || cond }")(ContextVarAccess + logicCost * 3 + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost + constCost)
+    costAot("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
+
+    costJit("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costAot("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
+
+    costJit("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costAot("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
+
+    costJit("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costAot("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
   }
 
   property("atLeast costs") {
-    cost("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
+    costJit("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
+      collToColl + proveDlogEvalCost * 2 + logicCost + constCost)
+    costAot("{ atLeast(2, Coll(pkA, pkB, pkB)) }")(
       concreteCollectionItemCost * 3 + collToColl + proveDlogEvalCost * 2 + logicCost + constCost)
+
   }
 
   property("allZK costs") {

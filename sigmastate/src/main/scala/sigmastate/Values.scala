@@ -108,6 +108,8 @@ object Values {
       if (E.isMeasureOperationTime) E.profiler.onAfterNode(this)
       v.asInstanceOf[T]
     }
+
+    def opCost: Int = Value.costOf(opName, opType)
   }
 
   object Value {
@@ -202,7 +204,7 @@ object Values {
       case c @ Constant(p: SigmaProp, tpe) =>
         costOfSigmaTree(p)
       case _ =>
-        costOf(v.opName, v.opType)
+        v.opCost
     }
 
   }
@@ -230,7 +232,7 @@ object Values {
     lazy val allOperations = _allOperations.toMap
   }
 
-  trait EvaluatedValue[+S <: SType] extends Value[S] {
+  abstract class EvaluatedValue[+S <: SType] extends Value[S] {
     val value: S#WrappedType
     def opType: SFunc = {
       val resType = tpe match {
@@ -244,7 +246,7 @@ object Values {
     }
   }
 
-  trait Constant[+S <: SType] extends EvaluatedValue[S] {}
+  abstract class Constant[+S <: SType] extends EvaluatedValue[S] {}
 
   case class ConstantNode[S <: SType](value: S#WrappedType, tpe: S) extends Constant[S] {
     assert(Constant.isCorrectType(value, tpe), s"Invalid type of constant value $value, expected type $tpe")
@@ -253,7 +255,7 @@ object Values {
     override def opName: String = s"Const"
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-      E += costOf(this)
+      E.addCostOf(this)
       value
     }
 
@@ -798,6 +800,7 @@ object Values {
 
     protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
       val is = items.map(_.evalTo[V#WrappedType](E, env)).toArray(tElement.classTag)
+      E.addCostOf(this)
       Colls.fromArray(is)
     }
   }

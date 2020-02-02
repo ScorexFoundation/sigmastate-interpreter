@@ -247,7 +247,12 @@ case class OR(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
-    SigmaDsl.anyOf(inputV)
+    if (inputV.isEmpty) false
+    else {
+      E.addPerItemCostOf(this, inputV.length - 1)
+      E.addCostOf(this)
+      SigmaDsl.anyOf(inputV)
+    }
   }
 }
 
@@ -269,6 +274,9 @@ case class XorOf(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
+    if (inputV.nonEmpty)
+      E.addPerItemCostOf(this, inputV.length - 1)
+    E.addCostOf(this)
     SigmaDsl.xorOf(inputV)
   }
 }
@@ -293,7 +301,12 @@ case class AND(input: Value[SCollection[SBoolean.type]])
   override val opType = SFunc(SCollection.SBooleanArray, SBoolean)
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Boolean]](E, env)
-    SigmaDsl.allOf(inputV)
+    if (inputV.isEmpty) true
+    else {
+      E.addPerItemCostOf(this, inputV.length - 1)
+      E.addCostOf(this)
+      SigmaDsl.allOf(inputV)
+    }
   }
 }
 
@@ -326,6 +339,7 @@ case class AtLeast(bound: Value[SInt.type], input: Value[SCollection[SSigmaProp.
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val b = bound.evalTo[Int](E, env)
     val props = input.evalTo[Coll[SigmaProp]](E, env)
+    E.addCostOf(this)
     SigmaDsl.atLeast(b, props)
   }
 }
@@ -631,7 +645,7 @@ case class ArithOp[T <: SType](left: Value[T], right: Value[T], override val opC
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val x = left.evalTo[Any](E, env)
     val y = right.evalTo[Any](E, env)
-    E += costOf(this)
+    E.addCostOf(this)
     companion.eval(tpe.typeCode, x, y)
   }
 }
@@ -860,7 +874,7 @@ case class LT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
-    E += costOf(this)
+    E.addCostOf(this)
     opImpl.o.lt(lV, rV)
   }
 }
@@ -876,7 +890,7 @@ case class LE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
-    E += costOf(this)
+    E.addCostOf(this)
     opImpl.o.lteq(lV, rV)
   }
 }
@@ -892,7 +906,7 @@ case class GT[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
-    E += costOf(this)
+    E.addCostOf(this)
     opImpl.o.gt(lV, rV)
   }
 }
@@ -908,7 +922,7 @@ case class GE[T <: SType](override val left: Value[T], override val right: Value
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val lV = left.evalTo[Any](E, env)
     val rV = right.evalTo[Any](E, env)
-    E += costOf(this)
+    E.addCostOf(this)
     opImpl.o.gteq(lV, rV)
   }
 }
@@ -957,6 +971,7 @@ case class BinOr(override val left: BoolValue, override val right: BoolValue)
   override def companion = BinOr
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val l = left.evalTo[Boolean](E, env)
+    E.addCostOf(this)
     l || right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's ||
   }
 }
@@ -974,6 +989,7 @@ case class BinAnd(override val left: BoolValue, override val right: BoolValue)
   override def companion = BinAnd
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val l = left.evalTo[Boolean](E, env)
+    E.addCostOf(this)
     l && right.evalTo[Boolean](E, env)  // rely on short-cutting semantics of Scala's &&
   }
 }
