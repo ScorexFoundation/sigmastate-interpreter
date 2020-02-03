@@ -191,7 +191,7 @@ trait Interpreter extends ScorexLogging {
           if (costNew != cost) println(s"WARNING: $costErr")
           costNew
         case None => // nothing special was requested
-          assert(costNew - treeComplexity <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
+          assert((costNew - treeComplexity) / 2 <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
           cost
       }
 
