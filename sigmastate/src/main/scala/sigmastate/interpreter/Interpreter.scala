@@ -142,12 +142,13 @@ trait Interpreter extends ScorexLogging {
     * @return          result of script reduction
     * @see `ReductionResult`
     */
-  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType]): Try[ReductionResult] = Try {
+  def reduceToCrypto(context: CTX, env: ScriptEnv, exp: Value[SType], treeComplexity: Int): Try[ReductionResult] = Try {
     import IR._
     implicit val vs = context.validationSettings
     val maxCost = context.costLimit
     val initCost = context.initCost
     trySoftForkable[ReductionResult](whenSoftFork = TrivialProp.TrueProp -> 0) {
+      // AOT version of costing and execution using graph IR
       val (res, cost) = {
         val costingRes = doCostingEx(env, exp, true)
         val costF = costingRes.costF
@@ -167,6 +168,7 @@ trait Interpreter extends ScorexLogging {
         val res = calcResult(calcCtx, calcF)
         (res, estimatedCost)
       }
+      // new JIT costing with direct ErgoTree execution
       val (resNew, costNew) = {
         val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
@@ -189,7 +191,7 @@ trait Interpreter extends ScorexLogging {
           if (costNew != cost) println(s"WARNING: $costErr")
           costNew
         case None => // nothing special was requested
-          assert(costNew == cost, costErr)
+          assert(costNew - treeComplexity <= cost, s"The JIT cost is larger than the AOT: $costNew > $cost")
           cost
       }
 
@@ -198,8 +200,8 @@ trait Interpreter extends ScorexLogging {
     }
   }
 
-  def reduceToCrypto(context: CTX, exp: Value[SType]): Try[ReductionResult] =
-    reduceToCrypto(context, Interpreter.emptyEnv, exp)
+  def reduceToCrypto(context: CTX, tree: ErgoTree): Try[ReductionResult] =
+    reduceToCrypto(context, Interpreter.emptyEnv, tree.toProposition(tree.isConstantSegregation), tree.complexity)
 
   /** Extracts proposition for ErgoTree handing soft-fork condition.
     * @note soft-fork handler */
@@ -256,7 +258,7 @@ trait Interpreter extends ScorexLogging {
 
       // here we assume that when `propTree` is TrueProp then `reduceToCrypto` always succeeds
       // and the rest of the verification is also trivial
-      val (cProp, cost) = reduceToCrypto(context2, env, propTree).getOrThrow
+      val (cProp, cost) = reduceToCrypto(context2, env, propTree, (context2.initCost - context.initCost).toInt).getOrThrow
 
       val checkingResult = cProp match {
         case TrivialProp.TrueProp => true

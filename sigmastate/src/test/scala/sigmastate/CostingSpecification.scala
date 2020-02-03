@@ -89,7 +89,7 @@ class CostingSpecification extends SigmaTestingData {
       case Some(_) => interpreter.withJitCost(returnJitCost)
       case _ => interpreter
     }
-    val res = I.reduceToCrypto(context, env, ergoTree).get._2
+    val res = I.reduceToCrypto(context, env, ergoTree, 0).get._2
     if (printCosts)
       println(script + s" --> ${returnJitCost.fold("")(jit => if (jit) "JIT" else "AOT")} cost $res")
     res shouldBe ((expCost * CostTable.costFactorIncrease / CostTable.costFactorDecrease) + CostTable.interpreterInitCost).toLong
@@ -131,13 +131,13 @@ class CostingSpecification extends SigmaTestingData {
     costJit("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost + constCost)
     costAot("{ val cond = getVar[Boolean](2).get; cond ^ cond && true ^ cond }")(ContextVarAccess + logicCost * 3 + constCost)
 
-    costJit("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
     costAot("{ val cond = getVar[Boolean](2).get; allOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
 
-    costJit("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
     costAot("{ val cond = getVar[Boolean](2).get; anyOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
 
-    costJit("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + logicBaseCost + constCost)
+    costJit("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }")(ContextVarAccess + collToColl + logicCost * 2 + logicBaseCost + constCost)
     costAot("{ val cond = getVar[Boolean](2).get; xorOf(Coll(cond, true, cond)) }")(ContextVarAccess + logicCost * 2 + constCost)
   }
 

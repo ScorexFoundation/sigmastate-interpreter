@@ -41,12 +41,12 @@ class ErgoLikeInterpreterSpecification extends SigmaTestingCommons
     val exp = TrueLeaf
     e shouldBe exp
 
-    val res = verifier.reduceToCrypto(ctx, exp).get._1
+    val res = verifier.reduceToCrypto(ctx, exp.toSigmaProp).get._1
     res shouldBe TrueProp
 
     val res2 = verifier.reduceToCrypto(ctx,
       EQ(ByteArrayConstant(h1.treeWithSegregation.bytes),
-        ByteArrayConstant(h2.treeWithSegregation.bytes))).get._1
+        ByteArrayConstant(h2.treeWithSegregation.bytes)).toSigmaProp).get._1
     res2 shouldBe FalseProp
   }
 
