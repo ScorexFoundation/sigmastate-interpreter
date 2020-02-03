@@ -205,6 +205,7 @@ case class SigmaAnd(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPr
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](E, env)
     }
+    E.addPerItemCostOf(this, items.length - 1)
     SigmaDsl.allZK(Colls.fromArray(is))
   }
 }
@@ -227,6 +228,7 @@ case class SigmaOr(items: Seq[SigmaPropValue]) extends SigmaTransformer[SigmaPro
     cfor(0)(_ < len, _ + 1) { i =>
       is(i) = items(i).evalTo[SigmaProp](E, env)
     }
+    E.addPerItemCostOf(this, items.length - 1)
     SigmaDsl.anyZK(Colls.fromArray(is))
   }
 }
@@ -538,6 +540,7 @@ case class CalcBlake2b256(override val input: Value[SByteArray]) extends CalcHas
   override val hashFn: CryptographicHash32 = Blake2b256
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
+    E.addPerKbCostOf(this, inputV.length)
     SigmaDsl.blake2b256(inputV)
   }
 }
@@ -554,6 +557,7 @@ case class CalcSha256(override val input: Value[SByteArray]) extends CalcHash {
   override val hashFn: CryptographicHash32 = Sha256
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
     val inputV = input.evalTo[Coll[Byte]](E, env)
+    E.addPerKbCostOf(this, inputV.length)
     SigmaDsl.sha256(inputV)
   }
 }
