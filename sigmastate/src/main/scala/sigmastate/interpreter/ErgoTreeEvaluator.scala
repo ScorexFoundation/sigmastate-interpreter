@@ -27,13 +27,19 @@ class ErgoTreeEvaluator(
   def addCostOf(node: SValue) = {
     val cost = Value.costOf(node)
     coster.add(cost)
-//    println("CostOf(${node.opName}) -> ${cost}") // comment before commit and push
+//    println(s"CostOf(${node.opName}) -> $cost") // comment before commit and push
   }
 
   def addPerItemCostOf(node: SValue, arrLen: Int) = {
     val cost = Value.perItemCostOf(node, arrLen)
     coster.add(cost)
-//    println(s"PerItemCostOf(${node.opName}) -> ${cost}") // comment before commit and push
+//    println(s"PerItemCostOf(${node.opName}) -> $cost") // comment before commit and push
+  }
+
+  def addPerKbCostOf(node: SValue, dataSize: Int) = {
+    val cost = Value.perKbCostOf(node, dataSize)
+    coster.add(cost)
+//    println(s"PerKbCostOf(${node.opName}) -> $cost") // comment before commit and push
   }
 }
 
