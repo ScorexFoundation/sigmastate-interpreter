@@ -35,6 +35,7 @@ trait Interpreter extends ScorexLogging {
   val IR: IRContext
   import IR._
 
+  val evalSettings: EvalSettings = ErgoTreeEvaluator.DefaultEvalSettings
   val returnAOTCost: Option[Boolean] = None
 
   /** Deserializes given script bytes using ValueSerializer (i.e. assuming expression tree format).
@@ -170,7 +171,7 @@ trait Interpreter extends ScorexLogging {
       }
       // new JIT costing with direct ErgoTree execution
       val (resNew, costNew) = {
-        val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp) match {
+        val (res, cost) = ErgoTreeEvaluator.eval(context.asInstanceOf[ErgoLikeContext], exp, evalSettings) match {
           case (p: special.sigma.SigmaProp, c) => (p, c)
           case (b: Boolean, c) => (SigmaDsl.sigmaProp(b), c)
           case (res, _) => sys.error(s"Invalid result type of $res: expected Boolean or SigmaProp when evaluating $exp")

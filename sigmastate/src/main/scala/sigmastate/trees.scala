@@ -943,7 +943,14 @@ case class EQ[S <: SType](override val left: Value[S], override val right: Value
   extends SimpleRelation[S] {
   override def companion = EQ
   protected final override def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = {
-    left.evalTo[Any](E, env) == right.evalTo[Any](E, env)
+    val l = left.evalTo[Any](E, env)
+    val r = right.evalTo[Any](E, env)
+    left.tpe.asInstanceOf[SType] match {
+      case SBigInt => E.addCostOf("EQ", SBigInt.RelationOpType)
+      case t if t.isConstantSize => E.addCostOf(this)
+      case _ => ???
+    }
+    l == r
   }
 }
 object EQ extends RelationCompanion {

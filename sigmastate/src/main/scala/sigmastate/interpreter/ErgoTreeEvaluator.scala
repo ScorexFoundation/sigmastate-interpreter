@@ -1,13 +1,15 @@
 package sigmastate.interpreter
 
 import org.ergoplatform.ErgoLikeContext
-import sigmastate.SType
+import sigmastate.{SType, SFunc}
 import sigmastate.Values._
 import sigmastate.eval.Profiler
 import sigmastate.interpreter.ErgoTreeEvaluator.DataEnv
 import sigmastate.interpreter.Interpreter.ReductionResult
 import sigmastate.lang.exceptions.CostLimitException
 import special.sigma.Context
+
+case class EvalSettings(isMeasureOperationTime: Boolean)
 
 class EvalContext(
   val context: Context,
@@ -16,12 +18,17 @@ class EvalContext(
 class ErgoTreeEvaluator(
   val evalContext: EvalContext,
   val coster: CostAccumulator,
-  val profiler: Profiler)
+  val profiler: Profiler,
+  val settings: EvalSettings)
 {
-  val isMeasureOperationTime: Boolean = false
-
   def eval(env: DataEnv, exp: SValue): Any = {
     exp.evalTo[Any](this, env)
+  }
+
+  def addCostOf(opName: String, opType: SFunc) = {
+    val cost = Value.costOf(opName, opType)
+    coster.add(cost)
+//    println(s"CostOf($opName, $opType) -> $cost") // comment before commit and push
   }
 
   def addCostOf(node: SValue) = {
@@ -48,9 +55,10 @@ object ErgoTreeEvaluator {
   type DataEnv = Map[Int, Any]
 
   val DefaultProfiler = new Profiler
+  val DefaultEvalSettings = EvalSettings(false)
 
-  def eval(context: ErgoLikeContext, ergoTree: ErgoTree): ReductionResult = {
-    val (res, cost) = eval(context, ergoTree.toProposition(false))
+  def eval(context: ErgoLikeContext, ergoTree: ErgoTree, evalSettings: EvalSettings): ReductionResult = {
+    val (res, cost) = eval(context, ergoTree.toProposition(false), evalSettings)
     val sb = res match {
       case sb: SigmaBoolean => sb
       case _ => error(s"Expected SigmaBoolean but was: $res")
@@ -58,12 +66,12 @@ object ErgoTreeEvaluator {
     (sb, cost)
   }
 
-  def eval(context: ErgoLikeContext, exp: SValue): (Any, Int) = {
+  def eval(context: ErgoLikeContext, exp: SValue, evalSettings: EvalSettings): (Any, Int) = {
     val costAccumulator = new CostAccumulator(0, Some(context.costLimit))
     val sigmaContext = context.toSigmaContext(isCost = false)
 
     val ctx = new EvalContext(sigmaContext, Array.empty[Constant[SType]])
-    val evaluator = new ErgoTreeEvaluator(ctx, costAccumulator, DefaultProfiler)
+    val evaluator = new ErgoTreeEvaluator(ctx, costAccumulator, DefaultProfiler, evalSettings)
     val res = evaluator.eval(Map(), exp)
     val cost = costAccumulator.totalCost
     (res, cost)

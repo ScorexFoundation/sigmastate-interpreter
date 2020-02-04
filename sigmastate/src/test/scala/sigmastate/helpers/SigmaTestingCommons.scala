@@ -16,7 +16,7 @@ import scorex.crypto.hash.{Digest32, Blake2b256}
 import sigma.types.IsPrimView
 import sigmastate.Values.{Constant, EvaluatedValue, SValue, Value, ErgoTree, GroupElementConstant}
 import sigmastate.interpreter.Interpreter.{ScriptNameProp, ScriptEnv}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, ContextExtension, EvalContext}
+import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator, Interpreter, EvalSettings, ContextExtension, EvalContext}
 import sigmastate.lang.{TransformingSigmaBuilder, SigmaCompiler}
 import sigmastate.serialization.{ValueSerializer, SigmaSerializer, GroupElementSerializer}
 import sigmastate.{SGroupElement, AvlTreeData, SType}
@@ -28,7 +28,7 @@ import special.sigma.{Box, PreHeader, Header}
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
-import scala.util.{Try, Failure, Success}
+import scala.util.{Success, Failure, Try}
 
 trait SigmaTestingCommons extends PropSpec
   with PropertyChecks
@@ -168,8 +168,38 @@ trait SigmaTestingCommons extends PropSpec
         .withBindings(bindings: _*)
       val calcCtx = ctx.toSigmaContext(isCost = false)
       val (res, _) = valueFun(calcCtx)
-      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
-      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+//      val (resNew, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree)
+//      assert(resNew == res, s"The new Evaluator result differ from the old: $resNew != $res")
+      res.asInstanceOf[B]
+    }
+  }
+
+  def funcJit[A: RType, B: RType](func: String, bindings: (Byte, EvaluatedValue[_ <: SType])*)
+                              (implicit IR: IRContext, context: ErgoLikeContext, evalSettings: EvalSettings): A => B = {
+    val tA = RType[A]
+    val tB = RType[B]
+    val tpeA = Evaluation.rtypeToSType(tA)
+    val tpeB = Evaluation.rtypeToSType(tB)
+    val code =
+      s"""{
+         |  val func = $func
+         |  val res = func(getVar[${tA.name}](1).get)
+         |  res
+         |}
+      """.stripMargin
+    val env = Interpreter.emptyEnv
+    val interProp = compiler.typecheck(env, code)
+    val IR.Pair(calcF, _) = IR.doCosting[Any](env, interProp)
+    val tree = IR.buildTree(calcF)
+    checkSerializationRoundTrip(tree)
+
+    (in: A) => {
+      implicit val cA = tA.classTag
+      val x = fromPrimView(in)
+      val ctx = context
+        .withBindings(1.toByte -> Constant[SType](x.asInstanceOf[SType#WrappedType], tpeA))
+        .withBindings(bindings: _*)
+      val (res, _) = ErgoTreeEvaluator.eval(ctx.asInstanceOf[ErgoLikeContext], tree, evalSettings)
       res.asInstanceOf[B]
     }
   }

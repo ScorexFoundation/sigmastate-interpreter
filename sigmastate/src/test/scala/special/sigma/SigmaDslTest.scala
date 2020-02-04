@@ -8,6 +8,7 @@ import org.ergoplatform._
 import org.scalatest.prop.PropertyChecks
 import org.scalatest.{PropSpec, Matchers}
 import scalan.RType
+import scalan.util.BenchmarkUtil
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Digest32, Blake2b256}
@@ -18,7 +19,7 @@ import sigmastate._
 import sigmastate.Values._
 import sigmastate.eval.Extensions._
 import sigmastate.eval._
-import sigmastate.interpreter.ErgoTreeEvaluator
+import sigmastate.interpreter.{EvalSettings, ErgoTreeEvaluator}
 import sigmastate.interpreter.Interpreter.ScriptEnv
 import sigmastate.utxo.ComplexityTableStat
 import special.collection.{Coll, Builder}
@@ -274,39 +275,102 @@ class SigmaDslTest extends PropSpec
     }
   }
 
+  case class TestCase[A: RType, B: RType](scalaFun: A => B, script: String)(implicit es: EvalSettings) {
+    val aotFunc = func[A, B](script)
+    val jitFunc = funcJit[A, B](script)
+
+    def testAot(x: A) = {
+      checkEq(aotFunc)(scalaFun)(x)
+    }
+    def testJit(x: A) = {
+      checkEq(jitFunc)(scalaFun)(x)
+    }
+  }
+
+  case class TestGroup[A: RType](cases: TestCase[A,_]*) {
+    def testAot(x: A) = {
+      for (c <- cases)
+        c.testAot(x)
+    }
+    def testJit(x: A) = {
+      for (c <- cases)
+        c.testJit(x)
+    }
+  }
+
+  def testGroupElementOps(implicit es: EvalSettings) = TestGroup[GroupElement](
+    TestCase({ (x: GroupElement) => x.getEncoded },
+      "{ (x: GroupElement) => x.getEncoded }"),
+    TestCase({ (x: GroupElement) => decodePoint(x.getEncoded) == x },
+      "{ (x: GroupElement) => decodePoint(x.getEncoded) == x }"),
+    TestCase({ (x: GroupElement) => x.negate },
+      "{ (x: GroupElement) => x.negate }")
+
+    //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+    // eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+  )
+
+//  val testGroupElementExp = TestGroup[(GroupElement, BigInt)] { eq =>
+//    eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
+//  }
+//
+//  val testGEMultiply = TestGroup[(GroupElement, GroupElement)] { eq =>
+//    eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
+//  }
+//
+//  val testGroupGenerator = TestGroup[BigInt] { eq =>
+//    eq({ (x: BigInt) => groupGenerator.exp(x) })("{ (x: BigInt) => groupGenerator.exp(x) }")
+//  }
+
   property("GroupElement operations equivalence") {
     val ge = SigmaDsl.groupGenerator
     val n = SigmaDsl.BigInt(BigInteger.TEN)
     val g2 = ge.exp(n)
 
-    {
-      val eq = EqualityChecker(ge)
-      eq({ (x: GroupElement) => x.getEncoded })("{ (x: GroupElement) => x.getEncoded }")
-      eq({ (x: GroupElement) => decodePoint(x.getEncoded) == x })("{ (x: GroupElement) => decodePoint(x.getEncoded) == x }")
-      eq({ (x: GroupElement) => x.negate })("{ (x: GroupElement) => x.negate }")
+    implicit val withProfiling = ErgoTreeEvaluator.DefaultEvalSettings.copy(isMeasureOperationTime = true)
 
-      //TODO soft-fork: related to https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-      // eq({ (x: GroupElement) => x.isIdentity })("{ (x: GroupElement) => x.isIdentity }")
+    case class GroupRunner[A](group: TestGroup[A]) {
+      def runAot(x: A): Unit = { group.testAot(x) }
+      def runJit(x: A): Unit = { group.testJit(x) }
     }
 
-    {
-      val eq = EqualityChecker((ge, n))
-      eq({ (x: (GroupElement, BigInt)) => x._1.exp(x._2) })("{ (x: (GroupElement, BigInt)) => x._1.exp(x._2) }")
-    }
+    val runners = Seq(
+      GroupRunner(testGroupElementOps)
+    )
 
-    {
-      val eq = EqualityChecker((ge, g2))
-      eq({ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) })("{ (x: (GroupElement, GroupElement)) => x._1.multiply(x._2) }")
-    }
-
-    {
-      val eq = checkEq(func[BigInt, GroupElement]("{ (x: BigInt) => groupGenerator.exp(x) }")) { x =>
-        groupGenerator.exp(x)
-      }
-      forAll { x: BigInt =>
-        eq(x)
+    Range(0, 100).foreach { i =>
+      for (r <- runners) {
+        r.runAot(ge)
+        r.runJit(ge)
       }
     }
+
+    System.gc()
+    BenchmarkUtil.measure(100, false) { i =>
+      for( _ <- 1 to 100) {
+        for (r <- runners) {
+          r.runAot(ge)
+        }
+      }
+    }
+
+    System.gc()
+    BenchmarkUtil.measure(100, false) { i =>
+      for( _ <- 1 to 100) {
+        for (r <- runners) {
+          r.runJit(ge)
+        }
+      }
+    }
+    
+    println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
+    //    testGroupElementExp((ge, n))
+//    testGEMultiply((ge, g2))
+//
+//    forAll { x: BigInt =>
+//      testGroupGenerator(x)
+//    }
+
   }
 
   property("AvlTree properties equivalence") {
@@ -858,7 +922,7 @@ class SigmaDslTest extends PropSpec
     println(ErgoTreeEvaluator.DefaultProfiler.complexityTableString)
   }
 
-  // TODO implement Option.fold
+  // TODO soft-fork: implement Option.fold
   ignore("Option fold method") {
     val opt: Option[Long] = ctx.dataInputs(0).R0[Long]
     val eq = EqualityChecker(opt)

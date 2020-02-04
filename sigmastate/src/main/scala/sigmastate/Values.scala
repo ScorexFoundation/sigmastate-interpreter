@@ -103,9 +103,9 @@ object Values {
     protected def eval(E: ErgoTreeEvaluator, env: DataEnv): Any = sys.error(s"Should be overriden in ${this.getClass}: $this")
 
     @inline final def evalTo[T](E: ErgoTreeEvaluator, env: DataEnv): T = {
-      if (E.isMeasureOperationTime) E.profiler.onBeforeNode(this)
+      if (E.settings.isMeasureOperationTime) E.profiler.onBeforeNode(this)
       val v = eval(E, env)
-      if (E.isMeasureOperationTime) E.profiler.onAfterNode(this)
+      if (E.settings.isMeasureOperationTime) E.profiler.onAfterNode(this)
       v.asInstanceOf[T]
     }
 
