@@ -4,27 +4,30 @@
 \subsection{Type Serialization format rationale}
 \label{sec:appendix:motivation:type}
 
-Some operations of \ASDag have type parameters, for which concrete types
-should be specified (since \ASDag is monomorphic IR). When the operation
-(such as \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}}) is serialized those types should also be
-serialized as part of operation. The following encoding is designed to
-minimize a number of bytes required to represent type in the serialization
-format of \ASDag.
+\langname types terms are serialized using special encoding designed for compact
+storage yet fast deserialization. In this section we describe the motivation.
 
-In most cases type term serialises into a single byte. In the intermediate
-representation of ErgoTree each type is represented by a tree of nodes where
-leaves are primitive types and other nodes are type constructors.
-Simple (but sub-optimal) way to serialize a type would be to give each
-primitive type and each type constructor a unique type code. Then, to
-serialize a node, we need to emit its code and then perform recursive descent
-to serialize all children. 
+Some operations of \ASDag have type parameters, for which concrete types should be
+specified (since \ASDag is monomorphic IR). When the operation (such as
+\hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}}) is
+serialized those type parameters should also be serialized as part of the operation.
+The following encoding is designed to minimize a number of bytes required to represent
+type in the serialization format of \ASDag. Since most of the scripts will use simple
+types so we want them the take a single byte of the storage.
+
+In the intermediate representation of ErgoTree each type is represented by a tree of
+nodes where leaves are primitive types and other nodes are type constructors. Simple
+(but sub-optimal) way to serialize a type would be to give each primitive type and each
+type constructor a unique type code. Then, to serialize a node, we whould need to emit
+its code and then perform recursive descent to serialize all children.
+
 However, to save storage space, we use special encoding schema to save bytes
 for the types that are used more often.
 
 We assume the most frequently used types are:
 \begin{itemize}
-    \item primitive types (\lst{Int, Byte, Boolean, BigInt, GroupElement,
-    Box, AvlTree})
+    \item primitive types (\lst{Boolean}, \lst{Byte}, \lst{Short}, \lst{Int}, \lst{Long}, \lst{BigInt}, \lst{GroupElement},
+    \lst{SigmaProp}, \lst{Box}, \lst{AvlTree})
     \item  Collections of primitive types (\lst{Coll[Byte]} etc)
     \item  Options of primitive types (\lst{Option[Int]} etc.)
     \item Nested arrays of primitive types (\lst{Coll[Coll[Int]]} etc.)
@@ -37,8 +40,10 @@ We assume the most frequently used types are:
     the same)
 \end{itemize}
 
-All the types above should be represented in an optimized way (preferable by a single byte).
-For other types, we do recursive descent down the type tree as it is defined in section~\ref{sec:ser:type}
+All the types above should be represented in an optimized way preferably by a single
+byte (see examples in Figure~\ref{fig:ser:type:examples}). For other types, we do
+recursive descent down the type tree as it is defined in
+section~\ref{sec:ser:type:recursive}.
 
 \subsection{Constant Segregation rationale}
 

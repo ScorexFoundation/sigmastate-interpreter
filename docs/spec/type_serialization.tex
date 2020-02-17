@@ -1,139 +1,149 @@
 \subsection{Type Serialization}
 \label{sec:ser:type}
 
-
-
-For motivation behind this type encoding please see Appendix~\ref{sec:appendix:motivation:type}.
+For motivation behind this type encoding please see
+Appendix~\ref{sec:appendix:motivation:type}.
 
 \subsubsection{Distribution of type codes}
 \label{sec:ser:type:codedist}
 
-The whole space of 256 codes is divided as the following:
+The whole space of 256 one byte codes is divided as shown in
+Figure~\ref{fig:ser:type:codedist}.
 
 \begin{figure}[h] \footnotesize
 \(\begin{tabularx}{\textwidth}{| l | X |}
     \hline
-    \bf{Interval} & \bf{Distribution} \\
+    \bf{Value/Interval} & \bf{Distribution} \\
     \hline
     \lst{0x00} & special value to represent undefined type (\lst{NoType} in \ASDag) \\
     \hline
-    \lst{0x01 - 0x6F(111)} & data types including primitive types, arrays, options
+    \lst{0x01 - 0x6F(111)} & \emph{data types} including primitive types, arrays, options
     aka nullable types, classes (in future), 111 = 255 - 144 different codes \\
     \hline
-    \lst{0x70(112) - 0xFF(255)} & function types \lst{T1 => T2}, 144 = 12 x 12
-    different codes \\
+    \lst{0x70(112) - 0xFF(255)} & \emph{function types} \lst{T1 => T2}, 144 = 12 x 12
+    different codes~\footnote{Note that the function types are never serialized in version 1 of the Ergo
+    protocol, this encoding is reserved for future development of the protocol.} \\
     \hline 
 \end{tabularx}\)
-\caption{Distribution of type codes}
+\caption{Distribution of type codes between Data and Function types}
 \label{fig:ser:type:codedist}
 \end{figure}
 
-\subsubsection{Encoding Data Types}
+\subsubsection{Encoding of Data Types}
 
-There are 9 different values for primitive types and 2 more are reserved for future
-extensions. Each primitive type has an id in a range {1,...,11} as the following.
+There are eight different values for \emph{embeddable} types and 3 more are reserved
+for the future extensions. Each embeddable type has a type code in the range {1,...,11}
+as shown in Figure~\ref{fig:ser:type:embeddable}.
 
 \begin{figure}[h] \footnotesize
     \(\begin{tabularx}{\textwidth}{| l | X |}
         \hline
-        \bf{Id} & \bf{Type} \\ \hline
+        \bf{Code} & \bf{Type} \\ \hline
 1     &   Boolean \\  \hline
 2     &   Byte\\  \hline
 3     &   Short (16 bit)\\  \hline
 4     &   Int (32 bit)\\  \hline
 5     &   Long (64 bit)\\  \hline
-6     &   BigInt (java.math.BigInteger)\\  \hline
-7     &   GroupElement (org.bouncycastle.math.ec.ECPoint)\\  \hline
+6     &   BigInt (represented by java.math.BigInteger)\\  \hline
+7     &   GroupElement (represented by org.bouncycastle.math.ec.ECPoint)\\  \hline
 8     &   SigmaProp \\  \hline
 9     &   reserved for Char \\  \hline
-10    &   reserved for Double \\  \hline
+10    &   reserved \\  \hline
 11    &   reserved \\ \hline 
 \end{tabularx}\)
-\label{fig:ser:type:primtypes}
+\caption{Embeddable Types}
+\label{fig:ser:type:embeddable}
 \end{figure}
 
-For each type constructor like \lst{Coll} or \lst{Option} we use the encoding
-schema defined below. Type constructor has associated \emph{base code} (e.g.
-12 for \lst{Coll[_]}, 24 for \lst{Coll[Coll[_]]} etc. ), which is multiple of
-12.
-Base code can be added to primitive type id to produce code of constructed
-type, for example 12 + 1 = 13 is a code of \lst{Coll[Byte]}. The code of type
-constructor (12 in this example) is used when type parameter is non-primitive
+For each type constructor like \lst{Coll} or \lst{Option} we use the encoding schema
+defined below. Type constructor has an associated \emph{base code} which is multiple
+of~$12$ (e.g.~$12$ for \lst{Coll[_]}, $24$ for \lst{Coll[Coll[_]]} etc.).
+The base code can be added to the embeddable type code to produce the code of the constructed
+type, for example $12 + 1 = 13$ is a code of \lst{Coll[Byte]}. 
+The code of type
+constructor (e.g. $12$ in this example) is used when type parameter is non-embeddable
 type (e.g. \lst{Coll[(Byte, Int)]}). In this case the code of type
 constructor is read first, and then recursive descent is performed to read
-bytes of the parameter type (in this case \lst{(Byte, Int)}) This encoding
-allows very simple and quick decoding by using div and mod operations.
+bytes of the parameter type (in this case \lst{(Byte, Int)}). This encoding
+allows very simple and fast decoding by using \lst{div} and \lst{mod} operations.
 
-The interval of codes for data types is divided as the following:
+Following the above encoding schema the interval of codes for data types is divided as
+shown in Figure~\ref{fig:ser:type:datatypes}.
 
 \begin{figure}[h] \footnotesize
-    \(\begin{tabularx}{\textwidth}{| l | l | X |}
+\(\begin{tabularx}{\textwidth}{| l | l | X |}
 \hline
-\bf{Interval} & \bf{Type constructor} & \bf{Description} \\ \hline
-0x01 - 0x0B(11)     &                    & primitive types (including 2 reserved) \\ \hline
-0x0C(12)            & \lst{Coll[_]}          & Collection of non-primivite types (\lst{Coll[(Int,Boolean)]}) \\ \hline
-0x0D(13) - 0x17(23) & \lst{Coll[_]}          & Collection of primitive types (\lst{Coll[Byte]}, \lst{Coll[Int]}, etc.) \\ \hline
-0x18(24)            & \lst{Coll[Coll[_]]}    & Nested collection of non-primitive types (\lst{Coll[Coll[(Int,Boolean)]]}) \\ \hline
-0x19(25) - 0x23(35) & \lst{Coll[Coll[_]]}    & Nested collection of primitive types (\lst{Coll[Coll[Byte]]}, \lst{Coll[Coll[Int]]}) \\ \hline
-0x24(36)            & \lst{Option[_]}        & Option of non-primitive type (\lst{Option[(Int, Byte)]}) \\ \hline
-0x25(37) - 0x2F(47) & \lst{Option[_]}        & Option of primitive type (\lst{Option[Int]}) \\ \hline
-0x30(48)            & \lst{Option[Coll[_]]}  & Option of Coll of non-primitive type (\lst{Option[Coll[(Int, Boolean)]]}) \\ \hline
-0x31(49) - 0x3B(59) & \lst{Option[Coll[_]]}  & Option of Coll of primitive type (\lst{Option[Coll[Int]]}) \\ \hline
-0x3C(60)            & \lst{(_,_)}            & Pair of non-primitive types (\lst{((Int, Byte), (Boolean,Box))}, etc.) \\ \hline
-0x3D(61) - 0x47(71) & \lst{(_, Int)}         & Pair of types where first is primitive (\lst{(_, Int)}) \\ \hline
-0x48(72)            & \lst{(_,_,_)}          & Triple of types  \\ \hline
-0x49(73) - 0x53(83) & \lst{(Int, _)}         & Pair of types where second is primitive (\lst{(Int, _)}) \\ \hline
-0x54(84)            & \lst{(_,_,_,_)}        & Quadruple of types  \\ \hline
-0x55(85) - 0x5F(95) & \lst{(_, _)}           & Symmetric pair of primitive types (\lst{(Int, Int)}, \lst{(Byte,Byte)}, etc.) \\ \hline
-0x60(96)            & \lst{(_,...,_)}        & \lst{Tuple} type with more than 4 items \lst{(Int, Byte, Box, Boolean, Int)} \\ \hline
+\bf{Interval}       & \bf{Type constructor} & \bf{Description} \\ \hline
+0x01 - 0x0B(11)     &                       & embeddable types (including 3 reserved) \\ \hline
+0x0C(12)            & \lst{Coll[_]}         & Collection of non-embeddable types (\lst{Coll[(Int,Boolean)]}) \\ \hline
+0x0D(13) - 0x17(23) & \lst{Coll[_]}         & Collection of embeddable types (\lst{Coll[Byte]}, \lst{Coll[Int]}, etc.) \\ \hline
+0x18(24)            & \lst{Coll[Coll[_]]}   & Nested collection of non-embeddable types (\lst{Coll[Coll[(Int,Boolean)]]}) \\ \hline
+0x19(25) - 0x23(35) & \lst{Coll[Coll[_]]}   & Nested collection of embeddable types (\lst{Coll[Coll[Byte]]}, \lst{Coll[Coll[Int]]}) \\ \hline
+0x24(36)            & \lst{Option[_]}       & Option of non-embeddable type (\lst{Option[(Int, Byte)]}) \\ \hline
+0x25(37) - 0x2F(47) & \lst{Option[_]}       & Option of embeddable type (\lst{Option[Int]}) \\ \hline
+0x30(48)            & \lst{Option[Coll[_]]} & Option of Coll of non-embeddable type (\lst{Option[Coll[(Int, Boolean)]]}) \\ \hline
+0x31(49) - 0x3B(59) & \lst{Option[Coll[_]]} & Option of Coll of embeddable type (\lst{Option[Coll[Int]]}) \\ \hline
+0x3C(60)            & \lst{(_,_)}           & Pair of non-embeddable types (\lst{((Int, Byte), (Boolean,Box))}, etc.) \\ \hline
+0x3D(61) - 0x47(71) & \lst{(_, Int)}        & Pair of types where first is embeddable (\lst{(_, Int)}) \\ \hline
+0x48(72)            & \lst{(_,_,_)}         & Triple of types  \\ \hline
+0x49(73) - 0x53(83) & \lst{(Int, _)}        & Pair of types where second is embeddable (\lst{(Int, _)}) \\ \hline
+0x54(84)            & \lst{(_,_,_,_)}       & Quadruple of types  \\ \hline
+0x55(85) - 0x5F(95) & \lst{(_, _)}          & Symmetric pair of embeddable types (\lst{(Int, Int)}, \lst{(Byte,Byte)}, etc.) \\ \hline
+0x60(96)            & \lst{(_,...,_)}       & \lst{Tuple} type with more than 4 items \lst{(Int, Byte, Box, Boolean, Int)} \\ \hline
 0x61(97)            & \lst{Any}             & Any type  \\ \hline
 0x62(98)            & \lst{Unit}            & Unit type \\ \hline
 0x63(99)            & \lst{Box}             & Box type  \\ \hline
 0x64(100)           & \lst{AvlTree}         & AvlTree type  \\ \hline
 0x65(101)           & \lst{Context}         & Context type  \\ \hline
-0x65(102)           & \lst{String}          & String  \\ \hline
-0x66(103)           & \lst{IV}              & TypeIdent  \\ \hline
-0x67(104)- 0x6E(110)&                    & reserved for future use  \\ \hline
-0x6F(111)           &                    & Reserved for future \lst{Class} type (e.g. user-defined types)  \\ \hline
+0x66(102)           &                       & reserved for String  \\ \hline
+0x67(103)           &                       & reserved for TypeVar  \\ \hline
+0x68(104)           & \lst{Header}          & Header type  \\ \hline
+0x69(105)           & \lst{PreHeader}       & PreHeader type  \\ \hline
+0x6A(106)           & \lst{Global}          & Global type  \\ \hline
+0x6B(107)- 0x6E(110)&                       & reserved for future use  \\ \hline
+0x6F(111)           &                       & Reserved for future \lst{Class} type (e.g. user-defined types)  \\ \hline
 \end{tabularx}\)
-\label{fig:ser:type:primtypes}
+\caption{Code Ranges of Data Types}
+\label{fig:ser:type:datatypes}
 \end{figure}
 
-\subsubsection{Encoding Function Types}
+\subsubsection{Encoding of Function Types}
 
 We use $12$ different values for both domain and range types of functions. This
 gives us $12 * 12 = 144$ function types in total and allows to represent $11 *
 11 = 121$ functions over primitive types using just single byte.
 
-Each code $F$ in a range of function types can be represented as
-$F = D * 12 + R + 112$, where $D, R \in \{0,\dots,11\}$ - indices of domain and range types correspondingly, 
-$112$ - is the first code in an interval of function types. 
+Each code $F$ in a range of the function types (i.e $F \in \{112, \dots, 255\}$) can be
+represented as $F~=~D * 12 + R + 112$, where $D, R \in \{0,\dots,11\}$ - indices of
+domain and range types correspondingly, $112$ - is the first code in an interval of
+function types.
 
-If $D = 0$ then domain type is not primitive and recursive descent is necessary to write/read domain type.
+If $D = 0$ then the domain type is not embeddable and the recursive descent is
+necessary to write/read the domain type.
 
-If $R = 0$ then range type is not primitive and recursive descent is necessary to write/read range type.
+If $R = 0$ then the range type is not embeddable and the recursive descent is necessary
+to write/read the range type.
 
 \subsubsection{Recursive Descent}
+\label{sec:ser:type:recursive}
 
-When an argument of a type constructor is not a primitive type we fallback to
-the simple encoding schema.
-
-In such a case we emit the special code for the type constructor according to
-the table above and descend recursively to every child node of the type tree.
+When an argument of a type constructor is not a primitive type we fallback to the
+simple encoding schema in which case we emit the separate code for the type constructor
+according to the table above and descend recursively to every child node of the type
+tree.
 
 We do this descend only for those children whose code cannot be embedded in
 the parent code. For example, serialization of \lst{Coll[(Int,Boolean)]}
 proceeds as the following:
 \begin{enumerate}
-\item emit \lst{0x0C} because element of collection is not primitive 
-\item recursively serialize \lst{(Int, Boolean)}
-\item emit \lst{0x3D} because first item in the pair is primitive
-\item recursivley serialize \lst{Boolean}
-\item emit \lst{0x02} - the code for primitive type \lst{Boolean}
+\item Emit \lst{0x0C} because the elements type of the collection is not embeddable 
+\item Recursively serialize \lst{(Int, Boolean)}
+\item Emit \lst{0x41(=0x3D+4)} because the first type of the pair is embeddable and its code is~$4$
+\item Recursivley serialize \lst{Boolean}
+\item Emit \lst{0x02} - the code for embeddable type \lst{Boolean}
 \end{enumerate}
 
-\noindent Examples
-
+More examples of type serialization are shown in Figure~\ref{fig:ser:type:examples}
 \begin{figure}[h] \footnotesize
 \(\begin{tabularx}{\textwidth}{| l | c | c | l | c | X |}
 \hline
@@ -149,5 +159,6 @@ proceeds as the following:
 \lst{(Int,Boolean)}      &     &     &  60 + 3, 2           &  2     &      \\ \hline
 \lst{(Int,Box)=>Boolean} & 0   & 2   &  0*12+2+112, 60+3, 7 &  3     &     \\ \hline
 \end{tabularx}\)
-\label{fig:ser:type:primtypes}
+\caption{Examples of type serialization}
+\label{fig:ser:type:examples}
 \end{figure}
