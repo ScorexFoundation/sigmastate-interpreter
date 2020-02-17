@@ -167,12 +167,12 @@
 \newcommand{\MaxVlqSize}{VLQ_{max}}
 \newcommand{\MaxBits}{Bits_{max}}
 \newcommand{\MaxBytes}{Bytes_{max}}
-\newcommand{\MaxTypeSize}{Type_{max}}
-\newcommand{\MaxDataSize}{Data_{max}}
+\newcommand{\MaxTypeSize}{T_{max}}
+\newcommand{\MaxDataSize}{D_{max}}
 \newcommand{\MaxBox}{Box_{max}}
 \newcommand{\MaxSigmaProp}{SigmaProp_{max}}
 \newcommand{\MaxAvlTree}{AvlTree_{max}}
-\newcommand{\MaxConstSize}{Const_{max}}
+\newcommand{\MaxConstSize}{C_{max}}
 \newcommand{\MaxExprSize}{Expr_{max}}
 \newcommand{\MaxErgoTreeSize}{ErgoTree_{max}}
 
@@ -261,7 +261,8 @@ ErgoScript with syntax of Scala/Kotlin. ErgoScript aims to address the large aud
 of programmers with minimum surprise and WTF ratio \cite{WTFLang}. The syntax of
 ErgoScript is inspired by Scala/Kotlin and also shares a common subset with Java and
 C\#, thus if you are proficient in any of these languages you will be right at home
-using ErgoScript as well.
+using ErgoScript as well. We don't describe ErgoScript is this document though and
+focus exclusively on \ASDag.
 
 We implemented a reference implementation of \ASDag according to the specification
 described in this document.
@@ -273,8 +274,6 @@ described in this document.
 \include{evaluation}
 
 \include{serialization}
-
-\include{graph}
 
 \include{costing}
 

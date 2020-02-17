@@ -1,17 +1,22 @@
-\section{Language}
+\section{\langname As A Language}
 \label{sec:language}
 
-Here we define abstract syntax for \langname language. It is a typed
-functional language with tuples, collections, optional types and \lst{val}
-binding expressions. The semantics of \langname is specified by first
-translating it to a core calculus (\corelang) and then by giving its
-evaluation semantics. Typing rules is given in Section~\ref{sec:typing} and
-evaluation semantics is given in Section~\ref{sec:evaluation}.
+In this section we define an abstract syntax for the \langname language. It is a typed
+call-by-value, higher-order functional language without recursion. It supports
+single-assignment blocks, tuples, optional values, indexed collections with
+higher-order operations, short-cutting logicals, ternary 'if' with lazy branches. All
+operations are deterministic, without side effects and all values are immutable.
 
-\langname is defined here using abstract syntax notation as shown in
-Figure~\ref{fig:language}. This corresponds to \lst{ErgoTree} data structure,
-which can be serialized to an array of bytes. The mnemonics shown in the
-figure correspond to classes of \lst{ErgoTree} reference implementation.
+The semantics of \langname is specified by first translating it to a core calculus
+(\corelang) and then by giving its denotational evaluation semantics. Typing rules are
+given in Section~\ref{sec:typing} and the evaluation semantics is given in
+Section~\ref{sec:evaluation}.
+
+\langname is defined below using abstract syntax notation as shown in
+Figure~\ref{fig:language}. This corresponds to \lst{Value} class of the reference
+implementation, which can be serialized to an array of bytes using
+\lst{ValueSerializer}. The mnemonic names shown in the figure correspond to classes of
+the reference implementation.
 
 \begin{figure}[h]
     \footnotesize

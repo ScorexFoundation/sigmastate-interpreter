@@ -2,53 +2,55 @@
 \label{sec:serialization}
 
 This section defines a binary format, which is used to store \langname
-contracts in persistent stores, to transfer them over wire and to enable
+contracts in persistent stores, to transfer them over the wire and to enable
 cross-platform interoperation.
 
 Terms of the language described in Section~\ref{sec:language} can be
 serialized to array of bytes to be stored in Ergo blockchain (e.g. as
-Box.propositionBytes).
+\lst{Box.propositionBytes}).
 
 When the guarding script of an input box of a transaction is validated the
-\lst{propositionBytes} array is deserialized to an \langname IR (called \ASDag), which can
-be evaluated as it is specified in Section~\ref{sec:evaluation}.
+\lst{propositionBytes} array is deserialized to an \langname IR (represented by the
+\lst{ErgoTree} class), which can be evaluated as it is specified in
+Section~\ref{sec:evaluation}.
 
-Here we specify the serialization procedure in general. The serialization
-format of \langname terms and types is specified in
-Appendix~\ref{sec:appendix:ergotree_serialization} and
-~\ref{sec:appendix:type_serialization} correspondingly.
+Here we specify the serialization procedure in general. The serialization format of
+\langname types (\lst{SType} class) and nodes (\lst{Value} class) is specified in
+section~\ref{sec:ser:type} and Appendix~\ref{sec:appendix:ergotree_serialization}
+correspondingly.
 
-Table~\ref{table:ser:formats} shows size limits which are checked during
-contract deserialization.
+Table~\ref{table:ser:limits} shows size limits which are checked during
+contract deserialization, which is important to resist malicious script attacks.
 
 \begin{table}[h]
     \footnotesize
-\(\begin{tabularx}{\textwidth}{| l | p{2cm} | X |}
+\(\begin{tabularx}{\textwidth}{| l | p{2.5cm} | X |}
     \hline
     \bf{Name}   & \bf{Value} & \bf{Description} \\
     \hline
-    $\MaxVlqSize$  & $10$ & Maximum size of VLQ encoded byte sequence (See VLQ formats)  \\
+    $\MaxVlqSize$  & $10$ & Maximum size of VLQ encoded byte sequence (See VLQ formats~\ref{sec:vlq-encoding})  \\
     \hline
-    $\MaxTypeSize$ & $100$ & Maximum size of serialized type term (see Type format) \\
+    $\MaxTypeSize$ & $100$ & Maximum size of serialized type term (see Type format~\ref{sec:ser:type}) \\
     \hline
-    $\MaxDataSize$ & $10Kb$ & Maximum size of serialized data instance (see Data format) \\
+    $\MaxDataSize$ & $10Kb$ & Maximum size of serialized data instance (see Data format~\ref{sec:ser:data}) \\
     \hline
-    $\MaxConstSize$ & $=\MaxTypeSize + \MaxDataSize$  & Maximum size of serialized data instance (see Const format) \\
+    $\MaxConstSize$ & $=\MaxTypeSize+\MaxDataSize$  & Maximum size of serialized data instance (see Const format~\ref{sec:ser:const}) \\
     \hline
-    $\MaxExprSize$ & $1Kb$ & Maximum size of serialized \langname term (see Expr format) \\
+    $\MaxExprSize$ & $4Kb$ & Maximum size of serialized \langname term (see Expr format~\ref{sec:ser:expr}) \\
     \hline
-    $\MaxErgoTreeSize$ & $24Kb$ & Maximum size of serialized \langname contract (see ErgoTree format) \\
+    $\MaxErgoTreeSize$ & $4Kb$ & Maximum size of serialized \langname contract (see ErgoTree format~\ref{sec:ser:ergotree}) \\
     \hline
 \end{tabularx}\)
 \caption{Serialization limits}
-\label{table:ser:formats}
+\label{table:ser:limits}
 \end{table}
 
-All serialization formats which are uses and defined thoughout this
-section are listed in Table~\ref{table:ser:formats}.
+All the serialization formats which are uses and defined thoughout this section are
+listed in Table~\ref{table:ser:formats} which introduces a name for each format and also
+shows the number of bytes each format may occupy in the byte stream.
 
 \begin{table}[h]
-    \footnotesize
+    \scriptsize
 \(\begin{tabularx}{\textwidth}{| l | l | X |}
     \hline
     \bf{Format} & \bf{\#bytes} & \bf{Description} \\
@@ -79,8 +81,7 @@ section are listed in Table~\ref{table:ser:formats}.
     \hline
     \lst{Bits} & $[1..\MaxBits]$ & A collection of bits packed in a sequence of bytes. \\
     \hline
-    \lst{Bytes} & $[1..\MaxBytes]$ & A sequence (block) of bytes. 
-    The size of the block should either stored elsewhere or wellknown. \\
+    \lst{Bytes} & $[1..\MaxBytes]$ & A sequence of bytes, which size is stored elsewhere or wellknown. \\
 
     \hline
     \lst{Type} & $[1..\MaxTypeSize]$ & Serialized type terms of \langname. See~\ref{sec:ser:type} \\
@@ -106,190 +107,27 @@ section are listed in Table~\ref{table:ser:formats}.
 \label{table:ser:formats}
 \end{table}
 
-Table~\ref{table:ser:formats} introduce a name for each format and also shows
-the number of bytes each format may occupy in the byte stream. We use $[1..n]$
-notation when serialization may produce from 1 to n bytes depending of actual
-data instance. 
+We use $[1..n]$ notation when serialization may produce from 1 to n bytes depending of
+actual data instance.
 
-Serialization format of \ASDag is optimized for compact storage. In many
-cases serialization procedure is data dependent and thus have branching
-logic. To express this complex serialization logic we use
-\emph{pseudo-language operators} like \lst{for, match, if, optional} which
-allow to specify a \emph{structure} on \emph{simple serialization slots}.
+Serialization format of \ASDag is optimized for compact storage and very fast
+deserialization. In many cases serialization procedure is data dependent and thus have
+branching logic. To express this complex serialization logic in the specification we
+use a \emph{pseudo-language} with operators like \lst{for, match, if, optional}. The
+language allows to specify a \emph{structure} out of \emph{simple serialization slots}.
 Each \emph{slot} specifies a fragment of serialized stream of bytes, whereas
-\emph{operators} specifiy how the slots are combined together to form the
+\emph{operators} specifiy how the slots are combined together to form the resulting
 stream of bytes.
+
+In the next section we describe how types (like \lst{Int}, \lst{Coll[Byte]},
+etc.) are serialized, then we define serialization of typed data. This will
+give us a basis to describe serialization of Constant nodes of \ASDag. From
+that we will proceed to serialization of arbitrary \ASDag trees.
 
 \input{type_serialization.tex}
 
-\subsection{Data Serialization}
-\label{sec:ser:data}
+\input{data_serialization.tex}
 
-In \langname all runtime data values have an associated type also available
-at runtime (this is called \emph{type reification}\cite{Reification}).
-However serialization format separates data values from its type descriptors. 
-This allows to save space when for example a collection of items is serialized.
-
-The contents of a typed data structure can be fully described by a type tree.
-For example having a typed data object \lst{d: (Int, Coll[Byte], Boolean)} we can
-tell that \lst{d} has 3 items, the first item contain 32-bit integer, the second
-- collection of bytes, and the third - logical true/false value.
-
-To serialize/deserialize typed data we need to know its type descriptor (type
-tree). Serialization procedure is recursive over type tree and the
-corresponding subcomponents of an object. For primitive types (the leaves of
-the type tree) the format is fixed. The data values of \langname types are
-serialized using predefined function shown in Figure~\ref{fig:ser:data}.
-
-\begin{figure}[h]
-\footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-    \hline
-    \multicolumn{4}{l}{\lst{def serializeData(}$t, v$\lst{)}} \\
-    \multicolumn{4}{l}{~~\lst{match} $(t, v)$ } \\
-
-    \multicolumn{4}{l}{~~~~\lst{with} $(Unit, v \in \Denot{Unit})$~~~// nothing serialized } \\
-    \multicolumn{4}{l}{~~~~\lst{with} $(Boolean, v \in \Denot{Boolean})$} \\
-    \hline
-    $~~~~~~v$ & \lst{Byte} & 1 & 0 or 1 in a single byte \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(Byte, v \in \Denot{Byte})$} \\
-    \hline
-    $~~~~~~v$  & \lst{Byte} & 1 &  in a single byte \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(N, v \in \Denot{Short}), N \in {Short, Int, Long}$} \\
-    \hline
-    $~~~~~~v$  & \lst{VLQ(ZigZag($$N$$))} & [1..3] & 
-      16,32,64-bit signed integer encoded using \hyperref[sec:zigzag-encoding]{ZigZag} 
-      and then using \hyperref[sec:vlq-encoding]{VLQ} \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(BigInt, v \in \Denot{BigInt})$} \\
-    \multicolumn{4}{l}{~~~~~~$bytes = v$\lst{.toByteArray} } \\
-    \hline
-    $~~~~~~numBytes$  & \lst{VLQ(UInt)} &  & number of bytes in $bytes$ array \\
-    \hline
-    $~~~~~~bytes$  & \lst{Bytes} &  & serialized $bytes$ array \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(GroupElement, v \in \Denot{GroupElement})$} \\
-    \hline
-    ~~~~~~$v$  & \lst{GroupElement} &  & serialization of GroupElement data. See~\ref{sec:ser:data:groupelement} \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(SigmaProp, v \in \Denot{SigmaProp})$} \\
-    \hline
-    ~~~~~~$v$  & \lst{SigmaProp} &  & serialization of SigmaProp data. See~\ref{sec:ser:data:sigmaprop} \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(Box, v \in \Denot{Box})$} \\
-    \hline
-    ~~~~~~$v$  & \lst{Box} &  & serialization of Box data. See~\ref{sec:ser:data:box} \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(AvlTree, v \in \Denot{AvlTree})$} \\
-    \hline
-    ~~~~~~$v$  & \lst{AvlTree} &  & serialization of AvlTree data. See~\ref{sec:ser:data:avltree} \\
-
-    \hline
-    \multicolumn{4}{l}{~~~~\lst{with} $(Coll[T], v \in \Denot{Coll[T]})$} \\
-    \hline
-    $~~~~~~len$  & \lst{VLQ(UShort)} & [1..3] & length of the collection \\
-    \hline
-    \multicolumn{4}{l}{~~~~~~\lst{match} $(T, v)$ } \\
-
-    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Boolean, v \in \Denot{Coll[Boolean]})$} \\
-    \hline
-    $~~~~~~~~~~items$  & \lst{Bits} & [1..1024] & boolean values packed in bits \\
-    \hline
-
-    \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Byte, v \in \Denot{Coll[Byte]})$} \\
-    \hline
-    $~~~~~~~~~~items$  & \lst{Bytes} & $[1..len]$ & items of the collection  \\
-    \hline
-    \multicolumn{4}{l}{~~~~~~~~\lst{otherwise} } \\
-    \multicolumn{4}{l}{~~~~~~~~~~\lst{for}~$i=1$~\lst{to}~$len$} \\
-    \multicolumn{4}{l}{~~~~~~~~~~~~\lst{serializeData(}$T, v_i$\lst{)}} \\
-    \multicolumn{4}{l}{~~~~~~~~~~\lst{end for}} \\
-    \multicolumn{4}{l}{~~~~~~\lst{end match}} \\
-
-    \multicolumn{4}{l}{~~\lst{end match}} \\
-    \multicolumn{4}{l}{\lst{end serializeData}} \\
-    \hline
-    \hline
-\end{tabularx}\)
-\caption{Data serialization format}
-\label{fig:ser:data}
-\end{figure}
-
-\subsubsection{GroupElement serialization}
-\label{sec:ser:data:groupelement}
-
-\begin{figure}[h]
-\footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-    \multicolumn{4}{l}{\lst{def serialize(}$ge$\lst{)}} \\
-    \multicolumn{4}{l}{~~\lst{if} $ge.isIdentity$ \lst{then}} \\
-    \hline
-    ~~~~$ $  & \lst{Const} & $ $ &  \\ 
-    \hline
-    \multicolumn{4}{l}{~~\lst{else}} \\
-    \hline
-    ~~~~$ $  &  & $ $ &  \\ 
-    \hline
-    \multicolumn{4}{l}{~~\lst{end if}} \\
-    \multicolumn{4}{l}{\lst{end def}} \\
-\end{tabularx}\)
-\caption{GroupElement serialization format}
-\label{fig:ser:data:groupelement}
-\end{figure}
-
-\subsubsection{SigmaProp serialization}
-\label{sec:ser:data:sigmaprop}
-\begin{figure}[h]
-\footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-\end{tabularx}\)
-\caption{SigmaProp serialization format}
-\label{fig:ser:data:sigmaprop}
-\end{figure}
-
-\subsubsection{Box serialization}
-\label{sec:ser:data:box}
-\begin{figure}[h]
-\footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-\end{tabularx}\)
-\caption{Box serialization format}
-\label{fig:ser:data:box}
-\end{figure}
-
-\subsubsection{AvlTree serialization}
-\label{sec:ser:data:avltree}
-\begin{figure}[h]
-\footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-\end{tabularx}\)
-\caption{AvlTree serialization format}
-\label{fig:ser:data:avltree}
-\end{figure}
 
 \subsection{Constant Serialization}
 \label{sec:ser:const}
