@@ -23,6 +23,8 @@ Table~\ref{table:ser:limits} shows size limits which are checked during
 contract deserialization, which is important to resist malicious script attacks.
 
 \begin{table}[h]
+    \caption{Serialization limits}\vspace{-7pt}
+    \label{table:ser:limits}
     \footnotesize
 \(\begin{tabularx}{\textwidth}{| l | p{2.5cm} | X |}
     \hline
@@ -41,16 +43,16 @@ contract deserialization, which is important to resist malicious script attacks.
     $\MaxErgoTreeSize$ & $4Kb$ & Maximum size of serialized \langname contract (see ErgoTree format~\ref{sec:ser:ergotree}) \\
     \hline
 \end{tabularx}\)
-\caption{Serialization limits}
-\label{table:ser:limits}
+
 \end{table}
 
 All the serialization formats which are uses and defined thoughout this section are
 listed in Table~\ref{table:ser:formats} which introduces a name for each format and also
 shows the number of bytes each format may occupy in the byte stream.
 
-\begin{table}[h]
-    \scriptsize
+\begin{table}[H] \scriptsize
+\caption{Serialization formats}\vspace{-7pt}
+\label{table:ser:formats}
 \(\begin{tabularx}{\textwidth}{| l | l | X |}
     \hline
     \bf{Format} & \bf{\#bytes} & \bf{Description} \\
@@ -103,8 +105,6 @@ shows the number of bytes each format may occupy in the byte stream.
     \lst{ErgoTree} & $[1..\MaxErgoTreeSize]$ & Serialized instances of \langname contracts. See~\ref{sec:ser:ergotree} \\
     \hline
 \end{tabularx}\)
-\caption{Serialization formats}
-\label{table:ser:formats}
 \end{table}
 
 We use $[1..n]$ notation when serialization may produce from 1 to n bytes depending of
@@ -117,7 +117,44 @@ use a \emph{pseudo-language} with operators like \lst{for, match, if, optional}.
 language allows to specify a \emph{structure} out of \emph{simple serialization slots}.
 Each \emph{slot} specifies a fragment of serialized stream of bytes, whereas
 \emph{operators} specifiy how the slots are combined together to form the resulting
-stream of bytes.
+stream of bytes. The notation is summarized in Table~\ref{table:ser:notation}.
+
+\begin{table}[h] \footnotesize
+\caption{Serialization Notation}
+\label{table:ser:notation}
+\(\begin{tabularx}{\textwidth}{| l | X |}
+    \hline
+    \bf{Notation} & \bf{Description} \\
+    \hline
+    $\Denot{T}$ where $T$ - type & Denotes a set of values of type $T$  \\
+    \hline
+    $v \in \Denot{T}$ & The value $v$ belongs to the set $\Denot{T}$ \\
+    \hline   
+    $v : T$ & Same as $v \in \Denot{T}$ \\
+    \hline    
+    \lst{match} $(t, v)$ & Pattern match on pair $(t, v)$ where $t, v$ - values \\
+    \hline    
+    \lst{with} $(Unit, v \in \Denot{Unit})$ & Pattern case \\
+    \hline    
+
+    \lst{for}~$i=1$~\lst{to}~$len$ & \multirow{3}{=}{Call 
+        the given \lst{serialize} function repeatedly. 
+        The outputs bytes of all invocations are concatenated and become 
+        the output of the \lst{for} statement. } \\
+    ~~\lst{serialize(}$v_i$\lst{)} &  \\
+    \lst{end for} & \\
+    \hline
+
+    \lst{if}~$condition$~\lst{then} & \multirow[t]{5}{=}{Serialize 
+        one of the branches depending of the $condition$.  
+        The output bytes of the executed branch becomes the output of the \lst{if} statement. } \\
+    ~~\lst{serialize1(}$v_1$\lst{)} &  \\
+    \lst{else} & \\
+    ~~\lst{serialize2(}$v_2$\lst{)} &  \\
+    \lst{end if} & \\
+    \hline
+\end{tabularx}\)
+\end{table}
 
 In the next section we describe how types (like \lst{Int}, \lst{Coll[Byte]},
 etc.) are serialized, then we define serialization of typed data. This will

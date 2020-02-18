@@ -10,7 +10,9 @@ Appendix~\ref{sec:appendix:motivation:type}.
 The whole space of 256 one byte codes is divided as shown in
 Figure~\ref{fig:ser:type:codedist}.
 
-\begin{figure}[h] \footnotesize
+\begin{table}[h] \footnotesize
+\caption{Distribution of type codes between Data and Function types}\vspace{-7pt}
+\label{fig:ser:type:codedist}
 \(\begin{tabularx}{\textwidth}{| l | X |}
     \hline
     \bf{Value/Interval} & \bf{Distribution} \\
@@ -25,9 +27,8 @@ Figure~\ref{fig:ser:type:codedist}.
     protocol, this encoding is reserved for future development of the protocol.} \\
     \hline 
 \end{tabularx}\)
-\caption{Distribution of type codes between Data and Function types}
-\label{fig:ser:type:codedist}
-\end{figure}
+
+\end{table}
 
 \subsubsection{Encoding of Data Types}
 
@@ -35,7 +36,9 @@ There are eight different values for \emph{embeddable} types and 3 more are rese
 for the future extensions. Each embeddable type has a type code in the range {1,...,11}
 as shown in Figure~\ref{fig:ser:type:embeddable}.
 
-\begin{figure}[h] \footnotesize
+\begin{table}[h] \footnotesize
+\caption{Embeddable Types}\vspace{-7pt}
+\label{fig:ser:type:embeddable}
     \(\begin{tabularx}{\textwidth}{| l | X |}
         \hline
         \bf{Code} & \bf{Type} \\ \hline
@@ -51,9 +54,44 @@ as shown in Figure~\ref{fig:ser:type:embeddable}.
 10    &   reserved \\  \hline
 11    &   reserved \\ \hline 
 \end{tabularx}\)
-\caption{Embeddable Types}
-\label{fig:ser:type:embeddable}
-\end{figure}
+\end{table}
+
+\begin{table}[H] \scriptsize
+    \caption{Code Ranges of Data Types}\vspace{-7pt}
+    \label{fig:ser:type:datatypes}
+    \(\begin{tabularx}{\textwidth}{| l | l | X |}
+    \hline
+    \bf{Interval}       & \bf{Constructor} & \bf{Description} \\ \hline
+    0x01 - 0x0B(11)     &                       & embeddable types (including 3 reserved) \\ \hline
+    0x0C(12)            & \lst{Coll[_]}         & Collection of non-embeddable types (\lst{Coll[(Int,Boolean)]}) \\ \hline
+    0x0D(13) - 0x17(23) & \lst{Coll[_]}         & Collection of embeddable types (\lst{Coll[Byte]}, \lst{Coll[Int]}, etc.) \\ \hline
+    0x18(24)            & \lst{Coll[Coll[_]]}   & Nested collection of non-embeddable types (\lst{Coll[Coll[(Int,Boolean)]]}) \\ \hline
+    0x19(25) - 0x23(35) & \lst{Coll[Coll[_]]}   & Nested collection of embeddable types (\lst{Coll[Coll[Byte]]}, \lst{Coll[Coll[Int]]}) \\ \hline
+    0x24(36)            & \lst{Option[_]}       & Option of non-embeddable type (\lst{Option[(Int, Byte)]}) \\ \hline
+    0x25(37) - 0x2F(47) & \lst{Option[_]}       & Option of embeddable type (\lst{Option[Int]}) \\ \hline
+    0x30(48)            & \lst{Option[Coll[_]]} & Option of Coll of non-embeddable type (\lst{Option[Coll[(Int, Boolean)]]}) \\ \hline
+    0x31(49) - 0x3B(59) & \lst{Option[Coll[_]]} & Option of Coll of embeddable type (\lst{Option[Coll[Int]]}) \\ \hline
+    0x3C(60)            & \lst{(_,_)}           & Pair of non-embeddable types (\lst{((Int, Byte), (Boolean,Box))}, etc.) \\ \hline
+    0x3D(61) - 0x47(71) & \lst{(_, Int)}        & Pair of types where first is embeddable (\lst{(_, Int)}) \\ \hline
+    0x48(72)            & \lst{(_,_,_)}         & Triple of types  \\ \hline
+    0x49(73) - 0x53(83) & \lst{(Int, _)}        & Pair of types where second is embeddable (\lst{(Int, _)}) \\ \hline
+    0x54(84)            & \lst{(_,_,_,_)}       & Quadruple of types  \\ \hline
+    0x55(85) - 0x5F(95) & \lst{(_, _)}          & Symmetric pair of embeddable types (\lst{(Int, Int)}, \lst{(Byte,Byte)}, etc.) \\ \hline
+    0x60(96)            & \lst{(_,...,_)}       & \lst{Tuple} type with more than 4 items \lst{(Int, Byte, Box, Boolean, Int)} \\ \hline
+    0x61(97)            & \lst{Any}             & Any type  \\ \hline
+    0x62(98)            & \lst{Unit}            & Unit type \\ \hline
+    0x63(99)            & \lst{Box}             & Box type  \\ \hline
+    0x64(100)           & \lst{AvlTree}         & AvlTree type  \\ \hline
+    0x65(101)           & \lst{Context}         & Context type  \\ \hline
+    0x66(102)           &                       & reserved for String  \\ \hline
+    0x67(103)           &                       & reserved for TypeVar  \\ \hline
+    0x68(104)           & \lst{Header}          & Header type  \\ \hline
+    0x69(105)           & \lst{PreHeader}       & PreHeader type  \\ \hline
+    0x6A(106)           & \lst{Global}          & Global type  \\ \hline
+    0x6B(107)-0x6E(110) &                       & reserved for future use  \\ \hline
+    0x6F(111)           &                       & Reserved for future \lst{Class} type (e.g. user-defined types)  \\ \hline
+    \end{tabularx}\)
+\end{table}
 
 For each type constructor like \lst{Coll} or \lst{Option} we use the encoding schema
 defined below. Type constructor has an associated \emph{base code} which is multiple
@@ -68,44 +106,8 @@ bytes of the parameter type (in this case \lst{(Byte, Int)}). This encoding
 allows very simple and fast decoding by using \lst{div} and \lst{mod} operations.
 
 Following the above encoding schema the interval of codes for data types is divided as
-shown in Figure~\ref{fig:ser:type:datatypes}.
+shown in Table~\ref{fig:ser:type:datatypes}.
 
-\begin{figure}[h] \footnotesize
-\(\begin{tabularx}{\textwidth}{| l | l | X |}
-\hline
-\bf{Interval}       & \bf{Type constructor} & \bf{Description} \\ \hline
-0x01 - 0x0B(11)     &                       & embeddable types (including 3 reserved) \\ \hline
-0x0C(12)            & \lst{Coll[_]}         & Collection of non-embeddable types (\lst{Coll[(Int,Boolean)]}) \\ \hline
-0x0D(13) - 0x17(23) & \lst{Coll[_]}         & Collection of embeddable types (\lst{Coll[Byte]}, \lst{Coll[Int]}, etc.) \\ \hline
-0x18(24)            & \lst{Coll[Coll[_]]}   & Nested collection of non-embeddable types (\lst{Coll[Coll[(Int,Boolean)]]}) \\ \hline
-0x19(25) - 0x23(35) & \lst{Coll[Coll[_]]}   & Nested collection of embeddable types (\lst{Coll[Coll[Byte]]}, \lst{Coll[Coll[Int]]}) \\ \hline
-0x24(36)            & \lst{Option[_]}       & Option of non-embeddable type (\lst{Option[(Int, Byte)]}) \\ \hline
-0x25(37) - 0x2F(47) & \lst{Option[_]}       & Option of embeddable type (\lst{Option[Int]}) \\ \hline
-0x30(48)            & \lst{Option[Coll[_]]} & Option of Coll of non-embeddable type (\lst{Option[Coll[(Int, Boolean)]]}) \\ \hline
-0x31(49) - 0x3B(59) & \lst{Option[Coll[_]]} & Option of Coll of embeddable type (\lst{Option[Coll[Int]]}) \\ \hline
-0x3C(60)            & \lst{(_,_)}           & Pair of non-embeddable types (\lst{((Int, Byte), (Boolean,Box))}, etc.) \\ \hline
-0x3D(61) - 0x47(71) & \lst{(_, Int)}        & Pair of types where first is embeddable (\lst{(_, Int)}) \\ \hline
-0x48(72)            & \lst{(_,_,_)}         & Triple of types  \\ \hline
-0x49(73) - 0x53(83) & \lst{(Int, _)}        & Pair of types where second is embeddable (\lst{(Int, _)}) \\ \hline
-0x54(84)            & \lst{(_,_,_,_)}       & Quadruple of types  \\ \hline
-0x55(85) - 0x5F(95) & \lst{(_, _)}          & Symmetric pair of embeddable types (\lst{(Int, Int)}, \lst{(Byte,Byte)}, etc.) \\ \hline
-0x60(96)            & \lst{(_,...,_)}       & \lst{Tuple} type with more than 4 items \lst{(Int, Byte, Box, Boolean, Int)} \\ \hline
-0x61(97)            & \lst{Any}             & Any type  \\ \hline
-0x62(98)            & \lst{Unit}            & Unit type \\ \hline
-0x63(99)            & \lst{Box}             & Box type  \\ \hline
-0x64(100)           & \lst{AvlTree}         & AvlTree type  \\ \hline
-0x65(101)           & \lst{Context}         & Context type  \\ \hline
-0x66(102)           &                       & reserved for String  \\ \hline
-0x67(103)           &                       & reserved for TypeVar  \\ \hline
-0x68(104)           & \lst{Header}          & Header type  \\ \hline
-0x69(105)           & \lst{PreHeader}       & PreHeader type  \\ \hline
-0x6A(106)           & \lst{Global}          & Global type  \\ \hline
-0x6B(107)- 0x6E(110)&                       & reserved for future use  \\ \hline
-0x6F(111)           &                       & Reserved for future \lst{Class} type (e.g. user-defined types)  \\ \hline
-\end{tabularx}\)
-\caption{Code Ranges of Data Types}
-\label{fig:ser:type:datatypes}
-\end{figure}
 
 \subsubsection{Encoding of Function Types}
 
@@ -143,8 +145,10 @@ proceeds as the following:
 \item Emit \lst{0x02} - the code for embeddable type \lst{Boolean}
 \end{enumerate}
 
-More examples of type serialization are shown in Figure~\ref{fig:ser:type:examples}
-\begin{figure}[h] \footnotesize
+More examples of type serialization are shown in Table~\ref{fig:ser:type:examples}
+\begin{table}[H] \footnotesize
+\caption{Examples of type serialization}\vspace{-7pt}
+\label{fig:ser:type:examples}
 \(\begin{tabularx}{\textwidth}{| l | c | c | l | c | X |}
 \hline
 \bf{Type}                &\bf{D} & \bf{R} & \bf{Serialized Bytes} & \bf{\#Bytes} &  \bf{Comments} \\ \hline
@@ -159,6 +163,4 @@ More examples of type serialization are shown in Figure~\ref{fig:ser:type:exampl
 \lst{(Int,Boolean)}      &     &     & 60 + 4, 1           &  2     & Int embedded in pair, then Boolean     \\ \hline
 \lst{(Int,Box)=>Boolean} & 0   & 1   & 0*12+1+112, 60+4, 99 &  3    & func with embedded range, then Int embedded, then Box    \\ \hline
 \end{tabularx}\)
-\caption{Examples of type serialization}
-\label{fig:ser:type:examples}
-\end{figure}
+\end{table}
