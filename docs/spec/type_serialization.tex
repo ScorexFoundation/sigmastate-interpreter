@@ -147,17 +147,17 @@ More examples of type serialization are shown in Figure~\ref{fig:ser:type:exampl
 \begin{figure}[h] \footnotesize
 \(\begin{tabularx}{\textwidth}{| l | c | c | l | c | X |}
 \hline
-\bf{Type}                &\bf{D} & \bf{R} & \bf{Bytes} & \bf{\#Bytes} &  \bf{Comments} \\ \hline
-\lst{Byte}               &     &     &  1                   &  1     &    \\ \hline
-\lst{Coll[Byte]}         &     &     &  12 + 1 = 13         &  1     &    \\ \hline
-\lst{Coll[Coll[Byte]]}   &     &     &  24 + 1 = 25         &  1     &     \\ \hline
-\lst{Option[Byte]}       &     &     &  36 + 1 = 37         &  1     & register    \\ \hline
-\lst{Option[Coll[Byte]]} &     &     &  48 + 1 = 49         &  1     & register    \\ \hline
-\lst{(Int,Int)}          &     &     &  84 + 3 = 87         &  1     & fold    \\ \hline
-\lst{Box=>Boolean}       & 7   & 2   &  198 = 7*12+2+112    &  1     & exist, forall    \\ \hline
-\lst{(Int,Int)=>Int}     & 0   & 3   &  115=0*12+3+112, 87  &  2     &  fold    \\ \hline
-\lst{(Int,Boolean)}      &     &     &  60 + 3, 2           &  2     &      \\ \hline
-\lst{(Int,Box)=>Boolean} & 0   & 2   &  0*12+2+112, 60+3, 7 &  3     &     \\ \hline
+\bf{Type}                &\bf{D} & \bf{R} & \bf{Serialized Bytes} & \bf{\#Bytes} &  \bf{Comments} \\ \hline
+\lst{Byte}               &     &     & 2                   &  1     & simple embeddable type     \\ \hline
+\lst{Coll[Byte]}         &     &     & 12 + 2 = 14         &  1     & embeddable type in Coll \\ \hline
+\lst{Coll[Coll[Byte]]}   &     &     & 24 + 2 = 26         &  1     & embeddable type in nested Coll \\ \hline
+\lst{Option[Byte]}       &     &     & 36 + 2 = 38         &  1     & embeddable type in Option    \\ \hline
+\lst{Option[Coll[Byte]]} &     &     & 48 + 2 = 50         &  1     & embeddable type in Coll nested in Option   \\ \hline
+\lst{(Int,Int)}          &     &     & 84 + 4 = 88         &  1     & symmetric pair of embeddable type   \\ \hline
+\lst{Int=>Boolean}       & 4   & 1   & 161 = 4*12+1+112    &  1     & embeddable domain and range  \\ \hline
+\lst{(Int,Int)=>Int}     & 0   & 4   & 115=0*12+4+112, 88  &  2     & embeddable range, then symmetric pair    \\ \hline
+\lst{(Int,Boolean)}      &     &     & 60 + 4, 1           &  2     & Int embedded in pair, then Boolean     \\ \hline
+\lst{(Int,Box)=>Boolean} & 0   & 1   & 0*12+1+112, 60+4, 99 &  3    & func with embedded range, then Int embedded, then Box    \\ \hline
 \end{tabularx}\)
 \caption{Examples of type serialization}
 \label{fig:ser:type:examples}
