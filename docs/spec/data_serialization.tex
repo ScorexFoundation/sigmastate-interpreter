@@ -8,15 +8,16 @@ This allows to save space when for example a collection of items is serialized.
 
 It is done is such a way that the contents of a typed data structure can be fully
 described by a type tree. For example having a typed data object \lst{d: (Int,
-Coll[Byte], Boolean)} we can tell that \lst{d} has 3 items, the first item contain
-32-bit integer, the second - collection of bytes, and the third - logical true/false
-value.
+Coll[Byte], Boolean)} we can tell, by examining the structure of the type, that \lst{d}
+is a tuple with 3 items, the first item contain 32-bit integer, the second - collection
+of bytes, and the third - logical true/false value.
 
 To serialize/deserialize typed data we need to know its \emph{type descriptor} (type
-tree). The data serialization procedure is recursive over a type tree and the corresponding
-sub-components of the data object. For primitive types (the leaves of the type tree) the
-format is fixed. The data values of \langname types are serialized using the predefined
-recursive function shown in Figure~\ref{fig:ser:data}.
+tree). The data serialization procedure is recursive over a type tree and the
+corresponding sub-components of the data object. For primitive types (the leaves of the
+type tree) the format is fixed. The data values of \langname types are serialized
+according to the predefined recursive function shown in Figure~\ref{fig:ser:data} which
+uses the notation from Table~\ref{table:ser:notation}.
 
 \begin{figure}[H] \footnotesize
 \caption{Data serialization format}\vspace{-7pt}
@@ -83,12 +84,12 @@ recursive function shown in Figure~\ref{fig:ser:data}.
 
     \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Boolean, v \in \Denot{Coll[Boolean]})$} \\
     \hline
-    $~~~~~~~~~~items$  & \lst{Bits} & [1..1024] & boolean values packed in bits \\
+    $~~~~~~~~~~v$  & \lst{Bits} & [1..1024] & boolean values packed in bits \\
     \hline
 
     \multicolumn{4}{l}{~~~~~~~~\lst{with} $(Byte, v \in \Denot{Coll[Byte]})$} \\
     \hline
-    $~~~~~~~~~~items$  & \lst{Bytes} & $[1..len]$ & items of the collection  \\
+    $~~~~~~~~~~v$  & \lst{Bytes} & $[1..len]$ & items of the collection  \\
     \hline
     \multicolumn{4}{l}{~~~~~~~~\lst{otherwise} } \\
     \multicolumn{4}{l}{~~~~~~~~~~\lst{for}~$i=1$~\lst{to}~$len$~\lst{do}~\lst{serializeData(}$T, v_i$\lst{) end for}} \\
@@ -103,6 +104,11 @@ recursive function shown in Figure~\ref{fig:ser:data}.
 \subsubsection{GroupElement serialization}
 \label{sec:ser:data:groupelement}
 
+A value of the \lst{GroupElement} type is represented in reference implementation using
+\lst{SecP256K1Point} class of the \lst{org.bouncycastle.math.ec.custom.sec} package and
+serialized into ASN.1 encoding. During deserialization the different encodings are
+taken account of, including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg. 17).
+
 \begin{figure}[H] \footnotesize
 \caption{GroupElement serialization format}\vspace{-7pt}
 \label{fig:ser:data:groupelement}
@@ -111,13 +117,13 @@ recursive function shown in Figure~\ref{fig:ser:data}.
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
     \multicolumn{4}{l}{\lst{def serialize(}$ge$\lst{)}} \\
-    \multicolumn{4}{l}{~~\lst{if} $ge.isIdentity$ \lst{then}} \\
+    \multicolumn{4}{l}{~~\lst{if} $ge.isInfinity$ \lst{then}} \\
     \hline
-    ~~~~$ $  & \lst{Const} & $ $ &  \\ 
+    ~~~~$bytes$  & \lst{rep(}$0, 33$\lst{)} & $ 33 $ & all bytes = 0 \\ 
     \hline
     \multicolumn{4}{l}{~~\lst{else}} \\
     \hline
-    ~~~~$ $  &  & $ $ &  \\ 
+    ~~~~$bytes$  & Bytes & $33$ & see \lst{sigmastate.serialization.GroupElementSerializer} \\ 
     \hline
     \multicolumn{4}{l}{~~\lst{end if}} \\
     \multicolumn{4}{l}{\lst{end def}} \\
