@@ -135,12 +135,55 @@ taken account of, including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg
 \subsubsection{SigmaProp serialization}
 \label{sec:ser:data:sigmaprop}
 
+In reference implementation values of \lst{SigmaProp} type are serialized using 
+\lst{SigmaBoolean.serializer}
+
 \begin{figure}[H] \footnotesize
 \caption{SigmaProp serialization format}\vspace{-7pt}
 \label{fig:ser:data:sigmaprop}
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
+    \hline
+    \multicolumn{4}{l}{\lst{def serializeSigma(}$sp: SigmaTree$\lst{)}} \\
+    \hline
+    ~~$sp.opCode$  & \lst{Byte} & $1$ & opcode of SigmaTree node\\
+    \hline
+    \multicolumn{4}{l}{~~\lst{match} $sp$} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $dl: ProveDlog$} \\
+        \hline
+        ~~~~~~$dl.value$  & \lst{GroupElement} & $33$ & see \ref{sec:ser:data:groupelement} \\
+        \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $dht: ProveDHTuple$} \\
+        \hline
+        ~~~~~~$dht.gv$  & \lst{GroupElement} & $33$ & see \ref{sec:ser:data:groupelement} \\
+        \hline
+        ~~~~~~$dht.hv$  & \lst{GroupElement} & $33$ &  \\
+        \hline
+        ~~~~~~$dht.uv$  & \lst{GroupElement} & $33$ &  \\    
+        \hline
+        ~~~~~~$dht.vv$  & \lst{GroupElement} & $33$ &  \\
+        \hline
+    \multicolumn{4}{l}{~~~~\lst{with} $and: CAND$} \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$and.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $or: COR$} \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$or.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $th: CTHRESHOLD$} \\
+        \hline
+        ~~~~~~$th.k$       & \lst{VLQ(UShort)} & $1..3$ & $k$ out of $n$ \\
+        \hline
+        ~~~~~~$nChildren$  & \lst{VLQ(UShort)} & $1..3$ & number of children \\
+        \hline
+        \multicolumn{4}{l}{~~~~~~\lst{for}~$i=1$~\lst{to}~$nChildren$~\lst{do}~\lst{serializeSigma(}$th.$\lst{children(}$i$\lst{)) end for}} \\
+    \multicolumn{4}{l}{~~~~\lst{with} $\_: TrivialProp$ \lst{// besides opCode no additional bytes}} \\
+    \multicolumn{4}{l}{~~\lst{end match}} \\
+    \multicolumn{4}{l}{\lst{end def}} \\
     \hline
     \hline
 \end{tabularx}\)
