@@ -1,11 +1,13 @@
 \subsection{Expression Serialization}
 \label{sec:ser:expr}
 
-Expressions of \langname are serialized as tree data structure using
-recursive procedure described here. 
+Expressions of \langname are serialized as tree data structure using recursive
+procedure described in Figure~\ref{fig:ser:expr}. Expression nodes are represented in
+the reference implementation using \lst{Value} class.
 
-\begin{figure}[h]
-\footnotesize
+\begin{figure}[h] \footnotesize
+\caption{\lst{Expr} serialization format}\vspace{-7pt}
+\label{fig:ser:expr}
 \(\begin{tabularx}{\textwidth}{| l | l | l | X |}
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
@@ -15,19 +17,18 @@ recursive procedure described here.
     ~~$e.opCode$  & \lst{Byte} & $1$ & opcode of ErgoTree node, 
     used for selection of an appropriate node serializer from Appendix~\ref{sec:appendix:ergotree_serialization} \\
     \hline
-    \multicolumn{4}{l}{~~\lst{if} $opCode <= LastConstantCode$ \lst{then}} \\
+    \multicolumn{4}{l}{~~\lst{if} $opCode <= $ \lst{LastConstantCode then}} \\
     \hline
-    ~~~~$c$  & \lst{Const} & $[1..\MaxConstSize]$ & Constant serializaton slot \\ 
+    ~~~~$c$  & \lst{Constant} & $[1..\MaxConstSize]$ & Constant serializaton according to~\ref{sec:ser:const} \\ 
     \hline
     \multicolumn{4}{l}{~~\lst{else}} \\
     \hline
-    ~~~~$body$  & Op & $[1..\MaxExprSize]$ & serialization of operation arguments 
+    ~~~~$body$  & \lst{Op} & $[1..\MaxExprSize]$ & serialization of the operation 
     depending on $e.opCode$ as defined in Appendix~\ref{sec:appendix:ergotree_serialization} \\ 
     \hline
     \multicolumn{4}{l}{~~\lst{end if}} \\
     \multicolumn{4}{l}{\lst{end serializeExpr}} \\
     \hline
+    \hline
 \end{tabularx}\)
-\caption{Expression serialization format}
-\label{fig:ser:expr}
 \end{figure}

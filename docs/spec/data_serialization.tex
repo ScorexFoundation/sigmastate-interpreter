@@ -107,7 +107,7 @@ uses the notation from Table~\ref{table:ser:notation}.
 A value of the \lst{GroupElement} type is represented in reference implementation using
 \lst{SecP256K1Point} class of the \lst{org.bouncycastle.math.ec.custom.sec} package and
 serialized into ASN.1 encoding. During deserialization the different encodings are
-taken account of, including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg. 17).
+taken into account including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg. 17).
 
 \begin{figure}[H] \footnotesize
 \caption{GroupElement serialization format}\vspace{-7pt}
@@ -123,7 +123,7 @@ taken account of, including point compression for $F_p$ (see X9.62 sec. 4.2.1 pg
     \hline
     \multicolumn{4}{l}{~~\lst{else}} \\
     \hline
-    ~~~~$bytes$  & Bytes & $33$ & see \lst{sigmastate.serialization.GroupElementSerializer} \\ 
+    ~~~~$bytes$  & Bytes & $33$ & where $bytes(0) \neq 0$, see \lst{sigmastate.serialization.GroupElementSerializer} \\ 
     \hline
     \multicolumn{4}{l}{~~\lst{end if}} \\
     \multicolumn{4}{l}{\lst{end def}} \\
@@ -189,22 +189,11 @@ In reference implementation values of \lst{SigmaProp} type are serialized using
 \end{tabularx}\)
 \end{figure}
 
-\subsubsection{Box serialization}
-\label{sec:ser:data:box}
-
-\begin{figure}[H] \footnotesize
-\caption{Box serialization format}\vspace{-7pt}
-\label{fig:ser:data:box}
-\(\begin{tabularx}{\textwidth}{| l | l | l | X |}
-    \hline
-    \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
-    \hline
-    \hline
-\end{tabularx}\)
-\end{figure}
-
 \subsubsection{AvlTree serialization}
 \label{sec:ser:data:avltree}
+
+In reference implementation values of \lst{AvlTree} type are serialized using 
+\lst{AvlTreeData.serializer}.
 
 \begin{figure}[H] \footnotesize
 \caption{AvlTree serialization format}\vspace{-7pt}
@@ -213,6 +202,27 @@ In reference implementation values of \lst{SigmaProp} type are serialized using
     \hline
     \bf{Slot} & \bf{Format} & \bf{\#bytes} & \bf{Description} \\
     \hline
+    $digest$  & \lst{Bytes} & $DigestSize$ & authenticated tree digest: root hash along with tree height \\    
+    \hline
+    $treeFlags$  & \lst{UByte} & $1$ & 
+        allowed modifications of the tree. 
+        The operation is allowed when bit is set to 1. 
+        bit0 - insert, bit1 - update, bit2 - remove \\
+    \hline
+    $keyLength$  & \lst{VLQ(UInt)} & $[1..5]$ & the length of each key in the tree \\    
+    \hline
+    \multicolumn{4}{l}{\lst{optional}~$valueLength$} \\
+    \hline
+    ~~$tag$ & \lst{Byte} & 1 & 0 - no value; 1 - has value \\
+    \hline
+    \multicolumn{4}{l}{~~\lst{when}~$tag == 1$} \\
+    \hline
+    ~~~~ $valueLength$ & \lst{VLQ(UInt)} & [1, *] & the length of all the values in the tree \\
+    \hline
+    \multicolumn{4}{l}{\lst{end optional}} \\
+    \hline
     \hline
 \end{tabularx}\)
 \end{figure}
+
+
