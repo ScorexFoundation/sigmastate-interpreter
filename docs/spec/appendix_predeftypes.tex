@@ -63,7 +63,9 @@ connectives like \lst{&&},\lst{||} and \lst{THRESHOLD} are used as operations.
 The abstract syntax of sigma propositions is shown in
 Figure~\ref{fig:sigmaprop:tree}.
 
-\begin{figure}[h]
+\begin{figure}[h] \footnotesize
+   \caption{Abstract syntax of sigma propositions}\vspace{-7pt}
+   \label{fig:sigmaprop:tree}
    \centering
    \begin{tabular}{@{}l c l l l} 
       \hline
@@ -72,17 +74,17 @@ Figure~\ref{fig:sigmaprop:tree}.
       $Tree \ni t$	& := 	& \lst{Trivial(b)} 	& \lst{TrivialProp}	& boolean value \lst{b} as sigma proposition  \\
                      & $\mid$	& \lst{Dlog(ge)} 	& \lst{ProveDLog}	& knowledge of discrete logarithm of \lst{ge} \\
                      & $\mid$ & \lst{DHTuple(g,h,u,v)} 	& \lst{ProveDHTuple}	& knowledge of Diffie-Hellman tuple \\
-                     & $\mid$ & \lst{THRESHOLD}$(k,t_1,\dots,t_n)$ 	& \lst{THRESHOLD}	& knowledge of $k$ out of $n$ secrets\\
-                     & $\mid$ & \lst{OR}$(t_1,\dots,t_n)$ 	& \lst{OR}	& knowledge of any one of $n$ secrets\\
-                     & $\mid$ & \lst{AND}$(t_1,\dots,t_n)$ 	& \lst{AND}	& knowledge of all $n$ secrets\\
-      \end{tabular} 
-   \caption{Abstract syntax of sigma propositions}
-   \label{fig:sigmaprop:tree}
+                     & $\mid$ & \lst{THRESHOLD}$(k,t_1,\dots,t_n)$ 	& \lst{CTHRESHOLD}	& knowledge of $k$ out of $n$ secrets\\
+                     & $\mid$ & \lst{OR}$(t_1,\dots,t_n)$ 	& \lst{COR}	& knowledge of any one of $n$ secrets\\
+                     & $\mid$ & \lst{AND}$(t_1,\dots,t_n)$ 	& \lst{CAND}	& knowledge of all $n$ secrets\\
+      \hline
+   \end{tabular} 
 \end{figure}
 
 Every well-formed tree of sigma proposition is a value of type
 \lst{SigmaProp}, thus following the notation of Section~\ref{sec:evaluation}
-we can define denotation of \lst{SigmaProp}
+we can define a denotation of the \lst{SigmaProp} type (i.e. a set of possible values)
+
 $$\Denot{\lst{SigmaProp}} = \Set{t \in Tree}$$
 
 
@@ -90,7 +92,8 @@ The following methods can be called on all instances of \lst{SigmaProp} type.
 
 \input{generated/SigmaProp_methods.tex}
 
-For a list of primitive operations on \lst{SigmaProp} type see Appendix~\ref{sec:appendix:primops}.
+Additionally, for a list of primitive operations on \lst{SigmaProp} type see
+Appendix~\ref{sec:appendix:primops}.
 
 \subsection{Box type}
 \label{sec:type:Box}
