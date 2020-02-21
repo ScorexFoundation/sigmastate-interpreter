@@ -28,13 +28,13 @@ contract deserialization, which is important to resist malicious script attacks.
     \footnotesize
 \(\begin{tabularx}{\textwidth}{| l | p{2.5cm} | X |}
     \hline
-    \bf{Name}   & \bf{Value} & \bf{Description} \\
+    \bf{Constant}   & \bf{Value} & \bf{Description} \\
     \hline
     $\MaxVlqSize$  & $10$ & Maximum size of VLQ encoded byte sequence (See VLQ formats~\ref{sec:vlq-encoding})  \\
     \hline
     $\MaxTypeSize$ & $100$ & Maximum size of serialized type term (see Type format~\ref{sec:ser:type}) \\
     \hline
-    $\MaxDataSize$ & $10Kb$ & Maximum size of serialized data instance (see Data format~\ref{sec:ser:data}) \\
+    $\MaxDataSize$ & $4Kb$ & Maximum size of serialized data instance (see Data format~\ref{sec:ser:data}) \\
     \hline
     $\MaxConstSize$ & $=\MaxTypeSize+\MaxDataSize$  & Maximum size of serialized data instance (see Const format~\ref{sec:ser:const}) \\
     \hline
@@ -88,7 +88,7 @@ shows the number of bytes each format may occupy in the byte stream.
     \hline
     \lst{Type} & $[1..\MaxTypeSize]$ & Serialized type terms of \langname. See~\ref{sec:ser:type} \\
     \hline
-    \lst{Data} & $[1..\MaxDataSize]$ & Serialized \langname values. See~\ref{sec:ser:data} \\
+    \lst{Data} & $[1..\MaxDataSize]$ & Serialized data values of \langname. See~\ref{sec:ser:data} \\
     \hline
     \lst{GroupElement} & $33$ & Serialized elements of eliptic curve group. See~\ref{sec:ser:data:groupelement} \\
     \hline
