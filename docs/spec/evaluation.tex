@@ -1,7 +1,13 @@
-\section{Evaluation Semantics}
+\section{Evaluation}
 \label{sec:evaluation}
 
-  Evaluation of \langname is specified by its translation to \corelang, whose
+In this section we describe evaluation semantics of the \langname language
+and the corresponding reference implementation of the interpreter.
+
+\subsection{Semantics}
+\label{sec:evaluation:semantics}
+
+Evaluation of \langname is specified by its translation to \corelang, whose
 terms form a subset of \langname terms. Thus, typing rules of \corelang form
 a subset of typing rules of \langname.
 
@@ -68,7 +74,8 @@ In summary, the denotational semantics is organized as follows.
 The denotations of types and terms is given in Figure~\ref{fig:denotations}.
 
 \begin{figure}[h]
-
+\caption{Denotational semantics of \corelang}
+\label{fig:denotations}
 The denotations of \corelang types
 
 \begin{center}
@@ -101,7 +108,7 @@ The denotations of \corelang terms
 		& \Apply{ (\Apply{\Denot{M_I}}{\rho}).m }{ \Ov{v_i} }~where~\Ov{v_i = \Apply{\Denot{N_i}}{\rho}} \\	
   \end{array}\)
 \end{center}
-
-\caption{Denotational semantics of \corelang}
-\label{fig:denotations}
 \end{figure}
+
+\subsection{Interpreter}
+\label{sec:evaluation:interpreter}
