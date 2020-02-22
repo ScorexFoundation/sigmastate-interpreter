@@ -4,25 +4,30 @@ import sigmastate._
 import sigmastate.eval.Evaluation._
 import sigmastate.eval.{Zero, Sized}
 import scalan.util.Extensions.ByteOps
-import scalan.util.CollectionUtil
+import scalan.util.{CollectionUtil, FileUtil}
 import scalan.util.PrintExtensions._
 import sigmastate.Values.{FalseLeaf, Constant, TrueLeaf, BlockValue, ConstantPlaceholder, Tuple, ValDef, FunDef, ValUse, ValueCompanion, TaggedVariable, ConcreteCollection, ConcreteCollectionBooleanConstant}
 import sigmastate.lang.SigmaPredef.{PredefinedFuncRegistry, PredefinedFunc}
 import sigmastate.lang.StdSigmaBuilder
-import sigmastate.lang.Terms.{MethodCall, PropertyCall}
+import sigmastate.lang.Terms.{PropertyCall, MethodCall}
 import sigmastate.serialization.OpCodes.OpCode
 import sigmastate.serialization.{ValueSerializer, OpCodes}
 import sigmastate.utxo.{SigmaPropIsProven, SelectField}
 
 object SpecGenUtils {
   val types = SType.allPredefTypes.diff(Seq(SString))
-  val companions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
-  val typesWithMethods = companions ++ Seq(SCollection, SOption)
+  val typeCompanions: Seq[STypeCompanion] = types.collect { case tc: STypeCompanion => tc }
+  val typesWithMethods = typeCompanions ++ Seq(SCollection, SOption)
 }
 
 trait SpecGen {
   import SpecGenUtils._
   val tT = STypeVar("T")
+
+  def saveFile(fileName: String, text: String) = {
+    val fPrimOps = FileUtil.file(fileName)
+    FileUtil.write(fPrimOps, text)
+  }
 
   case class OpInfo(
       opDesc: ValueCompanion,
@@ -135,7 +140,8 @@ trait SpecGen {
     table
   }
   
-  def methodSubsection(typeName: String, m: SMethod) = {
+  def methodSubsection(tc: STypeCompanion, m: SMethod) = {
+    val typeName = tc.typeName
     val argTypes = m.stype.tDom
     val resTpe = m.stype.tRange.toTermString
     val types = argTypes.map(_.toTermString)
@@ -150,11 +156,15 @@ trait SpecGen {
         |  \\hline
        """.stripMargin
     }
+    val tpeParams = m.stype.tpeParams.filterNot(tc.typeParams.contains).opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
+    val sigArgs = argInfos.zip(types).drop(1).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
+    val sig = s"""\\lst{def ${m.name}}$tpeParams$sigArgs: \\lst{$resTpe}"""
     subsectionTempl(
       opName = s"$typeName.${m.name}",
       opCode = s"${m.objType.typeId}.${m.methodId}",
       label  = s"sec:type:$typeName:${m.name}",
       desc = m.docInfo.opt(i => i.description + i.isFrontendOnly.opt(" (FRONTEND ONLY)")),
+      signature = if (sig.length > 100) "\\footnotesize " + sig else sig,
       types = types,
       argInfos = argInfos,
       resTpe = resTpe,
@@ -180,6 +190,7 @@ trait SpecGen {
       opCode = opDesc.map(_.opCode.toUByte.toString).getOrElse("NA"),
       label  = s"sec:appendix:primops:${f.docInfo.opTypeName}",
       desc = f.docInfo.description + f.docInfo.isFrontendOnly.opt(" (FRONTEND ONLY)"),
+      signature = "",
       types = types,
       argInfos = argInfos,
       resTpe = resTpe,
@@ -187,16 +198,16 @@ trait SpecGen {
     )
   }
 
-  def subsectionTempl(opName: String, opCode: String, label: String, desc: String, types: Seq[String], argInfos: Seq[ArgInfo], resTpe: String, serializedAs: String) = {
-    val params = types.opt { ts =>
-      val args = argInfos.zip(ts).filter { case (a, _) => a.name != "this" }
+  def subsectionTempl(opName: String, opCode: String, label: String, desc: String, signature: String, types: Seq[String], argInfos: Seq[ArgInfo], resTpe: String, serializedAs: String) = {
+
+    val params = argInfos.zip(types).filter { case (a, _) => a.name != "this" }.opt { args =>
       s"""
         |  \\hline
         |  \\bf{Parameters} &
-        |      \\(\\begin{array}{l l l}
+        |      \\(\\begin{array}{l l}
         |         ${args.rep({ case (info, t) =>
-        s"\\lst{${info.name}} & \\lst{: $t} & \\text{// ${info.description}} \\\\"
-      }, "\n")}
+                    s"\\lst{${info.name}} & \\text{${info.description}} \\\\"
+                  }, "\n")}
         |      \\end{array}\\) \\\\
        """.stripMargin
     }
@@ -207,9 +218,9 @@ trait SpecGen {
       |\\begin{tabularx}{\\textwidth}{| l | X |}
       |   \\hline
       |   \\bf{Description} & $desc \\\\
+      |   \\hline
+      |   \\bf{Signature} & $signature \\\\
       |  $params
-      |  \\hline
-      |  \\bf{Result} & \\lst{${resTpe}} \\\\
       |  \\hline
       |  $serializedAs
       |\\end{tabularx}
@@ -218,7 +229,7 @@ trait SpecGen {
 
   def printMethods(tc: STypeCompanion) = {
     val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
-      methodSubsection(tc.typeName, m)
+      methodSubsection(tc, m)
     }
     val res = methodSubsections.mkString("\n\n")
     res

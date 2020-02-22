@@ -1,20 +1,16 @@
 package sigmastate.utils
 
-import scalan.util.FileUtil
-
 object GenPredefTypesApp extends SpecGen {
   import SpecGenUtils._
 
   def main(args: Array[String]) = {
-    val table = printTypes(companions)
-    val fPrimOps = FileUtil.file("docs/spec/generated/predeftypes.tex")
-    FileUtil.write(fPrimOps, table)
+    val table = printTypes(typeCompanions)
+    saveFile("docs/spec/generated/predeftypes.tex", table)
 
     for (tc <- typesWithMethods) {
       val typeName = tc.typeName
       val methodsRows = printMethods(tc)
-      val fMethods = FileUtil.file(s"docs/spec/generated/${typeName}_methods.tex")
-      FileUtil.write(fMethods, methodsRows)
+      saveFile(s"docs/spec/generated/${typeName}_methods.tex", methodsRows)
 
       println(s"\\input{generated/${typeName}_methods.tex}")
     }
