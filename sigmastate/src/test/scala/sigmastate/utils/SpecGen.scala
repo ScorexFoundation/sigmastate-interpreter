@@ -233,7 +233,8 @@ trait SpecGen {
   }
 
   def printMethods(tc: STypeCompanion) = {
-    val methodSubsections = for { m <- tc.methods.sortBy(_.methodId) } yield {
+    val nonFrontEndMethods = tc.methods.filter(m => m.docInfo.exists(_.opDesc.isDefined))
+    val methodSubsections = for { m <- nonFrontEndMethods.sortBy(_.methodId)} yield {
       methodSubsection(tc, m)
     }
     val res = methodSubsections.mkString("\n\n")
