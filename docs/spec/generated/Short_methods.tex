@@ -5,18 +5,12 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Byte}, throwing exception if overflow. \\
+   \hline
+   \bf{Signature} & \lst{def toByte}: \lst{Byte} \\
   
   \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Byte} \\
-  \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Downcast]{\lst{Downcast}} \\
   \hline
        
 \end{tabularx}
@@ -29,18 +23,12 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Short}, throwing exception if overflow. \\
+   \hline
+   \bf{Signature} & \lst{def toShort}: \lst{Short} \\
   
   \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Short} \\
-  \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Downcast]{\lst{Downcast}} \\
   \hline
        
 \end{tabularx}
@@ -53,18 +41,12 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Int}, throwing exception if overflow. \\
+   \hline
+   \bf{Signature} & \lst{def toInt}: \lst{Int} \\
   
   \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
-  \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Upcast]{\lst{Upcast}} \\
   \hline
        
 \end{tabularx}
@@ -77,18 +59,12 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{Long}, throwing exception if overflow. \\
+   \hline
+   \bf{Signature} & \lst{def toLong}: \lst{Long} \\
   
   \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Long} \\
-  \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Upcast]{\lst{Upcast}} \\
   \hline
        
 \end{tabularx}
@@ -101,71 +77,12 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts this numeric value to \lst{BigInt} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{BigInt} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Short.toBytes} method (Code 106.6)}
-\label{sec:type:Short:toBytes}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  Returns a big-endian representation of this numeric value in a collection of bytes.
- For example, the \lst{Int} value \lst{0x12131415} would yield the
- collection of bytes \lst{[0x12, 0x13, 0x14, 0x15]}.
-           \\
+   \bf{Signature} & \lst{def toBigInt}: \lst{BigInt} \\
   
   \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
-  \hline
   
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Short.toBits} method (Code 106.7)}
-\label{sec:type:Short:toBits}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  Returns a big-endian representation of this numeric in a collection of Booleans.
-  Each boolean corresponds to one bit.
-           \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Boolean]} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
+  \bf{Serialized as} & \hyperref[sec:serialization:operation:Upcast]{\lst{Upcast}} \\
   \hline
        
 \end{tabularx}

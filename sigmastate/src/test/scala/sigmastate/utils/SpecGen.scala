@@ -143,13 +143,18 @@ trait SpecGen {
   def methodSubsection(tc: STypeCompanion, m: SMethod) = {
     val typeName = tc.typeName
     val argTypes = m.stype.tDom
-    val resTpe = m.stype.tRange.toTermString
+    val resTpe = m.stype.tRange
+    val resTpeStr = resTpe.toTermString
     val types = argTypes.map(_.toTermString)
     val argInfos = m.docInfo.fold(
       Range(0, types.length).map(i => ArgInfo("arg" + i, "")))(info => info.args.toIndexedSeq)
 
+    val castOpt = tc match {
+      case n: sigmastate.SNumericType => SNumericType.getNumericCast(n, m.name, resTpe)
+      case _ => None
+    }
     val serializedAs = m.docInfo.flatMap(_.opDesc).opt { d =>
-      val opName = d.typeName
+      val opName = castOpt.getOrElse(d).typeName
       val opCode = d.opCode.toUByte
       s"""
         |  \\bf{Serialized as} & \\hyperref[sec:serialization:operation:$opName]{\\lst{$opName}} \\\\
@@ -158,7 +163,7 @@ trait SpecGen {
     }
     val tpeParams = m.stype.tpeParams.filterNot(tc.typeParams.contains).opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
     val sigArgs = argInfos.zip(types).drop(1).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
-    val sig = s"""\\lst{def ${m.name}}$tpeParams$sigArgs: \\lst{$resTpe}"""
+    val sig = s"""\\lst{def ${m.name}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
     subsectionTempl(
       opName = s"$typeName.${m.name}",
       opCode = s"${m.objType.typeId}.${m.methodId}",
@@ -167,7 +172,7 @@ trait SpecGen {
       signature = if (sig.length > 100) "\\footnotesize " + sig else sig,
       types = types,
       argInfos = argInfos,
-      resTpe = resTpe,
+      resTpe = resTpeStr,
       serializedAs = serializedAs
       )
   }
