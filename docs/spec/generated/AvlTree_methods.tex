@@ -7,15 +7,9 @@
    \bf{Description} & Returns digest of the state represented by this tree.
  Authenticated tree \lst{digest} = \lst{root hash bytes} ++ \lst{tree height}
          \\
+   \hline
+   \bf{Signature} & \lst{def digest}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -35,15 +29,9 @@
  \lst{isUpdateAllowed == (enabledOperations & 0x02) != 0}\newline
  \lst{isRemoveAllowed == (enabledOperations & 0x04) != 0}
          \\
+   \hline
+   \bf{Signature} & \lst{def enabledOperations}: \lst{Byte} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Byte} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -58,18 +46,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
-         \\
+   \bf{Description} & All the elements under the tree have the same given length of the keys. \\
+   \hline
+   \bf{Signature} & \lst{def keyLength}: \lst{Int} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -84,18 +64,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
-         \\
+   \bf{Description} & If non-empty, all the values under the tree are of the same given length. \\
+   \hline
+   \bf{Signature} & \lst{def valueLengthOpt}: \lst{Option[Int]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Option[Int]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -110,18 +82,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
-         \\
+   \bf{Description} & Checks if Insert operation is allowed for this tree instance. \\
+   \hline
+   \bf{Signature} & \lst{def isInsertAllowed}: \lst{Boolean} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -136,18 +100,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
-         \\
+   \bf{Description} & Checks if Update operation is allowed for this tree instance. \\
+   \hline
+   \bf{Signature} & \lst{def isUpdateAllowed}: \lst{Boolean} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -162,18 +118,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
-         \\
+   \bf{Description} & Checks if Remove operation is allowed for this tree instance. \\
+   \hline
+   \bf{Signature} & \lst{def isRemoveAllowed}: \lst{Boolean} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -188,18 +136,18 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
+   \bf{Description} &  Enable/disable operations of this tree producing a new tree.
+ Since \lst{AvlTree} is immutable, \lst{this} tree instance remains unchanged.
          \\
+   \hline
+   \bf{Signature} & \lst{def updateOperations}(\lst{newOperations}$:$~\lst{Byte}): \lst{AvlTree} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{newOperations} & \text{a new flags which specify available operations on a new tree} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -214,18 +162,22 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
+   \bf{Description} &  Checks if an entry with key \lst{key} exists in this tree using proof \lst{proof}.
 
+ NOTE, does not support multiple keys check, use \lst{getMany} instead.
+ Returns \lst{true} if a leaf with the key \lst{key} exists.
+ Returns \lst{false} if leaf with provided key does not exist.
          \\
+   \hline
+   \bf{Signature} & \lst{def contains}(\lst{key}$:$~\lst{Coll[Byte]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{key} & \text{a key of an element of this authenticated dictionary} \\
+\lst{proof} & \text{proof that they tree with \lst{this.digest} contains the given key} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -240,18 +192,23 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
+   \bf{Description} &  Perform a lookup of key \lst{key} in this tree using \lst{proof}.
+ Throws exception if proof is incorrect.
 
+ NOTE, does not support multiple keys check, use \lst{getMany} instead.
+ Return \lst{Some(bytes)} of leaf with key \lst{key} if it exists
+ Return \lst{None} if leaf with provided key does not exist.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def get}(\lst{key}$:$~\lst{Coll[Byte]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[Coll[Byte]]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{key} & \text{a key of an element of this authenticated dictionary} \\
+\lst{proof} & \text{proof that they tree with \lst{this.digest} contains the given key} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[Coll[Byte]]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -266,18 +223,21 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
+   \bf{Description} &  Perform a lookup of many keys \lst{keys} in this tree using proof \lst{proof}.
 
+ NOTE, keys must be ordered the same way they were in lookup before proof was generated.
+ For each key return \lst{Some(bytes)} of leaf if it exists and \lst{None} if is doesn't.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def getMany}(\lst{keys}$:$~\lst{Coll[Coll[Byte]]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Coll[Option[Coll[Byte]]]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{keys} & \text{keys of elements of this authenticated dictionary} \\
+\lst{proof} & \text{proof that they tree with \lst{this.digest} contains the given key} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Option[Coll[Byte]]]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -292,18 +252,24 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
+   \bf{Description} &  Perform insertions of key-value entries into this authenticated dictionary
+ using proof \lst{proof}.
+ Throws exception if proof is incorrect.
 
+ NOTE, pairs must be ordered the same way they were in insert ops before proof was generated.
+ Returns \lst{Some(newTree)} if successful.
+ Returns \lst{None} if operations were not performed.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def insert}(\lst{operations}$:$~\lst{Coll[(Coll[Byte],Coll[Byte])]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[AvlTree]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{operations} & \text{a collection of key-value pairs inserted in this dictionary} \\
+\lst{proof} & \text{a proof that the key-value pairs were inserted} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[AvlTree]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -318,18 +284,23 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
+   \bf{Description} &  Perform updates of key-value entries into this authenticated dictionary using proof \lst{proof}.
+ Throws exception if proof is incorrect.
 
+ Note, pairs must be ordered the same way they were in update ops before proof was generated.
+ Returns \lst{Some(newTree)} if successful.
+ Returns \lst{None} if operations were not performed.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def update}(\lst{operations}$:$~\lst{Coll[(Coll[Byte],Coll[Byte])]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[AvlTree]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{operations} & \text{a collection of key-value pairs updated in this dictionary} \\
+\lst{proof} & \text{a proof that the key-value pairs were updated} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[AvlTree]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -344,18 +315,22 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
+   \bf{Description} &  Perform removal of entries into this authenticated dictionary using \lst{proof}.
+ Throws exception if the proof is incorrect.
+ Returns \lst{Some(newTree)} if successful.
+ Returns \lst{None} if operations were not performed.
+ NOTE, keys must be ordered the same way they were in remove ops before proof was generated.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def remove}(\lst{operations}$:$~\lst{Coll[Coll[Byte]]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[AvlTree]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{operations} & \text{a collection of key-value pairs removed from this dictionary} \\
+\lst{proof} & \text{a proof that the key-value pairs were removed} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[AvlTree]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -370,18 +345,19 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & 
-
+   \bf{Description} &  Replace digest of this tree producing a new tree.
+ Since AvlTree is immutable, this tree instance remains unchanged.
+ Returns a copy of this AvlTree instance where \lst{this.digest} replaced by \lst{newDigest}.
          \\
+   \hline
+   \bf{Signature} & \lst{def updateDigest}(\lst{newDigest}$:$~\lst{Coll[Byte]}): \lst{AvlTree} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
+      \(\begin{array}{l l}
+         \lst{newDigest} & \text{a new digest} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\

@@ -395,7 +395,7 @@ trait AvlTree {
     * Return `true` if a leaf with the key `key` exists
     * Return `false` if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof  proof that they tree with `this.digest` contains the given key
     */
   def contains(key: Coll[Byte], proof: Coll[Byte]): Boolean
 
@@ -406,7 +406,7 @@ trait AvlTree {
     * Return Some(bytes) of leaf with key `key` if it exists
     * Return None if leaf with provided key does not exist.
     * @param key    a key of an element of this authenticated dictionary.
-    * @param proof
+    * @param proof  proof that they tree with `this.digest` contains the given key
     */
   def get(key: Coll[Byte], proof: Coll[Byte]): Option[Coll[Byte]]
 
@@ -415,7 +415,7 @@ trait AvlTree {
     * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
     * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
     * @param keys    keys of elements of this authenticated dictionary.
-    * @param proof
+    * @param proof   proof that they tree with `this.digest` contains the given key
     */
   def getMany(keys: Coll[Coll[Byte]], proof: Coll[Byte]): Coll[Option[Coll[Byte]]]
 
@@ -425,8 +425,8 @@ trait AvlTree {
     * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
-    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
-    * @param proof
+    * @param operations collection of key-value pairs to insert in this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were inserted
     */
   def insert(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -436,8 +436,8 @@ trait AvlTree {
     * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
     * Return Some(newTree) if successful
     * Return None if operations were not performed.
-    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
-    * @param proof
+    * @param operations collection of key-value pairs to update in this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were updated
     */
   def update(operations: Coll[(Coll[Byte], Coll[Byte])], proof: Coll[Byte]): Option[AvlTree]
 
@@ -447,8 +447,8 @@ trait AvlTree {
     * Return None if operations were not performed.
     *
     * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
-    * @param operations   collection of keys to remove from this authenticated dictionary.
-    * @param proof
+    * @param operations collection of keys to remove from this authenticated dictionary.
+    * @param proof      a proof that the key-value pairs were removed
     */
   def remove(operations: Coll[Coll[Byte]], proof: Coll[Byte]): Option[AvlTree]
 }
