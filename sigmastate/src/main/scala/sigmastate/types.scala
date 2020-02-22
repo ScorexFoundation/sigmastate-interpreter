@@ -520,7 +520,6 @@ trait SNumericType extends SProduct {
       m => m.copy(stype = SigmaTyper.applySubst(m.stype, Map(tNum -> this)).asFunc)
     }
   }
-  def isCastMethod (name: String): Boolean = castMethods.contains(name)
 
   def upcast(i: AnyVal): WrappedType
   def downcast(i: AnyVal): WrappedType
@@ -528,6 +527,9 @@ trait SNumericType extends SProduct {
   /** Returns a type which is larger. */
   @inline def max(that: SNumericType): SNumericType =
     if (this.typeIndex > that.typeIndex) this else that
+
+  /** Returns true if this numeric type is larger than that. */
+  @inline def >(that: SNumericType): Boolean = this.typeIndex > that.typeIndex
 
   /** Number of bytes to store values of this type. */
   @inline private def typeIndex: Int = allNumericTypes.indexOf(this)
@@ -573,13 +575,25 @@ object SNumericType extends STypeCompanion {
     ToShortMethod,  // see Downcast
     ToIntMethod,  // see Downcast
     ToLongMethod,  // see Downcast
-    ToBigIntMethod,  // see Downcast
-    ToBytesMethod,
-    ToBitsMethod
+    ToBigIntMethod  // see Downcast
+// TODO soft-fork: uncomment when implemented
+//    ToBytesMethod,
+//    ToBitsMethod
   )
   val castMethods: Array[String] =
     Array(ToByteMethod, ToShortMethod, ToIntMethod, ToLongMethod, ToBigIntMethod)
       .map(_.name)
+
+  /** Checks the given name is numeric type cast method (like toByte, toInt, etc.).*/
+  def isCastMethod(name: String): Boolean = castMethods.contains(name)
+
+  /** Convert the given method to a cast operation from fromTpe to resTpe. */
+  def getNumericCast(fromTpe: SType, methodName: String, resTpe: SType): Option[NumericCastCompanion] = (fromTpe, resTpe) match {
+    case (from: SNumericType, to: SNumericType) if isCastMethod(methodName) =>
+      val op = if (to > from) Upcast else Downcast
+      Some(op)
+    case _ => None  // the method in not numeric type cast
+  }
 }
 
 trait SLogical extends SType {
@@ -762,13 +776,16 @@ case object SBigInt extends SPrimType with SEmbeddable with SNumericType with SM
   val MultModQMethod = SMethod(this, "multModQ", SFunc(IndexedSeq(this, SBigInt), SBigInt), 4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall, "Multiply this number with \\lst{other} by module Q.", ArgInfo("other", "Number to multiply with this."))
-  protected override def getMethods() = super.getMethods() ++ Seq(
-//    ModQMethod,
-//    PlusModQMethod,
-//    MinusModQMethod,
-    // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
-    // MultModQMethod,
-  )
+  protected override def getMethods() = {
+    val numericMethod = super.getMethods().filter(m => m.name == SNumericType.ToBigIntMethod.name || !SNumericType.isCastMethod(m.name))
+    numericMethod ++ Seq(
+      // TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/479
+      //    ModQMethod,
+      //    PlusModQMethod,
+      //    MinusModQMethod,
+      //    MultModQMethod,
+    )
+  }
 }
 
 /** NOTE: this descriptor both type and type companion */
@@ -1566,6 +1583,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
       .withInfo(MethodCall,
         """ Enable/disable operations of this tree producing a new tree.
           | Since \lst{AvlTree} is immutable, \lst{this} tree instance remains unchanged.
+          | Returns a copy of this AvlTree instance where \lst{this.enabledOperations} replaced by \lst{newOperations}.
         """.stripMargin,
         ArgInfo("newOperations", "a new flags which specify available operations on a new tree")
       )

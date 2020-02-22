@@ -104,7 +104,7 @@ trait CompiletimeCosting extends RuntimeCosting { IR: IRContext =>
         eval(mkSelectField(tuple.asTuple, index))
 
       case Select(obj, method, Some(tRes: SNumericType))
-        if obj.tpe.isNumType && obj.asNumValue.tpe.isCastMethod(method) =>
+        if obj.tpe.isNumType && SNumericType.isCastMethod(method) =>
         val numValue = obj.asNumValue
         if (numValue.tpe == tRes)
           eval(numValue)
