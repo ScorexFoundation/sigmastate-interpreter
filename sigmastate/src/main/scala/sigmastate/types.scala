@@ -2,17 +2,15 @@ package sigmastate
 
 import java.lang.reflect.Method
 import java.math.BigInteger
-import java.util
 
 import org.ergoplatform._
 import org.ergoplatform.validation._
 import scalan.RType
 import scalan.RType.GeneralType
 import sigmastate.SType.{TypeCode, AnyOps}
-import sigmastate.interpreter.{CryptoConstants, ErgoTreeEvaluator}
+import sigmastate.interpreter.{CryptoConstants}
 import sigmastate.utils.Overloading.Overload1
 import scalan.util.Extensions._
-import sigmastate.SBigInt.MaxSizeInBytes
 import sigmastate.Values._
 import sigmastate.lang.Terms._
 import sigmastate.lang.{SigmaBuilder, SigmaTyper}
@@ -25,7 +23,7 @@ import sigmastate.eval.RuntimeCosting
 
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
-import sigmastate.SMethod.{MethodCallIrBuilder, InvokeDescBuilder, javaMethodOf}
+import sigmastate.SMethod.{MethodCallIrBuilder, javaMethodOf, InvokeDescBuilder}
 import sigmastate.utxo.ByIndex
 import sigmastate.utxo.ExtractCreationInfo
 import sigmastate.utxo._
@@ -33,7 +31,6 @@ import special.sigma.{Header, Box, SigmaProp, AvlTree, SigmaDslBuilder, PreHeade
 import sigmastate.lang.SigmaTyper.STypeSubst
 import sigmastate.eval.Evaluation.stypeToRType
 import sigmastate.eval._
-import sigmastate.lang.exceptions.SerializerException
 
 /** Base type for all AST nodes of sigma lang. */
 trait SigmaNode extends Product
@@ -234,6 +231,9 @@ trait STypeCompanion {
       case _ => this.getClass.getSimpleName.replace("$", "")
     }
   }
+
+  /** Type parameters of the generic type like Coll. */
+  def typeParams: Seq[STypeParam]
 
   /** List of methods defined for instances of this type. */
   def methods: Seq[SMethod]
@@ -537,6 +537,7 @@ trait SNumericType extends SProduct {
 object SNumericType extends STypeCompanion {
   final val allNumericTypes = Array(SByte, SShort, SInt, SLong, SBigInt)
   def typeId: TypeCode = 106: Byte
+  override def typeParams: Seq[STypeParam] = Nil
 
   /** Since this object is not used in SMethod instances. */
   override def reprClass: Class[_] = sys.error(s"Shouldn't be called.")
@@ -588,6 +589,7 @@ trait SLogical extends SType {
   * @see `SGenericType`
   */
 trait SMonoType extends SType with STypeCompanion {
+  override def typeParams: Seq[STypeParam] = Nil
   protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
@@ -884,7 +886,7 @@ case class SOption[ElemType <: SType](elemType: ElemType) extends SProduct with 
   override def toString = s"Option[$elemType]"
   override def toTermString: String = s"Option[${elemType.toTermString}]"
 
-  val typeParams: Seq[STypeParam] = Seq(STypeParam(tT))
+  val typeParams: Seq[STypeParam] = SOption.typeParams
   def tparamSubst: Map[STypeVar, SType] = Map(tT -> elemType)
 }
 
@@ -894,7 +896,13 @@ object SOption extends STypeCompanion {
   val OptionCollectionTypeConstrId = 4
   val OptionCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * OptionCollectionTypeConstrId).toByte
 
+  val tT = STypeVar("T")
+  val tR = STypeVar("R")
+  val ThisType = SOption(tT)
+
   override def typeId = OptionTypeCode
+  override val typeParams: Seq[STypeParam] = Array(STypeParam(tT))
+
   override def coster: Option[CosterFactory] = Some(Coster(_.OptionCoster))
   override val reprClass: Class[_] = classOf[Option[_]]
 
@@ -926,10 +934,6 @@ object SOption extends STypeCompanion {
   val Get = "get"
   val GetOrElse = "getOrElse"
   val Fold = "fold"
-
-  val tT = STypeVar("T")
-  val tR = STypeVar("R")
-  val ThisType = SOption(tT)
 
   val IsDefinedMethod = SMethod(this, IsDefined, SFunc(ThisType, SBoolean), 2)
       .withInfo(OptionIsDefined,
@@ -1003,7 +1007,7 @@ case class SCollectionType[T <: SType](elemType: T) extends SCollection[T] {
     implicit val sT = Sized.typeToSized(Evaluation.stypeToRType(elemType))
     Sized.sizeOf(coll).dataSize
   }
-  def typeParams: Seq[STypeParam] = SCollectionType.typeParams
+  def typeParams: Seq[STypeParam] = SCollection.typeParams
   def tparamSubst: Map[STypeVar, SType] = Map(tIV -> elemType)
   protected override def getMethods() = super.getMethods() ++ SCollection.methods
   override def toString = s"Coll[$elemType]"
@@ -1015,7 +1019,6 @@ object SCollectionType {
   val CollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * CollectionTypeConstrId).toByte
   val NestedCollectionTypeConstrId = 2
   val NestedCollectionTypeCode: TypeCode = ((SPrimType.MaxPrimTypeCode + 1) * NestedCollectionTypeConstrId).toByte
-  val typeParams = Seq(STypeParam(tIV.name))
 }
 
 object SCollection extends STypeCompanion with MethodByNameUnapply {
@@ -1025,6 +1028,8 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val tIV = STypeVar("IV")
   val paramIV = STypeParam(tIV)
+  override val typeParams = Seq(paramIV)
+
   val tOV = STypeVar("OV")
   val paramOV = STypeParam(tOV)
   val tK = STypeVar("K")
@@ -1341,7 +1346,7 @@ object STuple extends STypeCompanion {
   val TupleTypeCode = ((SPrimType.MaxPrimTypeCode + 1) * 8).toByte
 
   def typeId = TupleTypeCode
-
+  override val typeParams = Nil
   override val reprClass: Class[_] = classOf[Product2[_,_]]
 
   lazy val colMethods = {
@@ -1424,7 +1429,7 @@ case class STypeVar(name: String) extends SType {
 }
 object STypeVar {
   val TypeCode: TypeCode = 103: Byte
-  implicit def liftString(n: String): STypeVar = STypeVar(n)
+  implicit def stringToTypeVar(n: String): STypeVar = STypeVar(n)
 }
 
 case object SBox extends SProduct with SPredefType with SMonoType {
@@ -1529,152 +1534,139 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
          | \lst{isUpdateAllowed == (enabledOperations & 0x02) != 0}\newline
          | \lst{isRemoveAllowed == (enabledOperations & 0x04) != 0}
         """.stripMargin)
+
   val keyLengthMethod         = SMethod(this, "keyLength", SFunc(this, SInt),               3)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-    """
-     |
-        """.stripMargin)
+        """All the elements under the tree have the same given length of the keys.""".stripMargin)
+
   val valueLengthOptMethod    = SMethod(this, "valueLengthOpt", SFunc(this, SIntOption),    4)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """If non-empty, all the values under the tree are of the same given length.""".stripMargin)
+
   val isInsertAllowedMethod   = SMethod(this, "isInsertAllowed", SFunc(this, SBoolean),     5)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Insert operation is allowed for this tree instance.""".stripMargin)
+
   val isUpdateAllowedMethod   = SMethod(this, "isUpdateAllowed", SFunc(this, SBoolean),     6)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Update operation is allowed for this tree instance.""".stripMargin)
+
   val isRemoveAllowedMethod   = SMethod(this, "isRemoveAllowed", SFunc(this, SBoolean),     7)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(PropertyCall,
-        """
-         |
-        """.stripMargin)
+        """Checks if Remove operation is allowed for this tree instance.""".stripMargin)
 
   val updateOperationsMethod  = SMethod(this, "updateOperations",
     SFunc(IndexedSeq(SAvlTree, SByte), SAvlTree),                 8)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |
-        """.stripMargin)
+        """ Enable/disable operations of this tree producing a new tree.
+          | Since \lst{AvlTree} is immutable, \lst{this} tree instance remains unchanged.
+        """.stripMargin,
+        ArgInfo("newOperations", "a new flags which specify available operations on a new tree")
+      )
 
   val containsMethod          = SMethod(this, "contains",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SBoolean),             9)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |   /** Checks if an entry with key `key` exists in this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |
-         |    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
-         |    * Return `true` if a leaf with the key `key` exists
-         |    * Return `false` if leaf with provided key does not exist.
-         |    * @param key    a key of an element of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Checks if an entry with key \lst{key} exists in this tree using proof \lst{proof}.
+          |
+          | NOTE, does not support multiple keys check, use \lst{getMany} instead.
+          | Returns \lst{true} if a leaf with the key \lst{key} exists.
+          | Returns \lst{false} if leaf with provided key does not exist.
+        """.stripMargin,
+        ArgInfo("key", "a key of an element of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val getMethod               = SMethod(this, "get",
     SFunc(IndexedSeq(SAvlTree, SByteArray, SByteArray), SByteArrayOption),     10)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform a lookup of key `key` in this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Does not support multiple keys check, use [[getMany]] instead.
-         |    * Return Some(bytes) of leaf with key `key` if it exists
-         |    * Return None if leaf with provided key does not exist.
-         |    * @param key    a key of an element of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform a lookup of key \lst{key} in this tree using \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | NOTE, does not support multiple keys check, use \lst{getMany} instead.
+          | Return \lst{Some(bytes)} of leaf with key \lst{key} if it exists
+          | Return \lst{None} if leaf with provided key does not exist.
+        """.stripMargin,
+        ArgInfo("key", "a key of an element of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val getManyMethod           = SMethod(this, "getMany",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), TCollOptionCollByte), 11)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform a lookup of many keys `keys` in this tree using proof `proof`.
-         |    *
-         |    * @note CAUTION! Keys must be ordered the same way they were in lookup before proof was generated.
-         |    * For each key return Some(bytes) of leaf if it exists and None if is doesn't.
-         |    * @param keys    keys of elements of this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform a lookup of many keys \lst{keys} in this tree using proof \lst{proof}.
+          |
+          | NOTE, keys must be ordered the same way they were in lookup before proof was generated.
+          | For each key return \lst{Some(bytes)} of leaf if it exists and \lst{None} if is doesn't.
+        """.stripMargin,
+        ArgInfo("keys", "keys of elements of this authenticated dictionary"),
+        ArgInfo("proof", "proof that they tree with \\lst{this.digest} contains the given key")
+      )
 
   val insertMethod            = SMethod(this, "insert",
     SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     12)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform insertions of key-value entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Pairs must be ordered the same way they were in insert ops before proof was generated.
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    * @param operations   collection of key-value pairs to insert in this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform insertions of key-value entries into this authenticated dictionary
+          | using proof \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | NOTE, pairs must be ordered the same way they were in insert ops before proof was generated.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs inserted in this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were inserted")
+      )
 
   val updateMethod            = SMethod(this, "update",
     SFunc(IndexedSeq(SAvlTree, CollKeyValue, SByteArray), SAvlTreeOption),     13)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform updates of key-value entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    *
-         |    * @note CAUTION! Pairs must be ordered the same way they were in update ops before proof was generated.
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    * @param operations   collection of key-value pairs to update in this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform updates of key-value entries into this authenticated dictionary using proof \lst{proof}.
+          | Throws exception if proof is incorrect.
+          |
+          | Note, pairs must be ordered the same way they were in update ops before proof was generated.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs updated in this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were updated")
+      )
 
   val removeMethod            = SMethod(this, "remove",
     SFunc(IndexedSeq(SAvlTree, SByteArray2, SByteArray), SAvlTreeOption),      14)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |  /** Perform removal of entries into this tree using proof `proof`.
-         |    * Throws exception if proof is incorrect
-         |    * Return Some(newTree) if successful
-         |    * Return None if operations were not performed.
-         |    *
-         |    * @note CAUTION! Keys must be ordered the same way they were in remove ops before proof was generated.
-         |    * @param operations   collection of keys to remove from this authenticated dictionary.
-         |    * @param proof
-         |    */
-         |
-        """.stripMargin)
+        """ Perform removal of entries into this authenticated dictionary using \lst{proof}.
+          | Throws exception if the proof is incorrect.
+          | Returns \lst{Some(newTree)} if successful.
+          | Returns \lst{None} if operations were not performed.
+          | NOTE, keys must be ordered the same way they were in remove ops before proof was generated.
+        """.stripMargin,
+        ArgInfo("operations", "a collection of key-value pairs removed from this dictionary"),
+        ArgInfo("proof", "a proof that the key-value pairs were removed")
+      )
 
   val updateDigestMethod  = SMethod(this, "updateDigest",
     SFunc(IndexedSeq(SAvlTree, SByteArray), SAvlTree),                       15)
       .withIRInfo(MethodCallIrBuilder)
       .withInfo(MethodCall,
-        """
-         |
-        """.stripMargin)
+        """ Replace digest of this tree producing a new tree.
+          | Since AvlTree is immutable, this tree instance remains unchanged.
+          | Returns a copy of this AvlTree instance where \lst{this.digest} replaced by \lst{newDigest}.
+        """.stripMargin,
+        ArgInfo("newDigest", "a new digest"),
+      )
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(
     digestMethod,
