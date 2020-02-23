@@ -261,10 +261,9 @@ object Operations {
   }
 
   object ExtractRegisterAsInfo extends InfoObject {
-    private val method = SMethod.fromIds(99, 7)
+    private val method = SMethod.fromIds(99, 9)
     val thisArg: ArgInfo = method.argInfo("this")
-    val regIdArg: ArgInfo = method.argInfo("regId")
-    val argInfos: Seq[ArgInfo] = Array(thisArg, regIdArg)
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
   object ExtractScriptBytesInfo extends InfoObject {
@@ -321,12 +320,24 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
+  object HeightInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 6)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
+  }
+
   object IfInfo extends InfoObject {
     private val func = predefinedOps.specialFuncs("if")
     val conditionArg: ArgInfo = func.argInfo("condition")
     val trueBranchArg: ArgInfo = func.argInfo("trueBranch")
     val falseBranchArg: ArgInfo = func.argInfo("falseBranch")
     val argInfos: Seq[ArgInfo] = Array(conditionArg, trueBranchArg, falseBranchArg)
+  }
+
+  object InputsInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 4)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
   object LEInfo extends InfoObject {
@@ -341,6 +352,12 @@ object Operations {
     val leftArg: ArgInfo = func.argInfo("left")
     val rightArg: ArgInfo = func.argInfo("right")
     val argInfos: Seq[ArgInfo] = Array(leftArg, rightArg)
+  }
+
+  object LastBlockUtxoRootHashInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 9)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
   object LogicalNotInfo extends InfoObject {
@@ -374,6 +391,12 @@ object Operations {
     val leftArg: ArgInfo = func.argInfo("left")
     val rightArg: ArgInfo = func.argInfo("right")
     val argInfos: Seq[ArgInfo] = Array(leftArg, rightArg)
+  }
+
+  object MinerPubkeyInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 10)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
   object MinusInfo extends InfoObject {
@@ -442,6 +465,12 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
+  object OutputsInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 5)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
+  }
+
   object PlusInfo extends InfoObject {
     private val func = predefinedOps.funcs("+")
     val leftArg: ArgInfo = func.argInfo("left")
@@ -454,6 +483,12 @@ object Operations {
     val inputArg: ArgInfo = func.argInfo("input")
     val fieldIndexArg: ArgInfo = func.argInfo("fieldIndex")
     val argInfos: Seq[ArgInfo] = Array(inputArg, fieldIndexArg)
+  }
+
+  object SelfInfo extends InfoObject {
+    private val method = SMethod.fromIds(101, 7)
+    val thisArg: ArgInfo = method.argInfo("this")
+    val argInfos: Seq[ArgInfo] = Array(thisArg)
   }
 
   object SigmaAndInfo extends InfoObject {

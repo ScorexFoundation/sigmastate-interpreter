@@ -93,14 +93,14 @@ trait SpecGen {
 
   def getOpInfo(opDesc: ValueCompanion, optM: Option[SMethod], optF: Option[PredefinedFunc]): OpInfo = {
     (optM, optF) match {
-      case (Some(m), _) =>
-        val description = m.docInfo.map(i => i.description).opt()
-        val args = m.docInfo.map(i => i.args).getOrElse(Seq())
-        OpInfo(opDesc, description, args, Right(m))
       case (_, Some(f)) =>
         val description = f.docInfo.description
         val args = f.docInfo.args
         OpInfo(opDesc, description, args, Left(f))
+      case (Some(m), _) =>
+        val description = m.docInfo.map(i => i.description).opt()
+        val args = m.docInfo.map(i => i.args).getOrElse(Seq())
+        OpInfo(opDesc, description, args, Right(m))
       case p => sys.error(s"Unexpected $opDesc with $p")
     }
   }
