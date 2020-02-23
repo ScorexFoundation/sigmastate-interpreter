@@ -265,7 +265,7 @@ trait Box {
   /** Blake2b256 hash of this box's content, basically equals to `blake2b256(bytes)` */
   def id: Coll[Byte]
 
-  /** Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)*/
+  /** Monetary value in NanoERGs stored in this box. */
   def value: Long
 
   /** Serialized bytes of guarding script, which should be evaluated to true in order to

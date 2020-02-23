@@ -1489,10 +1489,10 @@ case object SBox extends SProduct with SPredefType with SMonoType {
         """ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
          | is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
          | identifier followed by box index in the transaction outputs.
-        """.stripMargin ) // see ExtractCreationInfo
+        """.stripMargin)
 
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
-      .withInfo(ExtractRegisterAs,
+      .withInfo(// note, frontend only
         """ Extracts register by id and type.
          | Type param \lst{T} expected type of the register.
          | Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
@@ -1504,18 +1504,22 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       .withInfo(PropertyCall, "Secondary tokens")
 
   // should be lazy to solve recursive initialization
-  protected override def getMethods() = super.getMethods() ++ Vector(
+  protected override def getMethods() = super.getMethods() ++ Array(
     SMethod(this, Value, SFunc(SBox, SLong), 1)
-        .withInfo(ExtractAmount, "Mandatory: Monetary value, in Ergo tokens (NanoErg unit of measure)"), // see ExtractAmount
+        .withInfo(ExtractAmount, "Monetary value in NanoERGs stored in this box."),
     SMethod(this, PropositionBytes, SFunc(SBox, SByteArray), 2)
-        .withInfo(ExtractScriptBytes, "Serialized bytes of guarding script, which should be evaluated to true in order to\n" +
-            " open this box. (aka spend it in a transaction)"), // see ExtractScriptBytes
+        .withInfo(ExtractScriptBytes,
+          "Serialized bytes of the guarding script which should be evaluated to true in order to\n" +
+          " open this box (spend it in a transaction)."),
     SMethod(this, Bytes, SFunc(SBox, SByteArray), 3)
-        .withInfo(ExtractBytes, "Serialized bytes of this box's content, including proposition bytes."), // see ExtractBytes
+        .withInfo(ExtractBytes,
+          "Serialized bytes of this box's content, including proposition bytes."),
     SMethod(this, BytesWithoutRef, SFunc(SBox, SByteArray), 4)
-        .withInfo(ExtractBytesWithNoRef, "Serialized bytes of this box's content, excluding transactionId and index of output."), // see ExtractBytesWithNoRef
+        .withInfo(ExtractBytesWithNoRef,
+          "Serialized bytes of this box's content, excluding transactionId and index of output."),
     SMethod(this, Id, SFunc(SBox, SByteArray), 5)
-        .withInfo(ExtractId, "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"), // see ExtractId
+        .withInfo(ExtractId,
+          "Blake2b256 hash of this box's content, basically equals to \\lst{blake2b256(bytes)}"),
     creationInfoMethod,
     getRegMethod,
     tokensMethod
