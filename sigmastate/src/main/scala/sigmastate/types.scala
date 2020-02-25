@@ -976,7 +976,7 @@ object SOption extends STypeCompanion {
   lazy val GetOrElseMethod = SMethod(this, GetOrElse, SFunc(IndexedSeq(ThisType, tT), tT, Seq(tT)), 4)
       .withInfo(OptionGetOrElse,
         """Returns the option's value if the option is nonempty, otherwise
-         |return the result of evaluating \lst{default}.
+         |returns \lst{default}.
         """.stripMargin, ArgInfo("default", "the default value"))
 
   val FoldMethod      = SMethod(this, Fold, SFunc(IndexedSeq(ThisType, tR, SFunc(tT, tR)), tR, Seq(tT, tR)), 5)
@@ -1180,20 +1180,50 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val PatchMethod = SMethod(this, "patch",
     SFunc(IndexedSeq(ThisType, SInt, ThisType, SInt), ThisType, Seq(paramIV)), 19)
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """Produces a new collection where a slice of elements in this collection is replaced
+         |by another collection. Returns a new collection consisting of all elements of this
+         |collection except that \lst{replaced} elements starting from \lst{from} are
+         |replaced by \lst{patch}.""".stripMargin,
+        ArgInfo("from", "the index of the first replaced element"),
+        ArgInfo("patch", "the replacement sequence"),
+        ArgInfo("replaced", "the number of elements to drop in the original collection"),
+      )
 
   val UpdatedMethod = SMethod(this, "updated",
     SFunc(IndexedSeq(ThisType, SInt, tIV), ThisType, Seq(paramIV)), 20)
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Int, Any]("updated"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """A copy of this collection with one single replaced element.
+          |Returns a new collection which is a copy of this collection with the element
+          |at position \lst{index} replaced by \lst{elem}.
+          |Throws IndexOutOfBoundsException if \lst{index} does not satisfy \lst{0 <= index < length}.
+          |""".stripMargin,
+        ArgInfo("index", "the position of the replacement"),
+        ArgInfo("elem", "the replacing element")
+      )
 
   val UpdateManyMethod = SMethod(this, "updateMany",
     SFunc(IndexedSeq(ThisType, SCollection(SInt), ThisType), ThisType, Seq(paramIV)), 21)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        "Returns a copy of this collection where elements at \\lst{indexes} are replaced with \\lst{values}.",
+        ArgInfo("indexes", "the positions of the replacement"),
+        ArgInfo("values", "the values to be put in the corresponding position"),
+      )
 
   val UnionSetsMethod = SMethod(this, "unionSets",
     SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 22)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        """Produces a new collection which contains all distinct elements of this
+         |collection and also all elements of a given collection that are not in this
+         |collection. This is order preserving operation considering only first
+         |occurrences of each distinct elements.
+         |Any collection \lst{xs} can be transformed to a sequence with distinct elements
+         |by using \lst{xs.unionSet(Coll())}.
+         |NOTE: Use append if you don't need set semantics.
+         |""".stripMargin,
+        ArgInfo("that", "the collection to add")
+      )
 
   val DiffMethod = SMethod(this, "diff",
     SFunc(IndexedSeq(ThisType, ThisType), ThisType, Seq(paramIV)), 23)
@@ -1209,7 +1239,15 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val IndexOfMethod = SMethod(this, "indexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 26)
       .withIRInfo(MethodCallIrBuilder, javaMethodOf[Coll[_], Any, Int]("indexOf"))
-      .withInfo(MethodCall, "")
+      .withInfo(MethodCall,
+        """Finds index of first occurrence of some value in this collection after or
+         |at some start index.
+         |Returns an index \lst{>= from} of the first element of this collection that
+         |is equal (as determined by \lst{==}) to \lst{elem}, or \lst{-1}, if none exists.
+         |""".stripMargin,
+        ArgInfo("elem", "the element value to search for"),
+        ArgInfo("from", "the start index")
+      )
 
   val LastIndexOfMethod = SMethod(this, "lastIndexOf",
     SFunc(IndexedSeq(ThisType, tIV, SInt), SInt, Seq(paramIV)), 27)
@@ -1222,7 +1260,12 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
 
   val ZipMethod = SMethod(this, "zip",
     SFunc(IndexedSeq(ThisType, tOVColl), SCollection(STuple(tIV, tOV)), Seq(tIV, tOV)), 29)
-      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall, "")
+      .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
+        """For this collection $(x_0, \dots, x_N)$ and other collection $(y_0, \dots, y_M)$
+         |produces a collection $((x_0, y_0), \dots, (x_K, y_K))$ where $K = min(N, M)$.
+         |""".stripMargin,
+        ArgInfo("ys", "other collection")
+      )
 
   val DistinctMethod = SMethod(this, "distinct",
     SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)

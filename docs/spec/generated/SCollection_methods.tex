@@ -312,10 +312,21 @@ holds for all elements of this collection, otherwise \lst{false}.
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Produces a new collection where a slice of elements in this collection is replaced
+by another collection. Returns a new collection consisting of all elements of this
+collection except that \lst{replaced} elements starting from \lst{from} are
+replaced by \lst{patch}. \\
    \hline
-   \bf{Signature} & \lst{def patch}: \lst{Coll[IV]} \\
+   \bf{Signature} & \footnotesize \lst{def patch}(\lst{from}$:$~\lst{Int}, \lst{patch}$:$~\lst{Coll[IV]}, \lst{replaced}$:$~\lst{Int}): \lst{Coll[IV]} \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l}
+         \lst{from} & \text{the index of the first replaced element} \\
+\lst{patch} & \text{the replacement sequence} \\
+\lst{replaced} & \text{the number of elements to drop in the original collection} \\
+      \end{array}\) \\
+       
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -330,10 +341,21 @@ holds for all elements of this collection, otherwise \lst{false}.
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A copy of this collection with one single replaced element.
+Returns a new collection which is a copy of this collection with the element
+at position \lst{index} replaced by \lst{elem}.
+Throws IndexOutOfBoundsException if \lst{index} does not satisfy \lst{0 <= index < length}.
+ \\
    \hline
-   \bf{Signature} & \lst{def updated}: \lst{Coll[IV]} \\
+   \bf{Signature} & \lst{def updated}(\lst{index}$:$~\lst{Int}, \lst{elem}$:$~\lst{IV}): \lst{Coll[IV]} \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l}
+         \lst{index} & \text{the position of the replacement} \\
+\lst{elem} & \text{the replacing element} \\
+      \end{array}\) \\
+       
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -348,10 +370,17 @@ holds for all elements of this collection, otherwise \lst{false}.
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Returns a copy of this collection where elements at \lst{indexes} are replaced with \lst{values}. \\
    \hline
-   \bf{Signature} & \lst{def updateMany}: \lst{Coll[IV]} \\
+   \bf{Signature} & \footnotesize \lst{def updateMany}(\lst{indexes}$:$~\lst{Coll[Int]}, \lst{values}$:$~\lst{Coll[IV]}): \lst{Coll[IV]} \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l}
+         \lst{indexes} & \text{the positions of the replacement} \\
+\lst{values} & \text{the values to be put in the corresponding position} \\
+      \end{array}\) \\
+       
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -366,10 +395,21 @@ holds for all elements of this collection, otherwise \lst{false}.
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Finds index of first occurrence of some value in this collection after or
+at some start index.
+Returns an index \lst{>= from} of the first element of this collection that
+is equal (as determined by \lst{==}) to \lst{elem}, or \lst{-1}, if none exists.
+ \\
    \hline
-   \bf{Signature} & \lst{def indexOf}: \lst{Int} \\
+   \bf{Signature} & \lst{def indexOf}(\lst{elem}$:$~\lst{IV}, \lst{from}$:$~\lst{Int}): \lst{Int} \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l}
+         \lst{elem} & \text{the element value to search for} \\
+\lst{from} & \text{the start index} \\
+      \end{array}\) \\
+       
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -384,10 +424,18 @@ holds for all elements of this collection, otherwise \lst{false}.
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & For this collection $(x_0, \dots, x_N)$ and other collection $(y_0, \dots, y_M)$
+produces a collection $((x_0, y_0), \dots, (x_K, y_K))$ where $K = min(N, M)$.
+ \\
    \hline
-   \bf{Signature} & \lst{def zip}$[$\lst{OV}$]$: \lst{Coll[(IV,OV)]} \\
+   \bf{Signature} & \lst{def zip}$[$\lst{OV}$]$(\lst{ys}$:$~\lst{Coll[OV]}): \lst{Coll[(IV,OV)]} \\
   
+  \hline
+  \bf{Parameters} &
+      \(\begin{array}{l l}
+         \lst{ys} & \text{other collection} \\
+      \end{array}\) \\
+       
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
