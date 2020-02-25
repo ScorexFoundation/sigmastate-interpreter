@@ -96,8 +96,8 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
- is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
- identifier followed by box index in the transaction outputs.
+ is a height of the tx's block. The \lst{creationInfo._2} is a serialized bytes of the transaction
+ identifier followed by the serialized bytes of the box index in the transaction outputs.
          \\
    \hline
    \bf{Signature} & \lst{def creationInfo}: \lst{(Int,Coll[Byte])} \\
@@ -123,78 +123,6 @@
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Box.R0} method (Code 99.9)}
-\label{sec:type:Box:R0}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Monetary value, in Ergo tokens \\
-   \hline
-   \bf{Signature} & \lst{def R0}$[$\lst{T}$]$: \lst{Option[T]} \\
-  
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Box.R1} method (Code 99.10)}
-\label{sec:type:Box:R1}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Guarding script \\
-   \hline
-   \bf{Signature} & \lst{def R1}$[$\lst{T}$]$: \lst{Option[T]} \\
-  
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Box.R2} method (Code 99.11)}
-\label{sec:type:Box:R2}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Secondary tokens \\
-   \hline
-   \bf{Signature} & \lst{def R2}$[$\lst{T}$]$: \lst{Option[T]} \\
-  
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
-  \hline
-       
-\end{tabularx}
-
-
-
-\subsubsection{\lst{Box.R3} method (Code 99.12)}
-\label{sec:type:Box:R3}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Reference to transaction and output id where the box was created \\
-   \hline
-   \bf{Signature} & \lst{def R3}$[$\lst{T}$]$: \lst{Option[T]} \\
-  
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ExtractRegisterAs]{\lst{ExtractRegisterAs}} \\
   \hline
        
 \end{tabularx}

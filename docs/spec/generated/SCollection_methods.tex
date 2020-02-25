@@ -5,15 +5,9 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & The size of the collection in elements. \\
+   \hline
+   \bf{Signature} & \lst{def size}: \lst{Int} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SizeOf]{\lst{SizeOf}} \\
@@ -29,16 +23,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Return the element of collection if \lst{index} is in range \lst{0 .. size-1} \\
+   \hline
+   \bf{Signature} & \lst{def getOrElse}(\lst{index}$:$~\lst{Int}, \lst{default}$:$~\lst{IV}): \lst{IV} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{index} & \lst{: Int} & \text{// index of the element of this collection} \\
-\lst{default} & \lst{: IV} & \text{// value to return when \lst{index} is out of range} \\
+      \(\begin{array}{l l}
+         \lst{index} & \text{index of the element of this collection} \\
+\lst{default} & \text{value to return when \lst{index} is out of range} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{IV} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
@@ -57,15 +51,15 @@
  Returns a new collection of type \lst{Coll[B]} resulting from applying the given function
  \lst{f} to each element of this collection and collecting the results.
          \\
+   \hline
+   \bf{Signature} & \lst{def map}$[$\lst{OV}$]$(\lst{f}$:$~\lst{(IV) => OV}): \lst{Coll[OV]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{f} & \lst{: (IV) => OV} & \text{// the function to apply to each element} \\
+      \(\begin{array}{l l}
+         \lst{f} & \text{the function to apply to each element} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[OV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MapCollection]{\lst{MapCollection}} \\
@@ -83,15 +77,15 @@
    \bf{Description} & Tests whether a predicate holds for at least one element of this collection.
 Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one element of this collection, otherwise \lst{false}
          \\
+   \hline
+   \bf{Signature} & \lst{def exists}(\lst{p}$:$~\lst{(IV) => Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
+      \(\begin{array}{l l}
+         \lst{p} & \text{the predicate used to test elements} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Exists]{\lst{Exists}} \\
@@ -107,16 +101,16 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Applies a binary operator to a start value and all elements of this collection, going left to right. \\
+   \hline
+   \bf{Signature} & \lst{def fold}$[$\lst{OV}$]$(\lst{zero}$:$~\lst{OV}, \lst{op}$:$~\lst{(OV,IV) => OV}): \lst{OV} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{zero} & \lst{: OV} & \text{// a starting value} \\
-\lst{op} & \lst{: (OV,IV) => OV} & \text{// the binary operator} \\
+      \(\begin{array}{l l}
+         \lst{zero} & \text{a starting value} \\
+\lst{op} & \text{the binary operator} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{OV} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Fold]{\lst{Fold}} \\
@@ -135,15 +129,15 @@ Returns \lst{true} if the given predicate \lst{p} is satisfied by at least one e
 Returns \lst{true} if this collection is empty or the given predicate \lst{p}
 holds for all elements of this collection, otherwise \lst{false}.
          \\
+   \hline
+   \bf{Signature} & \lst{def forall}(\lst{p}$:$~\lst{(IV) => Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements} \\
+      \(\begin{array}{l l}
+         \lst{p} & \text{the predicate used to test elements} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ForAll]{\lst{ForAll}} \\
@@ -164,16 +158,16 @@ holds for all elements of this collection, otherwise \lst{false}.
      from <= indexOf(x) < until
   }
          \\
+   \hline
+   \bf{Signature} & \lst{def slice}(\lst{from}$:$~\lst{Int}, \lst{until}$:$~\lst{Int}): \lst{Coll[IV]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{from} & \lst{: Int} & \text{// the lowest index to include from this collection} \\
-\lst{until} & \lst{: Int} & \text{// the lowest index to EXCLUDE from this collection} \\
+      \(\begin{array}{l l}
+         \lst{from} & \text{the lowest index to include from this collection} \\
+\lst{until} & \text{the lowest index to EXCLUDE from this collection} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Slice]{\lst{Slice}} \\
@@ -192,15 +186,15 @@ holds for all elements of this collection, otherwise \lst{false}.
  Returns  a new collection consisting of all elements of this collection that satisfy the given
  predicate \lst{p}. The order of the elements is preserved.
          \\
+   \hline
+   \bf{Signature} & \lst{def filter}(\lst{p}$:$~\lst{(IV) => Boolean}): \lst{Coll[IV]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (IV) => Boolean} & \text{// the predicate used to test elements.} \\
+      \(\begin{array}{l l}
+         \lst{p} & \text{the predicate used to test elements.} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Filter]{\lst{Filter}} \\
@@ -216,15 +210,15 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Puts the elements of other collection after the elements of this collection (concatenation of 2 collections) \\
+   \hline
+   \bf{Signature} & \lst{def append}(\lst{other}$:$~\lst{Coll[IV]}): \lst{Coll[IV]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{other} & \lst{: Coll[IV]} & \text{// the collection to append at the end of this} \\
+      \(\begin{array}{l l}
+         \lst{other} & \text{the collection to append at the end of this} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Append]{\lst{Append}} \\
@@ -245,15 +239,15 @@ holds for all elements of this collection, otherwise \lst{false}.
  Returns the element at the given index.
  Throws an exception if \lst{i < 0} or \lst{length <= i}
          \\
+   \hline
+   \bf{Signature} & \lst{def apply}(\lst{i}$:$~\lst{Int}): \lst{IV} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{i} & \lst{: Int} & \text{// the index} \\
+      \(\begin{array}{l l}
+         \lst{i} & \text{the index} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{IV} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByIndex]{\lst{ByIndex}} \\
@@ -271,15 +265,9 @@ holds for all elements of this collection, otherwise \lst{false}.
    \bf{Description} & Produces the range of all indices of this collection as a new collection
  containing [0 .. length-1] values.
          \\
+   \hline
+   \bf{Signature} & \lst{def indices}: \lst{Coll[Int]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Int]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -301,15 +289,15 @@ holds for all elements of this collection, otherwise \lst{false}.
  Returns a new collection of type \lst{Coll[B]} resulting from applying the given collection-valued function
  \lst{f} to each element of this collection and concatenating the results.
          \\
+   \hline
+   \bf{Signature} & \lst{def flatMap}$[$\lst{OV}$]$(\lst{f}$:$~\lst{(IV) => Coll[OV]}): \lst{Coll[OV]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{f} & \lst{: (IV) => Coll[OV]} & \text{// the function to apply to each element.} \\
+      \(\begin{array}{l l}
+         \lst{f} & \text{the function to apply to each element.} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[OV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -325,15 +313,9 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \lst{def patch}: \lst{Coll[IV]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -349,15 +331,9 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \lst{def updated}: \lst{Coll[IV]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -373,15 +349,9 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \lst{def updateMany}: \lst{Coll[IV]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[IV]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -397,15 +367,9 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \lst{def indexOf}: \lst{Int} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -421,15 +385,9 @@ holds for all elements of this collection, otherwise \lst{false}.
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \lst{def zip}$[$\lst{OV}$]$: \lst{Coll[(IV,OV)]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[(IV,OV)]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\

@@ -261,9 +261,10 @@ object Operations {
   }
 
   object ExtractRegisterAsInfo extends InfoObject {
-    private val method = SMethod.fromIds(99, 9)
+    private val method = SMethod.fromIds(99, 7)
     val thisArg: ArgInfo = method.argInfo("this")
-    val argInfos: Seq[ArgInfo] = Array(thisArg)
+    val regIdArg: ArgInfo = method.argInfo("regId")
+    val argInfos: Seq[ArgInfo] = Array(thisArg, regIdArg)
   }
 
   object ExtractScriptBytesInfo extends InfoObject {

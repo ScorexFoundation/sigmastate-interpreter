@@ -4,16 +4,12 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & The generator $g$ of the group is an element of the group such that,
+when written multiplicatively, every element of the group is a power of $g$.
+Returns the generator of the SecP256K1 group. \\
+   \hline
+   \bf{Signature} & \lst{def groupGenerator}: \lst{GroupElement} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:GroupGenerator]{\lst{GroupGenerator}} \\
@@ -29,16 +25,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Byte-wise XOR of two collections of bytes \\
+   \hline
+   \bf{Signature} & \lst{def xor}(\lst{left}$:$~\lst{Coll[Byte]}, \lst{right}$:$~\lst{Coll[Byte]}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: Coll[Byte]} & \text{// left operand} \\
-\lst{right} & \lst{: Coll[Byte]} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Xor]{\lst{Xor}} \\

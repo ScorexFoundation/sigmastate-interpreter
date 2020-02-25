@@ -5,15 +5,9 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns \lst{true} if the option is an instance of \lst{Some}, \lst{false} otherwise. \\
+   \hline
+   \bf{Signature} & \lst{def isDefined}: \lst{Boolean} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionIsDefined]{\lst{OptionIsDefined}} \\
@@ -29,15 +23,9 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns the option's value. The option must be nonempty. Throws exception if the option is empty. \\
+   \hline
+   \bf{Signature} & \lst{def get}: \lst{T} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGet]{\lst{OptionGet}} \\
@@ -55,15 +43,15 @@
    \bf{Description} & Returns the option's value if the option is nonempty, otherwise
 return the result of evaluating \lst{default}.
          \\
+   \hline
+   \bf{Signature} & \lst{def getOrElse}(\lst{default}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{default} & \lst{: T} & \text{// the default value} \\
+      \(\begin{array}{l l}
+         \lst{default} & \text{the default value} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:OptionGetOrElse]{\lst{OptionGetOrElse}} \\
@@ -82,15 +70,15 @@ return the result of evaluating \lst{default}.
    value if this option is nonempty.
    Otherwise return \lst{None}.
          \\
+   \hline
+   \bf{Signature} & \lst{def map}$[$\lst{R}$]$(\lst{f}$:$~\lst{(T) => R}): \lst{Option[R]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{f} & \lst{: (T) => R} & \text{// the function to apply} \\
+      \(\begin{array}{l l}
+         \lst{f} & \text{the function to apply} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[R]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\
@@ -108,15 +96,15 @@ return the result of evaluating \lst{default}.
    \bf{Description} & Returns this option if it is nonempty and applying the predicate \lst{p} to
   this option's value returns true. Otherwise, return \lst{None}.
          \\
+   \hline
+   \bf{Signature} & \lst{def filter}(\lst{p}$:$~\lst{(T) => Boolean}): \lst{Option[T]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{p} & \lst{: (T) => Boolean} & \text{// the predicate used for testing} \\
+      \(\begin{array}{l l}
+         \lst{p} & \text{the predicate used for testing} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[T]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:MethodCall]{\lst{MethodCall}} \\

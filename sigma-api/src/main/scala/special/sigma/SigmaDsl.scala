@@ -458,7 +458,7 @@ trait AvlTree {
   */
 @scalan.Liftable
 trait PreHeader { // Testnet2
-  /** Block version, to be increased on every soft and hardfork. */
+  /** Block version, to be increased on every soft and hard-fork. */
   def version: Byte
 
   /** Id of parent block */
@@ -477,6 +477,7 @@ trait PreHeader { // Testnet2
   /** Miner public key. Should be used to collect block rewards. */
   def minerPk: GroupElement
 
+  /** A collection of votes set up by the block miner. */
   def votes: Coll[Byte]
 }
 
@@ -488,7 +489,7 @@ trait Header {
   /** Bytes representation of ModifierId of this Header */
   def id: Coll[Byte]
 
-  /** Block version, to be increased on every soft and hardfork. */
+  /** Block version, to be increased on every soft and hard-fork. */
   def version: Byte
 
   /** Bytes representation of ModifierId of the parent block */
@@ -497,7 +498,7 @@ trait Header {
   /** Hash of ADProofs for transactions in a block */
   def ADProofsRoot: Coll[Byte] // Digest32. Can we build AvlTree out of it?
 
-  /** AvlTree) of a state after block application */
+  /** AvlTree of a state after block application */
   def stateRoot: AvlTree
 
   /** Root hash (for a Merkle tree) of transactions in a block. */
@@ -530,6 +531,7 @@ trait Header {
     * corresponding to `minerPk`. The lower `powDistance` is, the harder it was to find this solution. */
   def powDistance: BigInt
 
+  /** A collection of votes set up by the block miner. */
   def votes: Coll[Byte] //3 bytes
 }
 
@@ -565,12 +567,20 @@ trait Context {
     */
   def headers: Coll[Header]
 
-  /**
+  /** Only header fields that can be predicted by a miner when the spending transaction is
+    * added to a new block candidate.
     * @since 2.0
     */
   def preHeader: PreHeader
 
+  /** Encoded bytes of public key of the miner who created the block.
+    * Equals to `preHeader.minerPk.getEncoded` */
   def minerPubKey: Coll[Byte]
+
+  /** Get context variable with given `varId`` and type. Example:
+    * `getVar[Coll[Byte]](10).get` extract a collection of bytes from the variable
+    * with varId = 10.
+    */
   def getVar[T](id: Byte)(implicit cT: RType[T]): Option[T]
   def vars: Coll[AnyValue]
 }
@@ -676,6 +686,7 @@ trait SigmaDslBuilder {
   /** Construct a new authenticated dictionary with given parameters and tree root digest. */
   def avlTree(operationFlags: Byte, digest: Coll[Byte], keyLength: Int, valueLengthOpt: Option[Int]): AvlTree
 
+  /** Byte-wise XOR of two collections of bytes. */
   def xor(l: Coll[Byte], r: Coll[Byte]): Coll[Byte]
 }
 

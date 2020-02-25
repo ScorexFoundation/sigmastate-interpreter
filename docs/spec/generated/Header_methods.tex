@@ -4,16 +4,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Bytes representation of ModifierId of this Header \\
+   \hline
+   \bf{Signature} & \lst{def id}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -28,16 +22,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Block version, to be increased on every soft and hard-fork. \\
+   \hline
+   \bf{Signature} & \lst{def version}: \lst{Byte} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Byte} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -52,16 +40,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Bytes representation of ModifierId of the parent block \\
+   \hline
+   \bf{Signature} & \lst{def parentId}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -76,16 +58,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Hash of ADProofs for transactions in a block \\
+   \hline
+   \bf{Signature} & \lst{def ADProofsRoot}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -100,16 +76,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & AvlTree of a state after block application \\
+   \hline
+   \bf{Signature} & \lst{def stateRoot}: \lst{AvlTree} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -124,16 +94,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Root hash (for a Merkle tree) of transactions in a block. \\
+   \hline
+   \bf{Signature} & \lst{def transactionsRoot}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -148,16 +112,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Block timestamp (in milliseconds since beginning of Unix Epoch) \\
+   \hline
+   \bf{Signature} & \lst{def timestamp}: \lst{Long} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Long} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -172,16 +130,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Current difficulty in a compressed view. NOTE: actually it is unsigned Int. \\
+   \hline
+   \bf{Signature} & \lst{def nBits}: \lst{Long} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Long} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -196,16 +148,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Block height \\
+   \hline
+   \bf{Signature} & \lst{def height}: \lst{Int} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Int} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -220,16 +166,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Root hash of extension section \\
+   \hline
+   \bf{Signature} & \lst{def extensionRoot}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -244,16 +184,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Miner public key. Should be used to collect block rewards. Part of Autolykos solution. \\
+   \hline
+   \bf{Signature} & \lst{def minerPk}: \lst{GroupElement} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -268,16 +202,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & One-time public key. Prevents revealing of miners secret. \\
+   \hline
+   \bf{Signature} & \lst{def powOnetimePk}: \lst{GroupElement} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -292,16 +220,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & The nonce value generated during mining. \\
+   \hline
+   \bf{Signature} & \lst{def powNonce}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -316,16 +238,11 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & Distance between pseudo-random number, corresponding to nonce \lst{powNonce} and a secret,
+corresponding to \lst{minerPk}. The lower \lst{powDistance} is, the harder it was to find this solution. \\
+   \hline
+   \bf{Signature} & \lst{def powDistance}: \lst{BigInt} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{BigInt} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\
@@ -340,16 +257,10 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} &  \\
+   \bf{Description} & A collection of votes set up by the block miner. \\
+   \hline
+   \bf{Signature} & \lst{def votes}: \lst{Coll[Byte]} \\
   
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:PropertyCall]{\lst{PropertyCall}} \\

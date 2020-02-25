@@ -19,11 +19,15 @@
     \label{table:predeftypes}
 \end{table}
 
-There is a section for each type with sub-sections for all available methods. Each method
-is characterized with the description, signature, parameters and reference to
-serialization format.
+There is a section for each type with sub-sections for all available methods. Each
+method is characterized by the description, signature (i.e. name, parameters and return
+type), description of all parameters and reference to the serialization format.
 
-The following subsections are auto-generated from type descriptors of \langname reference
+There is universal primitive which can represent any method invocation
+(\lst{MethodCall}). However, many method are also mapped to the special primitive
+operations to save storage space.
+
+The following sub-sections are auto-generated from type descriptors of \langname reference
 implementation.
 
 % \subsection{Boolean type}
@@ -36,24 +40,23 @@ implementation.
 
 \subsection{Short type}
 \label{sec:type:Short}
-\input{generated/Short_methods.tex}
+ \input{generated/Short_methods.tex}
 
 \subsection{Int type}
 \label{sec:type:Int}
-\input{generated/Int_methods.tex}
+ \input{generated/Int_methods.tex}
 
 \subsection{Long type}
 \label{sec:type:Long}
-\input{generated/Long_methods.tex}
+ \input{generated/Long_methods.tex}
 
 \subsection{BigInt type}
 \label{sec:type:BigInt}
-\input{generated/BigInt_methods.tex}
+ \input{generated/BigInt_methods.tex}
 
 \subsection{GroupElement type}
 \label{sec:type:GroupElement}
 \input{generated/GroupElement_methods.tex}
-
 
 \subsection{SigmaProp type}
 \label{sec:type:SigmaProp}
@@ -101,37 +104,19 @@ Appendix~\ref{sec:appendix:primops}.
 
 \subsection{Box type}
 \label{sec:type:Box}
-\input{generated/Box_methods.tex}
+ \input{generated/Box_methods.tex}
 
 \subsection{\lst{AvlTree} type}
 \label{sec:type:AvlTree}
-
-% \subsubsection{\lst{AvlTree.digest} method (Code 100.1)}
-% \noindent
-% \begin{tabularx}{\textwidth}{| l | X |}
-%    \hline
-%    \bf{Description} & Returns digest of the state represent by this tree.
-%    Authenticated tree digest = root hash bytes ++ tree height. \\
-%   \hline
-%   \bf{Parameters} & 
-%       \(\begin{array}{l l l}
-%          \lst{key} & \lst{: Coll[Byte]} & \text{// key to lookup} \\
-%          \lst{value} & \lst{: Coll[Byte]} & \text{// value to insert}\\
-%       \end{array}\) \\
-%   \hline
-%   \bf{Result} & \lst{Coll[Byte]} \\
-%   \hline
-% \end{tabularx}
-
-\input{generated/AvlTree_methods.tex}
+ \input{generated/AvlTree_methods.tex}
 
 \subsection{Header type}
 \label{sec:type:Header}
-\input{generated/Header_methods.tex}
+ \input{generated/Header_methods.tex}
 
 \subsection{PreHeader type}
 \label{sec:type:PreHeader}
-\input{generated/PreHeader_methods.tex}
+ \input{generated/PreHeader_methods.tex}
 
 \subsection{Context type}
 \label{sec:type:Context}
@@ -143,7 +128,7 @@ Appendix~\ref{sec:appendix:primops}.
 
 \subsection{Coll type}
 \label{sec:type:Coll}
-\input{generated/SCollection_methods.tex}
+ \input{generated/SCollection_methods.tex}
 
 \subsection{Option type}
 \label{sec:type:Option}

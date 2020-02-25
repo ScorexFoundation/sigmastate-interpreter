@@ -342,11 +342,16 @@ case class Coster(selector: RuntimeCosting => RuntimeCosting#CostingHandler[_]) 
   * @param description argument description. */
 case class ArgInfo(name: String, description: String)
 
-/** Meta information which can be attached to SMethod.
+/** Meta information which can be attached to SMethod. Used in spec generators.
   * @param description  human readable description of the method
-  * @param args         one item for each argument */
-case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo]) {
+  * @param args         one item for each argument
+  * @param isEnabled    true if operation can be used in ErgoTree
+  */
+case class OperationInfo(opDesc: Option[ValueCompanion], description: String, args: Seq[ArgInfo], isEnabled: Boolean = true) {
+  /** Returns true if this operation is front-end only and doesn't exist in ErgoTree. */
   def isFrontendOnly: Boolean = opDesc.isEmpty
+  /** Returns true if this operation is available for usage in ErgoTree. */
+  def isAvailableInErgoTree: Boolean = !isFrontendOnly && isEnabled
   def opTypeName: String = opDesc.map(_.typeName).getOrElse("(FRONTEND ONLY)")
 }
 
@@ -421,6 +426,13 @@ case class SMethod(
   }
   def withInfo(opDesc: ValueCompanion, desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(opDesc, desc, ArgInfo("this", "this instance") +: args.toSeq)))
+  }
+  def withInfo(opDesc: ValueCompanion, desc: String, args: Seq[ArgInfo], isEnabled: Boolean): SMethod = {
+    this.copy(docInfo =
+      Some(OperationInfo(
+        Some(opDesc), desc,
+        ArgInfo("this", "this instance") +: args.toSeq,
+        isEnabled)))
   }
   def withInfo(desc: String, args: ArgInfo*): SMethod = {
     this.copy(docInfo = Some(OperationInfo(None, desc, ArgInfo("this", "this instance") +: args.toSeq)))
@@ -604,15 +616,16 @@ trait SLogical extends SType {
   */
 trait SMonoType extends SType with STypeCompanion {
   override def typeParams: Seq[STypeParam] = Nil
-  protected def property(name: String, tpeRes: SType, id: Byte): SMethod =
-    SMethod(this, name, SFunc(this, tpeRes), id)
-      .withIRInfo(MethodCallIrBuilder)
-      .withInfo(PropertyCall, "")
 
-  protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion): SMethod =
+  protected def property(name: String, tpeRes: SType, id: Byte, desc: String): SMethod =
     SMethod(this, name, SFunc(this, tpeRes), id)
       .withIRInfo(MethodCallIrBuilder)
-      .withInfo(valueCompanion, "")
+      .withInfo(PropertyCall, desc)
+
+  protected def property(name: String, tpeRes: SType, id: Byte, valueCompanion: ValueCompanion, desc: String): SMethod =
+    SMethod(this, name, SFunc(this, tpeRes), id)
+      .withIRInfo(MethodCallIrBuilder)
+      .withInfo(valueCompanion, desc)
 }
 
 case object SBoolean extends SPrimType with SEmbeddable with SLogical with SProduct with SMonoType {
@@ -1468,7 +1481,7 @@ case object SBox extends SProduct with SPredefType with SMonoType {
       i match {
         case r: MandatoryRegisterId =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
-              .withInfo(ExtractRegisterAs, r.purpose)
+              .withInfo(ExtractRegisterAs, r.purpose, Nil, false)
         case _ =>
           SMethod(this, s"R${i.asIndex}", SFunc(IndexedSeq(SBox), SOption(tT), Seq(STypeParam(tT))), (idOfs + i.asIndex + 1).toByte)
               .withInfo(ExtractRegisterAs, "Non-mandatory register")
@@ -1487,17 +1500,18 @@ case object SBox extends SProduct with SPredefType with SMonoType {
   lazy val creationInfoMethod = SMethod(this, CreationInfo, ExtractCreationInfo.OpType, 6)
       .withInfo(ExtractCreationInfo,
         """ If \lst{tx} is a transaction which generated this box, then \lst{creationInfo._1}
-         | is a height of the tx's block. The \lst{creationInfo._2} is a serialized transaction
-         | identifier followed by box index in the transaction outputs.
+         | is a height of the tx's block. The \lst{creationInfo._2} is a serialized bytes of the transaction
+         | identifier followed by the serialized bytes of the box index in the transaction outputs.
         """.stripMargin)
 
   lazy val getRegMethod = SMethod(this, "getReg", SFunc(IndexedSeq(SBox, SInt), SOption(tT), Seq(STypeParam(tT))), 7)
-      .withInfo(// note, frontend only
+      .withInfo(ExtractRegisterAs,
         """ Extracts register by id and type.
          | Type param \lst{T} expected type of the register.
          | Returns \lst{Some(value)} if the register is defined and has given type and \lst{None} otherwise
         """.stripMargin,
-        ArgInfo("regId", "zero-based identifier of the register."))
+        Array(ArgInfo("regId", "zero-based identifier of the register.")),
+        false)
 
   lazy val tokensMethod = SMethod(this, "tokens", SFunc(SBox, ErgoBox.STokensRegType), 8)
       .withIRInfo(MethodCallIrBuilder)
@@ -1727,18 +1741,46 @@ case object SContext extends SProduct with SPredefType with SMonoType {
   override def isConstantSize = false
 
   val tT = STypeVar("T")
-  val dataInputsMethod = property("dataInputs", SBoxArray, 1)
-  val headersMethod    = property("headers", SHeaderArray, 2)
-  val preHeaderMethod  = property("preHeader", SPreHeader, 3)
-  val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs)
-  val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs)
-  val heightMethod     = property("HEIGHT", SInt, 6, Height)
-  val selfMethod       = property("SELF", SBox, 7, Self)
-  val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8)
-  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash)
-  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey)
+
+  val dataInputsMethod = property("dataInputs", SBoxArray, 1,
+    "A collection of inputs of the current transaction that will not be spent.")
+
+  val headersMethod    = property("headers", SHeaderArray, 2,
+    "A fixed number of last block headers in descending order (first header is the newest one)")
+
+  val preHeaderMethod  = property("preHeader", SPreHeader, 3,
+    "Only header fields that can be predicted by a miner when the spending transaction is added to a new block candidate.")
+
+  val inputsMethod     = property("INPUTS", SBoxArray, 4, Inputs,
+    """A collection of inputs of the current transaction,
+      |where the \lst{SELF} box is one of the inputs.""".stripMargin)
+
+  val outputsMethod    = property("OUTPUTS", SBoxArray, 5, Outputs,
+    "A collection of outputs of the current transaction.")
+
+  val heightMethod     = property("HEIGHT", SInt, 6, Height,
+    "Height (block number) of the block which is currently being validated.")
+
+  val selfMethod       = property("SELF", SBox, 7, Self,
+    "Box whose proposition is being currently executing")
+
+  val selfBoxIndexMethod = property("selfBoxIndex", SInt, 8, "")
+    .withInfo(// TODO soft-fork: https://github.com/ScorexFoundation/sigmastate-interpreter/issues/603
+              // when fixed, remove this .withInfo and it will appear in the spec.tex after regeneration
+      """Zero based index in \lst{inputs} of \lst{selfBox}. $-1$ if self box is not in the INPUTS collection.""")
+
+  val lastBlockUtxoRootHashMethod = property("LastBlockUtxoRootHash", SAvlTree, 9, LastBlockUtxoRootHash,
+    "Authenticated dynamic dictionary digest representing Utxo state before current state.")
+
+  val minerPubKeyMethod = property("minerPubKey", SByteArray, 10, MinerPubkey,
+    """Encoded bytes of public key of the miner who created the block.
+      |Equals to \lst{preHeader.minerPk.getEncoded}""".stripMargin)
+
   val getVarMethod = SMethod(this, "getVar", SFunc(IndexedSeq(SContext, SByte), SOption(tT), Seq(STypeParam(tT))), 11)
-    .withInfo(GetVar, "Get context variable with given \\lst{varId} and type.",
+    .withInfo(GetVar,
+      """Get context variable with given \lst{varId} and type.
+       |Example: \lst{getVar[Coll[Byte]](10).get} extract a collection of bytes
+       |from the variable with varId = 10.""".stripMargin,
       ArgInfo("varId", "\\lst{Byte} identifier of context variable"))
 
   protected override def getMethods() = super.getMethods() ++ Seq(
@@ -1775,21 +1817,37 @@ case object SHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  val idMethod               = property("id", SByteArray, 1)
-  val versionMethod          = property("version",  SByte,      2)
-  val parentIdMethod         = property("parentId", SByteArray, 3)
-  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4)
-  val stateRootMethod        = property("stateRoot", SAvlTree, 5)
-  val transactionsRootMethod = property("transactionsRoot", SByteArray, 6)
-  val timestampMethod        = property("timestamp", SLong, 7)
-  val nBitsMethod            = property("nBits", SLong, 8)
-  val heightMethod           = property("height", SInt, 9)
-  val extensionRootMethod    = property("extensionRoot", SByteArray, 10)
-  val minerPkMethod          = property("minerPk", SGroupElement, 11)
-  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12)
-  val powNonceMethod         = property("powNonce", SByteArray, 13)
-  val powDistanceMethod      = property("powDistance", SBigInt, 14)
-  val votesMethod            = property("votes", SByteArray, 15)
+  val idMethod               = property("id", SByteArray, 1,
+    "Bytes representation of ModifierId of this Header")
+  val versionMethod          = property("version",  SByte,      2,
+    "Block version, to be increased on every soft and hard-fork.")
+  val parentIdMethod         = property("parentId", SByteArray, 3,
+    "Bytes representation of ModifierId of the parent block")
+  val ADProofsRootMethod     = property("ADProofsRoot", SByteArray, 4,
+    "Hash of ADProofs for transactions in a block")
+  val stateRootMethod        = property("stateRoot", SAvlTree, 5,
+    "AvlTree of a state after block application")
+  val transactionsRootMethod = property("transactionsRoot", SByteArray, 6,
+    "Root hash (for a Merkle tree) of transactions in a block.")
+  val timestampMethod        = property("timestamp", SLong, 7,
+    "Block timestamp (in milliseconds since beginning of Unix Epoch)")
+  val nBitsMethod            = property("nBits", SLong, 8,
+    "Current difficulty in a compressed view. NOTE: actually it is unsigned Int.")
+  val heightMethod           = property("height", SInt, 9,
+    "Block height")
+  val extensionRootMethod    = property("extensionRoot", SByteArray, 10,
+    "Root hash of extension section")
+  val minerPkMethod          = property("minerPk", SGroupElement, 11,
+    "Miner public key. Should be used to collect block rewards. Part of Autolykos solution.")
+  val powOnetimePkMethod     = property("powOnetimePk", SGroupElement, 12,
+    "One-time public key. Prevents revealing of miners secret.")
+  val powNonceMethod         = property("powNonce", SByteArray, 13,
+    "The nonce value generated during mining.")
+  val powDistanceMethod      = property("powDistance", SBigInt, 14,
+    """Distance between pseudo-random number, corresponding to nonce \lst{powNonce} and a secret,
+      |corresponding to \lst{minerPk}. The lower \lst{powDistance} is, the harder it was to find this solution.""".stripMargin)
+  val votesMethod            = property("votes", SByteArray, 15,
+    "A collection of votes set up by the block miner.")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     idMethod, versionMethod, parentIdMethod, ADProofsRootMethod, stateRootMethod, transactionsRootMethod,
@@ -1819,13 +1877,26 @@ case object SPreHeader extends SProduct with SPredefType with SMonoType {
   }
   override def isConstantSize = true
 
-  val versionMethod          = property("version",  SByte,      1)
-  val parentIdMethod         = property("parentId", SByteArray, 2)
-  val timestampMethod        = property("timestamp", SLong, 3)
-  val nBitsMethod            = property("nBits", SLong, 4)
-  val heightMethod           = property("height", SInt, 5)
-  val minerPkMethod          = property("minerPk", SGroupElement, 6)
-  val votesMethod            = property("votes", SByteArray, 7)
+  val versionMethod          = property("version",  SByte,      1,
+    "Block version, to be increased on every soft and hard-fork.")
+
+  val parentIdMethod         = property("parentId", SByteArray, 2,
+    "Id of parent block")
+
+  val timestampMethod        = property("timestamp", SLong, 3,
+    "Block timestamp (in milliseconds since beginning of Unix Epoch)")
+
+  val nBitsMethod            = property("nBits", SLong, 4,
+    "Current difficulty in a compressed view. NOTE: actually it is unsigned Int.")
+
+  val heightMethod           = property("height", SInt, 5,
+    "Block height")
+
+  val minerPkMethod          = property("minerPk", SGroupElement, 6,
+    "Miner public key. Should be used to collect block rewards.")
+
+  val votesMethod            = property("votes", SByteArray, 7,
+    "A collection of votes set up by the block miner.")
 
   protected override def getMethods() = super.getMethods() ++ Seq(
     versionMethod, parentIdMethod, timestampMethod, nBitsMethod, heightMethod, minerPkMethod, votesMethod
@@ -1864,7 +1935,11 @@ case object SGlobal extends SProduct with SPredefType with SMonoType {
   val tT = STypeVar("T")
   lazy val groupGeneratorMethod = SMethod(this, "groupGenerator", SFunc(this, SGroupElement), 1)
     .withIRInfo({ case (builder, obj, method, args, tparamSubst) => GroupGenerator })
-    .withInfo(GroupGenerator, "")
+    .withInfo(GroupGenerator,
+      """The generator $g$ of the group is an element of the group such that,
+        |when written multiplicatively, every element of the group is a power of $g$.
+        |Returns the generator of the SecP256K1 group.""".stripMargin)
+
   lazy val xorMethod = SMethod(this, "xor", SFunc(IndexedSeq(this, SByteArray, SByteArray), SByteArray), 2)
     .withIRInfo({
         case (_, _, _, Seq(l, r), _) => Xor(l.asByteArray, r.asByteArray)
