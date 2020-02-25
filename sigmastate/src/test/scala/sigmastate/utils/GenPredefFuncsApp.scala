@@ -6,9 +6,6 @@ import scalan.util.PrintExtensions._
 object GenPredefFuncsApp extends SpecGen {
 
   def main(args: Array[String]) = {
-    val rowsFile = FileUtil.file("docs/spec/generated/predeffunc_rows.tex")
-    val sectionsFile = FileUtil.file(s"docs/spec/generated/predeffunc_sections.tex")
-
     val opsTable = collectOpsTable()
     val opInfos = opsTable.collect { case (d, m, optF @ Some(f)) =>
       val info = getOpInfo(d, m, optF)
@@ -27,7 +24,7 @@ object GenPredefFuncsApp extends SpecGen {
       val serRef = s"\\hyperref[sec:serialization:operation:$mnemonic]{\\lst{$mnemonic}}"
       val desc = if (info.description.length > 150) "..." else info.description
       funcRows.append(
-        s""" $opCode & $serRef & \\parbox{4cm}{\\lst{$opName:} \\\\ \\lst{($argsTpe)} \\\\ \\lst{  => $resTpe}} & $desc \\\\
+        s""" $opCode & $serRef & $desc \\\\
           | \\hline
          """.stripMargin)
 
@@ -35,7 +32,8 @@ object GenPredefFuncsApp extends SpecGen {
       sections.append(subsection)
     }
     println(s"Total ops: ${opInfos.length}")
-    FileUtil.write(rowsFile, funcRows.result())
-    FileUtil.write(sectionsFile, sections.result())
+
+    saveFile("docs/spec/generated/predeffunc_rows.tex", funcRows.result())
+    saveFile("docs/spec/generated/predeffunc_sections.tex", sections.result())
   }
 }

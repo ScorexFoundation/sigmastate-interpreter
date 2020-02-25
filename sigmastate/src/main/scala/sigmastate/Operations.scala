@@ -147,12 +147,6 @@ object Operations {
     val argInfos: Seq[ArgInfo] = Array(inputArg)
   }
 
-  object ConstantPlaceholderInfo extends InfoObject {
-    private val func = predefinedOps.specialFuncs("placeholder")
-    val indexArg: ArgInfo = func.argInfo("index")
-    val argInfos: Seq[ArgInfo] = Array(indexArg)
-  }
-
   object CreateAvlTreeInfo extends InfoObject {
     private val func = predefinedOps.funcs("avlTree")
     val operationFlagsArg: ArgInfo = func.argInfo("operationFlags")

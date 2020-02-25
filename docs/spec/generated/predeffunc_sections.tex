@@ -1,26 +1,4 @@
 
-\subsubsection{\lst{placeholder} method (Code 115)}
-\label{sec:appendix:primops:ConstantPlaceholder}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Create special ErgoTree node which can be replaced by constant with given id. \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{index} & \lst{: Int} & \text{// index of the constant in ErgoTree header} \\
-      \end{array}\) \\
-       
-  \hline
-  \bf{Result} & \lst{T} \\
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:ConstantPlaceholder]{\lst{ConstantPlaceholder}} \\
-  \hline
-       
-\end{tabularx}
-
 \subsubsection{\lst{substConstants} method (Code 116)}
 \label{sec:appendix:primops:SubstConstants}
 \noindent
@@ -37,17 +15,17 @@
 
  Returns original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def substConstants}$[$\lst{T}$]$(\lst{scriptBytes}$:$~\lst{Coll[Byte]}, \lst{positions}$:$~\lst{Coll[Int]}, \lst{newValues}$:$~\lst{Coll[T]}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{scriptBytes} & \lst{: Coll[Byte]} & \text{// serialized ErgoTree with ConstantSegregationFlag set to 1.} \\
-\lst{positions} & \lst{: Coll[Int]} & \text{// zero based indexes in ErgoTree.constants array which should be replaced with new values} \\
-\lst{newValues} & \lst{: Coll[T]} & \text{// new values to be injected into the corresponding positions in ErgoTree.constants array} \\
+      \(\begin{array}{l l}
+         \lst{scriptBytes} & \text{serialized ErgoTree with ConstantSegregationFlag set to 1.} \\
+\lst{positions} & \text{0-based indexes in ErgoTree.constants} \\
+\lst{newValues} & \text{values to be put into the corresponding positions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SubstConstants]{\lst{SubstConstants}} \\
@@ -61,15 +39,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Converts \lst{Long} value to big-endian bytes representation. \\
+   \hline
+   \bf{Signature} & \lst{def longToByteArray}(\lst{input}$:$~\lst{Long}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Long} & \text{// value to convert} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{value to convert} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:LongToByteArray]{\lst{LongToByteArray}} \\
@@ -83,15 +61,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Convert big-endian bytes representation (Coll[Byte]) to BigInt value. \\
+   \hline
+   \bf{Signature} & \lst{def byteArrayToBigInt}(\lst{input}$:$~\lst{Coll[Byte]}): \lst{BigInt} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes in big-endian format} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{collection of bytes in big-endian format} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{BigInt} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByteArrayToBigInt]{\lst{ByteArrayToBigInt}} \\
@@ -105,15 +83,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Convert big-endian bytes representation (Coll[Byte]) to Long value. \\
+   \hline
+   \bf{Signature} & \lst{def byteArrayToLong}(\lst{input}$:$~\lst{Coll[Byte]}): \lst{Long} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes in big-endian format} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{collection of bytes in big-endian format} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Long} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:ByteArrayToLong]{\lst{ByteArrayToLong}} \\
@@ -127,15 +105,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow. \\
+   \hline
+   \bf{Signature} & \lst{def downcast}$[$\lst{T}, \lst{R}$]$(\lst{input}$:$~\lst{T}): \lst{R} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: T} & \text{// value to cast} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{value to cast} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{R} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Downcast]{\lst{Downcast}} \\
@@ -149,15 +127,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Cast this numeric value to a bigger type (e.g. Int to Long) \\
+   \hline
+   \bf{Signature} & \lst{def upcast}$[$\lst{T}, \lst{R}$]$(\lst{input}$:$~\lst{T}): \lst{R} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: T} & \text{// value to cast} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{value to cast} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{R} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Upcast]{\lst{Upcast}} \\
@@ -171,16 +149,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Select tuple field by its 1-based index. E.g. \lst{input._1} is transformed to \lst{SelectField(input, 1)} \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def selectField}$[$\lst{T}, \lst{R}$]$(\lst{input}$:$~\lst{T}, \lst{fieldIndex}$:$~\lst{Byte}): \lst{R} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: T} & \text{// tuple of items} \\
-\lst{fieldIndex} & \lst{: Byte} & \text{// index of an item to select} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{tuple of items} \\
+\lst{fieldIndex} & \text{index of an item to select} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{R} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SelectField]{\lst{SelectField}} \\
@@ -194,16 +172,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns \lst{true} is the left operand is less then the right operand, \lst{false} otherwise. \\
+   \hline
+   \bf{Signature} & \lst{def <}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:LT]{\lst{LT}} \\
@@ -217,16 +195,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns \lst{true} is the left operand is less then or equal to the right operand, \lst{false} otherwise. \\
+   \hline
+   \bf{Signature} & \lst{def <=}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:LE]{\lst{LE}} \\
@@ -240,16 +218,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns \lst{true} is the left operand is greater then the right operand, \lst{false} otherwise. \\
+   \hline
+   \bf{Signature} & \lst{def >}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:GT]{\lst{GT}} \\
@@ -263,16 +241,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns \lst{true} is the left operand is greater then or equal to the right operand, \lst{false} otherwise. \\
+   \hline
+   \bf{Signature} & \lst{def >=}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:GE]{\lst{GE}} \\
@@ -286,16 +264,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Compare equality of \lst{left} and \lst{right} arguments \\
+   \hline
+   \bf{Signature} & \lst{def ==}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:EQ]{\lst{EQ}} \\
@@ -309,16 +287,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Compare inequality of \lst{left} and \lst{right} arguments \\
+   \hline
+   \bf{Signature} & \lst{def !=}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:NEQ]{\lst{NEQ}} \\
@@ -332,17 +310,17 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Compute condition, if true then compute trueBranch else compute falseBranch \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def if}$[$\lst{T}$]$(\lst{condition}$:$~\lst{Boolean}, \lst{trueBranch}$:$~\lst{T}, \lst{falseBranch}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{condition} & \lst{: Boolean} & \text{// condition expression} \\
-\lst{trueBranch} & \lst{: T} & \text{// expression to execute when \lst{condition == true}} \\
-\lst{falseBranch} & \lst{: T} & \text{// expression to execute when \lst{condition == false}} \\
+      \(\begin{array}{l l}
+         \lst{condition} & \text{condition expression} \\
+\lst{trueBranch} & \text{expression to execute when \lst{condition == true}} \\
+\lst{falseBranch} & \text{expression to execute when \lst{condition == false}} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:If]{\lst{If}} \\
@@ -356,15 +334,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns true if \emph{all} the elements in collection are \lst{true}. \\
+   \hline
+   \bf{Signature} & \lst{def allOf}(\lst{conditions}$:$~\lst{Coll[Boolean]}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \(\begin{array}{l l}
+         \lst{conditions} & \text{a collection of conditions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:AND]{\lst{AND}} \\
@@ -378,15 +356,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns true if \emph{any} the elements in collection are \lst{true}. \\
+   \hline
+   \bf{Signature} & \lst{def anyOf}(\lst{conditions}$:$~\lst{Coll[Boolean]}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \(\begin{array}{l l}
+         \lst{conditions} & \text{a collection of conditions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:OR]{\lst{OR}} \\
@@ -403,16 +381,16 @@
  AtLeast has two inputs: integer \lst{bound} and \lst{children} same as in AND/OR.
  The result is true if at least \lst{bound} children are proven.
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def atLeast}(\lst{bound}$:$~\lst{Int}, \lst{children}$:$~\lst{Coll[SigmaProp]}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{bound} & \lst{: Int} & \text{// required minimum of proven children} \\
-\lst{children} & \lst{: Coll[SigmaProp]} & \text{// proposition to be proven/validated} \\
+      \(\begin{array}{l l}
+         \lst{bound} & \text{required minimum of proven children} \\
+\lst{children} & \text{proposition to be proven/validated} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:AtLeast]{\lst{AtLeast}} \\
@@ -426,16 +404,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns a result of subtracting second numeric operand from the first. \\
+   \hline
+   \bf{Signature} & \lst{def -}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Minus]{\lst{Minus}} \\
@@ -449,16 +427,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns a sum of two numeric operands \\
+   \hline
+   \bf{Signature} & \lst{def +}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Plus]{\lst{Plus}} \\
@@ -472,16 +450,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Byte-wise XOR of two collections of bytes \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def binary_|}(\lst{left}$:$~\lst{Coll[Byte]}, \lst{right}$:$~\lst{Coll[Byte]}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: Coll[Byte]} & \text{// left operand} \\
-\lst{right} & \lst{: Coll[Byte]} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Xor]{\lst{Xor}} \\
@@ -495,16 +473,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns a multiplication of two numeric operands \\
+   \hline
+   \bf{Signature} & \lst{def *}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Multiply]{\lst{Multiply}} \\
@@ -518,16 +496,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Integer division of the first operand by the second operand. \\
+   \hline
+   \bf{Signature} & \lst{def /}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Division]{\lst{Division}} \\
@@ -541,16 +519,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Reminder from division of the first operand by the second operand. \\
+   \hline
+   \bf{Signature} & \lst{def \%}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Modulo]{\lst{Modulo}} \\
@@ -564,16 +542,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Minimum value of two operands. \\
+   \hline
+   \bf{Signature} & \lst{def min}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Min]{\lst{Min}} \\
@@ -587,16 +565,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Maximum value of two operands. \\
+   \hline
+   \bf{Signature} & \lst{def max}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Max]{\lst{Max}} \\
@@ -610,18 +588,18 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Construct a new authenticated dictionary with given parameters and tree root digest. \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def avlTree}(\lst{operationFlags}$:$~\lst{Byte}, \lst{digest}$:$~\lst{Coll[Byte]}, \lst{keyLength}$:$~\lst{Int}, \lst{valueLengthOpt}$:$~\lst{Option[Int]}): \lst{AvlTree} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{operationFlags} & \lst{: Byte} & \text{// flags of available operations} \\
-\lst{digest} & \lst{: Coll[Byte]} & \text{// hash of merkle tree root} \\
-\lst{keyLength} & \lst{: Int} & \text{// length of dictionary keys in bytes} \\
-\lst{valueLengthOpt} & \lst{: Option[Int]} & \text{// optional width of dictionary values in bytes} \\
+      \(\begin{array}{l l}
+         \lst{operationFlags} & \text{flags of available operations} \\
+\lst{digest} & \text{hash of merkle tree root} \\
+\lst{keyLength} & \text{length of dictionary keys in bytes} \\
+\lst{valueLengthOpt} & \text{optional width of dictionary values in bytes} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{AvlTree} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateAvlTree]{\lst{CreateAvlTree}} \\
@@ -635,17 +613,17 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} &  \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def treeLookup}(\lst{tree}$:$~\lst{AvlTree}, \lst{key}$:$~\lst{Coll[Byte]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[Coll[Byte]]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{tree} & \lst{: AvlTree} & \text{// tree to lookup the key} \\
-\lst{key} & \lst{: Coll[Byte]} & \text{// a key of an item in the \lst{tree} to lookup} \\
-\lst{proof} & \lst{: Coll[Byte]} & \text{// proof to perform verification of the operation} \\
+      \(\begin{array}{l l}
+         \lst{tree} & \text{tree to lookup the key} \\
+\lst{key} & \text{a key of an item in the \lst{tree} to lookup} \\
+\lst{proof} & \text{proof to perform verification of the operation} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[Coll[Byte]]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:TreeLookup]{\lst{TreeLookup}} \\
@@ -659,15 +637,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Calculate Blake2b hash from \lst{input} bytes. \\
+   \hline
+   \bf{Signature} & \lst{def blake2b256}(\lst{input}$:$~\lst{Coll[Byte]}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{collection of bytes} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:CalcBlake2b256]{\lst{CalcBlake2b256}} \\
@@ -681,15 +659,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Calculate Sha256 hash from \lst{input} bytes. \\
+   \hline
+   \bf{Signature} & \lst{def sha256}(\lst{input}$:$~\lst{Coll[Byte]}): \lst{Coll[Byte]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Coll[Byte]} & \text{// collection of bytes} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{collection of bytes} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Coll[Byte]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:CalcSha256]{\lst{CalcSha256}} \\
@@ -705,15 +683,15 @@
    \bf{Description} & ErgoTree operation to create a new \lst{SigmaProp} value representing public key
  of discrete logarithm signature protocol.
          \\
+   \hline
+   \bf{Signature} & \lst{def proveDlog}(\lst{value}$:$~\lst{GroupElement}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{value} & \lst{: GroupElement} & \text{// element of elliptic curve group} \\
+      \(\begin{array}{l l}
+         \lst{value} & \text{element of elliptic curve group} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateProveDlog]{\lst{CreateProveDlog}} \\
@@ -730,18 +708,18 @@
  of Diffie Hellman signature protocol.
  Common input: (g,h,u,v)
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def proveDHTuple}(\lst{g}$:$~\lst{GroupElement}, \lst{h}$:$~\lst{GroupElement}, \lst{u}$:$~\lst{GroupElement}, \lst{v}$:$~\lst{GroupElement}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{g} & \lst{: GroupElement} & \text{// } \\
-\lst{h} & \lst{: GroupElement} & \text{// } \\
-\lst{u} & \lst{: GroupElement} & \text{// } \\
-\lst{v} & \lst{: GroupElement} & \text{// } \\
+      \(\begin{array}{l l}
+         \lst{g} & \text{} \\
+\lst{h} & \text{} \\
+\lst{u} & \text{} \\
+\lst{v} & \text{} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateProveDHTuple]{\lst{CreateProveDHTuple}} \\
@@ -759,15 +737,15 @@
  to be used as arguments of \lst{atLeast(..., sigmaProp(boolExpr), ...)} operation.
  During execution results to either \lst{TrueProp} or \lst{FalseProp} values of \lst{SigmaProp} type.
          \\
+   \hline
+   \bf{Signature} & \lst{def sigmaProp}(\lst{condition}$:$~\lst{Boolean}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{condition} & \lst{: Boolean} & \text{// boolean value to embed in SigmaProp value} \\
+      \(\begin{array}{l l}
+         \lst{condition} & \text{boolean value to embed in SigmaProp value} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BoolToSigmaProp]{\lst{BoolToSigmaProp}} \\
@@ -787,15 +765,15 @@
  Throws an exception if the actual script type doesn't conform to T.
  Returns a result of the script execution in the current context
          \\
+   \hline
+   \bf{Signature} & \lst{def executeFromVar}$[$\lst{T}$]$(\lst{id}$:$~\lst{Byte}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{id} & \lst{: Byte} & \text{// identifier of the context variable} \\
+      \(\begin{array}{l l}
+         \lst{id} & \text{identifier of the context variable} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:DeserializeContext]{\lst{DeserializeContext}} \\
@@ -815,16 +793,16 @@
  Throws an exception if the actual script type doesn't conform to \lst{T}.
  Returns a result of the script execution in the current context
          \\
+   \hline
+   \bf{Signature} & \footnotesize \lst{def executeFromSelfReg}$[$\lst{T}$]$(\lst{id}$:$~\lst{Byte}, \lst{default}$:$~\lst{Option[T]}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{id} & \lst{: Byte} & \text{// identifier of the register} \\
-\lst{default} & \lst{: Option[T]} & \text{// optional default value, if register is not available} \\
+      \(\begin{array}{l l}
+         \lst{id} & \text{identifier of the register} \\
+\lst{default} & \text{optional default value, if register is not available} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:DeserializeRegister]{\lst{DeserializeRegister}} \\
@@ -838,16 +816,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Apply the function to the arguments.  \\
+   \hline
+   \bf{Signature} & \lst{def apply}$[$\lst{T}, \lst{R}$]$(\lst{func}$:$~\lst{(T) => R}, \lst{args}$:$~\lst{T}): \lst{R} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{func} & \lst{: (T) => R} & \text{// function which is applied} \\
-\lst{args} & \lst{: T} & \text{// list of arguments} \\
+      \(\begin{array}{l l}
+         \lst{func} & \text{function which is applied} \\
+\lst{args} & \text{list of arguments} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{R} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Apply]{\lst{Apply}} \\
@@ -861,15 +839,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Get context variable with given \lst{varId} and type. \\
+   \hline
+   \bf{Signature} & \lst{def getVar}$[$\lst{T}$]$(\lst{varId}$:$~\lst{Byte}): \lst{Option[T]} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{varId} & \lst{: Byte} & \text{// \lst{Byte} identifier of context variable} \\
+      \(\begin{array}{l l}
+         \lst{varId} & \text{\lst{Byte} identifier of context variable} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Option[T]} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:GetVar]{\lst{GetVar}} \\
@@ -883,15 +861,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns sigma proposition which is proven when \emph{all} the elements in collection are proven. \\
+   \hline
+   \bf{Signature} & \lst{def allZK}(\lst{propositions}$:$~\lst{Coll[SigmaProp]}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{propositions} & \lst{: Coll[SigmaProp]} & \text{// a collection of propositions} \\
+      \(\begin{array}{l l}
+         \lst{propositions} & \text{a collection of propositions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SigmaAnd]{\lst{SigmaAnd}} \\
@@ -905,15 +883,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Returns sigma proposition which is proven when \emph{any} of the elements in collection is proven. \\
+   \hline
+   \bf{Signature} & \lst{def anyZK}(\lst{propositions}$:$~\lst{Coll[SigmaProp]}): \lst{SigmaProp} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{propositions} & \lst{: Coll[SigmaProp]} & \text{// a collection of propositions} \\
+      \(\begin{array}{l l}
+         \lst{propositions} & \text{a collection of propositions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{SigmaProp} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:SigmaOr]{\lst{SigmaOr}} \\
@@ -927,16 +905,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Logical OR of two operands \\
+   \hline
+   \bf{Signature} & \lst{def ||}(\lst{left}$:$~\lst{Boolean}, \lst{right}$:$~\lst{Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
-\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BinOr]{\lst{BinOr}} \\
@@ -950,16 +928,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Logical AND of two operands \\
+   \hline
+   \bf{Signature} & \lst{def &&}(\lst{left}$:$~\lst{Boolean}, \lst{right}$:$~\lst{Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
-\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BinAnd]{\lst{BinAnd}} \\
@@ -973,15 +951,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Convert \lst{Coll[Byte]} to \lst{GroupElement} using \lst{GroupElementSerializer} \\
+   \hline
+   \bf{Signature} & \lst{def decodePoint}(\lst{input}$:$~\lst{Coll[Byte]}): \lst{GroupElement} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Coll[Byte]} & \text{// serialized bytes of some \lst{GroupElement} value} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{serialized bytes of some \lst{GroupElement} value} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{GroupElement} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:DecodePoint]{\lst{DecodePoint}} \\
@@ -995,15 +973,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Logical NOT operation. Returns \lst{true} if input is \lst{false} and \lst{false} if input is \lst{true}. \\
+   \hline
+   \bf{Signature} & \lst{def unary_!}(\lst{input}$:$~\lst{Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: Boolean} & \text{// input \lst{Boolean} value} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{input \lst{Boolean} value} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:LogicalNot]{\lst{LogicalNot}} \\
@@ -1017,15 +995,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Negates numeric value \lst{x} by returning \lst{-x}. \\
+   \hline
+   \bf{Signature} & \lst{def unary_-}$[$\lst{T}$]$(\lst{input}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: T} & \text{// value of numeric type} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{value of numeric type} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:Negation]{\lst{Negation}} \\
@@ -1039,15 +1017,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Invert every bit of the numeric value. \\
+   \hline
+   \bf{Signature} & \lst{def unary_~}$[$\lst{T}$]$(\lst{input}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{input} & \lst{: T} & \text{// value of numeric type} \\
+      \(\begin{array}{l l}
+         \lst{input} & \text{value of numeric type} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitInversion]{\lst{BitInversion}} \\
@@ -1061,16 +1039,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Bitwise OR of two numeric operands. \\
+   \hline
+   \bf{Signature} & \lst{def bit_|}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitOr]{\lst{BitOr}} \\
@@ -1084,16 +1062,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Bitwise AND of two numeric operands. \\
+   \hline
+   \bf{Signature} & \lst{def bit_&}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitAnd]{\lst{BitAnd}} \\
@@ -1107,16 +1085,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Logical XOR of two operands \\
+   \hline
+   \bf{Signature} & \lst{def ^}(\lst{left}$:$~\lst{Boolean}, \lst{right}$:$~\lst{Boolean}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: Boolean} & \text{// left operand} \\
-\lst{right} & \lst{: Boolean} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BinXor]{\lst{BinXor}} \\
@@ -1130,16 +1108,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Bitwise XOR of two numeric operands. \\
+   \hline
+   \bf{Signature} & \lst{def bit_^}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitXor]{\lst{BitXor}} \\
@@ -1153,16 +1131,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Right shift of bits. \\
+   \hline
+   \bf{Signature} & \lst{def bit_>>}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRight]{\lst{BitShiftRight}} \\
@@ -1176,16 +1154,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Left shift of bits. \\
+   \hline
+   \bf{Signature} & \lst{def bit_<<}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftLeft]{\lst{BitShiftLeft}} \\
@@ -1199,16 +1177,16 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Right shift of bits. \\
+   \hline
+   \bf{Signature} & \lst{def bit_>>>}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{left} & \lst{: T} & \text{// left operand} \\
-\lst{right} & \lst{: T} & \text{// right operand} \\
+      \(\begin{array}{l l}
+         \lst{left} & \text{left operand} \\
+\lst{right} & \text{right operand} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{T} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRightZeroed]{\lst{BitShiftRightZeroed}} \\
@@ -1222,15 +1200,15 @@
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
    \bf{Description} & Similar to \lst{allOf}, but performing logical XOR operation between all conditions instead of \lst{&&} \\
+   \hline
+   \bf{Signature} & \lst{def xorOf}(\lst{conditions}$:$~\lst{Coll[Boolean]}): \lst{Boolean} \\
   
   \hline
   \bf{Parameters} &
-      \(\begin{array}{l l l}
-         \lst{conditions} & \lst{: Coll[Boolean]} & \text{// a collection of conditions} \\
+      \(\begin{array}{l l}
+         \lst{conditions} & \text{a collection of conditions} \\
       \end{array}\) \\
        
-  \hline
-  \bf{Result} & \lst{Boolean} \\
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:XorOf]{\lst{XorOf}} \\

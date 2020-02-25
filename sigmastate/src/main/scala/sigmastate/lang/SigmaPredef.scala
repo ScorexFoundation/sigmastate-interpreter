@@ -332,8 +332,8 @@ object SigmaPredef {
          | Returns original scriptBytes array where only specified constants are replaced and all other bytes remain exactly the same.
         """.stripMargin, Seq(
         ArgInfo("scriptBytes", "serialized ErgoTree with ConstantSegregationFlag set to 1."),
-        ArgInfo("positions", "zero based indexes in ErgoTree.constants array which should be replaced with new values"),
-        ArgInfo("newValues", "new values to be injected into the corresponding positions in ErgoTree.constants array")))
+        ArgInfo("positions", "0-based indexes in ErgoTree.constants"),
+        ArgInfo("newValues", "values to be put into the corresponding positions")))
     )
 
     val ExecuteFromVarFunc = PredefinedFunc("executeFromVar",
@@ -546,14 +546,14 @@ object SigmaPredef {
         PredefFuncInfo(undefined),
         OperationInfo(Upcast,
           "Cast this numeric value to a bigger type (e.g. Int to Long)",
-          Seq(ArgInfo("input", "value to cast")))
+          Seq(ArgInfo("input", "value to cast")), false)
       ),
       PredefinedFunc("downcast",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
         OperationInfo(Downcast,
           "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
-          Seq(ArgInfo("input", "value to cast")))
+          Seq(ArgInfo("input", "value to cast")), false)
       ),
       PredefinedFunc("apply",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
@@ -561,15 +561,15 @@ object SigmaPredef {
         OperationInfo(Apply,
           "Apply the function to the arguments. ",
           Seq(ArgInfo("func", "function which is applied"),
-            ArgInfo("args", "list of arguments")))
+            ArgInfo("args", "list of arguments")), false)
       ),
-      PredefinedFunc("placeholder",
-        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
-        PredefFuncInfo(undefined),
-        OperationInfo(ConstantPlaceholder,
-          "Create special ErgoTree node which can be replaced by constant with given id.",
-          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
-      )
+//      PredefinedFunc("placeholder",
+//        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
+//        PredefFuncInfo(undefined),
+//        OperationInfo(ConstantPlaceholder,
+//          "Create special ErgoTree node which can be replaced by constant with given id.",
+//          Seq(ArgInfo("index", "index of the constant in ErgoTree header")))
+//      )
     ).map(f => f.name -> f).toMap
 
     private val funcNameToIrBuilderMap: Map[String, PredefinedFunc] =

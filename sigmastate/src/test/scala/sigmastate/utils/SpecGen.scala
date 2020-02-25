@@ -161,9 +161,11 @@ trait SpecGen {
         |  \\hline
        """.stripMargin
     }
+
     val tpeParams = m.stype.tpeParams.filterNot(tc.typeParams.contains).opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
     val sigArgs = argInfos.zip(types).drop(1).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
     val sig = s"""\\lst{def ${m.name}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
+
     subsectionTempl(
       opName = s"$typeName.${m.name}",
       opCode = s"${m.objType.typeId}.${m.methodId}",
@@ -179,7 +181,8 @@ trait SpecGen {
 
   def funcSubsection(f: PredefinedFunc) = {
     val argTypes = f.declaration.tpe.tDom
-    val resTpe = f.declaration.tpe.tRange.toTermString
+    val resTpe = f.declaration.tpe.tRange
+    val resTpeStr = resTpe.toTermString
     val types = argTypes.map(_.toTermString)
     val argInfos = f.docInfo.args
     val opDesc = f.docInfo.opDesc
@@ -190,15 +193,20 @@ trait SpecGen {
         |  \\hline
        """.stripMargin
     }
+
+    val tpeParams = f.declaration.tpe.tpeParams.opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
+    val sigArgs = argInfos.zip(types).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
+    val sig = s"""\\lst{def ${f.name.replace("%", "\\%")}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
+
     subsectionTempl(
       opName = toTexName(f.name),
       opCode = opDesc.map(_.opCode.toUByte.toString).getOrElse("NA"),
       label  = s"sec:appendix:primops:${f.docInfo.opTypeName}",
       desc = f.docInfo.description + f.docInfo.isFrontendOnly.opt(" (FRONTEND ONLY)"),
-      signature = "",
+      signature = if (sig.length > 100) "\\footnotesize " + sig else sig,
       types = types,
       argInfos = argInfos,
-      resTpe = resTpe,
+      resTpe = resTpeStr,
       serializedAs = serializedAs
     )
   }
