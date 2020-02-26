@@ -169,8 +169,7 @@ object GenSerializers extends SpecGen {
   def generateSerSpec() = {
     val fileName = "ergotree_serialization1.tex"
     val formatsTex = printSerializerSections()
-    val file = FileUtil.file(s"docs/spec/generated/$fileName")
-    FileUtil.write(file, formatsTex)
+    saveFile(s"docs/spec/generated/$fileName", formatsTex)
 
     println(s"\\input{generated/$fileName}")
   }

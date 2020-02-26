@@ -474,7 +474,7 @@ object SigmaPredef {
       PredefinedFunc("binary_|",
         Lambda(Vector("left" -> SByteArray, "right" -> SByteArray), SByteArray, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Xor, "Byte-wise XOR of two collections of bytes",
+        OperationInfo(Xor, "Byte-wise XOR of two collections of bytes. Example: \\lst{xs | ys}.",
           Seq(ArgInfo("left", "left operand"), ArgInfo("right", "right operand")))
       ),
 
@@ -544,21 +544,21 @@ object SigmaPredef {
       PredefinedFunc("upcast",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Upcast,
+        OperationInfo(Some(Upcast),
           "Cast this numeric value to a bigger type (e.g. Int to Long)",
           Seq(ArgInfo("input", "value to cast")), false)
       ),
       PredefinedFunc("downcast",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("input" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Downcast,
+        OperationInfo(Some(Downcast),
           "Cast this numeric value to a smaller type (e.g. Long to Int). Throws exception if overflow.",
           Seq(ArgInfo("input", "value to cast")), false)
       ),
       PredefinedFunc("apply",
         Lambda(Seq(STypeParam(tT), STypeParam(tR)), Vector("func" -> SFunc(tT, tR), "args" -> tT), tR, None),
         PredefFuncInfo(undefined),
-        OperationInfo(Apply,
+        OperationInfo(Some(Apply),
           "Apply the function to the arguments. ",
           Seq(ArgInfo("func", "function which is applied"),
             ArgInfo("args", "list of arguments")), false)

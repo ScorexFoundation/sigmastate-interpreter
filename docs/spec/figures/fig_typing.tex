@@ -36,7 +36,7 @@
 % functions
 \(\begin{array}{c c}
 	\frac{\Der{\TEnv,\Ov{x_i:~T_i}}{e~:~T}}
-	     {\Der{\Gamma}{\TyLam{x_i}{T_i}{e}~:~(T_0,\dots,T_n) \to T}}~\lst{(FuncExpr)}
+	     {\Der{\Gamma}{\TyLam{x_i}{T_i}{e}~:~(T_0,\dots,T_n) \to T}}~\lst{(FuncValue)}
 		  & 
 	\frac{ \Der{\TEnv}{e_f:~(T_1,\dots,T_n) \to T}~~~\Ov{\Der{\TEnv}{e_i:~T_i}} }
 		 { \Der{\Gamma}{\Apply{e_f}{\Ov{e_i}}~:~T} }~\lst{(Apply)} \\
@@ -57,7 +57,7 @@
 		\forall k\in\{2,\dots,n\}~\Der{\Gamma,x_1:~T_1,\dots,x_{k-1}:~T_{k-1}}{e_k:~T_k}~\wedge~
         \Der{\Gamma,x_1:~T_1,\dots,x_n:~T_n}{e:~T}
 		}
-		{ \DerEnv{\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}~:~T} }~\lst{(BlockExpr)}
+		{ \DerEnv{\{ \Ov{\text{\lst{val}}~x_i = e_i;}~e\}~:~T} }~\lst{(BlockValue)}
 \)
 % let
 % \(

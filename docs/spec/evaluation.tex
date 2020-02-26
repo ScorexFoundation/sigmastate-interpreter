@@ -19,9 +19,9 @@ types, then typed terms and then equations of denotational semantics.
 \begin{definition}
   (values, producers)
   \begin{itemize}
-    \item The following CBV terms are called values:
+    \item The following \corelang terms are called values:
     $$ V :== x \mid C(d, T) \mid \Lam{x}{M}$$
-    \item All CBV terms are called producers. (This is because, when evaluated, they produce a value.)
+    \item All \corelang terms are called producers. (This is because, when evaluated, they produce a value.)
   \end{itemize}
 \end{definition}
 
@@ -29,7 +29,7 @@ We now describe and explain a denotational semantics for the \corelang
 language. The key principle is that each type $A$ denotes a set $\Denot{A}$
 whose elements are the denotations of values of the type $A$.
 
-Thus the type \lst{Boolean} denotes the 2-element set
+Thus, the type \lst{Boolean} denotes the 2-element set
 $\{\lst{true},\lst{false}\}$, because there are two values of type
 \lst{Boolean}. Likewise the type $(T_1,\dots,T_n)$ denotes
 $(\Denot{T_1},\dots,\Denot{T_n})$ because a value of type $(T_1,\dots,T_n)$
@@ -45,7 +45,8 @@ A value of type $A \to B$ is of the form $\Lam{x}{M}$. This, when
 applied to a value of type $A$ gives a value of type $B$. So $A \to B$
 denotes $\Denot{A} \to \Denot{B}$. It is true that the syntax appears to
 allow us to apply $\Lam{x}{M}$ to any term $N$ of type $A$. But $N$ will be
-evaluated before it interracts with $\Lam{x}{M}$, so $\Lam{x}{M}$ is really only applied to the value that $N$ produces.
+evaluated before it interracts with $\Lam{x}{M}$, so $\Lam{x}{M}$ is really only
+applied to the value that $N$ produces (hence the semantics is call-by-value).
 
 \begin{definition}
  A \emph{context} $\Gamma$ is a finite sequence of identifiers with value
@@ -65,7 +66,7 @@ $\Denot{M}$ from $\Denot{\Gamma}$ to $\Denot{B}$.
 In summary, the denotational semantics is organized as follows.
 
 \begin{itemize}
-  \item A type $A$ denotes a set $\Denot{A}$
+  \item A type $A$ denotes the set $\Denot{A}$
   \item A context $x_1:A_1,\dots,x_n:A_n$ denotes the set $(\Denot{A_1},\dots,\Denot{A_n})$
   \item A term $\DerEnv{M: B}$ denotes a function $\Denot{M}:
   \Denot{\Gamma} \to \Denot{B}$
@@ -81,13 +82,14 @@ The denotations of \corelang types
 \begin{center}
   \(\begin{array}{ l c l }
   \Denot{\lst{Boolean}} & = & \{ \lst{true}, \lst{false} \}  \\	
-  \Denot{\lst{P}} & = & \text{see Appendix~\ref{sec:appendix:predeftypes}} \\	
+  \Denot{\lst{P}} & = & \text{see set of values in Appendix~\ref{sec:appendix:predeftypes}} \\	
   \Denot{(T_1,\dots,T_n)} & = & (\Denot{T_1},\dots,\Denot{T_n})  \\	
   \Denot{A \to B} & = & \Denot{A} \to \Denot{B}  \\	
   \end{array}\)
 \end{center}
 
-The denotations of \corelang terms
+The denotations of \corelang terms which together specify the function 
+$\Denot{\_}: \Denot{\Gamma} \to \Denot{T}$
 
 \begin{center}
   \(\begin{array}{ l c l }

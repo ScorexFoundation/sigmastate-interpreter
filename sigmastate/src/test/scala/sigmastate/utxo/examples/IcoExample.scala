@@ -537,7 +537,11 @@ class IcoExample extends SigmaTestingCommons { suite =>
   }
 
   property("ComplexityTableStat") {
-    println(ComplexityTableStat.complexityTableString)
+//    println(ComplexityTableStat.complexityTableString)
+    // ValueSerializer.serializerInfo is ready to be printed after all serializers are executed
+    // at least once during test execution.
+    // uncomment to save serialization info to the file
+//    sigmastate.utils.GenSerializers.generateSerSpec()
   }
 
 }

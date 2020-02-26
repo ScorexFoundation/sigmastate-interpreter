@@ -185,7 +185,7 @@
 
 \begin{document}
 
-\title{\ASDag Specification for Ergoplatform 3.0}
+\title{\ASDag Specification for Ergo Protocol 1.0}
 
 \author{Alexander Slesarenko}
 
@@ -220,7 +220,7 @@ provides a language neutral specification of \ASDag for developers of alternativ
 
 The design space of programming languages is very broad ranging from general-purpose
 languages like C,Java,Python up to specialized languages like SQL, HTML, CSS, etc. To
-provide a platform for contractual money, the language for writing contracts on
+serve as a platform for contractual money, the language for writing contracts on
 blockchain must have a number of properties.
 
 First, the language and the contract execution environment should be
@@ -244,32 +244,32 @@ be careful to specifiy the gas limit large enough for the transaction to complet
 otherwise the gas used for the failed transaction will be kept by the miners for their
 work and the user \emph{will not} get it back.
 
-Third, being simple, the contracts language should be \emph{expressive enough}. It
-should be possible to efficiently implement wide range of practical applications. This
-is the case of \ASDag which comes hand in hand with the design and capabilities of the
+Third, the contracts language should be simple yet \emph{expressive enough}. It
+should be possible to efficiently implement wide range of practical applications. For example
+\ASDag is \emph{not} turing-complete but it is co-designed with the capabilities of the
 Ergo blockchain platform itself, making the whole system \emph{turing-complete} as 
-demonstrated in~\cite{CKM18}.
+demonstrated in~\cite{CKM18}. Simplicity of the language enables spam-resistantance.
 
-Forth, simplicity and expressivity are often characteristics of domain-specific
+Forth, simplicity and expressivity are often the characteristics of domain-specific
 languages~\cite{dslbook,HudakDSL}. From this perspective \ASDag is an intermediate
 representation of a DSL for writing smart contracts. The language directly captures the
-\emph{ubiquitous language}~\cite{UbiqLang} of the smart contracts domain directly
-manipulating with Boxes, Tokens, Zero-Knowledge Sigma-Propostions etc.
-These are the novel first-class features of Ergo platform which it provides for user
-applicatons. 
+\emph{ubiquitous language}~\cite{UbiqLang} of the Ergo blockchain directly manipulating
+with Boxes, Tokens, Zero-Knowledge Sigma-Propostions etc. These are the novel
+first-class features of Ergo platform which it provides for user applicatons. It has
+complementary frontend language called ErgoScript with syntax of Scala/Kotlin.
+ErgoScript aims to address the large audience of programmers with minimum surprise and
+WTF ratio \cite{WTFLang}. The syntax of ErgoScript is inspired by Scala/Kotlin and also
+shares a common subset with Java and C\#, thus if you are proficient in any of these
+languages you will be right at home using ErgoScript as well.
 
-And last, but not the least, \ASDag is a core language of Ergo platform optimized for
-compact storage and fast execution. It has complementary frontend language called
-ErgoScript with syntax of Scala/Kotlin. ErgoScript aims to address the large audience
-of programmers with minimum surprise and WTF ratio \cite{WTFLang}. The syntax of
-ErgoScript is inspired by Scala/Kotlin and also shares a common subset with Java and
-C\#, thus if you are proficient in any of these languages you will be right at home
-using ErgoScript as well. We don't describe ErgoScript is this document though and
-focus exclusively on \ASDag.
+And last, but not the least, \ASDag as a core language of Ergo platform, should be
+optimized for compact storage and fast execution.  
 
 We implemented a reference implementation of \ASDag according to the specification
 described in this document and provide a guidance in section~\ref{sec:implementation}
 for development of an alternative and compliant protocol implementation.
+We don't describe ErgoScript is this document and focus exclusively on \ASDag.
+
 
 \include{language}
 
