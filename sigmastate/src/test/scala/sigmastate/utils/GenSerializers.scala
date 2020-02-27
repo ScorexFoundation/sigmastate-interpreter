@@ -128,7 +128,14 @@ object GenSerializers extends SpecGen {
     val scopes = serializerInfo
       .filter(_._2.children.nonEmpty).toSeq
       .sortBy(_._1).map(_._2)
-    scopes.map { s =>
+    def enabledOp(opCode: Byte): Boolean = {
+      val opRow = opsTable.find(r => r._1.opCode == opCode)
+      opRow match {
+        case Some((_,_, Some(f))) => f.docInfo.isEnabled
+        case _ => true
+      }
+    }
+    scopes.filter(s => enabledOp(s.opCode)).map { s =>
       val ser = getSerializer(s.opCode)
       val opCode = ser.opCode.toUByte
       val opName = ser.opDesc.typeName
