@@ -206,7 +206,7 @@ trait SpecGen {
 
     val tpeParams = f.declaration.tpe.tpeParams.opt(ps => s"$$[$$${ps.map(p => s"\\lst{$p}").rep()}$$]$$")
     val sigArgs = argInfos.zip(types).opt(args => s"(${args.map { case (info, ty) => s"""\\lst{${info.name}}$$:$$~\\lst{$ty}""" }.rep()})")
-    val sig = s"""\\lst{def ${f.name.replace("%", "\\%")}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
+    val sig = s"""\\lst{def ${toTexName(f.name)}}$tpeParams$sigArgs: \\lst{$resTpeStr}"""
 
     subsectionTempl(
       opName = toTexName(f.name),

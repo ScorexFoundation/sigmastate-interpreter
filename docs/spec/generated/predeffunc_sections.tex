@@ -582,55 +582,6 @@
        
 \end{tabularx}
 
-\subsubsection{\lst{avlTree} method (Code 182)}
-\label{sec:appendix:primops:CreateAvlTree}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Construct a new authenticated dictionary with given parameters and tree root digest. \\
-   \hline
-   \bf{Signature} & \footnotesize \lst{def avlTree}(\lst{operationFlags}$:$~\lst{Byte}, \lst{digest}$:$~\lst{Coll[Byte]}, \lst{keyLength}$:$~\lst{Int}, \lst{valueLengthOpt}$:$~\lst{Option[Int]}): \lst{AvlTree} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{operationFlags} & \text{flags of available operations} \\
-\lst{digest} & \text{hash of merkle tree root} \\
-\lst{keyLength} & \text{length of dictionary keys in bytes} \\
-\lst{valueLengthOpt} & \text{optional width of dictionary values in bytes} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:CreateAvlTree]{\lst{CreateAvlTree}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{treeLookup} method (Code 183)}
-\label{sec:appendix:primops:TreeLookup}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} &  \\
-   \hline
-   \bf{Signature} & \footnotesize \lst{def treeLookup}(\lst{tree}$:$~\lst{AvlTree}, \lst{key}$:$~\lst{Coll[Byte]}, \lst{proof}$:$~\lst{Coll[Byte]}): \lst{Option[Coll[Byte]]} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{tree} & \text{tree to lookup the key} \\
-\lst{key} & \text{a key of an item in the \lst{tree} to lookup} \\
-\lst{proof} & \text{proof to perform verification of the operation} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:TreeLookup]{\lst{TreeLookup}} \\
-  \hline
-       
-\end{tabularx}
-
 \subsubsection{\lst{blake2b256} method (Code 203)}
 \label{sec:appendix:primops:CalcBlake2b256}
 \noindent

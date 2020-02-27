@@ -300,13 +300,13 @@ object SigmaPredef {
         { case (_, Seq(flags, digest, keyLength, valueLength)) =>
           mkCreateAvlTree(flags.asByteValue, digest.asByteArray, keyLength.asIntValue, valueLength.asOption[SInt.type])
         }),
-      OperationInfo(CreateAvlTree,
+      OperationInfo(Some(CreateAvlTree),
         "Construct a new authenticated dictionary with given parameters and tree root digest.",
         Seq(
           ArgInfo("operationFlags", "flags of available operations"),
           ArgInfo("digest", "hash of merkle tree root"),
           ArgInfo("keyLength", "length of dictionary keys in bytes"),
-          ArgInfo("valueLengthOpt", "optional width of dictionary values in bytes")))
+          ArgInfo("valueLengthOpt", "optional width of dictionary values in bytes")), false)
     )
 
     val SubstConstantsFunc = PredefinedFunc("substConstants",
@@ -526,11 +526,11 @@ object SigmaPredef {
       PredefinedFunc("treeLookup",
         Lambda(Vector("tree" -> SAvlTree, "key" -> SByteArray, "proof" -> SByteArray), SOption(SByteArray), None),
         PredefFuncInfo(undefined),
-        OperationInfo(TreeLookup,
+        OperationInfo(Some(TreeLookup),
           "",
           Seq(ArgInfo("tree", "tree to lookup the key"),
           ArgInfo("key", "a key of an item in the \\lst{tree} to lookup"),
-          ArgInfo("proof", "proof to perform verification of the operation")))
+          ArgInfo("proof", "proof to perform verification of the operation")), false)
       ),
       PredefinedFunc("if",
         Lambda(Seq(STypeParam(tT)), Vector("condition" -> SBoolean, "trueBranch" -> tT, "falseBranch" -> tT), tT, None),

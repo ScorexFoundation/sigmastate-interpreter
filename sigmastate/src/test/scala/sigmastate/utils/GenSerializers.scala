@@ -141,7 +141,7 @@ object GenSerializers extends SpecGen {
         .opt { case (d, m, f) =>
           m.fold(f.opt { f =>
             val refName = f.docInfo.opTypeName
-            val opName = f.name.replace("%", "\\%")
+            val opName = toTexName(f.name)
             s"See~\\hyperref[sec:appendix:primops:$refName]{\\lst{${opName}}}"
           })({ m =>
             val typeName = m.objType.typeName

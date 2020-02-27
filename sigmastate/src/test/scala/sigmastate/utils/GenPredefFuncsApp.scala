@@ -22,7 +22,11 @@ object GenPredefFuncsApp extends SpecGen {
       val argsTpe = f.declaration.tpe.tDom.rep(_.toTermString)
       val resTpe = f.declaration.tpe.tRange.toTermString
       val serRef = s"\\hyperref[sec:serialization:operation:$mnemonic]{\\lst{$mnemonic}}"
-      val desc = if (info.description.length > 150) "..." else info.description
+      val desc = if (info.description.length > 150) {
+        s"See~\\ref{sec:appendix:primops:${f.docInfo.opTypeName}}"
+      } else
+        s"${info.description} See~\\ref{sec:appendix:primops:${f.docInfo.opTypeName}}"
+
       funcRows.append(
         s""" $opCode & $serRef & $desc \\\\
           | \\hline
