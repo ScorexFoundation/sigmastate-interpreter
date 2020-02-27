@@ -1187,7 +1187,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
          |replaced by \lst{patch}.""".stripMargin,
         ArgInfo("from", "the index of the first replaced element"),
         ArgInfo("patch", "the replacement sequence"),
-        ArgInfo("replaced", "the number of elements to drop in the original collection"),
+        ArgInfo("replaced", "the number of elements to drop in the original collection")
       )
 
   val UpdatedMethod = SMethod(this, "updated",
@@ -1208,7 +1208,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
       .withIRInfo(MethodCallIrBuilder).withInfo(MethodCall,
         "Returns a copy of this collection where elements at \\lst{indexes} are replaced with \\lst{values}.",
         ArgInfo("indexes", "the positions of the replacement"),
-        ArgInfo("values", "the values to be put in the corresponding position"),
+        ArgInfo("values", "the values to be put in the corresponding position")
       )
 
   val UnionSetsMethod = SMethod(this, "unionSets",
@@ -1270,6 +1270,7 @@ object SCollection extends STypeCompanion with MethodByNameUnapply {
   val DistinctMethod = SMethod(this, "distinct",
     SFunc(IndexedSeq(ThisType), ThisType, Seq(tIV)), 30)
       .withIRInfo(MethodCallIrBuilder).withInfo(PropertyCall, "")
+
 
   val StartsWithMethod = SMethod(this, "startsWith",
     SFunc(IndexedSeq(ThisType, ThisType, SInt), SBoolean, Seq(paramIV)), 31)
@@ -1744,7 +1745,7 @@ case object SAvlTree extends SProduct with SPredefType with SMonoType {
           | Since AvlTree is immutable, this tree instance remains unchanged.
           | Returns a copy of this AvlTree instance where \lst{this.digest} replaced by \lst{newDigest}.
         """.stripMargin,
-        ArgInfo("newDigest", "a new digest"),
+        ArgInfo("newDigest", "a new digest")
       )
 
   protected override def getMethods(): Seq[SMethod] = super.getMethods() ++ Seq(

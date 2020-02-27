@@ -562,7 +562,7 @@ object SigmaPredef {
           "Apply the function to the arguments. ",
           Seq(ArgInfo("func", "function which is applied"),
             ArgInfo("args", "list of arguments")))
-      ),
+      )
 //      PredefinedFunc("placeholder",
 //        Lambda(Seq(STypeParam(tT)), Vector("id" -> SInt), tT, None),
 //        PredefFuncInfo(undefined),
