@@ -449,7 +449,7 @@
 \noindent
 \begin{tabularx}{\textwidth}{| l | X |}
    \hline
-   \bf{Description} & Byte-wise XOR of two collections of bytes \\
+   \bf{Description} & Byte-wise XOR of two collections of bytes. Example: \lst{xs | ys}. \\
    \hline
    \bf{Signature} & \footnotesize \lst{def binary_|}(\lst{left}$:$~\lst{Coll[Byte]}, \lst{right}$:$~\lst{Coll[Byte]}): \lst{Coll[Byte]} \\
   
@@ -1011,74 +1011,6 @@
        
 \end{tabularx}
 
-\subsubsection{\lst{unary_~} method (Code 241)}
-\label{sec:appendix:primops:BitInversion}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Invert every bit of the numeric value. \\
-   \hline
-   \bf{Signature} & \lst{def unary_~}$[$\lst{T}$]$(\lst{input}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{input} & \text{value of numeric type} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitInversion]{\lst{BitInversion}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_|} method (Code 242)}
-\label{sec:appendix:primops:BitOr}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Bitwise OR of two numeric operands. \\
-   \hline
-   \bf{Signature} & \lst{def bit_|}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitOr]{\lst{BitOr}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_&} method (Code 243)}
-\label{sec:appendix:primops:BitAnd}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Bitwise AND of two numeric operands. \\
-   \hline
-   \bf{Signature} & \lst{def bit_&}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitAnd]{\lst{BitAnd}} \\
-  \hline
-       
-\end{tabularx}
-
 \subsubsection{\lst{^} method (Code 244)}
 \label{sec:appendix:primops:BinXor}
 \noindent
@@ -1098,98 +1030,6 @@
   \hline
   
   \bf{Serialized as} & \hyperref[sec:serialization:operation:BinXor]{\lst{BinXor}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_^} method (Code 245)}
-\label{sec:appendix:primops:BitXor}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Bitwise XOR of two numeric operands. \\
-   \hline
-   \bf{Signature} & \lst{def bit_^}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitXor]{\lst{BitXor}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_>>} method (Code 246)}
-\label{sec:appendix:primops:BitShiftRight}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Right shift of bits. \\
-   \hline
-   \bf{Signature} & \lst{def bit_>>}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRight]{\lst{BitShiftRight}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_<<} method (Code 247)}
-\label{sec:appendix:primops:BitShiftLeft}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Left shift of bits. \\
-   \hline
-   \bf{Signature} & \lst{def bit_<<}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftLeft]{\lst{BitShiftLeft}} \\
-  \hline
-       
-\end{tabularx}
-
-\subsubsection{\lst{bit_>>>} method (Code 248)}
-\label{sec:appendix:primops:BitShiftRightZeroed}
-\noindent
-\begin{tabularx}{\textwidth}{| l | X |}
-   \hline
-   \bf{Description} & Right shift of bits. \\
-   \hline
-   \bf{Signature} & \lst{def bit_>>>}$[$\lst{T}$]$(\lst{left}$:$~\lst{T}, \lst{right}$:$~\lst{T}): \lst{T} \\
-  
-  \hline
-  \bf{Parameters} &
-      \(\begin{array}{l l}
-         \lst{left} & \text{left operand} \\
-\lst{right} & \text{right operand} \\
-      \end{array}\) \\
-       
-  \hline
-  
-  \bf{Serialized as} & \hyperref[sec:serialization:operation:BitShiftRightZeroed]{\lst{BitShiftRightZeroed}} \\
   \hline
        
 \end{tabularx}

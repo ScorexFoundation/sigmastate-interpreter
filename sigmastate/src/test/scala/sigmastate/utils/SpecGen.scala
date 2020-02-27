@@ -67,7 +67,9 @@ trait SpecGen {
       .filterNot { f => f.docInfo.opDesc.exists(noFuncs.contains) }.toSeq
   val specialFuncs: Seq[PredefinedFunc] = predefFuncRegistry.specialFuncs.values.toSeq
 
-  def collectOpsTable() = {
+  type OpsTableRow = (ValueCompanion, Option[SMethod], Option[PredefinedFunc])
+
+  def collectOpsTable(): Seq[OpsTableRow] = {
     val ops = collectSerializableOperations().filterNot { case (_, opDesc) => noFuncs.contains(opDesc) }
     val methods = collectMethods()
     val funcs = predefFuncs ++ specialFuncs
@@ -89,6 +91,14 @@ trait SpecGen {
       for ((opCode, opDesc, optM, optF) <- table if optM.nonEmpty || optF.nonEmpty)
         yield (opDesc, optM, optF)
     rowsWithInfo
+  }
+
+  def filterOutDisabled(ops: Seq[OpsTableRow]): Seq[OpsTableRow] = {
+    ops.filterNot {
+      case (_, Some(m), _) => m.docInfo.exists(!_.isEnabled)
+      case (_, _, Some(f)) => !f.docInfo.isEnabled
+      case _ => false
+    }
   }
 
   def getOpInfo(opDesc: ValueCompanion, optM: Option[SMethod], optF: Option[PredefinedFunc]): OpInfo = {

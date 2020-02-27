@@ -6,7 +6,7 @@ import scalan.util.PrintExtensions._
 object GenPredefFuncsApp extends SpecGen {
 
   def main(args: Array[String]) = {
-    val opsTable = collectOpsTable()
+    val opsTable = filterOutDisabled(collectOpsTable())
     val opInfos = opsTable.collect { case (d, m, optF @ Some(f)) =>
       val info = getOpInfo(d, m, optF)
       (d, f, info)
